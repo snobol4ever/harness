@@ -270,8 +270,11 @@ def read_contract(pkg_dir):
     absorbed with its fatal block as the ref and SPITBOL's exit code as want_rc (CEO-1344: a SPITBOL fatal is gradable; the package's ALL.mask carries the
     block's engine lines); and `bom<TAB>as-shipped` -- a source that carries a UTF-8 BOM is run on the oracle as shipped and absorbed with what it answers,
     graded by the harness's compile-refusal arm (harness 1764ac3c), instead of excluded before any run. Each key lifts exactly its one exclusion; an oracle
-    crash, a hang, an empty answer or a two-run difference excludes as before."""
-    out = {"stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": ""}
+    crash, a hang, an empty answer or a two-run difference excludes as before.
+    ⭐ CIO-22 D (the coo 2026-11-10, on the cio's design; CIO-15 d revised): `units<TAB>generated` with `generator<TAB><module>` -- a per-goal
+    suite (INRIA's goals, Logtalk's cases) is a container of GENERATED programs: the module (harness/scripts/<module>.py) yields each case of the
+    package's own table and the builder runs no oracle (see build_generated)."""
+    out = {"stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -289,6 +292,10 @@ def read_contract(pkg_dir):
             out["units"] = "plunit"
         elif f[0] == "units" and f[1] == "iso-rejection":
             out["units"] = "iso-rejection"
+        elif f[0] == "units" and f[1] == "generated":
+            out["units"] = "generated"
+        elif f[0] == "generator":
+            out["generator"] = f[1].strip()
         elif f[0] == "dialect" and f[1] == "any-fpc-mode":
             out["dialect"] = "any-fpc-mode"
         elif f[0] == "oracle" and f[1] == "xsb-gentest":
@@ -319,8 +326,10 @@ def read_contract(pkg_dir):
             if not (pkg_dir / f[1]).is_file(): h.refuse(f"{cf}:{n}: stdin {f[1]!r} names no file beside the package (every entry with no stem-named stdin of its own would read it)")
             out["stdin"] = f[1].strip()
         else:
-            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, units=ref-beside,units=plunit, units=iso-rejection, dialect=any-fpc-mode, fatal=gradable, bom=as-shipped, "
+            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, units=ref-beside,units=plunit, units=iso-rejection, dialect=any-fpc-mode, fatal=gradable, bom=as-shipped, units=generated, generator=MODULE, "
                      f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space and unmarked_compile_args=--dialect=NAME only")
+    if (out["units"] == "generated") != bool(out["generator"]):
+        h.refuse(f"{cf}: units=generated and generator=<module> go together (got units={out['units']!r}, generator={out['generator']!r})")
     if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):
         h.refuse(f"{cf}: oracle=xsb-gentest needs upstream=<the upstream test tree> naming a directory (got {out['upstream']!r})")
     return out
@@ -392,7 +401,129 @@ def read_oracle_runs(pkg_dir):
     return runs
 
 
+def _load_generator(name):
+    """The generator module a units=generated contract names: harness/scripts/<name>.py (one subdirectory allowed, for a gate's fixture),
+    exposing cases(pkg_dir)."""
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(/[A-Za-z_][A-Za-z0-9_]*)?", name or ""):
+        h.refuse(f"generator {name!r} is not a module name under harness/scripts (letters, digits, _ and one /)")
+    gp = Path(HERE) / f"{name}.py"
+    if not gp.is_file():
+        h.refuse(f"generator {name!r}: no {gp}")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("s4e_generator_" + name.replace("/", "_"), gp)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    if not callable(getattr(mod, "cases", None)):
+        h.refuse(f"generator {gp} has no cases(pkg_dir)")
+    return mod
+
+
+def build_generated(pkg_dir, lang, out_prefix, contract, only):
+    """⭐ A PER-GOAL SUITE IS A CONTAINER OF GENERATED PROGRAMS GRADED AS TEXT (CIO-22 D, the coo 2026-11-10 on the cio's design; CIO-15 d revised:
+    no per-suite grader arm). The package's own table ALL.csv is the denominator (CIO-19): the generator named by CONTRACT generator=<module>
+    yields, for every entry of that table and no other, one dict -- name (exactly the ALL.csv entry), program (the text a conforming run
+    executes), ref (the suite's own expectation, the standard's, ONE line), cwd (the directory it runs from, relative to the package; "." the
+    package) and, optionally, want_rc -- or, when it cannot plan the case, name and reason. NO ORACLE RUNS: the ref is the suite's, cut from no
+    run. A case EXCLUDED_CASES.tsv, EXCLUDED.tsv or UNGRADABLE.tsv names, or one with a reason, is excluded by name; absorbed plus excluded equals
+    the table. ALL.csv keeps every column and row it has and gains compare (verdict-line: corpus_suite_harness.py grades the first stdout line
+    that begins with the ref's first word against the ref) and cwd for each absorbed entry; an excluded entry's two cells are blank."""
+    if only is not None:
+        h.refuse("--only splices oracle-cut entries into a container; a units=generated build runs no oracle and is rebuilt whole")
+    ext = LANG_EXT[lang]
+    gen = _load_generator(contract["generator"])
+    out_csv = pkg_dir / f"{out_prefix}.csv"
+    if not out_csv.is_file():
+        h.refuse(f"{out_csv}: units=generated grades the package's own table (CIO-19: the package table is the denominator), and there is none")
+    with open(out_csv, newline="", encoding="utf-8") as f:
+        _rdr = csv.DictReader(f)
+        header = list(_rdr.fieldnames or [])
+        rows = list(_rdr)
+    if "entry" not in header or not rows:
+        h.refuse(f"{out_csv}: no entry column or no rows")
+    table = [(r.get("entry") or "").strip() for r in rows]
+    _dup = sorted({n for n in table if table.count(n) > 1})
+    if "" in table or _dup:
+        h.refuse(f"{out_csv}: an entry is blank or named twice ({', '.join(_dup[:5]) or 'blank'}) -- one row, one case")
+    declared = {}
+    for _tn in ("EXCLUDED_CASES.tsv", "EXCLUDED.tsv", "UNGRADABLE.tsv"):
+        for _r in _tsv_rows(pkg_dir / _tn):
+            _n = _r[0].strip() if _r else ""
+            if _n:
+                _n = _n[:-len(ext)] if _n.endswith(ext) else _n
+                declared.setdefault(_n, f"{_tn} {(_r[1].strip() if len(_r) > 1 else '')}: {(_r[2].strip() if len(_r) > 2 else '')}")
+    by = {}
+    for c in gen.cases(pkg_dir):
+        _n = c.get("name") if isinstance(c, dict) else None
+        if not isinstance(_n, str) or not _n:
+            h.refuse(f"generator {contract['generator']}: a case is not a dict with a name ({c!r:.120})")
+        if _n in by:
+            h.refuse(f"generator {contract['generator']}: case {_n!r} yielded twice")
+        by[_n] = c
+    _missing = [n for n in table if n not in by]
+    _extra = sorted(set(by) - set(table))
+    if _missing or _extra:
+        h.refuse(f"generator {contract['generator']} and {out_csv.name} disagree: {len(_missing)} table entries it does not yield "
+                 f"({', '.join(_missing[:5])}) and {len(_extra)} cases the table lacks ({', '.join(_extra[:5])}) -- the table is the denominator")
+    print(f"contract: units generated (CONTRACT.tsv) -- generator {contract['generator']}, {len(by)} cases, no oracle run; "
+          f"{len(declared)} names declared out by EXCLUDED_CASES.tsv, EXCLUDED.tsv and UNGRADABLE.tsv", file=sys.stderr)
+    entries, excluded, cwd_of = [], [], {}
+    for n in table:
+        c = by[n]
+        if n in declared:
+            excluded.append((n, declared[n]))
+            continue
+        if c.get("reason"):
+            excluded.append((n, f"the generator cannot plan it: {c['reason']}"))
+            continue
+        prog, ref, cwd = c.get("program"), c.get("ref"), (c.get("cwd") or ".")
+        if not isinstance(prog, str) or not prog.strip():
+            h.refuse(f"generator case {n!r}: no program text and no reason")
+        if not isinstance(ref, str) or not ref.strip() or "\n" in ref.strip("\n"):
+            h.refuse(f"generator case {n!r}: the ref must be ONE non-empty line (the verdict line), got {ref!r:.120}")
+        if cwd.startswith("/") or ".." in cwd.split("/") or not (pkg_dir / cwd).is_dir():
+            h.refuse(f"generator case {n!r}: cwd {cwd!r} is not a directory beside the package (relative, no ..)")
+        entries.append(h.Entry("block", len(entries) + 1, n, prog.splitlines(), [ref.strip("\n")], stdin=None, want_rc=int(c.get("want_rc") or 0)))
+        cwd_of[n] = cwd
+    if len(entries) + len(excluded) != len(table):
+        h.refuse(f"population arithmetic broken: {len(entries)} absorbed + {len(excluded)} excluded != {len(table)} in the table")
+    out_excl = pkg_dir / f"{out_prefix}.excluded.txt"
+    if excluded:
+        out_excl.write_text("\n".join(f"{n}: {r}" for n, r in sorted(excluded)) + "\n")
+    elif out_excl.exists():
+        out_excl.unlink()
+    if not entries:
+        h.refuse(f"{pkg_dir}: zero absorbable cases of {len(table)} -- a container that grades nothing is not a container ({out_excl.name} names them)")
+    out_sno, out_ref, out_in, out_wantrc = (pkg_dir / f"{out_prefix}{x}" for x in (ext, ".ref", ".in", ".wantrc"))
+    if not h.write_suite(entries, str(out_sno), str(out_ref), out_in=str(out_in), lang=lang) and out_in.exists():
+        out_in.unlink()
+    _wr = [f"{e.name}\t{e.want_rc}" for e in entries if e.want_rc]
+    if _wr:
+        out_wantrc.write_text("\n".join(_wr) + "\n")
+    elif out_wantrc.exists():
+        out_wantrc.unlink()
+    _new = [c for c in ("compare", "cwd") if c not in header]
+    _at = max([header.index(c) + 1 for c in ("timeout_s", "compile_args", "run_args", "out_files", "stderr") if c in header] or [len(header)])
+    header = header[:_at] + _new + header[_at:]
+    for r in rows:
+        n = r["entry"].strip()
+        if n in cwd_of:
+            _t = [t for t in (r.get("compare") or "").split("+") if t and t != "verdict-line"]
+            r["compare"], r["cwd"] = "+".join(_t + ["verdict-line"]), cwd_of[n]
+        else:
+            r["compare"], r["cwd"] = "", ""
+    with open(out_csv, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=header, lineterminator="\n")
+        w.writeheader()
+        w.writerows(rows)
+    print(f"{pkg_dir}: GENERATED {len(entries)} absorbed, {len(excluded)} excluded, {len(table)} in the table (balanced); "
+          f"generator {contract['generator']}; no oracle run", file=sys.stderr)
+    return 0
+
+
 def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None):
+    _c0 = read_contract(pkg_dir)
+    if _c0["units"] == "generated":
+        return build_generated(pkg_dir, lang, out_prefix, _c0, only)
     ext = LANG_EXT[lang]
     paths = h.resolve_paths()
     h.check_scrip(paths)

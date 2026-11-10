@@ -1416,6 +1416,23 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     # reproduces. error-context grades every error(E, C) with C replaced by one marker in both streams; E is still compared exactly.
     _toks = set(ws_blind.split("+")) if isinstance(ws_blind, str) else ({"ignore-all-space"} if ws_blind is True else set())
     _vars, _ectx, _ws = "fresh-vars" in _toks, "error-context" in _toks, "ignore-all-space" in _toks
+    # ⭐ verdict-line (CIO-22 D, the coo 2026-11-10 on the cio's design): a GENERATED case (util_build_package_suite.py units=generated, INRIA's
+    # goals and Logtalk's cases) prints one verdict line among whatever else it prints, and its ref is that one line, the suite's own expectation.
+    # The FIRST stdout line whose first word is the ref's first word (the marker, @V for Logtalk) is graded against the ref's first line and every
+    # other line is ignored; no such line is FAIL, "no verdict line". rc, a signal and out-of-memory are graded as for any entry; the other tokens
+    # apply to the two lines by plus.
+    if "verdict-line" in _toks and exp is not None:
+        _ref1 = exp.split("\n")[0]
+        _mk = (_ref1.split() or [""])[0]
+        _vl = next((ln for ln in got.split("\n") if _mk and ln.split()[:1] == [_mk]), None)
+        if _vl is None:
+            oom = _oom_verdict(out, err, rc, masked_n)
+            if oom is not None:
+                return oom
+            v = Verdict("FAIL", out, err, rc, detail=f"no verdict line (no stdout line begins with {_mk!r})")
+            v.masked_lines = masked_n
+            return v
+        got, exp = _vl, _ref1
     def _norm(t):
         out = []
         for ln in t.split("\n"):
@@ -5306,15 +5323,16 @@ def validate_out_files_cell(raw, where):
 
 def validate_compare_cell(raw, where):
     """ONE compare cell: empty = byte for byte (every table before the column existed); "ignore-all-space" = each line compared with its white
-    space removed, as `diff -w` compares (XSB's gentest.sh, R-1927). Anything else refuses rc=2 naming the cell."""
+    space removed, as `diff -w` compares (XSB's gentest.sh, R-1927); verdict-line = the first stdout line that begins with the ref's first word is
+    graded against the ref's first line and the rest ignored (CIO-22 D, a generated case). Anything else refuses rc=2 naming the cell."""
     v = (raw or "").strip()
     if v == "":
         return False
     if v == "ignore-all-space":
         return True
-    if v and set(v.split("+")) <= {"fresh-vars", "error-context", "ignore-all-space"}:
+    if v and set(v.split("+")) <= {"fresh-vars", "error-context", "ignore-all-space", "verdict-line"}:
         return v
-    refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell or a '+'-joined set of ignore-all-space, fresh-vars, error-context")
+    refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell or a '+'-joined set of ignore-all-space, fresh-vars, error-context, verdict-line")
 
 
 def validate_stage_cell(raw, where):
