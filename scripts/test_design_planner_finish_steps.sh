@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_planner_finish_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: planner-finish (the cto, 2026-10-28, R-1996/1998;
-# .github/ARCH-THREE-ZETAS-EMISSION.md section 11). The plan is corpus/tests/snobol4/planner_finish/STEPS.tsv; the witnesses are the
+# .github/ARCH-THREE-ZETAS-EMISSION.md section 11). The plan is harness/designs/planner_finish/STEPS.tsv; the witnesses are the
 # planner_finish/ folders of corpus/tests/{snobol4,icon,prolog,pascal}, each program beside a .ref cut from its oracle (sbl -bf, icont/iconx,
 # swipl 9.0.4 -q -t halt, fpc 3.2.2).
 #
@@ -20,7 +20,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-STEPS="$HERE/../designs/planner_finish/STEPS.tsv"   # moved from corpus/tests/snobol4/planner_finish (the coo 2026-11-10, CIO-33/36: a language folder is its container and config alone)
+STEPS="$HERE/../designs/planner_finish/STEPS.tsv"   # moved from the snobol4 corpus folder (the coo 2026-11-10, CIO-33/36: a language folder is its container and config alone)
 CENSUS="$HERE/util_emitter_memory_model_census.py"
 NMGATE="$HERE/test_gate_planner_objects_leave_no_emitter_symbol_undefined.sh"
 OUT=""

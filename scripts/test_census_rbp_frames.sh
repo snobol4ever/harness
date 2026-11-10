@@ -68,8 +68,12 @@ CORPUS="${1:-$S4E/corpus}"
 # library/probe_reference/bb's loose .sno files converted to suite format 2026-08-28 (probe-consolidate-bb, LON-20260828
 # total conversion) -- this DIR now contributes 0 by construction, same as `feat`'s drop under
 # tests-consolidate-snobol4-loose. EXPECTED, not a regression; override via EARN2_DIRS if the suite
-# entries (tests/snobol4/probe/bb*.sno) need to rejoin this census.
-DIRS="${EARN2_DIRS:-crosscheck/patterns library/probe_reference/bb tests/snobol4/probe_loose demo benchmarks/snobol4}"   # re-pointed (s283h): probe/earn0's loose files are converted into suites; probe_loose holds the residual loose witnesses
+# entries (the probe_bb families of corpus/tests/snobol4/ALL.csv) need to rejoin this census.
+DIRS="${EARN2_DIRS:-crosscheck/patterns library/probe_reference/bb probe_loose demo benchmarks/snobol4}"   # re-pointed (s283h): probe/earn0's loose files are converted into suites; probe_loose is no dir: its residual witnesses are the master's probe_loose_ origins, extracted per run into PL_DIR (lib_rungs_extract.sh rungs_extract_origin_prefix)
+PL_WORK="$(mktemp -d)"; trap 'rm -rf "$PL_WORK"' EXIT
+PL_DIR="$PL_WORK/probe_loose"
+RUNGS_LANG="${RUNGS_LANG:-snobol4}" . "$HERE/lib_rungs_extract.sh"
+rungs_extract_origin_prefix probe_loose_ "$PL_DIR" || { echo "REFUSE(2): the probe_loose_ origins of the snobol4 master did not extract"; exit 2; }
 
 if [ ! -x "$SCRIP" ]; then echo "SKIP  scrip not built: $SCRIP"; exit 0; fi
 
@@ -105,7 +109,7 @@ T_PATBLOB=0; T_ABACT=0; T_PROC=0; T_MAIN=0
 T_DIVERGE=0; T_FILES=0; T_M3CRASH=0
 
 for d in $DIRS; do
-  D="$CORPUS/$d"; [ -d "$D" ] || { echo "$d: MISSING, skip"; continue; }
+  D="$CORPUS/$d"; [ "$d" = probe_loose ] && D="$PL_DIR"; [ -d "$D" ] || { echo "$d: MISSING, skip"; continue; }
   n=$(ls "$D"/*.sno 2>/dev/null | wc -l); [ "$n" -gt 0 ] || { echo "$d: no .sno"; continue; }
   echo "=== $d ($n files) ==="
   d_arbno=0; d_fence1=0; d_imm=0; d_cond=0; d_save=0

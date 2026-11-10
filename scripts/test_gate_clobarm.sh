@@ -5,9 +5,9 @@
 # Runs the clobarm suite in BOTH modes against the checked-in .ref oracle, under whatever
 # SCRIP_CHOICE_RBP the caller sets, and prints one PASS/FAIL row per program plus a tally.
 # ⭐ RE-POINTED 2026-08-29 (seat07, corpus-crosscheck-probe-total-conversion clause 3): corpus/probe/clobarm/
-# is gone -- converted to corpus/tests/snobol4/probe/clobarm.{sno,ref} (corpus-suites-consolidation format,
+# is gone -- converted to the probe_clobarm family of corpus/tests/snobol4/ALL.sno (corpus-suites-consolidation format,
 # byte-equal-validated both directions, both modes, all three SCRIP_CHOICE_RBP arm states before the loose
-# files were deleted -- see tests/snobol4/probe/clobarm.README.md and FINDING-2026-08-29-seat07-s129-blob-
+# files were deleted -- see the probe_clobarm rows of corpus/tests/snobol4/ALL.csv and FINDING-2026-08-29-seat07-s129-blob-
 # leaf-cell-corruption-is-resolved-clobarm-5-of-5.md: the s129 corruption this gate exists to catch is now
 # FIXED, all 5 witnesses pass in every arm). Same idiom as test_gate_fz_release.sh / probe_leafsib_measure.sh's
 # re-points: extract every entry via corpus_suite_harness.py (the ONE parsing authority) into a scratch dir,
