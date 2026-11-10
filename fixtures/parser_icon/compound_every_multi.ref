@@ -1,0 +1,11 @@
+(STMT :subj (TT_PROC_DECL show
+  (TT_VAR show)
+  (TT_VLIST (TT_VAR n))
+  (TT_PROGRAM
+    (TT_LOCAL (TT_VAR i))
+    (TT_EVERY
+      (TT_ASSIGN (TT_VAR i) (TT_TO (TT_ILIT 1) (TT_VAR n)))
+      (TT_SEQ_EXPR (TT_FNC (TT_VAR write) (TT_VAR i)) (TT_FNC (TT_VAR write) (TT_MUL (TT_VAR i) (TT_ILIT 2))))
+    )
+  )
+))

@@ -1,0 +1,6 @@
+procedure double(x)
+  return x + x;
+end
+procedure main()
+  write(double(5));
+end

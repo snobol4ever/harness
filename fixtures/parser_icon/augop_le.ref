@@ -1,0 +1,1 @@
+(STMT :subj (TT_PROC_DECL main (TT_VAR main) (TT_VLIST) (TT_PROGRAM (TT_AUGOP TT_LE (TT_VAR x) (TT_ILIT 2)))))

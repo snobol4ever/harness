@@ -1,0 +1,2 @@
+(STMT :subj (TT_GLOBAL (TT_VAR g1) (TT_VAR g2)))
+(STMT :subj (TT_PROC_DECL main (TT_VAR main) (TT_VLIST) (TT_PROGRAM (TT_FNC (TT_VAR write) (TT_VAR g1)))))

@@ -1,0 +1,6 @@
+procedure add(a, b)
+  write(a + b);
+end
+procedure main()
+  add(1, 2);
+end

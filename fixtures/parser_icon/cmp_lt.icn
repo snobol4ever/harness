@@ -1,0 +1,4 @@
+procedure main()
+  x := 3;
+  if x < 5 then write("lt");
+end

@@ -1,0 +1,4 @@
+procedure main()
+  x := 5;
+  if x = 5 then write("eq");
+end

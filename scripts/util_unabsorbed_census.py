@@ -256,7 +256,7 @@ for root, dirs, files in os.walk(C):
         # ⛔⭐ THE ACCOUNTING KEY THE BUILDER ACTUALLY WRITES IS THE FAMILY NAME, NOT THE BASENAME (hq_B 2026-09-04,
         # row icon-every-non-package-source-...). util_build_rungs_suite.py names an excluded source by its FAMILY --
         # the path under corpus/tests/<lang>/ with os.sep -> '_' and the extension dropped (discover_pairs: `fam =
-        # rel[:-len(EXT)].replace(os.sep, "_")`) -- so a fixture at tests/icon/parser/alt_arith.icn is written as
+        # rel[:-len(EXT)].replace(os.sep, "_")`) -- so a fixture at harness/fixtures/parser_icon/alt_arith.icn is written as
         # `parser_alt_arith`. This census matched only basename / filename / corpus-relative path, none of which is that
         # string for ANY source in a subdirectory, so every properly-excluded subdirectory source read as OWED.
         # MEASURED at the fix: icon 219 -> 62 owed, and all 157 of the difference already carried a reason line the

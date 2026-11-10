@@ -1,0 +1,4 @@
+procedure main()
+    static s1;
+    s1 := 42;
+end

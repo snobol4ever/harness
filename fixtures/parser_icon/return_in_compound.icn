@@ -1,0 +1,3 @@
+procedure try(c, n)
+    if c > n then { write("done"); return };
+end

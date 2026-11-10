@@ -1,0 +1,4 @@
+procedure main()
+  x := 7 % 3;
+  write(x);
+end

@@ -1,0 +1,4 @@
+procedure main()
+  x := gen \ 5;
+  write(x);
+end

@@ -1,0 +1,6 @@
+procedure greet()
+  write("hi");
+end
+procedure main()
+  greet();
+end

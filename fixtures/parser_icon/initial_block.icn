@@ -1,0 +1,4 @@
+procedure main()
+    initial { write("init") };
+    write("body");
+end

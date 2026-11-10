@@ -1,0 +1,5 @@
+(STMT :subj (TT_PROC_DECL range
+  (TT_VAR range)
+  (TT_VLIST (TT_VAR lo) (TT_VAR hi))
+  (TT_PROGRAM (TT_LOCAL (TT_VAR i)) (TT_EVERY (TT_ASSIGN (TT_VAR i) (TT_TO (TT_VAR lo) (TT_VAR hi))) (TT_SUSPEND (TT_VAR i))))
+))

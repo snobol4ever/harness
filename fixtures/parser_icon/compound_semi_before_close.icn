@@ -1,0 +1,17 @@
+procedure main()
+    local x;
+    x := { 1; };
+    write(image(x));
+    x := { 1; 2 };
+    write(image(x));
+    x := { 1; 2; };
+    write(image(x));
+    x := { ; };
+    write(image(x));
+    x := { { 3; }; };
+    write(image(x));
+    x := { 4;; };
+    write(image(x));
+    x := { 5 };
+    write(image(x));
+end

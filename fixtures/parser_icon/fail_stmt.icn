@@ -1,0 +1,7 @@
+procedure tryit()
+    fail;
+end
+
+procedure main()
+    write("x");
+end

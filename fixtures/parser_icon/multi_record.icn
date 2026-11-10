@@ -1,0 +1,6 @@
+record Point(x, y)
+record Color(r, g, b)
+
+procedure main()
+  p := Point(1, 2);
+end

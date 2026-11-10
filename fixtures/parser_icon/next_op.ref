@@ -1,0 +1,5 @@
+(STMT :subj (TT_PROC_DECL main
+  (TT_VAR main)
+  (TT_VLIST)
+  (TT_PROGRAM (TT_EVERY (TT_SEQ_EXPR (TT_IF (TT_LT (TT_VAR x) (TT_ILIT 0)) (TT_LOOP_NEXT)) (TT_FNC (TT_VAR write) (TT_VAR x)))))
+))

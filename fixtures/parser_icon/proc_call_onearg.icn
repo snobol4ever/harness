@@ -1,0 +1,6 @@
+procedure show(x)
+  write(x);
+end
+procedure main()
+  show(42);
+end

@@ -1,0 +1,3 @@
+procedure main()
+  if "b" >> "a" then write("yes");
+end

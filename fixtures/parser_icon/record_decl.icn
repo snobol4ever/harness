@@ -1,0 +1,5 @@
+record Point(x, y)
+
+procedure main()
+    p := Point(1, 2);
+end

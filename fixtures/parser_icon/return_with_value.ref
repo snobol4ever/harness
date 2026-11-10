@@ -1,0 +1,8 @@
+(STMT :subj (TT_PROC_DECL fact
+  (TT_VAR fact)
+  (TT_VLIST (TT_VAR n))
+  (TT_PROGRAM
+    (TT_IF (TT_LE (TT_VAR n) (TT_ILIT 1)) (TT_RETURN (TT_ILIT 1)))
+    (TT_RETURN (TT_MUL (TT_VAR n) (TT_FNC (TT_VAR fact) (TT_SUB (TT_VAR n) (TT_ILIT 1)))))
+  )
+))

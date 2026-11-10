@@ -1,0 +1,5 @@
+(STMT :subj (TT_PROC_DECL gen
+  (TT_VAR gen)
+  (TT_VLIST (TT_VAR n))
+  (TT_PROGRAM (TT_SUSPEND (TT_VAR n)) (TT_SUSPEND (TT_ADD (TT_VAR n) (TT_ILIT 1))) (TT_RETURN))
+))

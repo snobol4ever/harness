@@ -1,0 +1,3 @@
+procedure main()
+  every i := (1 + 1) to (5 * 2) do write(i);
+end

@@ -1,0 +1,14 @@
+(STMT :subj (TT_PROC_DECL main
+  (TT_VAR main)
+  (TT_VLIST)
+  (TT_PROGRAM
+    (TT_CASE
+      (TT_VAR x)
+      (TT_ILIT 1)
+      (TT_FNC (TT_VAR write) (TT_QLIT "one"))
+      (TT_ILIT 2)
+      (TT_FNC (TT_VAR write) (TT_QLIT "two"))
+      (TT_FNC (TT_VAR write) (TT_QLIT "other"))
+    )
+  )
+))

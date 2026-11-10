@@ -1,0 +1,3 @@
+procedure main()
+    x := not y;
+end

@@ -1,0 +1,7 @@
+procedure gen()
+    suspend 1 do write("done");
+end
+
+procedure main()
+    write("x");
+end

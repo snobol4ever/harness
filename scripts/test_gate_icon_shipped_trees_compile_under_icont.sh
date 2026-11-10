@@ -166,7 +166,7 @@ fi
 # expression `{a; b}`. The semicolons are CORRECT and deleting them produces `(a b)`, which is also invalid,
 # so they are NOT hq_B's deletion row and folding them into it would hand hq_B a repair that cannot succeed
 # and a DONE-WHEN (bytes removed == semicolons removed) that can never be satisfied. The repair is the
-# GROUPING, made by hand under HQV-19 for tests/icon/parser/paren_seq.icn and measured here per file.
+# GROUPING, made by hand under HQV-19 for harness/fixtures/parser_icon/paren_seq.icn and measured here per file.
 if [ "$n_seqx" -gt 0 ]; then
     echo "   $n_seqx SEQUENCE-EXPRESSION refusals -- \`(a; b)\` needs \`{a; b}\` for icont; the repair is the GROUPING, not deletion (NOT hq_B's row, NOT summed above):" >&2
     printf '     %s\n' "${SEQX[@]}" >&2

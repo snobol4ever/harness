@@ -1,0 +1,18 @@
+procedure main()
+    local a, b, c, d, e, f;
+    a := "ab\x41\x4\^a\^A\101\7\0377\n\t\b\d\e\f\l\r\v\z\q";
+    b := "cd_
+          ef";
+    c := 'xy\x42_z\^@';
+    d := "plain";
+    e := "a\nb";
+    f := 'a\nb';
+    write(image(a));
+    write(image(b));
+    write(image(c));
+    write(image(d));
+    write(image(e), " ", image(e), " ", image(f));
+    write(image(16rFF), " ", image(36rzzzz), " ", image(2r101), " ", image(016r10), " ", image(7));
+    write(image(9223372036854775807), " ", image(9223372036854775808), " ", image(36rzzzzzzzzzzzzzz), " ", image(9223372036854775808));
+    write(image(8r777777777777777777777), " ", image(8r1000000000000000000000), " ", image(16rFF));
+end

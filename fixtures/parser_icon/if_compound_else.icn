@@ -1,0 +1,8 @@
+procedure main()
+  if x > 0 then {
+    write("pos");
+    write("ok")
+  } else {
+    write("neg")
+  };
+end

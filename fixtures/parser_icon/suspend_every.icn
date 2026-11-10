@@ -1,0 +1,5 @@
+procedure range(lo, hi)
+    local i;
+    every i := lo to hi do
+        suspend i;
+end

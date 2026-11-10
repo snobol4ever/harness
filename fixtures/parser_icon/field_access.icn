@@ -1,0 +1,4 @@
+procedure main()
+  x := r.f;
+  write(x);
+end

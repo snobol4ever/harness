@@ -1,0 +1,11 @@
+(STMT :subj (TT_PROC_DECL swap
+  (TT_VAR swap)
+  (TT_VLIST (TT_VAR a) (TT_VAR b))
+  (TT_PROGRAM
+    (TT_LOCAL (TT_VAR tmp))
+    (TT_ASSIGN (TT_VAR tmp) (TT_VAR a))
+    (TT_ASSIGN (TT_VAR a) (TT_VAR b))
+    (TT_ASSIGN (TT_VAR b) (TT_VAR tmp))
+    (TT_RETURN (TT_VAR tmp))
+  )
+))

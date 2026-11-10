@@ -1,0 +1,6 @@
+procedure foo()
+  x := 1;
+end
+procedure bar()
+  x := 2;
+end

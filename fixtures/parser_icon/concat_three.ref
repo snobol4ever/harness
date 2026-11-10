@@ -1,0 +1,1 @@
+(STMT :subj (TT_PROC_DECL main (TT_VAR main) (TT_VLIST) (TT_PROGRAM (TT_ASSIGN (TT_VAR s) (TT_CAT (TT_CAT (TT_QLIT "a") (TT_QLIT "b")) (TT_QLIT "c"))))))

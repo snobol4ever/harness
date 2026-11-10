@@ -1,0 +1,7 @@
+procedure swap(a, b)
+  local tmp;
+  tmp := a;
+  a := b;
+  b := tmp;
+  return tmp;
+end
