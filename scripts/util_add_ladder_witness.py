@@ -441,9 +441,7 @@ def main():
     rungs_dir = Path(args.rungs_dir) if args.rungs_dir else S4E / "corpus" / "tests" / lang
     rungs_src, rungs_ref, rungs_csv = (rungs_dir / ("ALL" + cfg["ext"]), rungs_dir / "ALL.ref",
                                            rungs_dir / "ALL.csv")
-    if csh.fmt2_dir_of(rungs_src) is not None:
-        refuse("%s is a format-2 container (ONE%s or MULTI.md, CIO-24 f); this tool appends to the old ALL%s and ALL.ref by text "
-               "comparison and would corrupt it -- its format-2 writer is its own row" % (rungs_dir, cfg["ext"], cfg["ext"]))
+    csh.fmt2_edit_in_old_format(rungs_dir, cfg["ext"], "util_add_ladder_witness.py")
     for p in (rungs_src, rungs_ref, rungs_csv):
         if not p.is_file():
             refuse("rungs file missing: %s" % p)
