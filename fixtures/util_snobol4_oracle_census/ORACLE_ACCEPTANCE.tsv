@@ -1,0 +1,136 @@
+name	sbl	csnobol4	snoflake	sbl_note	csnobol4_note	snoflake_note
+any_dyn_nullalt.sno	OK	OK	NO_ORACLE			
+array_replace_branch_2_witness.sno	OK	OK	NO_ORACLE			
+break_dyn_nullalt.sno	OK	OK	NO_ORACLE			
+code_call_runtime_define_pending_entry.sno	OK	OK	NO_ORACLE			
+coverage_sno_nodes.sno	ERR	ERR	NO_ORACLE	rc=231 coverage_sno_nodes.sno(42) : ERROR 212 -- syntax error: value used where name is required	rc=1 coverage_sno_nodes.sno:42: Error 8 in statement 27 at level 0	
+dcap_repl_deferred_capture_into_global.sno	OK	OK	NO_ORACLE			
+dcap_repl_deferred_capture_into_result.sno	OK	OK	NO_ORACLE			
+dcap_repl_deferred_capture_then_return.sno	OK	OK	NO_ORACLE			
+dcap_repl_deferred_pattern_built_by_function.sno	OK	OK	NO_ORACLE			
+define_redef_alt_entry.sno	OK	OK	NO_ORACLE			
+define_redef_three_way.sno	OK	OK	NO_ORACLE			
+define_redef_two_functions.sno	OK	OK	NO_ORACLE			
+define_single_no_redef.sno	OK	OK	NO_ORACLE			
+feat_f15_trace_dump.sno	OK	OK	NO_ORACLE			
+feat_f18_error_handling.sno	ERR	OK	NO_ORACLE	rc=231 feat_f18_error_handling.sno(4) : ERROR 014 -- division caused integer overflow		
+fence0_dyn_operand_control.sno	OK	OK	NO_ORACLE			
+fence_body_dynamic_operand.sno	OK	ERR	NO_ORACLE		rc=1 fence_body_dynamic_operand.sno:3: Error 5 in statement 3 at level 0	
+gimpel_triage_class1_dup_label_shared.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 gimpel_triage_class1_dup_label_shared.sno:3: Error 32 in statement 0 at level 0	
+gimpel_triage_class5_sig11_seq_module.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 gimpel_triage_class5_sig11_seq_module.sno:16: Error 32 in statement 0 at level 0	
+gimpel_triage_class8_sig6_perm_module.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 gimpel_triage_class8_sig6_perm_module.sno:29: Error 32 in statement 0 at level 0	
+gimpel_triage_class8_sig6_perm_swap.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 gimpel_triage_class8_sig6_perm_swap.sno:9: Error 32 in statement 0 at level 0	
+jvm_j3_goto_f.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 jvm_j3_goto_f.sno:5: Error 32 in statement 0 at level 0	
+jvm_j3_input_test.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 jvm_j3_input_test.sno:3: Error 32 in statement 0 at level 0	
+ladder__rung14_lastno_stno_line_file_lastline_lastfile.sno	OK	OK	NO_ORACLE			
+lexcmp_nul_1.sno	OK	OK	NO_ORACLE			
+lexcmp_nul_2.sno	OK	OK	NO_ORACLE			
+linker_ancestor_ancestor_main.sno	OK	ERR	NO_ORACLE		rc=1 linker_ancestor_ancestor_main.sno:7: Error 5 in statement 3 at level 0	
+linker_greet_main.sno	OK	ERR	NO_ORACLE		rc=1 linker_greet_main.sno:6: Error 5 in statement 3 at level 0	
+nested_alt_span_breakx_rpos.sno	OK	OK	NO_ORACLE			
+nested_arbno_rpos.sno	OK	OK	NO_ORACLE			
+notany_dyn_nullalt.sno	OK	OK	NO_ORACLE			
+parser_binary_opsyn.sno	OK	ERR	NO_ORACLE		rc=1 parser_binary_opsyn.sno:1: Error 5 in statement 1 at level 0	
+parser_cf_bare_goto.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 parser_cf_bare_goto.sno:2: Error 32 in statement 0 at level 0	
+parser_cf_goto_computed.sno	OK	ERR	NO_ORACLE		rc=1 parser_cf_goto_computed.sno:1: Error 18 in statement 1 at level 0	
+parser_cf_goto_f.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 parser_cf_goto_f.sno:2: Error 32 in statement 0 at level 0	
+parser_cf_goto_sf.sno	ERR	ERR	NO_ORACLE	rc=1 1               x = 1          :S(OK):F(FAIL)	rc=1                 X = 1          :S(OK):F(FAIL)	
+parser_cf_goto_u.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 parser_cf_goto_u.sno:2: Error 32 in statement 0 at level 0	
+parser_cf_label_assign.sno	TIMEOUT	TIMEOUT	NO_ORACLE			
+parser_cf_loop.sno	TIMEOUT	TIMEOUT	NO_ORACLE			
+parser_fn_call_arith.sno	OK	ERR	NO_ORACLE		rc=1 parser_fn_call_arith.sno:1: Error 5 in statement 1 at level 0	
+parser_fn_call_expr_arg.sno	OK	ERR	NO_ORACLE		rc=1 parser_fn_call_expr_arg.sno:1: Error 5 in statement 1 at level 0	
+parser_fn_call_in_pat.sno	OK	ERR	NO_ORACLE		rc=1 parser_fn_call_in_pat.sno:1: Error 5 in statement 1 at level 0	
+parser_fn_call_nested.sno	OK	ERR	NO_ORACLE		rc=1 parser_fn_call_nested.sno:1: Error 5 in statement 1 at level 0	
+parser_fn_call_one.sno	OK	ERR	NO_ORACLE		rc=1 parser_fn_call_one.sno:1: Error 5 in statement 1 at level 0	
+parser_fn_call_str.sno	OK	ERR	NO_ORACLE		rc=1 parser_fn_call_str.sno:1: Error 5 in statement 1 at level 0	
+parser_fn_call_three.sno	OK	ERR	NO_ORACLE		rc=1 parser_fn_call_three.sno:1: Error 5 in statement 1 at level 0	
+parser_fn_call_two.sno	OK	ERR	NO_ORACLE		rc=1 parser_fn_call_two.sno:1: Error 5 in statement 1 at level 0	
+parser_fn_call_zero.sno	OK	ERR	NO_ORACLE		rc=1 parser_fn_call_zero.sno:1: Error 5 in statement 1 at level 0	
+parser_fn_stmt.sno	OK	ERR	NO_ORACLE		rc=1 parser_fn_stmt.sno:1: Error 5 in statement 1 at level 0	
+parser_idx_in_assign_lhs.sno	OK	ERR	NO_ORACLE		rc=1 parser_idx_in_assign_lhs.sno:1: Error 3 in statement 1 at level 0	
+parser_idx_multi.sno	OK	ERR	NO_ORACLE		rc=1 parser_idx_multi.sno:1: Error 3 in statement 1 at level 0	
+parser_idx_nested.sno	OK	ERR	NO_ORACLE		rc=1 parser_idx_nested.sno:1: Error 3 in statement 1 at level 0	
+parser_idx_simple.sno	OK	ERR	NO_ORACLE		rc=1 parser_idx_simple.sno:1: Error 3 in statement 1 at level 0	
+parser_kw_lcase.sno	OK	ERR	NO_ORACLE		rc=1 parser_kw_lcase.sno:2: Error 8 in statement 2 at level 0	
+parser_kw_maxlngth.sno	OK	OK	NO_ORACLE			
+parser_unary_assign.sno	OK	ERR	NO_ORACLE		rc=1 parser_unary_assign.sno:1: Error 5 in statement 1 at level 0	
+parser_unary_indirect.sno	OK	ERR	NO_ORACLE		rc=1 parser_unary_indirect.sno:2: Error 4 in statement 2 at level 0	
+parser_unary_not.sno	OK	ERR	NO_ORACLE		rc=1 parser_unary_not.sno:1: Error 4 in statement 1 at level 0	
+pat_expr_arith.sno	OK	OK	NO_ORACLE			
+pat_expr_fnc_control.sno	OK	OK	NO_ORACLE			
+pat_expr_interrogate_fail.sno	OK	OK	NO_ORACLE			
+pat_expr_interrogate_mixed.sno	OK	OK	NO_ORACLE			
+pat_expr_interrogate.sno	OK	OK	NO_ORACLE			
+pat_expr_negation.sno	OK	OK	NO_ORACLE			
+pos_dyn_inline.sno	OK	OK	NO_ORACLE			
+pos_dyn_lit.sno	OK	OK	NO_ORACLE			
+pos_dyn_noarbno.sno	OK	OK	NO_ORACLE			
+pos_dyn_var.sno	OK	OK	NO_ORACLE			
+probe_loose_ab_undef_call.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_ab_undef_call.sno:3: Error 5 in statement 2 at level 0	
+probe_loose_callout_claws5_call.sno	OK	TIMEOUT	NO_ORACLE			
+probe_loose_callout_claws5_cap.sno	OK	TIMEOUT	NO_ORACLE			
+probe_loose_conformance_f09_apply.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_f12_load.sno	OK	ERR	NO_ORACLE		rc=1 before-load	
+probe_loose_conformance_f15_unload.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_conformance_f15_unload.sno:5: Error 5 in statement 5 at level 0	
+probe_loose_conformance_f21_output.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_f25_collect.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_f26_dump.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_f52_dupl.sno	OK	ERR	NO_ORACLE		rc=1 dupl-negative-failed-ok	
+probe_loose_conformance_f65b_exit_savefile.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_f65_exit.sno	CRASH(11)	OK	NO_ORACLE			
+probe_loose_conformance_f68_stoptr.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_f69_trace.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_f83_trim.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_k09_file.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_k10_fnclevel.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_k11_lastfile_lastline_lastno.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_k30_lastfile_only.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_k32_file_keyword.sno	OK	OK	NO_ORACLE			
+probe_loose_conformance_u03_question.sno	OK	OK	NO_ORACLE			
+probe_loose_csnobol4_triage_include_trailing_space_lib.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 probe_loose_csnobol4_triage_include_trailing_space_lib.sno:1: Error 32 in statement 0 at level 0	
+probe_loose_csnobol4_triage_include_trailing_space.sno	ERR	ERR	NO_ORACLE	rc=1 probe_loose_csnobol4_triage_include_trailing_space.sno(5,10) : ERROR 285 -- include file cannot be opened	rc=1 probe_loose_csnobol4_triage_include_trailing_space.sno:5: Error 30 in statement 0 at level 0	
+probe_loose_csnobol4_triage_setexit_label_pruned.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_csnobol4_triage_setexit_label_pruned.sno:12: Error 35 in statement 2 at level 0	
+probe_loose_dv_dv_nreturn_imm.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_dv_dv_nreturn_imm.sno:4: Error 3 in statement 3 at level 1	
+probe_loose_errpath_bad_type_arith.sno	ERR	OK	NO_ORACLE	rc=231 2               total = 'not a number' + 1                :F(fail1)		
+probe_loose_errpath_bad_type_builtin.sno	OK	OK	NO_ORACLE			
+probe_loose_errpath_deep_recursion.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_errpath_deep_recursion.sno:3: Error 21 in statement 2 at level 285	
+probe_loose_errpath_div_by_zero.sno	ERR	OK	NO_ORACLE	rc=231 2               total = 1 / 0                             :F(fail1)		
+probe_loose_errpath_duplicate_label.sno	ERR	ERR	NO_ORACLE	rc=231 probe_loose_errpath_duplicate_label.sno(3) : ERROR 217 -- syntax error: duplicate label	rc=1 ERRORS DETECTED IN SOURCE PROGRAM	
+probe_loose_errpath_end_star_no_boundary.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 probe_loose_errpath_end_star_no_boundary.sno:4: Error 32 in statement 0 at level 0	
+probe_loose_errpath_huge_string.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_errpath_huge_string.sno:3: Error 20 in statement 2 at level 0	
+probe_loose_errpath_missing_end.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 probe_loose_errpath_missing_end.sno:2: Error 32 in statement 0 at level 0	
+probe_loose_errpath_undef_label_goto.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_errpath_undef_label_goto.sno:2: Error 24 in statement 1 at level 0	
+probe_loose_errpath_unterminated_string.sno	ERR	ERR	NO_ORACLE	rc=231 probe_loose_errpath_unterminated_string.sno(2,13) : ERROR 232 -- syntax error: unmatched string quote	rc=1 ERRORS DETECTED IN SOURCE PROGRAM	
+probe_loose_fuzz_fz_red_m4b_blob_defer_fence.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_fuzz_fz_red_m4b_blob_defer_fence.sno:3: Error 5 in statement 1 at level 0	
+probe_loose_fwctx_fwctx_standalone_ctl.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_fwctx_fwctx_standalone_ctl.sno:44: Error 5 in statement 43 at level 0	
+probe_loose_gimpel_gim_cassign_array_elt_loud.sno	OK	OK	NO_ORACLE			
+probe_loose_preord_pre_unsafe_then_guard.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_preord_pre_unsafe_then_guard.sno:10: Error 14 in statement 2 at level 0	
+probe_loose_table_nested_chain_incr_d1.sno	OK	TIMEOUT	NO_ORACLE			
+probe_loose_table_nested_chain_incr_d2.sno	OK	TIMEOUT	NO_ORACLE			
+probe_loose_table_nested_chain_incr_d3.sno	OK	TIMEOUT	NO_ORACLE			
+probe_loose_table_nested_chain_read_d1.sno	OK	TIMEOUT	NO_ORACLE			
+probe_loose_table_nested_chain_read_d2.sno	OK	TIMEOUT	NO_ORACLE			
+probe_loose_table_nested_chain_read_d3.sno	OK	TIMEOUT	NO_ORACLE			
+probe_loose_table_nested_claws5_l1.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_table_nested_claws5_l1.sno:25: Error 5 in statement 14 at level 0	
+probe_loose_table_nested_claws5_l2.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_table_nested_claws5_l2.sno:22: Error 5 in statement 15 at level 0	
+probe_loose_table_nested_ident_guard_d1.sno	OK	TIMEOUT	NO_ORACLE			
+probe_loose_table_nested_value_type_tbl.sno	OK	TIMEOUT	NO_ORACLE			
+probe_loose_unload_un_self_exec.sno	OK	ERR	NO_ORACLE		rc=1 probe_loose_unload_un_self_exec.sno:11: Error 5 in statement 4 at level 0	
+rpos_dyn_inline.sno	OK	OK	NO_ORACLE			
+rpos_dyn_lit.sno	OK	OK	NO_ORACLE			
+rpos_dyn_var.sno	OK	OK	NO_ORACLE			
+rtdef_compiled_define_code_body.sno	OK	OK	NO_ORACLE			
+rtdef_control_compiled_define.sno	OK	OK	NO_ORACLE			
+rtdef_dexp_idiom.sno	OK	OK	NO_ORACLE			
+rtdef_runtime_proto_compiled_body.sno	OK	OK	NO_ORACLE			
+rtx_func_11_inc.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 rtx_func_11_inc.sno:47: Error 32 in statement 0 at level 0	
+smoke_beauty_compiled.sno	ERR	ERR	NO_ORACLE	rc=1 No END statement found in source file(s).	rc=1 smoke_beauty_compiled.sno:10: Error 32 in statement 0 at level 0	
+smoke_empty_string.sno	ERR	ERR	NO_ORACLE	rc=231 smoke_empty_string.sno(1,8) : ERROR 221 -- syntax error: missing operand	rc=1 ERRORS DETECTED IN SOURCE PROGRAM	
+smoke_expr_parser.sno	OK	ERR	NO_ORACLE		rc=1 smoke_expr_parser.sno:28: Error 5 in statement 9 at level 0	
+smoke_hello.sno	ERR	ERR	NO_ORACLE	rc=231 smoke_hello.sno(1,8) : ERROR 221 -- syntax error: missing operand	rc=1 ERRORS DETECTED IN SOURCE PROGRAM	
+smoke_multi.sno	ERR	ERR	NO_ORACLE	rc=231 smoke_multi.sno(1,8) : ERROR 221 -- syntax error: missing operand	rc=1 ERRORS DETECTED IN SOURCE PROGRAM	
+span_dyn_altnonull.sno	OK	OK	NO_ORACLE			
+span_dyn_lit_nullalt.sno	OK	OK	NO_ORACLE			
+span_dyn_noalt.sno	OK	OK	NO_ORACLE			
+span_dyn_nullalt.sno	OK	OK	NO_ORACLE			

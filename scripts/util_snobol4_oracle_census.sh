@@ -17,7 +17,7 @@
 # A program is IN the SPITBOL baseline when its sbl column reads OK; every other combination is a fact about
 # the program's dialect that the suite inventories (UNGRADABLE.tsv / OUTSIDE_SPITBOL_BASELINE.tsv) can cite.
 #
-# OUTPUT: <package>/ORACLE_ACCEPTANCE.tsv  (name, sbl, csnobol4, snoflake, then one note per oracle), sorted,
+# OUTPUT: <package>/ORACLE_ACCEPTANCE.tsv (the tests/snobol4 folder's own table lives at harness/fixtures/util_snobol4_oracle_census/ORACLE_ACCEPTANCE.tsv)  (name, sbl, csnobol4, snoflake, then one note per oracle), sorted,
 # and one ORACLE_ACCEPTANCE summary line per package on stdout.  The TSV is corpus content: commit it.
 #
 # Usage: bash ../harness/scripts/util_snobol4_oracle_census.sh [package-dir ...]      (default: every SNOBOL4 package
@@ -70,6 +70,7 @@ trap 'rm -rf "$SCRATCH"' EXIT
 for pkg in $PKGS; do
     [ -d "$pkg" ] || { echo "⛔ REFUSE(2): no such package dir $pkg" >&2; exit 2; }
     tsv="$pkg/ORACLE_ACCEPTANCE.tsv"; tmp="$(mktemp)"
+    if [ "$pkg" = "$CORPUS/tests/snobol4" ]; then tsv="$S4E/harness/fixtures/util_snobol4_oracle_census/ORACLE_ACCEPTANCE.tsv"; mkdir -p "$(dirname "$tsv")"; fi
     # ⛔ NEVER RUN IN THE CORPUS TREE: the first run (2026-09-08) left spitlib.idx, openo.tst, test.bin, ASMTEMP and two
     # "(121A1)" files behind -- programs write beside themselves. Each package is copied whole into scratch (so -INCLUDE
     # siblings and .in files still resolve) and every program runs in the copy; the copy dies with the trap.
