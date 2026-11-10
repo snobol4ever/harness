@@ -1979,6 +1979,9 @@ def write_suite(entries, out_sno, out_ref, out_in=None, lang=""):
     validates against its own SNOBOL4-flavored default reader while the real bug (wrong comment char for
     the target language) sails through undetected -- exactly how this shipped unnoticed across 4 SNOBOL4
     packages before the first non-SNOBOL4 one (jcon_tests) hit it."""
+    if fmt2_dir_of(out_sno) is not None:
+        write_container_dir(entries, fmt2_dir_of(out_sno), Path(out_sno).suffix)
+        return False
     lc = LANG_CONFIGS.get(lang) if lang else None
     lines = [e for e in entries if e.kind == "line"]
     blocks = [e for e in entries if e.kind != "line"]
@@ -2043,6 +2046,9 @@ def write_block_suite(entries, out_src, out_ref, comment_open, comment_close, ou
     not by join-failure fallback), and the banner uses the dialect's own comment syntax.
     Returns True iff a stdin sidecar was written (out_in given AND at least one entry carries
     stdin) -- lets a caller report accurately without re-deriving write_stdin_sidecar's own check."""
+    if fmt2_dir_of(out_src) is not None:
+        write_container_dir(entries, fmt2_dir_of(out_src), Path(out_src).suffix)
+        return False
     src_lines, ref_lines = [], []
     for e in entries:
         banner = make_banner_cfg(e.seq, e.name, comment_open, comment_close, xfail=e.xfail)
@@ -2464,6 +2470,8 @@ def _read_lf_lines(path):
 
 
 def read_suite(sno_path, ref_path, in_path=None, x_path=None, w_path=None, a_path=None, modes=None):
+    if fmt2_dir_of(sno_path) is not None:
+        return read_container_dir(fmt2_dir_of(sno_path), Path(sno_path).suffix, modes=modes)
     """⛔ FOUND AND FIXED (corpus-suites-consolidation, gc family): a block used to be read as running to
     the NEXT banner -- correct only when the next entry is ALSO a block. A block immediately followed by
     one or more one-line entries (no banner of their own, e.g. gc.sno's 210_gc_deep_nesting -> 211/212/213
@@ -2565,6 +2573,8 @@ def read_block_suite(src_path, ref_path, banner_re, in_path=None, x_path=None, w
     carries SNOBOL4's format-A one-line entries and BANNER_RE). Written separately rather than
     parameterizing read_suite() itself, to avoid coupling a second dialect's reading to
     ONE_LINE_TAG_RE / _is_entry_start, which are SNOBOL4-format-A-specific and meaningless here."""
+    if fmt2_dir_of(src_path) is not None:
+        return read_container_dir(fmt2_dir_of(src_path), Path(src_path).suffix, modes=modes)
     src_lines = _read_lf_lines(src_path)
     ref_lines = _read_lf_lines(ref_path)
     entries = []
@@ -2595,6 +2605,375 @@ def read_block_suite(src_path, ref_path, banner_re, in_path=None, x_path=None, w
     read_argv_sidecar(a_path, entries, modes)
     read_command_line_columns(src_path, entries, modes)
     return entries
+
+
+# ================================================ FORMAT 2: ONE AND MULTI (CIO-24 f, CIO-25, CIO-34) ===
+# ⭐ A CONTAINER DIRECTORY IN FORMAT 2 holds ONE.EXT and ONE.stdout (line N of each is the Nth ALL.csv row whose group is one), MULTI.md
+# (one section a multi row, in index order: a heading of two hashes and the entry name, then fences tagged with the language, args, stdin,
+# stdout, stderr, each optional, an absent one meaning empty) and ALL.csv with three columns after entry: group (one or multi), road
+# (direct or staged) and nonl (the space-separated parts whose last line has no LF). THE BYTES were agreed by officer_01 (the SCRIP
+# switches, CIO-32) and officer_04 (this reader) by telegram 2026-11-10 09:1x CST; both LEDGERs carry the text. SCRIP reads the program,
+# args and stdin; this reader reads every part and gives the same Entry list read_suite or read_block_suite gave before regroup.
+# ⛔ regroup is a pure change of form: it refuses unless reading the new files back gives every entry with every attribute equal.
+FMT2_TAG = {".sno": "SNOBOL4", ".icn": "Icon", ".pl": "Prolog", ".raku": "Raku", ".pas": "Pascal", ".sc": "Snocone", ".reb": "Rebus"}
+FMT2_EXT = {t: x for x, t in FMT2_TAG.items()}
+FMT2_PARTS = ("args", "stdin", "stdout", "stderr")
+FMT2_COLS = ("group", "road", "nonl")
+FMT2_OLD = ("ALL{ext}", "ALL.ref", "ALL.in", "ALL.argv", "ALL.xfail")
+_FMT2_FENCE_RE = re.compile(r"^(`{3,})([^`]*)$")
+
+
+def fmt2_dir_of(src_path):
+    """The container directory when SRC_PATH is the old ALL.EXT name of a directory that holds format 2, else None: every caller keeps
+    its ALL.EXT ALL.ref command line through the move (CIO-24 f)."""
+    p = Path(src_path)
+    if not p.name.startswith("ALL.") or p.suffix not in FMT2_TAG or p.name != "ALL" + p.suffix:
+        return None
+    d = p.parent
+    return d if ((d / "MULTI.md").is_file() or (d / f"ONE{p.suffix}").is_file()) else None
+
+
+def fmt2_out_name(name):
+    """OUT/NAME.out and NAME.err: the entry with every slash an underscore (agreed line 6, A3)."""
+    return name.replace("/", "_")
+
+
+def _fmt2_lines_text(lines):
+    return "".join(l + "\n" for l in lines)
+
+
+def _fmt2_is_one(e):
+    """CIO-24 f and CIO-34 (2): one program line, exactly one stdout line, no stdin, no arguments, exit status 0; nothing else of the
+    entry may need a part ONE cannot hold (an XFAIL flag, merged stderr)."""
+    if e.stdin is not None or e.argv or getattr(e, "want_rc", 0) or e.xfail or getattr(e, "merge_stderr", False):
+        return False
+    if len(e.sno_lines) != 1:
+        return False
+    return ("\n" not in e.ref) if e.kind == "line" else (len(e.ref) == 1)
+
+
+def fmt2_road(e, container_dir, ext):
+    """direct or staged (CIO-27 (4), agreed A3 note): staged when the entry's process needs more than its one source file in a fresh
+    directory: a slash in its name, a cwd, an upstream stage, out_files, a temp answer file, a grader, the container's prelude, or a
+    companion file stage_entry copies beside it. compile_args, arguments, masks and compare rules do not stage: the switch passes the
+    first two and the post step applies the rest."""
+    if ("/" in e.name or getattr(e, "cwd", None) or getattr(e, "stage_upstream", False) or getattr(e, "out_files", None)
+            or getattr(e, "answer_file", None) or getattr(e, "grader", None) or (Path(container_dir) / "ALL.prelude").is_file()):
+        return "staged"
+    with tempfile.TemporaryDirectory(prefix="fmt2_road_") as td:
+        cand, _ = stage_entry(e, td, ext, str(container_dir))
+        return "direct" if sorted(os.listdir(td)) == [cand.name] else "staged"
+
+
+def _fmt2_fence(tag, text):
+    run = max((len(m) for m in re.findall(r"`+", text)), default=0)
+    k = "`" * max(3, run + 1)
+    body = text if (text == "" or text.endswith("\n")) else text + "\n"
+    return f"{k}{tag}\n{body}{k}\n\n"
+
+
+def _fmt2_section(e, tag):
+    """One MULTI.md section and the entry's nonl parts. stdout of a line entry is its ref text plus one LF (the ref is a string, maybe
+    with LFs inside); of a block entry its lines, the fence absent when it has none."""
+    nonl = []
+    out = [f"## {e.name}\n\n", _fmt2_fence(tag, _fmt2_lines_text(e.sno_lines))]
+    if e.argv:
+        bad = [a for a in e.argv if "\n" in a]
+        if bad:
+            raise ValueError(f"{e.name}: an argument holds a newline {bad!r}; the args fence holds one argument a line")
+        out.append(_fmt2_fence("args", _fmt2_lines_text(e.argv)))
+    if e.stdin is not None:
+        if e.stdin and not e.stdin.endswith("\n"):
+            nonl.append("stdin")
+        out.append(_fmt2_fence("stdin", e.stdin))
+    if e.kind == "line":
+        out.append(_fmt2_fence("stdout", e.ref + "\n"))
+    elif e.ref:
+        out.append(_fmt2_fence("stdout", _fmt2_lines_text(e.ref)))
+    return "".join(out), nonl
+
+
+def _fmt2_read_csv(d):
+    import csv as _csvm
+    p = Path(d) / "ALL.csv"
+    if not p.is_file():
+        raise ValueError(f"{d}: format 2 needs ALL.csv, the one index of both groups")
+    with open(p, newline="", encoding="utf-8") as f:
+        rdr = _csvm.DictReader(f)
+        return list(rdr.fieldnames or []), list(rdr)
+
+
+def _fmt2_write_csv(d, fields, rows):
+    import csv as _csvm
+    p = Path(d) / "ALL.csv"
+    tmp = p.with_suffix(".csv.fmt2tmp")
+    with open(tmp, "w", newline="", encoding="utf-8") as f:
+        w = _csvm.DictWriter(f, fieldnames=fields, lineterminator="\n")
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+    tmp.replace(p)
+
+
+def write_container_dir(entries, d, ext, road_of=None):
+    """THE FORMAT-2 WRITER: ONE.EXT, ONE.stdout and MULTI.md from ENTRIES, and ALL.csv's group, road and nonl columns rewritten for
+    every row (inserted after entry), its rows in ENTRIES' order, run_args emptied into the args fence (agreed A2). Refuses before
+    writing on an XFAIL entry (no XFAIL, CEO-1696), an entry with no ALL.csv row or a row with no entry, a name holding a newline, two
+    names one OUT name (A3). A group with no entry has no file. Returns {"one": n, "multi": n}."""
+    d = Path(d)
+    tag = FMT2_TAG.get(ext)
+    if tag is None:
+        raise ValueError(f"format 2 has no language tag for extension {ext!r}")
+    fields, rows = _fmt2_read_csv(d)
+    if "entry" not in fields:
+        raise ValueError(f"{d}/ALL.csv has no entry column")
+    by = {}
+    for r in rows:
+        if r["entry"] in by:
+            raise ValueError(f"{d}/ALL.csv names {r['entry']!r} twice")
+        by[r["entry"]] = r
+    names = [e.name for e in entries]
+    missing, extra = [n for n in names if n not in by], sorted(set(by) - set(names))
+    if missing or extra:
+        raise ValueError(f"{d}: entries and ALL.csv rows differ: no row for {missing[:8]} ({len(missing)}), no entry for {extra[:8]} ({len(extra)})")
+    outn = {}
+    for e in entries:
+        if "\n" in e.name or not e.name.strip():
+            raise ValueError(f"entry name {e.name!r} cannot be a heading")
+        if e.xfail or e.xfail_reason:
+            raise ValueError(f"{e.name}: XFAIL has no place in format 2 (no XFAIL, CEO-1696); clear it before regroup")
+        o = fmt2_out_name(e.name)
+        if o in outn:
+            raise ValueError(f"{e.name} and {outn[o]} write the same OUT name {o}")
+        outn[o] = e.name
+    road_of = road_of or (lambda e: fmt2_road(e, d, ext))
+    one_src, one_out, md, out_rows = [], [], [], []
+    for e in entries:
+        r = dict(by[e.name])
+        if _fmt2_is_one(e):
+            r["group"], r["nonl"] = "one", ""
+            one_src.append(e.sno_lines[0] + "\n")
+            one_out.append((e.ref if e.kind == "line" else e.ref[0]) + "\n")
+        else:
+            sec, nonl = _fmt2_section(e, tag)
+            r["group"], r["nonl"] = "multi", " ".join(nonl)
+            md.append(sec)
+        r["road"] = road_of(e)
+        if "run_args" in r:
+            r["run_args"] = ""
+        out_rows.append(r)
+    base = [f for f in fields if f not in FMT2_COLS]
+    i = base.index("entry") + 1
+    new_fields = base[:i] + list(FMT2_COLS) + base[i:]
+    for name, parts in ((f"ONE{ext}", one_src), ("ONE.stdout", one_out), ("MULTI.md", md)):
+        p = d / name
+        if parts:
+            p.write_bytes("".join(parts).encode("utf-8"))
+        elif p.exists():
+            p.unlink()
+    _fmt2_write_csv(d, new_fields, out_rows)
+    return {"one": len(one_src), "multi": len(md)}
+
+
+def _fmt2_parse_md(path, ext):
+    """MULTI.md -> [(name, program text, {part: text})] in file order; refuses (ValueError) on everything agreed line 5 refuses."""
+    lines = _read_lf_lines(path)
+    secs, cur, i, order = [], None, 0, ("lang",) + FMT2_PARTS
+    while i < len(lines):
+        ln = lines[i]
+        if ln.startswith("## "):
+            cur = {"name": ln[3:], "lang": None, "parts": {}, "last": -1, "fenced": False}
+            secs.append(cur)
+            i += 1
+            continue
+        m = _FMT2_FENCE_RE.match(ln)
+        if m:
+            if cur is None:
+                raise ValueError(f"{path} line {i + 1}: a fence before the first heading")
+            k, t = m.group(1), m.group(2)
+            j = i + 1
+            while j < len(lines) and lines[j] != k:
+                j += 1
+            if j >= len(lines):
+                raise ValueError(f"{path} line {i + 1}: fence {t!r} of {cur['name']} is never closed")
+            body = _fmt2_lines_text(lines[i + 1:j])
+            if t in FMT2_EXT:
+                if FMT2_EXT[t] != ext:
+                    raise ValueError(f"{path} line {i + 1}: {cur['name']} is tagged {t}, this container is {FMT2_TAG[ext]}")
+                if cur["lang"] is not None:
+                    raise ValueError(f"{path} line {i + 1}: {cur['name']} holds two language fences (a polyglot test); the Python grader runs one")
+                pos = 0
+                cur["lang"] = body
+            elif t in FMT2_PARTS:
+                pos = order.index(t)
+                cur["parts"][t] = body
+            else:
+                raise ValueError(f"{path} line {i + 1}: unknown fence tag {t!r} in {cur['name']}")
+            if pos <= cur["last"]:
+                raise ValueError(f"{path} line {i + 1}: fence {t!r} of {cur['name']} is out of order or repeated (order: {', '.join(order)})")
+            cur["last"], cur["fenced"] = pos, True
+            i = j + 1
+            continue
+        if ln.startswith("`"):
+            raise ValueError(f"{path} line {i + 1}: a line opening with a backtick that is not a fence")
+        if ln and cur is None:
+            raise ValueError(f"{path} line {i + 1}: text before the first heading")
+        if ln and cur["fenced"]:
+            raise ValueError(f"{path} line {i + 1}: text after the first fence of {cur['name']}, outside a fence")
+        i += 1
+    for s in secs:
+        if s["lang"] is None:
+            raise ValueError(f"{path}: section {s['name']} has no {FMT2_TAG[ext]} fence")
+    return secs
+
+
+def read_container_dir(d, ext, modes=None, allow_old=False):
+    """THE FORMAT-2 READER: the Entry list read_suite or read_block_suite gave for the same container before regroup, in ALL.csv's
+    order, every sidecar and column applied by the same readers. ⛔ Refuses a directory that also holds the old ALL.EXT, ALL.ref or
+    ALL.in (two formats in one directory) unless ALLOW_OLD, which only regroup's own read-back passes."""
+    d = Path(d)
+    if not allow_old:
+        both = [n.format(ext=ext) for n in FMT2_OLD[:3] if (d / n.format(ext=ext)).exists()]
+        if both:
+            raise ValueError(f"{d}: format 2 and the old container side by side ({', '.join(both)}): one directory, one format")
+    fields, rows = _fmt2_read_csv(d)
+    if "group" not in fields:
+        raise ValueError(f"{d}/ALL.csv has no group column: not a format-2 index")
+    bad = [r["entry"] for r in rows if r.get("group") not in ("one", "multi")]
+    if bad:
+        raise ValueError(f"{d}/ALL.csv: group must be one or multi: {bad[:8]}")
+    ones = [r for r in rows if r["group"] == "one"]
+    multis = [r for r in rows if r["group"] == "multi"]
+    one_src = _read_lf_lines(d / f"ONE{ext}") if (d / f"ONE{ext}").is_file() else []
+    one_out = _read_lf_lines(d / "ONE.stdout") if (d / "ONE.stdout").is_file() else []
+    if len(one_src) != len(ones) or len(one_out) != len(ones):
+        raise ValueError(f"{d}: {len(ones)} one rows, ONE{ext} has {len(one_src)} lines, ONE.stdout {len(one_out)}")
+    secs = _fmt2_parse_md(d / "MULTI.md", ext) if (d / "MULTI.md").is_file() else []
+    sn, mn = [s["name"] for s in secs], [r["entry"] for r in multis]
+    if sn != mn:
+        k = next((i for i, (a, b) in enumerate(zip(sn, mn)) if a != b), min(len(sn), len(mn)))
+        raise ValueError(f"{d}/MULTI.md: {len(sn)} sections against {len(mn)} multi rows; first difference at {k + 1}: "
+                         f"section {sn[k] if k < len(sn) else None!r}, row {mn[k] if k < len(mn) else None!r}")
+    one_it, sec_it = iter(zip(one_src, one_out)), iter(secs)
+    entries = []
+    for seq, r in enumerate(rows, 1):
+        kind = r.get("kind") or ("line" if r["group"] == "one" else "block")
+        if kind not in ("line", "block"):
+            raise ValueError(f"{d}/ALL.csv: {r['entry']} kind {kind!r}")
+        nonl = set((r.get("nonl") or "").split())
+        if nonl - {"program", "stdin", "stdout", "stderr"}:
+            raise ValueError(f"{d}/ALL.csv: {r['entry']} nonl {r.get('nonl')!r}")
+        if r["group"] == "one":
+            src, out = next(one_it)
+            e = Entry(kind, seq, r["entry"], [src], out if kind == "line" else [out])
+        else:
+            s = next(sec_it)
+            cut = lambda part, t: (t[:-1] if (part in nonl and t.endswith("\n")) else t)
+            prog = _lf_lines(cut("program", s["lang"]))
+            p = s["parts"]
+            out = p.get("stdout")
+            if kind == "line":
+                ref = "" if out is None else (out[:-1] if out.endswith("\n") else out)
+            else:
+                ref = [] if out is None else _lf_lines(out)
+            stdin = None if "stdin" not in p else cut("stdin", p["stdin"])
+            argv = _lf_lines(p["args"]) if "args" in p else None
+            e = Entry(kind, seq, r["entry"], prog, ref, stdin=stdin, argv=(argv or None))
+            if "stderr" in p:
+                e.stderr_answer = cut("stderr", p["stderr"])
+        entries.append(e)
+    src_path = str(d / f"ALL{ext}")
+    read_wantrc_sidecar(sidecar_wantrc_path(src_path), entries)
+    if (d / "ALL.argv").is_file() and not allow_old:
+        if any(e.argv for e in entries):
+            raise ValueError(f"{d}: arguments in the args fences AND in ALL.argv: one declaration (regroup folds ALL.argv)")
+        read_argv_sidecar(str(d / "ALL.argv"), entries, modes)
+    read_command_line_columns(src_path, entries, modes)
+    return entries
+
+
+def _fmt2_vars(e):
+    return {k: v for k, v in vars(e).items() if k != "seq"}
+
+
+def fmt2_identity(old, new):
+    """[] when NEW is OLD entry for entry (name, order, kind, program, answer, stdin, arguments and every attribute), else the first
+    differences, named."""
+    diffs = []
+    if [e.name for e in old] != [e.name for e in new]:
+        a, b = [e.name for e in old], [e.name for e in new]
+        k = next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
+        return [f"order or count: {len(a)} old, {len(b)} new, first difference at {k + 1}"]
+    for o, n in zip(old, new):
+        vo, vn = _fmt2_vars(o), _fmt2_vars(n)
+        ks = sorted(set(vo) | set(vn))
+        bad = [k for k in ks if vo.get(k) != vn.get(k)]
+        if bad:
+            diffs.append(f"{o.name}: " + "; ".join(f"{k} {vo.get(k)!r} -> {vn.get(k)!r}" for k in bad[:3]))
+            if len(diffs) >= 10:
+                break
+    return diffs
+
+
+def cmd_regroup(args):
+    """corpus_suite_harness.py regroup DIR [--dry-run]: rewrite one container directory from the old format to format 2 (CIO-24 f,
+    CIO-25, CIO-34 (7): a pure change of form) and refuse rc 2, every new file removed and ALL.csv restored, unless reading the new
+    files back gives the same entries in the same order with every attribute equal; only then are ALL.EXT, ALL.ref, ALL.in, ALL.argv
+    and ALL.xfail deleted. --dry-run writes in a scratch copy and prints the two counts. The lang is the extension of the one ALL.EXT."""
+    d = Path(args.dir).resolve()
+    cands = [p for p in d.glob("ALL.*") if p.suffix in FMT2_TAG and p.name == "ALL" + p.suffix]
+    if len(cands) != 1:
+        refuse(f"regroup: {d} holds {len(cands)} ALL.EXT containers ({', '.join(p.name for p in cands)}); one is needed")
+    src = cands[0]
+    ext = src.suffix
+    if fmt2_dir_of(src) is not None:
+        refuse(f"regroup: {d} already holds ONE{ext} or MULTI.md")
+    if not (d / "ALL.ref").is_file():
+        refuse(f"regroup: {d} has no ALL.ref")
+    lang = next((l for l, c in LANG_CONFIGS.items() if c["ext"] == ext), "snobol4" if ext == ".sno" else None)
+    old = _fmt2_old_read(src, lang)
+    work = d
+    if args.dry_run:
+        work = Path(tempfile.mkdtemp(prefix="regroup_dry_", dir=os.environ.get("TMPDIR") or None))
+        shutil.copytree(d, work, dirs_exist_ok=True)
+        old = _fmt2_old_read(work / src.name, lang)
+    csv_bytes = (work / "ALL.csv").read_bytes()
+    roads = {e.name: fmt2_road(e, work, ext) for e in old}
+    try:
+        counts = write_container_dir(old, work, ext, road_of=lambda e: roads[e.name])
+        new = read_container_dir(work, ext, allow_old=True)
+        diffs = fmt2_identity(old, new)
+    except ValueError as exc:
+        diffs, counts = [f"refused: {exc}"], None
+    if diffs:
+        for n in (f"ONE{ext}", "ONE.stdout", "MULTI.md"):
+            (work / n).unlink(missing_ok=True)
+        (work / "ALL.csv").write_bytes(csv_bytes)
+        print("REGROUP_BOARD dir=%s REFUSED" % d)
+        for x in diffs:
+            print("  " + x)
+        refuse(f"regroup: {d} did not read back identical; nothing changed")
+    nroad = sum(1 for v in roads.values() if v == "staged")
+    if not args.dry_run:
+        for n in FMT2_OLD:
+            (work / n.format(ext=ext)).unlink(missing_ok=True)
+        again = read_container_dir(work, ext)
+        if fmt2_identity(old, again):
+            refuse(f"regroup: {d} read back identical beside the old files and differently without them -- restore it from git")
+    print("REGROUP_BOARD dir=%s entries=%d one=%d multi=%d staged=%d%s" % (d, len(old), counts["one"], counts["multi"], nroad,
+                                                                              " dry-run" if args.dry_run else ""))
+    if args.dry_run:
+        shutil.rmtree(work, ignore_errors=True)
+    return 0
+
+
+def _fmt2_old_read(src, lang):
+    s = str(src)
+    kw = dict(in_path=sidecar_in_path(s), x_path=sidecar_xfail_path(s), w_path=sidecar_wantrc_path(s), a_path=sidecar_argv_path(s))
+    if lang in LANG_CONFIGS:
+        c = LANG_CONFIGS[lang]
+        return read_block_suite(s, str(Path(s).parent / "ALL.ref"), banner_re_for(c["comment_open"], c["comment_close"]), **kw)
+    return read_suite(s, str(Path(s).parent / "ALL.ref"), **kw)
 
 
 _INCLUDE_PATTERNS = [
@@ -3900,7 +4279,7 @@ def cmd_run(args):
     except Exception: _rt_md5 = "unreadable"
     print(("RUNTIME " + os.path.basename(_rt_so) if paths["engine"] != "scrip" else "RUNTIME libscrip_rt.so") + " md5=%s -- the runtime this pass ACTUALLY loaded; out/libscrip_rt.so is one mutable symlink per TREE, not per CONFIGURATION (R-1097)" % _rt_md5)
     for _label, _p in (("suite", args.sno), ("ref", args.ref)):
-        if not Path(_p).is_file():
+        if not Path(_p).is_file() and fmt2_dir_of(args.sno) is None:
             refuse(f"{_label} file does not exist: {_p} -- nothing was graded, and a run that graded nothing is "
                    f"UNMEASURED, never a red board (check the path, or build the rungs first)")
     if args.lang:
@@ -4734,7 +5113,7 @@ def cmd_pin_ref(args):
     paths = resolve_paths()
     src_path, ref_path = Path(args.sno), Path(args.ref)
     for label, p_ in (("suite", src_path), ("ref", ref_path)):
-        if not p_.is_file():
+        if not p_.is_file() and fmt2_dir_of(src_path) is None:
             refuse(f"{label} file does not exist: {p_}")
     if not args.ruling.strip():
         refuse("--ruling is mandatory: a pinned ref with no stated authority cannot be told from a ref cut "
@@ -5584,7 +5963,7 @@ def cmd_batch_list(args):
     ext = cfg["ext"]
     paths["lang"] = args.lang
     for _label, _p in (("suite", args.sno), ("ref", args.ref)):
-        if not Path(_p).is_file():
+        if not Path(_p).is_file() and fmt2_dir_of(args.sno) is None:
             refuse(f"{_label} file does not exist: {_p}")
     with contextlib.redirect_stdout(sys.stderr):
         entries = read_block_suite(args.sno, args.ref, banner_re_for(cfg["comment_open"], cfg["comment_close"]), in_path=sidecar_in_path(args.sno),
@@ -6448,6 +6827,10 @@ def main():
     bl.add_argument("--partition", required=True, help="the stored PARTITION.tsv cell: core | shell:<feature> | chunk:NN | entry:<name>")
     bl.set_defaults(func=cmd_batch_list)
 
+    rg = sub.add_parser("regroup", help="FORMAT 2 (CIO-24 f, CIO-25): rewrite one container directory into ONE.EXT, ONE.stdout and MULTI.md, refusing unless the read-back is identical")
+    rg.add_argument("dir")
+    rg.add_argument("--dry-run", action="store_true", help="regroup a scratch copy and print the counts; the directory is untouched")
+    rg.set_defaults(func=cmd_regroup)
     l = sub.add_parser("list", help="print every entry name in a suite, one per line, in file order")
     l.add_argument("sno")
     l.add_argument("ref")
