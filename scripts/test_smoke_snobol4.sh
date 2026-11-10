@@ -24,6 +24,7 @@ run_m3() {
 
 run_m4() {
     local label="$1" src="$2" expected="$3"
+    [ "${S4E_MODE4:-0}" = 1 ] || return 0   # mode 3 ONLY (Lon, COO-487): mode 4 runs only under S4E_MODE4=1
     local tmp; tmp=$(mktemp "${TMPDIR:-/tmp}/sno_XXXXXX.sno")
     printf '%s\n' "$src" > "$tmp"
     local s o bin
@@ -104,11 +105,11 @@ CN3=$(cv m3_n); CP3=$(cv m3_pass); CN4=$(cv m4_n); CP4=$(cv m4_pass); CF3=$((CN3
 printf '%s\n' "$COUT" | grep -E '^ +(FAIL|CRASH|HANG|UNPROVEN) m[34] ' | sed 's/^ */  CORE-/'
 TT=$((SECONDS-T0))
 echo ""
-echo "mode-3 (--run):     PASS=$P3 FAIL=$F3"
-echo "mode-4 (--compile): PASS=$P4 FAIL=$F4   (HARD GATE)"
+echo "mode-3 (--run):     PASS=$P3 FAIL=$F3   (HARD GATE: mode 3 ONLY, Lon COO-487)"
+echo "mode-4 (--compile): PASS=$P4 FAIL=$F4   (HARD GATE when run; skipped unless S4E_MODE4=1)"
 echo "core arm (SnoRungs core + $(echo $FRAGILE | wc -w) fragile, $CN4 entries): m3 PASS=$CP3 FAIL=$CF3  m4 PASS=$CP4 FAIL=$CF4   (HARD GATE, both modes)"
 echo "PASS=$P4 FAIL=$F4"
 printf "TIME TOTAL=%ds\n" "$TT"
 
 smoke_refuse_if_loaded   # R-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
-[ "$F4" -eq 0 ] && [ "$CF3" -eq 0 ] && [ "$CF4" -eq 0 ]
+[ "$F3" -eq 0 ] && [ "$F4" -eq 0 ] && [ "$CF3" -eq 0 ] && [ "$CF4" -eq 0 ]

@@ -76,7 +76,7 @@ for w in $wits; do
     witness "$w" "$OUT/step$step/wit"; ref="$WR"
     [ -f "$WP" ] && [ -f "$ref" ] || refuse "witness $w: no .pas or .ref after extracting packed_arrays__$w"
     n=$((n + 1))
-    for m in m3 m4 st; do
+    for m in m3 $([ "${S4E_MODE4:-0}" = 1 ] && echo m4) st; do
         [ "$m" = st ] && [ "$stress" = 0 ] && continue
         d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WP" "$d/$w.pas"
         if [ "$m" = m3 ]; then
@@ -118,7 +118,7 @@ for tok in $probe; do
         *) refuse "unknown probe token $tok in step $step" ;;
     esac
 done
-verdict=GREEN; [ "$m3p" = "$n" ] && [ "$m4p" = "$n" ] && [ "$pgreen" = 1 ] || verdict=RED
+verdict=GREEN; [ "$m3p" = "$n" ] && { [ "${S4E_MODE4:-0}" != 1 ] || [ "$m4p" = "$n" ]; } && [ "$pgreen" = 1 ] || verdict=RED
 [ "$stress" = 1 ] && { [ "$stp" = "$n" ] || verdict=RED; }
 echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n$([ "$stress" = 1 ] && echo " st=$stp/$n") probe=${readings# } -> $verdict${reds:+ reds:$reds}"
 [ "$verdict" = GREEN ] && exit 0 || exit 1

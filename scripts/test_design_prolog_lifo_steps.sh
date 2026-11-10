@@ -106,7 +106,7 @@ case "$probe" in
         done ;;
     *) refuse "step $step names a probe this harness does not grade: $probe" ;;
 esac
-wit=GREEN; [ "$m3p" = "$n" ] && [ "$m4p" = "$n" ] || wit=RED
+wit=GREEN; [ "$m3p" = "$n" ] && { [ "${S4E_MODE4:-0}" != 1 ] || [ "$m4p" = "$n" ]; } || wit=RED
 [ "$q3" = "$n" ] && [ "$q4" = "$n" ] || wit=RED
 verdict=GREEN; { [ "$wit" = RED ] || [ "$pr" = RED ]; } && verdict=RED; [ "$pr" = REFUSED ] && [ "$wit" = GREEN ] && verdict=REFUSED
 echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n plain=$q3/$n,$q4/$n probe=$pv${reds:+ reds:$reds}${preds:+ PLAIN-REDS:$preds} -> $verdict"

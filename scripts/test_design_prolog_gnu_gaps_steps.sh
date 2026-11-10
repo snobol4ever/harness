@@ -77,6 +77,7 @@ for w in $wits; do
     rm -rf "$d"; mkdir -p "$d"
     ( cd "$d" && timeout -k 5 60 "$SC/scrip" --run --dialect=gnu "$src" < /dev/null 2> "$o.m3.err" | norm > "$o.m3.out"; exit "${PIPESTATUS[0]}" ); rc=$?
     if [ "$rc" = 0 ] && cmp -s "$o.m3.out" "$ref"; then m3p=$((m3p + 1)); else reds="$reds m3:$w(rc$rc)"; fi
+    [ "${S4E_MODE4:-0}" = 1 ] || continue   # mode 3 ONLY (Lon, COO-487): mode 4 is graded only under S4E_MODE4=1
     rm -rf "$d"; mkdir -p "$d"
     if ( cd "$d" && timeout -k 5 120 "$SC/scrip" --compile --dialect=gnu --out="$o.s" "$src" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
        && gcc -c "$o.s" -o "$o.o" 2> /dev/null && gcc "$o.o" -L"$SC/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$SC/out" -o "$o.bin" 2> /dev/null; then
@@ -85,5 +86,5 @@ for w in $wits; do
     else reds="$reds m4:$w(nocompile)"; fi
 done
 reading="witnesses $m3p/$n+$m4p/$n"
-if [ "$m3p" = "$n" ] && [ "$m4p" = "$n" ]; then echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=$probe:$reading -> GREEN"; exit 0; fi
+if [ "$m3p" = "$n" ] && { [ "${S4E_MODE4:-0}" != 1 ] || [ "$m4p" = "$n" ]; }; then echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=$probe:$reading -> GREEN"; exit 0; fi
 echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=$probe:$reading red:$reds -> RED (diffs under $OUT/step$step)"; exit 1

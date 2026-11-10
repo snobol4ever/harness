@@ -81,7 +81,7 @@ for w in $wits; do
     ref="$WD/$w.ref"
     [ -f "$WD/$w.raku" ] && [ -f "$ref" ] || refuse "witness $w has no .raku or .ref in $WD"
     n=$((n + 1))
-    for m in m3 m4; do
+    for m in m3 $([ "${S4E_MODE4:-0}" = 1 ] && echo m4); do
         d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WD/$w.raku" "$d/$w.raku"
         if [ "$m" = m3 ]; then
             ( cd "$d" && timeout -k 5 120 "$SC/scrip" -d131072k -s4096k "$w.raku" < /dev/null > "$d/out" 2> "$d/err" ); rc=$?
@@ -126,7 +126,7 @@ for tok in $probe; do
         *) refuse "unknown probe token $tok in step $step" ;;
     esac
 done
-verdict=GREEN; [ "$m3p" = "$n" ] && [ "$m4p" = "$n" ] && [ "$pgreen" = 1 ] || verdict=RED
+verdict=GREEN; [ "$m3p" = "$n" ] && { [ "${S4E_MODE4:-0}" != 1 ] || [ "$m4p" = "$n" ]; } && [ "$pgreen" = 1 ] || verdict=RED
 [ "$land" = 1 ] && { echo "LAND STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=${readings# } -> $verdict${reds:+ reds:$reds} (POST-LAND, read by --step $step after the coo grades:${postland:- none})"; [ "$verdict" = GREEN ] && exit 0 || exit 1; }
 echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=${readings# } -> $verdict${reds:+ reds:$reds}"
 [ "$verdict" = GREEN ] && exit 0 || exit 1

@@ -28,7 +28,7 @@ raku() {
     a3=$(smoke_t -k 5 8 "$SCRIP" --run    "$tmp" 2>"$e3" </dev/null); rc3=$?
     a4=""
     s4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.s"); bin4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.bin"); rm -f "$bin4"
-    if smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
+    if [ "${S4E_MODE4:-0}" = 1 ] && smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null && [ -s "$s4" ] && [ -f "$RT_SO" ]; then   # mode 3 ONLY (Lon, COO-487)
         if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
             a4=$(smoke_t -k 5 8 "$bin4" 2>/dev/null </dev/null); rc4=$?
         fi
@@ -44,7 +44,8 @@ raku() {
     if   [ "$smx3" -eq 1 ];                                           then r3="m3 EXCS"; X3=$((X3+1));
     elif [ "$a3" = "$expected" ] && [ "$rc3" -eq 0 ];                 then r3="m3 PASS"; P3=$((P3+1));
     else                                                                    r3="m3 FAIL"; F3=$((F3+1)); fi
-    if   [ "$smx4" -eq 1 ];                                           then r4="m4 EXCS"; X4=$((X4+1));
+    if   [ "${S4E_MODE4:-0}" != 1 ];                                  then r4="m4 skip";
+    elif [ "$smx4" -eq 1 ];                                           then r4="m4 EXCS"; X4=$((X4+1));
     elif [ "$a4" = "$expected" ] && [ "$rc4" -eq 0 ];                 then r4="m4 PASS"; P4=$((P4+1));
     else                                                                    r4="m4 FAIL"; F4=$((F4+1)); fi
     printf "  [%s] [%s] %s\n" "$r3" "$r4" "$label"
@@ -64,7 +65,7 @@ raku_dies() {
     a4=""
     local crc4=0
     s4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.s"); bin4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.bin"); rm -f "$bin4"
-    smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null; crc4=$?
+    if [ "${S4E_MODE4:-0}" = 1 ]; then smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null; crc4=$?; fi   # mode 3 ONLY (Lon, COO-487)
     if [ "$crc4" -eq 0 ] && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
         if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
             a4=$(smoke_t -k 5 8 "$bin4" 2>/dev/null </dev/null); rc4=$?
@@ -79,7 +80,8 @@ raku_dies() {
     if   [ "$smx3" -eq 1 ];                                           then r3="m3 EXCS"; X3=$((X3+1));
     elif [ "$a3" = "$expected" ] && [ "$rc3" -ne 0 ];                 then r3="m3 PASS"; P3=$((P3+1));
     else                                                                    r3="m3 FAIL"; F3=$((F3+1)); fi
-    if   [ "$smx4" -eq 1 ];                                           then r4="m4 EXCS"; X4=$((X4+1));
+    if   [ "${S4E_MODE4:-0}" != 1 ];                                  then r4="m4 skip";
+    elif [ "$smx4" -eq 1 ];                                           then r4="m4 EXCS"; X4=$((X4+1));
     elif [ "$a4" = "$expected" ] && [ "$rc4" -ne 0 ];                 then r4="m4 PASS"; P4=$((P4+1));
     else                                                                    r4="m4 FAIL"; F4=$((F4+1)); fi
     printf "  [%s] [%s] %s\n" "$r3" "$r4" "$label"

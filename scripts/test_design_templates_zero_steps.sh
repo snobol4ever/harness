@@ -124,12 +124,12 @@ TSV
 )
         [ -n "$ext" ] || refuse "witness $w: no extension for language $lang"
         log="$OUT/step$step/$lang.$e.log"
-        ( cd "$SC" && S4E_DONE_WHEN_RUN=1 timeout -k 5 900 python3 "$HERE/corpus_suite_harness.py" run "$ROOT/corpus/tests/$lang/ALL.$ext" "$ROOT/corpus/tests/$lang/ALL.ref" --lang "$lang" --modes m3,m4 --partition "entry:$e" > "$log" 2>&1 )
+        ( cd "$SC" && S4E_DONE_WHEN_RUN=1 timeout -k 5 900 python3 "$HERE/corpus_suite_harness.py" run "$ROOT/corpus/tests/$lang/ALL.$ext" "$ROOT/corpus/tests/$lang/ALL.ref" --lang "$lang" --modes m3 --partition "entry:$e" > "$log" 2>&1 )
         board="$(grep '^SUITE_BOARD ' "$log" | tail -1)"
         [ -n "$board" ] || { reds="$reds $w(no-board)"; continue; }
         p3="$(echo "$board" | grep -o 'm3_pass=[0-9]*' | cut -d= -f2)"; p4="$(echo "$board" | grep -o 'm4_pass=[0-9]*' | cut -d= -f2)"
         [ "${p3:-0}" = 1 ] && m3p=$((m3p + 1)) || reds="$reds m3:$w"
-        [ "${p4:-0}" = 1 ] && m4p=$((m4p + 1)) || reds="$reds m4:$w"
+        [ "${S4E_MODE4:-0}" != 1 ] || { [ "${p4:-0}" = 1 ] && m4p=$((m4p + 1)) || reds="$reds m4:$w"; }   # mode 3 ONLY (Lon, COO-487): mode 4 is graded only under S4E_MODE4=1
     done
 fi
 verdict=GREEN; [ "$red" = 1 ] && verdict=RED; [ -n "$reds" ] && verdict=RED

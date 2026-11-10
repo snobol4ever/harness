@@ -40,14 +40,14 @@ pascal() {
     a4=""
     local s4 bin4
     s4=$(mktemp "${TMPDIR:-/tmp}/pas_XXXXXX.s"); bin4=$(mktemp "${TMPDIR:-/tmp}/pas_XXXXXX.bin"); rm -f "$bin4"
-    if smoke_t -k 5 8 "$SCRIP" --compile "$tmp" --out="$s4" </dev/null >/dev/null 2>&1 && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
+    if [ "${S4E_MODE4:-0}" = 1 ] && smoke_t -k 5 8 "$SCRIP" --compile "$tmp" --out="$s4" </dev/null >/dev/null 2>&1 && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
         if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
             a4=$(printf '%s\n' "$stdin_data" | smoke_t -k 5 8 "$bin4" 2>/dev/null)
         fi
     fi
     rm -f "$tmp" "$s4" "$bin4"
     if [ "$a3" = "$expected" ]; then r3="m3 PASS"; P3=$((P3+1)); else r3="m3 FAIL"; F3=$((F3+1)); fi
-    if [ "$a4" = "$expected" ]; then r4="m4 PASS"; P4=$((P4+1)); else r4="m4 FAIL"; F4=$((F4+1)); fi
+    if [ "${S4E_MODE4:-0}" != 1 ]; then r4="m4 skip"; elif [ "$a4" = "$expected" ]; then r4="m4 PASS"; P4=$((P4+1)); else r4="m4 FAIL"; F4=$((F4+1)); fi   # mode 3 ONLY (Lon, COO-487): mode 4 only under S4E_MODE4=1
     printf "  [%s] [%s] %s\n" "$r3" "$r4" "$label"
 }
 
@@ -176,6 +176,6 @@ EOF
 
 echo ""
 echo "mode-3 (--run):      PASS=$P3 FAIL=$F3  / $N   (HARD: zero FAIL — primary native mode)"
-echo "mode-4 (--compile):  PASS=$P4 FAIL=$F4  / $N   (HARD: zero FAIL; floor MODE4_MIN=$MODE4_MIN)"
+echo "mode-4 (--compile):  PASS=$P4 FAIL=$F4  / $N   (HARD: zero FAIL; floor MODE4_MIN=$MODE4_MIN; skipped unless S4E_MODE4=1, mode 3 ONLY)"
 smoke_refuse_if_loaded   # R-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 [ "$F3" -eq 0 ] && [ "$F4" -eq 0 ] && [ "$P3" -ge "$MODE3_MIN" ] && [ "$P4" -ge "$MODE4_MIN" ]

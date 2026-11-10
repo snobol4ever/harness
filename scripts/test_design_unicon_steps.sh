@@ -76,7 +76,7 @@ for w in $wits; do
     fi
 done
 pv="witnesses=$((m3p + m4p))/$((nm * n))"; pr=RED
-{ [ "$do3" = 0 ] || [ "$m3p" = "$n" ]; } && { [ "$do4" = 0 ] || [ "$m4p" = "$n" ]; } && pr=GREEN
+{ [ "$do3" = 0 ] || [ "$m3p" = "$n" ]; } && { [ "$do4" = 0 ] || { [ "${S4E_MODE4:-0}" != 1 ] || [ "$m4p" = "$n" ]; }; } && pr=GREEN
 f3="m3=$m3p/$n"; [ "$do3" = 1 ] || f3="m3=skip"; f4="m4=$m4p/$n"; [ "$do4" = 1 ] || f4="m4=skip"
 if [ "$probe" = markers ]; then
     pa=0; na=0

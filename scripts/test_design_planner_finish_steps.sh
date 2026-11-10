@@ -127,6 +127,6 @@ for tok in $probe; do
         *) refuse "unknown probe token $tok in step $step" ;;
     esac
 done
-verdict=GREEN; [ "$m3p" = "$n" ] && [ "$m4p" = "$n" ] && [ "$pgreen" = 1 ] || verdict=RED
+verdict=GREEN; [ "$m3p" = "$n" ] && { [ "${S4E_MODE4:-0}" != 1 ] || [ "$m4p" = "$n" ]; } && [ "$pgreen" = 1 ] || verdict=RED
 echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=${readings# } -> $verdict${reds:+ reds:$reds}"
 [ "$verdict" = GREEN ] && exit 0 || exit 1

@@ -109,7 +109,7 @@ for w in $wits; do
     b="$OUT/step$step/$w"; rm -rf "$b.m4bin"; mkdir -p "$b.m4bin"
     if ( cd "$b.m4bin" && timeout -k 5 300 "$SC/scrip" --compile --out="$b.m4bin/run.s" "$WD/$w.$e" < /dev/null > /dev/null 2> "$b.m4bin/cerr" ) \
        && gcc -c "$b.m4bin/run.s" -o "$b.m4bin/run.o" 2> /dev/null && gcc "$b.m4bin/run.o" -L"$SC/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$SC/out" -o "$b.m4bin/run.bin" 2> /dev/null; then have4=1; else have4=0; fi
-    for m in m3 m4 m3s m4s; do
+    for m in m3 m3s $([ "${S4E_MODE4:-0}" = 1 ] && echo m4 m4s); do
         d="$b.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WD/$w.$e" "$d/$w.$e"
         s=0; case "$m" in *s) s=1 ;; esac
         case "$m" in
@@ -180,6 +180,6 @@ for tok in $probe; do
         *) refuse "unknown probe token $tok in step $step" ;;
     esac
 done
-verdict=GREEN; for m in m3 m4 m3s m4s; do [ "${pass[$m]}" = "$n" ] || verdict=RED; done; [ "$pgreen" = 1 ] || verdict=RED
+verdict=GREEN; for m in m3 m3s $([ "${S4E_MODE4:-0}" = 1 ] && echo m4 m4s); do [ "${pass[$m]}" = "$n" ] || verdict=RED; done; [ "$pgreen" = 1 ] || verdict=RED
 echo "STEP $step $slug: m3=${pass[m3]}/$n m4=${pass[m4]}/$n m3s=${pass[m3s]}/$n m4s=${pass[m4s]}/$n probe=${readings# } -> $verdict${reds:+ reds:$reds}"
 [ "$verdict" = GREEN ] && exit 0 || exit 1

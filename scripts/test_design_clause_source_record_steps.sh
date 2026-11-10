@@ -63,7 +63,7 @@ for w in $wits; do
     else reds="$reds m4:$w(no-build)"; fi
 done
 pv="witnesses=$((m3p + m4p))/$((2 * n))"; pr=RED
-[ "$m3p" = "$n" ] && [ "$m4p" = "$n" ] && pr=GREEN
+[ "$m3p" = "$n" ] && { [ "${S4E_MODE4:-0}" != 1 ] || [ "$m4p" = "$n" ]; } && pr=GREEN
 if [ "$probe" = finish ] && [ "$smoke" = 1 ]; then
     if S4E_ONE_RUNNER_OVERRIDE="R-1928 lander smoke, design clause-source-record step $step" bash "$HERE/test_smoke_prolog.sh" > "$OUT/step$step/smoke_prolog.log" 2>&1; then pv="$pv smoke=green"; else pv="$pv smoke=RED($OUT/step$step/smoke_prolog.log)"; pr=RED; fi
 fi

@@ -38,8 +38,9 @@ pl() {
     rm -f "$e3"
 
     # mode 4 — --compile --target=x86 (tracked; emit→assemble→run when live)
-    local e4; e4=$(smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" 2>&1 </dev/null)
-    if echo "$e4" | grep -qE "$SMX_SIG"; then
+    local e4=""; [ "${S4E_MODE4:-0}" = 1 ] && e4=$(smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" 2>&1 </dev/null)   # mode 3 ONLY (Lon, COO-487): mode 4 only under S4E_MODE4=1
+    if [ "${S4E_MODE4:-0}" != 1 ]; then r4="m4 skip"
+    elif echo "$e4" | grep -qE "$SMX_SIG"; then
         r4="m4 REFUSED"; X4=$((X4+1))
     else
         local o4; o4=$(smoke_t -k 5 15 bash "$HERE/run_prolog_via_x86_backend.sh" "$tmp" 2>/dev/null </dev/null)
@@ -91,6 +92,6 @@ EOF
 echo ""
 echo "mode-2 (--run):            PASS=$P2 FAIL=$F2                / $N   (HARD GATE)"
 echo "mode-3 (--run):               PASS=$P3 FAIL=$F3 REFUSED=$X3   / $N   (tracked)"
-echo "mode-4 (--compile x86):       PASS=$P4 FAIL=$F4 REFUSED=$X4   / $N   (tracked)"
+echo "mode-4 (--compile x86):       PASS=$P4 FAIL=$F4 REFUSED=$X4   / $N   (tracked; skipped unless S4E_MODE4=1, mode 3 ONLY)"
 smoke_refuse_if_loaded   # R-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 [ "$F2" -eq 0 ]
