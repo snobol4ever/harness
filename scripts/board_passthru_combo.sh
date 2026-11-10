@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # board_passthru_combo.sh — THE PASS-THRU COMBINATORIAL BOARD (ARCH-PASSTHRU witness plan, s177 PT-COMBO + s179 class 6-9 fills).
-# Runs EVERY corpus/tests/snobol4/probe/passthru.sno suite witness (pt*/ptc*/ptx*/ptw*/cset32_all5) in BOTH modes
+# Runs EVERY probe_passthru entry of THE ONE FLAT RUNGS (corpus/tests/snobol4/ALL.sno, origins probe_passthru__*: pt*/ptc*/ptx*/ptw*/cset32_all5) in BOTH modes
 # (m3 --run; m4 --compile -> gcc -no-pie -> run), diffs vs the oracle-baked .ref beside each, prints per-row
 # verdicts + a per-class rollup. A red row is never denied (law 0d): minimize to a reproducer, stop the world,
 # show Lon. Usage: bash ../harness/scripts/board_passthru_combo.sh [m3|m4|both] [name-filter]
 # ⭐ RE-POINTED 2026-08-28 (seat08, probe-consolidate-passthru / corpus-crosscheck-probe-total-conversion, Lon's
 # total-conversion ruling): the 183 witnesses that used to live as loose corpus/probe/passthru/*.sno files now
-# live in corpus/tests/snobol4/probe/passthru.{sno,ref} (the corpus-suites-consolidation format) -- this script
+# live as entries of corpus/tests/snobol4/ALL.sno (origins probe_passthru__*, the corpus-suites-consolidation format) -- this script
 # is JUST ANOTHER CONSUMER of that shared file now, the same relationship test_gate_udc.sh already has with
-# tests/snobol4/tests/snobol4/probe_loose/cn.{sno,ref}, not a second copy of the witness text. one_shot() and the classifier/rollup
+# the probe_loose_cn_* entries of corpus/tests/snobol4/ALL.sno, not a second copy of the witness text. one_shot() and the classifier/rollup
 # below are UNCHANGED from before the conversion; only the SOURCE of (name, .sno, .ref) triples changed, from a
 # directory glob to entries extracted from the suite via corpus_suite_harness.py's `list`+`extract` (the ONE
 # parsing authority -- reused, never re-implemented in bash, per this file's own established precedent).
@@ -23,7 +23,7 @@ set -u
 SCRIP_DIR="${SCRIP_DIR:-$S4E/SCRIP}"
 # ⭐ RE-POINTED 2026-08-30 (seat12, repo-wide dead-suite-path consumer sweep): the passthru.{sno,ref}
 # per-family suite pair this script used to read (itself a 2026-08-28 re-point) was absorbed into
-# THE ONE FLAT RUNGS (tests/snobol4/ALL.{sno,ref,csv}, Lon's one-flat-suite ruling) and deleted.
+# THE ONE FLAT RUNGS (tests/snobol4/ALL.sno, ALL.ref, ALL.csv, Lon's one-flat-suite ruling) and deleted.
 # lib_rungs_extract.sh (the ONE authority for this, per its own header) now materializes each
 # origin "probe_passthru__<oldname>" back into a standalone .sno/.ref pair -- same idiom every other
 # re-pointed consumer in this sweep uses.

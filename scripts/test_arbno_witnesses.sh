@@ -13,9 +13,9 @@ SBL="${SBL:-$S4A/x64/bin/sbl}"   # CORRECTNESS oracle -- witness set vs live ora
 TAG="${1:-run}"
 W=/tmp/arbw.$TAG; mkdir -p "$W"
 # ⭐ corpus-crosscheck-probe-total-conversion (2026-08-28/29): every witness below now lives only
-# inside a suite file (tests/snobol4/crosscheck/patterns.{sno,ref}, tests/snobol4/probe/earn0.{sno,ref},
-# tests/snobol4/probe/bb_probes.{sno,ref} -- the last from probe-consolidate-bb, concurrent this same
-# day; tests/snobol4/probe/arb1.{sno,ref} converted 2026-08-29, seat12) -- this tool needs each as a
+# inside THE ONE FLAT RUNGS (corpus/tests/snobol4/ALL.sno; origins crosscheck_patterns__*, probe_earn0__*,
+# probe_bb_probes__* -- the last from probe-consolidate-bb, concurrent this same
+# day; probe_arb1__* converted 2026-08-29, seat12) -- this tool needs each as a
 # standalone file to feed sbl/scrip directly, so extract() materializes one per run into $W.
 extract() { rungs_extract_origin "$1__$2" "$W/$2.sno"; }   # re-pointed to THE RUNGS by origin (zero-subfolders cutover, s283h)
 RUNGS_LANG="${RUNGS_LANG:-snobol4}" . "$(dirname "${BASH_SOURCE[0]}")/lib_rungs_extract.sh"
