@@ -1387,7 +1387,6 @@ test_gate_sno_package_runners_append_progress_rows.sh	WIRED	-	-	-
 test_gate_sno_parser_refuses_at_compile_time_what_spitbol_refuses.sh	WIRED	-	-	-
 test_gate_sno_pattern_concatenation_with_null_preserves_identity.sh	WIRED	-	-	-
 test_gate_sno_pattern_position_expression.sh	WIRED	-	-	-
-test_gate_sno_port_trace_oracle_diff.sh	WIRED	-	-	-
 test_gate_sno_pos_rpos_dynamic_operand.sh	WIRED	-	-	-
 test_gate_sno_real_literal_overflow_is_a_parse_error.sh	WIRED	-	-	-
 test_gate_sno_real_zero_over_zero_is_real_zero_as_in_spitbol.sh	WIRED	-	-	-
