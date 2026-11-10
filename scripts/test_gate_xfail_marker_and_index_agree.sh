@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: through the harness reader (read_container_dir follows the folder), ALL.csv by name
 # test_gate_xfail_marker_and_index_agree.sh -- THE XFAIL MARKER AND THE INDEX MUST NAME THE SAME ENTRIES.
 # (hq_T 2026-09-05, row test-suite-consistency-seven-languages-one-standard; the half of
 # FINDING-2026-09-05-hq_T-every-xfail-promotion-leaves-the-master-unsorted-and-the-csv-stale that had no guard.)
@@ -37,12 +38,16 @@ examined=0
 
 # The census both arms share, so the gate and its own witness cannot drift apart.
 census() {
-python3 - "$1" <<'EOF'
+python3 - "$1" "$HERE" <<'EOF'
 import csv, os, re, sys
+sys.path.insert(0, sys.argv[2])
 RX = re.compile(r'^\W*-{3,}\s+(\d+)\s+(\S+)\s+XFAIL\b')
 EXT = {"snobol4":"sno","icon":"icn","prolog":"pl","raku":"raku","pascal":"pas","snocone":"sc","rebus":"reb"}
 tests = sys.argv[1]
 def names(p):
+    import corpus_suite_harness as H
+    if H.fmt2_dir_of(p) is not None:
+        return {e.name for e in H.read_container_dir(H.fmt2_dir_of(p), os.path.splitext(p)[1]) if e.xfail}
     if not os.path.isfile(p):
         return None
     out = set()
@@ -56,7 +61,8 @@ graded = bad = reasons_missing = 0
 for lang in sorted(EXT):
     d = os.path.join(tests, lang)
     rungs, index = os.path.join(d, "ALL." + EXT[lang]), os.path.join(d, "ALL.csv")
-    if not (os.path.isfile(rungs) and os.path.isfile(index)):
+    import corpus_suite_harness as H
+    if not ((os.path.isfile(rungs) or H.fmt2_dir_of(rungs) is not None) and os.path.isfile(index)):
         continue
     ban = names(rungs)
     # ⛔⭐ THE FOURTH REPRESENTATION, ADDED 2026-09-14 (hq_T, R-740's xpass promotion). This gate shipped

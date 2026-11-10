@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: through extract, reads ALL.csv by name
 # test_gate_sno_runtime_define.sh -- runtime DEFINE: a non-literal prototype (the gimpel DEXP idiom), a runtime prototype over a
 # compiled body, and a compile-time DEFINE whose body arrives through CODE(), graded in both modes against refs cut from the
 # SPITBOL oracle (the rtdef_ entries of corpus/tests/snobol4/ALL.sno, refs from ALL.ref, by origin); the ref is re-cut live so oracle drift reads as a red, not a pass.
@@ -12,7 +13,7 @@ O="$(sbl_correctness_bin)" || { echo "REFUSE: no SPITBOL correctness oracle"; ex
 W="$S4E/corpus/tests/snobol4"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 n=0; red=0
-for b in $(awk -F, 'NR>1 && $3 ~ /^rtdef_/ {print $3}' "$W/ALL.csv"); do
+for b in $(python3 -c 'import csv,sys; [print(r["origin"]) for r in csv.DictReader(open(sys.argv[1], encoding="utf-8")) if r["origin"].startswith("rtdef_")]' "$W/ALL.csv"); do
   n=$((n+1)); f="$T/$b.sno"
   python3 "$S4E/harness/scripts/corpus_suite_harness.py" extract "$W/ALL.sno" "$W/ALL.ref" --origin "$b" "$f" --out-ref "$T/$b.ref" >/dev/null 2>&1 || { echo "RED $b: the master entry of origin $b could not be extracted"; red=$((red+1)); continue; }
   [ -s "$T/$b.ref" ] || { echo "RED $b: no committed ref"; red=$((red+1)); continue; }

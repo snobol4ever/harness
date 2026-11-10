@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
+# format-2: through extract, reads ALL.csv by name
 # ../harness/scripts/test_gate_sn7_beauty_self_host.sh — SN-7 gate:
 # every beauty driver entry of corpus/tests/snobol4/ALL.sno (origin beauty_suite_<NAME>_driver, read by origin: there is no folder), under BOTH
 # real modes (--run = m3 BINARY, --compile = m4 TEXT),
@@ -48,7 +49,7 @@ trap 'rm -rf "$WORK"' EXIT
 # (corpus_suite_harness.py extract); the .inc files they include resolve through $CORPUS/include (SNO_LIB below).
 BEAUTY="$WORK/beauty"
 mkdir -p "$BEAUTY"
-ORIGINS="$(awk -F, 'NR>1 && $3 ~ /^beauty_suite_.*_driver__/ {print $3}' "$CORPUS/tests/snobol4/ALL.csv")"
+ORIGINS="$(python3 -c 'import csv,re,sys; [print(r["origin"]) for r in csv.DictReader(open(sys.argv[1], encoding="utf-8")) if re.match(r"beauty_suite_.*_driver__", r["origin"])]' "$CORPUS/tests/snobol4/ALL.csv")"
 WANT=$(printf '%s\n' "$ORIGINS" | grep -c .)
 for o in $ORIGINS; do
     n=${o#beauty_suite_}; n=${n%%__*}
