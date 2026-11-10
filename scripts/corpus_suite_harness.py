@@ -2968,6 +2968,120 @@ def cmd_regroup(args):
     return 0
 
 
+def ungroup_dir(d, ext):
+    """THE INVERSE OF regroup (CIO-45 (1) b: the builder and the add-a-witness tool write format 2 by ungrouping at their start and
+    regrouping at their end): a format-2 directory back to ALL.EXT, ALL.ref and ALL.in (and ALL.argv for the args fences), ALL.csv
+    without group, road and nonl. Refuses (ValueError), every format-2 file put back, unless the old reader gives the same entries;
+    only then are ONE.EXT, ONE.out and MULTI.md deleted. A test with a stderr fence cannot go back: the old format has no stderr."""
+    d = Path(d)
+    entries = read_container_dir(d, ext)
+    bad = [e.name for e in entries if hasattr(e, "stderr_answer")]
+    if bad:
+        raise ValueError(f"{d}: {len(bad)} test(s) carry a stderr fence the old format cannot hold: {bad[:8]}")
+    lang = next((l for l, c in LANG_CONFIGS.items() if c["ext"] == ext), "snobol4" if ext == ".sno" else None)
+    fields, rows = _fmt2_read_csv(d)
+    csv_bytes = (d / "ALL.csv").read_bytes()
+    g = [d / f"ONE{ext}", d / "ONE.out", d / "MULTI.md"]
+    held = {p: p.read_bytes() for p in g if p.is_file()}
+    for p in held:
+        p.unlink()
+    src, ref, inp, argv = d / f"ALL{ext}", d / "ALL.ref", d / "ALL.in", d / "ALL.argv"
+    try:
+        _fmt2_write_csv(d, [f for f in fields if f not in FMT2_COLS], [{k: v for k, v in r.items() if k not in FMT2_COLS} for r in rows])
+        withargs = [e for e in entries if e.argv]
+        if withargs:
+            argv.write_text("".join(e.name + "\t" + "\t".join(e.argv) + "\n" for e in withargs), encoding="utf-8")
+        if lang in LANG_CONFIGS:
+            c = LANG_CONFIGS[lang]
+            for e in entries:
+                e.kind = "block"
+            write_block_suite(entries, str(src), str(ref), c["comment_open"], c["comment_close"], out_in=str(inp))
+        else:
+            write_suite(entries, str(src), str(ref), out_in=str(inp))
+        back = _fmt2_old_read(src, lang)
+        diffs = fmt2_identity(entries, back)
+    except ValueError as exc:
+        diffs = [f"refused: {exc}"]
+    if diffs:
+        for p in (src, ref, inp, argv):
+            p.unlink(missing_ok=True)
+        for p, b in held.items():
+            p.write_bytes(b)
+        (d / "ALL.csv").write_bytes(csv_bytes)
+        raise ValueError(f"{d}: ungroup did not read back identical; format 2 restored: " + "; ".join(diffs[:4]))
+    return len(entries)
+
+
+def regroup_dir(d, ext):
+    """regroup's body for a caller (the builder, the add-a-witness tool): ValueError unless the read-back is identical, the old files
+    deleted only after it. Returns the counts."""
+    d = Path(d)
+    lang = next((l for l, c in LANG_CONFIGS.items() if c["ext"] == ext), "snobol4" if ext == ".sno" else None)
+    old = _fmt2_old_read(d / f"ALL{ext}", lang)
+    csv_bytes = (d / "ALL.csv").read_bytes()
+    try:
+        counts = write_container_dir(old, d, ext)
+        diffs = fmt2_identity(old, read_container_dir(d, ext, allow_old=True))
+    except ValueError as exc:
+        diffs, counts = [f"refused: {exc}"], None
+    if diffs:
+        for n in (f"ONE{ext}", "ONE.out", "MULTI.md"):
+            (d / n).unlink(missing_ok=True)
+        (d / "ALL.csv").write_bytes(csv_bytes)
+        raise ValueError(f"{d}: regroup did not read back identical; the old format stands: " + "; ".join(diffs[:4]))
+    for n in FMT2_OLD:
+        (d / n.format(ext=ext)).unlink(missing_ok=True)
+    return counts
+
+
+def fmt2_edit_in_old_format(d, ext, who):
+    """THE WRITERS' DOOR (CIO-45 (1) b): a tool that edits a container by the old files (the builder, the add-a-witness tool) calls this
+    first. When D is format 2 it is ungrouped now (rc 2 on a refusal, nothing changed) and regrouped when the process exits, whatever its
+    exit code; a regroup that refuses prints why and exits rc 2, leaving the old files, which every reader still reads. Returns True when
+    D was format 2."""
+    import atexit
+    d = Path(d)
+    if fmt2_dir_of(d / f"ALL{ext}") is None:
+        return False
+    try:
+        n = ungroup_dir(d, ext)
+    except ValueError as exc:
+        refuse(f"{who}: {exc}")
+    print(f"FMT2 {who}: {d} ungrouped ({n} tests) for the edit; it is regrouped at exit", flush=True)
+
+    def _back():
+        if fmt2_dir_of(d / f"ALL{ext}") is not None or not (d / f"ALL{ext}").is_file():
+            return
+        try:
+            c = regroup_dir(d, ext)
+            print(f"FMT2 {who}: {d} regrouped one={c['one']} multi={c['multi']}", flush=True)
+        except ValueError as exc:
+            print(f"⛔ REFUSING: {who}: {exc} -- the folder stays in the old format", file=sys.stderr, flush=True)
+            sys.stdout.flush()
+            os._exit(2)
+    atexit.register(_back)
+    return True
+
+
+def cmd_ungroup(args):
+    """corpus_suite_harness.py ungroup DIR: format 2 back to the old files, refusing rc 2 (format 2 restored) unless identical."""
+    d = Path(args.dir).resolve()
+    ext = next((x for x in FMT2_TAG if (d / f"ONE{x}").is_file()), None)
+    if ext is None:
+        _md = d / "MULTI.md"
+        if _md.is_file():
+            _t = next((l[3:].strip() for l in _read_lf_lines(_md) if _FMT2_FENCE_RE.match(l) and l.lstrip("`") in FMT2_EXT), None)
+            ext = FMT2_EXT.get(_t) if _t else None
+    if ext is None:
+        refuse(f"ungroup: {d} holds no ONE.EXT or MULTI.md")
+    try:
+        n = ungroup_dir(d, ext)
+    except ValueError as exc:
+        refuse(f"ungroup: {exc}")
+    print(f"UNGROUP_BOARD dir={d} entries={n}")
+    return 0
+
+
 def _fmt2_old_read(src, lang):
     s = str(src)
     kw = dict(in_path=sidecar_in_path(s), x_path=sidecar_xfail_path(s), w_path=sidecar_wantrc_path(s), a_path=sidecar_argv_path(s))
@@ -6909,6 +7023,9 @@ def main():
     rg.add_argument("dir")
     rg.add_argument("--dry-run", action="store_true", help="regroup a scratch copy and print the counts; the directory is untouched")
     rg.set_defaults(func=cmd_regroup)
+    ug = sub.add_parser("ungroup", help="FORMAT 2 BACK TO THE OLD FILES (CIO-45 (1) b): ALL.EXT, ALL.ref, ALL.in from ONE.EXT, ONE.out and MULTI.md, refusing unless the read-back is identical")
+    ug.add_argument("dir")
+    ug.set_defaults(func=cmd_ungroup)
     l = sub.add_parser("list", help="print every entry name in a suite, one per line, in file order")
     l.add_argument("sno")
     l.add_argument("ref")

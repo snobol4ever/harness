@@ -13,6 +13,10 @@
 #      and leaves every byte as it was;
 #   4  THE VERDICT: the container graded in mode 3 through corpus_suite_harness.py run reads the same board before and after, every entry
 #      PASS; FAIL-ONCE: the one-liner's ONE.out line corrupted in a copy reads that entry FAIL (the new reader is what grades).
+#   5  THE POST STEP (CIO-32 (6)): scrip --run-one-liners and --run-multi-liners run the container, run --post grades their OUT and reads
+#      the board arm 4 read; a corrupted NAME.out reads FAIL; a report naming a test twice refuses rc 2;
+#   6  UNGROUP, THE INVERSE (CIO-45 (1) b): the old ALL.sno, ALL.ref and ALL.in come back byte for byte and read the old entries (the
+#      args fence as ALL.argv); a test with a stderr fence, which the old format cannot hold, refuses rc 2 and changes no byte.
 # EXIT 0 all hold; 1 an arm failed; 2 could not measure.
 export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the harness over a scratch container outside the corpus, not a board (R-547)"
 set -uo pipefail
@@ -135,6 +139,23 @@ ck "FAIL-ONCE: a corrupted NAME.out reads that test FAIL" 'grep -q "m3_pass=4 m3
 echo "e	EXIT	0	0.001	0.001	1" >> "$W/rm.tsv"
 post "$W/new" twice >/dev/null 2>&1; rt=$?
 ck "a report naming one test twice refuses rc 2" '[ $rt = 2 ]'
+
+# ---- arm 6: ungroup, the inverse (CIO-45 (1) b, the builder and the witness tool write format 2 through it) --------------------------
+cp -a "$W/new" "$W/ug"; timeout -k 5 120 python3 "$H" ungroup "$W/ug" >/dev/null 2>&1; ru=$?
+ck "ungroup gives back ALL.sno, ALL.ref and ALL.in byte for byte, and no format-2 file" '[ $ru = 0 ] && cmp -s "$W/ug/ALL.sno" "$W/old/ALL.sno" && cmp -s "$W/ug/ALL.ref" "$W/old/ALL.ref" && cmp -s "$W/ug/ALL.in" "$W/old/ALL.in" && ! ls "$W/ug" | grep -qE "^(ONE\.|MULTI\.md)"'
+ou=$(python3 - "$HERE" "$W" <<'PY' 2>&1
+import sys; from pathlib import Path
+sys.path.insert(0, sys.argv[1]); import corpus_suite_harness as h
+w = Path(sys.argv[2])
+a = h.read_suite(str(w / "old/ALL.sno"), str(w / "old/ALL.ref"), in_path=str(w / "old/ALL.in"))
+b = h.read_suite(str(w / "ug/ALL.sno"), str(w / "ug/ALL.ref"), in_path=str(w / "ug/ALL.in"), a_path=h.sidecar_argv_path(str(w / "ug/ALL.sno")))
+print("IDENT" if not h.fmt2_identity(a, b) else h.fmt2_identity(a, b))
+PY
+)
+ck "the ungrouped files read the old entries, g's arguments in ALL.argv" '[ "$ou" = IDENT ] && grep -q "^g	alpha	beta$" "$W/ug/ALL.argv"'
+cp -a "$W/new" "$W/ue"; printf '```stderr\nboom\n```\n\n' >> "$W/ue/MULTI.md"; before=$(cd "$W/ue" && sha1sum * | sha1sum)
+timeout -k 5 60 python3 "$H" ungroup "$W/ue" >/dev/null 2>&1; rue=$?
+ck "ungroup of a test with a stderr fence refuses rc 2 and changes no byte" '[ $rue = 2 ] && [ "$(cd "$W/ue" && sha1sum * | sha1sum)" = "$before" ]'
 
 if [ "$fails" -eq 0 ]; then echo "GATE PASS [$GATE_NAME]: $n of $n checks hold"; gate_stamp; exit 0; fi
 echo "⛔ GATE FAIL [$GATE_NAME]: $fails of $n check(s) failed"; gate_stamp; exit 1
