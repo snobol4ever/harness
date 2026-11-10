@@ -20,7 +20,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-STEPS="$ROOT/corpus/tests/snobol4/planner_finish/STEPS.tsv"
+STEPS="$HERE/../designs/planner_finish/STEPS.tsv"   # moved from corpus/tests/snobol4/planner_finish (the coo 2026-11-10, CIO-33/36: a language folder is its container and config alone)
 CENSUS="$HERE/util_emitter_memory_model_census.py"
 NMGATE="$HERE/test_gate_planner_objects_leave_no_emitter_symbol_undefined.sh"
 OUT=""
@@ -39,7 +39,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default planner_finish; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: planner-finish -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/<lang>/planner_finish"
+    echo "DESIGN-PLAN: planner-finish -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/planner_finish/STEPS.tsv); a witness is the entry planner_finish__<name> of its language's master, or the loose pair corpus/tests/<lang>/planner_finish/<name> its language row has not absorbed"
     printf '%-4s %-38s %-32s %-14s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-38s %-32s %-14s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -56,16 +56,34 @@ if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
     . "$HERE/lib_slots.sh"; s4e_slot_hold run || true   # the one rule (lib_slots.sh): a seat file, then a pool slot; the grader's two slots reserved
 fi
 ext_of() { case "$1" in snobol4) echo sno ;; icon) echo icn ;; prolog) echo pl ;; pascal) echo pas ;; *) echo "" ;; esac; }
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+# ⭐ A WITNESS IS A CONTAINER ENTRY WHERE ITS LANGUAGE HAS ABSORBED IT (CIO-24 c, the coo 2026-11-10): witness LANG NAME sets dir, src (bare) and
+# ref -- the entry planner_finish__NAME extracted from corpus/tests/LANG/ALL.<ext> into this step's scratch, else the loose pair in
+# corpus/tests/LANG/planner_finish -- and is_entry; an entry is graded by design_witness_grade in each mode, a loose pair by the run below.
+witness() {
+    local lang="$1" name="$2" ext; ext="$(ext_of "$lang")"; is_entry=0
+    if design_witness_has "$lang" "planner_finish__$name"; then
+        dir="$OUT/step$step/wit"; design_witness_extract "$lang" "planner_finish__$name" "$dir" > /dev/null 2>&1 || refuse "witness $lang/$name: its entry planner_finish__$name did not extract"
+        src="planner_finish__$name.$ext"; ref="$dir/planner_finish__$name.ref"; is_entry=1
+    else
+        dir="$ROOT/corpus/tests/$lang/planner_finish"; src="$name.$ext"; ref="$dir/$name.ref"
+    fi
+}
 m3p=0; m4p=0; n=0; reds=""; first_src=""; first_dir=""
 for w in $wits; do
     lang="${w%%/*}"; name="${w#*/}"; ext="$(ext_of "$lang")"; [ -n "$ext" ] || refuse "witness $w names no known language"
-    dir="$ROOT/corpus/tests/$lang/planner_finish"; src="$dir/$name.$ext"; ref="$dir/$name.ref"; o="$OUT/step$step/$name"
-    [ -f "$src" ] && [ -f "$ref" ] || refuse "witness $w has no .$ext or .ref in $dir"
-    [ -n "$first_src" ] || { first_src="$name.$ext"; first_dir="$dir"; }
+    witness "$lang" "$name"; o="$OUT/step$step/$name"
+    [ -f "$dir/$src" ] && [ -f "$ref" ] || refuse "witness $w has no entry planner_finish__$name in corpus/tests/$lang and no .$ext and .ref in corpus/tests/$lang/planner_finish"
+    [ -n "$first_src" ] || { first_src="$src"; first_dir="$dir"; }
     n=$((n + 1))
-    ( cd "$dir" && timeout -k 5 120 "$SC/scrip" "$name.$ext" < /dev/null > "$o.m3.out" 2> "$o.m3.err" ); rc=$?
+    if [ "$is_entry" = 1 ]; then
+        design_witness_grade "$lang" "planner_finish__$name" m3 > "$o.m3.grade" 2>&1; rc=$?; [ "$rc" = 0 ] && m3p=$((m3p + 1)) || reds="$reds m3:$w(entry rc$rc)"
+        design_witness_grade "$lang" "planner_finish__$name" m4 > "$o.m4.grade" 2>&1; rc=$?; [ "$rc" = 0 ] && m4p=$((m4p + 1)) || reds="$reds m4:$w(entry rc$rc)"
+        continue
+    fi
+    ( cd "$dir" && timeout -k 5 120 "$SC/scrip" "$src" < /dev/null > "$o.m3.out" 2> "$o.m3.err" ); rc=$?
     if [ "$rc" = 0 ] && cmp -s "$o.m3.out" "$ref"; then m3p=$((m3p + 1)); else reds="$reds m3:$w(rc$rc)"; fi
-    if ( cd "$dir" && timeout -k 5 300 "$SC/scrip" --compile --out="$o.s" "$name.$ext" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
+    if ( cd "$dir" && timeout -k 5 300 "$SC/scrip" --compile --out="$o.s" "$src" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
        && gcc -c "$o.s" -o "$o.o" 2> /dev/null && gcc "$o.o" -L"$SC/out" -lscrip_rt -lm -Wl,-rpath,"$SC/out" -o "$o.bin" 2> /dev/null; then
         ( cd "$dir" && timeout -k 5 120 "$o.bin" < /dev/null > "$o.m4.out" 2> "$o.m4.err" ); rc=$?
         if [ "$rc" = 0 ] && cmp -s "$o.m4.out" "$ref"; then m4p=$((m4p + 1)); else reds="$reds m4:$w(rc$rc)"; fi
@@ -95,8 +113,8 @@ for tok in $probe; do
         dumps) pr="$(cd "$first_dir" && timeout -k 5 120 "$SC/scrip" --dump-plan --compile "$first_src" < /dev/null 2>/dev/null | grep -c '^PLAN_ROW')"
                hr="$(cd "$first_dir" && timeout -k 5 120 "$SC/scrip" --dump-homes --compile "$first_src" < /dev/null 2>&1 | grep -c -i 'HOME')"
                readings="$readings dump_plan_rows=$pr dump_homes_lines=$hr"; [ "$pr" -gt 0 ] && [ "$hr" -gt 0 ] || pgreen=0 ;;
-        zsmframe) z=0; for w in $wits; do lang="${w%%/*}"; name="${w#*/}"; ext="$(ext_of "$lang")"; dir="$ROOT/corpus/tests/$lang/planner_finish"
-                      ( cd "$dir" && SCRIP_ZSM=1 timeout -k 5 120 "$SC/scrip" --compile "$name.$ext" < /dev/null > /dev/null 2> "$OUT/step$step/$name.zsm.err" )
+        zsmframe) z=0; for w in $wits; do lang="${w%%/*}"; name="${w#*/}"; witness "$lang" "$name"
+                      ( cd "$dir" && SCRIP_ZSM=1 timeout -k 5 120 "$SC/scrip" --compile "$src" < /dev/null > /dev/null 2> "$OUT/step$step/$name.zsm.err" )
                       grep -E '^\[ZSM-FRAME\] .* addrs=[1-9]' "$OUT/step$step/$name.zsm.err" > /dev/null && z=$((z + 1)); done
                   readings="$readings zsm_frame_lines=$z/$n"; [ "$z" = "$n" ] || pgreen=0 ;;
         scoped) b="$(cd "$SC" && python3 "$CENSUS" --only A --in "$val" 2>/dev/null | sed -n 's/^SCOPED_BAR=\([0-9]*\).*/\1/p')"; readings="$readings scoped_bar=${b:-?}"; [ "$b" = 0 ] || pgreen=0 ;;
