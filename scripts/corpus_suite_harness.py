@@ -178,6 +178,17 @@ def rr_request_waits(queue):
     return False
 
 
+# ⛔⭐ MODE 3 ONLY (Lon 2026-11-08 10:2x, again 2026-11-09 08:4x, and 2026-11-10 16:5x: "Have you corrected to mode 3 EVERYWHERE? ... I said mode 3 two
+# days ago."; COO-487): every grade on this box is mode 3 until Lon says otherwise. This is the one place every runner, gate, step harness and the cycle
+# reaches, so a request that names m4 (a default of m3,m4 included) is graded in m3 alone and says so on stderr; a request for m4 alone refuses. S4E_MODE4=1
+# lets one deliberate caller grade mode 4 again (Lon's word first); nothing in the tree sets it.
+def mode3_only(modes, where):
+    if os.environ.get("S4E_MODE4") == "1" or "m4" not in modes: return modes
+    if modes == ["m4"]: refuse(f"{where}: --modes m4 alone: mode 3 ONLY (Lon, COO-487); grade --modes m3, or set S4E_MODE4=1 on Lon's word")
+    print(f"MODE3_ONLY {where}: mode 4 dropped from --modes {','.join(modes)} (Lon: mode 3 only, COO-487)", file=sys.stderr)
+    return [m for m in modes if m != "m4"]
+
+
 def parse_modes(spec, where):
     modes = [m for m in (spec or "").split(",") if m]
     bad = [m for m in modes if m not in GRADED_MODES]
@@ -188,7 +199,7 @@ def parse_modes(spec, where):
     if _engine() != "scrip" and "m4" in modes:
         refuse(f"{where}: --modes {spec!r} names m4 under S4E_ENGINE={_engine()} -- m4 is SCRIP's compiled binary and the port has "
                f"none (R-1822); grade --modes m3, the port's one run")
-    return modes
+    return mode3_only(modes, where)
 
 
 # ⛔⭐ `snobol4` IS AN ACCEPTED SPELLING OF THE DEFAULT, AND LEAVING IT OUT COST TWO SESSIONS. The default
