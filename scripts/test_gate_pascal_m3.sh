@@ -23,7 +23,7 @@ RUNGS_REF="${RUNGS_REF:-$CORPUS/ALL.ref}"
 # on m3 the benchmark-witness section) always examines >0 -- exactly the kind of "measured fine" vs. "could
 # not measure" collision RULES.md's own gate-witness law exists to forbid. RUNGS_EXAMINED now refuses
 # independently, not just as part of the combined check.
-# ⛔ FIVE entries stay loose PERMANENTLY, not a residue of this repoint: read1-4 and pb35 read real stdin,
+# ⭐ SINCE 2026-11-10 (the coo, CIO-56) THE FIVE ARE ENTRIES stdin__NAME of the master, extracted with their stdin below. WAS: FIVE entries stay loose PERMANENTLY, not a residue of this repoint: read1-4 and pb35 read real stdin,
 # and the suite format has no stdin-input concept (hq_C's SNOBOL4-side ruling, 2026-08-24 — see KEEP.md
 # section 1). The rungs builder independently reaches the same conclusion (ALL.omit names all 5).
 # Register a new permanent stdin exception in BOTH this file and test_gate_pascal_m4.sh's identical list.
@@ -33,13 +33,16 @@ PASS=0; FAIL=0; NOREF=0; XFAIL=0; EXAMINED=0
 echo -e "probe\tclass\tnotes" > "$RESULTS"
 
 for name in $STDIN_FAMILIES; do
-    pas="$CORPUS/$name.pas"; ref="$CORPUS/$name.ref"
+    # ⭐ EACH IS THE ENTRY stdin__NAME OF THE PASCAL MASTER (the coo 2026-11-10, CIO-24 c, CIO-56: the master holds stdin in ALL.in and format 2
+    # in its stdin fence, so the reason these five stood loose is gone); extracted with its stdin to the run's scratch, then run as before.
+    _sd="$(mktemp -d)"; python3 "$(dirname "${BASH_SOURCE[0]}")/corpus_suite_harness.py" extract "$CORPUS/ALL.pas" "$CORPUS/ALL.ref" "stdin__$name" "$_sd/$name.pas" --out-ref "$_sd/$name.ref" --out-in "$_sd/$name.in" > /dev/null 2>&1
+    pas="$_sd/$name.pas"; ref="$_sd/$name.ref"
     EXAMINED=$((EXAMINED+1))
     if [ ! -f "$pas" ] || [ ! -f "$ref" ]; then
         echo -e "$name\tNOREF\t" >> "$RESULTS"
         NOREF=$((NOREF+1)); continue
     fi
-    inp="$CORPUS/$name.in"; [ -f "$inp" ] || inp=/dev/null
+    inp="$_sd/$name.in"; [ -f "$inp" ] || inp=/dev/null
     out=$(timeout -k 5 8s "$SCRIP" --run "$pas" < "$inp" 2>/dev/null)
     rc=$?
     exp=$(cat "$ref")

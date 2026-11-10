@@ -23,7 +23,10 @@ PASS=0; FAIL=0; NOREF=0; XFAIL=0; EXAMINED=0
 echo -e "probe\tclass\tnotes" > "$RESULTS"
 
 for name in $STDIN_FAMILIES; do
-    pas="$CORPUS/$name.pas"; ref="$CORPUS/$name.ref"
+    # ⭐ EACH IS THE ENTRY stdin__NAME OF THE PASCAL MASTER (the coo 2026-11-10, CIO-24 c, CIO-56: the master holds stdin in ALL.in and format 2
+    # in its stdin fence, so the reason these five stood loose is gone); extracted with its stdin to the run's scratch, then run as before.
+    _sd="$(mktemp -d)"; python3 "$(dirname "${BASH_SOURCE[0]}")/corpus_suite_harness.py" extract "$CORPUS/ALL.pas" "$CORPUS/ALL.ref" "stdin__$name" "$_sd/$name.pas" --out-ref "$_sd/$name.ref" --out-in "$_sd/$name.in" > /dev/null 2>&1
+    pas="$_sd/$name.pas"; ref="$_sd/$name.ref"
     EXAMINED=$((EXAMINED+1))
     if [ ! -f "$pas" ] || [ ! -f "$ref" ]; then
         echo -e "$name\tNOREF\t" >> "$RESULTS"
@@ -43,7 +46,7 @@ for name in $STDIN_FAMILIES; do
         echo -e "$name\tLINK_FAIL\t" >> "$RESULTS"
         FAIL=$((FAIL+1)); continue
     fi
-    inp="$CORPUS/$name.in"; [ -f "$inp" ] || inp=/dev/null
+    inp="$_sd/$name.in"; [ -f "$inp" ] || inp=/dev/null
     out=$(timeout -k 5 8s "$exe" < "$inp" 2>/dev/null)
     rc=$?
     exp=$(cat "$ref")
