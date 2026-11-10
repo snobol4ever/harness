@@ -17,7 +17,7 @@ s4e_wake_live_of_tier() {   # <tier name> -> the live seats of that tier, one pe
     _ex="$(printf '%s' "$_fl" | sed -n 's/^FLEET: IDLE EXCEPT \([^(]*\).*/\1/p')"
     # ALIVE is a session, not a line: a seat whose s4e-seat-<seat>.scope holds a claude process is live; when no seat scope exists at all (a scratch probe,
     # a box without the slice) the MODE line decides, and with no line every seat of the tier counts.
-    local _cg="/sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/s4e.slice/s4e-seats.slice" _have=0 _s
+    local _cg="${S4E_SEAT_SCOPES:-/sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/s4e.slice/s4e-seats.slice}" _have=0 _s   # S4E_SEAT_SCOPES: the scopes directory a probe names (bus-one-queue steps 2 and 3)
     [ -d "$_cg" ] && ls -d "$_cg"/s4e-seat-*.scope >/dev/null 2>&1 && _have=1
     local _bosses; _bosses=" $(sed -n 's/^BOSSES:[[:space:]]*//p' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1) "   # a boss (cio coo cto) is woken by tier-fable and ask-fable only: its own tube is its escalation road, not its hold
     awk -F'\t' -v t="$_tn" -v live=" $_ex " -v bosses="$_bosses" -v any="$([ -n "$_fl" ] && echo 0 || echo 1)" '!/^#/ && $7==t && $1!="" { if (t != 1 && index(bosses, " " $1 " ")) next; if (any || index(live, " " $1 " ")) print $1 }' "$(s4e_wake_tiers)" 2>/dev/null | while read -r _s; do

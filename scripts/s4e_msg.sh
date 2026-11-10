@@ -260,7 +260,9 @@ s4e_skills_required_ok() {   # <tier> <goal text>: a sonnet or haiku row carries
     case "$1" in sonnet|haiku) printf '%s\n' "$2" | grep -q '^SKILLS:[[:space:]]*[^[:space:]]';; *) return 0;; esac; }
 s4e_queue_pri() { case "$1" in seat-*) echo $((100 + $2));; ask-*) echo 50;; *) echo $((1000 + $2));; esac; }   # <tube> <rank>: a directed job outranks tier work, an ask outranks both
 s4e_queue_enqueue_row() {   # <topic> <tube> <rank> <tier-for-ttr>: put the job, record it on the baton, print one line; rc 1 when the daemon refused
-    local _ttr _id _pri; _ttr="$(s4e_row_budget_ttr "$1")"; [ -n "$_ttr" ] || _ttr="$(s4e_tier_ttr "$4")"; _pri="$(s4e_queue_pri "$2" "$3")"
+    local _ttr _id _pri
+    if s4e_file_road; then echo "queued tube=$2 (file road: the column is the tube, no job put)"; return 0; fi   # bus-one-queue step 3: queue and mint on the file road put no job and write no QUEUE-JOB line
+    _ttr="$(s4e_row_budget_ttr "$1")"; [ -n "$_ttr" ] || _ttr="$(s4e_tier_ttr "$4")"; _pri="$(s4e_queue_pri "$2" "$3")"
     _id="$(s4e_queue_put "$2" "$1" "$_pri" "$_ttr")" || _id=""
     [ -n "$_id" ] || { echo "⚠ queue: the put into $2 failed (util_queue.py status tells why); the row exists, the job does not -- put it by hand: python3 harness/scripts/util_queue.py put $2 $1 --pri $_pri --ttr $_ttr" >&2; return 1; }
     s4e_baton_job_set "$1" "$_id" "$2"; echo "queued job=$_id tube=$2 pri=$_pri ttr=$_ttr"; }
@@ -307,6 +309,23 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
     _holder="$(head -1 "$_c")"
     _bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" | head -1)"
     case " $_bosses " in *" $ME "*) : ;; *) [ "$_holder" = "$ME" ] || { printf '⛔ REFUSED: %s is claimed by %s; only that seat or a boss may escalate it.\n' "$_t" "$_holder" >&2; return 2; };; esac
+    if s4e_file_road; then   # bus-one-queue step 3: on the file road the column is the tube; no job is killed, put or recorded
+        _tube="$(sed -n 's/^RESERVED file tube=\([^ ]*\).*/\1/p' "$_c" | tail -1)"
+        [ -n "$_tube" ] || { printf '⛔ REFUSED: the claim of %s has no RESERVED file tube=<tube> line; there is no tube to move it up from.\n' "$_t" >&2; return 2; }
+        _by="$(sed -n 's/^ASSIGNED-BY \([^ ]*\).*/\1/p' "$_c" | head -1)"; _des="$(sed -n 's/^DESIGNER:[[:space:]]*\([^ ]*\).*/\1/p' "$PO/tasks/$_t.task.md" 2>/dev/null | head -1)"; _iso="$(date -u +%FT%TZ)"
+        if _above="$(s4e_escalate_above "$_tube")"; then _top=0; else _top=1; _above=""; fi
+        _rung="$(s4e_escalate_rung_set "$_t")"; mkdir -p "$PO/escalations"; _mf="$PO/escalations/$_t.rung$_rung.md"; printf '%s\n' "$_body" > "$_mf"
+        if [ "$_top" = 1 ]; then
+            s4e_escalate_ledger "$_t" "$_rung" "$_tube" lon-hold "$_iso" "$_mf"; rm -f "$_c"; s4e_set_row_state "$_t" "PARKED-LON-HOLD:escalated" || true
+            s4e_escalate_tell cio "$_t" "$_rung" "$_tube" lon-hold "$_mf" && _tg=$((_tg+1))
+        else
+            s4e_escalate_ledger "$_t" "$_rung" "$_tube" "$_above" "$_iso" "$_mf"
+            _own="@${_above#tier-}"; case "$_above" in seat-*) _own="${_above#seat-}";; esac
+            rm -f "$_c"; s4e_set_row_state "$_t" "QUEUED:$_above" || true; s4e_reown_cell "$_t" "$_own" || true
+            for _seat in $(printf '%s\n%s\n' "$_by" "$_des" | awk 'NF && !_s[$0]++'); do s4e_escalate_tell "$_seat" "$_t" "$_rung" "$_tube" "$_above" "$_mf" && _tg=$((_tg+1)); done
+        fi
+        printf 'escalated %s rung=%s from=%s to=%s measurement=%s telegrams=%s (file road)\n' "$_t" "$_rung" "$_tube" "${_above:-lon-hold}" "$_mf" "$_tg"; s4e_wake_hint "${_above:-lon-hold}" "$_t" escalate; return 0
+    fi
     _rline="$(grep '^RESERVED job=' "$_c" | tail -1)"
     _job="$(printf '%s\n' "$_rline" | sed -n 's/^RESERVED job=\([0-9][0-9]*\) .*/\1/p')"
     _tube="$(printf '%s\n' "$_rline" | sed -n 's/^RESERVED job=[0-9]* tube=\([^ ]*\).*/\1/p')"
@@ -477,6 +496,18 @@ s4e_seat_claude_pid() {   # <seat>: the pid in the seat's s4e-seat-<seat>.scope/
 s4e_reserve_line() {   # <job> <tube>: the claim's RESERVED line; on the file road (job is the word file) RESERVED file tube=<tube> session=<SESSION> pid=<pid> <ts> (bus-one-queue step 2)
     if [ "$1" = file ]; then printf 'RESERVED file tube=%s session=%s pid=%s %s\n' "$2" "$(s4e_session_name_of "$ME")" "$(s4e_seat_claude_pid "$ME")" "$(date -u +%FT%TZ)"
     else printf 'RESERVED job=%s tube=%s %s\n' "$1" "$2" "$(date -u +%FT%TZ)"; fi; }
+s4e_file_expire_one() {   # <topic>: bus-one-queue step 5: a claim whose RESERVED file pid is dead, or not in its owner's seat scope, is archived and its row goes back to its tube (rc 0); a live holder, or no file reserve, is kept (rc 1)
+    local _t="$1" _c="$PO/claims/$1.claim" _l _tube _pid _own _d _ts _erl
+    [ -f "$_c" ] || { echo "EXPIRE $_t: no claim"; return 1; }
+    _l="$(grep '^RESERVED file ' "$_c" | tail -1)"; [ -n "$_l" ] || { echo "EXPIRE $_t: the claim holds no file reserve"; return 1; }
+    _tube="$(printf '%s' "$_l" | sed -n 's/.* tube=\([^ ]*\).*/\1/p')"; _pid="$(printf '%s' "$_l" | sed -n 's/.* pid=\([0-9]*\).*/\1/p')"; _own="$(head -1 "$_c")"
+    _d="${S4E_SEAT_SCOPES:-/sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/s4e.slice/s4e-seats.slice}/s4e-seat-$_own.scope/cgroup.procs"
+    if [ -n "$_pid" ] && kill -0 "$_pid" 2>/dev/null && grep -qx "$_pid" "$_d" 2>/dev/null; then echo "EXPIRE $_t: holder $_own pid $_pid lives in its seat scope; kept"; return 1; fi
+    mkdir -p "$PO/claims/expired"; _ts="$(date -u +%FT%TZ)"; mv "$_c" "$PO/claims/expired/$_t.claim.$_ts"
+    _erl="$(awk '/^## RESUME/{f=1;next} /^## /{f=0} f && /^RESUME /{print; exit}' "$PO/tasks/$_t.task.md" 2>/dev/null | cut -c1-200)"
+    s4e_ledger_prepend "$_t" "- [$ME·$_ts] LEASE expired holder=$_own pid=${_pid:-none} tube=$_tube: the holder's pid is dead or not in its seat scope, so the row is back in $_tube; the next seat resumes at ${_erl:+the RESUME line: $_erl}${_erl:-NEXT (no RESUME line)}" 2>/dev/null || true
+    s4e_set_row_state "$_t" "QUEUED:$_tube" || true
+    echo "EXPIRE $_t pid=${_pid:-none} tube=$_tube holder=$_own claim_archived=1 (file road)"; return 0; }
 s4e_take_refused() { : > "$PO/claims/$1.claim.release.$2" 2>/dev/null; return 1; }   # <topic> <job>: a take that refuses before its claim tells the holder to release now (util_queue.py reserve-hold reads <topic>.claim.release.<job>)
 s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (fleet-queue step 4); writes the claim file and the row state, nothing else
     local _t="$1" _c="$PO/claims/$1.claim"
@@ -3808,6 +3839,11 @@ case "$cmd" in
   expire) # fleet-queue step 5 (the cio 2026-11-05): a reserved job whose holder is gone is back in its tube (beanstalkd released it when the holder's
          # connection closed, or its TTR ran out); the tick calls this for every claim whose RESERVED job reads ready: the claim is archived, the LEDGER
          # says so, the row reads QUEUED:<tube>, and the next seat that reserves it resumes at the baton's RESUME line. Nothing is deleted or re-put.
+         if s4e_file_road; then   # bus-one-queue step 5: on the file road a claim's holder is its pid; no topic walks every claim
+           if [ -n "${2:-}" ]; then s4e_file_expire_one "$2"; exit $?; fi
+           _en=0; for _ec in "$PO"/claims/*.claim; do [ -f "$_ec" ] || continue; s4e_file_expire_one "$(basename "$_ec" .claim)" && _en=$((_en+1)); done
+           echo "EXPIRE walked the claims: $_en expired"; exit 0
+         fi
          [ -n "${2:-}" ] || s4e_need expire "a topic" "s4e_msg.sh expire <topic>" "Clears the claim of a reserved job that is back in its tube (the lease expired); the tick's verb."
          topic="$2"; c="$PO/claims/$topic.claim"; [ -f "$c" ] || { echo "EXPIRE $topic: no claim"; exit 1; }
          _ej="$(grep -m1 '^RESERVED job=' "$c" | sed 's/^RESERVED job=\([0-9]*\) tube=\([^ ]*\).*/\1 \2/')"; [ -n "$_ej" ] || { echo "EXPIRE $topic: the claim holds no reserved job"; exit 1; }
@@ -4926,6 +4962,7 @@ TASKEOF
          [ -n "${q_tube:-}" ] && s4e_wake_hint "$q_tube" "$topic" mint   # a mint with --tier or --to puts a job in a tube: it wakes its taker like queue (officer_03, 2026-11-08 11:03)
          s4e_queue_view
          [ -n "$q_tube" ] && s4e_queue_enqueue_row "$topic" "$q_tube" "$rank" "$q_tier"
+         [ -n "$q_tube" ] && s4e_file_road && { s4e_set_row_state "$topic" "QUEUED:$q_tube" || true; }   # bus-one-queue step 3: on the file road the minted row's column is its tube
          [ -n "$pw_block" ] && {
            printf '⚠ NO PREMISE-WHEN — you are the one reader who knows what this row ASSUMES, and you are looking at\n' >&2
            printf '  it right now. Write the one cheap command that proves that assumption still holds, into %s:\n' "$b" >&2
