@@ -72,7 +72,7 @@ case "$N" in
 3)  # queue, escalate and assign on the file road: the column moves, a WAKE line prints, no job id is printed and no QUEUE-JOB line is written
     q=busq3-queue-$$; e=busq3-esc-$$; a=busq3-assign-$$
     row 2 "$q" "$O" FREE; row 2 "$e" "$J" "CLAIMED:$J"; row 2 "$a" "$O" FREE; baton "$q"; baton "$e"; baton "$a"
-    p="$(live_claude "$J")"; printf '%s\nRESERVED file tube=tier-haiku session=PJ97 pid=%s 2026-11-08T00:00:00Z\n' "$J" "$p" > "$w/claims/$e.claim"
+    p="$(live_claude "$J")"; live_claude "$S" >/dev/null; printf '%s\nRESERVED file tube=tier-haiku session=PJ97 pid=%s 2026-11-08T00:00:00Z\n' "$J" "$p" > "$w/claims/$e.claim"
     out="$(bus "$O" queue "$q" --tier haiku)"; rc=$?
     [ "$rc" = 0 ] || why="$why queue exited $rc [$(printf '%s' "$out" | grep -m1 -E '⚠|⛔|REFUSE' | cut -c1-90)];"
     [ "$(st "$q")" = QUEUED:tier-haiku ] || why="$why the queued row reads $(st "$q");"
