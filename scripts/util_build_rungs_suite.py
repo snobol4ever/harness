@@ -79,7 +79,7 @@ DEFAULT_HEAP_KB = str(h.GC_HEAP_CAP_KB)
 DEFAULT_STACK_KB = str(h.GC_STACK_FLOOR_KB)
 # the unit's command line (RULES.md hard-cap rule clause 8 (f), R-1281): carried forward like heap_kb, never re-derived --
 # nothing in an entry's text says what switches its compile needs or what arguments its run takes
-CMD_COLS = ("compile_args", "run_args", "stage_name")   # stage_name (the coo 2026-11-10, CIO-36): the bare file name the harness writes an entry's program as, the
+CMD_COLS = ("compile_args", "run_args", "stage_name", "stderr")   # stderr (the coo 2026-11-10, CIO-36, INTERIM until CIO-34's recut): "merged" for an entry whose answer is on stderr   # stage_name (the coo 2026-11-10, CIO-36): the bare file name the harness writes an entry's program as, the
 # name its answer was cut under; carried like the command line, set by the additive road when the answer names its own file (_stage_name_for)
 
 
@@ -1256,7 +1256,7 @@ def _additive_classify_and_run(path, ext, oracle_bin, flags, paths, timeout):
         if committed != ora_text:
             sys.stderr.write("  RE-CUT %s: the committed %s disagrees with two identical fresh oracle runs; the fresh answer is the ref\n"
                              % (name, os.path.basename(existing_ref)))
-    return ("run", name, body_lines, ora_text, stdin_text)
+    return ("run", name, body_lines, ora_text, stdin_text, ora_rc)
 
 
 def _additive_next_name(base, taken):
@@ -1465,11 +1465,11 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
                 # one with a .input sidecar) read PASS at absorption and FAIL when the rungs was re-graded
                 # -- a silent, self-contradicting green. See the write section below for the other half
                 # (ALL.in must actually be written).
-                kind, name, body_lines, ref_or_ast, stdin_text = result
-                absorbed.append((name, cat, kind, body_lines, ref_or_ast, stdin_text))
+                kind, name, body_lines, ref_or_ast, stdin_text, ora_rc = result
+                absorbed.append((name, cat, kind, body_lines, ref_or_ast, stdin_text, ora_rc))
             else:
                 kind, name, body_lines, ref_or_ast = result
-                absorbed.append((name, cat, kind, body_lines, ref_or_ast, None))
+                absorbed.append((name, cat, kind, body_lines, ref_or_ast, None, 0))
 
     if not write:
         return absorbed, excluded_rows, programs_named
@@ -1492,7 +1492,7 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
     base_origins = {(csv_row_by_name.get(e.name) or {}).get("origin") or ("rungs__%s" % e.name) for e in base_entries}
 
     new_entries = []
-    for name, cat, kind, body_lines, ref_or_ast, stdin_text in absorbed:
+    for name, cat, kind, body_lines, ref_or_ast, stdin_text, ora_rc in absorbed:
         singular = cat[:-1] if cat.endswith("s") else cat
         fam = "%s_%s_%s" % (singular, lang, name)      # one family per additive entry -- see discover_pairs's
         origin = "%s__%s" % (fam, name)                 # own "plain" mode for the identical per-file convention
@@ -1501,7 +1501,10 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
             continue
         entry_name = _additive_next_name("%s_%s" % (singular, name), taken_names)
         taken_names.add(entry_name)
-        e = h.Entry("block", 0, entry_name, list(body_lines), ref_or_ast.splitlines(), xfail=False)
+        # ⛔ LF ONLY (CIO-46 D, the coo 2026-11-10; MEASURED: coverage_sno_nodes prints &ALPHABET and its ref lost the bytes 013 to 015 and 034 to 036,
+        # because str.splitlines() also breaks a line there): the answer is split on LF alone, as every reader of a container splits it.
+        # ⭐ THE EXIT STATUS IS THE ORACLE'S (CIO-46 C): a program sbl ends at rc 231 (a compile refusal) or 1 is declared so in ALL.wantrc below.
+        e = h.Entry("block", 0, entry_name, list(body_lines), h._lf_lines(ref_or_ast), xfail=False, want_rc=int(ora_rc or 0))
         if stdin_text:
             e.stdin = stdin_text
         e.origin = origin
@@ -1544,6 +1547,16 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
                 sorted(reread, key=lambda x: x.name), sorted(all_entries, key=lambda x: x.name))):
             sys.stderr.write("REFUSED: additive write did not round-trip (stdin content changed) -- nothing committed.\n")
             raise SystemExit(2)
+        # ⭐ A NEW ENTRY TAKES THE MASTER'S COMMAND-LINE CONVENTION (CIO-46 B, the coo 2026-11-10; MEASURED: 2099 of 2276 snobol4 entries declare
+        # --stlimit and the 60 admitted declared nothing, so TRACE, &STNO and the statement marks a ref was cut with were absent): a column's value
+        # held by a strict majority of the existing rows is a new row's value; no majority, no value.
+        _cmd_convention = {}
+        for _c in cmd_cols:
+            _vals = [(_r.get(_c) or "").strip() for _r in csv_row_by_name.values()]
+            if _vals:
+                _top = max(set(_vals), key=_vals.count)
+                if _top and _vals.count(_top) * 2 > len(_vals):
+                    _cmd_convention[_c] = _top
         with open(tmp_csv, "w", newline="") as f:
             w = csv.writer(f, lineterminator="\n")
             w.writerow(["rank", "entry", "origin", "family", "kind", "xfail", "n_lines", "heap_kb", "stack_kb"] + cmd_cols + [c for c, _ in cols])
@@ -1555,7 +1568,8 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
                 fam = origin.split("__", 1)[0]
                 w.writerow([rank, e.name, origin, fam, e.kind, int(bool(e.xfail)), len(e.sno_lines),
                             ((old_row.get("heap_kb") or "").strip() or DEFAULT_HEAP_KB), ((old_row.get("stack_kb") or "").strip() or DEFAULT_STACK_KB)]
-                           + [((old_row.get(c) or "").strip() or (_stage_name_for(e.name, origin, e.ref, os.path.splitext(rungs_sno)[1]) if c == "stage_name" else ""))
+                           + [((old_row.get(c) or "").strip() or (_stage_name_for(e.name, origin, e.ref, os.path.splitext(rungs_sno)[1]) if c == "stage_name"
+                                  else (_cmd_convention.get(c, "") if not old_row else "")))
                               for c in cmd_cols]
                            + [flags_e[c] for c, _ in cols])
     except BaseException:
@@ -1570,6 +1584,16 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
     elif os.path.exists(rungs_in):
         os.remove(rungs_in)
     os.replace(tmp_csv, rungs_csv)
+    _wr = [(e.name, e.want_rc) for e in new_entries if getattr(e, "want_rc", 0)]
+    if _wr:   # CIO-46 C: the oracle's exit status of a new entry, merged by name into the master's ALL.wantrc (created with the harness's header when absent)
+        _wp = os.path.join(os.path.dirname(rungs_sno), "ALL.wantrc")
+        _old = open(_wp).read() if os.path.isfile(_wp) else "# ALL.wantrc -- DECLARED exit codes for entries whose CORRECT run exits nonzero; name<TAB>rc\n"
+        _have = {ln.split("\t", 1)[0] for ln in _old.splitlines() if ln and not ln.startswith("#")}
+        with open(_wp, "w") as _f:
+            _f.write(_old if _old.endswith("\n") else _old + "\n")
+            for _n, _rc in _wr:
+                if _n not in _have:
+                    _f.write("%s\t%d\n" % (_n, _rc))
     _additive_write_excluded(OUTDIR, absorbed, excluded_rows)
     print("--additive %s --from %s: %d new entries absorbed (%d candidate(s) checked, %d excluded) -- "
           "ALL%s/ALL.ref/ALL.csv updated." % (lang, ",".join(categories), len(new_entries),

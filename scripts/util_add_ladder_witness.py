@@ -206,14 +206,14 @@ def derive_flags(sno_lines):
     return f
 
 
-def run_oracle_twice(oracle_argv, src_path, timeout=8, stdin_text=None, prog_args=(), bare=False):
+def run_oracle_twice(oracle_argv, src_path, timeout=8, stdin_text=None, prog_args=(), bare=False, merged=False):
     """bare: run the oracle on the file's bare name from its own folder, so an answer that names its file names the file the entry is staged as."""
     outs, rcs = [], []
     _arg, _cwd = (Path(src_path).name, str(Path(src_path).resolve().parent)) if bare else (str(src_path), None)
     for _ in range(2):
         try:
             p = subprocess.run(list(oracle_argv) + [_arg] + list(prog_args), cwd=_cwd, stdin=subprocess.DEVNULL if stdin_text is None else None,
-                                input=None if stdin_text is None else stdin_text.encode("utf-8"), capture_output=True, timeout=timeout)
+                                input=None if stdin_text is None else stdin_text.encode("utf-8"), stdout=subprocess.PIPE, stderr=subprocess.STDOUT if merged else subprocess.PIPE, timeout=timeout)
         except subprocess.TimeoutExpired:
             refuse("oracle timed out on %s -- not a witness candidate" % src_path)
         outs.append(p.stdout.decode("utf-8", errors="replace"))
@@ -229,7 +229,7 @@ def run_oracle_twice(oracle_argv, src_path, timeout=8, stdin_text=None, prog_arg
     # stdin belongs to a landing that also writes the sidecar; refusing here is the honest half of that.
     try:
         p3 = subprocess.run(list(oracle_argv) + [_arg] + list(prog_args), cwd=_cwd, input=b"stdin-probe\n",
-                            capture_output=True, timeout=timeout)
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT if merged else subprocess.PIPE, timeout=timeout)
     except subprocess.TimeoutExpired:
         refuse("oracle timed out on %s under the stdin-sensitivity probe" % src_path)
     if p3.stdout.decode("utf-8", errors="replace") != outs[0] or p3.returncode != rcs[0]:
@@ -368,6 +368,8 @@ def main():
                     ".argv into run_args, .in, .input or .stdin as its stdin) and <stem>.ref is its --expect")
     ap.add_argument("--expect", default="", help="the loose answer: the oracle is still cut twice, and a fresh cut that differs from it REFUSES, naming both")
     ap.add_argument("--accept-fresh", default="", help="one line naming WHY a fresh cut that differs from --expect is the answer (the stale loose answer is then replaced, named)")
+    ap.add_argument("--stderr-merged", action="store_true", help="CIO-36 (an INTERIM attribute; CIO-34 retires merged stderr at the recut): the oracle's stderr is cut into "
+                    "the answer with its stdout, and the row's stderr cell reads merged, for a program whose only answer is on stderr")
     ap.add_argument("--stage-as-cut", action="store_true", help="CIO-36: the entry is staged under its source's bare file name (ALL.csv stage_name) and the oracle "
                     "is cut on that bare name from the source's folder, for a program whose answer names its own file (&FILE, a fatal 'x.sno(3) : ERROR')")
     ap.add_argument("--from-dir", default="", help="the batch form: every program of the language in DIR with a <stem>.ref beside it, each by --from under --family, all refused before any is written")
@@ -531,7 +533,7 @@ def main():
                 cfg["comment_open"], args.twin_equivalence.strip(), cfg["comment_close"])
             sno_lines = [note] + sno_lines
             sno_text = "\n".join(sno_lines) + "\n"
-    ref_text, want_rc = run_oracle_twice(oracle_argv, twin_path if twin_path is not None else src_path, stdin_text=stdin_text, prog_args=prog_args, bare=args.stage_as_cut)
+    ref_text, want_rc = run_oracle_twice(oracle_argv, twin_path if twin_path is not None else src_path, stdin_text=stdin_text, prog_args=prog_args, bare=args.stage_as_cut, merged=args.stderr_merged)
     ref_lines = csh._lf_lines(ref_text)
     if args.expect:
         _ex = Path(args.expect)
@@ -550,7 +552,7 @@ def main():
     # minted without that line is graded against the default rc=0 forever -- which is why the old refusal was
     # right to block rather than mint half of it. The sidecar is written below, after the rungs and the CSV,
     # under the same tmp+replace discipline and the same preserve-what-existed proof.
-    if want_rc != 0 and lang not in csh.LANG_CONFIGS:
+    if False:   # the coo 2026-11-10: the mixed reader now reads ALL.wantrc (w_path) and the append below writes it, so a non-zero exit code is carried for snobol4 too
         refuse("oracle exited rc=%d and %s is a mixed (non-block) rungs, whose reader this tool drives "
                "through read_suite without a wantrc sidecar path -- extend that arm before minting a "
                "nonzero-rc witness for it" % (want_rc, lang))
@@ -576,9 +578,9 @@ def main():
         # own readers for that shape -- the round-trip proof below is what makes using them safe, and it is
         # run against the real rungs before a single byte is written.
         entries = csh.read_suite(str(rungs_src), str(rungs_ref), in_path=str(rungs_dir / "ALL.in"),
-                                  x_path=str(rungs_dir / "ALL.xfail"))
+                                  x_path=str(rungs_dir / "ALL.xfail"), w_path=str(rungs_dir / "ALL.wantrc"))
         reserialize = lambda es, a, b: csh.write_suite(es, a, b, out_in=None, lang=lang)
-        read_entries = lambda: csh.read_suite(str(rungs_src), str(rungs_ref), in_path=str(rungs_dir / "ALL.in"), x_path=str(rungs_dir / "ALL.xfail"))
+        read_entries = lambda: csh.read_suite(str(rungs_src), str(rungs_ref), in_path=str(rungs_dir / "ALL.in"), x_path=str(rungs_dir / "ALL.xfail"), w_path=str(rungs_dir / "ALL.wantrc"))
     # ── ROUND-TRIP PROOF, before this tool is trusted to touch the real files: re-serialize the
     # UNCHANGED entries and diff against what is actually on disk. A mismatch here means this script's
     # understanding of the format is wrong, and it must refuse before writing anything, not after.
@@ -650,6 +652,10 @@ def main():
                "kind": "block", "xfail": "0", "n_lines": str(len(sno_lines))}
     for k in flag_order:
         new_row[k] = str(flags[k])
+    if args.stderr_merged:
+        if "stderr" not in fields:
+            refuse("--stderr-merged: %s has no stderr column" % rungs_csv)
+        new_row["stderr"] = "merged"
     if args.stage_as_cut:
         if "stage_name" not in fields:
             refuse("--stage-as-cut: %s has no stage_name column (harness f77838edd adds it to the snobol4 master)" % rungs_csv)
