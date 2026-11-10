@@ -101,6 +101,11 @@ _me_refuse() { echo "⛔ REFUSE(lib_rungs_extract): $*" >&2; return 2; }
 # afterward), but a bare $RUNGS_EXT read later, inside a function called on a SEPARATE line, sees it
 # unset again and (under a caller's `set -u`) aborts. RUNGS_SNO is always reliable; extract from it.
 _me_ext() { local s="$RUNGS_SNO"; printf '%s\n' ".${s##*.}"; }
+# ⭐ THE CONTAINER IN EITHER FORMAT (CIO-24 f, CIO-25, CIO-50): the old pair ALL.<ext> and ALL.ref, or format 2 (ONE.<ext> or MULTI.md beside
+# ALL.csv). corpus_suite_harness.py reads both from the same ALL.<ext> ALL.ref command line, so a caller asks this, never [ -f "$RUNGS_SNO" ].
+rungs_present() {
+    { [ -f "$RUNGS_SNO" ] && [ -f "$RUNGS_REF" ]; } || { [ -f "$RUNGS_CSV" ] && { [ -f "$RUNGS_DIR/MULTI.md" ] || [ -f "$RUNGS_DIR/ONE$(_me_ext)" ]; }; }
+}
 rungs_entry_for_origin() {
     [ -f "$RUNGS_CSV" ] || { _me_refuse "no rungs CSV at $RUNGS_CSV"; return 2; }
     local n; n=$(awk -F, -v o="$1" '$3==o{print $2; exit}' "$RUNGS_CSV")
@@ -120,7 +125,7 @@ rungs_extract_name() {
     # means every one of this function's 21 existing callers keeps working, transparently, with the correct
     # input from now on instead of a silent wrong answer.
     local name="$1" out="$2" ref="${3:-}"
-    [ -f "$RUNGS_SNO" ] && [ -f "$RUNGS_REF" ] || { _me_refuse "rungs pair missing at $RUNGS_SNO"; return 2; }
+    rungs_present || { _me_refuse "no rungs container at $RUNGS_DIR (neither ALL$(_me_ext) and ALL.ref nor format 2)"; return 2; }
     local args=("$RUNGS_SNO" "$RUNGS_REF" "$name" "$out" --out-in "${out%.*}.in")
     [ -n "$ref" ] && args+=(--out-ref "$ref")
     # ⛔ THE OLD >/dev/null 2>&1 SWALLOWED THE HARNESS'S OWN REFUSAL REASON, leaving only a generic "failed"

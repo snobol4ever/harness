@@ -37,8 +37,8 @@ if [ ! -f "$RT_DIR/libscrip_rt.so" ]; then
     echo "SKIP libscrip_rt.so not built — run: make libscrip_rt"
     exit 0
 fi
-if [ ! -f "$RUNGS_SNO" ]; then
-    echo "GATE BLOCKED: no rungs at $RUNGS_SNO (clone corpus)"
+if ! rungs_present; then
+    echo "GATE BLOCKED: no rungs container at $RUNGS_DIR (clone corpus)"
     exit 2
 fi
 

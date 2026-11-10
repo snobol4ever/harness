@@ -22,7 +22,7 @@ TIMEOUT="${TIMEOUT:-10}"
 RUNGS_LANG="${RUNGS_LANG:-snobol4}" source "$HERE/lib_rungs_extract.sh"
 
 if [ ! -x "$SCRIP" ]; then echo "SKIP scrip not built at $SCRIP"; exit 0; fi
-if [ ! -f "$RUNGS_SNO" ] || [ ! -f "$RUNGS_REF" ]; then echo "SKIP SNOBOL4 rungs not populated at $RUNGS_SNO"; exit 0; fi
+if ! rungs_present; then echo "SKIP SNOBOL4 rungs not populated at $RUNGS_DIR"; exit 0; fi
 
 WORKDIR=$(mktemp -d)
 SRC_WORKDIR=$(mktemp -d)
