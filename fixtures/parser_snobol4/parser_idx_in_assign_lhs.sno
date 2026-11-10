@@ -1,0 +1,3 @@
+        A[1] = 'hello'
+        B[I, J] = X
+END

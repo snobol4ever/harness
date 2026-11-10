@@ -1,0 +1,2 @@
+LOOP    x = x + 1      :S(LOOP)
+END

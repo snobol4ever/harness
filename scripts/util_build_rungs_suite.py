@@ -1171,6 +1171,9 @@ def _additive_stdin_for(stem):
     return None, None
 
 
+_ADDITIVE_MASKS = {}   # the master's own ALL.mask (read_mask_sidecar), set by additive_absorb: the two-run test compares through it
+
+
 def _additive_classify_and_run(path, ext, oracle_bin, flags, paths, timeout):
     """-> ("ast", name, body_lines, ast_text) | ("run", name, body_lines, ref_text, stdin_text) | ("exclude", name, reason)
 
@@ -1229,7 +1232,13 @@ def _additive_classify_and_run(path, ext, oracle_bin, flags, paths, timeout):
     # if SCRIP is red. A committed .ref that disagrees with both fresh runs is stale (the 21 "committed .ref disagrees" lines): the fresh answer
     # is the ref, named on stderr, never the stale one copied.
     ora_text2, ora_rc2, ora_kind2 = h.run_oracle(oracle_bin, flags, _P(path), timeout, stdin_text=stdin_text)
-    if not (ora_kind2 == "RAN" and ora_text2 == ora_text and ora_rc2 == ora_rc):
+    # ⭐ THE TWO RUNS ARE COMPARED AS THE GRADER COMPARES THEM, through the master's ALL.mask (the coo 2026-11-10, measured at load 20 on 16 cores:
+    # three snobol4 programs that end in a SPITBOL fatal printed "execution time msec 0" on one run and 1 on the next and read NON-DETERMINISTIC,
+    # while their answer, stdout byte for byte under the mask, was the same; at a quiet moment both runs were identical). The mask rows are the
+    # declared implementation-defined lines (R-409); only a difference they do not cover is the oracle answering differently.
+    _mk = h.masks_for(_ADDITIVE_MASKS, name)
+    _same_text = ora_text2 == ora_text or (bool(_mk) and h.apply_line_mask(ora_text2, _mk, side="oracle")[0] == h.apply_line_mask(ora_text, _mk, side="oracle")[0])
+    if not (ora_kind2 == "RAN" and _same_text and ora_rc2 == ora_rc):
         return ("exclude", name, "NON-DETERMINISTIC, proven by repetition: two oracle runs of this program disagree (rc %s then %s, %s)"
                                    % (ora_rc, ora_rc2, "same output" if ora_text2 == ora_text else "different output"))
     if os.path.isfile(existing_ref):
@@ -1387,6 +1396,8 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
                  % (lang, ", ".join(sorted(ADDITIVE_ORACLE_LANGS))))
     EXT = LANG_EXT[lang]
     OUTDIR = os.path.join(root, "corpus", "tests", lang)
+    global _ADDITIVE_MASKS
+    _ADDITIVE_MASKS = h.read_mask_sidecar(os.path.join(OUTDIR, "ALL.ref"))
     os.makedirs(OUTDIR, exist_ok=True)
     _CO = h.LANG_CONFIGS[lang]["comment_open"] if lang in h.LANG_CONFIGS else "*"
     _CC = h.LANG_CONFIGS[lang].get("comment_close", "") if lang in h.LANG_CONFIGS else ""

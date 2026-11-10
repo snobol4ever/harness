@@ -9,6 +9,8 @@ They have no `.ref` and no `ALL.csv` row: they are never run, only parsed. Their
 `util_sno_include_twin.py` makes of the include lines, as `snobol4.l` reads them) and `bootstrap/parser_snobol4.sc` (which reads the RAW file and expands the includes itself) to print the same tree hash for each file.
 The gate changes directory to the program's own folder, so a name is found as written (`inc_a.inc`) and then, for a nested include, in the folder of the file already included.
 
+The 27 `parser_*.sno` beside them came from the top of corpus/tests/snobol4 on 2026-11-10 (the coo, CIO-42): they were graded by `--dump-ast` against SCRIP's own dump until Lon's word of 2026-09-13 removed every modes=ast entry (corpus a6646f04c), and their 27 `.ast-only` markers are deleted; they are fixtures of the tree gate, which reads files, and never entries of the master.
+
 - `include_nested_and_included_dir_search.sno` — `inc_nest.inc` includes `inc_sub/c.inc`; `inc_sub/d.inc` includes `d2.inc`, which exists only beside `d.inc` (the directory of a file already included).
 - `include_once_and_copy.sno` — `-INCLUDE` of the same name twice is one copy; `-COPY` twice is two.
 - `include_on_the_first_line.sno` — the directive is the first line of the program, so the text before it is empty. The first cut of the loop spliced with `SUBSTR(Src, 1, 0)`, which is the WHOLE string in SPITBOL and in SCRIP alike (a length of 0 means "to the end"), and ran out of heap on this file.

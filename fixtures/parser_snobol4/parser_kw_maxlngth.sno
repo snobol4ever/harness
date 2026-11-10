@@ -1,0 +1,4 @@
+        X = &MAXLNGTH
+        &MAXLNGTH = 500
+        IF LT(&MAXLNGTH, 100)
+END
