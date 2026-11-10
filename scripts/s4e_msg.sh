@@ -508,6 +508,17 @@ s4e_file_expire_one() {   # <topic>: bus-one-queue step 5: a claim whose RESERVE
     s4e_ledger_prepend "$_t" "- [$ME·$_ts] LEASE expired holder=$_own pid=${_pid:-none} tube=$_tube: the holder's pid is dead or not in its seat scope, so the row is back in $_tube; the next seat resumes at ${_erl:+the RESUME line: $_erl}${_erl:-NEXT (no RESUME line)}" 2>/dev/null || true
     s4e_set_row_state "$_t" "QUEUED:$_tube" || true
     echo "EXPIRE $_t pid=${_pid:-none} tube=$_tube holder=$_own claim_archived=1 (file road)"; return 0; }
+s4e_sweep_retire_jobs() {   # bus-one-queue step 8: with the daemon gone, every baton's QUEUE-JOB line goes and every live claim's RESERVED job= line becomes the file form; prints RETIRE-JOBS batons=B claims=C
+    local _b _c _nb=0 _nc=0 _own _tube _ts _pid _ses _tmp
+    s4e_file_road || { printf '⛔ REFUSED(2): sweep --retire-jobs runs only when beanstalkd is gone (util_queue.py status must exit 2); it answers now.\n' >&2; return 2; }
+    for _b in "$PO"/tasks/*.task.md; do [ -f "$_b" ] || continue; grep -q '^QUEUE-JOB:' "$_b" || continue; sed -i '/^QUEUE-JOB:/d' "$_b" && _nb=$((_nb+1)); done
+    for _c in "$PO"/claims/*.claim; do [ -f "$_c" ] || continue; grep -q '^DONE$' "$_c" && continue
+        [ "$(sed -n 2p "$_c" | cut -c1-13)" = "RESERVED job=" ] || continue
+        _own="$(head -1 "$_c")"; _tube="$(sed -n '2s/^RESERVED job=[0-9]* tube=\([^ ]*\).*/\1/p' "$_c")"; _ts="$(sed -n '2s/^RESERVED job=[0-9]* tube=[^ ]* \([0-9T:Z-]*\).*/\1/p' "$_c")"
+        _pid="$(s4e_seat_claude_pid "$_own")" || _pid=0; [ -n "$_pid" ] || _pid=0; _ses="$(s4e_session_name_of "$_own")"
+        _tmp="$(mktemp)"; awk -v l="RESERVED file tube=$_tube session=$_ses pid=$_pid ${_ts:-$(date -u +%FT%TZ)}" 'NR==2 {print l; next} {print}' "$_c" > "$_tmp" && cat "$_tmp" > "$_c" && _nc=$((_nc+1)); rm -f "$_tmp"
+    done
+    echo "RETIRE-JOBS batons=$_nb claims=$_nc"; return 0; }
 s4e_take_refused() { : > "$PO/claims/$1.claim.release.$2" 2>/dev/null; return 1; }   # <topic> <job>: a take that refuses before its claim tells the holder to release now (util_queue.py reserve-hold reads <topic>.claim.release.<job>)
 s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (fleet-queue step 4); writes the claim file and the row state, nothing else
     local _t="$1" _c="$PO/claims/$1.claim"
@@ -6022,10 +6033,11 @@ TASKEOF
          # This moves every row whose claim carries DONE into QUEUE.done.tsv (the memory) and rewrites the buffer.
          # ⛔ IT NEVER DELETES: every swept row is appended to QUEUE.done.tsv and the pre-sweep buffer is backed up.
          # ⛔ AN UNKNOWN FLAG REFUSES rc 2 BEFORE ANY WRITE (worker_08 2026-11-07 14:1x: `sweep --plant-measuring-dead`, before that flag existed, fell through to a LIVE sweep). Arguments after --close-green belong to its helper, which refuses its own unknowns.
-         for _a in "${@:2}"; do case "$_a" in --close-green) break;; --plant-green|--plant-measuring-dead|--plant-rc2) ;; --*) printf '⛔ REFUSED(2): sweep takes no flag %s\n   usage: %s sweep [--close-green --only <topic>] [--timeout <s>] | [--plant-green|--plant-measuring-dead|--plant-rc2]\n' "$_a" "$0" >&2; exit 2;; esac; done
+         for _a in "${@:2}"; do case "$_a" in --close-green) break;; --plant-green|--plant-measuring-dead|--plant-rc2|--retire-jobs) ;; --*) printf '⛔ REFUSED(2): sweep takes no flag %s\n   usage: %s sweep [--close-green --only <topic>] [--timeout <s>] | [--plant-green|--plant-measuring-dead|--plant-rc2]\n' "$_a" "$0" >&2; exit 2;; esac; done
          [ "${2:-}" = "--plant-green" ] && { s4e_sweep_plant_green; exit $?; }
          [ "${2:-}" = "--plant-measuring-dead" ] && { s4e_sweep_plant_measuring_dead; exit $?; }
          [ "${2:-}" = "--plant-rc2" ] && { s4e_sweep_plant_rc2_stale; exit $?; }
+         [ "${2:-}" = "--retire-jobs" ] && { s4e_sweep_retire_jobs; exit $?; }
          if [ "${2:-}" = "--close-green" ]; then shift 2; s4e_sweep_close_green "$@" || exit $?; fi
          q="$PO/QUEUE.tsv"; d="$PO/QUEUE.done.tsv"; [ -f "$q" ] || { echo "no QUEUE.tsv"; exit 1; }
          cp "$q" "$q.bak.sweep-$(date -u +%Y%m%dT%H%M%SZ)"
