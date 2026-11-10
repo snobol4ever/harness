@@ -7,6 +7,7 @@
 # ⛔ THE STRICT (ACCUSING) PREDICATE, kept from its predecessor: a ref opens with '(' AND carries a marker ordinary program output
 # does not ((STMT, (PROGRAM, :subj, :lhs), so a program that merely prints a parenthesised first line is never accused.
 # ⛔ AN UNREADABLE RUNGS IS A REFUSAL rc=2, NEVER A CLEAN LANGUAGE; zero rung suites read is a refusal too.
+# format-2: through run, read_suite follows the folder; the presence test is ALL.csv
 # EXIT: 0 no dump-shaped ref in any rung suite · 1 at least one, each named · 2 could not measure.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -36,7 +37,10 @@ for lang in sorted(LANGS):
     d = os.path.join(tests, lang)
     sp = os.path.join(d, "ALL" + LANGS[lang])
     rp = os.path.join(d, "ALL.ref")
-    if not (os.path.isfile(sp) and os.path.isfile(rp)):
+    if lang == "snobol4":
+        if not os.path.isfile(os.path.join(d, "ALL.csv")):
+            continue
+    elif not (os.path.isfile(sp) and os.path.isfile(rp)):
         continue
     try:
         if lang == "snobol4":

@@ -20,6 +20,7 @@
 # the very failure it exists to prevent. It reads `corpus/tests/snobol4` and writes only under mktemp.
 #
 # Usage: bash ../harness/scripts/test_gate_rungs_shrink_refusal.sh [--informational]
+# format-2: through run, the reader follows the folder; the scratch fixture is cut in the old form
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
@@ -32,7 +33,6 @@ gate_parse_args "$@"
 BUILDER="$ROOT/../harness/scripts/util_build_rungs_suite.py"
 LIVE="$ROOT/../corpus/tests/snobol4"
 gate_require "$BUILDER" "the rungs builder"
-gate_require "$LIVE/ALL.sno" "the live snobol4 rungs"
 gate_require "$LIVE/ALL.csv" "the live snobol4 attribute database"
 
 FAILS=0
@@ -73,6 +73,8 @@ es = h.read_suite(p, os.path.join(T, "ALL.ref"),
 # test those guards instead of the origin check. Reaching a late guard means satisfying every earlier one.
 drop = [e for e in es if not e.xfail and not e.stdin][:5]
 names = {e.name for e in drop}
+for f in ("ONE.sno", "ONE.out", "MULTI.md"):
+    if os.path.isfile(os.path.join(T, f)): os.remove(os.path.join(T, f))
 h.write_suite([e for e in es if e.name not in names], p, os.path.join(T, "ALL.ref"))
 PYA
 before="$(md5sum "$W/a/corpus/tests/snobol4/ALL.csv" | cut -d' ' -f1)"
@@ -112,7 +114,7 @@ echo "== B. POSITIVE: a rebuild that loses nothing must PROCEED (the guard can s
 # ⭐ The property a positive arm must show is not "a small rungs accepts pairs" but "a rebuild that LOSES
 # NOTHING proceeds". So: keep the rungs whole, add ONE genuinely new pair, expect it absorbed.
 mkscratch "$W/b"
-find "$W/b/corpus/tests/snobol4" -name '*.sno' ! -name 'ALL.sno' -delete 2>/dev/null
+find "$W/b/corpus/tests/snobol4" -name '*.sno' ! -name 'ALL.sno' ! -name 'ONE.sno' -delete 2>/dev/null
 # not-a-corpus-path: tests/snobol4/zz_gate_brandnew.sno -- a fixture this gate writes into its own mktemp copy, never read from the live tree
 # not-a-corpus-path: tests/snobol4/zz_gate_brandnew.ref -- the .ref half of the same scratch fixture
 printf '\tOUTPUT = "brandnew"\nEND\n' > "$W/b/corpus/tests/snobol4/zz_gate_brandnew.sno"
@@ -131,7 +133,7 @@ mkscratch "$W/c"
 # carries .sno files under config/ too, so a depth-1 delete left ONE pair behind, the builder correctly took
 # the COLLAPSE branch at pairs=1, and the arm reported an ORDER REGRESSION THAT DOES NOT EXIST. The fixture
 # was wrong, not the builder. Reaching "zero absorbable pairs" means every .sno but the rungs, at any depth.
-find "$W/c/corpus/tests/snobol4" -name '*.sno' ! -name 'ALL.sno' -delete 2>/dev/null
+find "$W/c/corpus/tests/snobol4" -name '*.sno' ! -name 'ALL.sno' ! -name 'ONE.sno' -delete 2>/dev/null
 out="$(S4E_HOME="$W/c" python3 "$BUILDER" --lang snobol4 2>&1)"; rc=$?
 if [ "$rc" -eq 0 ] && printf '%s' "$out" | grep -q 'RUNGS CURRENT'; then good "zero pairs over a full rungs exits 0 as RUNGS CURRENT"
 elif printf '%s' "$out" | grep -q 'COLLAPSE'; then bad "⛔ ORDER REGRESSION: zero pairs took the COLLAPSE branch — that refuses every language the moment its consolidation SUCCEEDS"
