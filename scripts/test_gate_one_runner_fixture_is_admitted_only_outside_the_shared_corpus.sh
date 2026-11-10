@@ -27,6 +27,7 @@
 #       admits B1, B3 and H's shared-corpus suite -- rc 0 -- so those three arms can red
 # FAIL-ONCE, MEASURED 2026-09-27 (coo) in a detached worktree of origin b26afab9f with this gate copied in: B1, B3, B5, P, R, H, G and
 # S red (8 of the 10 arms before F), and F refuses rc 2 because the old guard carries no block to restore; on this landing 11 of 11.
+# format-2: reads ALL.csv by name, hands the harness its ALL.sno ALL.ref name
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
@@ -36,7 +37,7 @@ G=one_runner_fixture_is_admitted_only_outside_the_shared_corpus
 unproven() { echo "GATE UNPROVEN(2) [$G]: $*"; exit 2; }
 L="$HERE/lib_one_runner.sh"; [ -f "$L" ] || unproven "no lib_one_runner.sh"
 CORPUS="$(cd "$ROOT/.." && pwd)/corpus"
-[ -f "$CORPUS/tests/snobol4/ALL.sno" ] || unproven "no shared corpus rungs at $CORPUS/tests/snobol4/ALL.sno"
+[ -f "$CORPUS/tests/snobol4/ALL.csv" ] || unproven "no shared corpus rungs at $CORPUS/tests/snobol4/ALL.csv"
 . "$L"
 one_runner_in_a_shared_checkout "$CORPUS" || unproven "$CORPUS is no checkout of $ONE_RUNNER_SHARED_CORPUS_REMOTE -- B1, B3 and H would measure nothing"
 PROBE="$ONE_RUNNER_PROBE_SEAT"

@@ -26,12 +26,13 @@
 # EXIT: 0 = all 5 materialized · 2 = REFUSE, could not materialize the full set (an incomplete witness
 # set is not a smaller witness set, it is a DIFFERENT experiment — this row has already been misled once
 # by a set whose membership was not what the reader believed).
+# format-2: through run, through extract, reads ALL.csv by name
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
 T="$ROOT/corpus/tests/snobol4"; HARNESS="$SD/../harness/scripts/corpus_suite_harness.py"
 OUT="${OUT_DIR:-$(mktemp -d)}"
 say() { printf '%s\n' "$*" >&2; }
-[ -f "$T/ALL.sno" ] && [ -f "$T/ALL.ref" ] && [ -f "$T/ALL.csv" ] || { say "⛔ REFUSE(rc=2): rungs suite triple missing under $T"; exit 2; }
+[ -f "$T/ALL.csv" ] || { say "⛔ REFUSE(rc=2): rungs index ALL.csv missing under $T"; exit 2; }
 [ -f "$HARNESS" ] || { say "⛔ REFUSE(rc=2): harness missing at $HARNESS"; exit 2; }
 mkdir -p "$OUT" || { say "⛔ REFUSE(rc=2): cannot create $OUT"; exit 2; }
 n=0
@@ -44,7 +45,9 @@ while IFS=, read -r entry family; do
     else
         say "⛔ REFUSE(rc=2): harness could not extract rungs entry '$entry' (origin $family)"; exit 2
     fi
-done < <(awk -F, 'NR>1 && $4 ~ /^probe_loose_fuzz_/ {print $2","$4}' "$T/ALL.csv")
+done < <(python3 -c 'import csv,sys
+for r in csv.DictReader(open(sys.argv[1], encoding="utf-8")):
+    if r["family"].startswith("probe_loose_fuzz_"): print(r["entry"] + "," + r["family"])' "$T/ALL.csv")
 # (b) the HELD-OUT witness that is still a loose pair (ALL.excluded.txt).  ⭐ It is not an oversight that
 # this one is a file: it is the ONLY member of the five whose distribution straddles PASS, so converting
 # it would have put a coin-flip verdict into the graded floor.  See the FINDING for the measurement.
