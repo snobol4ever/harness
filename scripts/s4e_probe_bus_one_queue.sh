@@ -65,9 +65,9 @@ case "$N" in
     k=busq2-lock-$$; row 2 "$k" @haiku FREE; baton "$k"
     ( flock 9; sleep 2; echo released > "$w/released"; ) 9>"$w/.queue.flock" & PIDS="$PIDS $!"
     for i in $(seq 1 50); do [ -e "$w/.queue.flock" ] && ! flock -n "$w/.queue.flock" true 2>/dev/null && break; sleep 0.1; done
-    out="$(bus "$O" park "$k" PARKED-PROBE)"
+    out="$(bus "$O" park "$k" PARKED)"
     [ -e "$w/released" ] || why="$why park wrote the column while another process held PO/.queue.flock (the write did not wait for the lock);"
-    [ "$(st "$k")" = PARKED-PROBE ] || why="$why the park after the lock was not written ($(st "$k"));"
+    [ "$(st "$k")" = PARKED ] || why="$why the park after the lock was not written ($(st "$k"));"
     verdict "reserve_line=file lock=.queue.flock";;
 3)  # queue, escalate and assign on the file road: the column moves, a WAKE line prints, no job id is printed and no QUEUE-JOB line is written
     q=busq3-queue-$$; e=busq3-esc-$$; a=busq3-assign-$$

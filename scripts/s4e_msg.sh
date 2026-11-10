@@ -228,6 +228,7 @@ s4e_worktree_rm_row() {   # <topic>: the bus half of the worktree rule (fleet-qu
 s4e_park_bury() {   # <topic> <state>: a park that takes a row out of the picker buries its job (step 6). A live holder of OUR claim buries it: PARK on the claim, BURIED back; the claim is cleared only after that, because a claim that vanishes releases the job to its tube. With no live holder the bus buries a ready job (bury-ready); a row with no job gets a put-buried one. rc 0 done or nothing to do (another seat's holder, a non-park state); rc 3 refused, nothing set.
     local _t="$1" _st="$2" _c="$PO/claims/$1.claim" _j="" _ok=0 _i _o _rc _tube="" _tier="" _ttr _pri _rank _id
     s4e_park_state_buries "$_st" || return 0
+    s4e_file_road && return 0   # bus-one-queue step 2 (the cio 2026-11-10): on the file road a parked row has no job to bury, puts none and writes no QUEUE-JOB line; its column is the whole fact
     if [ -f "$_c" ] && ! grep -q '^DONE$' "$_c" && [ "$(head -1 "$_c")" != "$ME" ] && grep -q '^RESERVED job=' "$_c"; then grep -q '^PARK ' "$_c" || printf 'PARK %s\n' "$_st" >> "$_c"; return 0; fi
     if [ -f "$_c" ] && ! grep -q '^DONE$' "$_c" && grep -q '^RESERVED job=' "$_c"; then
         _j="$(sed -n 's/^RESERVED job=\([0-9]*\).*/\1/p' "$_c" | tail -1)"
@@ -468,6 +469,14 @@ s4e_claim_holder_live() {   # <seat> <claim file> -> rc 0 when the claimant is A
     [ -n "$_ts" ] || return 1
     _age="$(date -u -d "$_ts" +%s 2>/dev/null)" || return 1; _now="$(date -u +%s)"
     [ $(( _now - _age )) -lt "${S4E_CLAIM_LIVE_S:-600}" ]; }
+s4e_seat_claude_pid() {   # <seat>: the pid in the seat's s4e-seat-<seat>.scope/cgroup.procs whose comm reads claude (bus-one-queue step 2, Q3); S4E_SEAT_SCOPES names the scopes' directory, else the box's seats slice; never a pgrep
+    local _d="${S4E_SEAT_SCOPES:-/sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/s4e.slice/s4e-seats.slice}" _p
+    [ -f "$_d/s4e-seat-$1.scope/cgroup.procs" ] || return 1
+    while read -r _p; do [ -n "$_p" ] && [ "$(ps -o comm= -p "$_p" 2>/dev/null)" = claude ] && { echo "$_p"; return 0; }; done < "$_d/s4e-seat-$1.scope/cgroup.procs"
+    return 1; }
+s4e_reserve_line() {   # <job> <tube>: the claim's RESERVED line; on the file road (job is the word file) RESERVED file tube=<tube> session=<SESSION> pid=<pid> <ts> (bus-one-queue step 2)
+    if [ "$1" = file ]; then printf 'RESERVED file tube=%s session=%s pid=%s %s\n' "$2" "$(s4e_session_name_of "$ME")" "$(s4e_seat_claude_pid "$ME")" "$(date -u +%FT%TZ)"
+    else printf 'RESERVED job=%s tube=%s %s\n' "$1" "$2" "$(date -u +%FT%TZ)"; fi; }
 s4e_take_refused() { : > "$PO/claims/$1.claim.release.$2" 2>/dev/null; return 1; }   # <topic> <job>: a take that refuses before its claim tells the holder to release now (util_queue.py reserve-hold reads <topic>.claim.release.<job>)
 s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (fleet-queue step 4); writes the claim file and the row state, nothing else
     local _t="$1" _c="$PO/claims/$1.claim"
@@ -514,10 +523,10 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
         fi
       else
         grep -q '^DONE$' "$_c" && { echo "⛔ $_t reads DONE on its claim; the holder deletes the job" >&2; return 1; }
-        printf 'RESERVED job=%s tube=%s %s\n' "$2" "$3" "$(date -u +%FT%TZ)" >> "$_c"; return 0
+        s4e_reserve_line "$2" "$3" >> "$_c"; return 0
       fi
     fi
-    ( set -o noclobber; printf '%s\nRESERVED job=%s tube=%s %s\n' "$ME" "$2" "$3" "$(date -u +%FT%TZ)" > "$_c" ) 2>/dev/null || { echo "⛔ $_t was claimed in the race ($(head -1 "$_c" 2>/dev/null)); the job is released" >&2; return 1; }
+    ( set -o noclobber; { printf '%s\n' "$ME"; s4e_reserve_line "$2" "$3"; } > "$_c" ) 2>/dev/null || { echo "⛔ $_t was claimed in the race ($(head -1 "$_c" 2>/dev/null)); the job is released" >&2; return 1; }
     s4e_set_row_state "$_t" "CLAIMED:$ME" || true; return 0; }
 # THE HEAD WHOSE PREMISE READ RED (the cio's cut, 2026-11-07; row bus-next-stops-at-a-reserved-job-whose-premise-is-red-and-serves-nothing-behind-it).
 # Before this, a reserved head whose PREMISE-WHEN read RED was released by its holder and next stopped, so the job behind it was never served.
@@ -3308,6 +3317,10 @@ s4e_set_row_state() {   # <topic> <state>  -- no-op (rc 1) when the topic has no
   # vocabulary check here would instead risk refusing a legitimate value some future verb computes.
   case "$_s" in *$'\t'*|*$'\n'*) printf '⛔ REFUSED: state for %s contains a tab/newline; that would tear the QUEUE.tsv row. Not written.\n' "$_t" >&2; return 1;; esac
   grep -qP "^[0-9]+\t\Q$_t\E\t" "$_q" 2>/dev/null || return 1
+  # bus-one-queue step 2 (Q2): the read and the one write of the column hold PO/.queue.flock (flock -w 10); a caller that already holds it (S4E_QFLOCK_HELD=1) does not take it twice
+  if [ "${S4E_QFLOCK_HELD:-0}" != 1 ]; then
+    ( exec 8>>"$PO/.queue.flock" && flock -w 10 8 || { printf '⚠ QUEUE.tsv state column NOT updated for %s (PO/.queue.flock busy 10 s).\n' "$_t" >&2; exit 1; }; S4E_QFLOCK_HELD=1 s4e_set_row_state "$_t" "$_s" ); return $?
+  fi
   for _i in $(seq 1 20); do mkdir "$_lk" 2>/dev/null && { _got=1; break; }; sleep 0.1; done
   [ "$_got" = 1 ] || { printf '⚠ QUEUE.tsv state column NOT updated for %s (lock busy 2s). The CLAIM is the authority and dispatch is unaffected; only its readable twin is stale.\n' "$_t" >&2; return 1; }
   _tmp="$(mktemp)"
@@ -3887,6 +3900,7 @@ case "$cmd" in
                 # outlive the episode it describes. ⛔ ONLY RESTRICTED is remembered: an ASSIGNED dispatch really is
                 # spent on release and must NOT be restored (that is the officer's 2026-08-28 ruling, still governing).
                 { _pre="$(s4e_row_state "$topic")"; if s4e_restricted_to "$_pre" >/dev/null; then printf 'PRIOR-STATE %s\n' "$_pre" >> "$c"; fi; }
+                case "$_pre" in QUEUED:?*) s4e_file_road && s4e_reserve_line file "${_pre#QUEUED:}" >> "$c";; esac   # bus-one-queue step 2: a claim of a QUEUED row on the file road is its reserve
                 s4e_set_row_state "$topic" "CLAIMED:$ME" || true
                 echo "claimed $topic"
                 # ⛔⭐ THE ANNOUNCEMENT IS PART OF TAKING THE ROW (R-1002). `next` reaches its lock through this
