@@ -85,7 +85,7 @@ inenum && /^\} /  {inenum=0}
 inenum {
   line=$0; gsub(/\/\*.*$/,"",line); gsub(/^[ \t]+/,"",line); gsub(/,.*/,"",line);
   if (line ~ /^IR_[A-Za-z0-9_]+$/) { print n" "line; n++ }
-}' "$IRH" > "$OPTAB"
+}' <(tr ',' '\n' < "$IRH") > "$OPTAB"   # ir_node.h packs several IR names per line since the enum reflow: split on commas before the awk, or IR_MATCH_ARBNO is lost and the census refuses
 ARBNO_OP=$(awk '$2=="IR_MATCH_ARBNO"{print $1}' "$OPTAB")
 FENCE1_OP=$(awk '$2=="IR_MATCH_FENCE1"{print $1}' "$OPTAB")
 IMM_OP=$(awk '$2=="IR_MATCH_ASSIGN_IMM"{print $1}' "$OPTAB")
