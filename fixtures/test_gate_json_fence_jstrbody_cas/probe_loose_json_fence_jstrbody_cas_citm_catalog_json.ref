@@ -1,0 +1,10 @@
+input bytes=1727204
+root=jobj
+objects=10937
+arrays=10451
+strings=735
+integers=14392
+reals=0
+booleans=0
+nulls=1263
+maxdepth=8

@@ -20,7 +20,7 @@ DEMO="${DEMO:-$S4E/corpus/demos/snobol4/json}"
 # ⭐ RE-POINTED 2026-08-30 (seat12, repo-wide dead-suite-path consumer sweep): corpus/probe/ was
 # deleted wholesale (corpus-crosscheck-probe-total-conversion); these two .ref files are part of the
 # un-absorbable residue and now live as flat probe_loose_-prefixed files directly under tests/snobol4/.
-PROBE="${PROBE:-$S4E/corpus/tests/snobol4}"
+PROBE="${PROBE:-$S4E/harness/fixtures/test_gate_json_fence_jstrbody_cas}"   # moved from corpus/tests/snobol4 (the coo 2026-11-10, CIO-36: the folder is its container and config alone)
 JFJC_JSON_REF="probe_loose_json_fence_jstrbody_cas_citm_catalog_json.ref"
 JFJC_MF_REF="probe_loose_json_fence_jstrbody_cas_citm_catalog_match_fence.ref"
 # ⛔ EACH WORKLOAD RUNS AT THE STACK AND HEAP IT DECLARES (clause 8 (f); the coo 2026-10-01, the officer's yes to the instrument row): the
