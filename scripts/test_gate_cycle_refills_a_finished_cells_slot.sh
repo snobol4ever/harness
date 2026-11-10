@@ -4,7 +4,8 @@
 # A scratch home holds a planted runner table of five one-cell suites (s1 sleeps 20 s, s2..s5 sleep 1 s) and stand-ins for every outside call the cycle
 # makes (sync, make, budget, run slot, the harness, the score row); the real harness/scripts/s4e_cycle.sh beside this gate runs over it at width 2 with
 # S4E_CYCLE_PROG and S4E_CYCLE_TMP scratch. GREEN: the four short cells' CELL lines come before the long one's, and the fifth CELL line is written under
-# 25 s after the lap starts (a barrier logs s1 first: the batch is logged in index order after its slowest cell). The live progress dir is never written.
+# 25 s after the lap starts (a barrier logs s1 first: the batch is logged in index order after its slowest cell). No live store is read or written:
+# the progress dir, the request folder, the postoffice and the results table are all scratch.
 # rc 0 GREEN, rc 1 RED, rc 2 could not measure.
 set -u
 G=test_gate_cycle_refills_a_finished_cells_slot
@@ -27,7 +28,8 @@ printf 'import sys\nprint("BUDGET ttr_s=120")\n' > "$H/harness/scripts/util_grad
 printf 'import sys\n' > "$H/harness/scripts/util_score_row.py"
 printf 'import sys, time\ntime.sleep(20 if "/pkg/s1/" in sys.argv[2] else 1)\nsys.exit(0)\n' > "$H/harness/scripts/corpus_suite_harness.py"
 t0=$(date +%s)
-setsid env S4E_HOME="$H" S4E_CYCLE_PROG="$w/prog" S4E_CYCLE_TMP="$w/tmp" S4E_CYCLE_WIDTH=2 bash "$CYC" > "$w/cycle.out" 2>&1 < /dev/null & cpid=$!
+mkdir -p "$w/rq" "$w/po"; : > "$w/results.tsv"   # every live store the cycle reads or writes is scratch: the request folder, the postoffice, the results table (2026-11-10: without them this gate's scratch cycle served the five live requests as refusals)
+setsid env S4E_HOME="$H" S4E_CYCLE_PROG="$w/prog" S4E_CYCLE_TMP="$w/tmp" S4E_CYCLE_WIDTH=2 S4E_TEST_REQUEST_DIR="$w/rq" S4E_POST="$w/po" S4E_RESULTS="$w/results.tsv" bash "$CYC" > "$w/cycle.out" 2>&1 < /dev/null & cpid=$!
 n=0; for i in $(seq 1 90); do n=$(grep -c ' CELL lap=1 ' "$w/prog/CYCLE.log" 2>/dev/null); [ "${n:-0}" -ge 5 ] && break; sleep 0.5; done
 el=$(( $(date +%s) - t0 ))
 kill -- -"$cpid" 2>/dev/null; wait "$cpid" 2>/dev/null; cpid=""
