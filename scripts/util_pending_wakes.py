@@ -5,7 +5,7 @@
 A Claude session has no inbound event but a SendMessage from another session, and no script may forge one (a cross-session message to a session in
 another permission mode waits for its user's approval; a raw socket write would bypass that hold). So the wake stays a SendMessage, sent by the coo
 each tick from ONE list this command prints; the rung move it decides itself.
-  READS   the bus tubes (util_queue.py tubes: seat-*, tier-*, ask-* only), each ready tube's head (peek: age, topic); TIERS.tsv (seat, name,
+  READS   the queue file's tubes (QUEUE.tsv rows QUEUED:seat-*, tier-*, ask-* only), each tube's head (lowest rank, then oldest mint stamp: age, topic); TIERS.tsv (seat, name,
           tier, role); the live set (a seat whose s4e-seat-<seat>.scope holds a claude process; --live a,b,c names it instead); the claims
           (a seat holding a claim with a RESERVED job= line and no DONE is busy); MODE's BOSSES: and ON-CALL: lines.
   PRINTS  WAKE <SESSION> seat=<s> tube=<t> ready=N oldest=Ns [overdue]   one per ready job, to an idle live taker:
@@ -22,10 +22,10 @@ each tick from ONE list this command prints; the rung move it decides itself.
   --probe  plants tubes, tiers, claims and a live set in a scratch dir and prints WAKE_PROBE; rc 0 only when it reads as designed.
 rc 0 read; 2 REFUSE (no tiers table, the queue unreachable). Read-only without --apply.
 """
-import os, re, subprocess, sys, tempfile, shutil
+import os, re, subprocess, sys, tempfile, shutil, time, calendar
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
-PO = os.environ.get("S4E_POST", "/home/resources/postoffice"); UQ = os.path.join(HERE, "util_queue.py")
+PO = os.environ.get("S4E_POST", "/home/resources/postoffice")
 LIMIT_S = 1800
 TIER_NAME = {"1": "fable", "2": "opus", "3": "sonnet", "4": "haiku"}
 CG = "/sys/fs/cgroup/user.slice/user-%d.slice/user@%d.service/s4e.slice/s4e-seats.slice" % (os.getuid(), os.getuid())
@@ -77,20 +77,31 @@ def busy(claims):
         if not f.endswith(".claim"): continue
         try: ls = open(os.path.join(claims, f), encoding="utf-8", errors="replace").read().split("\n")
         except OSError: continue
-        if ls[0].strip() and not any(l.strip() == "DONE" for l in ls) and any(l.startswith("RESERVED job=") for l in ls): b.add(ls[0].strip())
+        if ls[0].strip() and not any(l.strip() == "DONE" for l in ls) and any(l.startswith("RESERVED ") for l in ls): b.add(ls[0].strip())
     return b
 
 
-def live_tubes():
-    p = subprocess.run([sys.executable, UQ, "tubes"], capture_output=True, text=True, timeout=60)
-    if p.returncode != 0: refuse("util_queue.py tubes failed: %s" % (p.stdout + p.stderr).strip()[:200])
+def mint_age(topic, now):   # the age of a row's mint stamp: the first ISO stamp of its baton's LINKS line, as s4e_mint_ts reads it; 0 when there is none
+    try: links = next((l for l in open(os.path.join(PO, "tasks", topic + ".task.md")) if l.startswith("LINKS:")), "")
+    except OSError: return 0
+    m = re.search(r"(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)", links)
+    if not m: return 0
+    return max(0, int(now - calendar.timegm(time.strptime(m.group(1), "%Y-%m-%dT%H:%M:%SZ"))))
+
+
+def live_tubes():   # bus-one-queue: the tubes are the distinct T of a column QUEUED:T in QUEUE.tsv; ready is the count of such rows; the head is the lowest rank, then the oldest mint stamp
+    try: rows = [l.rstrip("\n").split("\t") for l in open(os.path.join(PO, "QUEUE.tsv")) if l[:1].isdigit()]
+    except OSError as e: refuse("QUEUE.tsv unreadable: %s" % e)
+    now = time.time(); by = {}
+    for r in rows:
+        if len(r) < 4 or not r[3].startswith("QUEUED:"): continue
+        tube = r[3][len("QUEUED:"):]
+        if not re.match(r"^(seat|tier|ask)-", tube): continue
+        by.setdefault(tube, []).append((int(r[0]), -mint_age(r[1], now), r[1]))
     out = []
-    for l in p.stdout.splitlines():
-        c = l.split("\t")
-        if len(c) < 2 or not re.match(r"^(seat|tier|ask)-", c[0]) or not c[1].isdigit() or int(c[1]) == 0: continue
-        pk = subprocess.run([sys.executable, UQ, "peek", c[0]], capture_output=True, text=True, timeout=60).stdout.rstrip("\n").split("\t")
-        age = int(pk[3]) if len(pk) > 4 and pk[3].isdigit() else 0
-        out.append((c[0], int(c[1]), age, pk[4] if len(pk) > 4 else ""))
+    for tube in sorted(by):
+        h = sorted(by[tube])[0]
+        out.append((tube, len(by[tube]), -h[1], h[2]))
     return out
 
 

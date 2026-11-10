@@ -7,14 +7,11 @@
 #   --regenerate      rewrite QUEUE.tsv (header lines kept) and QUEUE.tsv.sig (sha256 of the body); prints VIEW rows=N tubes=M
 #   --check           VIEW rows=N tubes=M age_s=S hand_edits=0|1 generated=1|0  (age_s since the last regeneration; hand_edits=1 when the file differs
 #                     from its signature, i.e. something other than this tool wrote it last); rc 0 only when hand_edits=0 and generated=1
-import os, re, sys, time, hashlib, glob, importlib.util
+import os, re, sys, time, hashlib, glob
 PO = os.environ.get("S4E_POST", "/home/resources/postoffice"); S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 Q = os.path.join(PO, "QUEUE.tsv"); SIG = Q + ".sig"; TASKS = os.path.join(PO, "tasks"); LOCK = os.path.join(PO, ".mint.lock")
 HEAD = re.compile(r"^(RANK|OWNER|STATE|QUEUE-JOB|LINKS): ?(.*)$", re.M)
-def queue_client():
-    spec = importlib.util.spec_from_file_location("util_queue", os.path.join(S4E, "harness", "scripts", "util_queue.py")); m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
-    try: return m.client()
-    except SystemExit: return None, None
+def tubes_of(states): return set(s[len("QUEUED:"):] for s in states if s.startswith("QUEUED:") and len(s) > len("QUEUED:"))   # bus-one-queue: the tubes are the distinct T of a column QUEUED:T
 def body_hash(text): return hashlib.sha256(text.encode()).hexdigest()
 def read_queue():
     header, rows = [], {}
@@ -53,7 +50,7 @@ def claim_holder(topic):
     try: return open(os.path.join(PO, "claims", topic + ".claim")).readline().strip()
     except OSError: return ""
 def regenerate():
-    gs, c = queue_client(); header, old = read_queue(); out = []; healed = 0; adopted = 0; tubes = set()
+    header, old = read_queue(); out = []; healed = 0; adopted = 0
     try: closed = set(l.split("\t")[1] for l in open(os.path.join(PO, "QUEUE.done.tsv")) if not l.startswith("#") and l.count("\t") >= 3)
     except OSError: closed = set()   # fleet-control step 9b (the cio, 2026-11-07 14:3x): QUEUE.done.tsv is the memory; a topic in it is closed whatever its baton or claim says
     # AN UNSIGNED QUEUE.tsv WAS WRITTEN BY SOMETHING ELSE SINCE THE LAST REGENERATION (a seat on an older bus writes the row, not the baton): for every row
@@ -87,15 +84,6 @@ def regenerate():
                 except OSError: have = False
                 if not have: open(rq, "a").write("%d\t%s\t%s\t%s\n" % (rank, topic, owner, state))
             continue
-        m = re.match(r"^(\d+) tube=(\S+)", d.get("QUEUE-JOB", ""))
-        if m and c is not None:
-            try:
-                st = c.stats_job(int(m.group(1))); tubes.add(st["tube"]); js = st["state"]
-                if js == "reserved":
-                    h = claim_holder(topic)
-                    if h and not re.match(r"^(CLAIMED|RUNNING|MEASURING|ASSIGNED):", state): state = "CLAIMED:" + h
-                elif js in ("ready", "delayed") and re.match(r"^(CLAIMED|RUNNING):", state) and claim_reserved(topic): state = "QUEUED:" + st["tube"]   # the lease expired: the claim says RESERVED, the job is back
-            except gs.NotFoundError: pass
         out.append((rank, mint_ts(d), topic, owner, state))
     out.sort(key=lambda r: (r[0], r[1] and -int(r[1].replace("-", "").replace("T", "").replace(":", "").rstrip("Z")) or 0, r[2]))
     body = "".join("%d\t%s\t%s\t%s\n" % (r[0], r[2], r[3], r[4]) for r in out)
@@ -110,7 +98,7 @@ def regenerate():
         if got:
             try: os.rmdir(LOCK)
             except OSError: pass
-    if c is not None: c.close()
+    tubes = tubes_of(r[4] for r in out)
     print("VIEW rows=%d tubes=%d healed=%d adopted=%d signed_before=%d lock=%d" % (len(out), len(tubes), healed, adopted, int(signed), int(got))); return 0
 def check():
     try: sig = open(SIG).read().strip(); age = int(time.time() - os.stat(SIG).st_mtime); gen = 1
@@ -118,10 +106,7 @@ def check():
     try: text = open(Q).read()
     except OSError: text = ""
     hand = 0 if (gen and body_hash(text) == sig) else 1
-    header, rows = read_queue(); tubes = 0; gs, c = queue_client()
-    if c is not None:
-        try: tubes = len(c.tubes())
-        finally: c.close()
+    header, rows = read_queue(); tubes = len(tubes_of(v[2] for v in rows.values()))
     print("VIEW rows=%d tubes=%d age_s=%d hand_edits=%d generated=%d" % (len(rows), tubes, age, hand, gen)); return 0 if (hand == 0 and gen == 1) else 1
 def probe_retire():
     """--probe-retire: on a scratch postoffice (S4E_POST, never the live one) two rows, one FREE and one SUPERSEDED:x, each with a baton; after --regenerate the

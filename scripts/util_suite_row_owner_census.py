@@ -111,7 +111,7 @@ if n == 0: refuse("%s holds no SCRIP row" % SUITES)
 print("SUITE_OWNER_BOARD suites=%d below_100=%d owned=%d held_by_lon=%d unowned=%d ports_skipped=%d" % (n, below, owned, held, len(reds), ports))
 for x in reds: print(x)
 # THE SEAT ARM (the cio, fleet-queue, 2026-11-07, on COO-481 and THE LADDER: a senior starts no task and serves escalations only; a worker holds only the job the queue serves it).
-# It reads three things: the TIERS table (tier 4 is a worker, tiers 1-3 are seniors), the claims (a seat holds a job when a claim file's first line is the seat and it has a RESERVED job= line and no DONE) and the tube stats (tier-haiku, every seat-<worker> tube, and ask-<tier> and tier-<tier> of tiers 1-3).
+# It reads three things: the TIERS table (tier 4 is a worker, tiers 1-3 are seniors), the claims (a seat holds a job when a claim file's first line is the seat and it has a RESERVED line and no DONE) and the tube counts of the queue file (tier-haiku, every seat-<worker> tube, and ask-<tier> and tier-<tier> of tiers 1-3).
 #   STARVED       a worker to wake: an idle worker whose own seat tube holds a ready job, then one idle worker per ready tier-haiku job, its job waiting. RED, one line per starved worker.
 #   DRY           idle workers minus ready tier-haiku jobs, when positive: the designers owe that many cut jobs. RED, printed DRY owed=N by cio,cto.
 #   OVERDUE       an ask-<tier> or tier-<tier> job of tiers 1-3 ready longer than 1800 s (the escalation timeout, fleet-queue 9). RED, one line per overdue tube.
@@ -122,7 +122,7 @@ import subprocess
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TIERS = arg("--tiers", os.path.join(ROOT, ".github", "TIERS.tsv")); CLAIMS = arg("--claims", "/home/resources/postoffice/claims"); TUBES = arg("--tubes", None)
 SLEEPING = arg("--sleeping", "/home/claude_coo/.scratch/verifier/sleeping")
-OVERDUE_S = 1800; UQ = os.path.join(os.path.dirname(os.path.abspath(__file__)), "util_queue.py")
+OVERDUE_S = 1800
 def table(path, need):
     try: rows = [l.rstrip("\n").split("\t") for l in open(path, encoding="utf-8") if l.strip() and not l.startswith("#")]
     except OSError as e: refuse("%s unreadable: %s" % (path, e))
@@ -130,14 +130,20 @@ def table(path, need):
     for col in need:
         if col not in rows[0]: refuse("%s has no %s column" % (path, col))
     return [dict(zip(rows[0], r)) for r in rows[1:] if r and r[0]]
-def live_tube(name, need_age):
-    out = subprocess.run([sys.executable, UQ, "stats-tube", name], capture_output=True, text=True, timeout=60).stdout
-    m = re.search(r"ready=(\d+)", out)
-    if m is None: refuse("util_queue.py stats-tube %s printed no ready count: %s" % (name, out.strip()))
-    ready, age = int(m.group(1)), 0
+def live_tube(name, need_age):   # bus-one-queue: a tube's ready count is its QUEUED:<tube> rows of the queue file; its head is the lowest rank, then the oldest mint stamp (the baton's LINKS line); the age is now less that stamp
+    import time, calendar
+    try: rows = [l.rstrip("\n").split("\t") for l in open(QUEUE, encoding="utf-8") if l[:1].isdigit()]
+    except OSError as e: refuse("%s unreadable: %s" % (QUEUE, e))
+    mine = [r for r in rows if len(r) >= 4 and r[3] == "QUEUED:" + name]
+    ready, age = len(mine), 0
     if ready and need_age:
-        pk = subprocess.run([sys.executable, UQ, "peek", name], capture_output=True, text=True, timeout=60).stdout.split("\t")
-        if len(pk) > 3 and pk[3].strip().isdigit(): age = int(pk[3])
+        def stamp(topic):
+            try: links = next((l for l in open(os.path.join(TASKS, topic + ".task.md"), encoding="utf-8") if l.startswith("LINKS:")), "")
+            except OSError: return None
+            m = re.search(r"(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)", links)
+            return calendar.timegm(time.strptime(m.group(1), "%Y-%m-%dT%H:%M:%SZ")) if m else None
+        head = sorted(mine, key=lambda r: (int(r[0]), stamp(r[1]) or float("inf")))[0]
+        st = stamp(head[1]); age = max(0, int(time.time() - st)) if st else 0
     return ready, age
 def tsv_tube(path):
     rows = {r["tube"]: (int(r["ready"]), int(r["oldest_ready_age_s"])) for r in table(path, ("tube", "ready", "oldest_ready_age_s"))}
@@ -150,7 +156,7 @@ def holdings(d):
         try: lines = open(os.path.join(d, f), encoding="utf-8", errors="replace").read().split("\n")
         except OSError: continue
         if not lines[0].strip() or any(l.startswith("DONE") for l in lines): continue
-        if any(l.startswith("RESERVED job=") for l in lines): held.setdefault(lines[0].strip(), []).append(f)
+        if any(l.startswith("RESERVED ") for l in lines): held.setdefault(lines[0].strip(), []).append(f)
     return held
 def sleepers(path):
     if not os.path.exists(path): return set()
