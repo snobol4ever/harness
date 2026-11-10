@@ -3139,7 +3139,7 @@ def _copy_companions(text, companion_dir, dest_dir):
 def stage_entry(entry, td, ext=".sno", companion_dir=None):
     """THE ONE WRITER OF AN ENTRY'S PROGRAM (split out of run_suite_entry 2026-11-05 for the expect census, so the oracle and SCRIP read
     the same bytes): the program file in td (its prelude, its companions, its argv files beside it); returns (path, expected text)."""
-    cand = Path(td) / f"{entry.name}{ext}"
+    cand = Path(td) / (getattr(entry, "stage_name", None) or f"{entry.name}{ext}")
     if getattr(entry, 'stage_upstream', False) and companion_dir:
         _sd = stage_upstream(companion_dir, entry.name, Path(td) / "u", ext)
         if _sd is None:
@@ -5899,7 +5899,7 @@ def read_command_line_columns(src_path, entries, modes=None):
     import csv as _csvm
     with open(csv_path, newline="") as f:
         rdr = _csvm.DictReader(f)
-        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s", "grader", "cwd") if rdr.fieldnames and c in rdr.fieldnames]
+        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s", "grader", "cwd", "stage_name") if rdr.fieldnames and c in rdr.fieldnames]
         if not cols:
             return
         rows = [(n, r) for n, r in enumerate(rdr, 2)]
@@ -5939,6 +5939,14 @@ def read_command_line_columns(src_path, entries, modes=None):
             if _gr not in ("swi-cases", "logtalk-cases", "text"):
                 refuse(f"{where}: grader {_gr!r} is not swi-cases, logtalk-cases or text (or empty)")
             e.grader = _gr
+        _sn = (row.get("stage_name") or "").strip()
+        if _sn:
+            # ⭐ THE NAME THE ANSWER WAS CUT UNDER (CIO-36, the coo 2026-11-10; measured: 23 of the 60 programs admitted to the SnoRungs master read red
+            # because each answer names its own file, a fatal "x.sno(3) : ERROR ..." or &FILE, and the entry was staged as <entry>.sno): the program
+            # is written under this bare file name, in both modes, so the file it reports is the file its answer was cut from.
+            if "/" in _sn or _sn.startswith(".") or _sn.startswith("ALL."):
+                refuse(f"{where}: stage_name {_sn!r} must be a bare file name (no /, not hidden, not ALL.*)")
+            e.stage_name = _sn
         _cw = (row.get("cwd") or "").strip()
         if _cw:
             if _cw.startswith("/") or ".." in _cw.split("/"):

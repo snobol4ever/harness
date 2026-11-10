@@ -79,7 +79,17 @@ DEFAULT_HEAP_KB = str(h.GC_HEAP_CAP_KB)
 DEFAULT_STACK_KB = str(h.GC_STACK_FLOOR_KB)
 # the unit's command line (RULES.md hard-cap rule clause 8 (f), R-1281): carried forward like heap_kb, never re-derived --
 # nothing in an entry's text says what switches its compile needs or what arguments its run takes
-CMD_COLS = ("compile_args", "run_args")
+CMD_COLS = ("compile_args", "run_args", "stage_name")   # stage_name (the coo 2026-11-10, CIO-36): the bare file name the harness writes an entry's program as, the
+# name its answer was cut under; carried like the command line, set by the additive road when the answer names its own file (_stage_name_for)
+
+
+def _stage_name_for(entry_name, origin, ref_lines, ext):
+    """The file name an entry is staged under when its answer names its own source file (a fatal "x.sno(3) : ERROR ...", &FILE): the origin's
+    last component plus the extension, when that differs from the entry's own name; else empty (staged as <entry><ext>, as always)."""
+    stem = (origin or "").split("__")[-1]
+    if not stem or stem == entry_name:
+        return ""
+    return stem + ext if (stem + ext) in "\n".join(ref_lines if isinstance(ref_lines, (list, tuple)) else [str(ref_lines)]) else ""
 
 
 def carried_cmd_cols(csv_path):
@@ -1545,7 +1555,8 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
                 fam = origin.split("__", 1)[0]
                 w.writerow([rank, e.name, origin, fam, e.kind, int(bool(e.xfail)), len(e.sno_lines),
                             ((old_row.get("heap_kb") or "").strip() or DEFAULT_HEAP_KB), ((old_row.get("stack_kb") or "").strip() or DEFAULT_STACK_KB)]
-                           + [(old_row.get(c) or "").strip() for c in cmd_cols]
+                           + [((old_row.get(c) or "").strip() or (_stage_name_for(e.name, origin, e.ref, os.path.splitext(rungs_sno)[1]) if c == "stage_name" else ""))
+                              for c in cmd_cols]
                            + [flags_e[c] for c, _ in cols])
     except BaseException:
         for q in (tmp_sno, tmp_ref, tmp_csv, tmp_in):

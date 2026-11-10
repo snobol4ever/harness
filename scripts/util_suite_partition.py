@@ -28,7 +28,8 @@ THE PARTITION (deterministic: the same table gives the same file byte for byte):
 import csv, os, sys, collections, io
 
 FIXED = {"rank", "entry", "origin", "family", "kind", "xfail", "n_lines", "heap_kb", "stack_kb", "timeout_s", "compile_args", "run_args", "modes", "dialect",
-         "wantrc", "mask", "heap", "stack", "oracle_env", "oracle_args", "argv", "stdin", "ref", "tier", "note", "status", "reason", "class", "out_files", "stderr", "mode_gap_s"}
+         "wantrc", "mask", "heap", "stack", "oracle_env", "oracle_args", "argv", "stdin", "ref", "tier", "note", "status", "reason", "class", "out_files", "stderr", "mode_gap_s",
+         "stage_name"}   # stage_name (the coo 2026-11-10): the file name an entry is staged under, an attribute, not a feature
 MARKED_NO = {"", "0", "-", "no", "false", "n"}
 
 
