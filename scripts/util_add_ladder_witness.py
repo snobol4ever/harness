@@ -206,11 +206,13 @@ def derive_flags(sno_lines):
     return f
 
 
-def run_oracle_twice(oracle_argv, src_path, timeout=8, stdin_text=None, prog_args=()):
+def run_oracle_twice(oracle_argv, src_path, timeout=8, stdin_text=None, prog_args=(), bare=False):
+    """bare: run the oracle on the file's bare name from its own folder, so an answer that names its file names the file the entry is staged as."""
     outs, rcs = [], []
+    _arg, _cwd = (Path(src_path).name, str(Path(src_path).resolve().parent)) if bare else (str(src_path), None)
     for _ in range(2):
         try:
-            p = subprocess.run(list(oracle_argv) + [str(src_path)] + list(prog_args), stdin=subprocess.DEVNULL if stdin_text is None else None,
+            p = subprocess.run(list(oracle_argv) + [_arg] + list(prog_args), cwd=_cwd, stdin=subprocess.DEVNULL if stdin_text is None else None,
                                 input=None if stdin_text is None else stdin_text.encode("utf-8"), capture_output=True, timeout=timeout)
         except subprocess.TimeoutExpired:
             refuse("oracle timed out on %s -- not a witness candidate" % src_path)
@@ -226,7 +228,7 @@ def run_oracle_twice(oracle_argv, src_path, timeout=8, stdin_text=None, prog_arg
     # once more with a non-empty stdin and refuse if the answer moves. A witness whose answer depends on
     # stdin belongs to a landing that also writes the sidecar; refusing here is the honest half of that.
     try:
-        p3 = subprocess.run(list(oracle_argv) + [str(src_path)] + list(prog_args), input=b"stdin-probe\n",
+        p3 = subprocess.run(list(oracle_argv) + [_arg] + list(prog_args), cwd=_cwd, input=b"stdin-probe\n",
                             capture_output=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         refuse("oracle timed out on %s under the stdin-sensitivity probe" % src_path)
@@ -366,6 +368,8 @@ def main():
                     ".argv into run_args, .in, .input or .stdin as its stdin) and <stem>.ref is its --expect")
     ap.add_argument("--expect", default="", help="the loose answer: the oracle is still cut twice, and a fresh cut that differs from it REFUSES, naming both")
     ap.add_argument("--accept-fresh", default="", help="one line naming WHY a fresh cut that differs from --expect is the answer (the stale loose answer is then replaced, named)")
+    ap.add_argument("--stage-as-cut", action="store_true", help="CIO-36: the entry is staged under its source's bare file name (ALL.csv stage_name) and the oracle "
+                    "is cut on that bare name from the source's folder, for a program whose answer names its own file (&FILE, a fatal 'x.sno(3) : ERROR')")
     ap.add_argument("--from-dir", default="", help="the batch form: every program of the language in DIR with a <stem>.ref beside it, each by --from under --family, all refused before any is written")
     ap.add_argument("--oracle-twin", default="",
                     help="path to the SPITBOL twin whose output IS the ref (required for --lang snocone, "
@@ -527,7 +531,7 @@ def main():
                 cfg["comment_open"], args.twin_equivalence.strip(), cfg["comment_close"])
             sno_lines = [note] + sno_lines
             sno_text = "\n".join(sno_lines) + "\n"
-    ref_text, want_rc = run_oracle_twice(oracle_argv, twin_path if twin_path is not None else src_path, stdin_text=stdin_text, prog_args=prog_args)
+    ref_text, want_rc = run_oracle_twice(oracle_argv, twin_path if twin_path is not None else src_path, stdin_text=stdin_text, prog_args=prog_args, bare=args.stage_as_cut)
     ref_lines = csh._lf_lines(ref_text)
     if args.expect:
         _ex = Path(args.expect)
@@ -646,6 +650,10 @@ def main():
                "kind": "block", "xfail": "0", "n_lines": str(len(sno_lines))}
     for k in flag_order:
         new_row[k] = str(flags[k])
+    if args.stage_as_cut:
+        if "stage_name" not in fields:
+            refuse("--stage-as-cut: %s has no stage_name column (harness f77838edd adds it to the snobol4 master)" % rungs_csv)
+        new_row["stage_name"] = src_path.name
     attrs = ladder_convention(rows, fields, {c: getattr(args, "attr_" + c) for c in ATTR_COLUMNS})
     new_row.update(attrs)
 
