@@ -2608,7 +2608,7 @@ def read_block_suite(src_path, ref_path, banner_re, in_path=None, x_path=None, w
 
 
 # ================================================ FORMAT 2: ONE AND MULTI (CIO-24 f, CIO-25, CIO-34) ===
-# ⭐ A CONTAINER DIRECTORY IN FORMAT 2 holds ONE.EXT and ONE.stdout (line N of each is the Nth ALL.csv row whose group is one), MULTI.md
+# ⭐ A CONTAINER DIRECTORY IN FORMAT 2 holds ONE.EXT and ONE.out (line N of each is the Nth ALL.csv row whose group is one), MULTI.md
 # (one section a multi row, in index order: a heading of two hashes and the entry name, then fences tagged with the language, args, stdin,
 # stdout, stderr, each optional, an absent one meaning empty) and ALL.csv with three columns after entry: group (one or multi), road
 # (direct or staged) and nonl (the space-separated parts whose last line has no LF). THE BYTES were agreed by officer_01 (the SCRIP
@@ -2656,7 +2656,8 @@ def fmt2_road(e, container_dir, ext):
     """direct or staged (CIO-27 (4), agreed A3 note): staged when the entry's process needs more than its one source file in a fresh
     directory: a slash in its name, a cwd, an upstream stage, out_files, a temp answer file, a grader, the container's prelude, or a
     companion file stage_entry copies beside it. compile_args, arguments, masks and compare rules do not stage: the switch passes the
-    first two and the post step applies the rest."""
+    first two and the post step applies the rest. An index row naming a stage_name (the coo's column, the file name the answer was cut
+    under) is staged by write_container_dir: the switches write the program as the entry's own last name component."""
     if ("/" in e.name or getattr(e, "cwd", None) or getattr(e, "stage_upstream", False) or getattr(e, "out_files", None)
             or getattr(e, "answer_file", None) or getattr(e, "grader", None) or (Path(container_dir) / "ALL.prelude").is_file()):
         return "staged"
@@ -2716,7 +2717,7 @@ def _fmt2_write_csv(d, fields, rows):
 
 
 def write_container_dir(entries, d, ext, road_of=None):
-    """THE FORMAT-2 WRITER: ONE.EXT, ONE.stdout and MULTI.md from ENTRIES, and ALL.csv's group, road and nonl columns rewritten for
+    """THE FORMAT-2 WRITER: ONE.EXT, ONE.out and MULTI.md from ENTRIES, and ALL.csv's group, road and nonl columns rewritten for
     every row (inserted after entry), its rows in ENTRIES' order, run_args emptied into the args fence (agreed A2). Refuses before
     writing on an XFAIL entry (no XFAIL, CEO-1696), an entry with no ALL.csv row or a row with no entry, a name holding a newline, two
     names one OUT name (A3). A group with no entry has no file. Returns {"one": n, "multi": n}."""
@@ -2758,14 +2759,14 @@ def write_container_dir(entries, d, ext, road_of=None):
             sec, nonl = _fmt2_section(e, tag)
             r["group"], r["nonl"] = "multi", " ".join(nonl)
             md.append(sec)
-        r["road"] = road_of(e)
+        r["road"] = "staged" if (r.get("stage_name") or "").strip() else road_of(e)
         if "run_args" in r:
             r["run_args"] = ""
         out_rows.append(r)
     base = [f for f in fields if f not in FMT2_COLS]
     i = base.index("entry") + 1
     new_fields = base[:i] + list(FMT2_COLS) + base[i:]
-    for name, parts in ((f"ONE{ext}", one_src), ("ONE.stdout", one_out), ("MULTI.md", md)):
+    for name, parts in ((f"ONE{ext}", one_src), ("ONE.out", one_out), ("MULTI.md", md)):
         p = d / name
         if parts:
             p.write_bytes("".join(parts).encode("utf-8"))
@@ -2845,9 +2846,9 @@ def read_container_dir(d, ext, modes=None, allow_old=False):
     ones = [r for r in rows if r["group"] == "one"]
     multis = [r for r in rows if r["group"] == "multi"]
     one_src = _read_lf_lines(d / f"ONE{ext}") if (d / f"ONE{ext}").is_file() else []
-    one_out = _read_lf_lines(d / "ONE.stdout") if (d / "ONE.stdout").is_file() else []
+    one_out = _read_lf_lines(d / "ONE.out") if (d / "ONE.out").is_file() else []
     if len(one_src) != len(ones) or len(one_out) != len(ones):
-        raise ValueError(f"{d}: {len(ones)} one rows, ONE{ext} has {len(one_src)} lines, ONE.stdout {len(one_out)}")
+        raise ValueError(f"{d}: {len(ones)} one rows, ONE{ext} has {len(one_src)} lines, ONE.out {len(one_out)}")
     secs = _fmt2_parse_md(d / "MULTI.md", ext) if (d / "MULTI.md").is_file() else []
     sn, mn = [s["name"] for s in secs], [r["entry"] for r in multis]
     if sn != mn:
@@ -2946,7 +2947,7 @@ def cmd_regroup(args):
     except ValueError as exc:
         diffs, counts = [f"refused: {exc}"], None
     if diffs:
-        for n in (f"ONE{ext}", "ONE.stdout", "MULTI.md"):
+        for n in (f"ONE{ext}", "ONE.out", "MULTI.md"):
             (work / n).unlink(missing_ok=True)
         (work / "ALL.csv").write_bytes(csv_bytes)
         print("REGROUP_BOARD dir=%s REFUSED" % d)
@@ -3360,6 +3361,68 @@ def batch_m3_verdicts(paths, entries, tmp_root, ext, companion_dir):
             continue   # HANG (the per-process timeout retry), REFUSED, a child that never opened its files, or an OOM-style kill: per-process
         v.secs = secs
         out[name] = {"m3": against_expect(v, _ex)}
+    return out
+
+
+def post_m3_verdicts(paths, entries, posts):
+    """THE POST STEP (CIO-32 (6), CIO-34 (4); the switches are officer_01's, the agreed bytes in both LEDGERs): mode 3 of each entry read from
+    what scrip --run-one-liners / --run-multi-liners wrote, never run here. POSTS is [(OUT directory, report file)]; a report line is entry,
+    type, number, wall seconds, processor seconds, peak KB, and the entry's streams are OUT/NAME.out and OUT/NAME.err (NAME every slash an
+    underscore). EXIT is graded by _grade_output exactly as run_m3 grades a run (the masks, compare rules, want_rc and the expect sidecar the
+    table declares; a merged entry's answer is NAME.out then NAME.err); ABORT and CRASH are those outcomes; OVERFLOW is FAIL at the output
+    bound. NOT RETURNED, so the per-process road runs them: DEFERRED (a staged test, CIO-32 (3)), TIMEOUT and HANG (every timeout is re-run
+    once at a longer limit before it grades, Lon 2026-10-15), REFUSED, an EXIT of 127, and an entry no report names. ⛔ Refuses rc 2 on a
+    report line naming no entry of the container, an entry two lines name, or an EXIT whose OUT files are missing."""
+    by = {e.name: e for e in entries}
+    rows = {}
+    for out_dir, rep in posts:
+        if not Path(rep).is_file() or not Path(out_dir).is_dir():
+            refuse(f"--post: {rep} or {out_dir} does not exist")
+        for n, ln in enumerate(Path(rep).read_text(encoding="utf-8").split("\n"), 1):
+            if not ln:
+                continue
+            f = ln.split("\t")
+            if len(f) != 6:
+                refuse(f"--post: {rep}:{n}: expected six tab-separated fields, got {len(f)}: {ln[:120]!r}")
+            if f[0] in rows:
+                refuse(f"--post: {f[0]} is named twice ({rows[f[0]][0]} and {rep}:{n})")
+            rows[f[0]] = (f"{rep}:{n}", Path(out_dir), f[1], f[2], f[3])
+    _all = set(by)
+    stray = sorted(set(rows) - _all)
+    if stray:
+        refuse(f"--post: the reports name {len(stray)} entr(ies) this container does not hold: {', '.join(stray[:8])}")
+    out, tally = {}, {}
+    for e in entries:
+        if e.name not in rows:
+            tally["unreported"] = tally.get("unreported", 0) + 1
+            continue
+        where, od, typ, num, wall = rows[e.name]
+        nm = fmt2_out_name(e.name)
+        o, r = od / f"{nm}.out", od / f"{nm}.err"
+        tally[typ] = tally.get(typ, 0) + 1
+        if typ in ("DEFERRED", "TIMEOUT", "HANG", "REFUSED") or (typ == "EXIT" and num == "127"):
+            continue
+        if not (o.is_file() and r.is_file()):
+            refuse(f"--post: {where}: {e.name} reads {typ} and {o} or {r} is missing")
+        ob, eb = o.read_bytes(), r.read_bytes()
+        _ex = getattr(e, "expect", None)
+        if typ == "EXIT":
+            want = _ex.rc if (_ex is not None and _ex.ending == "EXIT" and _ex.rc is not None) else getattr(e, "want_rc", 0)
+            _ms = getattr(e, "merge_stderr", False)
+            exp = ("\n".join(e.ref) if e.kind != "line" else e.ref)
+            v = _grade_output(ob + eb if _ms else ob, b"" if _ms else eb, int(num), exp, want_rc=want, mask=getattr(e, "mask", None),
+                              merge_stderr=_ms, ws_blind=getattr(e, "compare_ws", False))
+        elif typ in ("ABORT", "CRASH"):
+            sig = 6 if typ == "ABORT" else int(num)
+            v = Verdict(typ, ob, eb, -sig, detail=f"signal {sig}")
+        elif typ == "OVERFLOW":
+            v = Verdict("FAIL", ob, eb, None, detail="output passed the S4E_OUTPUT_CAP_MB bound; the kernel stopped the child (SIGXFSZ)")
+        else:
+            refuse(f"--post: {where}: unknown result type {typ!r}")
+        v.secs = float(wall)
+        out[e.name] = {"m3": against_expect(v, _ex)}
+    print("POST_BOARD graded_from_out=%d per_process=%d %s" % (len(out), len(entries) - len(out),
+          " ".join(f"{k}={tally[k]}" for k in sorted(tally))))
     return out
 
 
@@ -4588,7 +4651,12 @@ def cmd_run(args):
     _xr_rx = re.compile(_xr_re.encode()) if expected_refusals else None
     tmp_root = Path(tempfile.mkdtemp(prefix="csh_run_"))
     # ⭐ S4E_BATCH=1 (step 5): mode 3 of every eligible entry of this partition runs in ONE scrip --harness process, before the loop (see batch_m3_verdicts)
-    _batch_m3 = batch_m3_verdicts(paths, run_entries, tmp_root, ext, Path(args.sno).parent) if (os.environ.get("S4E_BATCH") == "1" and "m3" in modes) else {}
+    if getattr(args, "post", None):
+        if "m3" not in modes:
+            refuse("--post reads the switches' mode-3 outputs: --modes must include m3")
+        _batch_m3 = post_m3_verdicts(paths, run_entries, [(Path(o), Path(r)) for o, r in args.post])
+    else:
+        _batch_m3 = batch_m3_verdicts(paths, run_entries, tmp_root, ext, Path(args.sno).parent) if (os.environ.get("S4E_BATCH") == "1" and "m3" in modes) else {}
     if os.environ.get("S4E_BATCH") == "1" and "m4" in modes:
         batch_m4_asm(paths, run_entries, tmp_root, ext, Path(args.sno).parent)
     fails = []
@@ -6766,6 +6834,8 @@ def main():
                         "pass count is not comparable to a board graded against the baseline. Incompatible with --outside.")
     r.add_argument("--shard", default="", help="k/N: grade only every N-th entry starting at the k-th (1-based, interleaved), so the N shards partition the suite exactly once and their boards SUM to the monolithic board; the SUITE_BOARD line carries shard=k/N and total=<this shard's entries> (row corpus-runner-master-suite-exceeds-single-call-cap, hq_B 2026-09-02)")
     r.add_argument("--partition", default="", help="core | shell:<feature> | chunk:NN, or a comma-separated union of them: grade exactly that subset of the suite's stored PARTITION.tsv (R-1676), both modes, progress rows per program carrying partition=NAME in their note and config; the SUITE_BOARD carries partition=NAME, which util_score_row.py refuses as a suite row (a partition is never the suite). Incompatible with --shard")
+    r.add_argument("--post", nargs=2, action="append", metavar=("OUT", "REPORT"), default=None,
+                   help="THE POST STEP (CIO-32 (6)): mode 3 is read from scrip --run-one-liners/--run-multi-liners' OUT directory and report, not run; repeat for each switch; the per-process road runs DEFERRED, TIMEOUT, HANG, REFUSED and unreported entries")
     r.set_defaults(func=cmd_run)
 
     pt = sub.add_parser("partition", help="THE SELECTION VERB (R-1676): print PARTITION <name>: <k> of <n> entries from the suite's stored PARTITION.tsv (core | shell:<feature> | chunk:NN; every part without --name); runs nothing, records nothing")
@@ -6835,7 +6905,7 @@ def main():
     bl.add_argument("--partition", required=True, help="the stored PARTITION.tsv cell: core | shell:<feature> | chunk:NN | entry:<name>")
     bl.set_defaults(func=cmd_batch_list)
 
-    rg = sub.add_parser("regroup", help="FORMAT 2 (CIO-24 f, CIO-25): rewrite one container directory into ONE.EXT, ONE.stdout and MULTI.md, refusing unless the read-back is identical")
+    rg = sub.add_parser("regroup", help="FORMAT 2 (CIO-24 f, CIO-25): rewrite one container directory into ONE.EXT, ONE.out and MULTI.md, refusing unless the read-back is identical")
     rg.add_argument("dir")
     rg.add_argument("--dry-run", action="store_true", help="regroup a scratch copy and print the counts; the directory is untouched")
     rg.set_defaults(func=cmd_regroup)
