@@ -53,10 +53,10 @@ REPS="${REPS:-3}"; [ "$REPS" -ge 1 ] 2>/dev/null || REPS=3
 PIN="${SWEEP_PIN:-$HERE/util_out_sweep.pins}"
 OUT="${1:?usage: util_out_sweep.sh OUT.md5 [LISTFILE]}"; LIST="${2:-}"
 T="$(mktemp)"; RAW="$(mktemp)"; FLP="$(mktemp)"; trap 'rm -f "$T" "$RAW" "$FLP"' EXIT
-# library/probe_reference/bb's loose .sno files converted to suite format 2026-08-28 (probe-consolidate-bb, LON-20260828
-# total conversion) -- the library/probe_reference/bb find below now contributes 0 by construction. EXPECTED, not a
-# regression; pass LISTFILE to include tests/snobol4/probe/bb*.sno entries (materialize via
-# corpus_suite_harness.py extract first -- suite files are not standalone-runnable .sno programs).
+# the bb programs stand only as ALL.csv entries (families probe_bb*; the loose library/probe_reference/bb .sno files were
+# converted to suite format 2026-08-28, probe-consolidate-bb): bb_arm extracts them through corpus_suite_harness.py to ONE
+# stable per-seat dir (SWEEP_BB_DIR) so the md5 rows carry the same path in every arm and every run, and prints those paths.
+# It REFUSES rc 2 when the master holds no probe_bb entry (an empty population is never a silent zero).
 # the probe_loose/cn programs stand only as ALL.csv entries (family probe_loose_cn_*): cn_arm extracts them to ONE
 # stable per-seat dir (SWEEP_CN_DIR) so the md5 rows carry the same path in every arm and every run, and prints those paths.
 cn_arm() { local d="${SWEEP_CN_DIR:-/tmp/s4e/${S4E_SEAT:-${USER:-seat}}/out_sweep_cn}" t="$CORPUS/tests/snobol4" nm; mkdir -p "$d"
@@ -64,8 +64,15 @@ cn_arm() { local d="${SWEEP_CN_DIR:-/tmp/s4e/${S4E_SEAT:-${USER:-seat}}/out_swee
 for r in csv.DictReader(open(sys.argv[1])):
     if r["family"].startswith("probe_loose_cn_"): print(r["entry"])' "$t/ALL.csv" | while read -r nm; do
     python3 "$HERE/corpus_suite_harness.py" extract "$t/ALL.sno" "$t/ALL.ref" "$nm" "$d/$nm.sno" --out-ref "$d/$nm.ref" >/dev/null 2>&1 && echo "$d/$nm.sno"; done; }
+bb_arm() { local d="${SWEEP_BB_DIR:-/tmp/s4e/${S4E_SEAT:-${USER:-seat}}/out_sweep_bb}" t="$CORPUS/tests/snobol4" l; mkdir -p "$d"; l="$(mktemp)"
+  python3 -I -c 'import csv,sys
+for r in csv.DictReader(open(sys.argv[1])):
+    if r["family"].startswith("probe_bb"): print(r["entry"])' "$t/ALL.csv" > "$l"
+  [ -s "$l" ] || { rm -f "$l"; echo "REFUSE(2): util_out_sweep bb_arm: no probe_bb entry in $t/ALL.csv" >&2; return 2; }
+  export HERE t d; xargs -a "$l" -P "$(nproc)" -I{} bash -c 'python3 "$HERE/corpus_suite_harness.py" extract "$t/ALL.sno" "$t/ALL.ref" "$1" "$d/$1.sno" --out-ref "$d/$1.ref" >/dev/null 2>&1 && echo "$d/$1.sno"' _ {}; rm -f "$l"; }
 if [ -n "$LIST" ]; then cp "$LIST" "$T"; else
-  { find "$CORPUS/crosscheck" -name '*.sno'; find "$CORPUS/library/probe_reference/bb" -name '*.sno'; cn_arm
+  BB="$(bb_arm)" || exit 2
+  { find "$CORPUS/crosscheck" -name '*.sno'; echo "$BB"; cn_arm
     find "$CORPUS/probe/kw" -name '*.sno'; find "$CORPUS/probe/arbnostore" -name '*.sno'
     find "$CORPUS/demos" -maxdepth 1 -name '*.sno'; } | sort > "$T"; fi
 run1() { local p="$1" d o rc; d="$(dirname "$p")"
