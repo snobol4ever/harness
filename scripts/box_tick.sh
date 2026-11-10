@@ -75,15 +75,15 @@ sense() {   # the sensors of box_controller.sh's --decide, read the same way; se
 period_s() { systemctl --user cat s4e-tick.timer 2>/dev/null | sed -n 's/^OnUnitActiveSec=\([0-9]*\)$/\1/p' | head -1; }
 
 seat_held() {   # a seat holds a RESERVED claim not yet DONE: it has its job, so the wake pass sends it nothing
-  local c; for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue; [ "$(head -1 "$c")" = "$1" ] || continue; grep -q '^RESERVED job=' "$c" && ! grep -q '^DONE$' "$c" && return 0; done; return 1; }
+  local c; for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue; [ "$(head -1 "$c")" = "$1" ] || continue; grep -q '^RESERVED ' "$c" && ! grep -q '^DONE$' "$c" && return 0; done; return 1; }
 wake() {   # fleet-queue step 11: a seat whose watch list holds a ready job and that holds no reserved job gets one WAKE line (once per seat per 20 min) in $TICK_DIR/wake.pending;
   # the Stop hook holds a seat that already has a turn, so the line is only the pointer a fresh session needs (the cio's Monitor sends it). A tier tube wakes at most
   # as many seats of its tier as it holds ready jobs. Seats and tiers come from .github/TIERS.tsv; no seat pattern lives here.
   # THE RATE (CTO ruling, row tick-wake-pass-has-no-rate-twenty-wake-lines-in-eight-minutes-at-a-mass-wake): at most S4E_WAKE_RATE (default 2) WAKE lines per tick,
   # fable before opus before sonnet before haiku, and within a tier the seats whose own tube holds a job before the seats the tier tube wakes.
-  local tiers="$ROOT/.github/TIERS.tsv" seat tier t ready n seats pass woken=0 lines=0 rate=${S4E_WAKE_RATE:-2} q="$ROOT/harness/scripts/util_queue.py" stamp
+  local tiers="$ROOT/.github/TIERS.tsv" seat tier t ready n seats pass woken=0 lines=0 rate=${S4E_WAKE_RATE:-2} stamp
   stamp=$(date '+%F %T'); mkdir -p "$TICK_DIR"
-  rd() { python3 "$q" stats-tube "$1" 2>/dev/null | sed -n 's/^TUBE [^ ]* ready=\([0-9]*\).*/\1/p'; }
+  rd() { awk -F'\t' -v s="QUEUED:$1" '/^[0-9]/ && $4 == s {n++} END {print n+0}' "${S4E_TICK_QUEUE:-$PO/QUEUE.tsv}" 2>/dev/null; }   # bus-one-queue: a tube's ready count is its QUEUED:<tube> rows of the queue file (S4E_TICK_QUEUE: a probe's scratch file)
   recent() { [ -n "$(find "$TICK_DIR" -maxdepth 1 -name "wake.told.$1" -mmin -20 2>/dev/null)" ]; }
   for tier in 1 2 3 4; do
     case $tier in 1) t=fable;; 2) t=opus;; 3) t=sonnet;; 4) t=haiku;; esac
@@ -103,39 +103,27 @@ wake() {   # fleet-queue step 11: a seat whose watch list holds a ready job and 
     done
   done
   echo "WAKE lines=$lines"; return 0; }
-probe_daemon() {   # the cio's ruling (2026-11-07, row bus-queue-probes-put-and-reserve-on-the-live-beanstalkd): a probe that puts into a tube runs on ITS OWN beanstalkd on a free port, exported to every child and killed when this process exits; the live daemon (11300) is never written by it
-  local _p=$((21000 + ($$ % 20000))) _i _up=0
-  beanstalkd -l 127.0.0.1 -p "$_p" 9>&- >/dev/null 2>&1 & _BT_PID=$!
-  trap 'kill "$_BT_PID" 2>/dev/null' EXIT
-  for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_p" python3 "$ROOT/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
-  { [ "$_up" = 1 ] && kill -0 "$_BT_PID" 2>/dev/null; } || { echo "REFUSE(2): a private beanstalkd would not start on port $_p" >&2; return 2; }
-  export S4E_QUEUE_PORT="$_p"
-}
-probe_wake() {   # step 11's probe: a scratch tick dir, a plant job in a scratch seat's tube: exactly one WAKE line, none on the second pass (told within 20 min)
-  local w q="$ROOT/harness/scripts/util_queue.py" jid out1 out2 l1
+probe_wake() {   # step 11's probe: a scratch tick dir and a scratch queue file holding one QUEUED row in a scratch seat's tube: exactly one WAKE line, none on the second pass (told within 20 min)
+  local w out1 out2 l1 ps
   w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_wake_probe.XXXXXX")" || return 2
-  probe_daemon || { rm -rf "$w"; return 2; }
-  local ps; ps="$(awk -F'\t' '!/^#/ && $7==4 {print $1}' "$ROOT/.github/TIERS.tsv" | tail -1)"
-  jid=$(python3 "$q" put "seat-$ps" wake-plant --pri 100 --ttr 30) || { rm -rf "$w"; return 2; }
-  out1=$(S4E_WAKE_ONLY="$ps" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$0" --wake 2>/dev/null | tail -1); l1=$(grep -c ' WAKE ' "$w/wake.pending" 2>/dev/null)
-  out2=$(S4E_WAKE_ONLY="$ps" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$0" --wake 2>/dev/null | tail -1)
-  python3 "$q" delete "$jid" >/dev/null 2>&1; rm -rf "$w"
+  ps="$(awk -F'\t' '!/^#/ && $7==4 {print $1}' "$ROOT/.github/TIERS.tsv" | tail -1)"
+  printf '2\twake-plant\t%s\tQUEUED:seat-%s\n' "$ps" "$ps" > "$w/QUEUE.tsv"
+  out1=$(S4E_TICK_QUEUE="$w/QUEUE.tsv" S4E_WAKE_ONLY="$ps" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$0" --wake 2>/dev/null | tail -1); l1=$(grep -c ' WAKE ' "$w/wake.pending" 2>/dev/null)
+  out2=$(S4E_TICK_QUEUE="$w/QUEUE.tsv" S4E_WAKE_ONLY="$ps" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$0" --wake 2>/dev/null | tail -1)
+  rm -rf "$w"
   printf 'WAKE idle_with_ready=%s lines=%s by=hook second_pass=%s\n' "$( [ "${l1:-0}" -ge 1 ] && echo 1 || echo 0)" "${l1:-0}" "${out2#WAKE lines=}"
   [ "${l1:-0}" -ge 1 ] && [ "$out2" = "WAKE lines=0" ]; }
-probe_wake_rate() {   # the rate arm (CTO ruling, row tick-wake-pass-has-no-rate-...): five tier-4 seats with no live claim, one plant job each in its own tube; three --wake passes over one scratch tick dir with the told files kept between them: the rate writes 2, 2, 1
-  local w q="$ROOT/harness/scripts/util_queue.py" s jid jids="" seats="" k=0 p1 p2 p3
-  w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_wake_rate.XXXXXX")" || return 2
-  probe_daemon || { rm -rf "$w"; return 2; }
+probe_wake_rate() {   # the rate arm (CTO ruling, row tick-wake-pass-has-no-rate-...): five tier-4 seats with no live claim, one QUEUED row each in its own tube of a scratch queue file; three --wake passes over one scratch tick dir with the told files kept between them: the rate writes 2, 2, 1
+  local w s seats="" k=0 p1 p2 p3
+  w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_wake_rate.XXXXXX")" || return 2; : > "$w/QUEUE.tsv"
   for s in $(awk -F'\t' '!/^#/ && $7==4 {print $1}' "$ROOT/.github/TIERS.tsv" | tac); do
     [ "$k" -lt 5 ] || break
     seat_held "$s" && continue   # a seat with a live claim is held by the law, not by the rate: the probe does not count it
-    jid=$(python3 "$q" put "seat-$s" wake-plant --pri 100 --ttr 30) || { for jid in $jids; do python3 "$q" delete "$jid" >/dev/null 2>&1; done; rm -rf "$w"; return 2; }
-    jids="$jids $jid"; seats="$seats $s"; k=$((k+1))
+    printf '2\twake-plant-%s\t%s\tQUEUED:seat-%s\n' "$s" "$s" "$s" >> "$w/QUEUE.tsv"; seats="$seats $s"; k=$((k+1))
   done
-  p1=$(S4E_WAKE_RATE=2 S4E_WAKE_SEATS="${seats# }" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --wake 2>/dev/null | tail -1); p1=${p1#WAKE lines=}
-  p2=$(S4E_WAKE_RATE=2 S4E_WAKE_SEATS="${seats# }" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --wake 2>/dev/null | tail -1); p2=${p2#WAKE lines=}
-  p3=$(S4E_WAKE_RATE=2 S4E_WAKE_SEATS="${seats# }" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --wake 2>/dev/null | tail -1); p3=${p3#WAKE lines=}
-  for jid in $jids; do python3 "$q" delete "$jid" >/dev/null 2>&1; done
+  p1=$(S4E_TICK_QUEUE="$w/QUEUE.tsv" S4E_WAKE_RATE=2 S4E_WAKE_SEATS="${seats# }" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --wake 2>/dev/null | tail -1); p1=${p1#WAKE lines=}
+  p2=$(S4E_TICK_QUEUE="$w/QUEUE.tsv" S4E_WAKE_RATE=2 S4E_WAKE_SEATS="${seats# }" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --wake 2>/dev/null | tail -1); p2=${p2#WAKE lines=}
+  p3=$(S4E_TICK_QUEUE="$w/QUEUE.tsv" S4E_WAKE_RATE=2 S4E_WAKE_SEATS="${seats# }" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --wake 2>/dev/null | tail -1); p3=${p3#WAKE lines=}
   rm -rf "$w"
   printf 'WAKE_RATE ready=%s rate=2 first_pass=%s second_pass=%s third_pass=%s\n' "$k" "$p1" "$p2" "$p3"
   [ "$k" = 5 ] && [ "$p1" = 2 ] && [ "$p2" = 2 ] && [ "$p3" = 1 ]; }
@@ -146,8 +134,8 @@ leases() {   # fleet-queue step 5: a RESERVED claim whose job reads ready (the h
     out=$(S4E_NO_BANNER=1 timeout 60 bash "$ROOT/harness/scripts/s4e_msg.sh" expire "$t" 2>&1 < /dev/null) || continue
     printf '%s %s\n' "$(date '+%F %T')" "$(printf '%s' "$out" | tail -1 | cut -c1-200)" >> "$TICK_DIR/leases.log"
   done; return 0; }
-view_stamp() {   # the view's inputs (the coo's ruling, row tick-costs-13-to-20-s-cpu): the nanosecond mtimes of tasks/ and claims/, and every tube's counts (util_queue.py tubes: a put, a reserve or a done moves it); QUEUE.tsv is regenerated only when this moved
-  printf '%s|%s' "$(stat -c '%.9Y' "$PO/tasks" "$PO/claims" 2>/dev/null | tr '\n' ' ')" "$(python3 "$ROOT/harness/scripts/util_queue.py" tubes 2>/dev/null | md5sum | cut -c1-32)"; }
+view_stamp() {   # the view's inputs (the coo's ruling, row tick-costs-13-to-20-s-cpu): the nanosecond mtimes of tasks/ and claims/, and every row state of the queue file (a queue, a claim or a done moves it); QUEUE.tsv is regenerated only when this moved
+  printf '%s|%s' "$(stat -c '%.9Y' "$PO/tasks" "$PO/claims" 2>/dev/null | tr '\n' ' ')" "$(cut -f2,4 "$PO/QUEUE.tsv" 2>/dev/null | md5sum | cut -c1-32)"; }   # bus-one-queue: the tubes are the file's state column
 dry_sense() {   # S4E_TICK_DRY=1: sense() is skipped and its globals are planted at the cool arm plant() already uses, so a probe reads a quiet tick with no 2 s sample
   busy=6.0; cpu60=4; gcpu10=1; gmem10=0; mem_rise=0; up_hold=0; cores=16; q=500; w=2; WMIN=1; WMAX=8; sqc=1000; sq=800; jtc=12; jt=4; slotless=""; capped=""; orphans=""; mem=""; madmit=0; to_new=0; }
 tick() {

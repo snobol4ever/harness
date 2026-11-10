@@ -40,15 +40,17 @@ def tiers():
     rows = [l.split("\t") for l in rd(TIERS).split("\n") if l and not l.startswith("#") and not l.startswith("seat\t")]
     return {r[0]: int(r[6]) for r in rows if len(r) > 6 and r[6].isdigit()}
 
-def tube_stats(names):
+def tube_stats(names):   # bus-one-queue: a tube's ready count is the QUEUE.tsv rows whose column reads exactly QUEUED:<tube>; reserved is the live claims whose RESERVED line names the tube; nothing is buried on the file
     out = {}
-    q = S4E + "/harness/scripts/util_queue.py"
-    for t in names:
-        try:
-            r = subprocess.run(["python3", q, "stats-tube", t], capture_output=True, text=True, timeout=5)
-            m = re.search(r"ready=(\d+) reserved=(\d+) delayed=(\d+) buried=(\d+)", r.stdout)
-            out[t] = tuple(int(x) for x in m.groups()) if m else None
-        except Exception: out[t] = None
+    try: col = [l.split("\t")[3] for l in rd(PO + "/QUEUE.tsv").split("\n") if l and l[0].isdigit() and l.count("\t") >= 3]
+    except Exception: return {t: None for t in names}
+    held = []
+    for c in glob.glob(PO + "/claims/*.claim"):
+        try: lines = open(c).read().split("\n")
+        except OSError: continue
+        if "DONE" in lines: continue
+        held += [m.group(1) for m in (re.search(r"^RESERVED (?:file|job=\d+) tube=(\S+)", l) for l in lines) if m]
+    for t in names: out[t] = (col.count("QUEUED:" + t), held.count(t), 0, 0)
     return out
 
 def live_sessions():

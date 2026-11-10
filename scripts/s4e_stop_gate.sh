@@ -14,11 +14,11 @@ if [ "${1:-}" = --probe-queue ]; then   # fleet-queue step 11's probe on a scrat
     g() { S4E_POST="$w" bash "$0" "$w" "$ps" --dry | cut -d' ' -f1; }
     printf '2\tgate-plant\t%s\tCLAIMED:%s\n' "$ps" "$ps" > "$w/QUEUE.tsv"; printf '# TASK gate-plant\n## NEXT\nplant\n## QA\n## LEDGER\n' > "$w/tasks/gate-plant.task.md"
     printf '%s\nRESERVED job=0 tube=seat-%s now\n' "$ps" "$ps" > "$w/claims/gate-plant.claim"; r1="$(g)"
-    : > "$w/QUEUE.tsv"; rm -f "$w/claims/gate-plant.claim"; jid="$(python3 "$HERE/util_queue.py" put "seat-$ps" gate-plant --pri 100 --ttr 30)"; r2="$(g)"; python3 "$HERE/util_queue.py" delete "$jid" >/dev/null 2>&1
+    : > "$w/QUEUE.tsv"; rm -f "$w/claims/gate-plant.claim"; printf '2\tgate-plant\t%s\tQUEUED:seat-%s\n' "$ps" "$ps" > "$w/QUEUE.tsv"; r2="$(g)"; : > "$w/QUEUE.tsv"
     printf 'FROM x TO %s RE plant\nplant\n' "$ps" > "$w/$ps/inbox/1-x-plant.msg"; r3="$(g)"; rm -f "$w/$ps/inbox/1-x-plant.msg"; r4="$(g)"
     printf 'seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\n%s\tP\t%s\tclaude-haiku-5-5\txhigh\tcyan\t4\tworker\n' "$ps" "$w" > "$w/TIERS.tsv"
     gt() { S4E_POST="$w" S4E_TIERS="$w/TIERS.tsv" S4E_TIER_TUBE_PREFIX="$ps-tier-" bash "$0" "$w" "$ps" --dry | cut -d' ' -f1; }
-    jid="$(python3 "$HERE/util_queue.py" put "$ps-tier-haiku" gate-plant --pri 100 --ttr 30)"; r5="$(gt)"; python3 "$HERE/util_queue.py" delete "$jid" >/dev/null 2>&1; r6="$(gt)"
+    printf '2\tgate-plant\t@haiku\tQUEUED:%s-tier-haiku\n' "$ps" > "$w/QUEUE.tsv"; r5="$(gt)"; : > "$w/QUEUE.tsv"; r6="$(gt)"
     r6w="$(S4E_POST="$w" S4E_TIERS="$w/TIERS.tsv" S4E_TIER_TUBE_PREFIX="$ps-tier-" bash "$0" "$w" "$ps" --dry | grep -c 'next --wait 240')"
     rm -rf "$w"; printf 'GATE reserved=%s seat_tube_ready=%s mail=%s idle=%s tier_tube_ready=%s tier_tube_empty=%s longpoll=%s\n' "$r1" "$r2" "$r3" "$r4" "$r5" "$r6" "$r6w"
     [ "$r1" = BLOCK ] && [ "$r2" = BLOCK ] && [ "$r3" = BLOCK ] && [ "$r4" = PASS ] && [ "$r5" = BLOCK ] && [ "$r6" = BLOCK ] && [ "$r6w" = 1 ]; exit $?
@@ -67,7 +67,7 @@ else
         what="row=$t"
     else
         # fleet-queue step 11 (the cio 2026-11-05): a job ready in the seat's own tube is work assigned to it; the gate holds the seat until next reserves it
-        qr="$(python3 "$(dirname "$0")/util_queue.py" stats-tube "seat-$seat" 2>/dev/null | sed -n 's/^TUBE [^ ]* ready=\([0-9]*\).*/\1/p')"; qr="${qr:-0}"
+        qr="$(awk -F'\t' -v s="QUEUED:seat-$seat" '/^[0-9]/ && $4 == s {n++} END {print n+0}' "$PO/QUEUE.tsv" 2>/dev/null)"; qr="${qr:-0}"   # bus-one-queue: the ready count is the file's
         if [ "$qr" -gt 0 ]; then
             reason="$seat is stopping while $qr job(s) wait in its queue tube seat-$seat (a directed assign). Run bash harness/scripts/s4e_msg.sh next: it reserves the job and serves its baton."
             what="seat_tube=$qr"
@@ -86,7 +86,7 @@ else
             case "$tn" in 2|opus) tier=opus;; 3|sonnet) tier=sonnet;; 4|haiku) tier=haiku;; *) tier="";; esac
             if [ -n "$tier" ]; then
                 tt="${S4E_TIER_TUBE_PREFIX:-tier-}$tier"
-                tr="$(python3 "$(dirname "$0")/util_queue.py" stats-tube "$tt" 2>/dev/null | sed -n 's/^TUBE [^ ]* ready=\([0-9]*\).*/\1/p')"; tr="${tr:-0}"
+                tr="$(awk -F'\t' -v s="QUEUED:$tt" '/^[0-9]/ && $4 == s {n++} END {print n+0}' "$PO/QUEUE.tsv" 2>/dev/null)"; tr="${tr:-0}"
                 if [ "$tr" -gt 0 ]; then
                     reason="$seat is stopping idle while $tr job(s) wait ready in its tier tube $tt (THE LADDER, skill fleet-bus section 1: a seat works what the queue serves it; an idle seat beside ready work is the failure this arm removes). Run bash harness/scripts/s4e_msg.sh next: it reserves the first job and serves its baton; one honest try, then escalate with the measurement."
                     what="tier_tube=$tr"
