@@ -69,7 +69,7 @@ ladder_main() {
   if [ -n "$ONLY" ]; then SEL="--only $ONLY"; else SEL="--to ${TO:-max}"; fi
   [ -x "$SCRIP" ] || refuse "scrip binary not built at $SCRIP"
   [ -f "$RT/libscrip_rt.so" ] || refuse "runtime library missing at $RT/libscrip_rt.so"
-  [ -f "$RUNGS_DIR/ALL$RUNGS_EXT" ] && [ -f "$RUNGS_DIR/ALL.ref" ] && [ -f "$RUNGS_DIR/ALL.csv" ] || refuse "$LADDER_LANG rungs suite missing under $RUNGS_DIR (ALL$RUNGS_EXT / ALL.ref / ALL.csv)"
+  [ -f "$RUNGS_DIR/ALL.csv" ] && { { [ -f "$RUNGS_DIR/ALL$RUNGS_EXT" ] && [ -f "$RUNGS_DIR/ALL.ref" ]; } || [ -f "$RUNGS_DIR/MULTI.md" ] || [ -f "$RUNGS_DIR/ONE$RUNGS_EXT" ]; } || refuse "$LADDER_LANG rungs suite missing under $RUNGS_DIR (ALL$RUNGS_EXT / ALL.ref / ALL.csv)"
   . "$HERE/lib_rungs_extract.sh" || refuse "cannot source lib_rungs_extract.sh"
   . "$HERE/lib_declared_arena.sh" || refuse "cannot source lib_declared_arena.sh -- the one reader of a witness's declared heap and stack"
   # ladder_cmdline_words <program> -- two lines: the compile_args and the run_args its <stem>.cmdline declares (empty lines when none),
