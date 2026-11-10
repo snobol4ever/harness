@@ -16,7 +16,7 @@ OUT="${OUT_TSV:-/tmp/patterns_2mode.tsv}"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 # ⭐ RE-POINTED 2026-08-30 (seat12, repo-wide dead-suite-path consumer sweep): crosscheck/patterns/
-# is gone -- absorbed into THE ONE FLAT RUNGS (tests/snobol4/ALL.{sno,ref,csv}). An explicit
+# is gone -- absorbed into THE ONE FLAT RUNGS (tests/snobol4/ALL.sno, ALL.ref, ALL.csv). An explicit
 # PAT_CORPUS override is honored as-is (a caller's own standalone dir); the default now materializes
 # the "crosscheck_patterns" family via lib_rungs_extract.sh into a scratch dir first.
 if [ -n "${PAT_CORPUS:-}" ]; then

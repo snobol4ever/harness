@@ -18,7 +18,7 @@ DIAGDIR=${CENSUS_DIAGDIR:-/tmp/bug_hunt_diag}; mkdir -p "$DIAGDIR"
 LISTF=/tmp/bug_hunt_list.$$
 # library/probe_reference/bb's loose .sno files converted to suite format 2026-08-28 (probe-consolidate-bb, LON-20260828
 # total conversion) -- the find below now contributes 0 from library/probe_reference/bb by construction. EXPECTED, not a
-# regression; pass CENSUS_LIST to include tests/snobol4/probe/bb*.sno entries (materialize via
+# regression; pass CENSUS_LIST to include the probe_bb* families of THE ONE FLAT RUNGS (tests/snobol4/ALL.sno) (materialize via
 # corpus_suite_harness.py extract first -- suite files are not standalone-runnable .sno programs).
 if [ -n "${CENSUS_LIST:-}" ]; then cp "$CENSUS_LIST" "$LISTF"
 else { find $S4E/corpus/library/probe_reference/bb -name '*.sno' 2>/dev/null; find "$ROOT/demo" "$ROOT/../corpus/tests/scrip_test/demo" -name '*.sno' 2>/dev/null; find $S4E/corpus -path '*demo*' -name '*.sno' 2>/dev/null; } | sort -u > "$LISTF"; fi

@@ -8,7 +8,7 @@ TIMEOUT_RETRY="${TIMEOUT_RETRY:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ut
 set -u
 SCRIP_DIR="${SCRIP_DIR:-$S4E/SCRIP}"
 # ⭐ RE-POINTED (s283h, probe total-conversion): corpus/probe/earn0 is GONE -- the witnesses live in
-# the earn0 + earn02 SUITES (tests/snobol4/probe/) and are materialized here via the harness `extract`
+# the earn0 + earn02 families of THE ONE FLAT RUNGS (tests/snobol4/ALL.sno, families probe_earn0 and probe_earn02) and are materialized here via the harness `extract`
 # verb into an assembled dir, so the board's per-witness loop below is unchanged. EARN0= still overrides.
 if [ -z "${EARN0:-}" ]; then
   _EA="$(mktemp -d)"; trap 'rm -rf "$_EA"' EXIT
