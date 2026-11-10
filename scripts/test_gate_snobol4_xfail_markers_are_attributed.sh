@@ -46,6 +46,7 @@
 # and is still wrong -- that is a different question and needs a different instrument.
 set -u
 here="$(cd "$(dirname "$0")" && pwd)"; root="$(cd "$here/../.." && pwd)"
+# not-a-corpus-path: tests/snobol4/ALL.xfail -- retired by the R-1408 resort (the folder holds no xfail file); the gate reads its absence as zero reason blocks, below
 RUNGS_XFAIL="$root/corpus/tests/snobol4/ALL.xfail"
 RUNGS_CSV="$root/corpus/tests/snobol4/ALL.csv"
 QUEUE="${S4E_QUEUE:-/home/resources/postoffice/QUEUE.tsv}"
