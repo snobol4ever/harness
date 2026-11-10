@@ -5,7 +5,8 @@
 #     FUZZ_DIR="$(bash ../harness/scripts/util_fuzz_witness_materialize.sh)" bash ../harness/scripts/util_fuzz_witness_stability.sh
 #
 # ⛔⭐ WHY THIS EXISTS — THE ROW'S WITNESSES STOPPED BEING FILES AND ITS INSTRUMENTS DID NOT NOTICE.
-# Both instruments defaulted FUZZ_DIR to corpus/tests/snobol4/probe_loose/fuzz.  The one-flat-suite
+# not-a-corpus-path: tests/snobol4/probe_loose/fuzz -- the historical FUZZ_DIR default, named here as history only; the folder was deleted by the cutover and nothing reads it.
+# Both instruments defaulted FUZZ_DIR to that folder.  The one-flat-suite
 # cutover (corpus c06960a1, Lon 2026-08-29 total-conversion ruling) DELETED that directory: 4 of the 5
 # witnesses were absorbed into the rungs suite as XFAIL block entries under NEW names, and only the
 # 5th (fz_red_m4b, explicitly held out in ALL.excluded.txt) survives as a loose pair.  The instruments

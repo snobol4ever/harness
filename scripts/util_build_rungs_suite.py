@@ -6,7 +6,7 @@ You could create as many as 30 attributes, for instance the one word primitive f
 combinations like PATTERN . tz . *function(tz) would be a named construct. And there should be one big *.sno and one big *.ref
 file. Not 10's of folders and 100's of files.")
 
-Builds corpus/tests/snobol4/master/{ALL.sno, ALL.ref, ALL.csv} from EVERY suite pair under corpus/tests/snobol4/.
+Builds corpus/tests/snobol4/{ALL.sno, ALL.ref, ALL.csv} from EVERY suite pair under corpus/tests/snobol4/.
  - Entry names are prefixed with their source family (probe_kw__kw_defaults) so the flat namespace cannot collide; a collision REFUSES.
  - ALL.csv is the attribute database: one row per entry, ~30 columns of 0/1 feature flags scanned from the entry's own source text
    (primitives by exact UPPER name; constructs by syntax shape; combination columns for named constructs like capture_plus_defer,

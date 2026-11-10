@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_fuzz_witness_predicate_ladder.sh — for each tests/snobol4/probe_loose/fuzz witness x mode, find the FINEST
+# util_fuzz_witness_predicate_ladder.sh — for each witness of the fuzz set (materialized from the rungs) x mode, find the FINEST
 # grading predicate under which it is STABLE.  Companion to util_fuzz_witness_stability.sh.
 #
 # ⛔⭐ WHY THIS EXISTS.  The stability runner answers one question — "is this witness stable under
@@ -33,14 +33,15 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"
-DIR="${FUZZ_DIR:-$ROOT/corpus/tests/snobol4/probe_loose/fuzz}"
+W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
+DIR="${FUZZ_DIR:-$W/witnesses}"
+[ -n "${FUZZ_DIR:-}" ] || OUT_DIR="$DIR" bash "$HERE/util_fuzz_witness_materialize.sh" >/dev/null || { echo "⛔ REFUSE(rc=2): util_fuzz_witness_materialize.sh could not build the witness set (its stderr is above)"; exit 2; }
 N="${N:-10}"; TIMEOUT="${TIMEOUT:-8s}"; MODES="${MODES:-m3 m4}"
 [ -d "$DIR" ]                   || { echo "⛔ REFUSE(rc=2): witness dir missing: $DIR"; echo "   The one-flat-suite cutover (corpus c06960a1) ABSORBED 4 of the 5 witnesses into the rungs suite"; echo "   under new names and deleted this directory; only fz_red_m4b survives as a loose pair. The witnesses"; echo "   are not gone, only unreachable BY PATH. Materialize the full set and point FUZZ_DIR at it:"; echo "       FUZZ_DIR=\"\$(bash ../harness/scripts/util_fuzz_witness_materialize.sh)\" bash ../harness/scripts/$(basename "$0")"; exit 2; }
 [ -x "$SCRIP" ]                 || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP — build first (make)"; exit 2; }
 [ -f "$RT_DIR/libscrip_rt.so" ] || { echo "⛔ REFUSE(rc=2): no $RT_DIR/libscrip_rt.so"; exit 2; }
 case "$N" in ''|*[!0-9]*) echo "⛔ REFUSE(rc=2): N must be a positive integer, got '$N'"; exit 2;; esac
 [ "$N" -ge 2 ]                  || { echo "⛔ REFUSE(rc=2): N=$N cannot detect disagreement — need at least 2"; exit 2; }
-W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 mapfile -t SNOS < <(find "$DIR" -maxdepth 1 -name '*.sno' | sort)
 [ "${#SNOS[@]}" -gt 0 ]         || { echo "⛔ REFUSE(rc=2): zero .sno witnesses in $DIR — an empty set is not a stable set"; exit 2; }
 
