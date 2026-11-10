@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: through extract
 # test_gate_gc_nv_cell_caches_honour_the_memo_generation.sh -- a cached interior pointer into an NV_t block is wrong
 # after every collection, and the cache that holds one must join the invalidation protocol the collector already calls
 # (cfo CFO-116, 2026-09-20, SCRIP 621c08866).
@@ -41,7 +42,7 @@ SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ REFUSE(2): no 
 SUITE="$ROOT/../corpus/tests/snobol4/ALL.sno"; SREF="$ROOT/../corpus/tests/snobol4/ALL.ref"
 INC="${INC:-$ROOT/../corpus/include}"
 ENTRY=user_function_eval_arbno_replace_branch_2
-[ -f "$SUITE" ] && [ -f "$SREF" ] || { echo "⛔ REFUSE(2): snobol4 rungs absent ($SUITE)"; exit 2; }
+[ -f "$ROOT/../corpus/tests/snobol4/ALL.csv" ] || { echo "⛔ REFUSE(2): snobol4 rungs absent ($ROOT/../corpus/tests/snobol4/ALL.csv)"; exit 2; }
 [ -d "$INC" ] || { echo "⛔ REFUSE(2): the -INCLUDE companion dir is absent ($INC) -- the witness needs its 16 companions"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 python3 "$HERE/corpus_suite_harness.py" extract "$SUITE" "$SREF" "$ENTRY" "$T/w.sno" --out-ref "$T/w.ref" >/dev/null 2>&1 \

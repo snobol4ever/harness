@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: through extract
 # test_gate_gc_blob_carve_invariant_is_named_and_held.sh -- the R-4(b) SNOBOL4 stored-pattern blob frame
 # (emit.cpp, "R-4(b) BLOB ACTIVATION FRAME") and the deferred-capture pump that re-enters emitted code at a
 # match's end. Row gc-the-blob-frame-interior-takes-one-static-layout-and-its-cross-frame-dependency-is-named
@@ -40,7 +41,7 @@ G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
-CORPUS="$S4E/corpus/tests/snobol4"; [ -f "$CORPUS/ALL.sno" ] || { echo "⛔ GATE REFUSE(2) [$G]: no SNOBOL4 rungs at $CORPUS/ALL.sno -- the witness is cut from it"; exit 2; }
+CORPUS="$S4E/corpus/tests/snobol4"; [ -f "$CORPUS/ALL.csv" ] || { echo "⛔ GATE REFUSE(2) [$G]: no SNOBOL4 rungs index at $CORPUS/ALL.csv -- the witness is cut from it"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0
 export SNO_LIB="${SNO_LIB:-$S4E/corpus/include}"

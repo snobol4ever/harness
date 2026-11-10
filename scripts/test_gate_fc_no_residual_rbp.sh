@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
+# format-2: through extract by origin, ALL.csv by name
 # ZB-VAL-8b GATE (s182, closes s181 FINDING-2026-07-26f HEADLINE 6 "THE FALLBACK IS SILENT").
 #
 # THE HAZARD: x86_fc_hit(off) returns false when a GRANTED box's flat offset falls outside its own
@@ -94,7 +95,7 @@ tmp=$(mktemp) || exit 2
 wd=$(mktemp -d) || exit 2
 trap 'rm -rf "$tmp" "$tmp.f" "$wd"' EXIT
 MASTER_SNO="$CORPUS/ALL.sno"; MASTER_REF="$CORPUS/ALL.ref"; MASTER_CSV="$CORPUS/ALL.csv"
-[ -f "$MASTER_SNO" ] && [ -f "$MASTER_REF" ] && [ -f "$MASTER_CSV" ] || { echo "REFUSE(2): the master $CORPUS/ALL.{sno,ref,csv} is missing"; exit 2; }
+[ -f "$MASTER_CSV" ] || { echo "REFUSE(2): the master index $MASTER_CSV is missing"; exit 2; }
 # the population is the master's: the rows of ALL.csv whose family cell starts with feat or demo, each extracted by origin to scratch
 pop=$(python3 -I -c 'import csv,sys
 for r in csv.DictReader(open(sys.argv[1])):
