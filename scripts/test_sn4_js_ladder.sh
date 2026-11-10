@@ -9,7 +9,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${SCRIP:-$HERE/scrip}"
+SCRIP="${SCRIP:-$S4E/SCRIP/scrip}"
 CORPUS="$S4E/corpus"
 RT="$HERE/../../SCRIP/miscellaneous/runtimes/js/sno_runtime.js"
 TIMEOUT=10
@@ -56,10 +56,12 @@ run_one() {
     fi
 }
 
+RUNGS_LANG="${RUNGS_LANG:-snobol4}" . "$HERE/lib_rungs_extract.sh"
+rungs_extract_origin_prefix feat__ "$TMPD/feat" || { echo "REFUSE(2): the feat__ origins of the snobol4 master did not extract"; exit 2; }
 echo "=== SNOBOL4 → JS ladder ==="
 for sno in "$CORPUS/packages/snobol4/csnobol4_suite/"*.sno; do run_one "$sno"; done
 for sno in "$CORPUS/demos/"*.sno; do run_one "$sno"; done
-for sno in "$CORPUS/tests/snobol4/feat/"*.sno; do run_one "$sno"; done
+for sno in "$TMPD/feat/"*.sno; do run_one "$sno"; done
 
 TOTAL=$((PASS+FAIL))
 echo "PASS=$PASS FAIL=$FAIL TOTAL=$TOTAL"

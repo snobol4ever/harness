@@ -28,11 +28,11 @@ TIMEOUT="${TIMEOUT:-6}"
 MIN_PASS="${MIN_PASS:-10}"
 VERBOSE="${1:-}"
 
-if [ ! -x "$SCRIP" ];                 then echo "SKIP: scrip not found: $SCRIP";   exit 0; fi
-if ! command -v wat2wasm >/dev/null;  then echo "SKIP: wat2wasm not found";        exit 0; fi
-if ! command -v node     >/dev/null;  then echo "SKIP: node not found";            exit 0; fi
-if [ ! -f "$HOST_MJS" ];              then echo "SKIP: sno_host.mjs not found";    exit 0; fi
-if [ ! -d "$CORPUS" ];                then echo "SKIP: corpus not found";          exit 0; fi
+if [ ! -x "$SCRIP" ];                 then echo "REFUSE(2): scrip not found: $SCRIP";   exit 2; fi
+if ! command -v wat2wasm >/dev/null;  then echo "REFUSE(2): wat2wasm not found";        exit 2; fi
+if ! command -v node     >/dev/null;  then echo "REFUSE(2): node not found";            exit 2; fi
+if [ ! -f "$HOST_MJS" ];              then echo "REFUSE(2): sno_host.mjs not found";    exit 2; fi
+if [ ! -d "$CORPUS" ];                then echo "REFUSE(2): corpus not found";          exit 2; fi
 
 if [ ! -f "$WASM_RUNTIME_WASM" ] || [ "$WASM_RUNTIME_WAT" -nt "$WASM_RUNTIME_WASM" ]; then
     if ! wat2wasm "$WASM_RUNTIME_WAT" -o "$WASM_RUNTIME_WASM" 2>/dev/null; then
@@ -94,10 +94,12 @@ run_one() {
     fi
 }
 
+RUNGS_LANG="${RUNGS_LANG:-snobol4}" . "$HERE/lib_rungs_extract.sh"
+rungs_extract_origin_prefix feat__ "$TMPD/feat" || { echo "REFUSE(2): the feat__ origins of the snobol4 master did not extract"; exit 2; }
 echo "=== SNOBOL4 -> WASM ladder (safe) ==="
 for sno in "$CORPUS/packages/snobol4/csnobol4_suite/"*.sno; do run_one "$sno"; done
 for sno in "$CORPUS/demos/"*.sno; do run_one "$sno"; done
-for sno in "$CORPUS/tests/snobol4/feat/"*.sno; do run_one "$sno"; done
+for sno in "$TMPD/feat/"*.sno; do run_one "$sno"; done
 
 TOTAL=$((PASS+FAIL+SKIP))
 echo "PASS=$PASS FAIL=$FAIL SKIP=$SKIP TOTAL=$TOTAL"
