@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_pascal_front_end_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: pascal-front-end (the cto, 2026-10-28, R-1996/1998;
-# .github/ARCH-PASCAL-REDESIGN.md section 8). The plan is corpus/tests/pascal/front_end/STEPS.tsv; the witnesses are the .pas programs
+# .github/ARCH-PASCAL-REDESIGN.md section 8). The plan is harness/designs/front_end/STEPS.tsv; a witness is the entry front_end__NAME of the pascal master, or a loose pair, as the .pas programs
 # beside it, each with a .ref cut from fpc 3.2.2 (fpc -v0 in the program's own mode, the binary's stdout).
 #
 #   --list       print the steps and run nothing
@@ -11,7 +11,7 @@
 #                through corpus_suite_harness.py smoke under the feature writeln, no progress row, at most eight: the handful of R-1677),
 #                latest=... (results.tsv's latest reading per entry PASS in both modes, READ), row=N (SUITES.tsv's rosetta-pascal
 #                today_pass at least N, READ). Red before the step lands, green after.
-#   --cut        re-cut every witness ref from fpc (the design seat's road; an HQ that changes a witness re-cuts it the same way)
+#   --cut        retired (refuses rc 2): a witness's ref is the master entry's, cut by util_add_ladder_witness.py (CIO-37)
 #   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.pascal_front_end.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
@@ -21,7 +21,19 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/pascal/front_end"
-STEPS="$WD/STEPS.tsv"
+STEPS="$HERE/../designs/front_end/STEPS.tsv"   # moved from corpus/tests/pascal/front_end (the coo 2026-11-10, CIO-24 c, CIO-56)
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+# ⭐ A WITNESS IS THE ENTRY front_end__NAME OF THE PASCAL MASTER WHERE IT HAS ONE (CIO-24 c, the coo 2026-11-10), else the loose pair in
+# corpus/tests/pascal/front_end that its row has not admitted (pf20d and pf20e wait on the dialect column, pf30 on its unit's file fence):
+# witness NAME DIR sets WP (the program) and WR (its ref), the entry extracted to DIR; a loose pair's units (NAME_*.pas) travel with it.
+witness() {
+    if design_witness_has pascal "front_end__$1"; then
+        mkdir -p "$2"; design_witness_extract pascal "front_end__$1" "$2" > /dev/null 2>&1 || refuse "witness $1: its entry front_end__$1 did not extract"
+        WP="$2/front_end__$1.pas"; WR="$2/front_end__$1.ref"; WU=""
+    else
+        WP="$WD/$1.pas"; WR="$WD/$1.ref"; WU="$WD/$1"
+    fi
+}
 OUT=""
 RESULTS=/home/resources/progress/results.tsv
 SUITES=/home/resources/progress/SUITES.tsv
@@ -42,7 +54,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default pascal_front_end; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: pascal-front-end -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/pascal/front_end (refs from fpc 3.2.2)"
+    echo "DESIGN-PLAN: pascal-front-end -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/front_end/STEPS.tsv); a witness is the entry front_end__<name> of the pascal master, or its loose pair (refs from fpc 3.2.2)"
     printf '%-4s %-50s %-10s %-14s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-50s %-10s %-14s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -50,12 +62,7 @@ if [ "$mode" = list ]; then
     exit 0
 fi
 if [ "$mode" = cut ]; then
-    command -v fpc > /dev/null || refuse "no fpc on PATH (ORACLES.md: the Free Pascal oracle)"
-    T="$(mktemp -d "${TMPDIR:-/tmp}/pasfe_cut.XXXXXX")"
-    for w in $(awk -F'\t' '!/^#/ && $1 != "step" && $6 != "-" {print $6}' "$STEPS" | tr ' ' '\n' | sort -u); do
-        ( cd "$T" && fpc -v0 -o"$T/$w.bin" "$WD/$w.pas" > "$T/$w.cerr" 2>&1 && timeout -k 5 120 "$T/$w.bin" < /dev/null > "$WD/$w.ref" 2> /dev/null ); echo "cut $w.ref: $(wc -l < "$WD/$w.ref") lines$(grep -q 'Error' "$T/$w.cerr" && echo ' (FPC REFUSED: read the log)')"
-    done
-    rm -rf "$T"; exit 0
+    refuse "--cut retired: a witness is an entry of corpus/tests/pascal, its ref cut from fpc twice by util_add_ladder_witness.py --lang pascal --family front_end (CIO-37)"
 fi
 [ -n "$(col "$step" 1)" ] || refuse "no step $step in $STEPS (--list names them)"
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"
@@ -68,11 +75,11 @@ fi
 m3p=0; m4p=0; n=0; reds=""
 [ "$wits" = "-" ] && wits=""
 for w in $wits; do
-    ref="$WD/$w.ref"
-    [ -f "$WD/$w.pas" ] && [ -f "$ref" ] || refuse "witness $w has no .pas or .ref in $WD"
+    witness "$w" "$OUT/step$step/wit"; ref="$WR"
+    [ -f "$WP" ] && [ -f "$ref" ] || refuse "witness $w has no entry front_end__$w and no .pas or .ref in $WD"
     n=$((n + 1))
     for m in m3 m4; do
-        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WD/$w.pas" "$d/$w.pas"; for u in "$WD/${w}"_*.pas; do [ -f "$u" ] && cp "$u" "$d/"; done
+        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WP" "$d/$w.pas"; [ -n "$WU" ] && for u in "${WU}"_*.pas; do [ -f "$u" ] && cp "$u" "$d/"; done
         if [ "$m" = m3 ]; then
             ( cd "$d" && timeout -k 5 120 "$SC/scrip" -d131072k -s4096k "$w.pas" < /dev/null > "$d/out" 2> "$d/err" ); rc=$?
         else
@@ -90,8 +97,8 @@ for tok in $probe; do
     key="${tok%%=*}"; val="${tok#*=}"
     case "$key" in
         shadow) bad=0; seen=0
-                for w in $wits; do d="$OUT/step$step/$w.shadow"; mkdir -p "$d"
-                    ( cd "$d" && timeout -k 5 120 "$SC/scrip" --dump-pas-types --compile --out=/dev/null "$WD/$w.pas" < /dev/null > "$d/out" 2> "$d/err" )
+                for w in $wits; do d="$OUT/step$step/$w.shadow"; mkdir -p "$d"; witness "$w" "$d/wit"
+                    ( cd "$d" && timeout -k 5 120 "$SC/scrip" --dump-pas-types --compile --out=/dev/null "$WP" < /dev/null > "$d/out" 2> "$d/err" )
                     lines="$(grep -c '^PTY-STATS ' "$d/err")"; [ "$lines" -ge 1 ] || { bad=$((bad + 1)); continue; }
                     seen=$((seen + 1)); dis="$(awk '/^PTY-STATS /{ for (i = 1; i <= NF; i++) { split($i, kv, "="); if (kv[1] == "answered") a = kv[2]; if (kv[1] == "agreed") g = kv[2] } d += a - g } END { print d + 0 }' "$d/err")"
                     [ "$dis" = 0 ] || bad=$((bad + 1)); done
