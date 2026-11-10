@@ -1,0 +1,9 @@
+*  A continuation line after a comma (snobol4.l <BODY>{G}","{G}) is a line of the source. The rule tested yytext[_i]=="\n" (a char against a string literal, never
+*  true), so every statement after such a continuation took a line one too small in the C front end (testpgms-test8.spt: statement 91 was line 117 where the source has it
+*  on 118, and END on 126 where it is 132); the .sc parser counted true lines, and the IR-identity gate read the difference as four missing .loc lines.
+         OUTPUT = REPLACE('abc', 'a',
+.                         'b')
+         OUTPUT = REPLACE('xyz', 'x',
+.                         'w')
+         OUTPUT = 'done'
+END

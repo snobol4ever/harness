@@ -19,7 +19,7 @@
 #   bash ../harness/scripts/run_parser_sync_monitor.sh <lang> <sample-input>
 #
 # Examples:
-#   bash ../harness/scripts/run_parser_sync_monitor.sh snobol4  corpus/tests/snobol4/parser/atom_id.sno
+#   bash ../harness/scripts/run_parser_sync_monitor.sh snobol4  harness/fixtures/parser_snobol4/include_once_and_copy.sno
 #   bash ../harness/scripts/run_parser_sync_monitor.sh rebus    corpus/tests/rebus/parser_paren.reb
 #   bash ../harness/scripts/run_parser_sync_monitor.sh snocone  corpus/tests/snocone/test_capture_call.sc
 #   bash ../harness/scripts/run_parser_sync_monitor.sh icon     corpus/tests/icon/parser/fail_stmt.icn

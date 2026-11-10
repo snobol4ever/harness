@@ -1,0 +1,5 @@
+* a nested include, and a name found in the directory of a file already included (d2.inc is in inc_sub, where d.inc was found)
+-INCLUDE 'inc_nest.inc'
+-INCLUDE 'inc_sub/d.inc'
+        X = 1
+END

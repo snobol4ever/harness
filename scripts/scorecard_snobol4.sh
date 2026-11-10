@@ -106,7 +106,7 @@ if [ "${SCORECARD_PRINT_SUITES:-0}" = "1" ]; then printf '%s\n' "$SUITES"; exit 
 # smoke/jvm_j3 have no .ref siblings -- live-oracle-graded only, exactly the model this MISC bucket already
 # is; linker/ tests cross-file IMPORT/EXPORT linking, incompatible with the suite format's one-file-per-entry
 # model) -- their counts here are still the full, real denominator.
-MISC_DIRS="tests/snobol4/feat tests/snobol4/parser tests/snobol4/smoke tests/snobol4/jvm_j3 tests/snobol4/linker packages/snobol4/dotnet packages/snobol4/aisnobol"
+MISC_DIRS="tests/snobol4/feat tests/snobol4/smoke tests/snobol4/jvm_j3 tests/snobol4/linker packages/snobol4/dotnet packages/snobol4/aisnobol"
 # ---------------------------------------------------------------- stdin mapping (family conventions from the board scripts)
 stdin_for() {  # $1 = program path -> input file or /dev/null
   local p="$1" b d n; b="${p%.sno}"; d="$(dirname "$p")"; n="$(basename "$b")"

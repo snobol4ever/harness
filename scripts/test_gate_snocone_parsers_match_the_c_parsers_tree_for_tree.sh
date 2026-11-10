@@ -13,7 +13,8 @@
 #
 # POPULATION, EACH FILE ALONE: per landing the files of corpus/benchmarks/<lang>; with GATE_POPULATION=corpus or under the bus's
 # closure run (S4E_DONE_WHEN_RUN=1) every corpus program of the language (every *.<ext> outside .git and corpus/library, not
-# ALL.*) -- the whole-corpus run is a closure run, one at a time (R-1341). Each file goes to the C parser and to the .sc parser
+# ALL.*) and the parser fixtures harness/fixtures/parser_<lang>/ (moved out of corpus/tests by the coo 2026-11-10, CIO-36; GATE_POPULATION=fixtures runs
+# them alone) -- the whole-corpus run is a closure run, one at a time (R-1341). Each file goes to the C parser and to the .sc parser
 # compiled ONCE per language to a mode-4 binary (Lon 2026-09-28: "forget mode 3 runs."), run at the largest arena on the file's own
 # stdin; the two dumps are compared for THAT file. Raku is graded like the six (2026-10-21, Lon to the officer, verbatim: "I want it to
 # work on parser.sc programs completeness and speed performance versus the SCRIP C parsers."): the 2026-09-29 hang that kept its
@@ -81,7 +82,8 @@ for L in ${GATE_LANGS:-snobol4 snocone icon prolog rebus pascal raku}; do
     ext=${EXT[$L]}; exe="$ROOT/out/parser_$L"
     ( . "$HERE/lib_build_currency.sh" && assert_parser_current "$L" "$ROOT" ) || { echo "  $L: ⛔ REFUSE(2) $exe is missing or older than a source it was compiled from (named above) -- make parsers"; RC=2; continue; }
     SW="$(declared_switches_beside "$B/parser_$L.sc")" && [ -n "$SW" ] || { echo "  $L: ⛔ REFUSE(2) bootstrap/parser_$L.sc declares no heap or stack, or the declaration is refused"; RC=2; continue; }
-    if [ "$POP" = corpus ]; then find "$CORPUS" -type f -name "*.$ext" -not -name 'ALL.*' -not -path '*/.git/*' -not -path "$CORPUS/library/*" | sort > "$T/$L.files"
+    if [ "$POP" = corpus ]; then { find "$CORPUS" -type f -name "*.$ext" -not -name 'ALL.*' -not -path '*/.git/*' -not -path "$CORPUS/library/*"; ls "$HERE/../fixtures/parser_$L"/*."$ext" 2>/dev/null; } | sort > "$T/$L.files"
+    elif [ "$POP" = fixtures ]; then ls "$HERE/../fixtures/parser_$L"/*."$ext" 2>/dev/null | sort > "$T/$L.files"
     else ls "$CORPUS/benchmarks/$L"/*."$ext" 2>/dev/null | sort > "$T/$L.files"; fi
     nf=$(wc -l < "$T/$L.files"); [ "$nf" -gt 0 ] || { echo "  $L: ⛔ REFUSE(2) empty population ($POP)"; RC=2; continue; }
     cat $CHAIN "$B/parser_$L.sc" > "$T/$L.chain.sc"

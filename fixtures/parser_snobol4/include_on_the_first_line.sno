@@ -1,0 +1,4 @@
+-INCLUDE 'inc_a.inc'
+        Y = 2
+-copy "inc_sub/c.inc"
+END

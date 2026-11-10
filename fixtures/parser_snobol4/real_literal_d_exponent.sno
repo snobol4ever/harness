@@ -1,0 +1,7 @@
+*  A real literal's exponent letter is E, e, D or d (snobol4.l EXP [eEdD][+-]?{DIGIT}+): 1.0D2 is 100, 3D1 is 30, 2.5d-1 is 0.25. The first cut of parser_snobol4.sc read only E and e
+*  and refused the whole program at the first D (testpgms-test1.spt, line 280).
+         A = 1.0D2 + 2.5d0
+         B = 3D1 + 4.e2 + 5E-1
+         C = 2.5d-1 + 1.5D+2
+         OUTPUT = A ' ' B ' ' C
+END

@@ -1,0 +1,5 @@
+        X = 1
+-INCLUDE 'inc_empty.inc'
+        Y = 2
+-COPY 'inc_empty.inc'
+END

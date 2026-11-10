@@ -1,0 +1,8 @@
+* -INCLUDE names a file once, -COPY every time
+-INCLUDE 'inc_a.inc'
+        M = 0
+-INCLUDE 'inc_a.inc'
+-COPY 'inc_sub/c.inc'
+        N = 0
+-COPY 'inc_sub/c.inc'
+END
