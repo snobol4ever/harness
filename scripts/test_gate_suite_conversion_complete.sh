@@ -6,6 +6,7 @@
 # that can never say YES:
 #   (1) FOUR of the six (pascal/prolog/rebus/snocone) test `find tests/<lang> -name '*.<ext>' | wc -l -eq 0`.
 #       But the SETTLED architecture puts converted suite output INSIDE tests/<lang>/ WITH THE REAL EXTENSION --
+# not-a-corpus-path: tests/snobol4/crosscheck/patterns.sno -- prose in a comment: the history of a settled architecture, the file is gone
 #       live proof: corpus/tests/snobol4/crosscheck/patterns.sno, 44KB, pushed. So a successful conversion makes
 #       that count go UP, and the criterion is unsatisfiable BY DOING THE WORK CORRECTLY. Measured at ruling
 #       time: `find tests/snobol4 -name '*.sno'` = 187, against a criterion demanding 0.

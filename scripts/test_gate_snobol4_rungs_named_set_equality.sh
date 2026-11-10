@@ -57,6 +57,7 @@ echo "scanning $ncommits deletion commits (committed>=$START UNION message-relev
 derive_family() {
     local p="$1" d b norm
     d=$(dirname "$p"); b=$(basename "$p" .sno)
+    # not-a-corpus-path: tests/snobol4/} -- a bash prefix-strip pattern in code (the norm strip below), not a path the gate reads
     norm="${d}/${b}"; norm="${norm#tests/snobol4/}"; norm="${norm//\//_}"
     echo "$norm"
 }
