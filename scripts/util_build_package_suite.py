@@ -265,8 +265,13 @@ def read_contract(pkg_dir):
     entry's row of ORACLE_RUNS.tsv records, in a copy of `upstream<TAB><dir>` (the upstream test tree, an absolute path), its answer the
     sorted temp file, checked against the upstream NAME_old (ALL.xsbold names each check); and `compare<TAB>ignore-all-space` -- the package's
     harness compares with diff -w, so every absorbed entry's ALL.csv compare cell reads ignore-all-space. And `oracle<TAB>unicon` (R-2072, hq_unicon): an Icon
-    package whose refs are cut from the Unicon translator through unicon_bin() (the UniTests package), compiled by the translator with -s and -o and run as ./stem."""
-    out = {"stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": ""}
+    package whose refs are cut from the Unicon translator through unicon_bin() (the UniTests package), compiled by the translator with -s and -o and run as ./stem.
+    ⭐ CIO-22 C (the coo 2026-11-10, on the cio's design): `fatal<TAB>gradable` -- a SPITBOL graceful fatal (sbl_died) is the program's answer and is
+    absorbed with its fatal block as the ref and SPITBOL's exit code as want_rc (CEO-1344: a SPITBOL fatal is gradable; the package's ALL.mask carries the
+    block's engine lines); and `bom<TAB>as-shipped` -- a source that carries a UTF-8 BOM is run on the oracle as shipped and absorbed with what it answers,
+    graded by the harness's compile-refusal arm (harness 1764ac3c), instead of excluded before any run. Each key lifts exactly its one exclusion; an oracle
+    crash, a hang, an empty answer or a two-run difference excludes as before."""
+    out = {"stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -288,6 +293,10 @@ def read_contract(pkg_dir):
             out["dialect"] = "any-fpc-mode"
         elif f[0] == "oracle" and f[1] == "xsb-gentest":
             out["oracle"] = "xsb-gentest"
+        elif f[0] == "fatal" and f[1] == "gradable":
+            out["fatal"] = "gradable"
+        elif f[0] == "bom" and f[1] == "as-shipped":
+            out["bom"] = "as-shipped"
         elif f[0] == "oracle" and f[1] == "unicon":
             out["oracle"] = "unicon"
         elif f[0] == "upstream" and f[1].startswith("/"):
@@ -310,7 +319,7 @@ def read_contract(pkg_dir):
             if not (pkg_dir / f[1]).is_file(): h.refuse(f"{cf}:{n}: stdin {f[1]!r} names no file beside the package (every entry with no stem-named stdin of its own would read it)")
             out["stdin"] = f[1].strip()
         else:
-            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, units=ref-beside,units=plunit, units=iso-rejection, dialect=any-fpc-mode, "
+            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, units=ref-beside,units=plunit, units=iso-rejection, dialect=any-fpc-mode, fatal=gradable, bom=as-shipped, "
                      f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space and unmarked_compile_args=--dialect=NAME only")
     if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):
         h.refuse(f"{cf}: oracle=xsb-gentest needs upstream=<the upstream test tree> naming a directory (got {out['upstream']!r})")
@@ -407,6 +416,10 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
                 _decl[_row.get("entry")] = {c: (_row.get(c) or "").strip() for c in _decl_cols}
     if merged:
         print("contract: stderr merged (CONTRACT.tsv) -- every ref is cut from stdout and stderr as one stream", file=sys.stderr)
+    if contract["fatal"] == "gradable":
+        print("contract: fatal gradable (CONTRACT.tsv) -- a SPITBOL graceful fatal is absorbed with its fatal block as the ref (CEO-1344)", file=sys.stderr)
+    if contract["bom"] == "as-shipped":
+        print("contract: bom as-shipped (CONTRACT.tsv) -- a source with a UTF-8 BOM runs on the oracle as shipped and is graded by what it answers", file=sys.stderr)
     ref_beside = contract["units"] == "ref-beside"
     plunit = contract["units"] == "plunit"
     iso_rej = contract["units"] == "iso-rejection"
@@ -577,7 +590,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
                                         f"that IS vendored elsewhere under another path reads as what it is)"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (missing -INCLUDE {gap!r})", file=sys.stderr)
             continue
-        if lang in ("", "snobol4") and has_bom(text):
+        if lang in ("", "snobol4") and has_bom(text) and contract["bom"] != "as-shipped":
             excluded.append((name, "source carries a UTF-8 BOM -- confuses the oracle's label lexer (segfault, or a "
                                         "compile-time-only fatal that never executes the program), so its output would be "
                                         "a lexer-confusion artifact, not the program's ground truth"))
@@ -798,7 +811,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
             excluded.append((name, f"oracle crashed (signal {-ora_rc})"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle crashed, signal {-ora_rc})", file=sys.stderr)
             continue
-        if sbl_died(ora_text):
+        if sbl_died(ora_text) and contract["fatal"] != "gradable":
             excluded.append((name, "oracle died: graceful fatal report (e.g. undefined function) -- no ground truth to grade against"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle died)", file=sys.stderr)
             continue
