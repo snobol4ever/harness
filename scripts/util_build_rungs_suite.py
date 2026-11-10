@@ -80,7 +80,8 @@ DEFAULT_HEAP_KB = str(h.GC_HEAP_CAP_KB)
 DEFAULT_STACK_KB = str(h.GC_STACK_FLOOR_KB)
 # the unit's command line (RULES.md hard-cap rule clause 8 (f), R-1281): carried forward like heap_kb, never re-derived --
 # nothing in an entry's text says what switches its compile needs or what arguments its run takes
-CMD_COLS = ("compile_args", "run_args", "stage_name", "stderr")   # stderr (the coo 2026-11-10, CIO-36, INTERIM until CIO-34's recut): "merged" for an entry whose answer is on stderr   # stage_name (the coo 2026-11-10, CIO-36): the bare file name the harness writes an entry's program as, the
+CMD_COLS = ("timeout_s", "compile_args", "run_args", "stage_name", "stderr")   # timeout_s (the coo 2026-11-10): a DECLARED per-entry bound, carried like heap_kb; five masters hold it and every rebuild dropped it
+#   # stderr (the coo 2026-11-10, CIO-36, INTERIM until CIO-34's recut): "merged" for an entry whose answer is on stderr   # stage_name (the coo 2026-11-10, CIO-36): the bare file name the harness writes an entry's program as, the
 # name its answer was cut under; carried like the command line, set by the additive road when the answer names its own file (_stage_name_for)
 
 
@@ -151,7 +152,7 @@ def carried_cmd_cols(csv_path):
     A rebuild carries the table's shape and never imposes a column the table was not given, so --reindex on an unmodified
     tree stays byte-identical (test_gate_rungs_builder_reindex_only.sh arm a) while the tables gain the columns."""
     if not os.path.isfile(csv_path):
-        return list(CMD_COLS)
+        return [c for c in CMD_COLS if c != "timeout_s"]   # a declared bound is carried, never imposed on a new table
     with open(csv_path, newline="") as f:
         hdr = next(csv.reader(f), [])
     return [c for c in CMD_COLS if c in hdr]
@@ -2073,7 +2074,15 @@ def main():
     # has nothing to write FROM, so it cannot produce a smaller rungs -- `not pairs` exits without writing a
     # byte. The dangerous case is strictly `0 < pairs << base_entries`: something to write, far too little of
     # it. So the benign branch is checked FIRST and the collapse test now only ever sees pairs > 0.
-    if not pairs:
+    # ⛔ A DELETED PROGRAM'S OMIT LINE IS RETRACTED EVEN WHEN NOTHING NEW ARRIVES (the coo 2026-11-10, rebus folder: with the three loose
+    # programs git rm'd and no new pair, this exit kept their three omit lines, so the retraction of CIO-58 never ran). With a stale line in
+    # ALL.omit the run goes on to the write road with zero pairs, which writes the same entries and retracts the line.
+    _omit_stale = []
+    _omit_p = os.path.join(OUTDIR, "ALL.omit")
+    if not pairs and base_entries and os.path.isfile(_omit_p):
+        _ok = [l.split("\t", 1)[0] for l in open(_omit_p, encoding="utf-8", errors="replace").read().split("\n") if l and not l.startswith("#") and "\t" in l]
+        _omit_stale = _no_source_keys(_ok, lang, os.path.join(S4E, "corpus"))
+    if not pairs and not _omit_stale:
         if base_entries:
             print("RUNGS CURRENT: %d entries, zero new absorbable pairs under %s -- nothing to do." % (len(base_entries), ROOT), file=sys.stderr)
             raise SystemExit(0)
