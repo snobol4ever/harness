@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# util_zframe_ab.sh <label> -- run a fixed 22-program batch under whatever scrip/.so pair is
+# util_zframe_ab.sh <label> -- run a fixed 21-program batch under whatever scrip/.so pair is
 # currently installed at /home/claude/SCRIP, and report ok/crash counts.
+# (2026-11-10: the 22nd program, the f01 hello feat file, stands in no repo -- measured -- and was a silent miss; removed.)
 # Used to VERIFY (not inherit) the ZC_FRAME_RBP-does-not-run claim. Same batch, same order,
 # same timeout for both arms, so the two runs are comparable by construction.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
@@ -37,7 +38,6 @@ $C/benchmarks/icon/deal.icn
 $C/tests/prolog/rung11_findall_findall_basic.pl
 $C/tests/prolog/rung10_assert_assertz_basic.pl
 $C/icon/rung36_jcon_cxprimes.icn
-$C/tests/snobol4/feat/f01_hello.sno
 "
 ok=0; crash=0; miss=0
 for p in $PROGS; do
