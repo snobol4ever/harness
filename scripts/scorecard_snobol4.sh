@@ -51,7 +51,7 @@ DEMO="$CORPUS/demos"
 #           A filter that lists measurement lines BY NAME must be extended whenever the harness prints a new one.
 SUITES=$(cat <<'EOF'
 beauty_self    20 SELF                                                -                          include 90 -
-beauty_suite   15 tests/snobol4/beauty_suite                       -maxdepth 1 -name *_driver.sno  SELFDIR      60 -
+beauty_suite   15 MASTER                                              -maxdepth 1 -name *_driver.sno  SELFDIR      60 -
 demos          15 demo                               -maxdepth 2 -name *.sno    SELFDIR      90 -
 benchmarks     10 benchmarks/snobol4                                  -maxdepth 1 -name *.sno    SELFDIR      90 -
 bb_probes      10 library/probe_reference/bb                                            -name *.sno                SELFDIR      20 -
@@ -83,7 +83,7 @@ EOF
 # ⭐ AND THE QUESTION IS NOW MOOT, NOT MERELY PENDING (Lon 2026-08-27): no scored row returns, so there are no lon points to place.  The 5 stay UNALLOCATED and the
 # declared total STAYS 113.  This reservation stands; re-opening it needs a NEW Lon ruling, never an inference from the s269 access retraction.
 # ⭐ probes_misc (row 53 above) is SUITE-FORMAT AWARE as of row `scorecard-probes-misc-suite-awareness`: cmd_run also
-# folds in every corpus_suite_harness.py-graded family under tests/snobol4/probe/ (see sc_suite_family_rows below) --
+# folds in the master's probe_* families (MASTER_FOLD and sc_master_family_rows below, CIO-43) --
 # 113's own weights are UNTOUCHED by this (probes_misc stays weight 5, per the knob rule above), only ITS OWN pass
 # rate/denominator moves.  See .github FINDING-2026-08-27-seat15-probe-conformance-already-shrank-probes-misc-fuzz-
 # stays-blocked.md for the 92-witness loss this cures, and test_gate_scorecard_suite_aware.sh for the proof.
@@ -97,8 +97,8 @@ case "$SUITES" in *programs/lon*) echo "⛔ scorecard_snobol4.sh: the suite tabl
 # and exits before touching a corpus, an oracle, or a compiled scrip.  Requires no argument and no $1.
 if [ "${SCORECARD_PRINT_SUITES:-0}" = "1" ]; then printf '%s\n' "$SUITES"; exit 0; fi
 # ⚠️ task tests-consolidate-snobol4-loose (seat14, 2026-08-27): `feat`'s live program count here DROPPED from
-# 21 to 5 on purpose -- 16 converted to corpus-suites-consolidation suite format (tests/snobol4/feat.sno/.ref,
-# graded instead by test_corpus_snobol4.sh's suite-family loop), 3 left loose as documented pre-existing reds
+# 21 to 5 on purpose -- 16 converted to corpus-suites-consolidation suite format (now the master's family feat,
+# graded here by the master fold, MASTER_FOLD below), 3 left loose as documented pre-existing reds
 # (.github FINDING-2026-08-27-seat14-feat-family-three-pre-existing-reds-invisible-to-any-gate.md), 2 left
 # loose for having no .ref at all (f15_trace_dump, f18_error_handling, pre-existing gap). A smaller `find`
 # count under this MISC bucket for `feat` from here on is EXPECTED, not a regression -- this comment is the
@@ -106,7 +106,10 @@ if [ "${SCORECARD_PRINT_SUITES:-0}" = "1" ]; then printf '%s\n' "$SUITES"; exit 
 # smoke/jvm_j3 have no .ref siblings -- live-oracle-graded only, exactly the model this MISC bucket already
 # is; linker/ tests cross-file IMPORT/EXPORT linking, incompatible with the suite format's one-file-per-entry
 # model) -- their counts here are still the full, real denominator.
-MISC_DIRS="tests/snobol4/feat tests/snobol4/smoke tests/snobol4/jvm_j3 tests/snobol4/linker packages/snobol4/dotnet packages/snobol4/aisnobol"
+# ⭐ THE FOUR FOLDERS feat, smoke, jvm_j3 AND linker ARE GONE (CIO-43, 2026-11-10): their programs are entries of the master (MASTER_FOLD's misc
+# row grades them by family) or still stand loose and flat in the master's folder as <family>_*.sno until the coo absorbs them (MISC_LOOSE).
+MISC_DIRS="packages/snobol4/dotnet packages/snobol4/aisnobol"
+MISC_LOOSE="feat smoke jvm_j3 linker"
 # ---------------------------------------------------------------- stdin mapping (family conventions from the board scripts)
 stdin_for() {  # $1 = program path -> input file or /dev/null
   local p="$1" b d n; b="${p%.sno}"; d="$(dirname "$p")"; n="$(basename "$b")"
@@ -215,48 +218,49 @@ sc_suite_fields() {  # $1 = suite name -> "root<TAB>fargs<TAB>lib<TAB>rto<TAB>no
   done <<< "$SUITES"
   return 1
 }
-# ---------------------------------------------------------------- suite-family awareness (row `scorecard-probes-misc-suite-awareness`, s278)
-# ⛔ A probe family that CONSOLIDATES (probe/<family> loose files -> tests/snobol4/probe/<family>.{sno,ref},
-# corpus-suites-consolidation's probe-consolidate-* rows) moves OUT of probes_misc's find root (`probe`) into a
-# SIBLING root this suite's glob never reaches -- SILENT, uncorrected loss (92 witnesses for `conformance` alone,
-# .github FINDING-2026-08-27-seat15-probe-conformance-already-shrank-probes-misc-fuzz-stays-blocked.md). A suite
-# .sno/.ref pair is also never gradeable as ONE program (run_one's own SUITE-FILE GUARD refuses it, correctly --
-# it is a container) -- so it cannot simply be added to probes_misc's find glob either; it needs its ENTRY count,
-# from the ONE authority on that count: corpus_suite_harness.py's `run` subcommand, invoked exactly the way
-# test_corpus_snobol4.sh's own probe-suite-family loop already does (same $HARNESS, same discovery-from-the-
-# filesystem, same SUITE_BOARD field parsing) -- mirrored here, not re-derived, per RULES.md "call it, never
-# re-implement suite parsing in bash beside it".
-# One SYNTHETIC results.tsv row per ENTRY (never one row per family): cmd_report's awk sums PASS by status
-# STRING only, never by row identity, so per-mode marginal counts (read straight off SUITE_BOARD's own fields)
-# are the entire scoring contract -- exact per-witness m3/m4 PAIRING is not preserved (the two status lists are
-# zipped positionally, not matched by entry name), which only softens the diagnostic "top failure classes"
-# column, never N/P3/P4/META. ⛔ "ORACLE_FAIL" is never used as a synthesized status: that literal string routes
-# a row OUT of the denominator entirely in cmd_report's awk (`next`) -- using it here would silently rebuild the
-# exact bug this function exists to cure.
-sc_suite_family_rows() {  # $1 = suite name  $2 = suite-pair source dir  $3 = extra find-predicate (optional,
-                          # e.g. "-name bb*.sno" or "! -name bb*.sno" -- lets two rows PARTITION one shared
-                          # source dir without double-counting -- see bb_probes/probes_misc below) -> synthetic
-                          # TSV rows on stdout (results.tsv format)
-  local sname="$1" srcdir="$2" extra="${3:-}" harness="$HERE/corpus_suite_harness.py"
-  local s_sno s_ref fam board
-  [ -f "$harness" ] || { echo "⛔ sc_suite_family_rows: corpus_suite_harness.py missing at $harness" >&2; return 1; }
-  find "$srcdir" -maxdepth 1 -name '*.sno' $extra 2>/dev/null | sort | while IFS= read -r s_sno; do
-    s_ref="${s_sno%.sno}.ref"; [ -f "$s_ref" ] || continue
-    fam="$(basename "$s_sno" .sno)"
-    board="$(python3 "$harness" run "$s_sno" "$s_ref" --modes m3,m4 2>/dev/null | grep '^SUITE_BOARD ')"
-    if [ -z "$board" ]; then echo "⛔ sc_suite_family_rows: no SUITE_BOARD for suite:${sname}/${fam} ($s_sno) -- 0 entries counted, NOT skipped silently" >&2; continue; fi
-    local kv k n f3="" f4="" i
-    for kv in PASS:m3_pass DIFF:m3_fail SIG0:m3_crash TIMEOUT:m3_hang UNPROVEN:m3_unproven COMPILE_FAIL:m3_skip; do
-      k="${kv%%:*}"; n="$(echo "$board" | grep -oE "${kv##*:}=[0-9]+" | cut -d= -f2)"; n="${n:-0}"
-      for ((i=0;i<n;i++)); do f3="$f3$k"$'\n'; done
-    done
-    for kv in PASS:m4_pass DIFF:m4_fail SIG0:m4_crash TIMEOUT:m4_hang UNPROVEN:m4_unproven COMPILE_FAIL:m4_skip; do
-      k="${kv%%:*}"; n="$(echo "$board" | grep -oE "${kv##*:}=[0-9]+" | cut -d= -f2)"; n="${n:-0}"
-      for ((i=0;i<n;i++)); do f4="$f4$k"$'\n'; done
-    done
-    paste <(printf '%s' "$f3") <(printf '%s' "$f4") | awk -F'\t' -v s="$sname" -v fam="$fam" \
-      'NF==2{printf "%s\tsuite:%s#%d\t%s\t%s\t0\t0\tsuite-derived (corpus_suite_harness.py; entry pairing is positional, not by name)\n", s, fam, ++i, $1, $2}'
+# ---------------------------------------------------------------- the master fold (CIO-43, 2026-11-10; was row `scorecard-probes-misc-suite-awareness`, s278)
+# ⭐ A SUITE WHOSE PROGRAMS ARE ENTRIES OF THE MASTER READS THEM FROM THE MASTER, BY FAMILY (CIO-43): the loose folders of the snobol4
+# tests were absorbed into ALL.sno on 2026-08-29 and cleaned away on 2026-11-10, so an arm that found its programs by `find` in one of
+# them graded nothing. MASTER_FOLD names, per suite, the ALL.csv family cells it grades: an extended regex the family matches and one it
+# must not match ('-' for none). The entries are graded by the ONE authority on a master entry, corpus_suite_harness.py run ALL.sno
+# ALL.ref --partition entry:A,entry:B,... -- each entry's declared sizes, compile_args, stdin, companions and mask exactly as the master
+# is graded -- in ONE run per suite, never re-implemented in bash beside it (RULES.md). A suite pair is never gradeable as ONE program
+# (run_one's SUITE-FILE GUARD refuses it, correctly), so it never joins a find glob.
+# One SYNTHETIC results.tsv row per ENTRY (never one row per family): cmd_report's awk sums PASS by status STRING only, never by row
+# identity, so the per-mode counts read straight off SUITE_BOARD's own fields are the entire scoring contract -- the m3/m4 PAIRING is
+# positional, not by entry name, which softens only the diagnostic "top failure classes" column, never N/P3/P4/META. ⛔ "ORACLE_FAIL"
+# is never a synthesized status: that literal routes a row OUT of the denominator in cmd_report's awk (`next`). bb_probes and
+# probes_misc PARTITION the probe_* families by the bb naming, so neither double-counts the other's entries; probe_loose_* stays out of
+# probes_misc as it always was (those programs were never under its roots). The weights are Lon's and do not move (CIO-43 (b)).
+MASTER_FOLD=$(cat <<'EOF'
+beauty_suite  ^beauty_suite_                    -
+probes_misc   ^probe_                           ^probe_(bb|loose_)
+bb_probes     ^probe_bb                         -
+misc          ^(feat|smoke|jvm_j3|linker)(_|$)  -
+EOF
+)
+sc_master_family_rows() {  # $1 = suite name  $2 = family regex  $3 = excluded family regex or - -> synthetic TSV rows on stdout (results.tsv format)
+  local sname="$1" inc="$2" exc="$3" harness="$HERE/corpus_suite_harness.py" t4="$CORPUS/tests/snobol4" parts board modes=m3,m4
+  [ -f "$harness" ] || { echo "⛔ sc_master_family_rows: corpus_suite_harness.py missing at $harness" >&2; return 1; }
+  [ -f "$t4/ALL.csv" ] || { echo "⛔ sc_master_family_rows: no master index at $t4/ALL.csv -- suite:$sname counts 0 master entries, NOT skipped silently" >&2; return 0; }
+  parts="$(python3 -I -c 'import csv,re,sys
+i = re.compile(sys.argv[2]); x = None if sys.argv[3] == "-" else re.compile(sys.argv[3])
+print(",".join("entry:" + r["entry"] for r in csv.DictReader(open(sys.argv[1])) if i.search(r["family"]) and not (x and x.search(r["family"]))))' "$t4/ALL.csv" "$inc" "$exc")"
+  [ -n "$parts" ] || { echo "⛔ sc_master_family_rows: no family of $t4/ALL.csv matches /$inc/ -- suite:$sname counts 0 master entries, NOT skipped silently" >&2; return 0; }
+  { [ -n "$SC_PORT" ] || [ "${S4E_MODES:-m3,m4}" = m3 ]; } && modes=m3
+  board="$(python3 "$harness" run "$t4/ALL.sno" "$t4/ALL.ref" --lang snobol4 --modes "$modes" --partition "$parts" 2>/dev/null | grep '^SUITE_BOARD ')"
+  [ -n "$board" ] || { echo "⛔ sc_master_family_rows: no SUITE_BOARD for suite:$sname (families /$inc/ of $t4/ALL.sno) -- 0 entries counted, NOT skipped silently" >&2; return 0; }
+  local kv k n f3="" f4="" i
+  for kv in PASS:m3_pass DIFF:m3_fail SIG0:m3_crash TIMEOUT:m3_hang UNPROVEN:m3_unproven COMPILE_FAIL:m3_skip; do
+    k="${kv%%:*}"; n="$(echo "$board" | grep -oE " ${kv##*:}=[0-9]+" | cut -d= -f2)"; n="${n:-0}"
+    for ((i=0;i<n;i++)); do f3="$f3$k"$'\n'; done
   done
+  for kv in PASS:m4_pass DIFF:m4_fail SIG0:m4_crash TIMEOUT:m4_hang UNPROVEN:m4_unproven COMPILE_FAIL:m4_skip; do
+    k="${kv%%:*}"; n="$(echo "$board" | grep -oE " ${kv##*:}=[0-9]+" | cut -d= -f2)"; n="${n:-0}"
+    for ((i=0;i<n;i++)); do f4="$f4$k"$'\n'; done
+  done
+  paste <(printf '%s' "$f3") <(printf '%s' "$f4") | awk -F'\t' -v s="$sname" \
+    'NF==2{printf "%s\tmaster:%s#%d\t%s\t%s\t0\t0\tmaster-derived (corpus_suite_harness.py; entry pairing is positional, not by name)\n", s, s, ++i, $1, ($2==""?"-":$2)}'
 }
 # ---------------------------------------------------------------- PROVENANCE + CONTENTION (row `scorecard-provenance`, s190)
 # ⛔ THIS BOARD IS TIMING-GRADED AND COULD BE SILENTLY CORRUPTED BY A CO-TENANT WITH NOTHING IN ITS OUTPUT SAYING SO.  grade()
@@ -319,7 +323,7 @@ run_one() {  # suite lib prog norm run_to
   # it wrong or silently skip it: detected by an END-statement count >=2 (a lone program has exactly one terminal
   # END; a suite file has one per contained entry -- format-agnostic, doesn't depend on the tag/banner spelling)
   # OR the first line matching either format's own marker (harness's ONE_LINE_TAG_RE `;\* name$` / BANNER_RE
-  # `^\*-+ N name$`). Any probe/ family already converted lives under tests/snobol4/probe/ instead (a disjoint
+  # `^\*-+ N name$`). Any probe/ family already converted lives in the master instead (the master fold, a disjoint
   # path this suite's own `find $CORPUS/probe ...` glob never reaches), so this guard is a safety net against a
   # FUTURE oversight, not something today's clean corpus/probe/ tree is expected to trip.
   local _endc _first
@@ -399,7 +403,7 @@ run_one() {  # suite lib prog norm run_to
   echo -e "$suite\t${prog#$CORPUS/}\t$st3\t$st4\t$t3\t$t4\t$note"
   rm -rf "$W"
 }
-export -f run_one hr_get sc_mask stdin_for sc_libpath sbl_flags sbl_died sc_oracle_run run_at_declared_table declared_compile_args_from_table declared_oracle_args_beside declared_switches_from_table _declared_switch_words; export CORPUS SBL SCRIP SC DEMO _LDA_HERE SC_PORT
+export -f run_one hr_get sc_mask stdin_for sc_libpath sbl_flags sbl_lang_flags sbl_died sc_oracle_run run_at_declared_table declared_compile_args_from_table declared_oracle_args_beside declared_switches_from_table _declared_switch_words; export CORPUS SBL SCRIP SC DEMO _LDA_HERE SC_PORT
 # ---------------------------------------------------------------- run
 cmd_run() {
   set -f
@@ -462,7 +466,8 @@ cmd_run() {
     case "$root" in
       SELF)      echo "$DEMO/beauty/beauty.sno" > "$list";;
       SCRIPTEST) find "$SC/test" $fargs 2>/dev/null | sort > "$list";;
-      MISC)      : > "$list"; for m in $MISC_DIRS; do find "$CORPUS/$m" $fargs 2>/dev/null; done | sort >> "$list";;
+      MISC)      : > "$list"; { for m in $MISC_DIRS; do find "$CORPUS/$m" $fargs 2>/dev/null; done; for m in $MISC_LOOSE; do find "$CORPUS/tests/snobol4" -maxdepth 1 -name "${m}_*.sno" 2>/dev/null; done; } | sort >> "$list";;
+      MASTER)    : > "$list";;   # no loose programs: the master fold below grades this suite (CIO-43)
       *)         find "$CORPUS/$root" $fargs 2>/dev/null | sort > "$list";;
     esac
     [ "$fargs" = "-" ] && true
@@ -492,20 +497,13 @@ fi
 hr_run "$SCRIP"
 export HR_DIR
     SC_DECL="$out/decl.$name" xargs -a "$list" -P "$jobs" -I{} bash -c 'run_one "$0" "$1" "$2" "$3" "$4"' "$name" "$lib" {} "$norm" "$rto" >> "$out/results.tsv" 2>>"$out/noise.log"
-    # ⛔ SCOPED TO probes_misc/bb_probes DELIBERATELY (row scorecard-probes-misc-suite-awareness, extended
-    # row probe-consolidate-bb 2026-08-28): these are the two rows whose root has a live sibling
-    # suite-consolidation destination TODAY (tests/snobol4/probe/), and they PARTITION that one shared
-    # directory by the bb*/non-bb* naming convention (mirrors bb_probes's own find-glob split three lines
-    # above: library/probe_reference/bb has its OWN dedicated higher-weighted row, everything else is probes_misc) so neither
-    # double-counts the other's entries. A different suite growing the same sibling-directory shape needs
-    # its own named hook here, not a speculative generic one.
-    if [ "$name" = probes_misc ] && [ -d "$CORPUS/tests/snobol4/probe" ]; then
-      echo "== $name: +suite-derived families under tests/snobol4/probe (excl. bb*)  $(date +%H:%M:%S)"
-      sc_suite_family_rows "$name" "$CORPUS/tests/snobol4/probe" '! -name bb*.sno' >> "$out/results.tsv" 2>>"$out/noise.log"
-    fi
-    if [ "$name" = bb_probes ] && [ -d "$CORPUS/tests/snobol4/probe" ]; then
-      echo "== $name: +suite-derived families under tests/snobol4/probe (bb* only)  $(date +%H:%M:%S)"
-      sc_suite_family_rows "$name" "$CORPUS/tests/snobol4/probe" '-name bb*.sno' >> "$out/results.tsv" 2>>"$out/noise.log"
+    # ⭐ THE MASTER FOLD (CIO-43): a suite MASTER_FOLD names adds its master entries, by family, after its loose programs. bb_probes and
+    # probes_misc PARTITION the probe_* families by the bb naming, so neither double-counts the other's entries.
+    local _fi="" _fx=""
+    read -r _fi _fx < <(echo "$MASTER_FOLD" | awk -v s="$name" '$1 == s { print $2, $3; exit }')
+    if [ -n "$_fi" ]; then
+      echo "== $name: +master entries of the families /$_fi/ (not /$_fx/)  $(date +%H:%M:%S)"
+      sc_master_family_rows "$name" "$_fi" "$_fx" >> "$out/results.tsv" 2>>"$out/noise.log"
     fi
   done
   if [ -f "$out/declared_memory.refused" ]; then
@@ -630,18 +628,9 @@ cmd_report() {
   # ⛔ `if`, NOT `[ ... ] && echo`: this is cmd_report's LAST statement, so a bare test would make the whole script exit 1 on any
   # board that happens to have zero pin-only rows -- a green board reporting failure.  Caught by running it, not by reading it.
   if [ "$np" -gt 0 ]; then echo "PIN-ONLY ROWS — scored against the pin because the live oracle did not deliver: $np (of which oracle exited 0 on a FATAL REPORT: $nd)"; fi
-  # ⛔⭐ OUT-OF-DIALECT ROWS ARE NAMED HERE, NEVER FILTERED OUT (Lon ruled 2026-08-29; executed hq_P, row `beauty-suite-ref-provenance`).  These two are pin-only for a
-  # REASON THE COUNT CANNOT CARRY: the oracle did not "fail to deliver", it REFUSED BY DOCUMENTED RESTRICTION -- tree_driver's ARRAY('1:0') is manual ERROR 067 (line 11380)
-  # and ReadWrite_driver's CSNOBOL4 bracket file spec is ERROR 116 (line 11434).  So they are kept as regression tests but are NOT SPITBOL-conformance evidence, and a
-  # reader of this board must not count them as either a pass or a defect.  ⛔ Named, not skipped: this file's own law (see the lon_cherryholmes note above, :72) is that an
-  # exclusion must be STRUCTURAL or VISIBLE, because a run-time skip list is re-openable by anyone and silently shrinks a denominator.  Same shape as beauty_self above.
-  if [ -s "$out/results.tsv" ]; then
-    local od; od="$(awk -F'\t' '$7 ~ /^pin-only/ && ($2 ~ /beauty_suite\/tree_driver\.sno$/ || $2 ~ /beauty_suite\/ReadWrite_driver\.sno$/){print $2}' "$out/results.tsv" | sort | tr '\n' ' ')"
-    if [ -n "$od" ]; then
-      echo "  ⭐ OUT-OF-DIALECT (Lon 2026-08-29) — kept as regression tests, NOT conformance witnesses; the oracle refuses them by documented SPITBOL restriction, so their pin-only status is BY DESIGN: $od"
-      echo "     tree_driver: ARRAY('1:0') -> ERROR 067 (manual 11380) · ReadWrite_driver: CSNOBOL4 bracket file spec -> ERROR 116 (manual 11434).  See corpus/tests/snobol4/beauty_suite/KEEP.md."
-    fi
-  fi
+  # ⛔ THE OUT-OF-DIALECT NOTE FOR tree_driver AND ReadWrite_driver (Lon 2026-08-29) IS RETIRED HERE (CIO-43, 2026-11-10): it matched their loose
+  # paths, which are gone; the two are entries of the master now, graded by the master fold against their pinned refs, and a row of the fold
+  # carries no program path, so the note could never fire again.
 }
 # ---------------------------------------------------------------- one program, N times (row `scorecard-provenance`, s190)
 # ⛔ THIS EXISTS BECAUSE THE CONTENTION EXPERIMENT NEEDS ONE PROGRAM, NOT NINETY.  seat5 convicted this instrument by running
@@ -662,7 +651,9 @@ cmd_one() {  # <suite> <program-basename-or-path> [N]
     if [ ! -f "$full" ]; then case "$root" in
       SELF)      full="$DEMO/beauty/beauty.sno";;
       SCRIPTEST) full="$(find "$SC/test" $fargs 2>/dev/null | grep -m1 "/$prog\(\.sno\)\?$")";;
-      MISC)      local m; for m in $MISC_DIRS; do full="$(find "$CORPUS/$m" $fargs 2>/dev/null | grep -m1 "/$prog\(\.sno\)\?$")"; [ -n "$full" ] && break; done;;
+      MISC)      local m; for m in $MISC_DIRS; do full="$(find "$CORPUS/$m" $fargs 2>/dev/null | grep -m1 "/$prog\(\.sno\)\?$")"; [ -n "$full" ] && break; done
+                 [ -n "$full" ] || for m in $MISC_LOOSE; do full="$(find "$CORPUS/tests/snobol4" -maxdepth 1 -name "${m}_*.sno" 2>/dev/null | grep -m1 "/$prog\(\.sno\)\?$")"; [ -n "$full" ] && break; done;;
+      MASTER)    echo "⛔ suite $want reads its programs from the master (MASTER_FOLD): grade one with corpus_suite_harness.py run ALL.sno ALL.ref --lang snobol4 --modes m3,m4 --partition entry:$prog" >&2; exit 2;;
       *)         full="$(find "$CORPUS/$root" $fargs 2>/dev/null | grep -m1 "/$prog\(\.sno\)\?$")";;
     esac; fi
     [ -n "$full" ] && [ -f "$full" ] || { echo "⛔ not found in suite $want: $prog" >&2; exit 2; }

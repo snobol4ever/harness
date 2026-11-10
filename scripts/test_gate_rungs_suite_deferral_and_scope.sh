@@ -56,11 +56,16 @@ W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 # own pending_row_state()); pointing at a REAL row would make this gate's verdict depend on that row's
 # CURRENT fleet state, which drifts (exactly the row this task itself fixed, coexpr-stack-*, could land and
 # flip this gate red for a reason having nothing to do with the builder).
+# not-a-corpus-path: tests/snobol4/keepfam_probe.sno -- a fixture mkscratch writes into this gate's own mktemp corpus, never read from the live tree
+# not-a-corpus-path: tests/snobol4/pendfam_probe.sno -- a fixture mkscratch writes into this gate's own mktemp corpus
+# not-a-corpus-path: tests/snobol4/openfam2_probe.sno -- a fixture mkscratch writes into this gate's own mktemp corpus
+# not-a-corpus-path: tests/snobol4/KEEP.md -- the keeper declaration mkscratch writes into this gate's own mktemp corpus
+# not-a-corpus-path: tests/snobol4/PENDING.md -- the deferral declaration mkscratch writes into this gate's own mktemp corpus
 mkscratch() {
     rm -rf "$1"; mkdir -p "$1/corpus/tests/snobol4" "$1/postoffice"
     python3 - "$1/corpus/tests/snobol4" <<'PY'
 import sys, os
-sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "harness", "scripts"))
 import corpus_suite_harness as h
 T = sys.argv[1]
 def mk(name, out):
@@ -139,7 +144,7 @@ echo "== G. VALIDATES BEFORE IT WRITES: a forced post-write round-trip failure c
 rm -rf "$W/g"; mkdir -p "$W/g/corpus/tests/snobol4"
 python3 - "$W/g/corpus/tests/snobol4" <<'PY'
 import sys, os
-sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "harness", "scripts"))
 import corpus_suite_harness as h
 T = sys.argv[1]
 e = h.Entry("block", 1, "base-x", ["OUTPUT = 'base-x'", "END"], ["base-x"])
@@ -150,7 +155,7 @@ snap_g() { md5sum "$W"/g/corpus/tests/snobol4/ALL.* 2>/dev/null | sort; }
 before="$(snap_g)"
 python3 - "$W/g/corpus/tests/snobol4" <<'PY'
 import sys, os
-sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "harness", "scripts"))
 import corpus_suite_harness as h
 T = sys.argv[1]
 e = h.Entry("block", 1, "new-x", ["OUTPUT = 'new-x'", "END"], ["new-x"])
@@ -158,7 +163,7 @@ h.write_suite([e], os.path.join(T, "newfam_probe.sno"), os.path.join(T, "newfam_
 PY
 test_out="$(S4E_HOME="$W/g" python3 - <<'PY'
 import sys, os
-sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "harness", "scripts"))
 import corpus_suite_harness as h
 _orig = h.read_suite
 def _boom(sno_path, *a, **kw):
