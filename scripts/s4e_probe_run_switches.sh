@@ -14,7 +14,7 @@ N="${1:-}"
 SCRIP="$S4E/SCRIP/scrip"
 BG="$S4E/corpus/tests/shared/batch_grader"
 refuse() { echo "REFUSE(2) [run-switches probe]: $*"; exit 2; }
-[ -n "$N" ] || refuse "usage: $0 <step 1..12>"
+[ -n "$N" ] || refuse "usage: $0 <step 1..14>"
 mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 T="$(mktemp -d "/tmp/s4e/$ME/runsw_probe.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$T"' EXIT
@@ -317,7 +317,89 @@ step12() {   # the Python post step and the package runners take the package swi
     verdict "the grader and a runner library name the switch (the acceptance is the coo's same-verdict run, recorded)"
 }
 
+coll() {   # a scratch collection read in place (CIO-92, CIO-93): programs and their data in sub/, nothing of ours in it
+    local C="$1"
+    mkdir -p "$C/sub/deep"
+    printf 'beside line\n' > "$C/sub/data.txt"
+    printf "        INPUT(.F, 5, 'data.txt') :F(NO)\n        OUTPUT = F\n        OUTPUT(.G, 6, 'made.txt')\n        G = 'made'\n        ENDFILE(6)\n        OUTPUT(.H, 7, 'data.txt')\n        H = 'spoiled'\n        ENDFILE(7) :(END)\nNO      OUTPUT = 'absent'\nEND\n" > "$C/sub/a.sno"
+    printf "        INPUT(.M, 5, 'made.txt') :S(SEEN)\n        OUTPUT = 'clean'\n        INPUT(.F, 6, 'data.txt')\n        OUTPUT = F :(END)\nSEEN    OUTPUT = 'the file of the test before is still here'\nEND\n" > "$C/sub/b.sno"
+    printf "LOOP    OUTPUT = INPUT :S(LOOP)\nEND\n" > "$C/sub/c.sno"
+    printf "        OUTPUT = HOST(0)\nEND\n" > "$C/sub/deep/d.sno"
+    printf "        OUTPUT = 'collection copy'\nEND\n" > "$C/sub/h.sno"
+}
+
+step13() {   # run-files reads ALL.source: a row's program is read in place from the collection's root, run in a scratch copy of its own folder (CIO-92, CIO-93, CIO-96)
+    need_scrip
+    local C="$T/coll" P="$T/pkg" rc; coll "$C"
+    mkdir -p "$P/sub"
+    printf '%s\n' 'entry,file,timeout_s,heap_kb,stack_kb,compile_args,dialect,grader' 'sub/a,sub/a.sno,,,,,,' 'sub/b,sub/b.sno,,,,,,' 'sub/c,sub/c.sno,,,,,,' 'd,sub/deep/d.sno,,,,,,' \
+        'h,sub/h.sno,,,,,,' > "$P/ALL.csv"
+    printf 'root\t%s\norigin\ta scratch collection of the probe\nversion\tprobe\nlicence\tpublic domain\n' "$C" > "$P/ALL.source"
+    printf 'in one\nin two\n' > "$P/sub/c.in"; printf 'd\tone two\tthree\n' > "$P/ALL.args"
+    printf "        OUTPUT = 'hosted copy'\nEND\n" > "$P/sub/h.sno"
+    ( cd "$C" && find . -type f -exec md5sum {} + | sort -k2 ) > "$T/before.txt"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-files "$P" --out "$T/o" --work "$T/w" > rep.tsv 2> err.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] || red "the switch exits $rc ($(head -1 "$T/err.txt" | cut -c1-120))"
+    want "$T/rep.tsv" sub/a EXIT 0 && same "$T/o/sub_a.out" 'beside line' "sub/a (read from the collection, its data file beside it)"
+    want "$T/rep.tsv" sub/b EXIT 0 && same "$T/o/sub_b.out" "$(printf 'clean\nbeside line')" "sub/b (the scratch copy of the folder is restored from the collection)"
+    want "$T/rep.tsv" sub/c EXIT 0 && same "$T/o/sub_c.out" "$(printf 'in one\nin two')" "sub/c (NAME.in is read from the package folder)"
+    want "$T/rep.tsv" d EXIT 0 && same "$T/o/d.out" 'one two three' "d (ALL.args is read from the package folder)"
+    want "$T/rep.tsv" h EXIT 0 && same "$T/o/h.out" 'hosted copy' "h (a program the package itself holds is the one run)"
+    ( cd "$C" && find . -type f -exec md5sum {} + | sort -k2 ) > "$T/after.txt"
+    cmp -s "$T/before.txt" "$T/after.txt" || red "the collection changed under the run: $(diff "$T/before.txt" "$T/after.txt" | head -2 | tr '\n' ' ')"
+    [ -z "$(find "$T/w" -type l 2>/dev/null | head -1)" ] || red "the work directory holds a link"
+    printf '%s\n' 'entry,file,timeout_s,heap_kb,stack_kb,compile_args,dialect,grader' 'sub/a,sub/a.sno,,,,,,' 'gone,sub/nothere.sno,,,,,,' > "$P/ALL.csv"; rm -f "$P/ALL.args"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$P" --out "$T/o2" > rep2.tsv 2> err2.txt < /dev/null ); rc=$?
+    [ "$rc" = 2 ] || red "a file cell that names no file under the root exits $rc, want the refusal 2"
+    [ ! -s "$T/rep2.tsv" ] || red "the package with a missing program still ran a test"
+    grep -q 'nothere' "$T/err2.txt" 2>/dev/null || red "the refusal does not name the missing path"
+    printf '%s\n' 'entry,file,timeout_s,heap_kb,stack_kb,compile_args,dialect,grader' 'sub/a,sub/a.sno,,,,,,' > "$P/ALL.csv"
+    printf 'root\t%s\norigin\tprobe\nversion\tprobe\nlicence\tpublic domain\nconvert\ticon-semicolons\n' "$C" > "$P/ALL.source"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$P" --out "$T/o3" > rep3.tsv 2> err3.txt < /dev/null ); rc=$?
+    [ "$rc" = 2 ] || red "an ALL.source with a fifth key exits $rc, want the refusal 2"
+    printf 'root\t%s\norigin\tprobe\nversion\tprobe\nlicence\tpublic domain\n' "$T/no_such_root" > "$P/ALL.source"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$P" --out "$T/o4" > rep4.tsv 2> err4.txt < /dev/null ); rc=$?
+    [ "$rc" = 2 ] || red "a root that does not exist exits $rc, want the refusal 2"
+    [ ! -s "$T/rep4.tsv" ] || red "the package with no root still ran a test"
+    verdict "four tests ran in place from the collection, the collection is byte-identical after, the package's own program wins, three malformed forms refuse"
+}
+
+step14() {   # run-files reads ALL.launch: around BEFORE AFTER or driver PROGRAM, and a grader cell no longer defers (CIO-83)
+    need_scrip
+    local P="$T/pkg" rc got
+    mkdir -p "$P/shim" "$P/sub"
+    printf 'shim_fact(before).\n' > "$P/shim/before.pl"
+    printf ':- initialization((shim_fact(B), case_fact(C), write(around(B, C)), nl)).\n' > "$P/shim/after.pl"
+    printf 'case_fact(one).\n' > "$P/sub/one.pl"; printf 'case_fact(two).\n' > "$P/sub/two.pl"
+    printf '%s\n' 'entry,file,timeout_s,heap_kb,stack_kb,compile_args,dialect,grader' 'one,sub/one.pl,,,,,,verdict-line' 'two,sub/two.pl,,,,,,' > "$P/ALL.csv"
+    got="$(cd "$P/sub" && timeout -k 5 60 "$SCRIP" --run "$P/shim/before.pl" one.pl "$P/shim/after.pl" < /dev/null 2>/dev/null)"
+    [ "$got" = 'around(before,one)' ] || refuse "scrip does not run three Prolog sources in one launch (reads '$got'): the probe's own premise fails"
+    printf '# the launch of a per-case package (CIO-83)\nscrip\taround\tshim/before.pl\tshim/after.pl\noracle\taround\t-\tshim/after.pl\n' > "$P/ALL.launch"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-files "$P" --out "$T/o" > rep.tsv 2> err.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] || red "around: the switch exits $rc ($(head -1 "$T/err.txt" | cut -c1-120))"
+    want "$T/rep.tsv" one EXIT 0 && same "$T/o/one.out" 'around(before,one)' "one (a row with a grader cell runs between BEFORE and AFTER)"
+    want "$T/rep.tsv" two EXIT 0 && same "$T/o/two.out" 'around(before,two)' "two"
+    printf "        OUTPUT = HOST(0)\nEND\n" > "$P/shim/drive.sno"; printf 'data of one\n' > "$P/sub/one.dat"
+    printf '%s\n' 'entry,file,timeout_s,heap_kb,stack_kb,compile_args,dialect,grader' 'one,sub/one.dat,,,,,,verdict-line' > "$P/ALL.csv"
+    printf 'one\textra\n' > "$P/ALL.args"; printf 'scrip\tdriver\tshim/drive.sno\n' > "$P/ALL.launch"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-files "$P" --out "$T/o2" > rep2.tsv 2> err2.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] || red "driver: the switch exits $rc ($(head -1 "$T/err2.txt" | cut -c1-120))"
+    want "$T/rep2.tsv" one EXIT 0 && same "$T/o2/one.out" 'one.dat extra' "one (the driver gets the row's file name first, then the entry's arguments)"
+    printf 'scrip\taround\tshim/before.pl\n' > "$P/ALL.launch"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$P" --out "$T/o3" > rep3.tsv 2> err3.txt < /dev/null ); rc=$?
+    [ "$rc" = 2 ] || red "an around line with one path exits $rc, want the refusal 2"
+    printf 'scrip\tdriver\tshim/absent.sno\n' > "$P/ALL.launch"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$P" --out "$T/o4" > rep4.tsv 2> err4.txt < /dev/null ); rc=$?
+    [ "$rc" = 2 ] || red "a driver the package does not hold exits $rc, want the refusal 2"
+    [ ! -s "$T/rep4.tsv" ] || red "the package with no driver still ran a test"
+    printf 'oracle\tdriver\tshim/drive.sno\n' > "$P/ALL.launch"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$P" --out "$T/o5" > rep5.tsv 2> err5.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] || red "an ALL.launch with an oracle line alone exits $rc"
+    want "$T/rep5.tsv" one DEFERRED
+    verdict "around runs the row's file between two shim sources, driver hands it to one program, a grader cell runs once the package has a scrip line"
+}
+
 case "$N" in
-    1) step1 ;; 2) step2 ;; 3) step3 ;; 4) step4 ;; 5) step5 ;; 6) step6 ;; 7) step7 ;; 8) step8 ;; 9) step9 ;; 10) step10 ;; 11) step11 ;; 12) step12 ;;
-    *) refuse "no step $N (1..12)" ;;
+    1) step1 ;; 2) step2 ;; 3) step3 ;; 4) step4 ;; 5) step5 ;; 6) step6 ;; 7) step7 ;; 8) step8 ;; 9) step9 ;; 10) step10 ;; 11) step11 ;; 12) step12 ;; 13) step13 ;; 14) step14 ;;
+    *) refuse "no step $N (1..14)" ;;
 esac
