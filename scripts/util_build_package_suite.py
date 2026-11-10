@@ -423,7 +423,8 @@ def build_generated(pkg_dir, lang, out_prefix, contract, only):
     no per-suite grader arm). The package's own table ALL.csv is the denominator (CIO-19): the generator named by CONTRACT generator=<module>
     yields, for every entry of that table and no other, one dict -- name (exactly the ALL.csv entry), program (the text a conforming run
     executes), ref (the suite's own expectation, the standard's, ONE line), cwd (the directory it runs from, relative to the package; "." the
-    package) and, optionally, want_rc -- or, when it cannot plan the case, name and reason. NO ORACLE RUNS: the ref is the suite's, cut from no
+    package; absent or empty: the grader's own scratch directory, where an oracle-cut entry runs, so a case that writes a file never writes
+    beside the package) and, optionally, want_rc -- or, when it cannot plan the case, name and reason. NO ORACLE RUNS: the ref is the suite's, cut from no
     run. A case EXCLUDED_CASES.tsv, EXCLUDED.tsv or UNGRADABLE.tsv names, or one with a reason, is excluded by name; absorbed plus excluded equals
     the table. ALL.csv keeps every column and row it has and gains compare (verdict-line: corpus_suite_harness.py grades the first stdout line
     that begins with the ref's first word against the ref) and cwd for each absorbed entry; an excluded entry's two cells are blank."""
@@ -475,12 +476,12 @@ def build_generated(pkg_dir, lang, out_prefix, contract, only):
         if c.get("reason"):
             excluded.append((n, f"the generator cannot plan it: {c['reason']}"))
             continue
-        prog, ref, cwd = c.get("program"), c.get("ref"), (c.get("cwd") or ".")
+        prog, ref, cwd = c.get("program"), c.get("ref"), (c.get("cwd") or "")
         if not isinstance(prog, str) or not prog.strip():
             h.refuse(f"generator case {n!r}: no program text and no reason")
         if not isinstance(ref, str) or not ref.strip() or "\n" in ref.strip("\n"):
             h.refuse(f"generator case {n!r}: the ref must be ONE non-empty line (the verdict line), got {ref!r:.120}")
-        if cwd.startswith("/") or ".." in cwd.split("/") or not (pkg_dir / cwd).is_dir():
+        if cwd and (cwd.startswith("/") or ".." in cwd.split("/") or not (pkg_dir / cwd).is_dir()):
             h.refuse(f"generator case {n!r}: cwd {cwd!r} is not a directory beside the package (relative, no ..)")
         entries.append(h.Entry("block", len(entries) + 1, n, prog.splitlines(), [ref.strip("\n")], stdin=None, want_rc=int(c.get("want_rc") or 0)))
         cwd_of[n] = cwd

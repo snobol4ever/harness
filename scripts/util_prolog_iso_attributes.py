@@ -64,7 +64,7 @@ DATABASE = ["assert", "asserta", "assertz", "retract", "retractall", "abolish", 
             "multifile", "current_predicate", "predicate_property", "initialization", "ensure_loaded", "include",
             "consult", "op", "current_op", "set_prolog_flag", "current_prolog_flag", "char_conversion",
             "current_char_conversion"]
-TERMS = ["functor", "arg", "univ", "copy_term", "term_variables", "compare", "unify", "not_unify", "eq", "ne",
+TERMS = ["functor", "arg", "univ", "copy_term", "term_variables", "compare_3", "unify", "not_unify", "eq", "ne",
          "term_lt", "term_le", "term_gt", "term_ge", "unify_with_occurs_check", "subsumes_term", "acyclic_term",
          "ground", "var", "nonvar", "atom", "number", "integer", "float", "atomic", "compound", "callable",
          "is_list", "sort", "msort", "keysort", "length", "predsort", "nb_setval", "nb_getval", "b_setval", "b_getval",
@@ -89,6 +89,9 @@ SYNTAX = ["quoted_atom", "dq_string", "bq_string", "char_lit", "esc_seq", "float
           "anon_var", "nested_call", "layout_comment", "end_dot", "infix_def", "prefix_def", "postfix_def",
           "flag_double_quotes", "flag_unknown", "flag_bounded", "flag_char_conversion", "flag_max_arity",
           "flag_debug", "flag_occurs_check"]
+# ⛔ compare/3's flag is the column compare_3, never compare (the coo 2026-11-10, CIO-22 D): ALL.csv's compare column is the harness's compare
+# token (ignore-all-space, fresh-vars, error-context, verdict-line), and the generated-units build of these two suites writes verdict-line
+# there; a flag column of the same name read 0 and 1 as tokens and the harness refused the table.
 FEATURES = CONTROL + DATABASE + TERMS + ATOMS + ARITH + IO + SYNTAX
 
 _NAME_CALL = {
@@ -106,7 +109,7 @@ _NAME_CALL = {
     "current_prolog_flag": ("current_prolog_flag",), "char_conversion": ("char_conversion",),
     "current_char_conversion": ("current_char_conversion",),
     "functor": ("functor",), "arg": ("arg",), "copy_term": ("copy_term",), "term_variables": ("term_variables",),
-    "compare": ("compare",), "unify_with_occurs_check": ("unify_with_occurs_check",),
+    "compare_3": ("compare",), "unify_with_occurs_check": ("unify_with_occurs_check",),
     "subsumes_term": ("subsumes_term",), "acyclic_term": ("acyclic_term",), "ground": ("ground",), "var": ("var",),
     "nonvar": ("nonvar",), "atom": ("atom",), "number": ("number",), "integer": ("integer",), "float": ("float",),
     "atomic": ("atomic",), "compound": ("compound",), "callable": ("callable",), "is_list": ("is_list",),
