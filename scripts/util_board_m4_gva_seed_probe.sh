@@ -17,7 +17,7 @@
 #    A probe with no gva_register (no user globals) cannot be an r9 victim: counted NOSEED.
 #
 # USAGE:  bash util_board_m4_gva_seed_probe.sh [DIR]
-#         DIR defaults to the bb_probes suite (tests/snobol4/probe/bb_probes.sno), materialized into a
+#         DIR defaults to the probe_bb_probes family of the master (tests/snobol4/ALL.sno), materialized into a
 #         scratch dir for this run; pass an explicit DIR to point at a real directory of loose .sno/.ref instead.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -u
@@ -31,10 +31,11 @@ W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 # the suite into this run's own scratch dir (cleaned up by the trap above) instead.
 if [ -z "$DIR" ]; then
     DIR="$W/bb_probes"; mkdir -p "$DIR"
-    SUITE_SNO="$S4E/corpus/tests/snobol4/probe/bb_probes.sno"
-    SUITE_REF="$S4E/corpus/tests/snobol4/probe/bb_probes.ref"
-    HARNESS="$(dirname "$S")/scripts/corpus_suite_harness.py"
-    for nm in $(python3 "$HARNESS" list "$SUITE_SNO" "$SUITE_REF" 2>/dev/null); do
+    T4="$S4E/corpus/tests/snobol4"; SUITE_SNO="$T4/ALL.sno"; SUITE_REF="$T4/ALL.ref"
+    HARNESS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/corpus_suite_harness.py"
+    for nm in $(python3 -I -c 'import csv,sys
+for r in csv.DictReader(open(sys.argv[1])):
+    if r["family"] == "probe_bb_probes": print(r["entry"])' "$T4/ALL.csv"); do
         python3 "$HARNESS" extract "$SUITE_SNO" "$SUITE_REF" "$nm" "$DIR/$nm.sno" --out-ref "$DIR/$nm.ref" >/dev/null 2>&1
     done
 fi

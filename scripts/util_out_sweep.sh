@@ -57,8 +57,15 @@ T="$(mktemp)"; RAW="$(mktemp)"; FLP="$(mktemp)"; trap 'rm -f "$T" "$RAW" "$FLP"'
 # total conversion) -- the library/probe_reference/bb find below now contributes 0 by construction. EXPECTED, not a
 # regression; pass LISTFILE to include tests/snobol4/probe/bb*.sno entries (materialize via
 # corpus_suite_harness.py extract first -- suite files are not standalone-runnable .sno programs).
+# the probe_loose/cn programs stand only as ALL.csv entries (family probe_loose_cn_*): cn_arm extracts them to ONE
+# stable per-seat dir (SWEEP_CN_DIR) so the md5 rows carry the same path in every arm and every run, and prints those paths.
+cn_arm() { local d="${SWEEP_CN_DIR:-/tmp/s4e/${S4E_SEAT:-${USER:-seat}}/out_sweep_cn}" t="$CORPUS/tests/snobol4" nm; mkdir -p "$d"
+  python3 -I -c 'import csv,sys
+for r in csv.DictReader(open(sys.argv[1])):
+    if r["family"].startswith("probe_loose_cn_"): print(r["entry"])' "$t/ALL.csv" | while read -r nm; do
+    python3 "$HERE/corpus_suite_harness.py" extract "$t/ALL.sno" "$t/ALL.ref" "$nm" "$d/$nm.sno" --out-ref "$d/$nm.ref" >/dev/null 2>&1 && echo "$d/$nm.sno"; done; }
 if [ -n "$LIST" ]; then cp "$LIST" "$T"; else
-  { find "$CORPUS/crosscheck" -name '*.sno'; find "$CORPUS/library/probe_reference/bb" -name '*.sno'; find "$CORPUS/tests/snobol4/probe_loose/cn" -name '*.sno'
+  { find "$CORPUS/crosscheck" -name '*.sno'; find "$CORPUS/library/probe_reference/bb" -name '*.sno'; cn_arm
     find "$CORPUS/probe/kw" -name '*.sno'; find "$CORPUS/probe/arbnostore" -name '*.sno'
     find "$CORPUS/demos" -maxdepth 1 -name '*.sno'; } | sort > "$T"; fi
 run1() { local p="$1" d o rc; d="$(dirname "$p")"
