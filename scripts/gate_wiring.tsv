@@ -1492,6 +1492,7 @@ test_gate_zd_a_run_keeps_no_producer_whose_consumer_is_outside_it.sh	WIRED	-	-	-
 test_gate_zd_check_a_read_across_a_retaining_box_goes_through_its_frame.sh	WIRED	-	-	-
 test_gate_zd_check_reads_zero_violations_on_the_cores.sh	WIRED	-	-	-
 test_gate_zeta_layout_check_negative_controls_red.sh	WIRED	-	-	-
+test_gate_a_witness_of_any_family_is_absorbed_and_graded_by_entry.sh	RULING	the proof of CIO-24 b and c (the add-a-witness tool takes any family, --from and --expect, and a step harness grades an entry), the row's DONE-WHEN: it copies the rebus master to scratch and runs the oracle and the harness about ten times, a landing proof for the tool and lib_design_witness.sh run by s4e_land.sh on its row, not a per-commit check of SCRIP	coo	2026-11-10T14:08Z
 test_gate_baton_donewhen_runnable_live.sh	RULING	reads the LIVE postoffice: grades rows sixteen seats are editing right now, so it reds on a dirty fleet BY DESIGN (ruling 2026-09-03, stated verbatim in the Makefile test-postoffice header)	the officer	2026-09-03
 test_gate_baton_next_blocks.sh	RULING	reads the LIVE postoffice: grades rows sixteen seats are editing right now, so it reds on a dirty fleet BY DESIGN (ruling 2026-09-03, stated verbatim in the Makefile test-postoffice header)	the officer	2026-09-03
 test_gate_baton_one_next_block.sh	RULING	reads the LIVE postoffice: grades rows sixteen seats are editing right now, so it reds on a dirty fleet BY DESIGN (ruling 2026-09-03, stated verbatim in the Makefile test-postoffice header)	the officer	2026-09-03

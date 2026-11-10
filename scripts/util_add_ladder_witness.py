@@ -66,6 +66,7 @@ ORACLE = {
     "raku": ["/home/resources/rakudo-local/bin/raku"],  # Rakudo 2026.05, the ONE Raku oracle (rakudo_bin() in lib_oracle_flags.sh
     "prolog": ["/usr/bin/swipl", "-q", "-t", "halt"],  # THE SWI-Prolog oracle, swipl_bin() in lib_oracle_flags.sh; -q -t halt: the witness's own initialization(main) runs once and no toplevel is entered (cto, R-1959)
     "pascal": [str(HERE / "fpc_oracle_run.sh"), "-Miso"],
+    "rebus": [str(HERE / "snocone_oracle_run.sh")],  # the coo 2026-11-10 (CIO-24 b): scrip --transpile carries the statements to SNOBOL4 text in a private tmpdir and sbl -bf RUNS it; the answer is SPITBOL's (the harness's own rebus road, corpus_suite_harness.py cmd_expect)
     "unicon": [str(HERE / "unicon_oracle_run.sh")],  # the coo 2026-11-04 (Lon: "do the RUNGS for Unicon"): a Unicon rung's ref is cut by the Unicon translator through unicon_bin() (icon skill R2); selected by --oracle unicon on an icon witness  # fpc 3.2.2 -Miso through the one-step wrapper corpus_suite_harness.py's resolver names (compile to a tmpdir, run); a witness needing an FPC dialect says {$mode objfpc} in its own source, which fpc honours over -Miso as scrip does
 }
 # ⛔⭐ `-bf` IS NOT OPTIONAL AND NOT A PER-PROGRAM WORKAROUND (RULES sec Oracles, s189): SPITBOL case-folds
@@ -205,25 +206,27 @@ def derive_flags(sno_lines):
     return f
 
 
-def run_oracle_twice(oracle_argv, src_path, timeout=8):
+def run_oracle_twice(oracle_argv, src_path, timeout=8, stdin_text=None, prog_args=()):
     outs, rcs = [], []
     for _ in range(2):
         try:
-            p = subprocess.run(list(oracle_argv) + [str(src_path)], stdin=subprocess.DEVNULL,
-                                capture_output=True, timeout=timeout)
+            p = subprocess.run(list(oracle_argv) + [str(src_path)] + list(prog_args), stdin=subprocess.DEVNULL if stdin_text is None else None,
+                                input=None if stdin_text is None else stdin_text.encode("utf-8"), capture_output=True, timeout=timeout)
         except subprocess.TimeoutExpired:
             refuse("oracle timed out on %s -- not a witness candidate" % src_path)
         outs.append(p.stdout.decode("utf-8", errors="replace"))
         rcs.append(p.returncode)
     if outs[0] != outs[1] or rcs[0] != rcs[1]:
         refuse("oracle is NONDETERMINISTIC on %s (two runs disagreed) -- not a witness candidate" % src_path)
+    if stdin_text is not None:
+        return outs[0], rcs[0]   # the witness's own stdin sidecar fed both cuts, and the append writes it to ALL.in (CIO-24 b)
     # ⛔⭐ THE REF IS CUT WITH EMPTY STDIN, AND THIS SCRIPT DOES NOT WRITE ALL.in -- so a witness that READS
     # its input would be minted against an empty-stdin answer and then graded against it forever, quietly
     # testing the wrong program. PROVED BY MEASUREMENT, not by grepping the source for INPUT: run the oracle
     # once more with a non-empty stdin and refuse if the answer moves. A witness whose answer depends on
     # stdin belongs to a landing that also writes the sidecar; refusing here is the honest half of that.
     try:
-        p3 = subprocess.run(list(oracle_argv) + [str(src_path)], input=b"stdin-probe\n",
+        p3 = subprocess.run(list(oracle_argv) + [str(src_path)] + list(prog_args), input=b"stdin-probe\n",
                             capture_output=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         refuse("oracle timed out on %s under the stdin-sensitivity probe" % src_path)
@@ -356,8 +359,14 @@ def main():
     ap.add_argument("--lang", default="icon", choices=sorted(ORACLE))
     ap.add_argument("--oracle", choices=["unicon"], default=None, help="icon only: cut the ref with the Unicon translator (unicon_oracle_run.sh) for a Unicon rung")
     ap.add_argument("--entry-name", default="", help="override the builder-derived entry name (rarely right)")
-    ap.add_argument("--origin", required=True, help="ladder__rungNN_<slug>, must be new and NN must be an existing rung")
-    ap.add_argument("--source", required=True, help="path to the new witness's source file")
+    ap.add_argument("--origin", default="", help="ladder__rungNN_<slug>, must be new and NN must be an existing rung (a ladder witness; --family names any other)")
+    ap.add_argument("--source", default="", help="path to the new witness's source file")
+    ap.add_argument("--family", default="", help="CIO-24 b: the entry joins family NAME as NAME__<source stem> (origin the same), in place of a ladder rung")
+    ap.add_argument("--from", default="", dest="from_pair", help="CIO-24 b: a loose program; its sidecars are read (<stem>.heap and .stack into heap_kb and stack_kb, "
+                    ".argv into run_args, .in, .input or .stdin as its stdin) and <stem>.ref is its --expect")
+    ap.add_argument("--expect", default="", help="the loose answer: the oracle is still cut twice, and a fresh cut that differs from it REFUSES, naming both")
+    ap.add_argument("--accept-fresh", default="", help="one line naming WHY a fresh cut that differs from --expect is the answer (the stale loose answer is then replaced, named)")
+    ap.add_argument("--from-dir", default="", help="the batch form: every program of the language in DIR with a <stem>.ref beside it, each by --from under --family, all refused before any is written")
     ap.add_argument("--oracle-twin", default="",
                     help="path to the SPITBOL twin whose output IS the ref (required for --lang snocone, "
                          "which has no oracle able to read its own source; forbidden for the others, whose "
@@ -377,6 +386,44 @@ def main():
         ap.add_argument("--" + _a.replace("_", "-"), default=None, dest="attr_" + _a,
                         help="the new row's %s; omitted, the rungs' own ladder convention is READ from its ladder rows" % _a)
     args = ap.parse_args()
+    if args.from_dir:
+        return batch_from_dir(args)
+    stdin_text, prog_args = None, []
+    if args.from_pair:
+        if args.source:
+            refuse("--from names the source; --source and --from are one question asked twice")
+        args.source = args.from_pair
+        _fp = Path(args.from_pair)
+        for _ext, _attr in ((".heap", "attr_heap_kb"), (".stack", "attr_stack_kb")):
+            _sc = _fp.with_suffix(_ext)
+            if _sc.is_file() and getattr(args, _attr) is None:
+                _v = _sc.read_text().strip().lower().removesuffix("kb").removesuffix("k")
+                if not _v.isdigit():
+                    refuse("%s holds %r, not a number of KB" % (_sc, _sc.read_text().strip()))
+                setattr(args, _attr, _v)
+        _av = _fp.with_suffix(".argv")
+        if _av.is_file():
+            prog_args = _av.read_text().split()
+            if any(("'" in t or '"' in t) for t in prog_args):
+                refuse("%s quotes an argument; run_args is whitespace-separated words" % _av)
+            if args.attr_run_args is None:
+                args.attr_run_args = " ".join(prog_args)
+        _ins = [x for x in (".in", ".input", ".stdin") if _fp.with_suffix(x).is_file()]
+        if len(_ins) > 1:
+            refuse("%s has %d stdin sidecars (%s) -- one program, one stdin" % (_fp, len(_ins), " ".join(_ins)))
+        if _ins:
+            stdin_text = _fp.with_suffix(_ins[0]).read_text(encoding="utf-8")
+        if not args.expect and _fp.with_suffix(".ref").is_file():
+            args.expect = str(_fp.with_suffix(".ref"))
+    if not args.source:
+        refuse("--source or --from names the witness")
+    if bool(args.origin) == bool(args.family):
+        refuse("exactly one of --origin (a ladder rung) or --family (any other family) names where the entry goes")
+    if args.family:
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", args.family) or args.family == "ladder":
+            refuse("--family %r is not a family name (lower case, digits and _, and not ladder: a rung takes --origin)" % args.family)
+        args.origin = "%s__%s" % (args.family, Path(args.source).stem)
+        args.entry_name = args.entry_name or args.origin
 
     lang = args.lang
     # ⛔ SNOBOL4 IS DELIBERATELY ABSENT FROM csh.LANG_CONFIGS (see LANG_CHOICES there: every other language is
@@ -393,9 +440,9 @@ def main():
             refuse("rungs file missing: %s" % p)
 
     m = re.match(r"^ladder__rung(\d+)_(\S+)$", args.origin)
-    if not m:
+    if not m and not args.family:
         refuse("--origin must match ladder__rungNN_<slug>, got %r" % args.origin)
-    rung_num = int(m.group(1))
+    rung_num = int(m.group(1)) if m else None
 
     with open(rungs_csv, newline="") as fh:
         rows = list(csv.DictReader(fh))
@@ -404,7 +451,7 @@ def main():
         refuse("origin %r already exists in %s" % (args.origin, rungs_csv))
     existing_rungs = {int(mm.group(1)) for r in rows
                        for mm in [re.match(r"^ladder__rung(\d+)_", r["origin"])] if mm}
-    if rung_num not in existing_rungs and not args.first_in_rung:
+    if rung_num is not None and rung_num not in existing_rungs and not args.first_in_rung:
         # ⛔ THIS GUARD CATCHES A TYPO, NOT AN UNSOUNDNESS -- keep it, but make the deliberate case sayable.
         # `rung_num` is read NOWHERE else in this script (grep it): the entry name comes from
         # builder_entry_name(source), every flag from builder_flags(source), the ref from the oracle and the
@@ -477,8 +524,20 @@ def main():
                 cfg["comment_open"], args.twin_equivalence.strip(), cfg["comment_close"])
             sno_lines = [note] + sno_lines
             sno_text = "\n".join(sno_lines) + "\n"
-    ref_text, want_rc = run_oracle_twice(oracle_argv, twin_path if twin_path is not None else src_path)
+    ref_text, want_rc = run_oracle_twice(oracle_argv, twin_path if twin_path is not None else src_path, stdin_text=stdin_text, prog_args=prog_args)
     ref_lines = csh._lf_lines(ref_text)
+    if args.expect:
+        _ex = Path(args.expect)
+        if not _ex.is_file():
+            refuse("--expect not found: %s" % _ex)
+        _exl = csh._lf_lines(_ex.read_bytes().decode("utf-8", errors="replace"))
+        if _exl != ref_lines:
+            _i = next((i for i, (a, b) in enumerate(zip(_exl, ref_lines)) if a != b), min(len(_exl), len(ref_lines)))
+            _why = ("the fresh cut differs from the loose answer %s at line %d: loose %r, fresh %r (%d and %d lines)"
+                    % (_ex, _i + 1, _exl[_i] if _i < len(_exl) else "<end>", ref_lines[_i] if _i < len(ref_lines) else "<end>", len(_exl), len(ref_lines)))
+            if not args.accept_fresh:
+                refuse(_why + " -- a stale loose answer is never copied; pass --accept-fresh naming why the fresh cut is the answer")
+            print("FRESH CUT ACCEPTED over the loose answer: %s; why: %s" % (_why, args.accept_fresh.strip()))
     # ⛔⭐ A NONZERO want_rc IS DECLARED IN ALL.wantrc, NEVER ONLY IN ALL.csv (hq_I 2026-09-13, extending the
     # refusal that stood here). lib_ladder.sh's own wantrc() reads the sidecar and nothing else, so a witness
     # minted without that line is graded against the default rc=0 forever -- which is why the old refusal was
@@ -501,9 +560,9 @@ def main():
     if lang in csh.LANG_CONFIGS:
         banner_re = csh.banner_re_for(cfg["comment_open"], cfg["comment_close"])
         entries = csh.read_block_suite(str(rungs_src), str(rungs_ref), banner_re,
-                                        w_path=str(rungs_dir / "ALL.wantrc"))
+                                        in_path=str(rungs_dir / "ALL.in"), w_path=str(rungs_dir / "ALL.wantrc"))
         reserialize = lambda es, a, b: csh.write_block_suite(es, a, b, cfg["comment_open"], cfg["comment_close"])
-        read_entries = lambda: csh.read_block_suite(str(rungs_src), str(rungs_ref), banner_re, w_path=str(rungs_dir / "ALL.wantrc"))
+        read_entries = lambda: csh.read_block_suite(str(rungs_src), str(rungs_ref), banner_re, in_path=str(rungs_dir / "ALL.in"), w_path=str(rungs_dir / "ALL.wantrc"))
     else:
         # ⛔ THE SNOBOL4 RUNGS IS MIXED: one-line entries (`stmt;END;* name`) and 80-column banner blocks in
         # ONE file, so read_block_suite REFUSES on its first line. read_suite/write_suite are the harness's
@@ -579,8 +638,8 @@ def main():
     # and an entry whose seq is its rank makes the rungs fail this tool's OWN round-trip proof on the very
     # next invocation. It was invisible for as long as rank and position coincided; corpus a6646f04c removed
     # the 620 AST-graded entries from all seven rung suites and separated them permanently (hq_T 2026-09-13).
-    new_entry = csh.Entry("block", len(entries) + 1, entry_name, sno_lines, ref_lines, want_rc=want_rc)
-    new_row = {"rank": str(rank), "entry": entry_name, "origin": args.origin, "family": "ladder",
+    new_entry = csh.Entry("block", len(entries) + 1, entry_name, sno_lines, ref_lines, want_rc=want_rc, stdin=stdin_text)
+    new_row = {"rank": str(rank), "entry": entry_name, "origin": args.origin, "family": args.family or "ladder",
                "kind": "block", "xfail": "0", "n_lines": str(len(sno_lines))}
     for k in flag_order:
         new_row[k] = str(flags[k])
@@ -627,6 +686,8 @@ def main():
         refuse("post-append check failed: the existing entries were perturbed by the append -- nothing written")
     tmp_src2.replace(rungs_src)
     tmp_ref2.replace(rungs_ref)
+    if stdin_text is not None and not csh.write_stdin_sidecar(all_entries, str(rungs_dir / "ALL.in"), cfg["comment_open"], cfg["comment_close"]):
+        refuse("the witness carries stdin and ALL.in was not written -- %s" % _rollback())
 
     tmp_csv = rungs_csv.with_suffix(".csv.newtmp")
     with open(tmp_csv, "w", newline="") as fh:
@@ -685,9 +746,10 @@ def main():
     # ── FINAL PROOF: extract the just-written entry back out via the OFFICIAL extractor (not this
     # script's own belief) and confirm it is byte-identical to what the oracle produced.
     check_src, check_ref = Path("/tmp") / (entry_name + cfg["ext"]), Path("/tmp") / (entry_name + ".ref")
+    check_in = Path("/tmp") / (entry_name + ".in")
     err = subprocess.run([sys.executable, str(HERE / "corpus_suite_harness.py"), "extract",
                           str(rungs_src), str(rungs_ref), entry_name, str(check_src),
-                          "--out-ref", str(check_ref)], capture_output=True, text=True)
+                          "--out-ref", str(check_ref)] + (["--out-in", str(check_in)] if stdin_text is not None else []), capture_output=True, text=True)
     # ⛔⭐ THE EXPECTATION IS RECONSTRUCTED FROM THE LINES THE RUNGS STORES, NEVER FROM rstrip (hq_V,
     # 2026-09-09, on the FIRST rung minted for R-445). It was `ref_text.rstrip("\n") + "\n"`, which
     # collapses ANY run of trailing newlines to exactly one -- so a witness whose ORACLE OUTPUT LEGITIMATELY
@@ -702,8 +764,9 @@ def main():
         lines = csh._lf_lines(text)
         return "\n".join(lines) + "\n" if lines else ""
     ok = (err.returncode == 0 and check_src.read_text() == _as_stored(sno_text)
-          and check_ref.read_bytes().decode("utf-8") == _as_stored(ref_text))
-    check_src.unlink(missing_ok=True); check_ref.unlink(missing_ok=True)
+          and check_ref.read_bytes().decode("utf-8") == _as_stored(ref_text)
+          and (stdin_text is None or check_in.read_text(encoding="utf-8") == stdin_text))
+    check_src.unlink(missing_ok=True); check_ref.unlink(missing_ok=True); check_in.unlink(missing_ok=True)
     if not ok:
         # ⛔ A REFUSAL LEAVES THE TREE AS IT FOUND IT. The proof necessarily runs AFTER the three rung suites are
         # replaced -- it extracts through the OFFICIAL extractor rather than this script's belief, so there is
@@ -714,6 +777,46 @@ def main():
                % (entry_name, err.stderr, _rollback()))
     print("APPLIED: %s rank=%s -> %s / %s / %s (extraction round-trip verified)"
           % (entry_name, rank, rungs_src, rungs_ref, rungs_csv))
+    _pt = subprocess.run([sys.executable, str(HERE / "util_suite_partition.py"), "build", "ALL.csv"], cwd=str(rungs_dir), capture_output=True, text=True)
+    if _pt.returncode != 0:
+        refuse("the entry is written and PARTITION.tsv did not rebuild (%s) -- rebuild it by hand before landing" % (_pt.stderr or _pt.stdout).strip()[-200:])
+    print("PARTITION rebuilt: %s" % (_pt.stdout.strip().splitlines() or ["(no output)"])[-1])
+
+
+def batch_from_dir(args):
+    """--from-dir DIR: every program of the language in DIR with a <stem>.ref beside it, each absorbed by --from under --family; every one is
+    cut and compared first (a dry run each), and nothing is written unless all of them would be, so a folder is absorbed whole or not at all."""
+    if not args.family:
+        refuse("--from-dir needs --family: a batch is a family of loose pairs")
+    if args.source or args.from_pair or args.origin or args.expect or args.entry_name:
+        refuse("--from-dir takes --family and the attribute options only; each program's --from, --expect and name come from the folder")
+    ext = (csh.LANG_CONFIGS[args.lang]["ext"] if args.lang in csh.LANG_CONFIGS else ".sno")
+    d = Path(args.from_dir)
+    progs = sorted(p for p in d.glob("*" + ext) if p.with_suffix(".ref").is_file())
+    if not progs:
+        refuse("no %s program with a .ref beside it in %s" % (ext, d))
+    base = [sys.executable, str(Path(__file__).resolve()), "--lang", args.lang, "--family", args.family]
+    if args.rungs_dir:
+        base += ["--rungs-dir", args.rungs_dir]
+    if args.accept_fresh:
+        base += ["--accept-fresh", args.accept_fresh]
+    for _a in ATTR_COLUMNS:
+        if getattr(args, "attr_" + _a) is not None:
+            base += ["--" + _a.replace("_", "-"), getattr(args, "attr_" + _a)]
+    for p in progs:
+        r = subprocess.run(base + ["--from", str(p)], capture_output=True, text=True)
+        if r.returncode != 0:
+            refuse("batch refused before any write: %s -- %s" % (p.name, (r.stderr or r.stdout).strip()[-300:]))
+    print("BATCH dry run green for %d program(s): %s" % (len(progs), " ".join(p.stem for p in progs)))
+    if not args.apply:
+        print("(dry-run only -- pass --apply to write)")
+        return
+    for p in progs:
+        r = subprocess.run(base + ["--from", str(p), "--apply"], capture_output=True, text=True)
+        sys.stdout.write(r.stdout)
+        if r.returncode != 0:
+            refuse("batch stopped at %s after the dry run passed -- %s" % (p.name, (r.stderr or r.stdout).strip()[-300:]))
+    print("BATCH APPLIED %d program(s) under family %s" % (len(progs), args.family))
 
 
 if __name__ == "__main__":
