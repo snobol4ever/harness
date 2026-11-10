@@ -2,7 +2,7 @@
 # lib_rungs_extract.sh -- THE ONE way a script materializes a witness out of a language's RUNGS flat suite
 # (Lon 2026-08-29 one-flat-suite + zero-subfolders rulings: per-family suite files and the tests/snobol4
 # subdirs are GONE; every absorbed test lives in tests/snobol4/ALL.{sno,ref,in,csv} side by side).
-# A consumer that used to run tests/snobol4/probe/<fam>.sno or a loose pair now asks for entries BY ORIGIN
+# A consumer that used to run a per-family probe .sno or a loose pair now asks for entries BY ORIGIN
 # (the CSV's provenance column, "<family>__<old-name>") or by CURRENT name, and gets standalone files back.
 #   rungs_entry_for_origin <origin>                 -> prints the entry's CURRENT (descriptive) name
 #   rungs_extract_origin  <origin> <out_src> [ref]  -> materializes one entry (+.ref) by origin
