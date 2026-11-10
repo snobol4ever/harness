@@ -50,6 +50,7 @@
 # THE SEVEN PROGRAMS ARE MASTER ENTRIES (hq_snobol4 2026-10-17, row snobol4-absorb-every-owed-source-into-the-one-master-
 # unabsorbed-census-reads-zero): each is extracted from tests/snobol4/ALL.{sno,ref} by its ORIGIN (its old loose basename,
 # the durable key in ALL.csv), never by the entry name the builder assigns and may re-sort.
+# not-a-corpus-path: tests/snobol4/ALL.{sno,ref} -- a brace glob in prose naming the two master files, which both exist; nothing reads the glob.
 #
 # rc=0 CLEAN (nothing swept diverges from the oracle, in either mode), rc=1 VIOLATION (at least one does),
 # rc=2 UNPROVEN (no oracle, no fresh binary, or a zero denominator -- never printed as a pass).

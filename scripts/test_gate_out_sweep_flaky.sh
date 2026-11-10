@@ -28,6 +28,7 @@ REAL="${SCRIP:-$SC/scrip}"; CORPUS="${CORPUS:-$S4E/corpus}"; SWEEP="${SWEEP:-$HE
 [ -x "$REAL" ] || { echo "GATE RED: no scrip binary at $REAL (make -j4 scrip)"; exit 1; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 # ⛔ crosscheck/patterns/ is GONE -- converted into the tests/snobol4/ALL.{sno,ref,csv} rungs
+# not-a-corpus-path: tests/snobol4/ALL.{sno,ref,csv} -- a brace glob in prose naming the three master files, which all exist; nothing reads the glob
 # (corpus da0987478 lineage). Extract by ORIGIN (never re-point at a surviving directory -- that
 # would grade a different population and look green either way, hq_P's FINDING-2026-08-30 on this
 # exact class). Origins confirmed against ALL.csv's own family/origin columns before use.

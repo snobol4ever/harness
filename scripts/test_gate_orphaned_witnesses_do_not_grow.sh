@@ -86,6 +86,7 @@ CENSUS="$CORPUS/tests/ORPHANED-WITNESSES.tsv"
 # `fence_then_operand_then_alternation_never_backtracks` and `tpgm4_syntactic_recognizer` are DECLARED in
 # corpus/tests/snobol4/PENDING.md, deferred to a LIVE row whose DONE-WHEN grades the first of them in both modes, and they
 # convert into the rungs the day it is cured -- at which point this floor falls back to 39 and this gate is what says so.
+# not-a-corpus-path: tests/snobol4/PENDING.md -- the deferral list named in the FLOOR note above, retired by corpus commit 636deb4cf; prose history, this gate reads no such file.
 # ⭐ FLOOR_snobol4 41 -> 39 (hq_snobol4 2026-09-27): cured at SCRIP 5f445d5fd -- 11c73f1e5 cured the minimal witness and 5f445d5fd the
 # trailing-operand case tpgm4 needed (row snobol4-a-stored-fenced-pattern-with-an-operand-after-its-alternation-never-backtracks-into-
 # it-tpgm4-two-part-gotos); both pairs converted into the rungs green in both modes by the builder's --absorb-only/--delete-absorbed,
