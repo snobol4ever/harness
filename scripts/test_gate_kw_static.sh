@@ -12,18 +12,18 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -uo pipefail
 SCRIP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
-# ⭐ RE-POINTED (s283h, probe total-conversion): corpus/probe/kw is GONE. The 13 non-stdin witnesses
-# live in the kw SUITE (tests/snobol4/probe/kw.{sno,ref}) and are materialized here via the harness's
-# `extract` verb (test_arbno_witnesses.sh's established idiom); the 2 stdin-bearing witnesses
-# (kw_trim_effect, kw_trim_lazy_seed -- .dat companions) stay LOOSE in tests/snobol4/probe_loose/kw
-# per hq_C's permanent stdin ruling and are copied in beside them, so this gate's witness population
-# is UNCHANGED (15) and the .dat-stdin arm below still exercises what it always did.
+# ⭐ RE-POINTED (s283h, probe total-conversion): corpus/probe/kw is GONE, and so is every probe/ and probe_loose/
+# folder: the rungs are ONE flat container (corpus/tests/snobol4/ALL.sno, ALL.ref, ALL.in, ALL.csv). The
+# non-stdin witnesses are origin family probe_kw and come out through rungs_extract_family. The 2 stdin-bearing
+# witnesses (kw_trim_effect, kw_trim_lazy_seed) are origin family probe_loose_kw_<name>; they come out by origin,
+# and their stdin (ALL.in) is written as <name>.in, which is renamed .dat below for the .dat-stdin arm.
 KW_ASSEMBLED="$(mktemp -d)"
 RUNGS_LANG="${RUNGS_LANG:-snobol4}" . "$(dirname "${BASH_SOURCE[0]}")/lib_rungs_extract.sh"   # zero-subfolders cutover: the kw suite lives IN the rungs; loose stdin pair is flat-prefixed
 rungs_extract_family probe_kw "$KW_ASSEMBLED" || true
-for f in "$S4E/corpus/tests/snobol4/"probe_loose_kw_*; do
-    [ -f "$f" ] || continue
-    b="$(basename "$f")"; cp "$f" "$KW_ASSEMBLED/${b#probe_loose_kw_}"
+for o in $(rungs_origins_by_prefix probe_loose_kw_); do
+    b="${o#*__}"; b="${b#probe_loose_kw_}"
+    rungs_extract_origin "$o" "$KW_ASSEMBLED/$b.sno" "$KW_ASSEMBLED/$b.ref" || true
+    [ -f "$KW_ASSEMBLED/$b.in" ] && mv "$KW_ASSEMBLED/$b.in" "$KW_ASSEMBLED/$b.dat"
 done
 PROBE_DIR="${KW_PROBE_DIR:-$KW_ASSEMBLED}"
 SCRIP_BIN="${SCRIP_BIN:-$SCRIP_DIR/scrip}"

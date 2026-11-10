@@ -63,7 +63,7 @@ echo "== A. NEGATIVE: a rebuild that would LOSE a known origin must REFUSE rc=2 
 mkscratch "$W/a"
 python3 - "$W/a/corpus/tests/snobol4" <<'PYA'
 import sys, os
-sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "harness", "scripts"))
 import corpus_suite_harness as h
 T = sys.argv[1]; p = os.path.join(T, "ALL.sno")
 es = h.read_suite(p, os.path.join(T, "ALL.ref"),
@@ -92,7 +92,7 @@ else bad "⛔ THE CSV CHANGED during a refusal — and the CSV is the only recor
 count_entries() {  # $1 = language dir
     python3 - "$1" <<'PYC'
 import sys, os
-sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "harness", "scripts"))
 import corpus_suite_harness as h
 T = sys.argv[1]; p = os.path.join(T, "ALL.sno")
 try:
@@ -113,6 +113,8 @@ echo "== B. POSITIVE: a rebuild that loses nothing must PROCEED (the guard can s
 # NOTHING proceeds". So: keep the rungs whole, add ONE genuinely new pair, expect it absorbed.
 mkscratch "$W/b"
 find "$W/b/corpus/tests/snobol4" -name '*.sno' ! -name 'ALL.sno' -delete 2>/dev/null
+# not-a-corpus-path: tests/snobol4/zz_gate_brandnew.sno -- a fixture this gate writes into its own mktemp copy, never read from the live tree
+# not-a-corpus-path: tests/snobol4/zz_gate_brandnew.ref -- the .ref half of the same scratch fixture
 printf '\tOUTPUT = "brandnew"\nEND\n' > "$W/b/corpus/tests/snobol4/zz_gate_brandnew.sno"
 printf 'brandnew\n'                     > "$W/b/corpus/tests/snobol4/zz_gate_brandnew.ref"
 n_before="$(count_entries "$W/b/corpus/tests/snobol4")"

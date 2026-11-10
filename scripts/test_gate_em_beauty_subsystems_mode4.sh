@@ -2,7 +2,8 @@
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ../harness/scripts/test_gate_em_beauty_subsystems_mode4.sh — EM-7d-prep gate:
-# every *_driver.sno in corpus/tests/snobol4/beauty_suite/, under
+# every beauty_suite_ driver entry of the rungs (corpus/tests/snobol4/ALL.sno, extracted by origin through
+# lib_rungs_extract.sh as <name>_driver.sno), under
 #   --compile    (mode 4: emit .s, link to libscrip_rt.so, run binary)
 # produces output byte-identical to the same driver under
 #   --run            (mode 2: proven SM interpreter)
@@ -23,7 +24,9 @@ ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside ha
 SCRIP="${SCRIP:-$ROOT/scrip}"
 RT_DIR="${RT_DIR:-$ROOT/out}"
 CORPUS="${CORPUS:-$S4E/corpus}"
-BEAUTY="$CORPUS/tests/snobol4/beauty_suite"
+RUNGS_LANG=snobol4
+RUNGS_DIR="${RUNGS_DIR:-$CORPUS/tests/snobol4}"
+. "$HERE/lib_rungs_extract.sh"
 TIMEOUT="${TIMEOUT:-30}"
 
 if [ ! -x "$SCRIP" ]; then
@@ -34,14 +37,18 @@ if [ ! -f "$RT_DIR/libscrip_rt.so" ]; then
     echo "SKIP libscrip_rt.so not built — run: make libscrip_rt"
     exit 0
 fi
-if [ ! -d "$BEAUTY" ]; then
-    echo "SKIP corpus not populated at $CORPUS"
-    exit 0
+if [ ! -f "$RUNGS_SNO" ]; then
+    echo "GATE BLOCKED: no rungs at $RUNGS_SNO (clone corpus)"
+    exit 2
 fi
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 cd "$TMP"
+BEAUTY="$TMP/beauty_suite"
+SNOLIB="$BEAUTY:${INC:-$CORPUS/include}"   # the harness's include path (corpus_suite_harness.py resolve_paths inc): the drivers' -INCLUDE files live flat in corpus/include
+rungs_extract_origin_prefix beauty_suite_ "$BEAUTY" || { echo "GATE BLOCKED: beauty_suite_ entries did not extract from $RUNGS_SNO"; exit 2; }
+ls "$BEAUTY"/*_driver.sno > /dev/null 2>&1 || { echo "GATE BLOCKED: no beauty_suite_ driver entries in $RUNGS_CSV"; exit 2; }
 
 PASS=0
 FAIL_EMIT=0
@@ -58,11 +65,11 @@ for sno in "$BEAUTY"/*_driver.sno; do
     # parity means mode-4 should produce the same (empty) output.
     # bash -c runs the child in a fresh shell so SIGSEGV trap message
     # (printed by the parent's job-control) doesn't reach our stderr.
-    bash -c "SNO_LIB='$BEAUTY' timeout '$TIMEOUT' '$SCRIP' --run '$sno' < /dev/null" \
+    bash -c "SNO_LIB='$SNOLIB' timeout '$TIMEOUT' '$SCRIP' --run '$sno' < /dev/null" \
         > "$name.sm.out" 2>/dev/null || true
 
     # mode-4: emit -> assemble+link -> run.
-    SNO_LIB="$BEAUTY" "$SCRIP" --compile "$sno" \
+    SNO_LIB="$SNOLIB" "$SCRIP" --compile "$sno" \
         > "$name.s" 2> "$name.emit.err"
     if [ $? -ne 0 ] || [ ! -s "$name.s" ]; then
         FAIL_EMIT=$((FAIL_EMIT + 1))
@@ -76,7 +83,7 @@ for sno in "$BEAUTY"/*_driver.sno; do
         FAILS="$FAILS $name(link)"
         continue
     fi
-    bash -c "SNO_LIB='$BEAUTY' timeout '$TIMEOUT' ./'$name.prog' < /dev/null" \
+    bash -c "SNO_LIB='$SNOLIB' timeout '$TIMEOUT' ./'$name.prog' < /dev/null" \
         > "$name.m4.out" 2>/dev/null || true
 
     if diff -q "$name.m4.out" "$name.sm.out" > /dev/null 2>&1; then
