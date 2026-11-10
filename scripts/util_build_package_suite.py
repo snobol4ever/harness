@@ -169,7 +169,19 @@ def count_top_level_ends(src_text):
     means the shipped file is several example programs concatenated under one name, not a single valid
     program (measured on the dotnet package's chap7.sno: a textbook chapter, 2 top-level END lines).
     Mirrors test_snobol4_dotnet_suite.sh's own check (`grep -cE '^END([[:space:]]|$)'`)."""
-    return sum(1 for line in src_text.splitlines() if _END_LINE_RE.match(line))
+    # ⛔ AN END WITH NO STATEMENT SINCE THE LAST END ENDS NO SECOND PROGRAM (the cio 2026-11-10, measured on spitbol_x32_tests hi.spt: one
+    # OUTPUT statement, END, END; sbl -bf and SCRIP both print the one line and the deleted runner graded it PASS, yet the whole build
+    # excluded it as a multi-program file and the suite's denominator fell by one). Text after END is never program text; a second
+    # PROGRAM is statements followed by their own END, which is what chap7 holds.
+    n = stmts = 0
+    for line in src_text.splitlines():
+        if _END_LINE_RE.match(line):
+            if stmts or n == 0:
+                n += 1
+            stmts = 0
+        elif line.strip() and not line.startswith("*"):
+            stmts += 1
+    return n
 
 
 def read_text_tolerant(path):
@@ -379,6 +391,20 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
     print(f"oracle: {oracle_bin} {flags}", file=sys.stderr)
     contract = read_contract(pkg_dir)
     merged = contract["stderr"] == "merged"
+    # ⛔⭐ THE TABLE'S ATTRIBUTE COLUMNS ARE THE ONE SPEC, READ BY THE BUILDER AS BY THE GRADER (Lon 2026-11-08 23:0x, verbatim: "Same spec on
+    # attributes and environment."; the cio 2026-11-10). MEASURED on spitbol_x32_tests: its ALL.csv declared out_files=extract1.txt extract2.txt
+    # and stderr=merged for arcget and timeout_s=300 for all 21; a whole build read none of the three, ran the oracle without them, excluded
+    # arcget as EMPTY output (its answer is the two files and its TERMINAL lines) and wrote a table without the three columns. Nine tables
+    # rebuilt on 2026-11-09 lost timeout_s the same way. So an entry's out_files (when no <stem>.outfiles sidecar speaks), stderr and timeout_s
+    # in the table as it stands are read here, before any oracle run, used for the cut, and written back.
+    _decl = {}
+    _decl_cols = []
+    if (pkg_dir / f"{out_prefix}.csv").is_file():
+        with open(pkg_dir / f"{out_prefix}.csv", newline="") as _f:
+            _rdr = csv.DictReader(_f)
+            _decl_cols = [c for c in ("out_files", "stderr", "timeout_s") if c in (_rdr.fieldnames or [])]
+            for _row in _rdr:
+                _decl[_row.get("entry")] = {c: (_row.get(c) or "").strip() for c in _decl_cols}
     if merged:
         print("contract: stderr merged (CONTRACT.tsv) -- every ref is cut from stdout and stderr as one stream", file=sys.stderr)
     ref_beside = contract["units"] == "ref-beside"
@@ -583,14 +609,15 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (non-UTF-8 stdin {stdin_path.name})", file=sys.stderr)
             continue
         _of_path = src.with_suffix(".outfiles")
-        _of_cell = " ".join(ln.strip() for ln in _of_path.read_text().split("\n") if ln.strip() and not ln.lstrip().startswith("#")) if _of_path.is_file() else ""
+        _of_cell = " ".join(ln.strip() for ln in _of_path.read_text().split("\n") if ln.strip() and not ln.lstrip().startswith("#")) if _of_path.is_file() else _decl.get(name, {}).get("out_files", "")
+        _ms = merged or _decl.get(name, {}).get("stderr", "") == "merged"
         if any(w.startswith(".") for w in _of_cell.split()):
             _hid = [w for w in _of_cell.split() if w.startswith(".")]
             excluded.append((name, f"out_files names hidden file(s) {' '.join(_hid)} -- the staging rule admits a bare name with no leading '.' "
                                         "(validate_out_files_cell), so the run cannot own them; excluded rather than refused (the whole build would stop)"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (out_files names hidden files)", file=sys.stderr)
             continue
-        out_files = h.validate_out_files_cell(_of_cell, str(_of_path)) if _of_path.is_file() else None
+        out_files = h.validate_out_files_cell(_of_cell, str(_of_path) if _of_path.is_file() else f"{pkg_dir / (out_prefix + '.csv')}:{name}") if (_of_path.is_file() or _of_cell) else None
         # ⭐ ISOLATE THE ORACLE INVOCATION, ONE FILE PER THROWAWAY CWD (measured on
         # corpus/packages/icon/ipl/progs/: this project's own Icon oracle driver, run_oracle()'s
         # cwd=sno_path.parent contract landing it in a directory of `link`-directive .icn siblings, renames
@@ -651,7 +678,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
                                                                          prog_args=prog_args, out_files=out_files)
                 else:
                     return h.run_oracle(oracle_bin, flags, _iso_src, paths["timeout"], stdin_text=stdin_text,
-                                                              prog_args=prog_args, out_files=out_files, merge_stderr=merged)
+                                                              prog_args=prog_args, out_files=out_files, merge_stderr=_ms)
         # ⭐ EVERY FPC DIALECT, ISO FIRST (Lon 2026-10-09, in-chat to the coo, verbatim: "I suspect you should ignore the compiler directives
         # suggesting and hinting at the dialect. Let's get all those rosetta programs working if they run and give reasonable results, REF
         # file, from the oracle."): under CONTRACT.tsv dialect=any-fpc-mode a Pascal program fpc refuses to compile under -Miso (the wrapper's
@@ -824,6 +851,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
         _fed = f" [stdin: {stdin_path.name}]" if stdin_text is not None else ""
         if prog_args: e.argv = list(prog_args)
         if out_files: e.out_files = list(out_files)
+        e.decl_stderr = _ms
         _rc = f" [want_rc={want_rc}]" if want_rc else ""
         print(f"[{i}/{len(srcs)}] {name}: ABSORBED{_fed}{_rc}", file=sys.stderr)
 
@@ -901,8 +929,9 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
     _old_stack = {}   # stack_kb: the same kind of paid-for measurement, carried forward the same way (R-1225)
     _old_cmd = {}     # compile_args and run_args: the unit's command line, carried forward the same way (clause 8 (f), R-1281)
     _cmd_cols = ["compile_args", "run_args"]   # a new table gets both; a rebuild keeps the ones the table has, never imposes one
-    _of_col = ["out_files"] if any(getattr(e, "out_files", None) for e in entries) else []   # derived from <stem>.outfiles, every build
-    _se_col = ["stderr"] if merged else []   # derived from CONTRACT.tsv, every build
+    _of_col = ["out_files"] if any(getattr(e, "out_files", None) for e in entries) or any(d.get("out_files") for d in _decl.values()) else []   # from <stem>.outfiles, else the table's own declaration
+    _se_col = ["stderr"] if merged or any(d.get("stderr") for d in _decl.values()) else []   # from CONTRACT.tsv (every entry), else the table's own per-entry declaration
+    _tmo_col = ["timeout_s"] if "timeout_s" in _decl_cols else []   # the declared bound (test-cycle step 6), carried forward; a table that never declared one gains none here
     # ⭐ fresh-vars and error-context (corpus_suite_harness.py _grade_output): a Prolog ref prints a fresh variable as the oracle names it
     # (ISO/IEC 13211-1 7.10.5) and an error term's context as the oracle builds it (7.12.1), both the implementation's; each is derived
     # from the entry's own ref, every build.
@@ -952,19 +981,19 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
                     _old_gap[_row.get("entry")] = _g
     with open(out_csv, "w", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
-        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _cmd_cols + _of_col + _se_col + _cm_col + _sg_col + _gr_col + _gap_col + [c for c, _fn in cols])
+        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _tmo_col + _cmd_cols + _of_col + _se_col + _cm_col + _sg_col + _gr_col + _gap_col + [c for c, _fn in cols])
         for e in entries:
             joined = "\n".join(e.sno_lines)
             flags_row = m.attrs_for_text(joined, table_lang)
             w.writerow([e.seq, e.name, f"{pkg_dir.name}__{e.name}", pkg_dir.name, len(e.sno_lines),
-                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + ["merged" for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + ((["swi-cases", e.name.rsplit("/", 1)[0] if "/" in e.name else "."]) if _gr_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [flags_row[c] for c, _fn in cols])
+                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_decl.get(e.name, {}).get("timeout_s", "") for c in _tmo_col] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + [("merged" if getattr(e, "decl_stderr", merged) else "") for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + ((["swi-cases", e.name.rsplit("/", 1)[0] if "/" in e.name else "."]) if _gr_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [flags_row[c] for c, _fn in cols])
         _rank = max([e.seq for e in entries] or [0])
         for _row in sorted(_carried, key=lambda r: r.get("entry") or ""):
             _rank += 1
             w.writerow([_rank, _row.get("entry"), _row.get("origin") or f"{pkg_dir.name}__{_row.get('entry')}", _row.get("package") or pkg_dir.name,
                         _row.get("n_lines") or "", _row.get("stdin") or "0", _row.get("want_rc") or "0",
-                        (_row.get("heap_kb") or "").strip() or m.DEFAULT_HEAP_KB, (_row.get("stack_kb") or "").strip() or m.DEFAULT_STACK_KB] + [(_row.get(c) or "").strip() for c in _cmd_cols]
-                       + ["" for c in _of_col] + ["" for c in _se_col] + ["" for c in _cm_col] + ["" for c in _sg_col] + ["" for c in _gr_col] + [(_row.get(c) or "").strip() for c in _gap_col] + ["" for c, _fn in cols])
+                        (_row.get("heap_kb") or "").strip() or m.DEFAULT_HEAP_KB, (_row.get("stack_kb") or "").strip() or m.DEFAULT_STACK_KB] + [(_row.get(c) or "").strip() for c in _tmo_col] + [(_row.get(c) or "").strip() for c in _cmd_cols]
+                       + [(_row.get(c) or "").strip() for c in _of_col] + [(_row.get(c) or "").strip() for c in _se_col] + ["" for c in _cm_col] + ["" for c in _sg_col] + ["" for c in _gr_col] + [(_row.get(c) or "").strip() for c in _gap_col] + ["" for c, _fn in cols])
     if _carried:
         print("    settings rows: %d unit(s) still shipped and not absorbed by this build carried forward, declarations kept, no block: %s"
               % (len(_carried), ", ".join(sorted(r.get("entry") or "" for r in _carried))), file=sys.stderr)

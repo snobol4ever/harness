@@ -51,6 +51,11 @@ def drop_excluded_and_containers(table, rows):
     if os.path.isfile(ex_p):
         with open(ex_p, encoding="utf-8", errors="replace") as f:
             ex = set(l.split(": ", 1)[0].strip() for l in f if l.strip())
+        # A NAME WRITTEN WITH ITS SOURCE EXTENSION IS THE SAME ENTRY (the cio 2026-11-10; MEASURED: ipl's 354 "procs/abkform.icn: a library graded
+        # through its driver" lines matched no table entry, so chunk:01 to 04 and chunk:09 named 354 libraries the container does not hold and the
+        # cycle's five cells refused rc 2 every lap): a name that is no table entry while its extension-less form is one drops that entry.
+        names = set(r.get("entry") for r in rows)
+        ex |= set(os.path.splitext(x)[0] for x in ex if x not in names and os.path.splitext(x)[0] in names)
     if os.path.isfile(ct_p):
         with open(ct_p, encoding="utf-8", errors="replace") as f:
             ct = set(os.path.splitext(l.split("\t", 1)[0].strip())[0] for l in f if l.strip() and not l.startswith("#"))
