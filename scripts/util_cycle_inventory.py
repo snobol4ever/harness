@@ -16,7 +16,8 @@ One line per row of SUITE_RUNNERS.tsv that is not a port row:
           of the denominator: published, shipped, and graded by nothing since the package runners were deleted (harness cc2783502)
   cells   the cycle cells of the row; lap: the last finished lap's cells by exit code (rc:n); held: cells named in CYCLE.skip
 VERDICT words: NOT-IN-CYCLE (kind small: s4e_cycle.sh launches master and pkg rows only), NO-CONTAINER, NO-PARTITION, PARTITION-NAMES-n-ABSENT,
-n-ENTRIES-IN-NO-CELL, OWED-n, and from the lap n-CELLS-REFUSE and CELL-DIED-OR-TIMED-OUT; HELD-n-CELLS is Lon's hold and is not a defect.
+n-ENTRIES-IN-NO-CELL, OWED-n, and from the lap n-CELLS-REFUSE and CELL-DIED-OR-TIMED-OUT; HELD-n-CELLS is Lon's hold and is not a defect, and a row
+whose every cell is held is printed with its words and counted by neither check until the hold is lifted.
 --owed KEY prints that row's owed programs with the builder's reason. --check: rc 1 when a selected row carries a structural word (everything but
 the lap's); --check-lap: the lap's words count too. rc 2 refused. It reads; it writes nothing and runs no program."""
 import collections, csv, os, re, subprocess, sys
@@ -154,8 +155,9 @@ def main():
         if any(k not in ("0", "1", "2") for k in rcs):
             vl.append("CELL-DIED-OR-TIMED-OUT")
         hold = ["HELD-%d-CELLS" % held[key]] if held.get(key) else []
-        bad += 1 if v else 0
-        bad_lap += 1 if (v or vl) else 0
+        if not (part and held.get(key, 0) >= len(part)):   # a row whose every cell Lon holds is shown with its words and counted by neither check
+            bad += 1 if v else 0
+            bad_lap += 1 if (v or vl) else 0
         print(FMT % (key, kind, flags, ncsv, len(cont) if cont is not None else "-", len(pnames) if part else "-", gone, nocell,
                      len(owed) if kind == "pkg" and cont is not None else "-", len(part),
                      " ".join("%s:%d" % kv for kv in sorted(rcs.items())) or "-", " ".join(v + vl + hold) or "OK"))
