@@ -6323,6 +6323,10 @@ def oracle_args_declarations(src_path):
 # as XSB -S; 2 without), and the 39 xsb_tests runs ORACLE_RUNS.tsv records with -S declare it (test_gate_xsb_an_oracle_switch_is_the_entrys_compile_args.sh).
 # --dialect=unicon joins 2026-11-04 (cto, CTO-473): a markerless UniTests program is a Unicon program because the package says so; the driver turns the switch into the per-program Unicon state a class, package or import marker sets.
 COMPILE_ARGS_ADMITTED = ("--stlimit", "--dialect=gnu", "--dialect=unicon", "-S")
+# THE DIALECT COLUMN (run-switches steps 3 and 11, CTO-588 and the cto's step 11; CIO-118): an index's dialect cell is the entry's dialect switch,
+# scrip --dialect=CELL at the compile step in both modes, read by the package switch and by this per-process road alike; a row that also carries
+# a dialect word in compile_args is refused (two answers to one question). With it a package prelude that only named the dialect leaves.
+DIALECT_CELLS = ("swi", "xsb", "gnu", "unicon")
 
 
 def validate_out_files_cell(raw, where):
@@ -6535,7 +6539,7 @@ def read_command_line_columns(src_path, entries, modes=None):
     import csv as _csvm
     with open(csv_path, newline="") as f:
         rdr = _csvm.DictReader(f)
-        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s", "grader", "cwd", "stage_name") if rdr.fieldnames and c in rdr.fieldnames]
+        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s", "grader", "cwd", "stage_name", "dialect") if rdr.fieldnames and c in rdr.fieldnames]
         if not cols:
             return
         rows = [(n, r) for n, r in enumerate(rdr, 2)]
@@ -6549,6 +6553,13 @@ def read_command_line_columns(src_path, entries, modes=None):
         ca = validate_args_cell(row.get("compile_args"), "compile_args", where)
         if ca:
             e.compile_args = ca
+        _dl = (row.get("dialect") or "").strip()
+        if _dl:
+            if _dl not in DIALECT_CELLS:
+                refuse(f"{where}: dialect {_dl!r} is not one of {', '.join(DIALECT_CELLS)} (or empty)")
+            if any(w.startswith("--dialect=") for w in (e.compile_args or [])):
+                refuse(f"{where}: {e.name} names its dialect in the dialect cell AND in compile_args -- one declaration")
+            e.compile_args = list(e.compile_args or []) + ["--dialect=" + _dl]
         ra = validate_args_cell(row.get("run_args"), "run_args", where)
         if ra:
             if e.argv:
