@@ -8,7 +8,8 @@ paths blanked, or, with an empty standard error, how its output first differs fr
 Tests with one signature are one GROUP: one cause to find, one row to cut.
 Writes DIR/SUITE.groups.tsv (count, signature, up to five tests) and DIR/SUITE.tests.tsv (test, signature); prints RED_CENSUS suite=K failing=N
 ran=N groups=G largest=M covered_by_top_ten=P%. rc 0; rc 2 refused (no such suite, not on the package switch, no binary). Reads the corpus and
-writes only under DIR and its scratch folder."""
+writes only under DIR and its scratch folder. A program ALL.omit names is no entry of the package (the builder ships it ungraded) and is
+never counted or run, whatever an old reading of it says."""
 import collections, csv, os, re, subprocess, sys, tempfile
 ROOT = os.environ.get("S4E_HOME") or "/home/claude_cio"
 sys.path.insert(0, os.path.join(ROOT, "harness", "scripts"))
@@ -43,7 +44,9 @@ def main(argv):
     with open(idx, newline="", encoding="utf-8", errors="replace") as f:
         rows = list(csv.DictReader(f))
     if not rows or "path" not in rows[0]: refuse(f"{key} is not on the package switch (its index has no path column): convert the package first")
-    path_of = {r["entry"]: r["path"] for r in rows}
+    om = os.path.join(d, "ALL.omit")
+    omitted = {l.split(": ", 1)[0] for l in open(om, "rb").read().decode("utf-8", "replace").split("\n") if l.strip() and not l.startswith("#") and ": " in l} if os.path.isfile(om) else set()
+    path_of = {r["entry"]: r["path"] for r in rows if r["entry"] not in omitted}
     last = {}
     with open("/home/resources/progress/results.tsv", encoding="utf-8", errors="replace") as f:
         for l in f:
