@@ -14,7 +14,7 @@ N="${1:-}"
 SCRIP="$S4E/SCRIP/scrip"
 BG="$S4E/corpus/tests/shared/batch_grader"
 refuse() { echo "REFUSE(2) [run-switches probe]: $*"; exit 2; }
-[ -n "$N" ] || refuse "usage: $0 <step 1..18>"
+[ -n "$N" ] || refuse "usage: $0 <step 1..19>"
 mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 T="$(mktemp -d "/tmp/s4e/$ME/runsw_probe.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$T"' EXIT
@@ -518,8 +518,42 @@ step18() {   # a source file that fails to parse fails the run wherever it stand
     verdict "a Pascal file fpc refuses fails the run with exit 1 in either position, nothing runs, the file is named"
 }
 
+step19() {   # run-files reads ALL.stdin: an entry's standard input is a file of the collection, named by its path from the root and never copied (COO-514 (3), the grader 2026-11-11)
+    need_scrip
+    local C="$T/coll" P="$T/pkg" rc; coll "$C"
+    mkdir -p "$C/data" "$P"; printf 'fed one\nfed two\n' > "$C/data/feed.txt"
+    printf '%s\n' 'entry,path,timeout_s' 'sub/c,sub/c.sno,' 'sub/a,sub/a.sno,' > "$P/ALL.csv"
+    printf 'root\t%s\norigin\ta scratch collection of the probe\nversion\tprobe\nlicence\tpublic domain\n' "$C" > "$P/ALL.source"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-files "$P" --out "$T/o0" --work "$T/w0" > rep0.tsv 2> err0.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] && [ ! -s "$T/o0/sub_c.out" ] || refuse "the control arm (no ALL.stdin) exits $rc and sub/c prints '$(head -c 60 "$T/o0/sub_c.out" 2>/dev/null)': the probe measures nothing"
+    ( cd "$C" && find . -type f -exec md5sum {} + | sort -k2 ) > "$T/before.txt"
+    printf '# the standard input of an entry, a file of the collection\nsub/c\tdata/feed.txt\n' > "$P/ALL.stdin"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-files "$P" --out "$T/o" --work "$T/w" > rep.tsv 2> err.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] || red "the switch with ALL.stdin exits $rc ($(head -1 "$T/err.txt" | cut -c1-120))"
+    want "$T/rep.tsv" sub/c EXIT 0 && same "$T/o/sub_c.out" "$(printf 'fed one\nfed two')" "sub/c (fed the collection's file by its path from the root)"
+    want "$T/rep.tsv" sub/a EXIT 0 && same "$T/o/sub_a.out" 'beside line' "sub/a (an entry ALL.stdin does not name is fed nothing)"
+    ( cd "$C" && find . -type f -exec md5sum {} + | sort -k2 ) > "$T/after.txt"
+    cmp -s "$T/before.txt" "$T/after.txt" || red "the collection changed under the run: $(diff "$T/before.txt" "$T/after.txt" | head -2 | tr '\n' ' ')"
+    [ -z "$(find "$P" -name '*.in' | head -1)" ] || red "the package holds a copy of the input"
+    arm() {   # <label> <word the refusal must hold>
+        ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$P" --out "$T/ox" > repx.tsv 2> errx.txt < /dev/null ); rc=$?
+        [ "$rc" = 2 ] || red "$1 exits $rc, want the refusal 2"
+        [ ! -s "$T/repx.tsv" ] || red "$1 still ran a test"
+        grep -q -- "$2" "$T/errx.txt" 2>/dev/null || red "$1: the refusal does not name $2"
+    }
+    printf 'sub/zz\tdata/feed.txt\n' > "$P/ALL.stdin"; arm "an entry the index lacks" 'sub/zz'
+    printf 'sub/c\tdata/nothere.txt\n' > "$P/ALL.stdin"; arm "a file the collection does not hold" 'nothere'
+    printf 'sub/c\t../coll/data/feed.txt\n' > "$P/ALL.stdin"; arm "a path that leaves the root" 'leaves'
+    printf 'sub/c\t%s\n' "$C/data/feed.txt" > "$P/ALL.stdin"; arm "an absolute path" 'leaves'
+    printf 'sub/c\tdata/feed.txt\nsub/c\tdata/feed.txt\n' > "$P/ALL.stdin"; arm "an entry named twice" 'twice'
+    printf 'sub/c\n' > "$P/ALL.stdin"; arm "a line with no path" 'ALL.stdin'
+    printf 'sub/c\tdata/feed.txt\n' > "$P/ALL.stdin"; mkdir -p "$P/sub"; printf 'ours\n' > "$P/sub/c.in"; arm "an entry with a NAME.in and a line of ALL.stdin" 'both'
+    rm -f "$P/sub/c.in"; rm -f "$P/ALL.source"; mkdir -p "$P/sub"; cp "$C/sub/c.sno" "$C/sub/a.sno" "$C/sub/data.txt" "$P/sub/"; arm "ALL.stdin in a package with no ALL.source" 'ALL.source'
+    verdict "an entry is fed a file of the collection by its path from the root, the other entry is fed nothing, the collection is byte-identical after, the package holds no copy, eight malformed forms refuse"
+}
+
 
 case "$N" in
-    1) step1 ;; 2) step2 ;; 3) step3 ;; 4) step4 ;; 5) step5 ;; 6) step6 ;; 7) step7 ;; 8) step8 ;; 9) step9 ;; 10) step10 ;; 11) step11 ;; 12) step12 ;; 13) step13 ;; 14) step14 ;; 15) step15 ;; 16) step16 ;; 17) step17 ;; 18) step18 ;;
-    *) refuse "no step $N (1..18)" ;;
+    1) step1 ;; 2) step2 ;; 3) step3 ;; 4) step4 ;; 5) step5 ;; 6) step6 ;; 7) step7 ;; 8) step8 ;; 9) step9 ;; 10) step10 ;; 11) step11 ;; 12) step12 ;; 13) step13 ;; 14) step14 ;; 15) step15 ;; 16) step16 ;; 17) step17 ;; 18) step18 ;; 19) step19 ;;
+    *) refuse "no step $N (1..19)" ;;
 esac

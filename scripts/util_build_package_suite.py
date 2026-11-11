@@ -1584,8 +1584,11 @@ def _mine_scratch_drop():
     MINE_SCRATCH.clear()
 
 
-def _mine_one(lang, root, rel, cap, whole=False, ladder=None):
-    """The census verdict of one program (the mining rows' classes). -> (verdict, note, rc, stdout bytes)."""
+def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None):
+    """The census verdict of one program (the mining rows' classes). -> (verdict, note, rc, stdout bytes). FEED is (what it is, its bytes) when the
+    package names the program's standard input (ALL.stdin, a file of the collection by its path; or our own NAME.in in the package): both runs are
+    fed it, and the third run, which asks whether the answer changes with standard input, is not made."""
+    fed = feed[1] if feed else b""
     src = root / rel
     at, name = (root, rel) if whole else (src.parent, src.name)
     text = src.read_text(errors="replace")
@@ -1596,7 +1599,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None):
     flags = ()
     for dialect, flag in (ladder or MINE_LADDER.get(lang) or (("", ""),)):
         flags = (flag,) if flag else ()
-        rc1, out1, err1 = _mine_run(lang, at, name, cap, b"", flags)
+        rc1, out1, err1 = _mine_run(lang, at, name, cap, fed, flags)
         if not (lang == "pascal" and rc1 == 126):
             if dialect:
                 MINE_FOUND[rel] = dialect
@@ -1619,15 +1622,50 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None):
         return "ORACLE-REFUSES", f"SPITBOL ends it with an error: {why.strip()[:140]}", None, b""
     if lang == "raku" and rc1 == 2 and first.startswith("Usage:"):
         return "NEEDS-INPUT", "it asks for arguments (rakudo prints its usage, exit 2)", None, b""
-    rc2, out2, err2 = _mine_run(lang, at, name, cap, b"", flags)
+    rc2, out2, err2 = _mine_run(lang, at, name, cap, fed, flags)
     if (rc2, out2) != (rc1, out1):
         return "DIFFERS-BETWEEN-RUNS", f"exit {rc1} and {rc2}, {len(out1)} and {len(out2)} bytes", None, b""
-    rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags)
-    if (rc3, out3) != (rc1, out1):
-        return "NEEDS-INPUT", "its answer changes with what standard input holds", None, b""
+    if not feed:
+        rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags)
+        if (rc3, out3) != (rc1, out1):
+            return "NEEDS-INPUT", "its answer changes with what standard input holds", None, b""
     if not out1.strip():
         return "NO-OUTPUT", f"nothing on standard output, exit {rc1}; a dead engine would earn the same" + (f"; stderr: {first}" if first else ""), None, b""
-    return "ENTRY", (f"stderr not graded: {first}" if first else ""), rc1, out1
+    return "ENTRY", "; ".join(x for x in ((f"standard input is {feed[0]}" if feed else ""), (f"stderr not graded: {first}" if first else "")) if x), rc1, out1
+
+
+def _mine_feeds(pkg_dir, root, stems, under):
+    """THE STANDARD INPUT THE PACKAGE NAMES FOR A PROGRAM (COO-514 (3), the grader 2026-11-11; CIO-92 step 2: "a NEEDS-INPUT program becomes an
+    entry when its input is a file of the collection, named ... as a copy only when the licence class is A, and by path otherwise"). Two homes,
+    both written by a person before the census and never by it: ALL.stdin at the package root, one line an entry, a tab, the path from the
+    collection's root of the file it is fed (read where it stands, never copied); and our own NAME.in in the package at the program's relative
+    path (an input we wrote, or a copy the licence allows). -> {program's path from the root: (what feeds it, its bytes)}. Refuses a malformed
+    line, an entry named twice, a path that leaves the root or names no file, a program with both homes, and a name that is no program the
+    census reads (under --mine-under a line for another folder is left alone)."""
+    feeds = {}
+    f = pkg_dir / "ALL.stdin"
+    for n, raw in enumerate(f.read_text().split("\n") if f.is_file() else (), 1):
+        if not raw.strip() or raw.startswith("#"):
+            continue
+        c = raw.split("\t")
+        if len(c) != 2 or not c[1]:
+            h.refuse(f"{f}:{n}: a line of ALL.stdin is an entry, one tab and a path from the collection's root; read {raw[:80]!r}")
+        if c[0] not in stems:
+            if under and not c[0].startswith(under.rstrip("/") + "/"):
+                continue
+            h.refuse(f"{f}:{n}: {c[0]!r} is no program the census reads under {root} (an entry's name is its path from the root without the extension)")
+        if stems[c[0]] in feeds:
+            h.refuse(f"{f}:{n}: {c[0]!r} is named twice")
+        if c[1].startswith("/") or ".." in c[1].split("/") or not (root / c[1]).is_file():
+            h.refuse(f"{f}:{n}: {c[0]} is fed {c[1]!r}, which is no file under the root {root}")
+        feeds[stems[c[0]]] = (f"the collection's {c[1]}", (root / c[1]).read_bytes())
+    for stem, rel in stems.items():
+        own = pkg_dir / (stem + ".in")
+        if own.is_file():
+            if rel in feeds:
+                h.refuse(f"{pkg_dir.name}: {stem} has both a NAME.in in the package and a line of ALL.stdin")
+            feeds[rel] = (f"the package's own {stem}.in", own.read_bytes())
+    return feeds
 
 
 def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dialects=None, add=False):
@@ -1677,11 +1715,17 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
         if not known or any(d not in known for d in dialects):
             h.refuse(f"--mine-dialects {','.join(dialects)}: the ladder of {lang or 'snobol4'} is {', '.join(known) or 'empty'}")
         ladder = tuple((d, known[d]) for d in dialects)
+    feeds = _mine_feeds(pkg_dir, root, {k: v for k, v in stems.items() if v in rels}, under)
     try:
         with ThreadPoolExecutor(max_workers=jobs) as ex:
-            got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder), rels))
+            got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder, feeds.get(r)), rels))
     finally:
         _mine_scratch_drop()
+    unfed = [f"{r} ({feeds[r][0]}): {v}: {note}" for r, (v, note, rc, out) in zip(rels, got) if r in feeds and v != "ENTRY"]
+    if unfed:
+        h.refuse(f"{pkg_dir.name}: the package names a standard input for {len(unfed)} program(s) the oracle does not answer with it, and nothing is "
+                 f"written: {'; '.join(unfed)[:600]}. Correct the input, or take its line out of ALL.stdin (or its NAME.in out of the package) and "
+                 f"the census gives the program its verdict without it")
     # ONE FOLDER MORE (--mine-add with --mine-under, the coo 2026-11-11: Free Pascal's tree is cut one folder a landing): the rows, the answers,
     # the ALL.rc and ALL.omit lines and the census lines of every OTHER folder stand as they are; only what is under FOLDER is cut again.
     pre = (under.rstrip("/") + "/") if (add and under) else None
@@ -1758,7 +1802,9 @@ def main():
                          "(SPITBOL's own suite ships .sbl; the container is still ALL.sno for snobol4)")
     ap.add_argument("--mine", default="", metavar="CENSUS.tsv",
                     help="the package holds ALL.source: take the census of the collection it names into CENSUS.tsv and write the index and the "
-                         "answers of the programs the oracle answers the same twice; no program is copied into the package")
+                         "answers of the programs the oracle answers the same twice; no program is copied into the package. A program whose standard input "
+                         "the package names (a line of ALL.stdin: entry, tab, a file of the collection by its path from the root; or our own NAME.in "
+                         "at the program's path) is fed it on both runs")
     ap.add_argument("--mine-cap", type=int, default=60, help="seconds the oracle has for one program under --mine (default 60)")
     ap.add_argument("--mine-jobs", type=int, default=4, help="oracle runs side by side under --mine (default 4, a seat's share of the run pool)")
     ap.add_argument("--mine-under", default="", metavar="FOLDER", help="under --mine, only the programs under this folder of the root")

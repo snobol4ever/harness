@@ -6,7 +6,7 @@ NAME.out, and NAME.err files. And slightly varying ALL files."). The sister of u
 
 usage: util_package_layout_census.py --package DIR [--check] [--list] | --probe
 For every file git tracks under DIR (every file on disk when DIR is in no repository) one role:
-  INDEX      ALL.csv, ALL.args, ALL.omit, ALL.mask, ALL.rc, ALL.source (the collection a row's program is read from in place, CIO-92) and ALL.launch at the
+  INDEX      ALL.csv, ALL.args, ALL.omit, ALL.mask, ALL.rc, ALL.source (the collection a row's program is read from in place, CIO-92), ALL.stdin (an entry's standard input, a file of that collection by its path, COO-514) and ALL.launch at the
              package root; and ALL.dialect there while ALL.csv has no dialect column: the builder's own
              record of the oracle's mode that cut each answer, which the grader does not read (with the column it is a second home of one fact and reads
              LOOSE, to leave in the landing that writes the column; the cio's ruling of 2026-11-11 on rosetta-pascal)
@@ -33,7 +33,7 @@ import csv, fnmatch, os, shutil, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROLES = ("INDEX", "PROGRAM", "STREAM", "PART", "TABLE", "DOCUMENT", "CONTAINER", "OMITTED", "LOOSE")
-INDEX = ("ALL.csv", "ALL.args", "ALL.omit", "ALL.mask", "ALL.rc", "ALL.source", "ALL.launch")
+INDEX = ("ALL.csv", "ALL.args", "ALL.omit", "ALL.mask", "ALL.rc", "ALL.source", "ALL.launch", "ALL.stdin")
 TABLES = ("CONTRACT.tsv", "CONTAINERS.tsv", "PARTITION.tsv", "SOURCES.tsv", "DRIVERS.tsv")
 CONTAINER_EXT = (".sno", ".icn", ".pl", ".raku", ".pas", ".sc", ".reb")
 CONTAINER = ("ALL.ref", "ALL.in", "ALL.argv", "ALL.prelude") + tuple("ALL" + x for x in CONTAINER_EXT)

@@ -21,6 +21,10 @@
 #   6  a second package whose ALL.source says copy root and cwd root (CTO-591) is mined from the top of the collection: the program that reads
 #      a file by its path from the top is an ENTRY there and has no output in the first package, and the one reading beside itself the reverse
 #   7  with the root gone the build refuses rc 2 and leaves the package as it stood
+#   8  a third package whose ALL.stdin names a file of the collection as the standard input of the program that reads it (COO-514 (3): a
+#      collection that may not be copied feeds its own file by path): the program is an ENTRY there, its answer is the oracle's on that
+#      file, the package holds no copy of the input, the layout census reads no loose file, the one grader passes all four entries; and an
+#      ALL.stdin that feeds a program the oracle refuses makes the build refuse rc 2 with the package as it stood
 # EXIT: 0 all arms pass, 1 an arm failed, 2 REFUSED (no binary, no oracle).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -84,10 +88,26 @@ timeout -k 5 900 python3 "$B" "$P2" --lang raku --mine "$T/census2.tsv" --mine-c
 got2="$(grep -v '^#' "$T/census2.tsv" 2>/dev/null | cut -f1,2 | tr '\t' ' ' | sort | tr '\n' ';')"
 [ "$r6" = 0 ] && [ "$got2" = "sub/beside.raku NO-OUTPUT;sub/fromtop.raku ENTRY;sub/writer.raku ENTRY;" ] && [ "$(cat "$P2/sub/fromtop.out" 2>/dev/null)" = "a line at the top" ] \
   && ck ok "(6) under copy root and cwd root a program runs from the top of the collection" || ck no "(6) rc=$r6 census=[$got2] :: $(tail -1 "$T/6.log" | cut -c1-160)"
+P3="$T/pkg/mined_fed"; mkdir -p "$P3"
+cp "$P/ALL.source" "$P3/ALL.source"; printf '# the standard input of an entry: a file of the collection, by its path from the root\ninput\tsub/beside.txt\n' > "$P3/ALL.stdin"
+timeout -k 5 900 python3 "$B" "$P3" --lang raku --mine "$T/census8.tsv" --mine-cap 30 > "$T/8.log" 2>&1; r8=$?
+v8="$(grep -P '^input\.raku\t' "$T/census8.tsv" 2>/dev/null | cut -f2)"
+lay8="$(python3 "$HERE/util_package_layout_census.py" --package "$P3" --check 2>&1 | tail -1)"
+S4E_ONE_RUNNER_FIXTURE="$NAME: a planted collection and package of four programs, not a board" S4E_PROGRESS_DB="$T/progress8.tsv" \
+  timeout -k 5 900 python3 "$HERE/corpus_suite_harness.py" run "$P3/ALL.raku" "$P3/ALL.ref" --lang raku --modes m3 > "$T/8g.log" 2>&1 < /dev/null; r8g=$?
+board8="$(grep -E '^SUITE_BOARD ' "$T/8g.log" | tail -1)"
+n8="$(printf '%s' "$board8" | grep -oE 'm3_n=[0-9]+' | cut -d= -f2)"; p8="$(printf '%s' "$board8" | grep -oE 'm3_pass=[0-9]+' | cut -d= -f2)"
+snap "$P3" > "$T/pkg3.before"; printf 'input\tsub/beside.txt\nrefused\ttop.txt\n' > "$P3/ALL.stdin"; snap "$P3" > "$T/pkg3.before"
+timeout -k 5 900 python3 "$B" "$P3" --lang raku --mine "$T/census8b.tsv" --mine-cap 30 > "$T/8b.log" 2>&1; r8b=$?
+snap "$P3" > "$T/pkg3.after"
+[ "$r8" = 0 ] && [ "$v8" = ENTRY ] && [ "$(cat "$P3/input.out" 2>/dev/null)" = 1 ] && [ -z "$(find "$P3" -name '*.in' -o -name 'beside.txt' | head -1)" ] \
+  && case "$lay8" in *" loose=0"*) true ;; *) false ;; esac && [ "$r8g" = 0 ] && [ "${n8:-0}" = 4 ] && [ "${p8:-0}" = 4 ] && [ "$r8b" = 2 ] && cmp -s "$T/pkg3.before" "$T/pkg3.after" \
+  && ck ok "(8) ALL.stdin feeds a program a file of the collection by its path: an entry, graded, no copy; a fed program the oracle refuses refuses the build" \
+  || ck no "(8) rc=$r8 verdict=[$v8] out=[$(head -c 40 "$P3/input.out" 2>/dev/null)] lay=[$(printf '%s' "$lay8" | cut -c1-80)] grader rc=$r8g n=${n8:-} pass=${p8:-} refusal rc=$r8b :: $(tail -1 "$T/8.log" | cut -c1-160) :: $(tail -1 "$T/8g.log" | cut -c1-160)"
 snap "$P" > "$T/pkg.before"; mv "$C" "$T/coll_gone"
 timeout -k 5 300 python3 "$B" "$P" --lang raku --mine "$T/census7.tsv" > "$T/7.log" 2>&1; r7=$?
 snap "$P" > "$T/pkg.after"
 [ "$r7" = 2 ] && cmp -s "$T/pkg.before" "$T/pkg.after" && ck ok "(7) with the root gone the build refuses and leaves the package as it stood" || ck no "(7) rc=$r7 :: $(tail -1 "$T/7.log" | cut -c1-160)"
-echo "BUILDER_MINES_IN_PLACE_BOARD arms=7 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
-[ "$fail" = 0 ] && [ "$pass" = 7 ] && { echo "GATE OK [$NAME]: a collection is mined in place: census, index and answers, no program hosted"; exit 0; }
+echo "BUILDER_MINES_IN_PLACE_BOARD arms=8 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
+[ "$fail" = 0 ] && [ "$pass" = 8 ] && { echo "GATE OK [$NAME]: a collection is mined in place: census, index and answers, no program hosted"; exit 0; }
 echo "GATE FAIL [$NAME]: $fail arm(s) failed"; exit 1

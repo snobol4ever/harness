@@ -83,7 +83,7 @@ advpas350	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/advpas350
 tply	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/tply
 cocor-pascal	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/cocor-pascal
 dsa	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/dsa
-pascal-lisp	none	pascal	-	-
+pascal-lisp	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascal-lisp
 tex	none	pascal	-	-
 rakudo-t	none	raku	-	-
 raku-examples	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/raku_examples

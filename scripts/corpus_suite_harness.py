@@ -3139,6 +3139,42 @@ def _pkg_read_args(d, entries):
         by_name[parts[0]].argv = parts[1:]
 
 
+def _pkg_read_stdin(d, entries, src_root):
+    """ALL.stdin at the package root (COO-514 (3), the grader 2026-11-11): one line an entry whose standard input is a FILE OF THE COLLECTION, the
+    entry's name, one tab, the file's path from the collection's root; blank lines and lines beginning with # ignored. The file is never copied
+    into the package (a collection of class B, C or D may not be hosted): scrip --run-files opens it where it stands, and here the entry carries
+    its path alone (stdin_in_place), never its bytes, so no verb that writes a package can write a copy. Refuses what the switch refuses: a line
+    that is not two cells, an entry the package lacks or named twice, a package with no ALL.source, a path that leaves the root or names no
+    file, and an entry that also has a NAME.in."""
+    p = Path(d) / "ALL.stdin"
+    if not p.is_file():
+        return
+    by_name = {e.name: e for e in entries}
+    omitted = _pkg_omitted(d)
+    for n, raw in enumerate(p.read_bytes().decode("utf-8").split("\n"), 1):
+        if not raw.strip() or raw.startswith("#"):
+            continue
+        c = raw.split("\t")
+        if len(c) != 2 or not c[1]:
+            raise ValueError(f"{p}:{n}: a line of ALL.stdin is an entry, one tab and a path from the collection's root; read {raw[:80]!r}")
+        if c[0] not in by_name:
+            if c[0] in omitted:
+                continue
+            raise ValueError(f"{p}:{n}: a standard input for {c[0]!r}, which is no entry of the package")
+        e = by_name[c[0]]
+        if getattr(e, "stdin_in_place", None):
+            raise ValueError(f"{p}:{n}: {c[0]!r} is named twice")
+        if src_root is None:
+            raise ValueError(f"{p}:{n}: ALL.stdin names a file of a collection and the package has no ALL.source")
+        if c[1].startswith("/") or ".." in c[1].split("/"):
+            raise ValueError(f"{p}:{n}: {c[1]!r} leaves the collection's root")
+        if not (src_root / c[1]).is_file():
+            refuse(f"{p}:{n}: {c[0]} is fed {c[1]}, which is no file under the source root {src_root}")
+        if e.stdin is not None:
+            raise ValueError(f"{p}:{n}: {c[0]!r} has both a NAME.in in the package and a line of ALL.stdin")
+        e.stdin_in_place = str(src_root / c[1])
+
+
 PKG_SOURCE_KEYS = ("root", "origin", "version", "licence")
 PKG_SOURCE_OPTIONAL = {"copy": ("root", "folder"), "cwd": ("root", "folder")}   # CTO-591: what the switch copies to scratch and where the test runs; the switch's to act on, read here only to be refused when malformed
 
@@ -3227,6 +3263,7 @@ def read_package_dir(d, ext, modes=None):
         entries.append(e)
     src = str(d / ("ALL" + ext))
     _pkg_read_args(d, entries)
+    _pkg_read_stdin(d, entries, src_root)
     read_wantrc_sidecar(sidecar_wantrc_path(src), entries)
     read_command_line_columns(src, entries, modes)
     return entries
