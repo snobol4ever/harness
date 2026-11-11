@@ -1564,7 +1564,45 @@ def _mine_snap(top):
                   for d, ds, ns in os.walk(top) for n in ns + [x for x in ds if os.path.islink(os.path.join(d, x))])
 
 
-def _mine_run(lang, folder, name, cap, stdin_bytes, flags=()):
+def mine_read_launch(pkg_dir, lang, dialects):
+    """THE ORACLE'S LAUNCH LINE OF A MINED PACKAGE (CIO-83; the grader 2026-11-11 on Lon's word of 09:50 CST: "Make drivers for library ones, and run the
+    others. Let's get these GRADED."): ALL.launch at the package root, written by a person before the census, may hold `oracle<TAB>around<TAB>BEFORE<TAB>AFTER`
+    (a cell `-` for none): the oracle then runs BEFORE, the program and AFTER as one load, the shim files OUR OWN, held in the package and never in the
+    collection, exactly as the package switch runs `scrip around BEFORE AFTER` (run-switches step 14). A collection whose programs define and do not run
+    (XSB's examples) gets its answers through a driver consulted after each program. -> (before path or None, after path or None), or None when the
+    package has no oracle line. Refuses a malformed line, a shim the package does not hold, the driver form (a row that is a data file handed to one
+    program: not built for --mine), and a language whose oracle takes one file."""
+    f = pkg_dir / "ALL.launch"
+    if not f.is_file():
+        return None
+    got = None
+    for n, raw in enumerate(f.read_text().split("\n"), 1):
+        if not raw.strip() or raw.startswith("#"):
+            continue
+        c = raw.split("\t")
+        if c[0] != "oracle":
+            continue
+        if got is not None or len(c) != 4 or c[1] != "around":
+            h.refuse(f"{f}:{n}: --mine reads one line oracle, a tab, around, a tab, BEFORE, a tab, AFTER (a cell - for none); read {raw[:80]!r}")
+        shims = []
+        for cell in c[2:]:
+            if cell == "-":
+                shims.append(None)
+                continue
+            q = (pkg_dir / cell)
+            if cell.startswith("/") or ".." in cell.split("/") or not q.is_file():
+                h.refuse(f"{f}:{n}: the shim {cell!r} is no file of the package")
+            shims.append(q.resolve())
+        if shims == [None, None]:
+            h.refuse(f"{f}:{n}: an oracle line with neither a BEFORE nor an AFTER launches nothing")
+        got = tuple(shims)
+    if got is not None and not (lang == "prolog"):
+        h.refuse(f"{f}: --mine launches a program around shim files for Prolog (swipl loads the files in order; xsb consults them in order); "
+                 f"{lang or 'snobol4'} is not built")
+    return got
+
+
+def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None):
     """One oracle run of NAME in a scratch copy of FOLDER (subfolders included; the collection is never written to), from the top of that
     copy: the program's own folder and its bare name, or under copy root and cwd root the whole collection and the path from its root (CTO-591).
     The copy is made once per worker and folder and made again after any run that changed a file in it (CTO-583 (2)), so a run always starts
@@ -1578,6 +1616,17 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=()):
         shutil.copytree(folder, work / "f", symlinks=True)
         MINE_SCRATCH[key] = (work, _mine_snap(work / "f"))
     work, snap = MINE_SCRATCH[key]
+    files = [name]
+    if launch:
+        # the shims are OURS: each is copied beside the scratch copy, never into it, so what an oracle writes next to a file it loads (XSB's .xwam)
+        # lands in scratch and the copy of the collection's folder stays the collection's own
+        (work / "launch").mkdir(exist_ok=True)
+        staged = []
+        for q in launch:
+            if q is not None:
+                shutil.copyfile(q, work / "launch" / q.name)
+            staged.append(None if q is None else str(work / "launch" / q.name))
+        files = [x for x in (staged[0], name, staged[1]) if x is not None]
     try:
         sin = work / "stdin"
         sin.write_bytes(stdin_bytes)
@@ -1590,14 +1639,15 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=()):
             with open(sin, "rb") as fin:
                 pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
         elif lang == "prolog" and "--xsb" in flags:
-            goal = "consult('" + str(name).replace("\\", "\\\\").replace("'", "\\'") + "'), halt."
+            goal = ", ".join("consult('" + str(x).replace("\\", "\\\\").replace("'", "\\'") + "')" for x in files) + ", halt."
             argv = ["bash", os.path.join(HERE, "util_oracle.sh"), "xsb", "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_XSB_FLAGS, "-e", goal]
             pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
         else:
-            argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *flags, name]
+            argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *flags, *files]
             pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
         here = (str(work / "f") + "/").encode()
-        return pr.returncode, pr.stdout, pr.stderr.replace(here, b"")
+        there = (str(work / "launch") + "/").encode()
+        return pr.returncode, pr.stdout.replace(there, b""), pr.stderr.replace(here, b"").replace(there, b"")
     finally:
         if _mine_snap(work / "f") != snap:
             shutil.rmtree(work, ignore_errors=True)
@@ -1611,7 +1661,7 @@ def _mine_scratch_drop():
     MINE_SCRATCH.clear()
 
 
-def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None):
+def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=None):
     """The census verdict of one program (the mining rows' classes). -> (verdict, note, rc, stdout bytes). FEED is (what it is, its bytes) when the
     package names the program's standard input (ALL.stdin, a file of the collection by its path; or our own NAME.in in the package): both runs are
     fed it, and the third run, which asks whether the answer changes with standard input, is not made."""
@@ -1628,7 +1678,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None):
     flags = ()
     for dialect, flag in (ladder or MINE_LADDER.get(lang) or (("", ""),)):
         flags = (flag,) if flag else ()
-        rc1, out1, err1 = _mine_run(lang, at, name, cap, fed, flags)
+        rc1, out1, err1 = _mine_run(lang, at, name, cap, fed, flags, launch)
         if not (lang == "pascal" and rc1 == 126):
             if dialect:
                 MINE_FOUND[rel] = dialect
@@ -1654,11 +1704,11 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None):
         return "ORACLE-REFUSES", f"SPITBOL ends it with an error: {why.strip()[:140]}", None, b""
     if lang == "raku" and rc1 == 2 and first.startswith("Usage:"):
         return "NEEDS-INPUT", "it asks for arguments (rakudo prints its usage, exit 2)", None, b""
-    rc2, out2, err2 = _mine_run(lang, at, name, cap, fed, flags)
+    rc2, out2, err2 = _mine_run(lang, at, name, cap, fed, flags, launch)
     if (rc2, out2) != (rc1, out1):
         return "DIFFERS-BETWEEN-RUNS", f"exit {rc1} and {rc2}, {len(out1)} and {len(out2)} bytes", None, b""
     if not feed:
-        rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags)
+        rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags, launch)
         if (rc3, out3) != (rc1, out1):
             return "NEEDS-INPUT", "its answer changes with what standard input holds", None, b""
     if not out1.strip():
@@ -1749,9 +1799,10 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
             h.refuse(f"--mine-dialects {','.join(dialects)}: the ladder of {lang or 'snobol4'} is {', '.join(known) or 'empty'}")
         ladder = tuple((d, known[d]) for d in dialects)
     feeds = _mine_feeds(pkg_dir, root, {k: v for k, v in stems.items() if v in rels}, under)
+    launch = mine_read_launch(pkg_dir, lang, dialects)
     try:
         with ThreadPoolExecutor(max_workers=jobs) as ex:
-            got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder, feeds.get(r)), rels))
+            got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder, feeds.get(r), launch), rels))
     finally:
         _mine_scratch_drop()
     unfed = [f"{r} ({feeds[r][0]}): {v}: {note}" for r, (v, note, rc, out) in zip(rels, got) if r in feeds and v != "ENTRY"]

@@ -17,6 +17,10 @@
 #   3  the census's header names xsb
 #   4  the one grader reads the mined package in mode 3: both entries are graded and pass
 #   5  without --mine-dialects the same collection is read by swipl as before: its one .pl program is the census
+#   6  a package whose ALL.launch says oracle around - drive.P (and scrip around - drive.P): xsb consults each program and then the package's
+#      own driver, which calls the program's demo/0: a program that defines demo and runs nothing is NO-OUTPUT without the launch and an
+#      ENTRY with it, its answer the driver's lines; the package gains no file (no .xwam beside the driver), the collection is as it was,
+#      and the one grader passes the entry in mode 3 (Lon 2026-11-11: "Make drivers for library ones")
 # EXIT: 0 all arms pass, 1 an arm failed, 2 REFUSED (no binary, no oracle).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -65,6 +69,28 @@ timeout -k 5 900 python3 "$B" "$P2" --lang prolog --mine "$T/census5.tsv" --mine
 got5="$(grep -v '^#' "$T/census5.tsv" 2>/dev/null | cut -f1,2 | tr '\t' ' ' | sort | tr '\n' ';')"
 [ "$r5" = 0 ] && [ "$got5" = "other.pl ENTRY;" ] && [ "$(cat "$P2/other.out" 2>/dev/null)" = swi ] && head -1 "$T/census5.tsv" | grep -q ' by swipl (' \
   && ck ok "(5) without --mine-dialects the collection is read by swipl as before" || ck no "(5) rc=$r5 census=[$got5] :: $(tail -1 "$T/5.log" | cut -c1-160)"
-echo "BUILDER_MINES_XSB_BOARD arms=5 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
-[ "$fail" = 0 ] && [ "$pass" = 5 ] && { echo "GATE OK [$NAME]: an XSB collection is mined in place by xsb: census, dialect, answers"; exit 0; }
+C6="$T/coll6"; P6="$T/pkg/launched"; P7="$T/pkg/unlaunched"; mkdir -p "$C6" "$P6" "$P7"
+printf 'demo :- writeln(demo_ran).\n' > "$C6/withdemo.P"
+printf 'p(1).\n' > "$C6/nodemo.P"
+printf 'root\t%s\norigin\ta scratch collection of the gate\nversion\tgate\nlicence\tpublic domain\n' "$C6" > "$P6/ALL.source"; cp "$P6/ALL.source" "$P7/ALL.source"
+printf 'gx_entry(G) :- current_predicate(G/0), !, write(calls), write(0), nl, ( call(G) -> R = yes ; R = no ), write(ended), write(R), nl.\ngx_entry(_).\n:- gx_entry(demo).\n' > "$P6/drive.P"
+printf 'scrip\taround\t-\tdrive.P\noracle\taround\t-\tdrive.P\n' > "$P6/ALL.launch"
+snap "$C6" > "$T/coll6.before"
+timeout -k 5 900 python3 "$B" "$P7" --lang prolog --mine "$T/census7.tsv" --mine-cap 30 --mine-dialects xsb > "$T/7.log" 2>&1; r7=$?
+timeout -k 5 900 python3 "$B" "$P6" --lang prolog --mine "$T/census6.tsv" --mine-cap 30 --mine-dialects xsb > "$T/6.log" 2>&1; r6=$?
+snap "$C6" > "$T/coll6.after"
+got7="$(grep -v '^#' "$T/census7.tsv" 2>/dev/null | cut -f1,2 | tr '\t' ' ' | sort | tr '\n' ';')"
+got6="$(grep -v '^#' "$T/census6.tsv" 2>/dev/null | cut -f1,2 | tr '\t' ' ' | sort | tr '\n' ';')"
+files6="$(cd "$P6" && find . -type f | sort | tr '\n' ' ')"
+S4E_ONE_RUNNER_FIXTURE="$NAME: a planted collection and a launched package of one program, not a board" S4E_PROGRESS_DB="$T/progress6.tsv" \
+  timeout -k 5 900 python3 "$HERE/corpus_suite_harness.py" run "$P6/ALL.pl" "$P6/ALL.ref" --lang prolog --modes m3 > "$T/6g.log" 2>&1 < /dev/null; r6g=$?
+board6="$(grep -E '^SUITE_BOARD ' "$T/6g.log" | tail -1)"
+n6="$(printf '%s' "$board6" | grep -oE 'm3_n=[0-9]+' | cut -d= -f2)"; p6="$(printf '%s' "$board6" | grep -oE 'm3_pass=[0-9]+' | cut -d= -f2)"
+[ "$r7" = 0 ] && [ "$got7" = "nodemo.P NO-OUTPUT;withdemo.P NO-OUTPUT;" ] && [ "$r6" = 0 ] && [ "$got6" = "nodemo.P NO-OUTPUT;withdemo.P ENTRY;" ] \
+  && [ "$(cat "$P6/withdemo.out" 2>/dev/null)" = "$(printf 'calls0\ndemo_ran\nendedyes')" ] && [ "$files6" = "./ALL.csv ./ALL.launch ./ALL.omit ./ALL.source ./drive.P ./withdemo.out " ] \
+  && cmp -s "$T/coll6.before" "$T/coll6.after" && [ "$r6g" = 0 ] && [ "${n6:-0}" = 1 ] && [ "${p6:-0}" = 1 ] \
+  && ck ok "(6) with oracle around - drive.P a program that only defines demo is an entry answered through the driver, graded, and nothing is left beside the driver" \
+  || ck no "(6) unlaunched rc=$r7 [$got7] launched rc=$r6 [$got6] out=[$(head -c 60 "$P6/withdemo.out" 2>/dev/null | tr '\n' '|')] files=[$files6] grader rc=$r6g n=${n6:-} pass=${p6:-} :: $(tail -1 "$T/6.log" | cut -c1-140) :: $(tail -1 "$T/6g.log" | cut -c1-140)"
+echo "BUILDER_MINES_XSB_BOARD arms=6 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
+[ "$fail" = 0 ] && [ "$pass" = 6 ] && { echo "GATE OK [$NAME]: an XSB collection is mined in place by xsb: census, dialect, answers"; exit 0; }
 echo "GATE FAIL [$NAME]: $fail arm(s) failed"; exit 1
