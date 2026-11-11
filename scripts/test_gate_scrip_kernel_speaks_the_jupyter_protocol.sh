@@ -284,7 +284,7 @@ try:
     kc.wait_for_ready(timeout=60)
     # THE KERNEL NAMES ITS SESSION'S LANGUAGE (CIO-73 (2)(g)): started with the default language Prolog it answers kernel_info with Prolog's name, extension and highlighter
     li = kc.kernel_info(reply=True, timeout=30)["content"].get("language_info", {})
-    il = li.get("name") == "prolog" and li.get("file_extension") == ".pl" and li.get("pygments_lexer") == "prolog" and li.get("mimetype") == "text/x-prolog"
+    il = li.get("name") == "prolog" and li.get("file_extension") == ".pl" and li.get("pygments_lexer") == "prolog" and li.get("mimetype") == "text/x-prolog" and li.get("codemirror_mode") == "prolog"   # the editor mode is the name the highlighter extension registers (CTO-597): JupyterLab reads this key before the mimetype
     print("KERNEL_INFO_LANG ok" if il else "KERNEL_INFO_LANG RED: language_info reads %r" % li)
     bad += 0 if il else 1
     def run2(code):
