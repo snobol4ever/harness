@@ -1,0 +1,12 @@
+# STEPS.tsv -- THE DESIGN-PLAN box-budget STEP TABLE (the cto, 2026-11-04, CTO-474/475/478; the design text in the shared-box skill's DESIGN section).
+# harness/scripts/test_design_box_budget_steps.sh reads it: --list prints it; --step N runs the step's probe (column 5, one bash command run from S4E_HOME with a 600 s budget): rc 0 GREEN, rc 1 RED, rc 2 could not measure.
+# Every probe reads a ledger or an instrument the step builds, so a step reads RED until its instrument exists and GREEN only while the box meets it; no probe is satisfied by a deletion.
+step	slug	executor	depends	probe
+1	the-ledger-prints-the-lap-every-tick	cqo	-	python3 harness/scripts/util_seat_census.py --lap | grep -E '^LAP .*rows_per_hour=[0-9]+.*fresh=[0-9]+/[0-9]+.*eta='
+2	one-declared-budget-table-applied-to-the-cgroups	cqo	-	test -s /home/resources/postoffice/BUDGET.tsv && python3 harness/scripts/util_seat_census.py --budget-check
+3	change-impact-selection-names-the-day-laps-set	coo	1	python3 harness/scripts/util_impact_set.py --root SCRIP --commit HEAD | grep -E '^IMPACT lang=[a-z0-9,]+ core=[0-9]+ shells=[0-9]+'
+4	the-nightly-lap-finishes-by-0600	coo	1,3	awk -F'\t' '$1=="nightly" && $3=="done" && $4 <= "06:00" {ok=1} END{exit ok?0:1}' /home/resources/progress/LAP.tsv
+5	admission-by-the-pools-bounds-every-wait	coo	2	python3 harness/scripts/util_seat_census.py --admission-check 86400
+6	a-dirty-worktree-fetches-its-base-build	cto	-	wt=/tmp/s4e/cto/box_budget_wt; rm -rf "$wt"; git -C SCRIP worktree prune; git -C SCRIP worktree add -q --detach "$wt" HEAD && echo >> "$wt/src/runtime/rt/rt.c" && bash harness/scripts/util_build_cache.sh fetch --root "$wt" 2>&1 | grep -q '^FETCHED'; rc=$?; git -C SCRIP worktree remove --force "$wt"; exit $rc
+7	the-memory-watch-reads-anon-against-file-pages	cqo	-	python3 harness/scripts/util_seat_census.py --memory-check 2>&1 | grep -E 'anon=[0-9]+MB file=[0-9]+MB'
+8	the-acceptance-over-one-working-day	cto	1,2,3,4,5,6,7	python3 harness/scripts/util_seat_census.py --box-budget-acceptance 86400
