@@ -1,0 +1,2 @@
+# RETIRED_GATES.tsv -- a gate deleted because the script it ran is gone (CIO-121; util_dead_script_gates.py --gate NAME reads it). One row a gate, tabs:
+# gate (no .sh)	date	successor gate that now holds the behaviour, or a dash	reason, with the measurement
