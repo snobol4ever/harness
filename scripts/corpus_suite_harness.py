@@ -3069,7 +3069,8 @@ def _pkg_read_args(d, entries):
 def read_package_dir(d, ext, modes=None):
     """THE FILES FORM OF A PACKAGE, READ (CIO-59, CIO-60): one Entry a row of ALL.csv, in the index's order; the program is the file the
     path column names, from the package root; DIR/STEM.out is its stdout answer, DIR/STEM.in its stdin, DIR/STEM.err its stderr answer,
-    an absent one meaning empty (no stdin at all); the arguments are ALL.args; the exit status, the mask, the sizes and every other
+    an absent one meaning empty (a NAME.in that is there, even of 0 bytes, is the stdin the test is fed; absent, it is fed none; an empty answer
+    has no NAME.out); the arguments are ALL.args; the exit status, the mask, the sizes and every other
     attribute are read where the container form reads them. The same list of Entry objects read_block_suite returns."""
     d = Path(d)
     fields, rows = _fmt2_read_csv(d)
@@ -3133,8 +3134,9 @@ def write_package_dir(entries, d, ext, path_of):
             if _read_lf_lines(prog) != e.sno_lines:
                 raise ValueError(f"{d}: {rel} is not the text of entry {e.name}")
             text = None
-        parts = ((".out", _fmt2_lines_text(e.ref)), (".in", e.stdin or ""), (".err", getattr(e, "stderr_answer", None) or ""))
-        for suf, body in parts:
+        parts = ((".out", "" if e.ref == [""] else _fmt2_lines_text(e.ref), bool(e.ref) and e.ref != [""]), (".in", e.stdin or "", e.stdin is not None),
+                 (".err", getattr(e, "stderr_answer", None) or "", bool(getattr(e, "stderr_answer", None))))
+        for suf, body, there in parts:
             t = Path(str(stem) + suf)
             if t.is_file() and t.read_bytes() != body.encode("utf-8"):
                 raise ValueError(f"{d}: {t.relative_to(d)} exists with other bytes than entry {e.name}'s")
@@ -3152,8 +3154,8 @@ def write_package_dir(entries, d, ext, path_of):
         if text is not None:
             prog.parent.mkdir(parents=True, exist_ok=True)
             prog.write_bytes(text.encode("utf-8"))
-        for suf, body in parts:
-            if body:
+        for suf, body, there in parts:
+            if there:
                 Path(str(stem) + suf).write_bytes(body.encode("utf-8"))
                 counts[suf[1:]] += 1
     if args_lines:
@@ -3194,6 +3196,9 @@ def unpack_dir(d, dry_run=False):
         raise ValueError(f"{d} has no ALL.ref")
     lang = next((l for l, c in LANG_CONFIGS.items() if c["ext"] == ext), "snobol4" if ext == ".sno" else None)
     old = _fmt2_old_read(src, lang)
+    for e in old:
+        if e.kind == "block" and e.ref == [""]:
+            e.ref = []
     fields, rows = _fmt2_read_csv(d)
     why = []
     graders = [r.get("entry") for r in rows if (r.get("grader") or "").strip()]
