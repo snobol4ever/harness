@@ -7,6 +7,8 @@
 # no program is copied into it, and the collection is never written to.
 #
 # THE ARMS (a scratch Raku collection of nine programs, the oracle rakudo; about 35 oracle runs):
+#   0  (inside arm 1 and 2) a program that prints its environment reads READS-THE-ENVIRONMENT and no file of the package holds the canary or
+#      the seat's HOME: every program runs under a scrubbed environment (COO-513 (4): an answer once held a credential)
 #   1  the census names each planted verdict: ENTRY (a plain program, one that reads a data file beside it, one that writes a file in its
 #      folder), NEEDS-INPUT, ORACLE-REFUSES, NO-OUTPUT, DIFFERS-BETWEEN-RUNS, LIBRARY
 #   2  the package holds ALL.source, ALL.csv, the three NAME.out, each the oracle's bytes, and ALL.omit naming the six programs that are no
@@ -39,6 +41,7 @@ printf 'say "unclosed;\n' > "$C/refused.raku"
 printf 'my $x = 1;\n' > "$C/quiet.raku"
 printf 'say now.Rat;\n' > "$C/differs.raku"
 printf 'unit module Lib;\nsub f is export { 1 }\n' > "$C/lib.raku"
+printf 'say %%*ENV<S4E_MINE_CANARY> // %%*ENV<HOME>;\n' > "$C/envdump.raku"
 printf 'say "top.txt".IO.slurp.chomp;\n' > "$C/sub/fromtop.raku"
 printf 'a line at the top\n' > "$C/top.txt"
 printf 'root\t%s\norigin\ta scratch collection of the gate\nversion\tgate\nlicence\tpublic domain\n' "$C" > "$P/ALL.source"
@@ -48,6 +51,7 @@ ck() { if [ "$1" = ok ]; then pass=$((pass + 1)); echo "  ok   $2"; else fail=$(
 snap "$C" > "$T/coll.before"
 timeout -k 5 900 python3 "$B" "$P" --lang raku --mine "$T/census.tsv" --mine-cap 30 > "$T/1.log" 2>&1; r1=$?
 want="differs.raku DIFFERS-BETWEEN-RUNS
+envdump.raku READS-THE-ENVIRONMENT
 input.raku NEEDS-INPUT
 lib.raku LIBRARY
 plain.raku ENTRY
@@ -59,7 +63,7 @@ sub/writer.raku ENTRY"
 got="$(grep -v '^#' "$T/census.tsv" 2>/dev/null | cut -f1,2 | tr '\t' ' ' | sort)"
 [ "$got" = "$want" ] && ck ok "(1) the census names each planted verdict" || ck no "(1) the census read: $(printf '%s' "$got" | tr '\n' ';')"
 files="$(cd "$P" && find . -type f | sort | tr '\n' ' ')"
-[ "$files" = "./ALL.csv ./ALL.omit ./ALL.source ./plain.out ./sub/beside.out ./sub/writer.out " ] && [ "$(grep -c . "$P/ALL.omit")" = 6 ] && grep -q '^quiet.raku: NO-OUTPUT: ' "$P/ALL.omit" && [ "$(cat "$P/plain.out")" = plain ] \
+[ "$files" = "./ALL.csv ./ALL.omit ./ALL.source ./plain.out ./sub/beside.out ./sub/writer.out " ] && [ "$(grep -c . "$P/ALL.omit")" = 7 ] && ! grep -r -q -e "$HOME" -e 's4e-mine-canary' "$P" && grep -q '^quiet.raku: NO-OUTPUT: ' "$P/ALL.omit" && [ "$(cat "$P/plain.out")" = plain ] \
   && [ "$(cat "$P/sub/beside.out")" = "a line beside" ] && [ "$(cut -d, -f3 "$P/ALL.csv" | tr '\n' ' ')" = "path plain.raku sub/beside.raku sub/writer.raku " ] \
   && ck ok "(2) the package holds the index and three answers, the path cells are paths from the root, and no program" \
   || ck no "(2) files=[$files] paths=[$(cut -d, -f3 "$P/ALL.csv" 2>/dev/null | tr '\n' ' ')]"

@@ -1475,6 +1475,30 @@ MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl", "pascal": "fpc", "snobol4": 
 MINE_LADDER = {"pascal": (("iso", "-Miso"), ("fpc", ""), ("objfpc", "-Mobjfpc"), ("delphi", "-Mdelphi"), ("tp", "-Mtp"))}
 MINE_FOUND = {}
 MINE_SCRATCH = {}
+# A MINED PROGRAM RUNS IN A SCRUBBED ENVIRONMENT (the coo 2026-11-11, COO-513 (4); MEASURED: Free Pascal's test/units/dos/tenv.pp prints its
+# environment, and its answer held all 73 variables of the seat that cut it, a credential among them; GitHub refused the push): the oracle gets
+# only what the box's own wrappers need, a scratch HOME, the user nobody, and a canary. A program whose answer holds the canary or any value of
+# that environment reads READS-THE-ENVIRONMENT and is no entry: its answer is a fact about the machine, not about the program.
+MINE_CANARY = "s4e-mine-canary-5d41402abc4b2a76"
+MINE_ENV_KEEP = ("PATH", "TMPDIR", "S4E_HOME", "S4E_SEAT", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS")
+
+
+def _mine_env(work):
+    env = {k: os.environ[k] for k in MINE_ENV_KEEP if k in os.environ}
+    (work / "home").mkdir(exist_ok=True)
+    env.update(HOME=str(work / "home"), USER="nobody", LOGNAME="nobody", TERM="dumb", LANG="C.UTF-8", LC_ALL="C.UTF-8", S4E_MINE_CANARY=MINE_CANARY)
+    return env
+
+
+def _mine_env_leak(out, work_home=b""):
+    """The name of an environment variable whose value stands in OUT, or None: the canary first, then every value of eight bytes or more."""
+    if MINE_CANARY.encode() in out:
+        return "the canary"
+    for k in MINE_ENV_KEEP:
+        v = os.environ.get(k, "").encode()
+        if len(v) >= 8 and v in out:
+            return k
+    return "HOME" if (b"/mine_" in out and b"/home" in out) else None
 MINE_FLAGS = {"prolog": ("-q",), "snobol4": ("-bf",)}   # the oracle's own flags before the program's name: swipl -q and sbl -bf, as corpus_suite_harness.py resolve_oracle_bin gives them
 MINE_DIALECT = {"prolog": "swi"}   # the dialect cell of a mined row: the oracle that cut its answer (run-switches step 4; swipl answers, so SCRIP reads the program as SWI)
 MINE_STATIC = {
@@ -1541,10 +1565,10 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=()):
         if lang == "pascal":
             argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "fpc_oracle_run.sh"), *flags, name]
             with open(sin, "rb") as fin:
-                pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True)
+                pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
         else:
             argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *flags, name]
-            pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True)
+            pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
         here = (str(work / "f") + "/").encode()
         return pr.returncode, pr.stdout, pr.stderr.replace(here, b"")
     finally:
@@ -1583,6 +1607,9 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None):
         return "ORACLE-REFUSES", f"fpc compiles it in no mode of the ladder; the last says: {why.strip()[:140]}", None, b""
     if rc1 in (124, 137):
         return "DOES-NOT-END", f"no answer inside {cap} s", None, b""
+    leak = _mine_env_leak(out1)
+    if leak:
+        return "READS-THE-ENVIRONMENT", f"its answer holds {leak} of the process that runs it", None, b""
     if rc1 == 2 and first.startswith("REFUSE(2)"):
         h.refuse(f"the oracle wrapper refused on {rel}: {first}")
     if lang == "raku" and b"===SORRY!===" in err1:
