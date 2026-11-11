@@ -2,13 +2,13 @@
 # s4e_cycle.sh -- THE TEST CYCLE: ONE PROCESS RUNS EVERY SUITE CELL IN ORDER, LAP AFTER LAP (Lon, in the cio's window, 2026-11-08 09:0x CST, verbatim:
 # "write a process that runs the test suite and write a fucking monitor to start it when it crashed" / "Is it not called CRON?"). No queue, no tubes,
 # no workers, no controller: this process and the cron line that restarts it (s4e_cycle_cron.sh).
-#   bash s4e_cycle.sh            the cycle: a lap is sync, make, then every cell of every master or pkg row of SUITE_RUNNERS.tsv, S4E_CYCLE_WIDTH (4) cells at once; then the next lap
+#   bash s4e_cycle.sh            the cycle: a lap is sync, make, then every cell of every master or pkg row of SUITE_RUNNERS.tsv and one cell (all) for every small row, S4E_CYCLE_WIDTH (4) cells at once; then the next lap
 #   bash s4e_cycle.sh --list     print the cells of one lap (suite kind lang dir cell) and their count; runs nothing
 #   bash s4e_cycle.sh --one      run the next unfinished cell only, then exit (the proof that one cell runs end to end)
 #   S4E_CYCLE_TMP names a scratch TMPDIR for a probe (default /tmp/s4e/grader, the live cycle's cell logs; a probe that leaves it unset overwrites them)
 #   bash s4e_cycle.sh --next     do the restart accounting (CYCLE.crash, CYCLE.skip) and print NEXT lap=L idx=I cell=KEY CELL, the cell a restart runs first; runs no cell (S4E_CYCLE_PROG names a scratch progress dir for a probe)
 # THE ROOT is S4E_HOME, default /home/claude_grader (the grader's mirror; no seat edits it). THE LAUNCH of a cell is the grade worker's launch, unchanged:
-# EVERY row, master or pkg, runs ONE launch (Lon 2026-11-08 23:0x: "ONE UNIFIED test suite system"): corpus_suite_harness.py run <dir>/ALL.<ext> <dir>/ALL.ref --lang L --modes $S4E_MODES --partition <cell>, dir the master's corpus/tests/<lang> or the pkg row's column 5; the package runner scripts are deleted; a row with no container refuses rc 2 by name;
+# EVERY row, master or pkg, runs ONE launch (Lon 2026-11-08 23:0x: "ONE UNIFIED test suite system"): corpus_suite_harness.py run <dir>/ALL.<ext> <dir>/ALL.ref --lang L --modes $S4E_MODES --partition <cell>, dir the master's corpus/tests/<lang> or the pkg row's column 5; the package runner scripts are deleted; a row with no container refuses rc 2 by name; a row of kind small is one cell run by its own runner until it is a package (COO-516, small_budget below);
 # both under util_run_slot.sh, S4E_CLASS=grader, S4E_BATCH=1 (one scrip --harness per partition and mode, batch-grader step 5), S4E_MODES default m3 (Lon 2026-11-08 10:2x: "We will test mode 3 only until further notice"), under timeout -k 30 of the
 # cell's declared budget (util_grade_job.py budget). After a master suite's or a pkg row's last cell its suite row is rewritten (util_score_row.py from-progress, in S4E_MODES).
 # THE STATE is /home/resources/progress/CYCLE.state (lap, idx, total, suite, cell, status, since), one line a key, rewritten before and after every cell;
@@ -30,7 +30,7 @@ log() { printf '%s %s\n' "$(now)" "$*" >> "$LOG"; }
 state_get() { sed -n "s/^$1=//p" "$STATE" 2>/dev/null | head -1; }
 state_put() {   # lap idx total suite cell status
     printf 'lap=%s\nidx=%s\ntotal=%s\nsuite=%s\ncell=%s\nstatus=%s\nsince=%s\npid=%s\n' "$1" "$2" "$3" "$4" "$5" "$6" "$(now)" "$$" > "$STATE.tmp" && mv "$STATE.tmp" "$STATE"; }
-cells() {   # one line per cell: key kind lang dir cell (dir: the suite's container directory); core first, then chunk:NN in order, per the row order of SUITE_RUNNERS.tsv
+cells() {   # one line per cell: key kind lang dir cell (dir: the suite's container directory; for a small row the runner's own command words, its cell the one name all); core first, then chunk:NN in order, per the row order of SUITE_RUNNERS.tsv
     awk -F'\t' -v S="$S4E" '
         !/^#/ && NF >= 5 && ($2 == "master" || $2 == "pkg") {
             row++; dir = ($2 == "master") ? S "/corpus/tests/" $3 : S "/" $5
@@ -46,7 +46,8 @@ cells() {   # one line per cell: key kind lang dir cell (dir: the suite's contai
                 }
             }
             close(f)
-        }' "$RUNNERS" | sort -t "$(printf '\t')" -k1,1n -k2,2n -k7,7 | cut -f3-
+        }
+        !/^#/ && NF >= 5 && $2 == "small" && $4 != "" && $4 != "-" { row++; print row "\t0\t" $1 "\t" $2 "\t" $3 "\t" $4 "\tall" }' "$RUNNERS" | sort -t "$(printf '\t')" -k1,1n -k2,2n -k7,7 | cut -f3-
 }
 # THE FASTEST SUITES RUN FIRST (the coo 2026-11-11, COO-515, on Lon's word the same morning: "So regarding the order in which the test suites should be
 # run, from fastest to slowest." / "I would prefer if you ran the suite that takes seconds now and the long running ones latter"; it reverses COO-510,
@@ -87,10 +88,28 @@ road_flag() {   # dir -> prints --run-files when the package declares that road
     awk -F'\t' '!/^#/ && $1 == "road" && $2 == "run-files" && $3 != "" {f = 1} END {exit !f}' "$d/CONTRACT.tsv" && printf '%s' --run-files
     return 0
 }
+# A SMALL ROW IS ONE CELL, RUN BY THE RUNNER THAT GRADES IT TODAY (the coo 2026-11-11, on Lon's word in the coo's window, verbatim: "get all test suites
+# graded and plugged into new cycle runner."; MEASURED the same morning by util_cycle_inventory.py: the cycle launched 42 of the banner's 63 suites; the
+# seven demos rows, the seven bench-ref rows and GNU source are kind small and no lap ever ran them, their rows last read by the coo's hand). Such a
+# suite is not a package yet (its programs take per-program arguments, inputs, companion folders and, for Rebus, derived answers the builder cannot
+# cut), so until each is converted (rows cycle-the-seven-demos-rows... and cycle-the-seven-bench-ref-rows..., CIO-22 F) its cell is the row's own
+# runner under one run slot, asked not to write the suite row where it takes --no-write: it appends its progress rows and the cycle records the row
+# from them in S4E_MODES like every other. The cap is a small multiple of the cell's last graded seconds (Lon 2026-11-05: a cap scales with the
+# expected time), 1800 for a cell never graded. THIS ARM GOES when no row of the table is kind small.
+small_budget() {   # key -> seconds: five times the last graded seconds of the cell, at least 300, at most 3600; 1800 with no reading
+    local s; s="$(awk -F'\t' -v k="$1" '$1 == k && $2 == "all" {print $3; exit}' "$ORDERF" 2>/dev/null)"
+    case "$s" in ''|*[!0-9]*) echo 1800; return;; esac
+    s=$(( s * 5 )); [ "$s" -lt 300 ] && s=300; [ "$s" -gt 3600 ] && s=3600; echo "$s"
+}
 run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23:0x, in the coo's window, verbatim: "We want ONE UNIFIED test suite system. The same ALL.tsv files etc. Same layout in corpus. Same script. Same spec on attributes and environment." / "Get those deleted and get to work with a complete test suite system."): every cell, master or pkg, is corpus_suite_harness.py run over the suite's container ALL.<ext> and ALL.ref; a suite without one refuses rc 2, named, until its container is built
-    local key="$1" kind="$2" lang="$3" dir="$4" cell="$5" ttr alls rc t0 out
+    local key="$1" kind="$2" lang="$3" dir="$4" cell="$5" ttr alls rc t0 out nw
     ttr="$(budget "$key" "$cell")"; [ -n "$ttr" ] || ttr=3600
     out="$TMPDIR/cycle/$key.$cell.log"; t0=$(date +%s)
+    if [ "$kind" = small ]; then
+        ttr="$(small_budget "$key")"; nw=""; grep -q -- '--no-write' "$S4E/harness/scripts/${dir%% *}" 2>/dev/null && nw=--no-write
+        ( cd "$S4E" && timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh bash harness/scripts/$dir $nw ) > "$out" 2>&1 < /dev/null; rc=$?
+        echo "$rc $(( $(date +%s) - t0 ))"; return "$rc"
+    fi
     alls="$dir/ALL.$(ext_of "$lang")"
     if ! suite_on_disk "$dir" "$alls"; then echo "REFUSE(2): no suite in $dir: no container ($alls and ALL.ref), no format 2 (MULTI.md or ONE.$(ext_of "$lang")), no files form (a path column in ALL.csv) -- the unified layout is owed (util_build_package_suite.py)" > "$out"; echo "2 0"; return 2; fi
     ( cd "$S4E" && SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" $(road_flag "$dir") ) > "$out" 2>&1 < /dev/null; rc=$?
@@ -241,6 +260,7 @@ while :; do
             if graded_this_lap "$key"; then
                 [ "$kind" = master ] && record_suite "$lang"
                 [ "$kind" = pkg ] && record_pkg "$key"
+                [ "$kind" = small ] && record_pkg "$key"
             else
                 log "NORECORD lap=$lap $key: no cell of this lap graded (every cell refused, died or was held); its suite row is not rewritten"
             fi

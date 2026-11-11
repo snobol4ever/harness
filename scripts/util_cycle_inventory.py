@@ -15,7 +15,7 @@ One line per row of SUITE_RUNNERS.tsv that is not a port row:
   owed    programs the builder left out by its OWN measurement (ALL.omit) that no package table (EXCLUDED.tsv, CONTAINERS.tsv) declares out
           of the denominator: published, shipped, and graded by nothing since the package runners were deleted (harness cc2783502)
   cells   the cycle cells of the row; lap: the last finished lap's cells by exit code (rc:n); held: cells named in CYCLE.skip
-VERDICT words: NOT-IN-CYCLE (kind small: s4e_cycle.sh launches master and pkg rows only), NO-CONTAINER, NO-PARTITION, PARTITION-NAMES-n-ABSENT,
+VERDICT words: BY-ITS-RUNNER (kind small: one cell a lap by the row's runner, COO-516; structurally not ok until it is a package), NOT-IN-CYCLE (kind none, or a small row with no runner), NO-CONTAINER, NO-PARTITION, PARTITION-NAMES-n-ABSENT,
 n-ENTRIES-IN-NO-CELL, OWED-n, and from the lap n-CELLS-REFUSE and CELL-DIED-OR-TIMED-OUT; HELD-n-CELLS is Lon's hold and is not a defect, and a row
 whose every cell is held is printed with its words and counted by neither check until the hold is lifted.
 --owed KEY prints that row's owed programs with the builder's reason. --check: rc 1 when a selected row carries a structural word (everything but
@@ -99,6 +99,12 @@ def main():
             continue
         rows += 1
         if kind not in ("master", "pkg"):
+            if kind == "small" and runner not in ("", "-"):   # COO-516: one cell (all) a lap, run by the row's own runner until the suite is a package
+                rc = (laps.get(lap, {}) if lap is not None else {}).get((key, "all"), "-")
+                print(FMT % (key, kind, "----", "-", "-", "-", "-", "-", "-", 1, "%s:1" % rc if rc != "-" else "-", "BY-ITS-RUNNER (%s; not a package yet)" % runner))
+                bad += 1
+                bad_lap += 0 if rc in ("0", "1") else 1
+                continue
             print(FMT % (key, kind, "----", "-", "-", "-", "-", "-", "-", 0, "-", "NOT-IN-CYCLE (runner %s)" % runner))
             bad += 1
             bad_lap += 1
