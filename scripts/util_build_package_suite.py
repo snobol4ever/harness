@@ -1466,10 +1466,21 @@ def build_files_form(pkg_dir, lang, twice=False, only=None, src_ext=None):
 MINE_KEYS = ("root", "origin", "version", "licence")
 MINE_OPTIONAL = {"copy": ("root", "folder"), "cwd": ("root", "folder")}
 MINE_EXTS = {"raku": (".raku", ".p6", ".pl6", ".t", ".rakutest"), "pascal": (".pas", ".pp", ".p", ".lpr"), "icon": (".icn",), "prolog": (".pl", ".pro")}
-MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl"}
+MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl", "pascal": "fpc"}
+# PASCAL (the coo 2026-11-11, COO-508): fpc only compiles, so a Pascal program is run by fpc_oracle_run.sh (compile to a private folder, then run; exit 126 =
+# fpc refuses the source). The dialect is found by the census: the first mode of the ladder in which fpc compiles the program cut its answer and is
+# the row's dialect cell (SCRIP's own names: iso, fpc, objfpc, delphi, tp); --mine-dialects names another ladder (fpc alone for Free Pascal's own
+# tests, which state their mode in the source).
+MINE_LADDER = {"pascal": (("iso", "-Miso"), ("fpc", ""), ("objfpc", "-Mobjfpc"), ("delphi", "-Mdelphi"), ("tp", "-Mtp"))}
+MINE_FOUND = {}
+MINE_SCRATCH = {}
 MINE_FLAGS = {"prolog": ("-q",)}   # the oracle's own flags before the program's name: swipl -q, as corpus_suite_harness.py resolve_oracle_bin gives it
 MINE_DIALECT = {"prolog": "swi"}   # the dialect cell of a mined row: the oracle that cut its answer (run-switches step 4; swipl answers, so SCRIP reads the program as SWI)
 MINE_STATIC = {
+    "pascal": (("LIBRARY", r"(?i)^\s*unit\s+\w+\s*;"),
+               ("NEEDS-INPUT", r"(?i)\{\s*%INTERACTIVE"),
+               ("NEEDS-NETWORK", r"(?i)\buses\b[^;]*\b(sockets|ssockets|fphttpclient|netdb|httpdefs)\b"),
+               ("NEEDS-DISPLAY", r"(?i)\buses\b[^;]*\b(crt|graph|video|keyboard|mouse|wincrt|ptcgraph|ptccrt)\b")),
     "raku": (("LIBRARY", r"^\s*unit\s+(module|class|role|grammar|package)\b"),
              ("NEEDS-NETWORK", r"\b(IO::Socket|LWP::|HTTP::|Cro::|Net::|WWW|WebService::|DBIish)\b"),
              ("NEEDS-DISPLAY", r"\b(Term::|Terminal::|NCurses|GTK::|SDL2?::|NativeCall|Inline::)")),
@@ -1504,26 +1515,51 @@ def mine_read_source(pkg_dir):
     return got
 
 
-def _mine_run(lang, folder, name, cap, stdin_bytes):
-    """One oracle run of NAME in a fresh scratch copy of FOLDER (subfolders included; the collection is never written to), from the top of that
+def _mine_snap(top):
+    return sorted((os.path.relpath(os.path.join(d, n), top), os.lstat(os.path.join(d, n)).st_size, os.lstat(os.path.join(d, n)).st_mtime_ns)
+                  for d, ds, ns in os.walk(top) for n in ns + [x for x in ds if os.path.islink(os.path.join(d, x))])
+
+
+def _mine_run(lang, folder, name, cap, stdin_bytes, flags=()):
+    """One oracle run of NAME in a scratch copy of FOLDER (subfolders included; the collection is never written to), from the top of that
     copy: the program's own folder and its bare name, or under copy root and cwd root the whole collection and the path from its root (CTO-591).
-    -> (rc, out, err)."""
+    The copy is made once per worker and folder and made again after any run that changed a file in it (CTO-583 (2)), so a run always starts
+    in the collection's own state and a folder of two thousand programs is not copied six thousand times. -> (rc, out, err)."""
     import shutil
     import subprocess
-    work = Path(tempfile.mkdtemp(prefix="mine_", dir=os.environ.get("TMPDIR") or None))
-    try:
+    import threading
+    key = (threading.get_ident(), str(folder))
+    if key not in MINE_SCRATCH:
+        work = Path(tempfile.mkdtemp(prefix="mine_", dir=os.environ.get("TMPDIR") or None))
         shutil.copytree(folder, work / "f", symlinks=True)
+        MINE_SCRATCH[key] = (work, _mine_snap(work / "f"))
+    work, snap = MINE_SCRATCH[key]
+    try:
         sin = work / "stdin"
         sin.write_bytes(stdin_bytes)
-        argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), name]
-        pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True)
+        if lang == "pascal":
+            argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "fpc_oracle_run.sh"), *flags, name]
+            with open(sin, "rb") as fin:
+                pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True)
+        else:
+            argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *flags, name]
+            pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True)
         here = (str(work / "f") + "/").encode()
         return pr.returncode, pr.stdout, pr.stderr.replace(here, b"")
     finally:
+        if _mine_snap(work / "f") != snap:
+            shutil.rmtree(work, ignore_errors=True)
+            del MINE_SCRATCH[key]
+
+
+def _mine_scratch_drop():
+    import shutil
+    for work, snap in list(MINE_SCRATCH.values()):
         shutil.rmtree(work, ignore_errors=True)
+    MINE_SCRATCH.clear()
 
 
-def _mine_one(lang, root, rel, cap, whole=False):
+def _mine_one(lang, root, rel, cap, whole=False, ladder=None):
     """The census verdict of one program (the mining rows' classes). -> (verdict, note, rc, stdout bytes)."""
     src = root / rel
     at, name = (root, rel) if whole else (src.parent, src.name)
@@ -1531,9 +1567,19 @@ def _mine_one(lang, root, rel, cap, whole=False):
     for verdict, pat in MINE_STATIC.get(lang, ()):
         mt = re.search(pat, text, re.M)
         if mt:
-            return verdict, f"the source names {mt.group(0).strip()}", None, b""
-    rc1, out1, err1 = _mine_run(lang, at, name, cap, b"")
+            return verdict, f"the source names {' '.join(mt.group(0).split())[:80]}", None, b""
+    flags = ()
+    for dialect, flag in (ladder or MINE_LADDER.get(lang) or (("", ""),)):
+        flags = (flag,) if flag else ()
+        rc1, out1, err1 = _mine_run(lang, at, name, cap, b"", flags)
+        if not (lang == "pascal" and rc1 == 126):
+            if dialect:
+                MINE_FOUND[rel] = dialect
+            break
     first = (err1.decode("utf-8", "replace").strip().splitlines() or [""])[0][:160]
+    if lang == "pascal" and rc1 == 126:
+        why = next((ln for ln in err1.decode("utf-8", "replace").splitlines() if re.search(r"\b(Fatal|Error):", ln)), first)
+        return "ORACLE-REFUSES", f"fpc compiles it in no mode of the ladder; the last says: {why.strip()[:140]}", None, b""
     if rc1 in (124, 137):
         return "DOES-NOT-END", f"no answer inside {cap} s", None, b""
     if rc1 == 2 and first.startswith("REFUSE(2)"):
@@ -1542,10 +1588,10 @@ def _mine_one(lang, root, rel, cap, whole=False):
         return "ORACLE-REFUSES", (err1.decode("utf-8", "replace").replace("===SORRY!===", "").strip().splitlines() or [""])[0][:160], None, b""
     if lang == "raku" and rc1 == 2 and first.startswith("Usage:"):
         return "NEEDS-INPUT", "it asks for arguments (rakudo prints its usage, exit 2)", None, b""
-    rc2, out2, err2 = _mine_run(lang, at, name, cap, b"")
+    rc2, out2, err2 = _mine_run(lang, at, name, cap, b"", flags)
     if (rc2, out2) != (rc1, out1):
         return "DIFFERS-BETWEEN-RUNS", f"exit {rc1} and {rc2}, {len(out1)} and {len(out2)} bytes", None, b""
-    rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n")
+    rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags)
     if (rc3, out3) != (rc1, out1):
         return "NEEDS-INPUT", "its answer changes with what standard input holds", None, b""
     if not out1.strip():
@@ -1553,7 +1599,7 @@ def _mine_one(lang, root, rel, cap, whole=False):
     return "ENTRY", (f"stderr not graded: {first}" if first else ""), rc1, out1
 
 
-def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None):
+def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dialects=None):
     """A PACKAGE WHOSE PROGRAMS ARE READ IN PLACE (CIO-92, CIO-96, COO-508): the census of the collection ALL.source names, one verdict a program,
     then the index of the ENTRY programs (path = the path from the root) and each one's NAME.out and exit status, cut from the oracle, at the
     same relative path in the package folder. No program file is written into the package."""
@@ -1584,14 +1630,27 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None):
         rels = [r for r in rels if r not in held]
         if not rels:
             h.refuse(f"{skip} names every program under {root}: nothing is left to census")
-    stems = {}
-    for r in rels:
-        stems.setdefault(os.path.splitext(r)[0], []).append(r)
-    twins = {k: v for k, v in stems.items() if len(v) > 1}
-    if twins:
-        h.refuse(f"{len(twins)} stem(s) name two programs, so their NAME.out would be one file: {sorted(twins)[:5]}")
-    with ThreadPoolExecutor(max_workers=jobs) as ex:
-        got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole), rels))
+    # TWO PROGRAMS OF ONE STEM (Free Pascal's tbs: tb0571.pp beside tb0571.pas) would share one NAME.out: the one whose extension the language
+    # lists first is the candidate, the other reads SHARES-A-STEM in the census and is not run; it is not named in ALL.omit, where a name whose
+    # extension-less form is an entry would drop that entry.
+    stems, twin = {}, {}
+    for r in sorted(rels, key=lambda r: (MINE_EXTS[lang].index(os.path.splitext(r)[1]) if os.path.splitext(r)[1] in MINE_EXTS[lang] else 99, r)):
+        if os.path.splitext(r)[0] in stems:
+            twin[r] = stems[os.path.splitext(r)[0]]
+        else:
+            stems[os.path.splitext(r)[0]] = r
+    rels = [r for r in rels if r not in twin]
+    ladder = None
+    if dialects:
+        known = dict(MINE_LADDER.get(lang) or ())
+        if not known or any(d not in known for d in dialects):
+            h.refuse(f"--mine-dialects {','.join(dialects)}: the ladder of {lang or 'snobol4'} is {', '.join(known) or 'empty'}")
+        ladder = tuple((d, known[d]) for d in dialects)
+    try:
+        with ThreadPoolExecutor(max_workers=jobs) as ex:
+            got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder), rels))
+    finally:
+        _mine_scratch_drop()
     census = Path(census_path)
     census.parent.mkdir(parents=True, exist_ok=True)
     census.write_text(f"# the census of {root} by {MINE_ORACLE[lang]} ({source['version']}), {time.strftime('%Y-%m-%d')}: path from the root, verdict, note\n"
@@ -1609,12 +1668,15 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None):
         rows.append({"rank": len(rows) + 1, "entry": name, "path": r, "language": "" if r.endswith(MINE_OWN_EXT[lang]) else lang, "origin": f"{pkg_dir.name}__{name}", "package": pkg_dir.name,
                      "n_lines": len((root / r).read_text(errors="replace").splitlines()), "want_rc": rc, "heap_kb": 131072, "stack_kb": 4096,
                      "timeout_s": cap, "compile_args": ""})
+    if twin:
+        with open(census, "a") as f:
+            f.write("".join(f"{r}\tSHARES-A-STEM\tits answer would be the NAME.out of {twin[r]}, which is the candidate\n" for r in sorted(twin)))
     if held:
         with open(census, "a") as f:
             f.write("".join(f"{r}\tHELD-ELSEWHERE\t{held[r]}\n" for r in sorted(held)))
         print(f"MINE_HELD package={pkg_dir.name} held_elsewhere={len(held)} (in the census, not run, no entry, not in ALL.omit)")
     for x in rows:
-        x["dialect"] = MINE_DIALECT.get(lang, "")
+        x["dialect"] = MINE_FOUND.get(x["path"]) or MINE_DIALECT.get(lang, "")
     cols = [c for c in MINE_HEADER if c not in ("language", "dialect") or any(x[c] for x in rows)]
     h._fmt2_write_csv(pkg_dir, cols, [{k: x[k] for k in cols} for x in rows])
     if rcs:
@@ -1651,6 +1713,8 @@ def main():
     ap.add_argument("--mine-cap", type=int, default=60, help="seconds the oracle has for one program under --mine (default 60)")
     ap.add_argument("--mine-jobs", type=int, default=4, help="oracle runs side by side under --mine (default 4, a seat's share of the run pool)")
     ap.add_argument("--mine-under", default="", metavar="FOLDER", help="under --mine, only the programs under this folder of the root")
+    ap.add_argument("--mine-dialects", default="", metavar="NAME[,NAME...]",
+                    help="under --mine, the dialect ladder to try in order (Pascal: iso, fpc, objfpc, delphi, tp; default all five, iso first)")
     ap.add_argument("--mine-skip", default="", metavar="FILE",
                     help="under --mine, programs another package grades already: a line is the path from the root, a tab, and where it is graded; "
                          "each reads HELD-ELSEWHERE in the census, is not run and is no entry")
@@ -1659,7 +1723,8 @@ def main():
     if not pkg_dir.is_dir():
         h.refuse(f"not a directory: {pkg_dir}")
     if args.mine:
-        sys.exit(mine(pkg_dir, args.lang, args.mine, cap=args.mine_cap, jobs=args.mine_jobs, under=args.mine_under or None, skip=args.mine_skip or None))
+        sys.exit(mine(pkg_dir, args.lang, args.mine, cap=args.mine_cap, jobs=args.mine_jobs, under=args.mine_under or None, skip=args.mine_skip or None,
+                      dialects=[d.strip() for d in args.mine_dialects.split(",") if d.strip()] or None))
     only = None
     if args.only is not None:
         only = [n.strip() for a in args.only for n in a.split(",") if n.strip()]

@@ -6538,7 +6538,9 @@ COMPILE_ARGS_ADMITTED = ("--stlimit", "--dialect=gnu", "--dialect=unicon", "-S")
 # THE DIALECT COLUMN (run-switches steps 3 and 11, CTO-588 and the cto's step 11; CIO-118): an index's dialect cell is the entry's dialect switch,
 # scrip --dialect=CELL at the compile step in both modes, read by the package switch and by this per-process road alike; a row that also carries
 # a dialect word in compile_args is refused (two answers to one question). With it a package prelude that only named the dialect leaves.
-DIALECT_CELLS = ("swi", "xsb", "gnu", "unicon")
+# Pascal's five join 2026-11-11 (the coo, COO-508): a mined Pascal row's cell is the fpc mode that cut its answer (iso, fpc, objfpc, delphi, tp),
+# which scrip --dialect= already takes; the first reading of Free Pascal's tbs folder refused at row 2 on the cell fpc.
+DIALECT_CELLS = ("swi", "xsb", "gnu", "unicon", "iso", "fpc", "objfpc", "delphi", "tp")
 
 
 def validate_out_files_cell(raw, where):

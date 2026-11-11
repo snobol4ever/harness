@@ -80,7 +80,7 @@ trealla-more	none	prolog	-	-
 xsb-examples	none	prolog	-	-
 prolog-sets	none	prolog	-	-
 other-prologs	none	prolog	-	-
-fpc-source	none	pascal	-	-
+fpc-source	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/freepascal_tree
 pascal-sets	none	pascal	-	-
 tex	none	pascal	-	-
 rakudo-t	none	raku	-	-
