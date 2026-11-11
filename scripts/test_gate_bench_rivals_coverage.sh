@@ -73,12 +73,12 @@ NTSV="$DIR/fixed-iter-n.tsv"
 if [ -f "$NTSV" ]; then
     universe=(); orphans=()
     while IFS= read -r k; do
-        universe+=("$k"); [ -f "$DIR/bench/$k.$ext" ] || orphans+=("$k")
+        universe+=("$k"); [ -f "$DIR/bench/$k.$ext" ] || [ -f "$DIR/$k.$ext" ] || orphans+=("$k")
     done < <(awk -F'\t' '!/^[[:space:]]*#/ && NF && $1 != "kernel" { print $1 }' "$NTSV")
     if [ ${#universe[@]} -eq 0 ]; then
         echo "⛔ REFUSED: $NTSV exists but carries zero kernel rows -- an empty universe is not a smaller board" >&2; exit 2; fi
     if [ ${#orphans[@]} -gt 0 ]; then
-        echo "⛔ REFUSED: $lang $NTSV names kernels with no bench/ source (orphan denominator entries): ${orphans[*]}" >&2; exit 2; fi
+        echo "⛔ REFUSED: $lang $NTSV names kernels with no source under bench/ or at the language root (orphan denominator entries): ${orphans[*]}" >&2; exit 2; fi
     extra=(); for k in "${raw[@]}"; do case " ${universe[*]} " in *" $k "*) ;; *) extra+=("$k");; esac; done
     [ ${#extra[@]} -gt 0 ] && echo "INFO: $lang bench/-only files outside the ${#universe[@]}-kernel universe (not graded, not covered): ${extra[*]}"
     mapfile -t kernels < <(printf '%s\n' "${universe[@]}" | sort -u)
