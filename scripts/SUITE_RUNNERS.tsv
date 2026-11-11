@@ -73,9 +73,9 @@ vanilla	none	snobol4	-	-
 icon-packs	none	icon	-	-
 unicon-uni	none	icon	-	-
 chat80	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/chat80
-press	none	prolog	-	-
+press	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/press
 hakank-more	none	prolog	-	-
-trealla-more	none	prolog	-	-
+trealla-more	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/trealla_more
 xsb-examples	none	prolog	-	-
 prolog-sets	none	prolog	-	-
 other-prologs	none	prolog	-	-
