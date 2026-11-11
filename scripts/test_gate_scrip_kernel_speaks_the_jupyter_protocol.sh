@@ -80,6 +80,41 @@ try:
           and r5["status"] == "error" and "cell exited" not in (r5.get("evalue") or "cell exited") and len(r5.get("traceback") or []) >= 2 and m5 is not None and m5.get("evalue") == r5.get("evalue"))
     print("KERNEL_ERROR_TEXT ok" if et else "KERNEL_ERROR_TEXT RED: session reply %r %r stderr %r, then %r; one-program reply %r %r" % (r3.get("ename"), r3.get("evalue"), e3, o4, r5.get("ename"), r5.get("evalue")))
     bad += 0 if et else 1
+    def many(sends):   # send every request before reading anything; return for each its reply, its stdout and the broadcast message types it caused
+        mids = [kc.execute(code, **kw) for code, kw in sends]
+        seen = {mid: {"out": "", "types": [], "idle": False} for mid in mids}
+        while not all(v["idle"] for v in seen.values()):
+            m = kc.get_iopub_msg(timeout=120); v = seen.get(m["parent_header"].get("msg_id"))
+            if v is None: continue
+            v["types"].append(m["msg_type"])
+            if m["msg_type"] == "stream" and m["content"]["name"] == "stdout": v["out"] += m["content"]["text"]
+            if m["msg_type"] == "status" and m["content"]["execution_state"] == "idle": v["idle"] = True
+        left = set(mids)
+        while left:
+            m = kc.get_shell_msg(timeout=60); mid = m["parent_header"].get("msg_id")
+            if mid in left: seen[mid]["reply"] = m["content"]; left.discard(mid)
+        return [seen[mid] for mid in mids]
+    # STOP ON ERROR (CIO-81): the requests already waiting when a cell fails are answered aborted and not run; with stop_on_error false the next one runs
+    slow_fail = " SOEI = 0\nSOEL SOEI = LT(SOEI, 6000000) SOEI + 1 :S(SOEL)\n OUTPUT = 1 / 0\n"
+    a1, a2, a3 = many([(slow_fail, {}), (" OUTPUT = 'second ran'\n", {}), (" OUTPUT = 'third ran'\n", {})])
+    b1, b2 = many([(slow_fail, {"stop_on_error": False}), (" OUTPUT = 'ran after a failure that does not stop'\n", {})])
+    c1, = many([(" OUTPUT = 'the queue is open again'\n", {})])
+    so = (a1["reply"]["status"] == "error" and a1["reply"].get("ename") == "SNOBOL4 error 14" and a2["reply"]["status"] == "error" and a2["reply"].get("evalue") == "aborted" and a3["reply"]["status"] == "error"
+          and a3["reply"].get("evalue") == "aborted" and a2["out"] == "" and a3["out"] == "" and b1["reply"]["status"] == "error" and b2["reply"]["status"] == "ok"
+          and b2["out"] == "ran after a failure that does not stop\n" and c1["reply"]["status"] == "ok" and c1["out"] == "the queue is open again\n")
+    print("KERNEL_STOP_ON_ERROR ok" if so else "KERNEL_STOP_ON_ERROR RED: replies %s %r, %s %r, %s %r; outputs %r %r; without the stop %s %r; after %r" % (a1["reply"]["status"], a1["reply"].get("ename"),
+          a2["reply"]["status"], a2["reply"].get("evalue"), a3["reply"]["status"], a3["reply"].get("evalue"), a2["out"], a3["out"], b2["reply"]["status"], b2["out"], c1["out"]))
+    bad += 0 if so else 1
+    # SILENT AND UNSTORED REQUESTS (CIO-81): a silent request broadcasts nothing but its two status messages and leaves the counter; an unstored one prints and leaves the counter; a stored one moves it by one
+    n0 = c1["reply"]["execution_count"]
+    s1, = many([(" OUTPUT = 'silent output'\n", {"silent": True})])
+    s2, = many([(" OUTPUT = 'unstored output'\n", {"store_history": False})])
+    s3, = many([(" OUTPUT = 'stored output'\n", {})])
+    si = (s1["types"] == ["status", "status"] and s1["reply"]["execution_count"] == n0 and s2["out"] == "unstored output\n" and "execute_input" in s2["types"] and s2["reply"]["execution_count"] == n0
+          and s3["out"] == "stored output\n" and s3["reply"]["execution_count"] == n0 + 1)
+    print("KERNEL_SILENT ok" if si else "KERNEL_SILENT RED: silent broadcast %r count %r, unstored %r count %r, stored count %r, the count before %r" % (s1["types"], s1["reply"]["execution_count"], s2["out"],
+          s2["reply"]["execution_count"], s3["reply"]["execution_count"], n0))
+    bad += 0 if si else 1
 finally:
     kc.stop_channels(); km.shutdown_kernel(now=False)
 # A CELL RUNS IN THE KERNEL'S OWN DIRECTORY (CIO-78): a second kernel started in a scratch folder reads the file beside the notebook by its bare name, from a session cell and from a one-program cell
