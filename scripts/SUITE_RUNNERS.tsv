@@ -77,7 +77,7 @@ press	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/press
 hakank-more	none	prolog	-	-
 trealla-more	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/trealla_more
 xsb-examples	none	prolog	-	-
-prolog-sets	none	prolog	-	-
+prolog-sets	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/prolog_sets
 other-prologs	none	prolog	-	-
 fpc-source	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/freepascal_tree
 pascal-sets	none	pascal	-	-

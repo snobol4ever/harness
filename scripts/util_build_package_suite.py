@@ -1465,8 +1465,9 @@ def build_files_form(pkg_dir, lang, twice=False, only=None, src_ext=None):
 
 MINE_KEYS = ("root", "origin", "version", "licence")
 MINE_OPTIONAL = {"copy": ("root", "folder"), "cwd": ("root", "folder")}
-MINE_EXTS = {"raku": (".raku", ".p6", ".pl6", ".t", ".rakutest"), "pascal": (".pas", ".pp", ".p", ".lpr"), "icon": (".icn",), "prolog": (".pl", ".pro")}
-MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl", "pascal": "fpc"}
+MINE_EXTS = {"raku": (".raku", ".p6", ".pl6", ".t", ".rakutest"), "pascal": (".pas", ".pp", ".p", ".lpr"), "icon": (".icn",), "prolog": (".pl", ".pro"),
+             "snobol4": (".sno", ".spt", ".sbl")}
+MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl", "pascal": "fpc", "snobol4": "sbl"}
 # PASCAL (the coo 2026-11-11, COO-508): fpc only compiles, so a Pascal program is run by fpc_oracle_run.sh (compile to a private folder, then run; exit 126 =
 # fpc refuses the source). The dialect is found by the census: the first mode of the ladder in which fpc compiles the program cut its answer and is
 # the row's dialect cell (SCRIP's own names: iso, fpc, objfpc, delphi, tp); --mine-dialects names another ladder (fpc alone for Free Pascal's own
@@ -1474,7 +1475,7 @@ MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl", "pascal": "fpc"}
 MINE_LADDER = {"pascal": (("iso", "-Miso"), ("fpc", ""), ("objfpc", "-Mobjfpc"), ("delphi", "-Mdelphi"), ("tp", "-Mtp"))}
 MINE_FOUND = {}
 MINE_SCRATCH = {}
-MINE_FLAGS = {"prolog": ("-q",)}   # the oracle's own flags before the program's name: swipl -q, as corpus_suite_harness.py resolve_oracle_bin gives it
+MINE_FLAGS = {"prolog": ("-q",), "snobol4": ("-bf",)}   # the oracle's own flags before the program's name: swipl -q and sbl -bf, as corpus_suite_harness.py resolve_oracle_bin gives them
 MINE_DIALECT = {"prolog": "swi"}   # the dialect cell of a mined row: the oracle that cut its answer (run-switches step 4; swipl answers, so SCRIP reads the program as SWI)
 MINE_STATIC = {
     "pascal": (("LIBRARY", r"(?i)^\s*unit\s+\w+\s*;"),
@@ -1487,7 +1488,7 @@ MINE_STATIC = {
     "prolog": (("NEEDS-DISPLAY", r"\blibrary\(\s*(pce|xpce|pce_\w+|plot/\w+)\s*\)|\b(send|new)\(\s*@\w"),
                ("NEEDS-NETWORK", r"\blibrary\(\s*(socket|ssl|http/\w+|http_open|www_browser)\s*\)|\btcp_(connect|socket|bind|open_socket)\(")),
 }
-MINE_OWN_EXT = {"raku": (".raku",), "pascal": (".pas", ".p", ".pp", ".lpr"), "icon": (".icn",), "prolog": (".pl",)}
+MINE_OWN_EXT = {"raku": (".raku",), "pascal": (".pas", ".p", ".pp", ".lpr"), "icon": (".icn",), "prolog": (".pl",), "snobol4": (".sno",)}
 MINE_HEADER = ("rank", "entry", "path", "language", "origin", "package", "n_lines", "want_rc", "heap_kb", "stack_kb", "timeout_s", "compile_args", "dialect")
 
 
@@ -1586,6 +1587,9 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None):
         h.refuse(f"the oracle wrapper refused on {rel}: {first}")
     if lang == "raku" and b"===SORRY!===" in err1:
         return "ORACLE-REFUSES", (err1.decode("utf-8", "replace").replace("===SORRY!===", "").strip().splitlines() or [""])[0][:160], None, b""
+    if lang == "snobol4" and sbl_died(out1.decode("utf-8", "replace")):
+        why = next((ln for ln in out1.decode("utf-8", "replace").splitlines() if _SBL_DIED_RE1.search(ln)), "")
+        return "ORACLE-REFUSES", f"SPITBOL ends it with an error: {why.strip()[:140]}", None, b""
     if lang == "raku" and rc1 == 2 and first.startswith("Usage:"):
         return "NEEDS-INPUT", "it asks for arguments (rakudo prints its usage, exit 2)", None, b""
     rc2, out2, err2 = _mine_run(lang, at, name, cap, b"", flags)
