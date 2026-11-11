@@ -117,8 +117,18 @@ boxcensus() { # $1 language -> the named-callee call boxes over its benchmark ke
     done
     echo "$c"
 }
+m4bin() { # $1 witness: its mode-4 binary, built here when the witness loop did not build it. The loop grades mode 4 only under S4E_MODE4=1 (the cycle grades mode 3 alone), and an
+    # instruction count is a mode-4 reading whatever the cycle grades: before 2026-11-11 every step with an ircall token refused rc 2 under the default (the grader, the second re-cut, CIO-126).
+    local w="$1" d="$OUT/step$step/$1.m4" e
+    [ -x "$d/run.bin" ] && return 0
+    e="$(wext "$w")" || return 1
+    mkdir -p "$d" && cp "$WD/$w.$e" "$d/$w.$e" || return 1
+    ( cd "$d" && timeout -k 5 300 "$SC/scrip" --compile --out="$d/run.s" "$w.$e" < /dev/null > /dev/null 2> "$d/cerr" ) \
+        && gcc -c "$d/run.s" -o "$d/run.o" 2> /dev/null && gcc "$d/run.o" -L"$SC/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$SC/out" -o "$d/run.bin" 2> /dev/null
+}
 ircall() { # $1 witness -> Ir per call of its mode-4 binary under callgrind
     local w="$1" b="$OUT/step$step/$1.m4/run.bin" ir
+    m4bin "$w"
     [ -x "$b" ] || { echo "REFUSED"; return; }
     command -v valgrind > /dev/null || { echo "REFUSED"; return; }
     ir="$(cd "$OUT/step$step/$w.m4" && SCRIP_DIAG=0 timeout -k 10 1800 valgrind --tool=callgrind --callgrind-out-file="$OUT/step$step/$w.cg" "$b" -d131072k -s4096k < /dev/null 2>&1 > /dev/null | sed -n 's/.*I *refs: *\([0-9,]*\).*/\1/p' | tr -d ,)"
