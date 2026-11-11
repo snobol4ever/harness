@@ -349,9 +349,31 @@ s4e_sweep_retire_jobs() {   # bus-one-queue step 8: with the daemon gone, every 
     done
     echo "RETIRE-JOBS batons=$_nb claims=$_nc"; return 0; }
 s4e_take_refused() { : > "$PO/claims/$1.claim.release.$2" 2>/dev/null; return 1; }   # <topic> <job>: a take that refuses before its claim tells the holder to release now (the retired queue client's reserve-hold reads <topic>.claim.release.<job>)
+# THE CODES OF s4e_queue_take_claim (bus-tube-herd-1): 0 taken, 1 refused, 4 premise red, 5 held by another seat.
 s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (fleet-queue step 4); writes the claim file and the row state, nothing else
     local _t="$1" _c="$PO/claims/$1.claim"
     [ -f "$PO/tasks/$_t.task.md" ] || { echo "⛔ reserved job $2 names $_t, which has no baton; released (the tick retires it)" >&2; s4e_take_refused "$_t" "$2"; return 1; }
+    # THE FOREIGN CLAIM IS READ BEFORE THE SYNC, THE MAKE AND THE PREMISE (bus-tube-herd-1, officer_01 2026-11-11, measured at harness 82d43442: a take that read the premise first wrote a false PREMISE-WHEN read RED line and PARKED-PREMISE-RED on a row another seat held, 222 such lines on 40 batons that day): a row held by another seat is buried here and returns rc 5, so the reserve pass goes on with no state change and no ledger line.
+    if [ -f "$_c" ] && [ "$(head -1 "$_c")" != "$ME" ]; then
+      local _own _ts; _own="$(head -1 "$_c")"
+      # THE HEAD NEVER CYCLES (the cio 2026-11-07 16:2x; worker_18, worker_15, worker_20 and the coo measured job 1159 reserved by four seats in eleven minutes and job 1165 held by a claim naming job 449, every next releasing the head and serving nothing behind it): the queue handed THIS seat job $2 of row $_t, so no reserve of another seat's RESERVED claim on that row lives; such a claim is stale by construction and is archived as expire archives it, and the job is taken. A claim with no RESERVED line is a hand claim or an assignment, a real lock: the head is BURIED for its claimant (rc 5) and the pass goes on, so the jobs behind it are served.
+      _oj="$(sed -n 's/^RESERVED job=\([0-9]*\).*/\1/p' "$_c" | tail -1)"
+      # THE HOLDER LIVES, THE JOB IS THE DUPLICATE (CIO-12 W2, the cio 2026-11-08 12:5x; the coo's EMERGENCY 12:28: job 532 of step 28 taken by eight juniors in five minutes, each take archiving the live holder's claim as STALE and the robbed holder releasing the job to the next taker). The head-never-cycles reasoning held only while a holder's reserve was continuous; a holder that released during its taker's sync and make (the 60 s grace, raised to 600 s at 4b3c63ae) left a READY job behind a LIVE claimant. So a foreign claim whose claimant is alive is a lock, RESERVED line or not: THIS seat's holder buries the job it reserved (the PARK line it reads), the claimant's done deletes it, and the pass goes on (rc 5). Only a dead claimant's RESERVED claim is archived as stale.
+      if ! grep -q '^DONE$' "$_c" && s4e_claim_holder_live "$_own" "$_c"; then
+        _ts="$(date -u +%FT%TZ)"
+        grep -q '^PARK ' "$_c" || printf 'PARK HELD-BY:%s:duplicate-job-%s-buried-at-take-by-%s %s\n' "$_own" "$2" "$ME" "$_ts" >> "$_c"
+        s4e_ledger_prepend "$_t" "- [$ME·$_ts] job $2 ($3) was served to $ME while $_own holds the row and is alive: the duplicate is buried for $_own, $ME takes nothing (CIO-12 W2: a live claimant's claim is never archived at take)"
+        echo "⛔ $_t is held by $_own, who is alive: job $2 is buried for the holder, whose done or park frees it; the pass goes on" >&2; return 5
+      fi
+      if grep -q '^RESERVED job=' "$_c" && ! grep -q '^DONE$' "$_c"; then
+        mkdir -p "$PO/claims/expired"; _ts="$(date -u +%FT%TZ)"; mv "$_c" "$PO/claims/expired/$_t.claim.$_ts"
+        s4e_ledger_prepend "$_t" "- [$ME·$_ts] STALE CLAIM of $_own archived at take: the queue handed job $2 ($3) to $ME and $_own is not alive (no session in its seat scope, RESERVED line older than S4E_CLAIM_LIVE_S), so no reserve behind that claim lived (fleet-queue: the head never cycles)"
+        echo "  (stale claim of $_own on $_t archived; job $2 taken)" >&2
+      else
+        grep -q '^PARK ' "$_c" || printf 'PARK HELD-BY:%s:duplicate-job-%s-buried-at-take-by-%s %s\n' "$_own" "$2" "$ME" "$(date -u +%FT%TZ)" >> "$_c"
+        echo "⛔ $_t is claimed by $_own by hand (no RESERVED line): job $2 is buried for the claimant, whose done or park frees it; the pass goes on" >&2; return 5
+      fi
+    fi
     # THE ROOT IS CURRENT BEFORE THE PREMISE IS READ (the cio 2026-11-08 10:5x on the coo's measurement: junior_03, 05 and 07 one harness commit behind, so the premise of unitests-order-0-r2 exited 2 on their roots and the first UniTests row went unserved 30 minutes): a fast-forward sync is cheap and a premise graded on a stale tree is no measurement; a root that cannot fast-forward (an unpushed local commit) is named by the sync and stays as it is.
     # ALL FOUR REPOS, THEN THE BINARY (the cio 2026-11-08 11:3x on officer_03's measurement: with SCRIP left out of the sync, a premise that reads SCRIP source read false in junior_06's root at bb311e419 and the CTO-555 rename row was retired): the sync fast-forwards SCRIP too, and make -j8 fetches the build from the cache (seconds on a clean tree), so the premise is read on the current tree with its own binary; a make that fails refuses the read, and the row is skipped, never retired.
     mkdir -p "/tmp/s4e/${ME:-seat}" 2>/dev/null
@@ -373,28 +395,8 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
     cat "$_pg" >&2; rm -f "$_pg"
     if [ -f "$_c" ]; then
       local _own _ts; _own="$(head -1 "$_c")"
-      if [ "$_own" != "$ME" ]; then
-        # THE HEAD NEVER CYCLES (the cio 2026-11-07 16:2x; worker_18, worker_15, worker_20 and the coo measured job 1159 reserved by four seats in eleven minutes and job 1165 held by a claim naming job 449, every next releasing the head and serving nothing behind it): the queue handed THIS seat job $2 of row $_t, so no reserve of another seat's RESERVED claim on that row lives; such a claim is stale by construction and is archived as expire archives it, and the job is taken. A claim with no RESERVED line is a hand claim or an assignment, a real lock: the head is BURIED for its claimant (rc 4) and the pass goes on, so the jobs behind it are served.
-        _oj="$(sed -n 's/^RESERVED job=\([0-9]*\).*/\1/p' "$_c" | tail -1)"
-        # THE HOLDER LIVES, THE JOB IS THE DUPLICATE (CIO-12 W2, the cio 2026-11-08 12:5x; the coo's EMERGENCY 12:28: job 532 of step 28 taken by eight juniors in five minutes, each take archiving the live holder's claim as STALE and the robbed holder releasing the job to the next taker). The head-never-cycles reasoning held only while a holder's reserve was continuous; a holder that released during its taker's sync and make (the 60 s grace, raised to 600 s at 4b3c63ae) left a READY job behind a LIVE claimant. So a foreign claim whose claimant is alive is a lock, RESERVED line or not: THIS seat's holder buries the job it reserved (the PARK line it reads), the claimant's done deletes it, and the pass goes on (rc 4). Only a dead claimant's RESERVED claim is archived as stale.
-        if ! grep -q '^DONE$' "$_c" && s4e_claim_holder_live "$_own" "$_c"; then
-          _ts="$(date -u +%FT%TZ)"
-          grep -q '^PARK ' "$_c" || printf 'PARK HELD-BY:%s:duplicate-job-%s-buried-at-take-by-%s %s\n' "$_own" "$2" "$ME" "$_ts" >> "$_c"
-          s4e_ledger_prepend "$_t" "- [$ME·$_ts] job $2 ($3) was served to $ME while $_own holds the row and is alive: the duplicate is buried for $_own, $ME takes nothing (CIO-12 W2: a live claimant's claim is never archived at take)"
-          echo "⛔ $_t is held by $_own, who is alive: job $2 is buried for the holder, whose done or park frees it; the pass goes on" >&2; return 4
-        fi
-        if grep -q '^RESERVED job=' "$_c" && ! grep -q '^DONE$' "$_c"; then
-          mkdir -p "$PO/claims/expired"; _ts="$(date -u +%FT%TZ)"; mv "$_c" "$PO/claims/expired/$_t.claim.$_ts"
-          s4e_ledger_prepend "$_t" "- [$ME·$_ts] STALE CLAIM of $_own archived at take: the queue handed job $2 ($3) to $ME and $_own is not alive (no session in its seat scope, RESERVED line older than S4E_CLAIM_LIVE_S), so no reserve behind that claim lived (fleet-queue: the head never cycles)"
-          echo "  (stale claim of $_own on $_t archived; job $2 taken)" >&2
-        else
-          grep -q '^PARK ' "$_c" || printf 'PARK HELD-BY:%s:duplicate-job-%s-buried-at-take-by-%s %s\n' "$_own" "$2" "$ME" "$(date -u +%FT%TZ)" >> "$_c"
-          echo "⛔ $_t is claimed by $_own by hand (no RESERVED line): job $2 is buried for the claimant, whose done or park frees it; the pass goes on" >&2; return 4
-        fi
-      else
-        grep -q '^DONE$' "$_c" && { echo "⛔ $_t reads DONE on its claim; the holder deletes the job" >&2; return 1; }
-        s4e_reserve_line "$2" "$3" >> "$_c"; return 0
-      fi
+      grep -q '^DONE$' "$_c" && { echo "⛔ $_t reads DONE on its claim; the holder deletes the job" >&2; return 1; }
+      s4e_reserve_line "$2" "$3" >> "$_c"; return 0
     fi
     ( set -o noclobber; { printf '%s\n' "$ME"; s4e_reserve_line "$2" "$3"; } > "$_c" ) 2>/dev/null || { echo "⛔ $_t was claimed in the race ($(head -1 "$_c" 2>/dev/null)); the job is released" >&2; return 1; }
     s4e_set_row_state "$_t" "CLAIMED:$ME" || true; return 0; }
