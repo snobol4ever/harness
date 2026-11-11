@@ -48,16 +48,18 @@ cells() {   # one line per cell: key kind lang dir cell (dir: the suite's contai
             close(f)
         }' "$RUNNERS" | sort -t "$(printf '\t')" -k1,1n -k2,2n -k7,7 | cut -f3-
 }
-# THE LONGEST CELLS RUN FIRST (the coo 2026-11-11, COO-510; MEASURED on CYCLE.log: laps 13, 14 and 15 took 3.3, 3.7 and over 4.1 hours while the sum of
-# their cells over the width of four is 2.5, 3.1 and 2.5 hours, because the table's order puts XSB's two-hour cells near the end and the lap's last
-# 70 to 100 minutes ran three cells on a box with one reading in thirty minutes): a lap's cells are ordered by the seconds each took the last time it
-# graded (rc 0 or 1), longest first; a cell with no reading yet (a new suite, a new chunk) runs before every known one; ties keep the table's order.
-# The order is FROZEN for the lap in CYCLE.order, written at the lap's start, so a restart in the middle of a lap reads the same list and its index
-# names the same cell.
+# THE FASTEST SUITES RUN FIRST (the coo 2026-11-11, COO-515, on Lon's word the same morning: "So regarding the order in which the test suites should be
+# run, from fastest to slowest." / "I would prefer if you ran the suite that takes seconds now and the long running ones latter"; it reverses COO-510,
+# which ran the longest cells first to shorten the lap): a lap's cells are ordered by their SUITE's time, the sum of the seconds each of its cells
+# took the last time it graded (rc 0 or 1), the fastest suite first, so the banner shows many suites early and the slow ones last; a suite with no
+# reading yet (a new suite) runs before every known one; a suite's own cells stay together in the table's order. The order is FROZEN for the lap in
+# CYCLE.order, written at the lap's start, so a restart in the middle of a lap reads the same list and its index names the same cell.
 ORDERF="$PROG/CYCLE.order"
 order_write() { awk '$2 == "CELL" && $7 != "rc=2" { v = $8; sub(/^secs=/, "", v); s[$5 "\t" $6] = v } END { for (k in s) print k "\t" s[k] }' "$LOG" 2>/dev/null > "$ORDERF.tmp" && mv "$ORDERF.tmp" "$ORDERF"; }
 order_cells() {   # stdin: the cells in the table's order; stdout: the lap's order
-    awk -F'\t' -v OF="$ORDERF" 'BEGIN { while ((getline l < OF) > 0) { split(l, a, "\t"); s[a[1] "\t" a[2]] = a[3] } } { k = $1 "\t" $5; printf "%d\t%d\t%s\n", ((k in s) ? s[k] : 99999999), NR, $0 }' | sort -t "$(printf '\t')" -k1,1nr -k2,2n | cut -f3-
+    awk -F'\t' -v OF="$ORDERF" 'BEGIN { while ((getline l < OF) > 0) { split(l, a, "\t"); s[a[1] "\t" a[2]] = a[3]; have = 1 } }
+        { line[NR] = $0; su[NR] = $1; k = $1 "\t" $5; if (k in s) { tot[$1] += s[k]; seen[$1] = 1 } }
+        END { for (i = 1; i <= NR; i++) printf "%d\t%d\t%s\n", (!have ? 0 : (su[i] in seen) ? tot[su[i]] + 1 : 0), i, line[i] }' | sort -t "$(printf '\t')" -k1,1n -k2,2n | cut -f3-
 }
 budget() { python3 -I "$S4E/harness/scripts/util_grade_job.py" budget --suite "$1" --cell "$2" 2>/dev/null | sed -n 's/.* ttr_s=\([0-9]*\).*/\1/p' | head -1; }
 container_key() { case "$1" in snobol4) echo sno-rungs;; icon) echo icn-rungs;; prolog) echo pl-rungs;; pascal) echo pas-rungs;; raku) echo raku-rungs;; snocone) echo snc-rungs;; rebus) echo reb-rungs;; esac; }

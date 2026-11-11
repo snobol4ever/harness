@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# test_gate_cycle_runs_the_longest_cells_first.sh -- the test cycle orders a lap's cells by the seconds each took the last time it graded, longest
-# first, a cell with no reading before every known one, and the order is frozen for the lap (the coo 2026-11-11, COO-510; MEASURED on CYCLE.log:
-# lap 14 took 3.71 hours in the table's order and its cells fit in 3.10 at the width of four; XSB's two-hour cells started last and the lap's
-# tail ran three cells for over an hour). order_write and order_cells are taken from s4e_cycle.sh and asked over a planted log; no cycle is run
-# and no live file is read or written.
+# test_gate_cycle_runs_the_fastest_suites_first.sh -- the test cycle orders a lap's cells by their SUITE's time (the sum of the seconds its cells
+# took the last time each graded), the fastest suite first, a suite with no reading before every known one, a suite's cells together, and the
+# order is frozen for the lap (the coo 2026-11-11, COO-515, on Lon's word: "So regarding the order in which the test suites should be run, from
+# fastest to slowest."; it replaces test_gate_cycle_runs_the_longest_cells_first.sh, COO-510, whose order Lon reversed the same morning).
+# order_write and order_cells are taken from s4e_cycle.sh and asked over a planted log; no cycle is run and no live file is read or written.
 #
 # THE ARMS:
-#   1  longest first: a cell with no reading leads, then the known cells by their last graded seconds, ties and unknowns in the table's order
+#   1  fastest suite first: the suite with no reading leads, then the suites by their summed seconds, each suite's cells together in the table's order
 #   2  a refused cell (rc=2 secs=0) does not erase the seconds of its last graded run; a later graded run replaces an earlier one
 #   3  frozen for the lap: a CELL line added to the log after order_write changes nothing until order_write runs again
 #   4  with no CYCLE.order the cells keep the table's order (a restart under a script that has just taken over reads the old list)
 # EXIT: 0 all arms pass, 1 an arm failed (or the script has no order_write and order_cells), 2 REFUSED (no script, no scratch directory).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NAME=cycle_runs_the_longest_cells_first
+NAME=cycle_runs_the_fastest_suites_first
 CYC="$HERE/s4e_cycle.sh"
 [ -f "$CYC" ] || { echo "REFUSE(2) [$NAME]: no $CYC"; exit 2; }
 T="$(mktemp -d "${TMPDIR:-/tmp}/gate_cycle_order.XXXXXX")" || { echo "REFUSE(2) [$NAME]: no scratch directory"; exit 2; }
@@ -37,14 +37,14 @@ if [ -z "$F" ]; then
     ck no "(1) s4e_cycle.sh has no order_write and order_cells: a lap runs in the table's order"; ck no "(2) no order to ask"; ck no "(3) no order to ask"; ck no "(4) no order to ask"
 else
     g1="$(table | ask 'order_write; order_cells')"
-    [ "$g1" = "d core;b chunk:01;b chunk:02;c core;a core;" ] && ck ok "(1) the unknown cell leads, then the known cells longest first" || ck no "(1) read [$g1]"
+    [ "$g1" = "d core;a core;c core;b chunk:01;b chunk:02;" ] && ck ok "(1) the unknown suite leads, then the suites fastest first, a suite's cells together" || ck no "(1) read [$g1]"
     grep -q -P '^b\tchunk:02\t300$' "$T/CYCLE.order" && grep -q -P '^c\tcore\t70$' "$T/CYCLE.order" && ck ok "(2) a refusal keeps the last graded seconds and a later graded run replaces an earlier one" || ck no "(2) CYCLE.order: $(tr '\t\n' ' ;' < "$T/CYCLE.order")"
     echo '2026-11-11T00:00:08Z CELL lap=2 1/5 a core rc=0 secs=9000' >> "$T/CYCLE.log"
     g3="$(table | ask 'order_cells')"; g3b="$(table | ask 'order_write; order_cells')"
-    [ "$g3" = "$g1" ] && [ "$g3b" = "d core;a core;b chunk:01;b chunk:02;c core;" ] && ck ok "(3) the order is frozen until the next lap writes it" || ck no "(3) before [$g3] after [$g3b]"
+    [ "$g3" = "$g1" ] && [ "$g3b" = "d core;c core;b chunk:01;b chunk:02;a core;" ] && ck ok "(3) the order is frozen until the next lap writes it" || ck no "(3) before [$g3] after [$g3b]"
     rm -f "$T/CYCLE.order"; g4="$(table | ask 'order_cells')"
     [ "$g4" = "a core;b chunk:01;b chunk:02;c core;d core;" ] && ck ok "(4) with no CYCLE.order the table's order stands" || ck no "(4) read [$g4]"
 fi
 echo "CYCLE_ORDER_BOARD arms=4 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
-[ "$fail" = 0 ] && [ "$pass" = 4 ] && { echo "GATE OK [$NAME]: a lap runs its longest cells first, in an order frozen for the lap"; exit 0; }
+[ "$fail" = 0 ] && [ "$pass" = 4 ] && { echo "GATE OK [$NAME]: a lap runs its fastest suites first, in an order frozen for the lap"; exit 0; }
 echo "GATE FAIL [$NAME]: $fail arm(s) failed"; exit 1
