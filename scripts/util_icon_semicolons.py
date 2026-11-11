@@ -10,6 +10,8 @@
 #   --compile-args=ARGS (the spelling util_add_ladder_witness.py takes; CTO-544 U2) parses with scrip --dump-ast ARGS, since out/parser_icon takes no switch (it opens
 #   --dialect=unicon as a file); a package's unmarked_compile_args go here. An insertion cap of max(500, 4 * lines + 4). A file the parse completes whose import the
 #   package resolver cannot find (icon: import: cannot find package, raised after the parse, icon_driver.c) is PARSED and the import named: that is the resolver's row.
+#   The same for a link the resolver cannot open or whose file refuses (icon: link: cannot open, icon: parse error in linked file; the coo 2026-11-11, MEASURED on
+#   Unicon's uni/gui: 92 of 95 files were fully converted and then dropped because graphics.icn, which they link, is not in the corpus).
 import os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP"); PARSER = os.path.join(ROOT, 'out', 'parser_icon')
 ERR = re.compile(r"expected ';'.*?after the token at line (\d+) col (\d+)")
@@ -130,8 +132,8 @@ def preinsert(lines):
     return added
 SCRIP_BIN = os.path.join(ROOT, 'scrip')
 PARSER_CMD = [PARSER] if os.path.exists(PARSER) else [SCRIP_BIN, '--dump-ast']
-UNRESOLVED = re.compile(r'^icon: import: cannot find package ')
-IMPORTED = re.compile(r'^icon: parse error in imported file ')
+UNRESOLVED = re.compile(r'^icon: (import: cannot find package|link: cannot open) ')   # the resolvers run after the file's own parse (icon_driver.c: the parse error is reported first, then imports, then links)
+IMPORTED = re.compile(r'^icon: parse error in (imported|linked) file ')
 def parse_error(path):
     r = subprocess.run(PARSER_CMD + [os.path.basename(path)], cwd=os.path.dirname(os.path.abspath(path)), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, timeout=60)
     if r.returncode == 0: return None
@@ -219,8 +221,8 @@ def main(argv):
         if added: changed += 1; print('%s %s: %d semicolon(s) at %s' % ('WOULD ADD' if check else 'ADDED', f, len(added), ' '.join('%d:%d' % a for a in added[:12])))
         if err: bad += 1; print('STILL REFUSED %s: %s' % (f, err[:160]))
         u = [v for k, v in UNRESOLVED_SEEN.items() if k in (os.path.abspath(f), os.path.abspath(t))]
-        if u and not err: print('PARSED %s, its import unresolved (the package resolver runs after the parse; not this converter\'s): %s' % (f, u[-1][:160]))
+        if u and not err: print('PARSED %s, its import or link unresolved (the resolvers run after the parse; not this converter\'s): %s' % (f, u[-1][:160]))
         v = [x for k, x in IMPORTED_SEEN.items() if k in (os.path.abspath(f), os.path.abspath(t))]
-        if v and not err: print('PARSED %s, a file it imports refuses (that file is converted on its own; its error is never applied here): %s' % (f, v[-1][:160]))
+        if v and not err: print('PARSED %s, a file it imports or links refuses (that file is converted on its own; its error is never applied here): %s' % (f, v[-1][:160]))
     print('files=%d changed=%d still_refused=%d' % (len(files), changed, bad)); return 1 if bad else 0
 if __name__ == '__main__': sys.exit(main(sys.argv[1:]))

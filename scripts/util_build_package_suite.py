@@ -313,6 +313,8 @@ def read_contract(pkg_dir):
         elif f[0] == "ipath":
             if not (pkg_dir / f[1]).is_dir(): h.refuse(f"{cf}:{n}: ipath {f[1]!r} names no directory beside the package (the run cannot find its imports)")
             out["ipath"] = os.pathsep.join(x for x in (out["ipath"], str((pkg_dir / f[1]).resolve())) if x)
+        elif f[0] == "lpath":
+            if not (pkg_dir / f[1]).is_dir(): h.refuse(f"{cf}:{n}: lpath {f[1]!r} names no directory (the grader could not find the package's $include files there)")
         elif f[0] == "prebuild":
             out["prebuild"] = f[1].strip()
         elif f[0] == "not_shipped":
@@ -329,7 +331,7 @@ def read_contract(pkg_dir):
             out["stdin"] = f[1].strip()
         else:
             h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, units=ref-beside,units=plunit, units=iso-rejection, dialect=any-fpc-mode, fatal=gradable, bom=as-shipped, units=generated, generator=MODULE, "
-                     f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space and unmarked_compile_args=--dialect=NAME only")
+                     f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space, ipath=DIR, lpath=DIR and unmarked_compile_args=--dialect=NAME only")
     if (out["units"] == "generated") != bool(out["generator"]):
         h.refuse(f"{cf}: units=generated and generator=<module> go together (got units={out['units']!r}, generator={out['generator']!r})")
     if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):

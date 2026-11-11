@@ -5009,6 +5009,10 @@ def _pkg_ipath_for(args):
         f = line.split("\t")
         if len(f) >= 3 and f[0] == "ipath" and (cf.parent / f[1]).is_dir():
             os.environ["IPATH"] = os.pathsep.join(x for x in (str((cf.parent / f[1]).resolve()), os.environ.get("IPATH", "")) if x)
+        # lpath (the coo 2026-11-11, for Unicon's uni tree: 153 of its files $include guih.icn from another folder and 31 evdefs.icn from Unicon's own
+        # include folder): a folder the preprocessor searches for an $include, LPATH as the oracle names it; relative to the package or absolute.
+        if len(f) >= 3 and f[0] == "lpath" and (cf.parent / f[1]).is_dir():
+            os.environ["LPATH"] = " ".join(x for x in (str((cf.parent / f[1]).resolve()), os.environ.get("LPATH", "")) if x)
 
 
 def _swi_cases_grade(e, m, v, container_dir):
