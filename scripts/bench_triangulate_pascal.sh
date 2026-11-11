@@ -21,6 +21,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+"$HERE/util_require_fresh.sh" --gate bench_triangulate_pascal "${SCRIP:-$HERE/../../SCRIP/scrip}" "$HERE/../../SCRIP/out/libscrip_rt.so" || exit 2
 SCRIP="${SCRIP:-$ROOT/scrip}"
 PDIR="${PASCAL_DIR:-$S4E/corpus/benchmarks/pascal}"
 TOL="${TOL_PCT:-10}"

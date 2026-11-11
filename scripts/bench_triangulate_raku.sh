@@ -56,6 +56,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+"$HERE/util_require_fresh.sh" --gate bench_triangulate_raku "${SCRIP:-$HERE/../../SCRIP/scrip}" "$HERE/../../SCRIP/out/libscrip_rt.so" || exit 2
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
 RDIR="${RAKU_DIR:-$S4E/corpus/benchmarks/raku}"
 REPS="${REPS:-3}"; T="${TIMEOUT:-120}"; KERNELS="${KERNELS:-}"; TOL="${TOL_PCT:-10}"
