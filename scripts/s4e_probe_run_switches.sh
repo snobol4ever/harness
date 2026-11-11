@@ -14,7 +14,7 @@ N="${1:-}"
 SCRIP="$S4E/SCRIP/scrip"
 BG="$S4E/corpus/tests/shared/batch_grader"
 refuse() { echo "REFUSE(2) [run-switches probe]: $*"; exit 2; }
-[ -n "$N" ] || refuse "usage: $0 <step 1..15>"
+[ -n "$N" ] || refuse "usage: $0 <step 1..18>"
 mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 T="$(mktemp -d "/tmp/s4e/$ME/runsw_probe.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$T"' EXIT
@@ -426,8 +426,100 @@ END"
     verdict "a merged row holds both streams in order in NAME.out with an empty NAME.err; an empty cell keeps them apart; an unknown word refuses"
 }
 
+step16() {   # the index's language column names a row's language, and scrip's --lang switch reads every file as it, whatever the extension (CTO-591, on the cio's X.P and the coo's NAME.t)
+    need_scrip
+    local D="$HERE/../designs/run_switches" P="$T/pkg" B="$T/bad" got rc
+    [ -f "$D/rs16_xsb_named_p.P" ] && [ -f "$D/rs16_xsb_named_p.out" ] && [ -f "$D/rs16_raku_named_t.t" ] && [ -f "$D/rs16_raku_named_t.out" ] || refuse "the step 16 witnesses are not beside the table"
+    mkdir -p "$P/sub" "$B"; cp "$D/rs16_xsb_named_p.P" "$D/rs16_raku_named_t.t" "$T/"; cp "$D/rs16_xsb_named_p.P" "$P/sub/x.P"; cp "$D/rs16_raku_named_t.t" "$P/r.t"
+    got="$(cd "$T" && timeout -k 5 120 "$SCRIP" --run --lang=prolog --dialect=xsb rs16_xsb_named_p.P < /dev/null 2> "$T/e1")" || red "scrip --lang=prolog on X.P exits non-zero ($(head -1 "$T/e1" | cut -c1-100))"
+    [ "$got" = "$(cat "$D/rs16_xsb_named_p.out")" ] || red "X.P under --lang=prolog reads '$(printf '%s' "$got" | tr '\n' '|' | cut -c1-80)', XSB reads '$(tr '\n' '|' < "$D/rs16_xsb_named_p.out")'"
+    got="$(cd "$T" && timeout -k 5 120 "$SCRIP" --run --lang=raku rs16_raku_named_t.t < /dev/null 2> "$T/e2")" || red "scrip --lang=raku on NAME.t exits non-zero ($(head -1 "$T/e2" | cut -c1-100))"
+    [ "$got" = "$(cat "$D/rs16_raku_named_t.out")" ] || red "NAME.t under --lang=raku reads '$(printf '%s' "$got" | tr '\n' '|' | cut -c1-80)', rakudo reads '$(tr '\n' '|' < "$D/rs16_raku_named_t.out")'"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run --lang=klingon hello.sno > /dev/null 2> "$T/e3" < /dev/null ); rc=$?
+    [ "$rc" = 2 ] || red "a language scrip does not have exits $rc, want the refusal 2"
+    printf "        OUTPUT = 'by its extension'\nEND\n" > "$P/s.sno"
+    printf '%s\n' 'entry,path,timeout_s,compile_args,dialect,language' 'x,sub/x.P,,,xsb,prolog' 'r,r.t,,,,raku' 's,s.sno,,,,' > "$P/ALL.csv"
+    ( cd "$T" && timeout -k 5 300 "$SCRIP" --run-files "$P" --out "$T/o" > rep.tsv 2> err.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] || red "the package switch exits $rc ($(head -1 "$T/err.txt" | cut -c1-120))"
+    want "$T/rep.tsv" x EXIT 0 && same "$T/o/x.out" "$(cat "$D/rs16_xsb_named_p.out")" "x (a file named X.P whose language cell is prolog)"
+    want "$T/rep.tsv" r EXIT 0 && same "$T/o/r.out" "$(cat "$D/rs16_raku_named_t.out")" "r (a file named NAME.t whose language cell is raku)"
+    want "$T/rep.tsv" s EXIT 0 && same "$T/o/s.out" 'by its extension' "s (an empty language cell: the extension names the language)"
+    cp "$P/r.t" "$B/r.t"; printf '%s\n' 'entry,path,timeout_s,compile_args,dialect,language' 'r,r.t,,,,perl' > "$B/ALL.csv"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$B" --out "$T/o2" > rep2.tsv 2> err2.txt < /dev/null ); rc=$?
+    [ "$rc" = 2 ] || red "a language cell that names no language exits $rc, want the refusal 2"
+    [ ! -s "$T/rep2.tsv" ] || red "the package with an unknown language still ran a test"
+    printf '%s\n' 'entry,path,timeout_s,compile_args,dialect,language' 'r,r.t,,--lang=raku,,raku' > "$B/ALL.csv"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$B" --out "$T/o3" > rep3.tsv 2> err3.txt < /dev/null ); rc=$?
+    [ "$rc" = 2 ] || red "a language cell beside a language switch in compile_args exits $rc, want the refusal 2"
+    verdict "X.P reads as Prolog and NAME.t as Raku by the switch and by the index's language cell, an empty cell keeps the extension, an unknown language and a second home refuse"
+}
+
+step17() {   # ALL.source's copy and cwd keys: copy root copies the whole collection once, cwd root runs a test from its top, a program the package holds is laid over the copy (CTO-591, on the coo's Roast measurement)
+    need_scrip
+    local C="$T/coll" P="$T/pkg" rc; mkdir -p "$C/S1" "$C/packages" "$P"
+    printf 'helper line\n' > "$C/packages/helper.txt"
+    printf "        INPUT(.F, 5, '../packages/helper.txt') :F(NO)\n        OUTPUT = F\n        OUTPUT(.G, 6, 'made.txt')\n        G = 'made'\n        ENDFILE(6) :(END)\nNO      OUTPUT = 'absent'\nEND\n" > "$C/S1/a.sno"
+    printf "        INPUT(.M, 5, 'made.txt') :S(SEEN)\n        OUTPUT = 'clean' :(END)\nSEEN    OUTPUT = 'the file of the test before is still here'\nEND\n" > "$C/S1/b.sno"
+    printf '%s\n' 'entry,path,timeout_s' 'a,S1/a.sno,' 'b,S1/b.sno,' > "$P/ALL.csv"
+    ( cd "$C" && find . -type f -exec md5sum {} + | sort -k2 ) > "$T/before.txt"
+    printf 'root\t%s\norigin\ta scratch collection of the probe\nversion\tprobe\nlicence\tpublic domain\n' "$C" > "$P/ALL.source"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-files "$P" --out "$T/o0" --work "$T/w0" > rep0.tsv 2> err0.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] || refuse "the control arm (no copy key) exits $rc: $(head -1 "$T/err0.txt" | cut -c1-120)"
+    [ "$(cat "$T/o0/a.out" 2>/dev/null)" = absent ] || refuse "the control arm reads '$(head -c 60 "$T/o0/a.out" 2>/dev/null)', want absent: the folder copy already reaches the helper, the probe measures nothing"
+    printf 'root\t%s\norigin\ta scratch collection of the probe\nversion\tprobe\nlicence\tpublic domain\ncopy\troot\n' "$C" > "$P/ALL.source"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-files "$P" --out "$T/o" --work "$T/w" > rep.tsv 2> err.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] || red "the switch under copy root exits $rc ($(head -1 "$T/err.txt" | cut -c1-120))"
+    want "$T/rep.tsv" a EXIT 0 && same "$T/o/a.out" 'helper line' "a (the helper folder beside the program's own is in the copy)"
+    want "$T/rep.tsv" b EXIT 0 && same "$T/o/b.out" 'clean' "b (the program's folder is restored after the test before)"
+    ( cd "$C" && find . -type f -exec md5sum {} + | sort -k2 ) > "$T/after.txt"
+    cmp -s "$T/before.txt" "$T/after.txt" || red "the collection changed under the run: $(diff "$T/before.txt" "$T/after.txt" | head -2 | tr '\n' ' ')"
+    printf 'root\t%s\norigin\tprobe\nversion\tprobe\nlicence\tpublic domain\ncopy\tfolder\n' "$C" > "$P/ALL.source"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-files "$P" --out "$T/o2" > rep2.tsv 2> err2.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] && [ "$(cat "$T/o2/a.out" 2>/dev/null)" = absent ] || red "copy folder exits $rc and a reads '$(head -c 60 "$T/o2/a.out" 2>/dev/null)', want 0 and absent (the folder alone, as with no key)"
+    printf 'root\t%s\norigin\tprobe\nversion\tprobe\nlicence\tpublic domain\ncopy\teverything\n' "$C" > "$P/ALL.source"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$P" --out "$T/o3" > rep3.tsv 2> err3.txt < /dev/null ); rc=$?
+    [ "$rc" = 2 ] || red "a copy value that is neither folder nor root exits $rc, want the refusal 2"
+    [ ! -s "$T/rep3.tsv" ] || red "the package with a malformed copy key still ran a test"
+    mkdir -p "$P/S1"; printf "        INPUT(.F, 5, '../packages/helper.txt') :F(NO)\n        OUTPUT = 'the package copy reads ' F :(END)\nNO      OUTPUT = 'absent'\nEND\n" > "$P/S1/a.sno"
+    printf "        INPUT(.F, 5, 'packages/helper.txt') :F(NO)\n        OUTPUT = 'from the top ' F :(END)\nNO      OUTPUT = 'absent'\nEND\n" > "$C/S1/t.sno"
+    ( cd "$C" && find . -type f -exec md5sum {} + | sort -k2 ) > "$T/before.txt"
+    printf '%s\n' 'entry,path,timeout_s' 'a,S1/a.sno,' 'b,S1/b.sno,' > "$P/ALL.csv"
+    printf 'root\t%s\norigin\tprobe\nversion\tprobe\nlicence\tpublic domain\ncopy\troot\n' "$C" > "$P/ALL.source"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-files "$P" --out "$T/o4" --work "$T/w4" > rep4.tsv 2> err4.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] || red "the switch with a program the package holds under copy root exits $rc ($(head -1 "$T/err4.txt" | cut -c1-120))"
+    want "$T/rep4.tsv" a EXIT 0 && same "$T/o4/a.out" 'the package copy reads helper line' "a (the package's own program wins and runs in the collection's copy)"
+    printf '%s\n' 'entry,path,timeout_s' 't,S1/t.sno,' 'a,S1/a.sno,' > "$P/ALL.csv"
+    printf 'root\t%s\norigin\tprobe\nversion\tprobe\nlicence\tpublic domain\ncopy\troot\ncwd\troot\n' "$C" > "$P/ALL.source"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-files "$P" --out "$T/o5" --work "$T/w5" > rep5.tsv 2> err5.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] || red "the switch under cwd root exits $rc ($(head -1 "$T/err5.txt" | cut -c1-120))"
+    want "$T/rep5.tsv" t EXIT 0 && same "$T/o5/t.out" 'from the top helper line' "t (cwd root: the test runs from the top of the copy)"
+    want "$T/rep5.tsv" a EXIT 0 && same "$T/o5/a.out" 'absent' "a (cwd root: a path relative to the program's folder is not found from the top)"
+    ( cd "$C" && find . -type f -exec md5sum {} + | sort -k2 ) > "$T/after.txt"
+    cmp -s "$T/before.txt" "$T/after.txt" || red "the collection changed under the overlay or the cwd root run: $(diff "$T/before.txt" "$T/after.txt" | head -2 | tr '\n' ' ')"
+    printf 'root\t%s\norigin\tprobe\nversion\tprobe\nlicence\tpublic domain\ncwd\troot\n' "$C" > "$P/ALL.source"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$P" --out "$T/o6" > rep6.tsv 2> err6.txt < /dev/null ); rc=$?
+    [ "$rc" = 2 ] || red "cwd root without copy root exits $rc, want the refusal 2"
+    verdict "copy root puts the whole collection in the scratch copy once, a program reaches the folder beside its own, its folder is restored, the collection is byte-identical after, copy folder is the folder alone, a program the package holds runs in the copy, cwd root runs from the top, another word and cwd root without copy root refuse"
+}
+
+step18() {   # a source file that fails to parse fails the run wherever it stands among several files (CTO-591, on the cio's EXIT 0 after a parse error)
+    need_scrip
+    local F rc1 rc2; F="$(bash -c ". '$HERE/lib_oracle_flags.sh' 2>/dev/null; fpc_bin" 2>/dev/null)"
+    [ -n "$F" ] && [ -x "$F" ] || refuse "no fpc oracle"
+    printf 'program good;\nbegin\n  writeln(7)\nend.\n' > "$T/good.pas"; printf 'program bad;\nbegin\n  writeln(7\nend.\n' > "$T/bad.pas"
+    ( cd "$T" && timeout -k 5 60 "$F" -Miso bad.pas > fpc.txt 2>&1 < /dev/null ) && refuse "fpc accepts the malformed witness"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run good.pas < /dev/null > g.out 2> g.err ) || refuse "scrip does not run the good witness alone"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run bad.pas good.pas < /dev/null > o1.txt 2> e1.txt ); rc1=$?
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run good.pas bad.pas < /dev/null > o2.txt 2> e2.txt ); rc2=$?
+    [ "$rc1" = 1 ] || red "the malformed file first exits $rc1, want 1"
+    [ "$rc2" = 1 ] || red "the malformed file second exits $rc2, want 1"
+    [ ! -s "$T/o2.txt" ] || red "the run with a file that did not parse still printed '$(head -c 40 "$T/o2.txt" | tr '\n' '|')'"
+    grep -q "parse failed for 'bad.pas'" "$T/e2.txt" 2>/dev/null || red "the refusal does not name the file that did not parse"
+    verdict "a Pascal file fpc refuses fails the run with exit 1 in either position, nothing runs, the file is named"
+}
+
 
 case "$N" in
-    1) step1 ;; 2) step2 ;; 3) step3 ;; 4) step4 ;; 5) step5 ;; 6) step6 ;; 7) step7 ;; 8) step8 ;; 9) step9 ;; 10) step10 ;; 11) step11 ;; 12) step12 ;; 13) step13 ;; 14) step14 ;; 15) step15 ;;
-    *) refuse "no step $N (1..15)" ;;
+    1) step1 ;; 2) step2 ;; 3) step3 ;; 4) step4 ;; 5) step5 ;; 6) step6 ;; 7) step7 ;; 8) step8 ;; 9) step9 ;; 10) step10 ;; 11) step11 ;; 12) step12 ;; 13) step13 ;; 14) step14 ;; 15) step15 ;; 16) step16 ;; 17) step17 ;; 18) step18 ;;
+    *) refuse "no step $N (1..18)" ;;
 esac

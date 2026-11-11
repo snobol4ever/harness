@@ -1,0 +1,2 @@
+:- import append/3 from basics.
+:- append([a],[b],L), writeln(L).
