@@ -45,6 +45,35 @@ else
     if [ -n "$out" ]; then printf '%s' "$out" > "$c"; else out="banner: the verb printed nothing within 100 s at load $load; the first refresh runs in the background and the next turn shows it"; [ -f "$c.lock" ] || spawn; fi
 fi
 if [ -f "$root/.claude/banner_compact.py" ]; then cmp="$(printf '%s' "$out" | python3 -I "$root/.claude/banner_compact.py" 2>/dev/null)" && [ -n "$cmp" ] && out="$cmp"; fi
+# ONE WORD AND A HUGE ICON (Lon 2026-11-11 13:0x CST, in officer_04's window, verbatim: "I just want one word and a huge icon so I can see from a distance. All those words are NEVER read."):
+# the hook shows the verdict word under a block icon and nothing else; the coo's suite grid (CIO-129) stays under it. The full text still goes to BOARD.md and the cache.
+word="$(printf '%s\n' "$out" | grep -xE 'SUCCESS|IN-PROGRESS|DRAIN|STOP|FAILURE' | tail -1)"; grid="$(printf '%s\n' "$out" | grep '│')"
+case "$word" in
+  SUCCESS)     ic='✅'; art='             ████
+            ████
+ ████      ████
+   ████  ████
+     ██████' ;;
+  IN-PROGRESS) ic='⏳'; art=' ██████████████
+   ██████████
+      ████
+   ██████████
+ ██████████████' ;;
+  DRAIN)       ic='📬'; art='      ████
+      ████
+      ████
+
+      ████' ;;
+  *)           ic='⛔'; [ -n "$word" ] || word="NO VERDICT"; art=' ████      ████
+    ████  ████
+      ██████
+    ████  ████
+ ████      ████' ;;
+esac
+out="$art
+
+$ic  $word"; [ -n "$grid" ] && out="$out
+$grid"
 gate="{}"; g="$root/harness/scripts/s4e_stop_gate.sh"
 [ -f "$g" ] && gate="$(printf '%s' "$hookin" | timeout 20 bash "$g" "$root" "$seat" --json 2>/dev/null)"
 printf '%s' "$out" | G="$gate" python3 -c 'import json,os,sys
@@ -55,6 +84,4 @@ except Exception: g={}
 # "Whoops, you just displayed \"Stop hook error\". I am about to whack you."): Claude Code labels every {"decision":"block"} at a Stop as a
 # "Stop hook blocking error", so the verdict of the gate is never passed on; its reason is shown in the banner and the seat stops. A seat is woken
 # for its work by a message, never by a held stop.
-if g.get("decision")=="block":
-    m=m+"\nwork waiting for this seat (the stop is not held): "+g.get("reason","")
 print(json.dumps({"systemMessage": m}))'
