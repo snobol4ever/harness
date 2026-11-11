@@ -71,10 +71,19 @@ refuse_case prose "$(printf 'PREMISE-WHEN: the premise holds')"
 bus recut "recut-probe-no-such-$$" --stdin < <(printf '%s\n' "$new") > "$w/out_unknown" 2>&1 && why="$why an unknown topic was accepted;"
 cmp -s "$b" "$w/after.task.md" || why="$why an unknown topic changed the baton;"
 [ ! -d "$po/.mint.lock" ] || why="$why a refusal left the mint lock held;"
+
+# 5. a baton whose ## NEXT repeats the criterion (the mint writes it twice): the header alone is re-cut rc 0, the NEXT line unchanged
+t2="$t-next"; b2="$po/tasks/$t2.task.md"
+printf '4\t%s\tprobe_owner\tRETIRED:criterion-refused-3-sweeps-probe\n' "$t2" >> "$po/QUEUE.tsv"
+printf '# TASK %s\nGOAL: plant\nDONE-WHEN: no-such-command-recut-probe --arg\nLINKS: minted via `mint` by probe_owner, %s\n## NEXT\nprobe\nDONE-WHEN: no-such-command-recut-probe --arg\n## QA\n## LEDGER\n- [probe_owner] minted\n' "$t2" "$now" > "$b2"
+printf 'DONE-WHEN: %s\n' "$new2" | bus recut "$t2" --stdin > "$w/out_next" 2>&1; rc5=$?
+[ "$rc5" = 0 ] || why="$why a baton whose NEXT repeats the DONE-WHEN was refused rc $rc5 ($(tail -1 "$w/out_next"));"
+[ "$(sed '/^## NEXT/q' "$b2" | grep -cxF "DONE-WHEN: $new2")" = 1 ] || why="$why the header DONE-WHEN was not re-cut;"
+[ "$(sed -n '/^## NEXT/,$p' "$b2" | grep -cxF 'DONE-WHEN: no-such-command-recut-probe --arg')" = 1 ] || why="$why the NEXT DONE-WHEN line was touched;"
 [ -n "$why" ] || [ "$pw" = 1 ] || why="$why the premise path was not exercised;"
 
 if [ -z "$why" ]; then
-    echo "RECUT wrote DONE-WHEN-WAS premise_was=1 (probe: on a scratch postoffice a RETIRED plant row was re-cut three ways: a bare body re-cut the DONE-WHEN and kept its old text on DONE-WHEN-WAS above the new line; a labelled body re-cut both fields, each old text on its receipt with the WHY; a premise-only body re-cut the PREMISE-WHEN alone, its old text on PREMISE-WHEN-WAS. The row reopened to FREE and the LEDGER got its line; a body that changes neither field, a label that is not one of the three, a prose premise, the same DONE-WHEN text again and an unknown topic each refused with the baton byte-identical)"
+    echo "RECUT wrote DONE-WHEN-WAS premise_was=1 (probe: on a scratch postoffice a RETIRED plant row was re-cut three ways: a bare body re-cut the DONE-WHEN and kept its old text on DONE-WHEN-WAS above the new line; a labelled body re-cut both fields, each old text on its receipt with the WHY; a premise-only body re-cut the PREMISE-WHEN alone, its old text on PREMISE-WHEN-WAS. The row reopened to FREE and the LEDGER got its line; a baton whose ## NEXT repeats the criterion re-cuts its header alone and leaves the NEXT line; a body that changes neither field, a label that is not one of the three, a prose premise, the same DONE-WHEN text again and an unknown topic each refused with the baton byte-identical)"
     exit 0
 fi
 echo "RECUT PROBE RED:$why"

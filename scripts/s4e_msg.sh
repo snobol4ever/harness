@@ -2998,7 +2998,7 @@ s4e_recut_write() {   # <topic> --stdin  |  <topic> <body words...>
     _b="$PO/tasks/$_t.task.md"
     [ -f "$_b" ] || { printf '⛔ REFUSED (rc=2): no baton %s -- recut re-cuts a row that exists. Nothing written.\n' "$_b" >&2; return 2; }
     grep -qP "^[0-9]+\t\Q$_t\E\t" "$_q" 2>/dev/null || { printf '⛔ REFUSED (rc=2): no QUEUE.tsv row is named %s. Nothing written.\n' "$_t" >&2; return 2; }
-    _n="$(grep -c '^DONE-WHEN:' "$_b")"; _np="$(grep -c '^PREMISE-WHEN:' "$_b")"
+    _n="$(sed '/^## NEXT/q' "$_b" | grep -c '^DONE-WHEN:')"; _np="$(sed '/^## NEXT/q' "$_b" | grep -c '^PREMISE-WHEN:')"   # ⛔ THE HEADER ALONE (the baton's ## NEXT repeats the criterion; the cio 2026-11-10): counting the whole file refused every freshly minted row
     [ "$_n" = 1 ] || { printf '⛔ REFUSED (rc=2): %s carries %s DONE-WHEN: lines, not one; delete the one you do not mean, then recut. Nothing written.\n' "$_t" "$_n" >&2; return 2; }
     [ "$_np" -le 1 ] || { printf '⛔ REFUSED (rc=2): %s carries %s PREMISE-WHEN: lines, not one or none; delete the extra ones, then recut. Nothing written.\n' "$_t" "$_np" >&2; return 2; }
     while IFS= read -r _ln || [ -n "$_ln" ]; do
@@ -3058,14 +3058,15 @@ s4e_recut_write() {   # <topic> --stdin  |  <topic> <body words...>
     _rl="- [$ME·$(date -u +%F)] RE-CUT (box-scheduler step 27, CTO-496; fleet-queue recut-premise): DONE-WHEN $_dwnote, PREMISE-WHEN $_pwnote; why: $_whyshow; state ${_st:-none} -> ${_to:-none}.$_ndw"
     B_DW="$_dw" B_PW="$_pw" B_RPW="$_rpw" B_RDW="$_rdw" C_DW="$_chgdw" C_PW="$_chgpw" awk '
         function stop(l) { return (l ~ /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|DONE-WHEN-WAS|PREMISE-WHEN-WAS|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ || l ~ /^## /) }
-        BEGIN { skip = 0; dd = 0; pd = 0 }
+        BEGIN { skip = 0; dd = 0; pd = 0; hd = 0 }
         skip { if (stop($0)) skip = 0; else next }
-        /^DONE-WHEN:/ && !dd { dd = 1
+        /^## / { hd = 1 }   # ⛔ THE HEADER ENDS AT THE FIRST SECTION: a line the ## NEXT repeats is not the header criterion; only the first header line is replaced
+        /^DONE-WHEN:/ && !dd && !hd { dd = 1
             if (ENVIRON["B_RPW"] != "") print ENVIRON["B_RPW"]
             if (ENVIRON["B_RDW"] != "") print ENVIRON["B_RDW"]
             if (ENVIRON["C_DW"] == "1") { print "DONE-WHEN: " ENVIRON["B_DW"]; skip = 1 } else print
             next }
-        /^PREMISE-WHEN:/ && !pd { pd = 1
+        /^PREMISE-WHEN:/ && !pd && !hd { pd = 1
             if (ENVIRON["C_PW"] == "1") { print "PREMISE-WHEN: " ENVIRON["B_PW"]; skip = 1 } else print
             next }
         /^## / && !pd && ENVIRON["C_PW"] == "1" { pd = 1; print "PREMISE-WHEN: " ENVIRON["B_PW"]; print; next }
