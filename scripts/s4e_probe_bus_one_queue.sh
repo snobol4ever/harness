@@ -159,5 +159,17 @@ case "$N" in
     out="$(S4E_POST="$w" timeout -k 5 120 bash "$HERE/test_gate_queue_is_an_index.sh" 2>&1)"; rc=$?
     [ "$rc" = 0 ] || why="$why test_gate_queue_is_an_index.sh exited $rc on a file-road index [$(printf '%s' "$out" | grep -m1 '⛔' | cut -c1-110)];"
     verdict "index_gate=GREEN";;
+wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operating boss is named only when the boss is asleep (the cio as mover, seat-cto tube)
+    tw="$w/TIERS-wake.tsv"; { head -1 "$w/TIERS.tsv"; printf 'cio\tCIO\t/tmp\tclaude-fable-5-2\txhigh\tblue\t1\tboss\ncto\tCTO\t/tmp\tclaude-fable-5-2\txhigh\tblue\t1\tboss\ncoo\tCOO\t/tmp\tclaude-opus-5-5\txhigh\tblue\t2\tboss\n'; } > "$tw"
+    printf 'BOSSES: cio coo cto\n' >> "$w/MODE"
+    wk() { ( export S4E_POST="$w" S4E_TIERS="$tw" S4E_SEAT_SCOPES="$w/scopes" ME=cio; . "$HERE/lib_wake.sh"; s4e_wake_hint seat-cto "$1" queue | head -1 ); }
+    rm -rf "$w/scopes"; mkdir -p "$w/scopes"; live_claude cio >/dev/null; live_claude cto >/dev/null
+    lv="$(wk wake-live-boss-live)"; ls_="$(printf '%s\n' "$lv" | sed -n 's/^WAKE: SendMessage to .* now (seat \([^;]*\);.*/\1/p')"
+    rm -rf "$w/scopes/s4e-seat-cto.scope"
+    as="$(wk wake-live-boss-asleep)"; as_="$(printf '%s\n' "$as" | sed -n 's/^WAKE: SendMessage to .* now (seat \([^;]*\);.*/\1/p')"
+    [ "$ls_" = cto ] || why="$why the live cto is not named (wake reads '${lv:-none}');"
+    [ "$as_" = coo ] || why="$why the asleep cto does not name the operating boss coo (wake reads '${as:-none}');"
+    if [ -z "$why" ]; then echo "WAKE_LIVE_BOSS live=$ls_ asleep=$as_"; exit 0; fi
+    echo "WAKE_LIVE_BOSS live=${ls_:-none} asleep=${as_:-none} RED:$why"; exit 1;;
 *) refuse "no step $N (1..9)";;
 esac
