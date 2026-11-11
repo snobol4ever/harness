@@ -5437,7 +5437,11 @@ TASKEOF
          _ul="$S4E/harness/scripts/util_unlanded_census.py"
          [ -f "$_ul" ] && timeout -k 5 20 python3 "$_ul" --seat "$ME" --fast 2>/dev/null | sed -n 's/^UNLANDED where=[^ ]* \(.*\)$/⛔ UNLANDED WORK in this seat: \1 -- land it, or reconcile it into its row (util_unlanded_census.py --seat '"$ME"' --fast --list)/p'
          _sb="$S4E/.github/scripts/util_suite_banner.py"
-         if [ "${S4E_BANNER_GRID:-1}" = 0 ]; then :
+         # ONLY THE COO'S BANNER CARRIES THE GRID (Lon 2026-11-11 10:4x CST, in the cto's window, verbatim: "Fix your stop hook banner to be status only, no test suite. COO will be the only one with
+         # the banner. It is just too big now for all the seats and one seat will do. The COO." / "Tell CIO to fix all the seats banners."; CIO-129; it narrows CIO-114). The default is the grid for the
+         # seat coo and status only for every other seat; S4E_BANNER_GRID=1 asks for the grid anywhere (the banner gate does) and 0 leaves it out anywhere.
+         _grid=0; [ "$ME" = coo ] && _grid=1
+         if [ "${S4E_BANNER_GRID:-$_grid}" = 0 ]; then :
          elif [ -f "$_sb" ]; then timeout -k 5 30 python3 "$_sb" || printf '%s\n' "⛔ SUITE GRID REFUSED (rc=$?) -- $_sb ran and did not render"
          else printf '%s\n' "⛔ SUITE GRID MISSING -- no $_sb"; fi
          { [ "$hrc" -eq 0 ] || [ "$onlyhere" -eq 0 ]; } && [ -z "$diverged" ] && exit 0 || exit 1;;
