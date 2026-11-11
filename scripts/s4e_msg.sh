@@ -1922,6 +1922,7 @@ s4e_claim_probe_overlap() {   # step 21's probe on a scratch postoffice: a notic
 s4e_lane_languages() { printf 'icon prolog snobol4 snocone pascal raku rebus'; }
 s4e_lane_owner_of_language() {
     # UNDER DUO THE CIO IS THE TESTING SEAT (Lon 2026-11-10 21:5x CST: "Go to DUET mode, CIO plus CTO, for DESIGN and ALL actions too, coding and testing."; CIO-112, CIO-115): the coo is stood down, so every language's lane is the cio's until Lon lifts DUO; the table moves before MODE's LANES line (CEO-1046).
+    # UNDER TRIO THE LANES ARE SPLIT BY LANGUAGE (Lon 2026-11-10 23:0x CST: "Go to TRIO mode. COO will also do DESIGN and any actions, coding and testing, which is needed."; CIO-116): icon, pascal and raku are the coo's; snobol4, prolog, snocone and rebus stay the cio's; one owner a language, so each of the two runs its own languages' boards.
     case "$1" in
       # ⛔ MODE DECTET (R-767, 2026-09-16, Lon: one HQ per language, four officers for the shared nodes): each
       # language's completeness AND speed owner is its HQ, named for the language; Rebus is closed and folded
@@ -2112,18 +2113,18 @@ s4e_lane_owner_of_language() {
       # seated as Opus 5.5 high. Go to TRIO mode. It is just you three overnight." and "Have COO find the test suite programs that need fixing and fix those immediately
       # between you and CFO and COO"; cto R-2116): every language's FREE rows route to the coo, the admin who finds and assigns (R-2095/2107; LANES: already names
       # the coo for every language); rebus leaves the removed the officer seat. The hq seats and their rows stay in place (R-755c). The TENET table is the one above this note.
-       icon)     printf 'cio';;
+       icon)     printf 'coo';;
        prolog)   printf 'cio';;
       # ⛔ REDUCED FLEET FOR THE SPINE CONVERSION (R-1827, 2026-10-18, Lon in-chat: "we should run a reduced fleet until things settle"; roster the officer coo hq_icon hq_prolog hq_zetas hq_dotnet hq_jvm): hq_snobol4 stands down, so SNOBOL4 routes to the officer, who assigns; hq_zetas is its hands for spine fallout meanwhile. The table moves BEFORE the MODE file (R-1046).
        snobol4)  printf 'cio';;
       # ⛔⭐ MODE TENET WITH FIVE LANGUAGE HQs (R-1870, 2026-10-21 17:3x CDT, Lon in-chat, verbatim: "I'm starting HQ-PASCAL and HQ-RAKU as Sonnet 5.5 xhigh."): PASCAL to
       # hq_pascal, RAKU to hq_raku; snocone and rebus stay the officer's, who assigns. The two arms the officer for pascal and raku are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-       pascal)   printf 'cio';;
+       pascal)   printf 'coo';;
       # ⛔⭐ MODE TENET WITH SIX LANGUAGE HQs (R-1871, 2026-10-21 17:4x CDT, Lon in-chat, verbatim: "I started HQ-SONCONE. I want it to work on parser.sc programs completeness and
       # speed performance versus the SCRIP C parsers."): SNOCONE to hq_snocone; rebus stays the officer's. The arm the officer for snocone is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
        snocone)  printf 'cio';;
        rebus)    printf 'cio';;
-       raku)     printf 'cio';;
+       raku)     printf 'coo';;
     esac
 }
 # One line of prose for the `mint` refusal, DERIVED so it cannot drift from the arms above.
