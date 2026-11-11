@@ -322,6 +322,8 @@ def read_contract(pkg_dir):
             out["not_shipped"] = f[1].strip()
         elif f[0] == "unmarked_compile_args" and f[1].startswith("--dialect="):
             out["unmarked_compile_args"] = f[1].strip()
+        elif f[0] == "road" and f[1] == "run-files":
+            pass   # the cycle's own key (s4e_cycle.sh road_flag): the package is run by the package switch; the builder cuts the same answers either way
         elif f[0] == "stdin":
             if not (pkg_dir / f[1]).is_file(): h.refuse(f"{cf}:{n}: stdin {f[1]!r} names no file beside the package (every entry with no stem-named stdin of its own would read it)")
             out["stdin"] = f[1].strip()

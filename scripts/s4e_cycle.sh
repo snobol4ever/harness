@@ -62,13 +62,25 @@ suite_on_disk() {   # dir alls -> 0 when the launch can read a suite there
     if [ -f "$d/MULTI.md" ] || [ -f "$d/ONE.${a##*.}" ]; then return 0; fi
     [ -f "$d/ALL.csv" ] && head -1 "$d/ALL.csv" | tr -d '\r' | tr ',' '\n' | grep -qx path
 }
+# THE ROAD OF A PACKAGE IS ITS OWN DECLARATION (the coo 2026-11-11, row cycle-a-package-whose-contract-names-the-run-files-road-is-run-by-the-package-switch-fpc-first;
+# run-switches step 12, CIO-118): a package in the files form whose CONTRACT.tsv carries the row road<TAB>run-files<TAB>evidence is run by the package
+# switch (the launch takes --run-files: mode 3 in one scrip process, graded from its OUT directory); no row is the per-process road. The row is written
+# only after the package read equal entry for entry on both roads; the evidence names that reading. The switch runs mode 3, so the flag needs m3.
+road_flag() {   # dir -> prints --run-files when the package declares that road
+    local d="$1"
+    [ -f "$d/CONTRACT.tsv" ] && [ -f "$d/ALL.csv" ] || return 0
+    case ",${S4E_MODES:-m3}," in *,m3,*) ;; *) return 0;; esac
+    head -1 "$d/ALL.csv" | tr -d '\r' | tr ',' '\n' | grep -qx path || return 0
+    awk -F'\t' '!/^#/ && $1 == "road" && $2 == "run-files" && $3 != "" {f = 1} END {exit !f}' "$d/CONTRACT.tsv" && printf '%s' --run-files
+    return 0
+}
 run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23:0x, in the coo's window, verbatim: "We want ONE UNIFIED test suite system. The same ALL.tsv files etc. Same layout in corpus. Same script. Same spec on attributes and environment." / "Get those deleted and get to work with a complete test suite system."): every cell, master or pkg, is corpus_suite_harness.py run over the suite's container ALL.<ext> and ALL.ref; a suite without one refuses rc 2, named, until its container is built
     local key="$1" kind="$2" lang="$3" dir="$4" cell="$5" ttr alls rc t0 out
     ttr="$(budget "$key" "$cell")"; [ -n "$ttr" ] || ttr=3600
     out="$TMPDIR/cycle/$key.$cell.log"; t0=$(date +%s)
     alls="$dir/ALL.$(ext_of "$lang")"
     if ! suite_on_disk "$dir" "$alls"; then echo "REFUSE(2): no suite in $dir: no container ($alls and ALL.ref), no format 2 (MULTI.md or ONE.$(ext_of "$lang")), no files form (a path column in ALL.csv) -- the unified layout is owed (util_build_package_suite.py)" > "$out"; echo "2 0"; return 2; fi
-    ( cd "$S4E" && SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" ) > "$out" 2>&1 < /dev/null; rc=$?
+    ( cd "$S4E" && SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" $(road_flag "$dir") ) > "$out" 2>&1 < /dev/null; rc=$?
     echo "$rc $(( $(date +%s) - t0 ))"
 }
 # THE TEST REQUESTS (the cio 2026-11-10, row bus-one-queue-the-grading-tube-retires-the-cycle-serves-the-test-requests-itself, CIO-82; the grade tube,
@@ -87,7 +99,7 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     IFS=$'\t' read -r kind lang dir <<< "$row"; [ "$kind" = master ] && dir="$S4E/corpus/tests/$lang" || dir="$S4E/$dir"
     alls="$dir/ALL.$(ext_of "$lang")"
     ttr="$(budget "$key" "entry:$ents")"; [ -n "$ttr" ] || ttr=1800
-    ( cd "$S4E" && SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" ) > "$out" 2>&1 < /dev/null; rc=$?
+    ( cd "$S4E" && SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" $(road_flag "$dir") ) > "$out" 2>&1 < /dev/null; rc=$?
     [ "$kind" = master ] && record_suite "$lang"; [ "$kind" = pkg ] && record_pkg "$key"
     echo "$rc $(( $(date +%s) - t0 ))"; }
 finish_request() {   # name rc secs: the file lands in done/ with its per-entry verdicts and one served= line
