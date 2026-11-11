@@ -51,12 +51,23 @@ cells() {   # one line per cell: key kind lang dir cell (dir: the suite's contai
 budget() { python3 -I "$S4E/harness/scripts/util_grade_job.py" budget --suite "$1" --cell "$2" 2>/dev/null | sed -n 's/.* ttr_s=\([0-9]*\).*/\1/p' | head -1; }
 container_key() { case "$1" in snobol4) echo sno-rungs;; icon) echo icn-rungs;; prolog) echo pl-rungs;; pascal) echo pas-rungs;; raku) echo raku-rungs;; snocone) echo snc-rungs;; rebus) echo reb-rungs;; esac; }
 ext_of() { case "$1" in snobol4) echo sno;; icon) echo icn;; prolog) echo pl;; pascal) echo pas;; raku) echo raku;; rebus) echo reb;; snocone) echo sc;; esac; }
+# A SUITE IS ON DISK IN ONE OF THREE FORMS, AND THE ONE LAUNCH READS ALL THREE UNDER THE SAME ALL.<ext> ALL.ref COMMAND LINE (the coo 2026-11-10, row
+# cycle-a-suite-in-format-2-or-the-files-form-is-run-not-refused-sno-rungs-refused-three-laps; fmt2_dir_of and pkg_dir_of of corpus_suite_harness.py):
+# the container (ALL.<ext> and ALL.ref), format 2 of a test folder (MULTI.md or ONE.<ext>, CIO-24), the files form of a package (a path column in
+# ALL.csv, CIO-59, CIO-113). MEASURED: testing for the container alone refused all 24 cells of the SNOBOL4 master in laps 12, 13 and 14 (format 2 since
+# 2026-11-10) and the cells of aisnobol and dotnet in lap 14 (the files form), each logged rc=2 secs=0.
+suite_on_disk() {   # dir alls -> 0 when the launch can read a suite there
+    local d="$1" a="$2"
+    if [ -f "$a" ] && [ -f "$d/ALL.ref" ]; then return 0; fi
+    if [ -f "$d/MULTI.md" ] || [ -f "$d/ONE.${a##*.}" ]; then return 0; fi
+    [ -f "$d/ALL.csv" ] && head -1 "$d/ALL.csv" | tr -d '\r' | tr ',' '\n' | grep -qx path
+}
 run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23:0x, in the coo's window, verbatim: "We want ONE UNIFIED test suite system. The same ALL.tsv files etc. Same layout in corpus. Same script. Same spec on attributes and environment." / "Get those deleted and get to work with a complete test suite system."): every cell, master or pkg, is corpus_suite_harness.py run over the suite's container ALL.<ext> and ALL.ref; a suite without one refuses rc 2, named, until its container is built
     local key="$1" kind="$2" lang="$3" dir="$4" cell="$5" ttr alls rc t0 out
     ttr="$(budget "$key" "$cell")"; [ -n "$ttr" ] || ttr=3600
     out="$TMPDIR/cycle/$key.$cell.log"; t0=$(date +%s)
     alls="$dir/ALL.$(ext_of "$lang")"
-    if [ ! -f "$alls" ] || [ ! -f "$dir/ALL.ref" ]; then echo "REFUSE(2): no container $alls and $dir/ALL.ref -- the unified layout is owed (util_build_package_suite.py)" > "$out"; echo "2 0"; return 2; fi
+    if ! suite_on_disk "$dir" "$alls"; then echo "REFUSE(2): no suite in $dir: no container ($alls and ALL.ref), no format 2 (MULTI.md or ONE.$(ext_of "$lang")), no files form (a path column in ALL.csv) -- the unified layout is owed (util_build_package_suite.py)" > "$out"; echo "2 0"; return 2; fi
     ( cd "$S4E" && SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" ) > "$out" 2>&1 < /dev/null; rc=$?
     echo "$rc $(( $(date +%s) - t0 ))"
 }
