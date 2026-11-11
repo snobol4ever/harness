@@ -24,6 +24,22 @@ WD="$ROOT/corpus/tests/icon/unicon"
 STEPS="$WD/STEPS.tsv"
 OUT="/tmp/s4e-design-unicon"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+# ⭐ A WITNESS IS A CONTAINER ENTRY WHERE THE ICON MASTER HAS ABSORBED IT (CIO-24 c, CIO-56; the coo 2026-11-11, row tests-layout-icon-subfolder-unicon-...):
+# witness NAME sets wdir, wsrc (bare) and wref -- the entry unicon__NAME extracted from corpus/tests/icon and staged under its own file name NAME.icn in
+# OUT/wit/NAME, else the loose pair in the folder (a witness that needs a companion file beside it stays loose until the companion option exists).
+witness() {
+    local name="$1" x="$OUT/wit/x" d="$OUT/wit/$1"
+    if design_witness_has icon "unicon__$name"; then
+        if [ ! -f "$d/$name.icn" ]; then
+            design_witness_extract icon "unicon__$name" "$x" > /dev/null 2>&1 || refuse "witness $name: its entry unicon__$name did not extract"
+            mkdir -p "$d" && cp "$x/unicon__$name.icn" "$d/$name.icn" && cp "$x/unicon__$name.ref" "$d/$name.ref" || refuse "witness $name: cannot stage its entry"
+        fi
+        wdir="$d"; wsrc="$name.icn"; wref="$d/$name.ref"
+    else
+        wdir="$WD"; wsrc="$name.icn"; wref="$WD/$name.ref"
+    fi
+}
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
 uq="$(python3 "$HERE/util_steps_unique.py" "$STEPS" 2>&1)" || refuse "STEPS.tsv numbers a step twice, renumber the later row: $uq"
 mode=""; step=""; smoke=0
@@ -44,7 +60,7 @@ done
 nm=$((do3 + do4)); [ "$nm" -gt 0 ] || refuse "S4E_MODES=${S4E_MODES:-} names no mode"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: unicon -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in $WD"
+    echo "DESIGN-PLAN: unicon -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1' "$STEPS" | wc -l) steps (STEPS.tsv in $WD); a witness is the entry unicon__<name> of the icon master, or a loose pair in the folder"
     printf '%-4s %-24s %-8s %-10s %s\n' step slug executor probe witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1 {print $1}' "$STEPS"); do
         printf '%-4s %-24s %-8s %-10s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 5)"
@@ -61,16 +77,16 @@ if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
 fi
 m3p=0; m4p=0; n=0; reds=""
 for w in $wits; do
-    n=$((n + 1)); src="$WD/$w.icn"; ref="$WD/$w.ref"; o="$OUT/step$step/$w"
-    [ -f "$src" ] && [ -f "$ref" ] || refuse "witness $w has no .icn or .ref in $WD"
+    n=$((n + 1)); witness "$w"; src="$wdir/$wsrc"; ref="$wref"; o="$OUT/step$step/$w"
+    [ -f "$src" ] && [ -f "$ref" ] || refuse "witness $w has no entry unicon__$w in corpus/tests/icon and no .icn and .ref in $WD"
     if [ "$do3" = 1 ]; then
-    ( cd "$WD" && timeout -k 5 60 "$SC/scrip" "$w.icn" < /dev/null > "$o.m3.out" 2> "$o.m3.err" ); rc=$?
+    ( cd "$wdir" && timeout -k 5 60 "$SC/scrip" "$w.icn" < /dev/null > "$o.m3.out" 2> "$o.m3.err" ); rc=$?
     if [ "$rc" = 0 ] && cmp -s "$o.m3.out" "$ref"; then m3p=$((m3p + 1)); else reds="$reds m3:$w(rc$rc)"; fi
     fi
     if [ "$do4" = 1 ]; then
-    if ( cd "$WD" && timeout -k 5 120 "$SC/scrip" --compile --out="$o.s" "$w.icn" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
+    if ( cd "$wdir" && timeout -k 5 120 "$SC/scrip" --compile --out="$o.s" "$w.icn" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
        && gcc -c "$o.s" -o "$o.o" 2> /dev/null && gcc "$o.o" -L"$SC/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$SC/out" -o "$o.bin" 2> /dev/null; then
-        ( cd "$WD" && timeout -k 5 60 "$o.bin" < /dev/null > "$o.m4.out" 2> "$o.m4.err" ); rc=$?
+        ( cd "$wdir" && timeout -k 5 60 "$o.bin" < /dev/null > "$o.m4.out" 2> "$o.m4.err" ); rc=$?
         if [ "$rc" = 0 ] && cmp -s "$o.m4.out" "$ref"; then m4p=$((m4p + 1)); else reds="$reds m4:$w(rc$rc)"; fi
     else reds="$reds m4:$w(no-build)"; fi
     fi
@@ -80,10 +96,11 @@ pv="witnesses=$((m3p + m4p))/$((nm * n))"; pr=RED
 f3="m3=$m3p/$n"; [ "$do3" = 1 ] || f3="m3=skip"; f4="m4=$m4p/$n"; [ "$do4" = 1 ] || f4="m4=skip"
 if [ "$probe" = markers ]; then
     pa=0; na=0
-    for f in "$WD"/uni_*.icn; do
+    for b in $( { for f in "$WD"/uni_*.icn; do [ -f "$f" ] && basename "$f" .icn; done; python3 "$HERE/corpus_suite_harness.py" list "$ROOT/corpus/tests/icon/ALL.icn" "$ROOT/corpus/tests/icon/ALL.ref" --lang icon 2> /dev/null | sed -n 's/^unicon__\(uni_.*\)$/\1/p'; } | LC_ALL=C sort -u); do
+        witness "$b"; f="$wdir/$wsrc"
         grep -qE '^[[:space:]]*(class|package|import)[[:space:]]' "$f" || continue
-        na=$((na + 1)); b="$(basename "$f" .icn)"
-        if ( cd "$WD" && timeout -k 5 60 "$SC/scrip" --dump-ast "$b.icn" < /dev/null > "$OUT/step$step/$b.ast" 2> "$OUT/step$step/$b.ast.err" ); then pa=$((pa + 1)); else reds="$reds ast:$b"; fi
+        na=$((na + 1))
+        if ( cd "$wdir" && timeout -k 5 60 "$SC/scrip" --dump-ast "$b.icn" < /dev/null > "$OUT/step$step/$b.ast" 2> "$OUT/step$step/$b.ast.err" ); then pa=$((pa + 1)); else reds="$reds ast:$b"; fi
     done
     pv="$pv marker-parses=$pa/$na"; [ "$pa" = "$na" ] || pr=RED
 fi
