@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_icon_scanning_asm_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: icon-scanning-asm (the cto, 2026-10-28, R-1996/1998;
-# .github/ARCH-ICON-RTX.md section 11). The plan is corpus/tests/icon/scanning_asm/STEPS.tsv; the witnesses are the .icn programs beside
-# it, each with a .ref cut from Arizona Icon (icont -s, the binary's stdout).
+# .github/ARCH-ICON-RTX.md section 11). The plan is harness/designs/scanning_asm/STEPS.tsv; a witness is the entry
+# scanning_asm__NAME of the icon master (corpus/tests/icon), its answer cut from Arizona Icon (icont -s, the binary's stdout).
 #
 #   --list       print the steps and run nothing
 #   --step N     grade step N: every witness in mode 3 and mode 4 (the declared -d131072k -s4096k, stdout compared exactly with the ref), then
@@ -22,12 +22,24 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/icon/scanning_asm"
 BENCH="$ROOT/corpus/benchmarks/icon"
-STEPS="$WD/STEPS.tsv"
+STEPS="$HERE/../designs/scanning_asm/STEPS.tsv"   # moved from corpus/tests/icon/scanning_asm (the coo 2026-11-11, CIO-56: a language folder is its container and config alone)
 OUT=""
 SUITES=/home/resources/progress/SUITES.tsv
 ICONT=/home/resources/icon-master/bin/icont
 ALLF="rt_scan_enter rt_scan_leave rt_scan_sync_in rt_scan_sync_out rt_scan_live_subj rt_scan_reenter_live rt_scan_needle rt_icn_cset_bits_d rt_icn_cset_member_n rt_keyword_var rt_substr"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+# ⭐ A WITNESS IS A CONTAINER ENTRY WHERE THE ICON MASTER HAS ABSORBED IT (CIO-24 c, CIO-56; the coo 2026-11-11, as harness 60db1415 did for planner_finish):
+# witness NAME sets wsrc and wref -- the entry scanning_asm__NAME extracted from corpus/tests/icon into OUT/wit, else the loose pair in the old folder.
+witness() {
+    local name="$1" d="$OUT/wit"
+    if design_witness_has icon "scanning_asm__$name"; then
+        [ -f "$d/scanning_asm__$name.icn" ] || design_witness_extract icon "scanning_asm__$name" "$d" > /dev/null 2>&1 || refuse "witness $name: its entry scanning_asm__$name did not extract"
+        wsrc="$d/scanning_asm__$name.icn"; wref="$d/scanning_asm__$name.ref"
+    else
+        wsrc="$WD/$name.icn"; wref="$WD/$name.ref"
+    fi
+}
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
 mode=""; step=""
 while [ $# -gt 0 ]; do
@@ -43,7 +55,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default icon_scanning_asm; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: icon-scanning-asm -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/icon/scanning_asm (refs from Arizona Icon)"
+    echo "DESIGN-PLAN: icon-scanning-asm -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/scanning_asm/STEPS.tsv); a witness is the entry scanning_asm__<name> of the icon master (refs from Arizona Icon)"
     printf '%-4s %-48s %-11s %-11s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-48s %-11s %-11s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -54,6 +66,7 @@ if [ "$mode" = cut ]; then
     [ -x "$ICONT" ] || refuse "no icont at $ICONT (ORACLES.md: the Icon oracle)"
     T="$(mktemp -d "${TMPDIR:-/tmp}/icnscan_cut.XXXXXX")"
     for w in $(awk -F'\t' '!/^#/ && $1 != "step" && $6 != "-" {print $6}' "$STEPS" | tr ' ' '\n' | sort -u); do
+        [ -f "$WD/$w.icn" ] || { echo "cut $w: the witness is the entry scanning_asm__$w of the icon master; its answer is the master's, re-cut by util_add_ladder_witness.py"; continue; }
         ( cd "$T" && "$ICONT" -s -o "$T/$w.ix" "$WD/$w.icn" > "$T/$w.cerr" 2>&1 && timeout -k 5 120 "$T/$w.ix" < /dev/null > "$WD/$w.ref" 2> /dev/null ); echo "cut $w.ref: $(wc -l < "$WD/$w.ref") lines$(grep -q . "$T/$w.cerr" && echo ' (ICONT COMPLAINED: read the log)')"
     done
     rm -rf "$T"; exit 0
@@ -69,11 +82,11 @@ fi
 m3p=0; m4p=0; n=0; reds=""
 [ "$wits" = "-" ] && wits=""
 for w in $wits; do
-    ref="$WD/$w.ref"
-    [ -f "$WD/$w.icn" ] && [ -f "$ref" ] || refuse "witness $w has no .icn or .ref in $WD"
+    witness "$w"; ref="$wref"
+    [ -f "$wsrc" ] && [ -f "$ref" ] || refuse "witness $w has no entry scanning_asm__$w in corpus/tests/icon and no .icn and .ref in $WD"
     n=$((n + 1))
     for m in m3 $([ "${S4E_MODE4:-0}" = 1 ] && echo m4); do
-        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WD/$w.icn" "$d/$w.icn"
+        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$wsrc" "$d/$w.icn"
         if [ "$m" = m3 ]; then
             ( cd "$d" && timeout -k 5 120 "$SC/scrip" -d131072k -s4096k "$w.icn" < /dev/null > "$d/out" 2> "$d/err" ); rc=$?
         else
@@ -87,7 +100,8 @@ for w in $wits; do
 done
 census() { # $1 space-separated function names -> the emitted call count over the benchmarks and is00_kw, mode 4
     local pat; pat="$(printf '%s' "$1" | sed 's/ /|/g')"; local c=0 t; local d="$OUT/step$step/census"; mkdir -p "$d"
-    for f in "$BENCH"/*.icn "$WD/is00_kw.icn"; do
+    witness is00_kw
+    for f in "$BENCH"/*.icn "$wsrc"; do
         ( cd "$d" && timeout -k 2 120 "$SC/scrip" --compile --out="$d/x.s" "$f" < /dev/null > /dev/null 2>&1 ) || { echo "REFUSED"; return; }
         t="$(grep -cE "call[[:space:]]+(qword ptr \[rip \+ )?($pat)\b" "$d/x.s")"; c=$((c + t))
     done
@@ -102,7 +116,7 @@ for tok in $probe; do
                 [ "$c" = REFUSED ] && refuse "a benchmark did not compile for the census"; readings="$readings census[${val%%:*}]=$c(at_most $lim)"; [ "$c" -le "$lim" ] || pgreen=0 ;;
         witcensus) fl="${val%%:*}"; lim="${val##*:}"; fl="${fl//,/ }"; c=0
                 # the census is over the step's FIRST witness (its census witness: one write is its only by-name call); the other witnesses of the row are equality guards, and every one of them prints through write
-                for w in ${wits%% *}; do ( cd "$OUT/step$step" && timeout -k 2 120 "$SC/scrip" --compile --out="$OUT/step$step/w.s" "$WD/$w.icn" < /dev/null > /dev/null 2>&1 ) || refuse "witness $w did not compile for the census"
+                for w in ${wits%% *}; do ( cd "$OUT/step$step" && timeout -k 2 120 "$SC/scrip" --compile --out="$OUT/step$step/w.s" "$(witness "$w"; echo "$wsrc")" < /dev/null > /dev/null 2>&1 ) || refuse "witness $w did not compile for the census"
                     t="$(grep -cE "call[[:space:]]+(qword ptr \[rip \+ )?($(printf '%s' "$fl" | sed 's/ /|/g'))\b" "$OUT/step$step/w.s")"; c=$((c + t)); done
                 readings="$readings witcensus[${val%%:*}]=$c(at_most $lim)"; [ "$c" -le "$lim" ] || pgreen=0 ;;
         nosym) bad=0; for s in ${val//,/ }; do grep -rqw "$s" "$SC/src/runtime" && bad=$((bad + 1)); done; readings="$readings nosym_present=$bad"; [ "$bad" = 0 ] || pgreen=0 ;;
