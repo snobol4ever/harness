@@ -6,7 +6,12 @@ test whose latest mode-3 reading in the progress store is FAIL, CRASH, HANG or O
 reduced to a SIGNATURE: how it ended (exit code, signal, timeout), the first line of its standard error with numbers, addresses, quoted text and
 paths blanked, or, with an empty standard error, how its output first differs from the answer (nothing printed; shorter; first differing line).
 Tests with one signature are one GROUP: one cause to find, one row to cut.
-Writes DIR/SUITE.groups.tsv (count, signature, up to five tests) and DIR/SUITE.tests.tsv (test, signature); prints RED_CENSUS suite=K failing=N
+A signature that is one general message hides many causes (253 Pascal tests say only: parse error, syntax error), so each test also gets a
+DETAIL: the same first line with its quoted text KEPT (the identifier that has no defining-point, the method and the type), or, for a
+message that names a source line (parse error line N; FILE:N:N: syntax error), the first word or operator of that source line that the
+language's standard does not hold (class, operator, +=, a typed constant), else the line's first word. One (signature, detail) is a SUBGROUP.
+Writes DIR/SUITE.groups.tsv (count, signature, up to five tests), DIR/SUITE.subgroups.tsv (count, signature, detail, up to five tests) and
+DIR/SUITE.tests.tsv (test, signature, detail); prints RED_CENSUS suite=K failing=N
 ran=N groups=G largest=M covered_by_top_ten=P%. rc 0; rc 2 refused (no such suite, not on the package switch, no binary). Reads the corpus and
 writes only under DIR and its scratch folder. A program ALL.omit names is no entry of the package (the builder ships it ungraded) and is
 never counted or run, whatever an old reading of it says."""
@@ -28,6 +33,32 @@ def norm(s):
     return re.sub(r"\s+", " ", s).strip()[:140]
 
 
+def normq(s):
+    s = re.sub(r"/[^\s:'\"]+", "PATH", s)
+    s = re.sub(r"0x[0-9a-fA-F]+", "ADDR", s)
+    s = re.sub(r"\b\d+\b", "N", s)
+    return re.sub(r"\s+", " ", s).strip()[:160]
+
+
+BEYOND = {"pascal": ("class object generic specialize operator property interface implementation try except finally raise absolute inline overload cdecl stdcall external out threadvar resourcestring exports library asm bitpacked helper strict private public protected published constref initialization finalization uses unit inherited virtual override abstract constructor destructor message static assembler safecall export deprecated platform varargs alias interrupt dynamic reintroduce sealed enumerator is as on xor shl shr exit break continue result self".split(), [r"\+=", r"-=", r"\*=", r"/=", r"\*\*", r"<<", r">>", r"><", r"\$[0-9A-Fa-f]+", r"%[01]+", r"&[0-7]+", r"#\$?[0-9A-Fa-f]+", r"//", r"\{\$\w+", r"@", r":\s*[\w.]+\s*=", r"\(\s*\."])}
+
+
+def line_detail(lang, src, n):
+    try: lines = open(src, "rb").read().decode("utf-8", "replace").split("\n")
+    except OSError: return ""
+    words, pats = BEYOND.get(lang, ((), ()))
+    for k in (n, n - 1):
+        if not 1 <= k <= len(lines): continue
+        ln = lines[k - 1]
+        low = ln.lower()
+        hits = [(m.start(), m.group(0)) for w in words for m in re.finditer(r"(?<![\w$#&%])" + re.escape(w) + r"(?!\w)", low)]
+        hits += [(m.start(), "the form " + pt.replace("\\", "")) for pt in pats for m in re.finditer(pt, ln)]
+        if hits: return "at the source line: " + min(hits)[1]
+    k = n if 1 <= n <= len(lines) else 0
+    w = re.findall(r"[A-Za-z_][\w-]*|\S", lines[k - 1]) if k else []
+    return "at the source line: first word " + (w[0].lower() if w else "(none)")
+
+
 def main(argv):
     if not argv: refuse("usage: util_red_census.py SUITE-KEY [--out DIR] [--limit N]")
     key = argv[0]
@@ -47,6 +78,12 @@ def main(argv):
     om = os.path.join(d, "ALL.omit")
     omitted = {l.split(": ", 1)[0] for l in open(om, "rb").read().decode("utf-8", "replace").split("\n") if l.strip() and not l.startswith("#") and ": " in l} if os.path.isfile(om) else set()
     path_of = {r["entry"]: r["path"] for r in rows if r["entry"] not in omitted}
+    sr = os.path.join(d, "ALL.source")
+    src_root = next((l.rstrip("\n").split("\t", 1)[1] for l in open(sr, encoding="utf-8") if l.startswith("root\t")), None) if os.path.isfile(sr) else None
+    lang = row[2]
+    def src_of(n):
+        own = os.path.join(d, path_of[n])
+        return own if os.path.isfile(own) or not src_root else os.path.join(src_root, path_of[n])
     last = {}
     with open("/home/resources/progress/results.tsv", encoding="utf-8", errors="replace") as f:
         for l in f:
@@ -69,7 +106,7 @@ def main(argv):
     for l in r.stdout.decode("utf-8", "replace").split("\n"):
         c = l.split("\t")
         if len(c) == 6: rep[c[0]] = (c[1], c[2])
-    sig_of = {}
+    sig_of = {}; det_of = {}
     for n in failing:
         typ, num = rep.get(n, ("NO-REPORT", ""))
         nm = n.replace("/", "_")
@@ -90,6 +127,8 @@ def main(argv):
                 k = next((i for i, (a, b) in enumerate(zip(g, w)) if a != b), min(len(g), len(w)))
                 what = f"output differs: {'stops early' if k >= len(g) else 'prints more' if k >= len(w) else 'first at a line of ' + ('the first three' if k < 3 else 'the body')}"
         sig_of[n] = f"{end} | {what}"
+        m = re.search(r"\bline (\d+)\b|:(\d+):\d+: ", e1) if e1 else None
+        det_of[n] = (line_detail(lang, src_of(n), int(m.group(1) or m.group(2))) if m else "") or (normq(e1) if e1 else "")
     groups = collections.defaultdict(list)
     for n, s in sig_of.items(): groups[s].append(n)
     os.makedirs(out, exist_ok=True)
@@ -97,10 +136,15 @@ def main(argv):
     with open(os.path.join(out, key + ".groups.tsv"), "w", encoding="utf-8") as f:
         f.write(f"# RED CENSUS of {key}: count\tsignature\tup to five tests\n")
         for s, ns in order: f.write(f"{len(ns)}\t{s}\t{' '.join(ns[:5])}\n")
+    sub = collections.defaultdict(list)
+    for n in failing: sub[(sig_of[n], det_of[n])].append(n)
+    with open(os.path.join(out, key + ".subgroups.tsv"), "w", encoding="utf-8") as f:
+        f.write(f"# RED CENSUS of {key}: count\tsignature\tdetail\tup to five tests\n")
+        for (s, dt), ns in sorted(sub.items(), key=lambda kv: -len(kv[1])): f.write(f"{len(ns)}\t{s}\t{dt}\t{' '.join(ns[:5])}\n")
     with open(os.path.join(out, key + ".tests.tsv"), "w", encoding="utf-8") as f:
-        for n in failing: f.write(f"{n}\t{sig_of[n]}\n")
+        for n in failing: f.write(f"{n}\t{sig_of[n]}\t{det_of[n]}\n")
     top = sum(len(ns) for _, ns in order[:10])
-    print(f"RED_CENSUS suite={key} failing={len(failing)} ran={len(rep)} groups={len(groups)} largest={len(order[0][1])} covered_by_top_ten={100 * top // len(failing)}%")
+    print(f"RED_CENSUS suite={key} failing={len(failing)} ran={len(rep)} groups={len(groups)} subgroups={len(sub)} largest={len(order[0][1])} covered_by_top_ten={100 * top // len(failing)}%")
     return 0
 
 
