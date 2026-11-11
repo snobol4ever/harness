@@ -90,12 +90,12 @@ fi
 
 # ── ARM 3: the two structural cures are still in place. ⭐ THIS IS WHAT MAKES ARM 1 SAFE: ignoring a name is
 # only defensible while nothing automated writes it, so the gate pins the cures rather than trusting them. ──
-RUNGS="$REPO/../harness/scripts/test_icon_all_rungs.sh"; ARIZ="$REPO/../harness/scripts/test_icon_arizona_suite.sh"
+RUNGS="$REPO/../harness/scripts/test_icon_all_rungs.sh"; GRADER="$REPO/../harness/scripts/corpus_suite_harness.py"
 CURES=0; LOST=""
 if [ -r "$RUNGS" ]; then CURES=$((CURES+1)); grep -q 'tdir="\$ICN_SCRATCH"' "$RUNGS" || LOST="$LOST test_icon_all_rungs(scratch-cwd)"; fi
-if [ -r "$ARIZ" ];  then CURES=$((CURES+1)); grep -q 'PRESNAP_FILE' "$ARIZ" && grep -q 'rm -f -- "\$PKG/\$new"' "$ARIZ" || LOST="$LOST test_icon_arizona_suite(snapshot-cleanup)"; fi
+if [ -r "$GRADER" ]; then CURES=$((CURES+1)); grep -q 'with tempfile.TemporaryDirectory(dir=tmp_root) as td:' "$GRADER" || LOST="$LOST corpus_suite_harness(run_suite_entry-tempdir)"; fi
 if [ "$CURES" -lt 2 ]; then
-    echo "⛔ REFUSES rc=2: found $CURES of 2 Icon suite runners -- cannot say whether the tree is still protected."
+    echo "⛔ REFUSES rc=2: found $CURES of 2 Icon writers (test_icon_all_rungs.sh and the one grader) -- cannot say whether the tree is still protected."
     echo "   A renamed or absent runner is not evidence that nothing writes into the tree."
     exit 2
 fi
@@ -105,7 +105,7 @@ if [ -n "$LOST" ]; then
     echo "        Restore the cure, or stop ignoring the names -- but never neither."
     FAIL=1
 else
-    echo "  ✅ arm 3: both Icon suites still keep their writes out of the source tree"
+    echo "  ✅ arm 3: the rungs runner and the one grader still keep their writes out of the source tree"
 fi
 
 # ── REPORTED: residue present but ignored. Not a failure -- a human's hand run is a mess, not a defect. ────
