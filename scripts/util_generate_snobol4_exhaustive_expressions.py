@@ -124,12 +124,12 @@ def main():
             report_lines.append(f"INFRA-FAIL {name}: scrip_err={got_err} oracle_err={want_err}")
             continue
         graded += 1
-        if got.rstrip("\n") != want.rstrip("\n"):
-            diverged.append((name, src, got, want))
+        if got.rstrip("\n") != want.rstrip("\n") or got_rc != want_rc:
+            diverged.append((name, src, got, want, got_rc, want_rc))
 
-    for name, src, got, want in diverged:
+    for name, src, got, want, got_rc, want_rc in diverged:
         (out_dir / f"{name}.ref").write_text(want)
-        line = f"DIVERGE {name}: src={src!r} scrip={got!r} oracle={want!r}"
+        line = f"DIVERGE {name}: src={src!r} scrip={got!r} oracle={want!r} scrip_rc={got_rc} oracle_rc={want_rc}"
         print(f"  {line}")
         report_lines.append(line)
 
