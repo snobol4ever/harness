@@ -23,7 +23,7 @@ ROOT = os.environ.get("S4E_HOME") or os.path.dirname(os.path.dirname(os.path.abs
 PO = os.environ.get("S4E_POSTOFFICE") or os.environ.get("S4E_POST") or "/home/resources/postoffice"
 PROG = "/home/resources/progress"
 U = "/sys/fs/cgroup/user.slice/user-%d.slice/user@%d.service" % (os.getuid(), os.getuid())
-GRADER = U + "/s4e.slice/s4e-grader.slice"
+GRADER = next((p for p in (U + "/app.slice/app-s4e.slice/app-s4e-grader.slice", U + "/s4e.slice/s4e-grader.slice") if os.path.isfile(p + "/cpu.pressure")), U + "/s4e.slice/s4e-grader.slice")   # the grader seat's runs enter app-s4e-grader.slice (util_mem_scope seat_slice); the class slice stood empty and read 0.0, so W rose on a hot box (cio 2026-11-11)
 SEATS_SLICE = U + "/s4e.slice/s4e-seats.slice"
 DRY = os.environ.get("S4E_TICK_DRY") == "1"
 TICK_DIR = os.environ.get("S4E_TICK_DIR") or ("/tmp/s4e/%s/tick" % os.environ.get("S4E_SEAT", "cio"))

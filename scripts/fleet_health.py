@@ -13,7 +13,7 @@
 import os, re, sys, glob, time, subprocess, json
 S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 PO = os.environ.get("S4E_POST", "/home/resources/postoffice"); P = os.environ.get("S4E_PROGRESS", "/home/resources/progress")
-V = os.environ.get("S4E_BOX_S", "/home/claude_coo/.scratch/verifier"); TIERS = os.environ.get("S4E_TIERS", S4E + "/.github/TIERS.tsv")
+V = os.environ.get("S4E_BOX_S", "/home/claude_coo/.scratch/verifier"); T = os.environ.get("S4E_TICK_DIR", "/tmp/s4e/cio/tick"); TIERS = os.environ.get("S4E_TIERS", S4E + "/.github/TIERS.tsv")
 W = 64   # column width of one quadrant (the seats line with asleep counts runs to 63)
 SLEEPING = os.path.join(V, "sleeping")   # one seat per line; util_suite_row_owner_census.py's sleepers() reads the same file
 
@@ -53,8 +53,12 @@ def tube_stats(names):   # bus-one-queue: a tube's ready count is the QUEUE.tsv 
     for t in names: out[t] = (col.count("QUEUED:" + t), held.count(t), 0, 0)
     return out
 
+def cap(rel):
+    m = rd("/sys/fs/cgroup/user.slice/user-%d.slice/user@%d.service%s/cpu.max" % (os.getuid(), os.getuid(), rel)).split()
+    return "none" if not m or m[0] == "max" else "%d%%" % (int(m[0]) * 100 // int(m[1]))
+
 def live_sessions():
-    try: ps = subprocess.run(["pgrep", "-af", "^claude --name "], capture_output=True, text=True, timeout=5).stdout
+    try: ps = subprocess.run(["pgrep", "-af", "(^|/)claude --name "], capture_output=True, text=True, timeout=5).stdout
     except Exception: return set()
     return {m.group(1).lower() for m in re.finditer(r"claude --name ([A-Za-z_0-9-]+)", ps)} | {m.group(1).lower().replace("-", "_") for m in re.finditer(r"claude --name ([A-Za-z_0-9-]+)", ps)}
 
@@ -80,14 +84,14 @@ def box():
     st = kv(rd(P + "/BOX.state")); a10, a60, a300 = psi()
     try: load = os.getloadavg()
     except OSError: load = (None, None, None)
-    n = os.cpu_count() or 16; busy = num(st.get("busy")); width = rd(V + "/box.width").strip() or st.get("grader_width", "?")
-    dec = rd(V + "/decide.last"); q = re.search(r"ACTUATOR sessions quota=(\d+)", dec); jt = re.search(r"ACTUATOR jobserver tokens=(\d+)", dec)
+    n = os.cpu_count() or 16; busy = num(st.get("busy")); width = rd(T + "/box.width").strip() or st.get("grader_width", "?")
+    dec = rd(T + "/decide.last"); q = re.search(r"ACTUATOR sessions quota=(\d+)", dec); jt = re.search(r"ACTUATOR jobserver tokens=(\d+)", dec)
     mem = num(st.get("memavail_mb")); tmo = st.get("timeouts10", st.get("timeouts30", "?"))
     verdict = "RED" if (a60 or 0) >= 50 or (load[0] or 0) >= 2 * n else "WARN" if (a60 or 0) >= 30 or (load[0] or 0) >= n else "OK"
     return "THE BOX", verdict, [
         "load1 %s load5 %s on %d cores, busy %s" % (fmt(load[0]), fmt(load[1]), n, fmt(busy)),
         "cpu pressure some avg10 %s avg60 %s avg300 %s" % (fmt(a10), fmt(a60), fmt(a300)),
-        "law: grader width %s, sessions quota %s%%, jobserver %s tokens" % (width, q.group(1) if q else "?", jt.group(1) if jt else "?"),
+        "law: grader width %s, caps: seats %s, runs %s, s4e %s" % (width, cap("/s4e.slice/s4e-seats.slice"), cap("/app.slice/app-s4e.slice"), cap("/s4e.slice")),
         "memory free %s MB, timeouts %s, BOX.state age %ss" % (fmt(mem, 0), tmo, fmt(time.time() - os.path.getmtime(P + "/BOX.state"), 0) if os.path.exists(P + "/BOX.state") else "?"),
         "controller %s, tick timer %s" % ("alive" if subprocess.run(["systemctl", "--user", "is-active", "-q", "s4e-tick.timer"], capture_output=True).returncode == 0 else "DOWN",
                                             subprocess.run(["systemctl", "--user", "is-active", "-q", "s4e-tick.timer"], capture_output=True).returncode == 0 and "active" or "inactive"),
