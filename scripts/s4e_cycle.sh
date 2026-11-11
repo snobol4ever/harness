@@ -95,10 +95,10 @@ road_flag() {   # dir -> prints --run-files when the package declares that road
 # cut), so until each is converted (rows cycle-the-seven-demos-rows... and cycle-the-seven-bench-ref-rows..., CIO-22 F) its cell is the row's own
 # runner under one run slot, asked not to write the suite row where it takes --no-write: it appends its progress rows and the cycle records the row
 # from them in S4E_MODES like every other. The cap is a small multiple of the cell's last graded seconds (Lon 2026-11-05: a cap scales with the
-# expected time), 1800 for a cell never graded. THIS ARM GOES when no row of the table is kind small.
-small_budget() {   # key -> seconds: five times the last graded seconds of the cell, at least 300, at most 3600; 1800 with no reading
+# expected time), 3600 for a cell never graded (MEASURED 2026-11-11 09:18 by the coo's hand run: the Prolog demos, both modes, stood at 4 of 8 after 14 minutes on a box at CPU pressure 32, and the Pascal bench passed 600 s). THIS ARM GOES when no row of the table is kind small.
+small_budget() {   # key -> seconds: five times the last graded seconds of the cell, at least 300, at most 3600; 3600 with no reading
     local s; s="$(awk -F'\t' -v k="$1" '$1 == k && $2 == "all" {print $3; exit}' "$ORDERF" 2>/dev/null)"
-    case "$s" in ''|*[!0-9]*) echo 1800; return;; esac
+    case "$s" in ''|*[!0-9]*) echo 3600; return;; esac
     s=$(( s * 5 )); [ "$s" -lt 300 ] && s=300; [ "$s" -gt 3600 ] && s=3600; echo "$s"
 }
 run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23:0x, in the coo's window, verbatim: "We want ONE UNIFIED test suite system. The same ALL.tsv files etc. Same layout in corpus. Same script. Same spec on attributes and environment." / "Get those deleted and get to work with a complete test suite system."): every cell, master or pkg, is corpus_suite_harness.py run over the suite's container ALL.<ext> and ALL.ref; a suite without one refuses rc 2, named, until its container is built

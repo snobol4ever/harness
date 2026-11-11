@@ -11,7 +11,7 @@
 #      no runner (-), a row of kind none and a port row give no cell
 #   2  the cell runs the row's runner with the row's words and returns the runner's own exit status (1 here: a red is a red)
 #   3  a runner that takes --no-write is asked not to write the suite row (the cycle records it from the progress rows); one that does not is run bare
-#   4  the cap is five times the cell's last graded seconds, at least 300, at most 3600, and 1800 for a cell never graded
+#   4  the cap is five times the cell's last graded seconds, at least 300, at most 3600, and 3600 for a cell never graded
 # EXIT: 0 all arms pass, 1 an arm failed (or the script lists no small cell), 2 REFUSED (no script, no scratch directory).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -42,7 +42,7 @@ else
     [ "$a2" = "one two --no-write" ] && [ "$a3" = "
 ." ] && [ "${g3%% *}" = 0 ] && ck ok "(3) a runner that takes --no-write is asked not to write the row; one that does not is run bare" || ck no "(3) the first saw [$a2], the second saw [$a3] and answered [$g3]"
     g4="$(ask 'small_budget s1; small_budget s3; small_budget big; small_budget never' | tr '\n' ' ')"
-    [ "$g4" = "500 300 3600 1800 " ] && ck ok "(4) the cap is five times the last graded seconds, at least 300, at most 3600, 1800 with no reading" || ck no "(4) read [$g4]"
+    [ "$g4" = "500 300 3600 3600 " ] && ck ok "(4) the cap is five times the last graded seconds, at least 300, at most 3600, 3600 with no reading" || ck no "(4) read [$g4]"
 fi
 echo "CYCLE_SMALL_BOARD arms=4 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
 [ "$fail" = 0 ] && [ "$pass" = 4 ] && { echo "GATE OK [$NAME]: a small row is one cell of the lap, run by its runner"; exit 0; }
