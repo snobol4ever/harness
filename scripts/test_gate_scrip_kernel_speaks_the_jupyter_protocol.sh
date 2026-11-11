@@ -250,8 +250,9 @@ try:
             if kc.stdin_channel.msg_ready():
                 r = kc.get_stdin_msg(timeout=5)
                 if r["parent_header"].get("msg_id") == mid and r["msg_type"] == "input_request":
-                    while kc.iopub_channel.msg_ready():   # what was published before the request is read before the answer is sent
-                        m = kc.get_iopub_msg(timeout=5)
+                    while True:   # what was published before the request is read before the answer is sent: the kernel is waiting, so whatever arrives now was published before it asked.
+                        try: m = kc.get_iopub_msg(timeout=2)   # the two sockets deliver apart, so the broadcast is read until it is quiet, never by what happens to be ready
+                        except Exception: break
                         if m["parent_header"].get("msg_id") == mid and m["msg_type"] == "stream" and m["content"]["name"] == "stdout": out += m["content"]["text"]
                     asked.append((r["content"], out)); kc.input(left.pop(0) if left else "")
                 continue
@@ -412,7 +413,7 @@ def under_server():
     bad_ = []
     if not all(n in specs and "logo-svg" in specs[n].get("resources", {}) for n in said): bad_.append("the server lists %r" % sorted(specs))
     if sorted(c1) != ["6\n", "ok"]: bad_.append("the first cell %r" % (c1,))
-    if c2[:3] != ["name?\n", "input_request", "hello Lon 5\n"] or "ok" not in c2: bad_.append("the reading cell %r" % (c2,))
+    if sorted(c2[:2]) != ["input_request", "name?\n"] or c2[2:3] != ["hello Lon 5\n"] or "ok" not in c2: bad_.append("the reading cell %r" % (c2,))   # the server relays the two channels apart: the prompt and the request may arrive in either order, the answer after both
     if ["text/html", "text/plain"] not in c3 or "ok" not in c3: bad_.append("the display cell %r" % (c3,))
     if ver != "5.5": bad_.append("kernel_info reads %r" % ver)
     if "Traceback" in open(logp).read(): bad_.append("the server's log holds a traceback (%s)" % logp)
