@@ -48,6 +48,17 @@ cells() {   # one line per cell: key kind lang dir cell (dir: the suite's contai
             close(f)
         }' "$RUNNERS" | sort -t "$(printf '\t')" -k1,1n -k2,2n -k7,7 | cut -f3-
 }
+# THE LONGEST CELLS RUN FIRST (the coo 2026-11-11, COO-510; MEASURED on CYCLE.log: laps 13, 14 and 15 took 3.3, 3.7 and over 4.1 hours while the sum of
+# their cells over the width of four is 2.5, 3.1 and 2.5 hours, because the table's order puts XSB's two-hour cells near the end and the lap's last
+# 70 to 100 minutes ran three cells on a box with one reading in thirty minutes): a lap's cells are ordered by the seconds each took the last time it
+# graded (rc 0 or 1), longest first; a cell with no reading yet (a new suite, a new chunk) runs before every known one; ties keep the table's order.
+# The order is FROZEN for the lap in CYCLE.order, written at the lap's start, so a restart in the middle of a lap reads the same list and its index
+# names the same cell.
+ORDERF="$PROG/CYCLE.order"
+order_write() { awk '$2 == "CELL" && $7 != "rc=2" { v = $8; sub(/^secs=/, "", v); s[$5 "\t" $6] = v } END { for (k in s) print k "\t" s[k] }' "$LOG" 2>/dev/null > "$ORDERF.tmp" && mv "$ORDERF.tmp" "$ORDERF"; }
+order_cells() {   # stdin: the cells in the table's order; stdout: the lap's order
+    awk -F'\t' -v OF="$ORDERF" 'BEGIN { while ((getline l < OF) > 0) { split(l, a, "\t"); s[a[1] "\t" a[2]] = a[3] } } { k = $1 "\t" $5; printf "%d\t%d\t%s\n", ((k in s) ? s[k] : 99999999), NR, $0 }' | sort -t "$(printf '\t')" -k1,1nr -k2,2n | cut -f3-
+}
 budget() { python3 -I "$S4E/harness/scripts/util_grade_job.py" budget --suite "$1" --cell "$2" 2>/dev/null | sed -n 's/.* ttr_s=\([0-9]*\).*/\1/p' | head -1; }
 container_key() { case "$1" in snobol4) echo sno-rungs;; icon) echo icn-rungs;; prolog) echo pl-rungs;; pascal) echo pas-rungs;; raku) echo raku-rungs;; snocone) echo snc-rungs;; rebus) echo reb-rungs;; esac; }
 ext_of() { case "$1" in snobol4) echo sno;; icon) echo icn;; prolog) echo pl;; pascal) echo pas;; raku) echo raku;; rebus) echo reb;; snocone) echo sc;; esac; }
@@ -160,7 +171,7 @@ lap_start() {
         exec bash "$SELF" ${MODE_ARG:+"$MODE_ARG"}
     fi
 }
-if [ "$MODE_ARG" = --list ]; then cells; echo "CELLS $(cells | wc -l)"; exit 0; fi
+if [ "$MODE_ARG" = --list ]; then cells | order_cells; echo "CELLS $(cells | wc -l)"; exit 0; fi
 { [ "${BASH_VERSINFO[0]}" -gt 5 ] || { [ "${BASH_VERSINFO[0]}" -eq 5 ] && [ "${BASH_VERSINFO[1]}" -ge 1 ]; }; } || { echo "REFUSE(2) [cycle]: bash ${BASH_VERSION} has no wait -n -p (5.1 or newer; the rolling pool needs it)"; exit 2; }
 if [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF" 2>/dev/null)" 2>/dev/null && [ "$(cat "$PIDF")" != "$$" ]; then echo "REFUSE(2) [cycle]: already running as pid $(cat "$PIDF")"; exit 2; fi
 echo $$ > "$PIDF"
@@ -175,9 +186,9 @@ if [ "$st" = running ] && [ -n "$ps" ]; then
     log "CRASH lap=$lap idx=$idx $ps $pc killed the cycle, count=$n"
     if [ "$n" -ge 3 ]; then printf '%s\t%s\t%s\tskipped after %s deaths\n' "$(now)" "$ps" "$pc" "$n" >> "$SKIP"; log "SKIP $ps $pc for good (three deaths)"; fi
 fi
-if [ "$MODE_ARG" = --next ]; then IFS=$'\t' read -r key kind lang dir cell <<< "$(cells | sed -n "$(( idx + 1 ))p")"; echo "NEXT lap=$lap idx=$idx cell=$key $cell"; exit 0; fi
+if [ "$MODE_ARG" = --next ]; then IFS=$'\t' read -r key kind lang dir cell <<< "$(cells | order_cells | sed -n "$(( idx + 1 ))p")"; echo "NEXT lap=$lap idx=$idx cell=$key $cell"; exit 0; fi
 while :; do
-    mapfile -t ALL < <(cells); total=${#ALL[@]}
+    mapfile -t ALL < <(cells | order_cells); total=${#ALL[@]}
     [ "$total" -gt 0 ] || { log "REFUSED: no cells (SUITE_RUNNERS.tsv or the partitions unreadable)"; exit 2; }
     if [ "$idx" -eq 0 ] || [ "$idx" -ge "$total" ]; then
         [ "$idx" -ge "$total" ] && [ "$lap" -gt 0 ] && log "LAP $lap done cells=$total"
@@ -185,7 +196,8 @@ while :; do
         cp "${S4E_RESULTS:-/home/resources/progress/results.tsv}" "$TMPDIR/cycle/lap.$lap.results" 2>/dev/null; rm -f "$TMPDIR/cycle/lap.$(( lap - 2 )).results"   # the lap's own copy: its end tells the new reds against it
         # THE LAP'S CELLS ARE READ FROM THE TREE IT GRADES, after the sync (the cio 2026-11-10: the list was read before lap_start, so a
         # partition landed between two laps ran one lap on the old cell names, and a chunk the new table no longer has refused rc 2).
-        mapfile -t ALL < <(cells); total=${#ALL[@]}
+        order_write
+        mapfile -t ALL < <(cells | order_cells); total=${#ALL[@]}
         [ "$total" -gt 0 ] || { log "REFUSED: no cells after the sync (SUITE_RUNNERS.tsv or the partitions unreadable)"; exit 2; }
     fi
     # THE WIDTH (the cio, 2026-11-08 10:4x CST; MEASURED: 20 cells in 1579 s one at a time, 78 s a cell, a lap of 190 cells 250 min, at load 8 on 16 cores
