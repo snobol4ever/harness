@@ -28,6 +28,7 @@
 *	src/templates/x86/
 *	src/templates/xa/
 *	src/lower/lower_common.c
+*	src/lower/lower_common.h
 *	src/lower/lower_call_forms.c
 *	src/ir/call_forms.h
 *	src/lower/g_lower.h
@@ -99,18 +100,24 @@ lang:snobol4	src/parsers/snobol4/
 lang:snobol4	src/lower/lower_snobol4.c
 lang:snobol4	src/lower/lower_snobol4.h
 lang:snobol4	src/lower/tree_to_sno.c
+lang:snobol4	src/templates/bb/bb_match_trap.cpp
 lang:snocone	src/parsers/snocone/
 lang:snocone	src/lower/lower_snobol4.c
 lang:snocone	src/lower/lower_snocone.c
+lang:snocone	src/lower/lower_snocone.h
 lang:rebus	src/parsers/rebus/
 lang:rebus	src/lower/lower_rebus.c
 lang:rebus	src/lower/lower_rebus.h
 lang:icon	src/parsers/icon/
 lang:icon	src/lower/lower_icon.c
 lang:icon	src/lower/lower_icon_class.c
+lang:icon	src/lower/lower_icon.h
+lang:icon	src/templates/bb/bb_match_casmark.cpp
 lang:prolog	src/parsers/prolog/
 lang:prolog	src/lower/lower_prolog.c
 lang:prolog	src/lower/lower_prolog_chr.c
+lang:prolog	src/lower/lower_prolog.h
+lang:prolog	src/lower/lower_prolog_chr.h
 lang:prolog	src/lower/pl_arith_names.h
 lang:prolog	src/lower/pl_control_names.h
 lang:prolog	src/lower/pl_aggregate_names.h
@@ -122,6 +129,7 @@ lang:prolog	src/templates/bb/bb_cleanup.cpp
 lang:prolog	src/templates/bb/bb_table_hdr.cpp
 lang:raku	src/parsers/raku/
 lang:raku	src/lower/lower_raku.c
+lang:raku	src/lower/lower_raku.h
 lang:pascal	src/parsers/pascal/
 lang:pascal	src/lower/lower_pascal.c
 lang:pascal	src/lower/lower_pascal_tree.c
@@ -130,6 +138,9 @@ lang:pascal	src/lower/lower_pascal_class.c
 lang:pascal	src/lower/lower_pascal_class.h
 lang:pascal	src/lower/lower_pascal_generics.c
 lang:pascal	src/lower/lower_pascal_generics.h
+lang:pascal	src/lower/lower_pascal.h
+lang:pascal	src/lower/lower_pascal_types.c
+lang:pascal	src/lower/lower_pascal_types.h
 lang:pascal	src/runtime/pas_xr.c
 # a column several languages share, carried by ONE language's lowerer, is qualified <lang>:<column> on each lowerer: an unqualified
 # row on lower_icon.c selected Raku's and Pascal's while on every Icon lowerer landing (the coo 2026-10-11, the first verifier batch)
