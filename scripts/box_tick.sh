@@ -132,6 +132,10 @@ leases() {   # fleet-queue step 5: a RESERVED claim whose job reads ready (the h
     out=$(S4E_NO_BANNER=1 timeout 60 bash "$ROOT/harness/scripts/s4e_msg.sh" expire "$t" 2>&1 < /dev/null) || continue
     printf '%s %s\n' "$(date '+%F %T')" "$(printf '%s' "$out" | tail -1 | cut -c1-200)" >> "$TICK_DIR/leases.log"
   done; return 0; }
+flush_claims() {   # bus-flush-2 (the cio's order 2026-11-11: the tick flushes every pass): s4e_msg.sh flush archives the dead claims; its last line lands in flush.log; it never fails the tick
+  local out
+  out=$(S4E_NO_BANNER=1 timeout 60 bash "$ROOT/harness/scripts/s4e_msg.sh" flush 2>&1 < /dev/null) || true
+  printf '%s %s\n' "$(date '+%F %T')" "$(printf '%s' "$out" | tail -1 | cut -c1-200)" >> "$TICK_DIR/flush.log"; return 0; }
 view_stamp() {   # the view's inputs (the coo's ruling, row tick-costs-13-to-20-s-cpu): the nanosecond mtimes of tasks/ and claims/, and every row state of the queue file (a queue, a claim or a done moves it); QUEUE.tsv is regenerated only when this moved
   printf '%s|%s' "$(stat -c '%.9Y' "$PO/tasks" "$PO/claims" 2>/dev/null | tr '\n' ' ')" "$(cut -f2,4 "$PO/QUEUE.tsv" 2>/dev/null | md5sum | cut -c1-32)"; }   # bus-one-queue: the tubes are the file's state column
 dry_sense() {   # S4E_TICK_DRY=1: sense() is skipped and its globals are planted at the cool arm plant() already uses, so a probe reads a quiet tick with no 2 s sample
@@ -164,7 +168,7 @@ tick() {
     elif vst=$(view_stamp) && python3 "$ROOT/harness/scripts/util_queue_view.py" --regenerate > "$TICK_DIR/view.last" 2>&1; then printf '%s' "$vst" > "$TICK_DIR/view.stamp"; view=regenerated
     else view=failed; fi
   else view=kept; fi
-  if [ "${S4E_TICK_DRY:-0}" != 1 ]; then wake > /dev/null; leases; fi   # fleet-queue step 11 and step 5; step 4e's scale; the dry probe plants no seat, expires no claim, starts no unit
+  if [ "${S4E_TICK_DRY:-0}" != 1 ]; then wake > /dev/null; leases; flush_claims; fi   # fleet-queue step 11 and step 5; step 4e's scale; the dry probe plants no seat, expires no claim, starts no unit
   if [ $(( tkn % ${S4E_PLANT_EVERY:-10} )) -eq 0 ]; then   # the plant sweep is a self-test: every tenth tick only, the others carry the last reading
     swp_out=$(timeout 300 bash "$ROOT/harness/scripts/s4e_msg.sh" sweep --plant-green 2>&1 < /dev/null); rc_s=$?
     printf '%s\n' "$swp_out" | tail -20 > "$TICK_DIR/sweep.last"; sweep=ran
