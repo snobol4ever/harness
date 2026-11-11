@@ -1446,6 +1446,21 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
             v.masked_lines = masked_n
             return v
         got, exp = _vl, _ref1
+    # ⭐ tap (COO-509, the coo 2026-11-11): a program that speaks the Test Anything Protocol is graded on its TESTS, not on its bytes. MEASURED on
+    # the roast, rakudo 2026.05 run twice on 477 files: 30 exit 0 both times with different bytes, every difference inside a test's description
+    # (a memory address, the order of a hash's keys). Both streams are reduced to their top-level skeleton: the plan line, and for each test line
+    # its number and ok or not ok; a TODO test keeps only its number (the oracle's not ok # TODO and an ok # TODO are both no failure, CTO-514
+    # ruling 4 (iii)); a SKIP is kept as one. Descriptions, diagnostics, subtest lines and every other line are not compared. An answer with no
+    # test line and no plan has no skeleton and is compared byte for byte, so the token never makes a silent answer pass.
+    _tap_first = None
+    if "tap" in _toks and exp is not None:
+        _sk_exp = tap_skeleton(exp)
+        if _sk_exp:
+            _sk_got = tap_skeleton(got)
+            _tap_first = next((f"test line {i + 1}: the oracle has {a!r}, scrip has {b!r}" for i, (a, b) in enumerate(zip(_sk_exp, _sk_got)) if a != b), None) \
+                or (f"scrip wrote {len(_sk_got)} of the oracle's {len(_sk_exp)} plan and test lines; the first missing is {_sk_exp[len(_sk_got)]!r}" if len(_sk_got) < len(_sk_exp)
+                    else (f"scrip wrote {len(_sk_got) - len(_sk_exp)} plan or test line(s) the oracle did not; the first is {_sk_got[len(_sk_exp)]!r}" if len(_sk_got) > len(_sk_exp) else None))
+            got, exp = "\n".join(_sk_got), "\n".join(_sk_exp)
     def _norm(t):
         out = []
         for ln in t.split("\n"):
@@ -1468,9 +1483,48 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     oom = _oom_verdict(out, err, rc, masked_n)
     if oom is not None:
         return oom
-    v = Verdict("FAIL", out, err, rc, detail="output mismatch" if exp is not None else "no expected text")
+    v = Verdict("FAIL", out, err, rc, detail=("tap: " + _tap_first) if _tap_first else ("output mismatch" if exp is not None else "no expected text"))
     v.masked_lines = masked_n
     return v
+
+
+TAP_TEST_RX = re.compile(r"^(not ok|ok)\b[ \t]*(\d*)(.*)$")
+TAP_PLAN_RX = re.compile(r"^1\.\.(\d+)(.*)$")
+TAP_DIRECTIVE_RX = re.compile(r"(?<!\\)#\s*(TODO|SKIP)", re.I)
+
+
+def tap_skeleton(text):
+    """The top-level Test Anything Protocol skeleton of a stream -> a list: "1..N" (with " # SKIP" for a skipped plan), "ok K", "not ok K",
+    "K # TODO" (either verdict), "ok K # SKIP", "Bail out!"; every other line, an indented subtest line included, is left out."""
+    sk = []
+    for ln in text.split("\n"):
+        m = TAP_TEST_RX.match(ln)
+        if m:
+            d = TAP_DIRECTIVE_RX.search(m.group(3))
+            kind = d.group(1).upper() if d else ""
+            sk.append(f"{m.group(2)} # TODO" if kind == "TODO" else f"{m.group(1)} {m.group(2)}" + (" # SKIP" if kind == "SKIP" else ""))
+            continue
+        m = TAP_PLAN_RX.match(ln)
+        if m:
+            sk.append(f"1..{m.group(1)}" + (" # SKIP" if re.search(r"#\s*skip", m.group(2), re.I) else ""))
+        elif ln.startswith("Bail out!"):
+            sk.append("Bail out!")
+    return sk
+
+
+def tap_compare_probe():
+    """--probe-tap-compare: the compare token tap on five planted answers -> TAP_COMPARE_PROBE description=PASS todo=PASS verdict=FAIL missing=FAIL
+    silent=FAIL, rc 0; another word in a cell and rc 1."""
+    ref = "1..3\nok 1 - at Block|111\nnot ok 2 - later # TODO not yet\n    ok 1 - inside a subtest\nok 3 - done"
+    arms = (("description", "1..3\nok 1 - at Block|222\nnot ok 2 - other words # TODO x\nok 3 - done differently", ref),
+            ("todo", "1..3\nok 1\nok 2 # TODO passes here\nok 3", ref),
+            ("verdict", "1..3\nok 1\nnot ok 2 # TODO\nnot ok 3 - done", ref),
+            ("missing", "1..3\nok 1\nnot ok 2 # TODO", ref),
+            ("silent", "", "said without a test line"))
+    got = [(n, _grade_output(o.encode(), b"", 0, r, ws_blind="tap").kind) for n, o, r in arms]
+    want = {"description": "PASS", "todo": "PASS", "verdict": "FAIL", "missing": "FAIL", "silent": "FAIL"}
+    print("TAP_COMPARE_PROBE " + " ".join(f"{n}={v}" for n, v in got))
+    return 0 if all(want[n] == v for n, v in got) else 1
 
 
 def stdbuf_wrap(paths, argv):
@@ -6499,9 +6553,9 @@ def validate_compare_cell(raw, where):
         return False
     if v == "ignore-all-space":
         return True
-    if v and set(v.split("+")) <= {"fresh-vars", "error-context", "ignore-all-space", "verdict-line"}:
+    if v and set(v.split("+")) <= {"fresh-vars", "error-context", "ignore-all-space", "verdict-line", "tap"}:
         return v
-    refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell or a '+'-joined set of ignore-all-space, fresh-vars, error-context, verdict-line")
+    refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell or a '+'-joined set of ignore-all-space, fresh-vars, error-context, verdict-line, tap")
 
 
 def validate_stage_cell(raw, where):
@@ -7520,6 +7574,8 @@ def cmd_list(args):
 
 
 def main():
+    if sys.argv[1:] == ["--probe-tap-compare"]:
+        sys.exit(tap_compare_probe())
     if sys.argv[1:] == ["--probe-source"]:
         return source_probe()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
