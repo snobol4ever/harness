@@ -1928,7 +1928,7 @@ def cmd_from_progress(a):
         fh.readline()
         for line in fh:
             fl = line.rstrip("\n").split("\t")
-            if len(fl) < 10 or fl[5] != dbsuite or fl[8] not in ("m3", "m4"):
+            if len(fl) < 10 or fl[5] != dbsuite or fl[8] not in modes:
                 continue
             if fl[1].lower().endswith("-dirty"):
                 dirty_keys.add((fl[7], fl[8]))
