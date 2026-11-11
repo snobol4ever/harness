@@ -1467,7 +1467,7 @@ MINE_KEYS = ("root", "origin", "version", "licence")
 MINE_OPTIONAL = {"copy": ("root", "folder"), "cwd": ("root", "folder")}
 MINE_EXTS = {"raku": (".raku", ".p6", ".pl6", ".t", ".rakutest"), "pascal": (".pas", ".pp", ".p", ".lpr"), "icon": (".icn",), "prolog": (".pl", ".pro"),
              "snobol4": (".sno", ".spt", ".sbl")}
-MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl", "pascal": "fpc", "snobol4": "sbl"}
+MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl", "pascal": "fpc", "snobol4": "sbl", "icon": "unicon"}
 # PASCAL (the coo 2026-11-11, COO-508): fpc only compiles, so a Pascal program is run by fpc_oracle_run.sh (compile to a private folder, then run; exit 126 =
 # fpc refuses the source). The dialect is found by the census: the first mode of the ladder in which fpc compiles the program cut its answer and is
 # the row's dialect cell (SCRIP's own names: iso, fpc, objfpc, delphi, tp); --mine-dialects names another ladder (fpc alone for Free Pascal's own
@@ -1509,8 +1509,14 @@ def _mine_env_leak(out, work_home=b""):
             return k
     return "HOME" if (b"/mine_" in out and b"/home" in out) else None
 MINE_FLAGS = {"prolog": ("-q",), "snobol4": ("-bf",)}   # the oracle's own flags before the program's name: swipl -q and sbl -bf, as corpus_suite_harness.py resolve_oracle_bin gives them
-MINE_DIALECT = {"prolog": "swi"}   # the dialect cell of a mined row: the oracle that cut its answer (run-switches step 4; swipl answers, so SCRIP reads the program as SWI)
+MINE_DIALECT = {"prolog": "swi", "icon": "unicon"}   # the dialect cell of a mined row: the oracle that cut its answer (run-switches step 4; swipl answers, so SCRIP reads the program as SWI)
+# ICON, BY THE UNICON TRANSLATOR (the coo 2026-11-11, COO-516, for Unicon's uni tree; the grader MEASURED the same day that the fleet's icont refuses
+# text without semicolons, so the Icon arm of --mine is Unicon's: its translator reads both languages as the collections ship them). A program is
+# translated INSIDE the scratch copy of its own folder (unicon_oracle_run.sh --here), so a file it links from that folder is found; a row's dialect
+# cell is unicon. A file with no procedure main is a LIBRARY (_mine_one, the one verdict a pattern cannot give: it is an absence).
 MINE_STATIC = {
+    "icon": (("NEEDS-DISPLAY", r"(?m)^\s*import\s+gui\b|^\s*link\s+[^#\n]*\b(graphics|vidgets|vsetup|wopen|dialog|gpxop|gui)\b|\$include\s+\"(guih|keysyms)\.icn\"|\b(WOpen|WAttrib|WindowContents)\s*\(|&window\b|\bopen\s*\([^()]*,\s*\"[a-z]*g[a-z]*l?\"|^\s*class\s+\w+\s*:\s*(Dialog|Component)\b"),
+             ("NEEDS-NETWORK", r"\bopen\s*\([^()]*,\s*\"(n|na|nl|nu|nau|m|ms)\"|^\s*import\s+(net|http|mail)\b")),
     "pascal": (("LIBRARY", r"(?i)^\s*unit\s+\w+\s*;"),
                ("NEEDS-INPUT", r"(?i)\{\s*%INTERACTIVE"),
                ("NEEDS-NETWORK", r"(?i)\buses\b[^;]*\b(sockets|ssockets|fphttpclient|netdb|httpdefs)\b"),
@@ -1579,6 +1585,10 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=()):
             argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "fpc_oracle_run.sh"), *flags, name]
             with open(sin, "rb") as fin:
                 pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
+        elif lang == "icon":
+            argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "unicon_oracle_run.sh"), "--here", name]
+            with open(sin, "rb") as fin:
+                pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
         elif lang == "prolog" and "--xsb" in flags:
             goal = "consult('" + str(name).replace("\\", "\\\\").replace("'", "\\'") + "'), halt."
             argv = ["bash", os.path.join(HERE, "util_oracle.sh"), "xsb", "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_XSB_FLAGS, "-e", goal]
@@ -1609,6 +1619,8 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None):
     src = root / rel
     at, name = (root, rel) if whole else (src.parent, src.name)
     text = src.read_text(errors="replace")
+    if lang == "icon" and not re.search(r"^\s*procedure\s+main\s*\(", text, re.M):
+        return "LIBRARY", "no procedure main", None, b""
     for verdict, pat in MINE_STATIC.get(lang, ()):
         mt = re.search(pat, text, re.M)
         if mt:
@@ -1625,6 +1637,9 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None):
     if lang == "pascal" and rc1 == 126:
         why = next((ln for ln in err1.decode("utf-8", "replace").splitlines() if re.search(r"\b(Fatal|Error):", ln)), first)
         return "ORACLE-REFUSES", f"fpc compiles it in no mode of the ladder; the last says: {why.strip()[:140]}", None, b""
+    if lang == "icon" and rc1 == 126:
+        why = next((ln for ln in err1.decode("utf-8", "replace").splitlines() if ln.strip() and not ln.startswith("Parsing ")), first)
+        return "ORACLE-REFUSES", f"unicon does not translate it: {why.strip()[:140]}", None, b""
     if rc1 in (124, 137):
         return "DOES-NOT-END", f"no answer inside {cap} s", None, b""
     leak = _mine_env_leak(out1)

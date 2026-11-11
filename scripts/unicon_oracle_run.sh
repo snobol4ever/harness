@@ -7,6 +7,18 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_oracle_flags.sh" || exit 127
 U="$(unicon_bin)" || exit 127
+# --here SRC (the coo 2026-11-11, the miner's Icon arm): SRC is translated where it stands, in the caller's current directory (a scratch copy of the
+# program's own folder, so the files it links from that folder are found), the executable goes to the private directory, and the program runs from
+# the caller's directory with the caller's stdin. The translator's .u files land in that scratch copy, never beside a collection's source.
+if [ "${1:-}" = --here ]; then
+    src="${2:-}"; [ -f "$src" ] || { echo "unicon_oracle_run.sh: no such file: $src" >&2; exit 127; }
+    work=$(mktemp -d) || exit 127
+    trap 'rm -rf "$work"' EXIT
+    name="$(basename "${src%.*}")"
+    "$U" -s "$src" -o "$work/$name" < /dev/null > "$work/compile.log" 2>&1
+    if [ ! -x "$work/$name" ]; then cat "$work/compile.log" >&2; exit 126; fi
+    "$work/$name"; exit $?
+fi
 src="${1:-}"; [ -f "$src" ] || { echo "unicon_oracle_run.sh: no such file: $src" >&2; exit 127; }
 work=$(mktemp -d) || exit 127
 trap 'rm -rf "$work"' EXIT
