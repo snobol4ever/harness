@@ -304,7 +304,7 @@ list_wts() {
 }
 
 verb="${1:-}"; [ $# -gt 0 ] && shift
-base=origin/main; langs=""; cap=$CAP_MB; name=""; row=""; full=0; discard=0
+base=origin/main; langs=""; cap=$CAP_MB; name=""; row=""; full=0; discard=0; save=0
 case "$verb" in
     --probe) probe ;;
     list) list_wts ;;
@@ -319,7 +319,8 @@ case "$verb" in
                 --row) [ $# -ge 2 ] || die "usage: --row <topic>" 2; row="$2"; shift 2 ;;
                 --full) full=1; shift ;;
                 --discard) discard=1; shift ;;
-                *) die "usage: s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--cap-mb <n>] [--row <topic>] | rm <name> | list | --probe" 2 ;;
+                --save) save=1; shift ;;
+                *) die "usage: s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--cap-mb <n>] [--row <topic>] | rm <name> [--save | --discard] | list | --probe" 2 ;;
             esac
         done
         valid_name "$name" || die "REFUSE(2): a name is required, [A-Za-z0-9._-], not dot-led" 2
@@ -327,8 +328,10 @@ case "$verb" in
         [ "$full" = 0 ] || case "$verb" in new|add) ;; *) die "REFUSE(2): --full is for new" 2 ;; esac
         [ "$full" = 0 ] || [ -z "$langs" ] || die "REFUSE(2): --full and --lang both name the corpus" 2
         [ "$discard" = 0 ] || case "$verb" in rm|remove) ;; *) die "REFUSE(2): --discard is for rm" 2 ;; esac
+        [ "$save" = 0 ] || case "$verb" in rm|remove) ;; *) die "REFUSE(2): --save is for rm" 2 ;; esac
+        [ "$save" = 0 ] || [ "$discard" = 0 ] || die "REFUSE(2): --save and --discard are two different answers; give one" 2
         ;;
-    *) die "usage: s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--cap-mb <n>] [--row <topic>] | rm <name> | list | --probe" 2 ;;
+    *) die "usage: s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--cap-mb <n>] [--row <topic>] | rm <name> [--save | --discard] | list | --probe" 2 ;;
 esac
 case "$verb" in
     new|add)
@@ -338,7 +341,19 @@ case "$verb" in
         wt="$SEATDIR/wt-$name"
         [ -d "$wt" ] || die "REFUSE(1): no worktree $name under $SEATDIR" 1
         if [ "$discard" = 1 ]; then [ "$(sed -n 's/^seat=//p' "$wt/.s4e-worktree" 2>/dev/null | head -1)" = "$SEAT" ] || die "REFUSE(1): only the owner may --discard $wt" 1
-        else lost="$(wt_unlanded "$wt")" || die "REFUSE(1): $wt holds work that is not on origin/main:$lost -- land or save it, or the owner rm $name --discard" 1; fi
+        elif lost="$(wt_unlanded "$wt")"; then :
+        elif [ "$save" = 1 ]; then
+            # rm --save (the cio 2026-11-11, CIO-125): THE WORK GOES WHERE THE NEXT SEAT WILL FIND IT. Until this day "save it" was answered by pinning the commits on a branch of the
+            # seat's own folder, which no tool read again: MEASURED 2026-11-11, 466 patches in 147 branches off main. The patch is written to the shared escalations folder and its
+            # path into the LEDGER of every baton that names this worktree; with no baton naming it the path is printed and counted by util_unlanded_census.py all the same.
+            [ "$(sed -n 's/^seat=//p' "$wt/.s4e-worktree" 2>/dev/null | head -1)" = "$SEAT" ] || die "REFUSE(1): only the owner may rm --save $wt" 1
+            pf="$(wt_save_patch "$wt" "$SEAT" "$name")" && [ -s "$pf" ] || die "REFUSE(1): the patch of $wt could not be written; the worktree stays" 1
+            nb=0
+            for b in $(grep -lxF "WORKTREE: $wt" "$BATONS"/*.task.md 2>/dev/null); do
+                printf -- '- [%s·%s] UNLANDED WORK SAVED by s4e_worktree.sh rm --save: worktree %s held work that is not on origin/main (%s ); the patch is %s (git am or git apply it in a fresh worktree); land it or say in this LEDGER why it is dropped\n' "$SEAT" "$(date '+%Y-%m-%d %H:%M CST')" "$wt" "$lost" "$pf" >> "$b"; nb=$((nb + 1))
+            done
+            echo "SAVED $pf batons=$nb"
+        else die "REFUSE(1): $wt holds work that is not on origin/main:$lost -- land it, or rm $name --save (the patch goes to the shared escalations folder and into the row's LEDGER; never pin it on a branch of your own folder), or the owner rm $name --discard" 1; fi
         drop "$wt"
         [ -e "$wt" ] && die "REFUSE(1): $wt is still there after drop" 1
         baton_strip "$wt"

@@ -78,6 +78,22 @@ def place_rows(where, d):
     return rows
 
 
+SAVED_DIR = "/home/resources/postoffice/escalations/worktrees"
+
+
+def saved_patches(seat=None):
+    """The patch files the worktree remover and the sweep wrote for worktrees that held unlanded work (<owner>-<name>-<stamp>.patch): (count, oldest
+    date) for one owner or for all. Each is work that left a worktree and reached no branch; it is unlanded until a row's LEDGER says otherwise."""
+    n, old = 0, ""
+    for p in glob.glob(SAVED_DIR + "/*.patch"):
+        if seat and not os.path.basename(p).startswith(seat + "-"):
+            continue
+        n += 1
+        d = datetime.date.fromtimestamp(os.path.getmtime(p)).isoformat()
+        old = d if not old or d < old else old
+    return n, old
+
+
 def census(seat=None, root="/home"):
     rows = []
     for d in sorted(glob.glob(f"{root}/claude_*")):
@@ -159,9 +175,18 @@ def main(argv):
     if "--list" in argv:
         for w, r, b, n, dt in sorted(rows):
             print(f"  {w}\t{r}\t{b}\t{n}\t{dt}")
+    sp, sp_old = saved_patches(seat)
+    if seat and sp and seat not in places:
+        places[seat] = [0, 0, sp_old]
     for w in sorted(places):
-        print(f"UNLANDED where={w} branches={places[w][0]} patches={places[w][1]} oldest={places[w][2]}")
-    print(f"UNLANDED_CENSUS places={len(places)} branches={len(rows)} patches={sum(r[3] for r in rows)}")
+        extra = ""
+        if w != "origin":
+            k, ko = saved_patches(w)
+            extra = f" saved_worktree_patches={k}" if k else ""
+            if k and ko < places[w][2]:
+                places[w][2] = ko
+        print(f"UNLANDED where={w} branches={places[w][0]} patches={places[w][1]}{extra} oldest={places[w][2]}")
+    print(f"UNLANDED_CENSUS places={len(places)} branches={len(rows)} patches={sum(r[3] for r in rows)} saved_worktree_patches={sp}")
     if "--check" in argv:
         day = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
         old = [r for r in rows if r[4] and r[4] < day]
