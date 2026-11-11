@@ -2692,17 +2692,22 @@ def _fmt2_is_one(e):
 
 
 def fmt2_road(e, container_dir, ext):
-    """direct or staged (CIO-27 (4), agreed A3 note): staged when the entry's process needs more than its one source file in a fresh
-    directory: a slash in its name, a cwd, an upstream stage, out_files, a temp answer file, a grader, the container's prelude, or a
-    companion file stage_entry copies beside it. compile_args, arguments, masks and compare rules do not stage: the switch passes the
-    first two and the post step applies the rest. An index row naming a stage_name (the coo's column, the file name the answer was cut
-    under) is staged by write_container_dir: the switches write the program as the entry's own last name component."""
-    if ("/" in e.name or getattr(e, "cwd", None) or getattr(e, "stage_upstream", False) or getattr(e, "out_files", None)
+    """direct or staged (CIO-27 (4), agreed A3 note; run-switches step 2, CTO-575 (2)): staged only when the entry's process needs
+    what the container does not hold: a cwd, an upstream stage, out_files, a temp answer file, a grader, the container's prelude, or a
+    companion file stage_entry copies beside it from the package folder. A slash in the name and the entry's own file fences do not
+    stage: the switch writes the program under its last name component and each file fence beside it (step 1). compile_args,
+    arguments, masks and compare rules do not stage: the switch passes the first two and the post step applies the rest. An index row
+    naming a stage_name (the coo's column, the file name the answer was cut under) is staged by write_container_dir."""
+    if (getattr(e, "cwd", None) or getattr(e, "stage_upstream", False) or getattr(e, "out_files", None)
             or getattr(e, "answer_file", None) or getattr(e, "grader", None) or (Path(container_dir) / "ALL.prelude").is_file()):
         return "staged"
     with tempfile.TemporaryDirectory(prefix="fmt2_road_") as td:
         cand, _ = stage_entry(e, td, ext, str(container_dir))
-        return "direct" if sorted(os.listdir(td)) == [cand.name] else "staged"
+        held = {cand.name} | set((getattr(e, "files", None) or {}).keys())
+        for p in Path(td).rglob("*"):
+            if p.is_file() and (p.parent != cand.parent or p.name not in held):
+                return "staged"
+        return "direct"
 
 
 def _fmt2_fence(tag, text):
@@ -2975,8 +2980,6 @@ def read_container_dir(d, ext, modes=None, allow_old=False):
             if "stderr" in p:
                 e.stderr_answer = cut("stderr", p["stderr"])
             if s["files"]:
-                if r.get("road") != "staged":
-                    raise ValueError(f"{d}/ALL.csv: {r['entry']} holds a file fence and its road is {r.get('road')!r}, not staged")
                 e.files = dict(s["files"])
         entries.append(e)
     src_path = str(d / f"ALL{ext}")
