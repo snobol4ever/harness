@@ -27,11 +27,11 @@ out="$(S4E_BANNER_GRID=1 S4E_BANNER_NO_BOARD=1 timeout -k 5 100 bash "$M" banner
 # THE SHAPE (2026-11-07, the coo's cut on the banner's own layout): the default banner is the double-sided grid that
 # .github/scripts/banner_compact.py prints, which draws no ruled rows (the ruled border was the single-sided grid's
 # shape, replaced 2026-11-04). The shape is: the verdict word on a line of its own; the compact header with its
-# column NAMES (Lang Suite Pass/Tot Excl M3 M4 Δ Pct Min); and at least one data row under it. Names, never values,
+# column NAMES (Lang Suite Pass/Tot Excl M3 M4 Pct Min Run Δ: Run, the readings' date and time range, and Δ the LAST column, Lon 2026-11-11); and at least one data row under it. Names, never values,
 # and no count is pinned: the rows are whatever the suite table holds.
 shape() {
   printf '%s\n' "$1" | grep -qE '^(SUCCESS|IN-PROGRESS|DRAIN|STOP)$' || { echo "no verdict word on a line of its own; expected one of SUCCESS / IN-PROGRESS / DRAIN / STOP"; return 1; }
-  printf '%s\n' "$1" | grep -qE '^Lang +Suite +Pass/Tot +Excl +M3 +M4 +Δ +Pct +Min .*│' || { echo "no compact header row with the columns Lang Suite Pass/Tot Excl M3 M4 Δ Pct Min (banner_compact.py)"; return 1; }
+  printf '%s\n' "$1" | grep -qE '^Lang +Suite +Pass/Tot +Excl +M3 +M4 +Pct +Min +Run +Δ +│' || { echo "no compact header row with the columns Lang Suite Pass/Tot Excl M3 M4 Pct Min Run Δ, Δ last (banner_compact.py)"; return 1; }
   printf '%s\n' "$1" | grep -qE '^[a-z]+ +[A-Za-z0-9@_.-]+ +[0-9]+/[0-9]+ .*│' || { echo "no compact data row under the header"; return 1; }
   if printf '%s\n' "$1" | grep -qE 'SUITE GRID (MISSING|REFUSED)'; then echo "the grid renderer refused"; return 1; fi
   return 0

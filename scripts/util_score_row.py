@@ -1798,6 +1798,16 @@ def _wall_only_without_a_table(full_key, _aud):
     return r.returncode
 
 
+def _set_run(full_key, oldest, newest, env):
+    """The row's Run: the stamps of the oldest and the newest reading it was assembled from, handed to the banner (Lon 2026-11-11, verbatim: "The stop
+    turn banner should display the date/time-range of the run that created the row."). A row with no reading hands none."""
+    o = (oldest[0] if oldest else "") or ""
+    n = (newest[0] if newest else "") or ""
+    ok = bool(re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}", o) and re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}", n))
+    r = subprocess.run([sys.executable, SUITE_BANNER, "--set-run", full_key] + ([o[:19], n[:19]] if ok else ["none", "none"]), capture_output=True, text=True, env=env)
+    sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
+
+
 def wall_cell(mins):
     """The text handed to the banner's --set-wall, from the minimum seconds of the members that have one: the whole seconds of their sum, 0 included,
     or the word none when no member has a minimum (Lon 2026-11-11 09:3x CST, in the coo's window, verbatim: "Why am I not seeing the new test suites
@@ -2128,6 +2138,7 @@ def cmd_from_progress(a):
         env = dict(os.environ); env["S4E_SUITES_TSV"] = SUITES_TSV; env["S4E_SCORE_MD"] = SCORE_MD
         r = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, wall_text], capture_output=True, text=True, env=env)
         sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
+        _set_run(full_key, oldest, newest, env)
         return r.returncode
     if a.dry_run:
         print("from-progress --dry-run: nothing written (would set %s -> %d/%d%s stamped %s, the oldest reading's tree)" % (full_key, cnt["PASS"], total, "" if excluded is None else " excluded=%d" % excluded, oldest[1]))
@@ -2163,6 +2174,8 @@ def cmd_from_progress(a):
         cmd += ["--excluded", str(excluded)]
     r = subprocess.run(cmd, capture_output=True, text=True, env=env)
     sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
+    if r.returncode == 0:
+        _set_run(full_key, oldest, newest, env)
     if r.returncode == 0 and _have_ledger:
         # the Wall is the sum of each member's minimum (see --wall-only): REPLACED here, so a run's clock or an older, larger sum never stands
         w = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, wall_text], capture_output=True, text=True, env=env)
