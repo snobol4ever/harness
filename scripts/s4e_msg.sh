@@ -5432,6 +5432,10 @@ TASKEOF
          else printf '%s\n' "IN-PROGRESS"; fi
          # THE STOP-TURN BANNER IS THE STATUS AND THE TEST SUITE GRID (Lon 2026-11-10 22:3x CST, in the cio's window, verbatim: "add the stop turn banner, status and test suite."; CIO-114;
          # it reverses his 2026-11-08 12:4x "Just not the test suite banner."). S4E_BANNER_GRID=0 leaves the grid out; unset or anything else prints it after the status lines and the verdict.
+         # WORK THAT IS NOT ON main IS NAMED AT EVERY STOP (the cio 2026-11-11, CIO-125; Lon, in the cio's window, verbatim: "Investigate how hundreds of fixes went un-pushed."): MEASURED that day, 466 patches in 147
+         # branches stood off main in 26 seat folders and on origin and no tool counted them. One line when this seat's folders hold a branch or a worktree with commits origin/main lacks; nothing when they hold none.
+         _ul="$S4E/harness/scripts/util_unlanded_census.py"
+         [ -f "$_ul" ] && timeout -k 5 20 python3 "$_ul" --seat "$ME" --fast 2>/dev/null | sed -n 's/^UNLANDED where=[^ ]* \(.*\)$/⛔ UNLANDED WORK in this seat: \1 -- land it, or reconcile it into its row (util_unlanded_census.py --seat '"$ME"' --fast --list)/p'
          _sb="$S4E/.github/scripts/util_suite_banner.py"
          if [ "${S4E_BANNER_GRID:-1}" = 0 ]; then :
          elif [ -f "$_sb" ]; then timeout -k 5 30 python3 "$_sb" || printf '%s\n' "⛔ SUITE GRID REFUSED (rc=$?) -- $_sb ran and did not render"

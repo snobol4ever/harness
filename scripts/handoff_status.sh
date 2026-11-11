@@ -292,6 +292,15 @@ else
     [ "$_zls_rc" = 2 ] && echo "  ⛔ NOT MEASURED — the maps census was not admitted to a run slot or refused (rc=2); read the line above; a refusal is not a red and not a pass."
   fi
 fi
+# WORK OFF main OLDER THAN A DAY BLOCKS THE HAND-OFF (the cio 2026-11-11, CIO-125): this check read only the branch each repo has checked out, so a
+# finished cure pinned on another branch, or left in a worktree, read COMPLETE. MEASURED 2026-11-11: 466 patches in 147 branches stood off main unseen.
+_ul_py="$SELF_DIR/util_unlanded_census.py"
+if [ -f "$_ul_py" ] && [ -n "${_ho_seat:-}" ]; then
+  _ul_out="$(timeout -k 5 60 python3 "$_ul_py" --seat "$_ho_seat" --fast --check 2>&1)"; _ul_rc=$?
+  printf '%s\n' "$_ul_out" | grep -E '^UNLANDED|OLDER THAN A DAY' | sed 's/^/  /'
+  if [ "$_ul_rc" = 1 ]; then blocked=1; reasons+=("$(printf '%s\n' "$_ul_out" | grep -c 'OLDER THAN A DAY') branch(es) or worktree(s) of seat $_ho_seat hold commits origin/main lacks, older than a day: land them or reconcile them into their rows")
+  elif [ "$_ul_rc" != 0 ]; then echo "  ⛔ NOT MEASURED — the unlanded-work census refused (rc=$_ul_rc)"; fi
+fi
 echo "------------------------------------------------------------"
 if [ "$blocked" -ne 0 ]; then
   echo "CHAT SESSION WAITING — not done:"; printf '  - %s\n' "${reasons[@]}"
