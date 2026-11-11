@@ -318,6 +318,39 @@ finally:
     kc.stop_channels(); km.shutdown_kernel(now=True)
 print("KERNEL_IPC ok" if ip_ok else "KERNEL_IPC RED: the cell over ipc read %r" % out)
 bad += 0 if ip_ok else 1
+# THE INSTALLED KERNELS (kernels, kernel specs): scrip --kernel-install writes for every kernel it names a kernel.json that says debugger false, an icon logo-svg.svg, and the session program
+# beside them, named by SCRIP_SESSION_SNOBOL4 in the kernel's environment; a kernel started FROM the installed specification, in a folder away from the tree, runs a session cell
+import subprocess, xml.etree.ElementTree as ET
+inst = tempfile.mkdtemp(prefix="scrip-kernel-inst-"); kd = os.path.join(inst, "kernels")
+r = subprocess.run([scrip, "--kernel-install", kd], capture_output=True, text=True)
+said = [l.split()[1] for l in r.stdout.splitlines() if l.startswith("KERNELSPEC ")]
+src = open(os.path.join(os.path.dirname(os.path.realpath(scrip)), "src", "driver", "kernel_session_snobol4.sno")).read()
+why = [] if r.returncode == 0 and said and sorted(said) == sorted(os.listdir(kd)) else ["the install said %r and wrote %r (rc %d)" % (said, os.path.isdir(kd) and sorted(os.listdir(kd)), r.returncode)]
+for n in said:
+    d = os.path.join(kd, n)
+    try:
+        j = json.load(open(os.path.join(d, "kernel.json"))); sp = j.get("env", {}).get("SCRIP_SESSION_SNOBOL4")
+        if j.get("metadata") != {"debugger": False}: why.append("%s metadata %r" % (n, j.get("metadata")))
+        if not ET.parse(os.path.join(d, "logo-svg.svg")).getroot().tag.endswith("svg"): why.append("%s icon is not an svg" % n)
+        if sp != os.path.join(d, "kernel_session_snobol4.sno") or open(sp).read() != src: why.append("%s session program %r" % (n, sp))
+    except Exception as e: why.append("%s: %r" % (n, e))
+if not why:
+    os.environ["JUPYTER_PATH"] = inst
+    km = KernelManager(kernel_name="scrip-snobol4"); km.start_kernel(cwd=tempfile.mkdtemp(prefix="scrip-kernel-away-")); kc = km.client(); kc.start_channels()
+    try:
+        kc.wait_for_ready(timeout=60)
+        mid = kc.execute(" OUTPUT = 'installed'\n"); out = ""; err = ""
+        while True:
+            m = kc.get_iopub_msg(timeout=120)
+            if m["parent_header"].get("msg_id") != mid: continue
+            if m["msg_type"] == "stream": out, err = (out + m["content"]["text"], err) if m["content"]["name"] == "stdout" else (out, err + m["content"]["text"])
+            if m["msg_type"] == "status" and m["content"]["execution_state"] == "idle": break
+        if (out, err) != ("installed\n", "") or not os.path.exists(os.path.join(km.kernel_spec.resource_dir, "logo-svg.svg")): why.append("the installed kernel's cell read %r %r" % (out, err))
+    except Exception as e: why.append(repr(e))
+    finally:
+        kc.stop_channels(); km.shutdown_kernel(now=True)
+print("KERNEL_INSTALL ok" if not why else "KERNEL_INSTALL RED: " + "; ".join(why[:4]))
+bad += 0 if not why else 1
 print("scrip --kernel: %d disagreement(s) over %d hello cells and the arms" % (bad, len(blocks)))
 sys.exit(1 if bad else 0)
 PY
