@@ -4233,6 +4233,48 @@ case "$cmd" in
          s4e_baton_head_set "$topic" OWNER "$seat" 2>/dev/null; s4e_queue_view   # fleet-queue step 12
          printf 'reowned: %s  %s -> %s  (state %s unchanged, claim untouched)\n' "$topic" "$_old" "$seat" "$_state"
          ;;
+  delete) # ⭐ DELETE A LIVE ROW WITH ITS TASK FILE AND ITS CLAIM, FOR A DESIGNER'S RE-CUT VERDICT (CIO-65 (3): a deleted row is deleted, not parked).
+         # Two designers hand-editing QUEUE.tsv race each other and the coo's verbs; this is the one road that removes a live row.
+         # Only the cio and the cto may run it. The body on stdin is the source read (file and function or line). The file road has no
+         # job to remove from a tube (the column is the tube), so only the row, the task file, the probe file and the claim go.
+         [ "${2:-}" = --plant ] && { s4e_pid_release; S4E_SEAT="$ME" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_probe_delete.sh"; exit $?; }
+         [ -n "${2:-}" ] || s4e_need delete "a topic" "s4e_msg.sh delete <topic> --verdict DELETED-DONE-IN-SOURCE|DELETED-NOT-REAL|REWRITTEN [--new <topic>] --stdin" "Removes a live row, its task file and its claim, and writes one line to RECUT.tsv."
+         topic="$2"; shift 2; verdict=""; newt=""
+         while [ $# -gt 0 ]; do case "$1" in
+           --verdict) verdict="${2:-}"; shift 2;;
+           --new) newt="${2:-}"; shift 2;;
+           --stdin) shift;;
+           *) echo "⛔ REFUSED(2): delete takes no argument $1" >&2; exit 2;;
+         esac; done
+         case "$ME" in cio|cto) ;; *) echo "⛔ REFUSED(2): delete is the cio's or the cto's verb; this seat is $ME." >&2; exit 2;; esac
+         case "$topic" in ""|*/*|*$'\n'*) echo "⛔ REFUSED(2): topic must be a filename-safe slug" >&2; exit 2;; esac
+         case "$verdict" in DELETED-DONE-IN-SOURCE|DELETED-NOT-REAL|REWRITTEN) ;; *) echo "⛔ REFUSED(2): --verdict is DELETED-DONE-IN-SOURCE, DELETED-NOT-REAL or REWRITTEN" >&2; exit 2;; esac
+         q="$PO/QUEUE.tsv"; [ -f "$q" ] || { echo "⛔ REFUSED(2): no QUEUE.tsv at $q" >&2; exit 2; }
+         row="$(grep -P "^[0-9]+\t\Q$topic\E\t" "$q" 2>/dev/null | head -1)"
+         [ -n "$row" ] || { echo "⛔ REFUSED(2): no live QUEUE.tsv row named '$topic'." >&2; exit 2; }
+         if [ "$verdict" = REWRITTEN ]; then
+           case "$newt" in ""|*/*|*$'\n'*) echo "⛔ REFUSED(2): REWRITTEN needs --new <topic> naming a live row" >&2; exit 2;; esac
+           grep -qP "^[0-9]+\t\Q$newt\E\t" "$q" || { echo "⛔ REFUSED(2): --new '$newt' names no live QUEUE.tsv row" >&2; exit 2; }
+         fi
+         _c="$PO/claims/$topic.claim"
+         if [ -f "$_c" ] && ! grep -q '^DONE$' "$_c" 2>/dev/null; then
+           _h="$(head -1 "$_c")"
+           if [ -n "$_h" ] && [ "$_h" != "$ME" ]; then echo "⛔ REFUSED(2): '$topic' is CLAIMED by $_h and not DONE; the holder must park or land it first." >&2; exit 2; fi
+         fi
+         body="$(cat)"
+         [ -n "$(printf '%s' "$body" | tr -d '[:space:]')" ] || { echo "⛔ REFUSED(2): delete needs the source read on stdin (file and function or line)" >&2; exit 2; }
+         cp "$q" "$q.bak.delete-$(date -u +%Y%m%dT%H%M%SZ)"
+         _tmp="$(mktemp)"
+         TOPIC="$topic" awk -F'\t' -v OFS='\t' '!($2==ENVIRON["TOPIC"] && /^[0-9]/) {print}' "$q" > "$_tmp"
+         if [ "$(wc -l < "$_tmp")" -ne "$(( $(wc -l < "$q") - 1 ))" ]; then rm -f "$_tmp"; echo "⛔ REFUSED(2): the rewrite did not remove exactly one row -- not applied. QUEUE.tsv untouched." >&2; exit 2; fi
+         mv "$_tmp" "$q"; chmod 664 "$q"
+         rm -f "$PO/tasks/$topic.task.md" "$PO/tasks/$topic.probe.sh" "$_c"
+         _rf="${S4E_RECUT:-/home/resources/progress/RECUT.tsv}"
+         _one="$(printf '%s' "$body" | tr '\t\n' '  ')"
+         printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$(TZ=America/Chicago date '+%Y-%m-%d %H:%M CST')" "$ME" "$topic" "$verdict" "${newt:--}" "$_one" >> "$_rf"
+         printf 'job_deleted=0 job=none (the file road: the column is the tube, no job to remove)\n'
+         printf 'DELETED %s %s\n' "$topic" "$verdict"
+         ;;
   assign) # ⭐ V2-1 / LAW 2 — ASSIGNMENT IS THE LOCK (the retired fleet architecture page). HQ writes the seat's claim ATOMICALLY on HQ's
          # side, which makes the v1 dispatch race UNREPRESENTABLE: v1 mailed a brief AND let the seat run `next`, so two
          # channels answered "what am I working on" with nothing arbitrating -- that race is what killed seat13's session
@@ -5704,7 +5746,7 @@ TASKEOF
   board) if [ $# -gt 1 ]; then shift; grep -v "^$ME |" "$PO/BOARD.md" 2>/dev/null > "$PO/.b.$$" || true; printf '%s | %s | %s\n' "$ME" "$*" "$(date -u +%H:%M)" >> "$PO/.b.$$"; mv "$PO/.b.$$" "$PO/BOARD.md"; fi; cat "$PO/BOARD.md"
          # posting a board line IS the handoff gesture -- so the banner fires here too (see `done` above).
          [ "${S4E_NO_BANNER:-0}" = "1" ] || S4E_BANNER_NO_BOARD=1 "$0" banner;;
-  *) echo "usage: next|claim|unclaim|park|done|assign|reown|mint|recut|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|whoami"
+  *) echo "usage: next|claim|unclaim|park|done|assign|reown|delete|mint|recut|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|whoami"
      # ⛔⭐ THE BACKTICK TRAP -- FIVE MEASURED OCCURRENCES, and it is printed here because THIS SCRIPT CANNOT
      # DETECT IT. A backtick used for emphasis inside a double-quoted body is COMMAND SUBSTITUTION: the
      # caller's shell runs the word, prints "X: command not found" on the CALLER's stderr, and substitutes
