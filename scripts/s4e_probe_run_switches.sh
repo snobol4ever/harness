@@ -14,7 +14,7 @@ N="${1:-}"
 SCRIP="$S4E/SCRIP/scrip"
 BG="$S4E/corpus/tests/shared/batch_grader"
 refuse() { echo "REFUSE(2) [run-switches probe]: $*"; exit 2; }
-[ -n "$N" ] || refuse "usage: $0 <step 1..14>"
+[ -n "$N" ] || refuse "usage: $0 <step 1..15>"
 mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 T="$(mktemp -d "/tmp/s4e/$ME/runsw_probe.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$T"' EXIT
@@ -399,7 +399,35 @@ step14() {   # run-files reads ALL.launch: around BEFORE AFTER or driver PROGRAM
     verdict "around runs the row's file between two shim sources, driver hands it to one program, a grader cell runs once the package has a scrip line"
 }
 
+step15() {   # a row whose stderr cell is merged gets standard output and standard error as one stream in OUT/NAME.out (CTO-589, on the coo's measurement of the Icon packages)
+    need_scrip
+    local P="$T/pkg" C="$T/c" B="$T/bad"; mkdir -p "$P" "$C" "$B"
+    local PG="        OUTPUT = 'out one'
+        TERMINAL = 'err two'
+        OUTPUT = 'out three'
+END"
+    printf '%s\n' "$PG" > "$P/m.sno"; printf '%s\n' "$PG" > "$P/a.sno"
+    printf '%s\n' 'entry,path,timeout_s,stderr' 'm,m.sno,,merged' 'a,a.sno,,' > "$P/ALL.csv"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-files "$P" --out "$T/o" > rep.tsv 2> err.txt < /dev/null ); local rc=$?
+    [ "$rc" = 0 ] || red "the package switch exits $rc ($(head -1 "$T/err.txt" | cut -c1-120))"
+    want "$T/rep.tsv" m EXIT 0 && same "$T/o/m.out" "$(printf 'out one\nerr two\nout three')" "m (merged: the two streams as one, in the order written)"
+    [ -f "$T/o/m.err" ] && [ ! -s "$T/o/m.err" ] || red "m: OUT/m.err is not an empty file"
+    want "$T/rep.tsv" a EXIT 0 && same "$T/o/a.out" "$(printf 'out one\nout three')" "a (an empty cell: standard output alone)"
+    same "$T/o/a.err" 'err two' "a (an empty cell: standard error apart)"
+    printf '%s\n' 'entry,group,road,nonl,timeout_s,stderr' 'cm,multi,direct,,,merged' > "$C/ALL.csv"
+    { printf '## cm\n\n'; fence SNOBOL4 "$PG"; } > "$C/MULTI.md"
+    ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-multi-liners "$C" --out "$T/o2" > rep2.tsv 2> err2.txt < /dev/null ); rc=$?
+    [ "$rc" = 0 ] || red "the multi-liner switch exits $rc ($(head -1 "$T/err2.txt" | cut -c1-120))"
+    want "$T/rep2.tsv" cm EXIT 0 && same "$T/o2/cm.out" "$(printf 'out one\nerr two\nout three')" "cm (merged in a container test)"
+    cp "$P/m.sno" "$B/m.sno"; printf '%s\n' 'entry,path,timeout_s,stderr' 'm,m.sno,,both' > "$B/ALL.csv"
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-files "$B" --out "$T/o3" > rep3.tsv 2> err3.txt < /dev/null ); rc=$?
+    [ "$rc" = 2 ] || red "a stderr cell that is neither empty nor merged exits $rc, want the refusal 2"
+    [ ! -s "$T/rep3.tsv" ] || red "the refused package still ran a test"
+    verdict "a merged row holds both streams in order in NAME.out with an empty NAME.err; an empty cell keeps them apart; an unknown word refuses"
+}
+
+
 case "$N" in
-    1) step1 ;; 2) step2 ;; 3) step3 ;; 4) step4 ;; 5) step5 ;; 6) step6 ;; 7) step7 ;; 8) step8 ;; 9) step9 ;; 10) step10 ;; 11) step11 ;; 12) step12 ;; 13) step13 ;; 14) step14 ;;
-    *) refuse "no step $N (1..14)" ;;
+    1) step1 ;; 2) step2 ;; 3) step3 ;; 4) step4 ;; 5) step5 ;; 6) step6 ;; 7) step7 ;; 8) step8 ;; 9) step9 ;; 10) step10 ;; 11) step11 ;; 12) step12 ;; 13) step13 ;; 14) step14 ;; 15) step15 ;;
+    *) refuse "no step $N (1..15)" ;;
 esac
