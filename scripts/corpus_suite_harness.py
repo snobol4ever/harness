@@ -2482,6 +2482,12 @@ def _read_lf_lines(path):
     return _lf_lines(Path(path).read_bytes().decode("utf-8"))
 
 
+def _read_stream_lines(path):
+    """An answer file of the files form (NAME.out, NAME.err): the oracle's bytes, which need not be UTF-8 (csnobol4's 8bit and alph print raw 8-bit bytes).
+    Decoded as a program's own output is decoded before the comparison (utf-8, replace), split on LF only, so both sides of the comparison are read alike."""
+    return _lf_lines(Path(path).read_bytes().decode("utf-8", "replace"))
+
+
 def read_suite(sno_path, ref_path, in_path=None, x_path=None, w_path=None, a_path=None, modes=None):
     if fmt2_dir_of(sno_path) is not None:
         return read_container_dir(fmt2_dir_of(sno_path), Path(sno_path).suffix, modes=modes)
@@ -3102,12 +3108,12 @@ def read_package_dir(d, ext, modes=None):
             raise ValueError(f"{d}: {name} and {seen[stem]} share the stem {stem.relative_to(d)}; their NAME.in, NAME.out and NAME.err would be one file")
         seen[stem] = name
         out = Path(str(stem) + ".out")
-        e = Entry("block", seq, name, _read_lf_lines(prog), _read_lf_lines(out) if out.is_file() else [])
+        e = Entry("block", seq, name, _read_lf_lines(prog), _read_stream_lines(out) if out.is_file() else [])
         inp, err = Path(str(stem) + ".in"), Path(str(stem) + ".err")
         if inp.is_file():
             e.stdin = inp.read_bytes().decode("utf-8")
         if err.is_file():
-            e.stderr_answer = err.read_bytes().decode("utf-8")
+            e.stderr_answer = err.read_bytes().decode("utf-8", "replace")
         _sn = _pkg_stage_name(name, rel, ext)
         if _sn:
             e.stage_name = _sn
