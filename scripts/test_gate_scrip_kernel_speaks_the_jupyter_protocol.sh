@@ -34,15 +34,17 @@ try:
     if info.get("implementation") != "SCRIP": print("REFUSE(2): the kernel that answered is %r, not SCRIP" % info.get("implementation")); kc.stop_channels(); km.shutdown_kernel(now=True); sys.exit(2)
     for lang, body in blocks:
         mid = kc.execute("%%" + lang + "\n" + body)
-        out = ""
+        out = ""; err = ""
         while True:
             m = kc.get_iopub_msg(timeout=120)
             if m["parent_header"].get("msg_id") != mid: continue
-            if m["msg_type"] == "stream": out += m["content"]["text"]
+            if m["msg_type"] == "stream" and m["content"]["name"] == "stdout": out += m["content"]["text"]
+            elif m["msg_type"] == "stream": err += m["content"]["text"]
             if m["msg_type"] == "status" and m["content"]["execution_state"] == "idle": break
         status = kc.get_shell_msg(timeout=30)["content"]["status"]
-        ok = status == "ok" and out == "Hello, World!\n"
-        print("%-8s status=%s out=%r %s" % (lang, status, out, "OK" if ok else "FAIL"))
+        note = "scrip: a cell tagged %s runs as its own program: SCRIP has no session road for that language yet (said once)\n" % lang.lower()   # CTO-580 (5): said once a language, on stderr; a SNOBOL4 cell runs in the session and says nothing
+        ok = status == "ok" and out == "Hello, World!\n" and err in ("", note) and not (lang == "SNOBOL4" and err)
+        print("%-8s status=%s out=%r err=%r %s" % (lang, status, out, err, "OK" if ok else "FAIL"))
         bad += 0 if ok else 1
 finally:
     kc.stop_channels(); km.shutdown_kernel(now=False)
