@@ -3914,6 +3914,14 @@ def run_files_switch(paths, args, run_entries, n_all, modes, tmp_root):
     out_dir, rep = tmp_root / "run_files_out", tmp_root / "run_files.report"
     pd = Path(pd).resolve()
     argv = [str(paths["scrip_bin"]), "--run-files", str(pd), "--out", str(out_dir)]
+    # A ROW WHOSE ANSWER IS THE TWO STREAMS AS ONE (stderr=merged) STAYS ON THE PER-PROCESS ROAD (the coo's measurement of 2026-11-10 on arizona,
+    # jcon and unicon_tests, CIO-118): the switch writes standard output and standard error to two files, and the order the program wrote
+    # them in cannot be put back from two files. Until the switch itself writes one stream for such a row, it is not handed to the switch.
+    n_asked = len(run_entries)
+    run_entries = [e for e in run_entries if not getattr(e, "merge_stderr", False)]
+    if not run_entries:
+        print("RUN_FILES_BOARD dir=%s entries=0 of %d report_lines=0 merged_stderr_left_per_process=%d" % (pd, n_all, n_asked))
+        return None
     if len(run_entries) != n_all or getattr(args, "partition", None):
         only = tmp_root / "run_files.only"
         only.write_text("".join(e.name + "\n" for e in run_entries), encoding="utf-8")
@@ -3923,7 +3931,7 @@ def run_files_switch(paths, args, run_entries, n_all, modes, tmp_root):
     if why or rc != 0:
         refuse(f"--run-files: scrip --run-files {pd} ended rc {rc}{' ' + why if why else ''}: {(se or b'').decode('utf-8', 'replace').strip()[-300:]}")
     rep.write_bytes(so or b"")
-    print("RUN_FILES_BOARD dir=%s entries=%d of %d report_lines=%d" % (pd, len(run_entries), n_all, len([l for l in (so or b"").split(b"\n") if l])))
+    print("RUN_FILES_BOARD dir=%s entries=%d of %d report_lines=%d merged_stderr_left_per_process=%d" % (pd, len(run_entries), n_all, len([l for l in (so or b"").split(b"\n") if l]), n_asked - len(run_entries)))
     return [[str(out_dir), str(rep)]]
 
 
