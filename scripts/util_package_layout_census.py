@@ -12,7 +12,8 @@ For every file git tracks under DIR (every file on disk when DIR is in no reposi
   OMITTED    a program a line of ALL.omit or a row of an EXCLUDED*.tsv names (declared out, with its measurement; not loose), and its streams
   TABLE      CONTRACT.tsv, CONTAINERS.tsv, EXCLUDED*.tsv, PARTITION.tsv, SOURCES.tsv, DRIVERS.tsv, or a .tsv at the root a script of harness/scripts names
   PART       STEM.E.ref beside a program a row of PREPROCESS.tsv names (the preprocess-only contract's answer; the coo's ask of 2026-11-10 on jcon and
-             arizona); a file CONTAINERS.tsv or CONTRACT.tsv names by its path or bare name, one ALL.args names as an argument, a member of a folder whose
+             arizona); NAME.ref.corrected for a name a row of ALL.corrected.tsv carries (the corrected answer the grader reads where the oracle errs;
+             the coo 2026-11-10 on fpc_tests); a file CONTAINERS.tsv or CONTRACT.tsv names by its path or bare name, one ALL.args names as an argument, a member of a folder whose
              other files are all PARTs (a library shipped whole), or one whose bare file name a PROGRAM, an OMITTED program or another PART holds in its text
   DOCUMENT   README*, LICENSE*, COPYING*, NOTICE*, PROVENANCE*, *.md or *.txt at the package root; a root file one of those names by its bare name (the
              distribution's own script or note, accounted for by the package's own record); and every file under the root folder upstream/ when it holds a
@@ -101,6 +102,10 @@ def census(d):
                 contained.update(c.strip() for c in ln.split("\t") if c.strip())
     contract = text_of(d, "CONTRACT.tsv") if os.path.isfile(os.path.join(d, "CONTRACT.tsv")) else ""
     pre = set()
+    if os.path.isfile(os.path.join(d, "ALL.corrected.tsv")):
+        for ln in text_of(d, "ALL.corrected.tsv").split("\n"):
+            if ln.strip() and not ln.startswith("#"):
+                pre.add(ln.split("\t", 1)[0].strip() + ".ref.corrected")
     if os.path.isfile(os.path.join(d, "PREPROCESS.tsv")):
         for ln in text_of(d, "PREPROCESS.tsv").split("\n"):
             if ln.strip() and not ln.startswith("#"):
@@ -194,6 +199,8 @@ def probe():
             "gone.sno": ("OMITTED", "END\n"),
             "PARTITION.tsv": ("TABLE", "# cells\n"),
             "lib.inc": ("PART", "* a library\n"),
+            "ALL.corrected.tsv": ("TABLE", "sub/run\tthe oracle errs\n"),
+            "sub/run.ref.corrected": ("PART", "y\n"),
             "README.md": ("DOCUMENT", "a planted package\n"),
             "ALL.ref": ("CONTAINER", ""),
             "stray.bak": ("LOOSE", "left behind\n"),
