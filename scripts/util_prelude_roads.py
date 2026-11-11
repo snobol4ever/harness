@@ -8,7 +8,9 @@ output and its standard error, byte for byte. An entry that FAILS on both roads 
 different output are a difference). The answer files are not read: this measures the two roads against each other, never against the oracle.
 Writes DIR/SUITE.roads.tsv (entry, what differs, source road's end, object road's end, the first differing line of each) and prints
 PRELUDE_ROADS suite=K entries=N differ=D end=E stdout=O stderr=S (tree HASH). rc 0 no entry differs; 1 some differ; 2 REFUSE (no such suite, not
-Prolog, not on the package switch, no binary, a run refused, no entry ran). --probe proves the comparison on two scratch result folders made by
+Prolog, not on the package switch, no binary, a run refused, no entry ran, or THE OBJECT ROAD IS NOT TAKEN: the first entry is run once more
+with LD_DEBUG=files and the loader must be seen opening the object; MEASURED 2026-11-11: trealla_more launches each entry around a driver, two
+sources a run, scrip loads the object only for a run of one source, and both roads read 273,250 million instructions to within 6 million). --probe proves the comparison on two scratch result folders made by
 hand (one entry equal, one differing in its output, one in how it ended) and never runs scrip. Writes only under DIR and /tmp/s4e/<seat>."""
 import csv, os, subprocess, sys, tempfile
 ROOT = os.environ.get("S4E_HOME") or "/home/claude_cio"
@@ -109,6 +111,12 @@ def main(argv):
         if r.returncode != 0: refuse(f"scrip --run-files on the {name} road ended rc {r.returncode}: {r.stderr.decode('utf-8', 'replace').strip()[-200:]}")
         roads[name] = read_road(r.stdout.decode("utf-8", "replace"), o)
     if not roads["source"]: refuse("no entry ran on the source road")
+    first = os.path.join(t, "first.txt")
+    open(first, "w", encoding="utf-8").write(sorted(roads["source"])[0] + "\n")
+    o = os.path.join(t, "taken")
+    r = subprocess.run(["bash", os.path.join(HERE, "util_run_slot.sh"), scrip, "--run-files", d, "--out", o, "--work", os.path.join(t, "taken.w"), "--only", first], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=t, env=dict(os.environ, SCRIP_PL_PRELUDE_SO=so, LD_DEBUG="files", SNO_LIB=os.path.join(ROOT, "corpus")))
+    seen = so.encode() in r.stderr or any(so.encode() in open(os.path.join(o, f), "rb").read() for f in (os.listdir(o) if os.path.isdir(o) else []) if f.endswith(".err"))
+    if not seen: refuse(f"{key}: the object road is not taken by this package's launch (its first entry {sorted(roads['source'])[0]} ran with the switch set and the loader never opened the object: scrip loads it only for a run of ONE source, and this package runs each entry with more), so the two readings are the source road twice and the comparison measures nothing")
     diff = compare(roads["source"], roads["object"])
     os.makedirs(out, exist_ok=True)
     with open(os.path.join(out, key + ".roads.tsv"), "w", encoding="utf-8") as f:

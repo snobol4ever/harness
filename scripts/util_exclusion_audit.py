@@ -7,13 +7,22 @@ the audit: what the builder then admits the oracle answers; what it still leaves
 
 usage: util_exclusion_audit.py run --package DIR --lang LANG --work SCRATCH [--out FILE]
        util_exclusion_audit.py check --package DIR [--strict] [--out FILE]
+       util_exclusion_audit.py keep --package DIR --name NAME --why "THE MEASUREMENT" [--out FILE]
        util_exclusion_audit.py --probe
 run    SCRATCH must be under /tmp/s4e and must not exist. DIR is copied to SCRATCH/<its name>; in the copy EXCLUDED.tsv, EXCLUDED_CASES.tsv,
        UNGRADABLE.tsv and every EXCLUDED.*.tsv keep their comment lines alone; the builder runs on the copy with --twice (and --src-ext when the
        index's path column names another extension than LANG's), through util_batch.sh, its output kept as SCRATCH/audit.log. Then one line a
        data row of the ORIGINAL tables goes to FILE (default /home/resources/progress/EXCLUSION-AUDIT.tsv), seven cells: date and time CST, the
        package's path from the corpus root, the name, the old class, the verdict, the evidence, the package's corpus commit. The verdict:
-         ANSWERED    the copy's index holds the name as an entry the copy's ALL.omit does not name (evidence: admitted)
+         REVIEW      the copy's index holds the name as an entry the copy's ALL.omit does not name (evidence: admitted by the builder, and the
+                     declared class). THIS IS NOT "THE ORACLE ANSWERS IT": the builder admits any program with a non-empty answer. MEASURED
+                     2026-11-11 by the cfo on trealla_tests and xsb_tests, the oracle run by hand on each: of the 12 names this verdict (then
+                     called ANSWERED) gave, two stop on an oracle ERROR in mid-run with output before it, two are implementation accidents
+                     an officer declared, one varies between runs (two equal runs are a sample), seven need threads. So the tool never says
+                     delete. A REVIEW row is RELEASED (its line deleted from the table) only when its declared class is NO_ORACLE_ANSWER and
+                     the oracle, run by hand twice through its accessor, ends rc 0 with an empty standard error and equal output; every
+                     other REVIEW row is KEPT by the keep verb with the measurement, and a class that is an officer's reading of an accident,
+                     a variation or a capability is released only by the language's designer.
          NO-ANSWER   the copy's ALL.omit names it (evidence: that line's reason)
          NOT-A-TEST  the package's CONTAINERS.tsv names it (evidence: that row's kind)
          UNDECIDED   otherwise (evidence: the audit.log line that names it, or: not named by the build)
@@ -22,7 +31,11 @@ run    SCRATCH must be under /tmp/s4e and must not exist. DIR is copied to SCRAT
        would read NO-ANSWER: no line is written).
 check  rc 0 when every data row of DIR's declaration tables has a line in FILE for that package and name at DIR's corpus commit; rc 1 naming the
        first ten that have none. --strict: rc 0 when every row the tables hold today has a line, at any commit, whose latest verdict is NO-ANSWER
-       (the audit has been acted on: the ANSWERED and the NOT-A-TEST rows are gone and none is UNDECIDED).
+       or REVIEW-KEPT (the audit has been acted on: every REVIEW row is released or kept with its measurement, the NOT-A-TEST rows are gone
+       and none is UNDECIDED).
+keep   writes one REVIEW-KEPT line for NAME (a data row of DIR's tables whose latest line reads REVIEW or REVIEW-KEPT), its evidence the --why
+       text, which must say what was measured (40 characters at least). rc 0; rc 2 refused (no such row, its latest verdict is another, a
+       short --why).
 --probe a planted package of three SNOBOL4 programs (one the oracle answers, one that prints nothing, one a planted CONTAINERS.tsv names) with a
        planted EXCLUDED.tsv naming all three reads AUDIT_PROBE answered=1 no_answer=1 not_a_test=1, rc 0; rc 1 with the lines read otherwise;
        rc 2 when the builder or the oracle cannot run here. It writes only under its own scratch folder."""
@@ -192,7 +205,7 @@ def audit(pkg, lang, work, out, batch=True):
         elif hit_omit is not None:
             v, ev = "NO-ANSWER", omit[hit_omit]
         elif ks & entries:
-            v, ev = "ANSWERED", "admitted"
+            v, ev = "REVIEW", "admitted by the builder (a non-empty answer, not a clean one); declared class %s" % (cls or "-")
         else:
             base = os.path.basename(os.path.splitext(name.split("\t")[0])[0])
             ln = next((l for l in loglines if re.search(r"(^|[\s/\]:])" + re.escape(base) + r"([\s:.,]|$)", l)), None)
@@ -213,8 +226,8 @@ def audit(pkg, lang, work, out, batch=True):
 
 def check_strict(pkg, out):
     """check --strict: THE AUDIT HAS BEEN ACTED ON. rc 0 when every data row the package's declaration tables hold TODAY has a line in the audit
-    table, at any commit, and the LATEST line for that name reads NO-ANSWER: what the oracle answers (ANSWERED) and what is no test (NOT-A-TEST)
-    has left the tables, and nothing stands UNDECIDED. rc 1 naming the first ten rows that are not audited or whose latest verdict is another."""
+    table, at any commit, and the LATEST line for that name reads NO-ANSWER or REVIEW-KEPT: what was released and what is no test (NOT-A-TEST)
+    has left the tables, a REVIEW row that stays carries its measurement, and nothing stands UNDECIDED. rc 1 naming the first ten rows that are not audited or whose latest verdict is another."""
     pkg = os.path.abspath(pkg)
     top = corpus_of(pkg)
     rel = os.path.relpath(pkg, top) if top else pkg
@@ -228,11 +241,34 @@ def check_strict(pkg, out):
     want = []
     for t in tables_of(pkg):
         want += [n.replace("\t", " ") for n, _ in data_rows(t)]
-    bad = [(n, latest.get(n, "NOT AUDITED")) for n in want if latest.get(n) != "NO-ANSWER"]
-    print("EXCLUSION_AUDIT_STRICT package=%s declared=%d standing_on_the_oracles_no_answer=%d" % (rel, len(want), len(want) - len(bad)))
+    bad = [(n, latest.get(n, "NOT AUDITED")) for n in want if latest.get(n) not in ("NO-ANSWER", "REVIEW-KEPT")]
+    print("EXCLUSION_AUDIT_STRICT package=%s declared=%d standing_on_the_oracles_no_answer=%d kept_after_review=%d" % (rel, len(want), sum(1 for n in want if latest.get(n) == "NO-ANSWER"), sum(1 for n in want if latest.get(n) == "REVIEW-KEPT")))
     for n, v in bad[:10]:
         print(f"  {v}: {n} is still declared")
     return 1 if bad else 0
+
+
+def keep(pkg, name, why, out):
+    """keep: one REVIEW-KEPT line for a row the audit read REVIEW, with the measurement that keeps it."""
+    pkg = os.path.abspath(pkg)
+    top = corpus_of(pkg)
+    rel = os.path.relpath(pkg, top) if top else pkg
+    if len(why.strip()) < 40: refuse("--why must say what was measured (the oracle's exit, its error line, the class and who releases it): 40 characters at least")
+    rows = {n.replace("\t", " "): c for t in tables_of(pkg) for n, c in data_rows(t)}
+    if name not in rows: refuse(f"{name!r} is no data row of {rel}'s declaration tables")
+    latest = None
+    if os.path.isfile(out):
+        with open(out, encoding="utf-8", errors="replace") as f:
+            for ln in f:
+                c = ln.rstrip("\n").split("\t")
+                if len(c) >= 7 and c[1] == rel and c[2] == name: latest = c[4]
+    if latest not in ("REVIEW", "REVIEW-KEPT", "ANSWERED"): refuse(f"{name!r}: its latest verdict is {latest or 'NOT AUDITED'}; keep is for a row the audit read REVIEW")
+    stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M CST")
+    who = os.environ.get("S4E_SEAT") or "-"
+    with open(out, "a", encoding="utf-8") as f:
+        f.write("\t".join([stamp, rel, name, rows[name] or "-", "REVIEW-KEPT", (who + ": " + why.strip()).replace("\t", " ").replace("\n", " ")[:600], pkg_commit(pkg)]) + "\n")
+    print(f"EXCLUSION_AUDIT_KEEP package={rel} name={name} by={who}")
+    return 0
 
 
 def check(pkg, out):
@@ -283,13 +319,21 @@ def probe():
             refuse("the builder cannot build the planted package here (no oracle, or it refuses)")
         out = os.path.join(t, "audit.tsv")
         rc, tally = audit(pkg, "snobol4", os.path.join(t, "work"), out, batch=False)
-        got = "AUDIT_PROBE answered=%d no_answer=%d not_a_test=%d" % (tally.get("ANSWERED", 0), tally.get("NO-ANSWER", 0), tally.get("NOT-A-TEST", 0))
-        print(got)
-        if got != "AUDIT_PROBE answered=1 no_answer=1 not_a_test=1" or tally.get("UNDECIDED"):
+        got = "AUDIT_PROBE review=%d no_answer=%d not_a_test=%d" % (tally.get("REVIEW", 0), tally.get("NO-ANSWER", 0), tally.get("NOT-A-TEST", 0))
+        if got != "AUDIT_PROBE review=1 no_answer=1 not_a_test=1" or tally.get("UNDECIDED") or tally.get("ANSWERED"):
+            print(got)
             with open(out, encoding="utf-8") as f:
                 print(f.read().rstrip())
             return 1
-        return 0
+        with open(os.path.join(pkg, "CONTAINERS.tsv"), "w", encoding="utf-8") as f: f.write("# planted\n")
+        with open(os.path.join(pkg, "EXCLUDED.tsv"), "w", encoding="utf-8") as f: f.write("# planted: two rows stay\nanswers.sno\tPROBE_CLASS\tplanted\nsilent.sno\tPROBE_CLASS\tplanted\n")
+        import io, contextlib
+        with contextlib.redirect_stdout(io.StringIO()):
+            before = check_strict(pkg, out)
+            keep(pkg, "answers.sno", "planted measurement: the oracle ends rc 0 and the class is the designer's to release", out)
+            after = check_strict(pkg, out)
+        print(got + " strict_with_a_review_row=%s strict_after_keep=%s" % ("red" if before == 1 else "green", "green" if after == 0 else "red"))
+        return 0 if before == 1 and after == 0 else 1
     finally:
         shutil.rmtree(t, ignore_errors=True)
 
@@ -297,13 +341,13 @@ def probe():
 def main(argv):
     if argv == ["--probe"]:
         return probe()
-    if not argv or argv[0] not in ("run", "check"):
+    if not argv or argv[0] not in ("run", "check", "keep"):
         refuse("usage: util_exclusion_audit.py run --package DIR --lang LANG --work SCRATCH [--out FILE] | check --package DIR [--out FILE] | --probe")
     opt, i = {}, 1
     strict = "--strict" in argv
     argv = [a for a in argv if a != "--strict"]
     while i < len(argv):
-        if argv[i] in ("--package", "--lang", "--work", "--out") and i + 1 < len(argv):
+        if argv[i] in ("--package", "--lang", "--work", "--out", "--name", "--why") and i + 1 < len(argv):
             opt[argv[i][2:]] = argv[i + 1]
             i += 2
         else:
@@ -313,6 +357,11 @@ def main(argv):
         if "package" not in opt:
             refuse("check needs --package DIR")
         return check_strict(opt["package"], out) if strict else check(opt["package"], out)
+    if argv[0] == "keep":
+        for k in ("package", "name", "why"):
+            if k not in opt:
+                refuse(f"keep needs --{k}")
+        return keep(opt["package"], opt["name"], opt["why"], out)
     for k in ("package", "lang", "work"):
         if k not in opt:
             refuse(f"run needs --{k}")
