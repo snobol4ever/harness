@@ -82,6 +82,27 @@ try:
     bad += 0 if et else 1
 finally:
     kc.stop_channels(); km.shutdown_kernel(now=False)
+# A CELL RUNS IN THE KERNEL'S OWN DIRECTORY (CIO-78): a second kernel started in a scratch folder reads the file beside the notebook by its bare name, from a session cell and from a one-program cell
+wd = tempfile.mkdtemp(prefix="scrip-kernel-cwd-")
+open(os.path.join(wd, "kcwd.dat"), "w").write("beside the notebook\n")
+km = KernelManager(kernel_name="scrip-gate"); km.start_kernel(cwd=wd); kc = km.client(); kc.start_channels()
+try:
+    kc.wait_for_ready(timeout=60)
+    def run2(code):
+        mid = kc.execute(code); out = ""
+        while True:
+            m = kc.get_iopub_msg(timeout=120)
+            if m["parent_header"].get("msg_id") != mid: continue
+            if m["msg_type"] == "stream" and m["content"]["name"] == "stdout": out += m["content"]["text"]
+            if m["msg_type"] == "status" and m["content"]["execution_state"] == "idle": break
+        return kc.get_shell_msg(timeout=30)["content"]["status"], out
+    s1, c1 = run2("        INPUT(.KCWDLINE, 5, 'kcwd.dat')\n        OUTPUT = KCWDLINE\n        ENDFILE(5)\n")
+    s2, c2 = run2("%%icon\nprocedure main();\n  f := open(\"kcwd.dat\") | stop(\"no kcwd.dat here\");\n  write(read(f));\n  close(f);\nend\n")
+    cw = s1 == "ok" and c1 == "beside the notebook\n" and s2 == "ok" and c2 == "beside the notebook\n"
+    print("KERNEL_CWD ok" if cw else "KERNEL_CWD RED: the session cell %s %r, the one-program cell %s %r" % (s1, c1, s2, c2))
+    bad += 0 if cw else 1
+finally:
+    kc.stop_channels(); km.shutdown_kernel(now=False)
 print("scrip --kernel: %d disagreement(s) over %d hello cells and the arms" % (bad, len(blocks)))
 sys.exit(1 if bad else 0)
 PY
