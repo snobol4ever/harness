@@ -5321,11 +5321,9 @@ TASKEOF
            br=$(git -C "$r" rev-parse --abbrev-ref HEAD 2>/dev/null)
            u=$(git -C "$r" rev-list --count "origin/$br..$br" 2>/dev/null || echo 0)
            onlyhere=$((onlyhere + d + ${u:-0})); done
-         # ONE VERDICT, NEVER TWO (Lon 2026-11-11 13:0x CST, in officer_04's window, verbatim: "your banner says TWO CONFLICTING things. SUCCESS and UNLANDED WORK." / "Delete one of the banners,
-         # and keep just one." / "I just want one word and a huge icon so I can see from a distance. All those words are NEVER read."): the unlanded census of CIO-125 is read HERE, before the verdict, and
-         # work off main makes the verdict IN-PROGRESS; it no longer prints a line of its own beside a SUCCESS. The Stop hook shows the word alone under a block icon (s4e_banner_cached.sh).
-         _ul="$S4E/harness/scripts/util_unlanded_census.py"; _ulw=""
-         [ -f "$_ul" ] && _ulw="$(timeout -k 5 20 python3 "$_ul" --seat "$ME" --fast 2>/dev/null | sed -n 's/^UNLANDED where=[^ ]* \(.*\)$/\1/p' | head -1)"
+         # ONE WORD, AND SUCCESS IS SAFE TO /clear (Lon 2026-11-11 13:0x CST, in officer_04's window, verbatim: "Delete one of the banners, and keep just one." / "I just want one word and a huge icon so I can
+         # see from a distance." / "The status needs to represent what might be done when I /clear which I do at any prompt that has SUCCESS."): the unlanded census of CIO-125 no longer prints a line
+         # beside the verdict; a saved patch or a branch is on disk and survives a /clear, so it never changes the word. handoff_status.sh still names it.
          if   [ -n "$diverged" ]; then line="⛔ STOP — $ME — PRE-REWRITE CLONE:$diverged — re-clone before use"
          # rc is deliberately NOT changed by the drain refusal, for the same reason NOTHING LANDED did not change it:
          # rc answers "is it safe to /clear", and unread mail is safe to /clear -- it is on disk and waits. What the
@@ -5342,7 +5340,6 @@ TASKEOF
          # rc is deliberately UNCHANGED -- it still answers "safe to /clear", which is a different question and the
          # one tooling consumes. The banner's TEXT is what Lon reads, and it is now the one that must be earned.
          elif [ "$vd" = FAILURE ]; then line="⛔ FAILURE — $ME — row ${row1}: its last DONE-WHEN read red, or a hash its LEDGER names is not on origin/main. Do NOT /clear — $lvl"
-         elif [ -n "$_ulw" ]; then line="⏳ IN-PROGRESS — $ME — UNLANDED WORK: $_ulw -- land it, or reconcile it into its row (util_unlanded_census.py --seat $ME --fast --list) — $lvl"
          elif [ "$inbx" -gt 0 ]; then line="⏳ IN-PROGRESS — $ME — ${inbx} telegram(s) in the inbox: read, act or reply, clear. Do NOT /clear — $lvl"
          elif [ -n "$row1" ] && [ "$(awk -F'\t' -v t="$row1" '$2==t{print $4; exit}' "$PO/QUEUE.tsv" 2>/dev/null)" = "CLAIMED:$ME" ]; then line="⏳ IN-PROGRESS — $ME — row ${row1} is CLAIMED:$ME and its NEXT is owed: write the NEXT and LEDGER, then park, unclaim or done. Do NOT /clear — $lvl"
          elif [ "$vd" != SUCCESS ] && [ "$cmts" -eq 0 ] && [ "$fnd" -eq 0 ]; then line="⚠ NOTHING LANDED — $ME — tree is clean and safe to /clear, but this session produced NO commit and NO FINDING. That is not success; it is an empty session."
@@ -5434,14 +5431,12 @@ TASKEOF
          # ⛔ SUCCESS IS THE CLEAN TREE ONLY (worker_10, 2026-11-06, Lon's "You say you are finished. It says different."): a clone with
          # uncommitted or unpushed work prints IN-PROGRESS whatever the handoff check said. The old test was `hrc -eq 0 || onlyhere -eq 0`,
          # so a handoff that measured clean printed SUCCESS over unpushed work. rc is unchanged (see the exit line below).
-         elif [ -n "$_ulw" ]; then printf '%s\n' "IN-PROGRESS"
          elif [ "$onlyhere" -eq 0 ]; then printf '%s\n' "SUCCESS"
          else printf '%s\n' "IN-PROGRESS"; fi
          # THE STOP-TURN BANNER IS THE STATUS AND THE TEST SUITE GRID (Lon 2026-11-10 22:3x CST, in the cio's window, verbatim: "add the stop turn banner, status and test suite."; CIO-114;
          # it reverses his 2026-11-08 12:4x "Just not the test suite banner."). S4E_BANNER_GRID=0 leaves the grid out; unset or anything else prints it after the status lines and the verdict.
          # WORK THAT IS NOT ON main IS NAMED AT EVERY STOP (the cio 2026-11-11, CIO-125; Lon, in the cio's window, verbatim: "Investigate how hundreds of fixes went un-pushed."): MEASURED that day, 466 patches in 147
          # branches stood off main in 26 seat folders and on origin and no tool counted them. One line when this seat's folders hold a branch or a worktree with commits origin/main lacks; nothing when they hold none.
-         # (the unlanded census moved above the verdict: ONE VERDICT, NEVER TWO, Lon 2026-11-11 13:0x)
          _sb="$S4E/.github/scripts/util_suite_banner.py"
          # ONLY THE COO'S BANNER CARRIES THE GRID (Lon 2026-11-11 10:4x CST, in the cto's window, verbatim: "Fix your stop hook banner to be status only, no test suite. COO will be the only one with
          # the banner. It is just too big now for all the seats and one seat will do. The COO." / "Tell CIO to fix all the seats banners."; CIO-129; it narrows CIO-114). The default is the grid for the
