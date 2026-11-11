@@ -11,8 +11,9 @@ For every file git tracks under DIR (every file on disk when DIR is in no reposi
   STREAM     STEM.in, STEM.out or STEM.err beside a PROGRAM of that stem
   OMITTED    a program a line of ALL.omit or a row of an EXCLUDED*.tsv names (declared out, with its measurement; not loose), and its streams
   TABLE      CONTRACT.tsv, CONTAINERS.tsv, EXCLUDED*.tsv, PARTITION.tsv, SOURCES.tsv, DRIVERS.tsv, or a .tsv at the root a script of harness/scripts names
-  PART       a file CONTAINERS.tsv names, or one whose bare file name a PROGRAM, an OMITTED program or another PART holds in its text
-  DOCUMENT   README*, LICENSE*, NOTICE*, PROVENANCE*, *.md or *.txt at the package root
+  PART       a file CONTAINERS.tsv names, one ALL.args names as an argument, or one whose bare file name a PROGRAM, an OMITTED program or another PART holds in its text
+  DOCUMENT   README*, LICENSE*, NOTICE*, PROVENANCE*, *.md or *.txt at the package root; and every file under the root folder upstream/ when it holds a
+             PROVENANCE.md: the distribution's own drop, kept whole as the record of what the vendoring changed (the cio 2026-11-10, on aisnobol)
   CONTAINER  ALL.<ext>, ALL.ref, ALL.in, ALL.argv, ALL.prelude, ALL.dialect: the form a converted package no longer has
   LOOSE      everything else
 then PACKAGE_LAYOUT dir=DIR files=N index=N program=N stream=N part=N table=N document=N container=N omitted=N loose=N.
@@ -95,6 +96,12 @@ def census(d):
         for ln in text_of(d, "CONTAINERS.tsv").split("\n"):
             if ln.strip() and not ln.startswith("#"):
                 contained.update(c.strip() for c in ln.split("\t") if c.strip())
+    upstream = "upstream/PROVENANCE.md" in files
+    argd = set()
+    if os.path.isfile(os.path.join(d, "ALL.args")):
+        for ln in text_of(d, "ALL.args").split("\n"):
+            if ln.strip() and not ln.startswith("#"):
+                argd.update(ln.split("\t")[1:])
     for f in files:
         base, top = os.path.basename(f), "/" not in f
         ext = os.path.splitext(f)[1]
@@ -112,7 +119,9 @@ def census(d):
             role[f] = "TABLE"
         elif f in omit or stem(f) in omit or base in omit or (ext not in STREAMS and ext != ".ref" and stem(base) in omit):
             role[f] = "OMITTED"
-        elif f in contained or base in contained:
+        elif upstream and f.startswith("upstream/"):
+            role[f] = "DOCUMENT"
+        elif f in contained or base in contained or f in argd:
             role[f] = "PART"
         elif top and ext == ".tsv" and script_names(base):
             role[f] = "TABLE"
