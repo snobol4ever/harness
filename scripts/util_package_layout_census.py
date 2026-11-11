@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+"""util_package_layout_census.py -- EVERY FILE OF A PACKAGE, NAMED BY ITS ROLE (the cio 2026-11-10, CIO-59, CIO-60, CIO-113; Lon in the cio's window,
+verbatim: "We also need major clean up in the $/corpus/packages language folders just like the \"tests\" folder but they will not have ONE LINERS
+and MULTI LINERS. Instead the programs will have the same layout as in the distribution from which it came, and side-by-side files with NAME.in,
+NAME.out, and NAME.err files. And slightly varying ALL files."). The sister of util_tests_layout_census.py, which reads a test folder.
+
+usage: util_package_layout_census.py --package DIR [--check] [--list] | --probe
+For every file git tracks under DIR (every file on disk when DIR is in no repository) one role:
+  INDEX      ALL.csv, ALL.args, ALL.omit, ALL.mask, ALL.rc at the package root
+  PROGRAM    a file the path column of ALL.csv names for a row ALL.omit does not name
+  STREAM     STEM.in, STEM.out or STEM.err beside a PROGRAM of that stem
+  OMITTED    a program a line of ALL.omit or a row of an EXCLUDED*.tsv names (declared out, with its measurement; not loose), and its streams
+  TABLE      CONTRACT.tsv, CONTAINERS.tsv, EXCLUDED*.tsv, PARTITION.tsv, SOURCES.tsv, DRIVERS.tsv, or a .tsv at the root a script of harness/scripts names
+  PART       a file CONTAINERS.tsv names, or one whose bare file name a PROGRAM, an OMITTED program or another PART holds in its text
+  DOCUMENT   README*, LICENSE*, NOTICE*, PROVENANCE*, *.md or *.txt at the package root
+  CONTAINER  ALL.<ext>, ALL.ref, ALL.in, ALL.argv, ALL.prelude, ALL.dialect: the form a converted package no longer has
+  LOOSE      everything else
+then PACKAGE_LAYOUT dir=DIR files=N index=N program=N stream=N part=N table=N document=N container=N omitted=N loose=N.
+--list prints one line a file (role, a tab, the path); --check: rc 0 when container=0 and loose=0, else rc 1 with the first twenty CONTAINER and
+LOOSE paths; --probe: a planted package holding one file of each role prints PACKAGE_LAYOUT_PROBE roles=9, rc 0 (rc 1 naming the file read
+otherwise). rc 2 refused (no such directory, no ALL.csv). It reads; it writes nothing in the package and runs no program."""
+import csv, fnmatch, os, shutil, subprocess, sys, tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROLES = ("INDEX", "PROGRAM", "STREAM", "PART", "TABLE", "DOCUMENT", "CONTAINER", "OMITTED", "LOOSE")
+INDEX = ("ALL.csv", "ALL.args", "ALL.omit", "ALL.mask", "ALL.rc")
+TABLES = ("CONTRACT.tsv", "CONTAINERS.tsv", "PARTITION.tsv", "SOURCES.tsv", "DRIVERS.tsv")
+CONTAINER_EXT = (".sno", ".icn", ".pl", ".raku", ".pas", ".sc", ".reb")
+CONTAINER = ("ALL.ref", "ALL.in", "ALL.argv", "ALL.prelude", "ALL.dialect") + tuple("ALL" + x for x in CONTAINER_EXT)
+STREAMS = (".in", ".out", ".err")
+DOCS = ("README*", "LICENSE*", "NOTICE*", "PROVENANCE*", "*.md", "*.txt")
+
+
+def refuse(msg):
+    print("REFUSE(2) [util_package_layout_census]: " + msg, file=sys.stderr)
+    sys.exit(2)
+
+
+def tracked(d):
+    """Every file git tracks under D, as paths from D; every file on disk when D is in no repository."""
+    p = subprocess.run(["git", "-C", d, "ls-files", "-z"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    if p.returncode == 0:
+        return sorted(x for x in p.stdout.decode("utf-8", "surrogateescape").split("\0") if x)
+    out = []
+    for root, dirs, names in os.walk(d):
+        dirs[:] = [x for x in dirs if not x.startswith(".")]
+        out += [os.path.relpath(os.path.join(root, n), d) for n in names]
+    return sorted(out)
+
+
+def omitted_names(d, files):
+    names = set()
+    p = os.path.join(d, "ALL.omit")
+    if os.path.isfile(p):
+        for ln in open(p, encoding="utf-8", errors="replace").read().split("\n"):
+            if ln.strip() and not ln.startswith("#") and ": " in ln:
+                names.add(ln.split(": ", 1)[0])
+    for f in files:
+        if "/" not in f and fnmatch.fnmatch(f, "EXCLUDED*.tsv"):
+            for ln in open(os.path.join(d, f), encoding="utf-8", errors="replace").read().split("\n"):
+                if ln.strip() and not ln.startswith("#"):
+                    names.add(ln.split("\t", 1)[0].strip())
+    return names
+
+
+def script_names(name):
+    p = subprocess.run(["grep", "-r", "-l", "-F", "-m", "1", "--", name, HERE], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    return bool(p.stdout.strip())
+
+
+def text_of(d, f):
+    try:
+        return open(os.path.join(d, f), "rb").read().decode("utf-8", "replace")
+    except OSError:
+        return ""
+
+
+def census(d):
+    d = os.path.abspath(d)
+    if not os.path.isdir(d):
+        refuse("no directory %s" % d)
+    if not os.path.isfile(os.path.join(d, "ALL.csv")):
+        refuse("%s has no ALL.csv: it is no package" % d)
+    files = tracked(d)
+    role = {}
+    with open(os.path.join(d, "ALL.csv"), newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    omit = omitted_names(d, files)
+    progs = {r.get("path") for r in rows if r.get("path") and r.get("entry") not in omit}
+    out_progs = {r.get("path") for r in rows if r.get("path") and r.get("entry") in omit}
+    stem = lambda f: os.path.splitext(f)[0]
+    prog_stems, out_stems = {stem(f) for f in progs}, {stem(f) for f in out_progs}
+    contained = set()
+    if os.path.isfile(os.path.join(d, "CONTAINERS.tsv")):
+        for ln in text_of(d, "CONTAINERS.tsv").split("\n"):
+            if ln.strip() and not ln.startswith("#"):
+                contained.update(c.strip() for c in ln.split("\t") if c.strip())
+    for f in files:
+        base, top = os.path.basename(f), "/" not in f
+        ext = os.path.splitext(f)[1]
+        if top and base in INDEX:
+            role[f] = "INDEX"
+        elif top and base in CONTAINER:
+            role[f] = "CONTAINER"
+        elif f in progs:
+            role[f] = "PROGRAM"
+        elif ext in STREAMS and stem(f) in prog_stems:
+            role[f] = "STREAM"
+        elif f in out_progs or (ext in STREAMS and stem(f) in out_stems):
+            role[f] = "OMITTED"
+        elif top and (base in TABLES or fnmatch.fnmatch(base, "EXCLUDED*.tsv")):
+            role[f] = "TABLE"
+        elif f in omit or stem(f) in omit or base in omit or (ext not in STREAMS and ext != ".ref" and stem(base) in omit):
+            role[f] = "OMITTED"
+        elif f in contained or base in contained:
+            role[f] = "PART"
+        elif top and ext == ".tsv" and script_names(base):
+            role[f] = "TABLE"
+        elif top and any(fnmatch.fnmatch(base, g) for g in DOCS):
+            role[f] = "DOCUMENT"
+    rest = [f for f in files if f not in role]
+    readers = [f for f in files if role.get(f) in ("PROGRAM", "OMITTED", "PART")]
+    texts = "\n".join(text_of(d, f) for f in readers)
+    while rest:
+        found = [f for f in rest if os.path.splitext(f)[1] not in STREAMS + (".ref",) and os.path.basename(f) in texts]
+        if not found:
+            break
+        for f in found:
+            role[f] = "PART"
+        texts += "\n" + "\n".join(text_of(d, f) for f in found)
+        rest = [f for f in rest if f not in role]
+    for f in rest:
+        role[f] = "LOOSE"
+    return d, files, role
+
+
+def report(d, files, role, list_all, check):
+    if list_all:
+        for f in files:
+            print("%s\t%s" % (role[f], f))
+    n = {r: sum(1 for f in files if role[f] == r) for r in ROLES}
+    print("PACKAGE_LAYOUT dir=%s files=%d index=%d program=%d stream=%d part=%d table=%d document=%d container=%d omitted=%d loose=%d" % (
+        d, len(files), n["INDEX"], n["PROGRAM"], n["STREAM"], n["PART"], n["TABLE"], n["DOCUMENT"], n["CONTAINER"], n["OMITTED"], n["LOOSE"]))
+    if not check:
+        return 0
+    bad = [f for f in files if role[f] in ("CONTAINER", "LOOSE")]
+    for f in bad[:20]:
+        print("  %s\t%s" % (role[f], f))
+    return 1 if bad else 0
+
+
+def probe():
+    t = tempfile.mkdtemp(prefix="pkg_layout_probe_", dir=os.environ.get("TMPDIR") or None)
+    try:
+        d = os.path.join(t, "probe_pkg")
+        os.makedirs(os.path.join(d, "sub"))
+        plant = {
+            "ALL.csv": ("INDEX", "rank,entry,path,origin\n1,sub/run,sub/run.sno,probe\n2,gone,gone.sno,probe\n"),
+            "ALL.omit": ("INDEX", "gone: the oracle refuses it\n"),
+            "sub/run.sno": ("PROGRAM", "-INCLUDE 'lib.inc'\n OUTPUT = 'x'\nEND\n"),
+            "sub/run.out": ("STREAM", "x\n"),
+            "gone.sno": ("OMITTED", "END\n"),
+            "PARTITION.tsv": ("TABLE", "# cells\n"),
+            "lib.inc": ("PART", "* a library\n"),
+            "README.md": ("DOCUMENT", "a planted package\n"),
+            "ALL.ref": ("CONTAINER", ""),
+            "stray.bak": ("LOOSE", "left behind\n"),
+        }
+        for f, (r, body) in plant.items():
+            open(os.path.join(d, f), "w").write(body)
+        d2, files, role = census(d)
+        wrong = ["%s read %s, planted %s" % (f, role.get(f), r) for f, (r, body) in plant.items() if role.get(f) != r]
+        seen = len({role[f] for f in files})
+        print("PACKAGE_LAYOUT_PROBE roles=%d" % seen)
+        for w in wrong:
+            print("  " + w)
+        return 0 if not wrong and seen == len(ROLES) else 1
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
+def main(a):
+    if "--probe" in a:
+        return probe()
+    if "--package" not in a or a.index("--package") + 1 >= len(a):
+        refuse("usage: util_package_layout_census.py --package DIR [--check] [--list] | --probe")
+    d, files, role = census(a[a.index("--package") + 1])
+    return report(d, files, role, "--list" in a, "--check" in a)
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
