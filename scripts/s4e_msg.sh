@@ -396,6 +396,7 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
     if [ -f "$_c" ]; then
       local _own _ts; _own="$(head -1 "$_c")"
       grep -q '^DONE$' "$_c" && { echo "⛔ $_t reads DONE on its claim; the holder deletes the job" >&2; return 1; }
+      [ "$_own" = "$ME" ] || { grep -q '^PARK ' "$_c" || printf 'PARK HELD-BY:%s:duplicate-job-%s-buried-at-take-by-%s %s\n' "$_own" "$2" "$ME" "$(date -u +%FT%TZ)" >> "$_c"; echo "⛔ $_t was claimed by $_own while $ME synced, built and read the premise: the job is released, the pass goes on (cio 2026-11-11: officer_02, 03 and 05 each served one row, a reserve appended to a foreign claim)" >&2; return 5; }
       s4e_reserve_line "$2" "$3" >> "$_c"; return 0
     fi
     ( set -o noclobber; { printf '%s\n' "$ME"; s4e_reserve_line "$2" "$3"; } > "$_c" ) 2>/dev/null || { echo "⛔ $_t was claimed in the race ($(head -1 "$_c" 2>/dev/null)); the job is released" >&2; return 1; }
