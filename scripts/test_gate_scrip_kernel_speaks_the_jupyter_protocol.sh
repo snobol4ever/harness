@@ -227,6 +227,19 @@ try:
     cl = c5r["status"] == "ok" and [t for t, _ in c5] == ["stream", "clear_output", "stream"] and c5[0][1].get("text") == "one" and c5[1][1] == {"wait": True} and c5[2][1].get("text") == "two\n"
     print("KERNEL_CLEAR ok" if cl else "KERNEL_CLEAR RED: the cell broadcast %r" % (c5,))
     bad += 0 if cl else 1
+    # VALUES FROM THE LIVE SESSION (messaging, user_expressions and inspect_request): each user expression of an execute request is evaluated in the session after the cell and answered as a
+    # MIME bundle or as its own error; the name under the cursor that is no builtin is described by its datatype and value; a language with no session answers each expression with an error
+    u1r, _ = cell(" UXV = 41\n", user_expressions={"sum": "UXV + 1", "bad": "NOSUCHFUNCTION(1)", "fails": "DIFFER(1, 1)", "text": "'two' CHAR(10) 'lines'"})
+    u2r, u2 = cell(" OUTPUT = 'the session lives ' UXV\n")
+    u3r, _ = cell("%%icon\nprocedure main();\n  write(1);\nend\n", user_expressions={"x": "1 + 1"})
+    ux, i3, i4 = u1r.get("user_expressions", {}), ask(kc.inspect(" OUTPUT = UXV", 12)), ask(kc.inspect(" OUTPUT = UXNEVERSET", 14))
+    ue = (ux.get("sum") == {"status": "ok", "data": {"text/plain": "42"}, "metadata": {}} and ux.get("bad", {}).get("status") == "error" and ux.get("bad", {}).get("ename") == "SNOBOL4 error 22"
+          and ux.get("fails", {}).get("ename") == "SNOBOL4 failure" and ux.get("text", {}).get("data") == {"text/plain": "two\nlines"} and u2r["status"] == "ok" and u2 == [("stream", {"name": "stdout", "text": "the session lives 41\n"})]
+          and u3r["status"] == "ok" and u3r.get("user_expressions", {}).get("x", {}).get("status") == "error" and i3.get("found") is True and i3.get("data", {}).get("text/plain") == "UXV: INTEGER\n41"
+          and i4.get("found") is False)
+    print("KERNEL_EXPRESSIONS ok" if ue else "KERNEL_EXPRESSIONS RED: the four expressions %r; the next cell %r %r; an Icon cell's expression %r; inspect of a set name %r, of an unset name %r" % (ux, u2r.get("status"), u2,
+          u3r.get("user_expressions"), i3, i4))
+    bad += 0 if ue else 1
 finally:
     kc.stop_channels(); km.shutdown_kernel(now=False)
 # A CELL RUNS IN THE KERNEL'S OWN DIRECTORY (CIO-78): a second kernel started in a scratch folder reads the file beside the notebook by its bare name, from a session cell and from a one-program cell
