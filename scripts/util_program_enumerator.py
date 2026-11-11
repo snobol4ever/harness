@@ -166,6 +166,7 @@ class Grader:
         path = os.path.join(self.work, 'b%05d_%d.sno' % (self.n_batches, depth))
         open(path, 'w').write(program(exprs, self.env))
         orc, oracle = oracle_run(path, self.tmo)
+        if orc != 0: oracle = {}
         if not oracle and len(exprs) > 1:
             h = len(exprs) // 2; r = self.grade(exprs[:h], depth + 1); r.update(self.grade(exprs[h:], depth + 1)); return r
         self.oracle_rows.update(oracle)
