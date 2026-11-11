@@ -19,7 +19,8 @@ For every file git tracks under DIR (every file on disk when DIR is in no reposi
              listing, which the builder reads for the lines a rejection must name; the coo 2026-11-11 on pat); STEM.E.ref beside a program a row of PREPROCESS.tsv names (the preprocess-only contract's answer; the coo's ask of 2026-11-10 on jcon and
              arizona); NAME.ref.corrected for a name a row of ALL.corrected.tsv carries (the corrected answer the grader reads where the oracle errs;
              the coo 2026-11-10 on fpc_tests); a file CONTAINERS.tsv or CONTRACT.tsv names by its path or bare name, one ALL.args names as an argument, a member of a folder whose
-             other files are all PARTs (a library shipped whole), or one whose bare file name a PROGRAM, an OMITTED program or another PART holds in its text
+             other files are all PARTs (a library shipped whole), or one whose bare file name a PROGRAM, an OMITTED program or another PART holds in its text, or an
+             Icon file NAME.icn that one of those names in a link declaration (link NAME: a pack of the Icon library is one program of many files)
   DOCUMENT   README*, LICENSE*, COPYING*, NOTICE*, PROVENANCE*, *.md or *.txt at the package root; a root file one of those names by its bare name (the
              distribution's own script or note, accounted for by the package's own record); and every file under the root folder upstream/ when it holds a
              PROVENANCE.md: the distribution's own drop, kept whole as the record of what the vendoring changed (the cio 2026-11-10, on aisnobol)
@@ -76,6 +77,17 @@ def omitted_names(d, files):
 def script_names(name):
     p = subprocess.run(["grep", "-r", "-l", "-F", "-m", "1", "--", name, HERE], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     return bool(p.stdout.strip())
+
+
+def icon_linked(texts):
+    """The names an Icon link declaration of TEXTS names (link a, b, c: each a file NAME.icn, written without its extension): a pack of the Icon
+    program library is one program of many files, its main file linking the others (the grader 2026-11-11 on pack_tcll1, whose ten linked files
+    read LOOSE because the rule above looks for a file's whole name)."""
+    import re
+    out = set()
+    for m in re.finditer(r"(?m)^[ \t]*link[ \t]+([^\n#;]+)", texts):
+        out.update(x.strip().strip('"') for x in m.group(1).split(",") if x.strip())
+    return out
 
 
 def text_of(d, f):
@@ -166,7 +178,8 @@ def census(d):
     readers = [f for f in files if role.get(f) in ("PROGRAM", "OMITTED", "PART")]
     texts = "\n".join(text_of(d, f) for f in readers)
     while rest:
-        found = [f for f in rest if os.path.splitext(f)[1] not in STREAMS + (".ref",) and os.path.basename(f) in texts]
+        linked = icon_linked(texts)
+        found = [f for f in rest if os.path.splitext(f)[1] not in STREAMS + (".ref",) and (os.path.basename(f) in texts or (os.path.splitext(f)[1] == ".icn" and os.path.splitext(os.path.basename(f))[0] in linked))]
         if not found:
             break
         for f in found:
