@@ -31,7 +31,7 @@ trap 'rm -rf "$W"' EXIT
 PASS=0; FAIL=0; T=$'\t'
 ok()  { PASS=$((PASS+1)); echo "  ✅ $1: $2"; }
 red() { FAIL=$((FAIL+1)); echo "  ⛔ $1 RED: $2"; }
-mkdir -p "$W/tasks" "$W/salvage"; : > "$W/QUEUE.done.tsv"; : > "$W/QUEUE.retired.tsv"
+mkdir -p "$W/tasks" "$W/salvage"; : > "$W/QUEUE.retired.tsv"
 printf '# fixture queue (R-1574 gate)\n' > "$W/QUEUE.tsv"
 OLD="$(date -d '2 days ago' +%Y-%m-%dT%H:%M:%S)"
 row()   { printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$W/QUEUE.tsv"; }
@@ -64,9 +64,9 @@ grep -qE "^2${T}fx-cannot-row${T}coo${T}RETIRED:zero-base-r-1386-cannot-measure-
 grep -qE "^2${T}fx-red-row${T}coo${T}FREE$" "$W/QUEUE.tsv" && grep -q 'ran RED (rc=1)' "$W/tasks/fx-red-row.task.md" \
     && ok R "the rank-0 red is kept, re-ranked to 2, and ledgered RED" \
     || red R "red row: [$(grep 'fx-red-row' "$W/QUEUE.tsv" | cut -c1-60)] ledger RED lines $(grep -c 'ran RED' "$W/tasks/fx-red-row.task.md") (want rank 2 FREE, 1)"
-grep -qE "^2${T}fx-green-row${T}coo${T}DONE:zero-base-green-r-1386$" "$W/QUEUE.done.tsv" \
-    && ok G "the green is archived DONE" \
-    || red G "green row: done [$(grep 'fx-green-row' "$W/QUEUE.done.tsv" | cut -c1-60)] (want DONE:zero-base-green-r-1386)"
+[ ! -e "$W/tasks/fx-green-row.task.md" ] && ! grep -q 'fx-green-row' "$W/QUEUE.tsv" \
+    && ok G "the green row is deleted from the live file with its baton (nothing archived)" \
+    || red G "green row: live [$(grep -c 'fx-green-row' "$W/QUEUE.tsv")] baton present [$([ -e "$W/tasks/fx-green-row.task.md" ] && echo yes || echo no)] (want live 0, baton gone)"
 s="$(ls "$W"/salvage/zero-base-*.tsv 2>/dev/null | head -1)"
 [ -n "$s" ] && grep -qE "^fx-load-guard-row${T}coo${T}FREE${T}LOAD-GUARD-kept${T}2${T}KEEP$" "$s" \
     && ok S "the salvage log names the class LOAD-GUARD-kept with rc 2 and place KEEP" \
@@ -79,8 +79,8 @@ nk="$(grep -c '^KNIT ' <<<"$o")"
 [ "$nk" = 2 ] && grep -q '^KNIT before the run phase: echo knit -> rc 0' <<<"$o" && grep -q '^KNIT after the killed criterion fx-timeout-row: echo knit -> rc 0' <<<"$o" \
     && ok K "the tree is knit once before the run phase and once after the killed criterion, each knit printed with its rc" \
     || red K "$nk KNIT line(s): $(grep '^KNIT ' <<<"$o" | cut -c1-80 | tr '\n' '|') (want 2: before the run phase, after the killed criterion fx-timeout-row, rc 0)"
-grep -qE "^2${T}fx-timeout-row${T}coo${T}FREE$" "$W/QUEUE.tsv" && ! grep -q 'fx-timeout-row' "$W/QUEUE.retired.tsv" && ! grep -q 'fx-timeout-row' "$W/QUEUE.done.tsv" \
+grep -qE "^2${T}fx-timeout-row${T}coo${T}FREE$" "$W/QUEUE.tsv" && ! grep -q 'fx-timeout-row' "$W/QUEUE.retired.tsv" \
     && ok T "the criterion killed at the timeout is kept FREE, neither retired nor done" \
-    || red T "timeout row: live [$(grep 'fx-timeout-row' "$W/QUEUE.tsv" | cut -c1-60)] retired [$(grep -c 'fx-timeout-row' "$W/QUEUE.retired.tsv")] done [$(grep -c 'fx-timeout-row' "$W/QUEUE.done.tsv")] (want FREE, 0, 0)"
+    || red T "timeout row: live [$(grep 'fx-timeout-row' "$W/QUEUE.tsv" | cut -c1-60)] retired [$(grep -c 'fx-timeout-row' "$W/QUEUE.retired.tsv")] (want FREE, 0)"
 echo "GATE $([ "$FAIL" = 0 ] && echo PASS || echo "FAIL($FAIL)") [$G]: $PASS of $((PASS + FAIL)) arms green (population: a five-row fixture postoffice swept by $ZB)"
 [ "$FAIL" = 0 ]
