@@ -5613,7 +5613,8 @@ PROGRESS_PACKAGE_KEYS = {"arizona_tests": "arizona", "jcon_tests": "jcon", "unic
                          "snoflake_suite": "snoflake", "aisnobol": "aisnobol", "dotnet": "dotnet", "swi_tests": "swi", "gnu_prolog": "gnu",
                          "inriasuite": "inria", "fpc_tests": "fpc", "pat": "pat", "spitbol_testpgms": "testpgms", "roast": "roast",
                          "trealla_tests": "trealla", "xsb_tests": "xsb", "spitbol_x64_tests": "spitbol_x64", "spitbol_x32_tests": "spitbol_x32",
-                         "raku_examples": "raku-examples", "freepascal_tree": "fpc-source"}   # the coo 2026-10-10: TreallaTests' row key is trealla; without this its 658 graded rows went in as trealla_tests and the writer read 0 PASS
+                         "raku_examples": "raku-examples", "freepascal_tree": "fpc-source",
+                         "trealla_more": "trealla-more", "prolog_sets": "prolog-sets"}   # the coo 2026-10-10: TreallaTests' row key is trealla; without this its 658 graded rows went in as trealla_tests and the writer read 0 PASS
 
 
 def progress_suite_for(sno_path, paths):
