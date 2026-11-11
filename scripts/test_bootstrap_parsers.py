@@ -219,7 +219,11 @@ def main():
     ap.add_argument("--no-rungs", action="store_true", help="corpus files only")
     ap.add_argument("--list", action="store_true", help="print the population and exit 0")
     ap.add_argument("--show", type=int, default=40, help="names printed per class (default 40; 0 = all)")
+    ap.add_argument("--append", action="store_true", help="write one progress row per member through util_progress_append.py (arms sc3 and sc4 only; suite bootparse-<lang>)")
     a = ap.parse_args()
+    OUT = {"PARSED": "PASS", "REFUSED": "REFUSE", "CRASH": "CRASH", "TIMEOUT": "HANG", "EMPTY": "MISSING"}
+    if a.append and a.arm not in ("sc3", "sc4"):
+        refuse("--append grades sc3 and sc4 only")
     langs = sorted(LANGS) if "all" in a.langs else a.langs
     work = Path(a.work or (Path(os.environ.get("TMPDIR", "/tmp")) / "bootstrap_parsers")).resolve()
     work.mkdir(parents=True, exist_ok=True)
@@ -248,6 +252,13 @@ def main():
             for f in concurrent.futures.as_completed(futs):
                 rc, text, to, dt = f.result()
                 results[futs[f]] = classify(a.arm, rc, text, to) + (dt,)
+        if a.append:
+            for name in sorted(results):
+                c, why, dt = results[name]
+                cmd = [sys.executable, str(Path(__file__).resolve().parent / "util_progress_append.py"), "append", "--class", "package", "--suite", f"bootparse-{lang}", "--lang", lang, "--program", name, "--mode", "m3" if a.arm == "sc3" else "m4", "--outcome", OUT[c], "--secs", str(round(dt, 3)), "--note", why[:200]]
+                appended = subprocess.run(cmd, capture_output=True, text=True)
+                if appended.returncode != 0:
+                    refuse(f"append refused for {name}: {(appended.stderr or appended.stdout).strip()[:300]}")
         counts = {k: 0 for k in ("PARSED", "REFUSED", "CRASH", "TIMEOUT", "EMPTY")}
         for c, _, _ in results.values():
             counts[c] += 1
