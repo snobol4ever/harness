@@ -5,15 +5,15 @@
   util_notebook_kernel_check.py check NOTEBOOK...   run each notebook top down through scrip --kernel and compare cell by cell
   util_notebook_kernel_check.py --probe             the tool's own proof on a planted notebook
 
-check: a scratch kernel specification is planted under the notebook's own kernelspec name, its argv the scrip binary (SCRIP_BIN, else SCRIP/scrip of
-S4E_HOME), --kernel and the connection file, its environment naming the notebook's language as the default; a deep copy of the notebook is run by
+check: THE ONE KERNEL (Lon 2026-11-11: "there is only ONE kernel. Its name is SCRIP and handle all the languages.") is installed into scratch by the scrip binary
+itself (SCRIP_BIN, else SCRIP/scrip of S4E_HOME; scrip --kernel-install), and a notebook that names any other kernel refuses; a deep copy of the notebook is run by
 nbclient in the notebook's own folder with errors allowed. A code cell is SAME when the text of its stdout streams equals the saved cell's and the
 run holds no stderr stream and no error output; else DIFFERS. One line a notebook:
   NOTEBOOK_KERNEL nb=NAME cells=N same=S differs=D first=K      (K the 1-based number of the first differing code cell, 0 when none)
 and for the first differing cell its two texts and what else the run held, at most ten lines each.
 rc 0 every notebook differs=0; rc 1 a notebook differs; rc 2 could not measure (no binary, no library, a notebook that does not parse, no kernel).
 Nothing is written beside a notebook; the scratch lives under /tmp/s4e/<seat> and is removed."""
-import copy, json, os, shutil, sys, tempfile
+import copy, json, os, shutil, subprocess, sys, tempfile
 
 
 def refuse(msg):
@@ -57,12 +57,12 @@ def check(paths, scrip, scratch):
             nb = nbformat.read(path, as_version=4)
         except Exception as e:
             refuse("%s does not parse as a notebook (%s)" % (path, e))
-        ks = nb.metadata.get("kernelspec", {})
-        name, lang = ks.get("name") or "scrip", ks.get("language") or "snobol4"
+        name = nb.metadata.get("kernelspec", {}).get("name") or "scrip"
         spec = tempfile.mkdtemp(prefix="spec.", dir=scratch)
-        os.makedirs(os.path.join(spec, "kernels", name))
-        json.dump({"argv": [scrip, "--kernel", "{connection_file}"], "display_name": name, "language": lang, "interrupt_mode": "message", "env": {"SCRIP_DEFAULT_LANG": lang}},
-                  open(os.path.join(spec, "kernels", name, "kernel.json"), "w"))
+        inst = subprocess.run([scrip, "--kernel-install", os.path.join(spec, "kernels")], capture_output=True, text=True)
+        if inst.returncode != 0: refuse("%s --kernel-install did not install the kernel (rc %d: %s)" % (scrip, inst.returncode, inst.stderr.strip()[:200]))
+        if not os.path.exists(os.path.join(spec, "kernels", name, "kernel.json")):
+            refuse("%s names the kernel %s and the install writes %s: there is ONE kernel, scrip (Lon 2026-11-11)" % (path, name, " ".join(sorted(os.listdir(os.path.join(spec, "kernels"))))))
         os.environ["JUPYTER_PATH"] = spec
         run = copy.deepcopy(nb)
         try:
@@ -90,7 +90,7 @@ def check(paths, scrip, scratch):
 
 def probe(scrip, scratch):
     import nbformat
-    nb = nbformat.v4.new_notebook(metadata={"kernelspec": {"name": "scrip-snobol4", "display_name": "SCRIP SNOBOL4", "language": "snobol4"}})
+    nb = nbformat.v4.new_notebook(metadata={"kernelspec": {"name": "scrip", "display_name": "SCRIP", "language": "scrip"}})
     for code, saved in (("        OUTPUT = 'one'\nEND\n", "one\n"), ("        OUTPUT = 'two'\nEND\n", "TWO\n")):
         c = nbformat.v4.new_code_cell(code)
         c.outputs = [nbformat.v4.new_output("stream", name="stdout", text=saved)]

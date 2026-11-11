@@ -3,12 +3,12 @@
 
   util_jupyterlab_highlight_look.py LABEXTENSION_DIR     (the built folder, corpus/editor_configs/jupyterlab/labextension)
 
-For each of the four languages a one-cell notebook is written whose metadata names the language as the SCRIP kernel does (language_info with the editor mode the
-extension registers). JupyterLab is started twice in scratch on a free port with a token, once with the extension copied into its data directory and once
+For each of the four languages a one-cell notebook is written whose metadata names the language (language_info with the editor mode the extension registers), and
+for the ONE KERNEL, scrip, a notebook of three cells: one with no tag (SNOBOL4), one tagged icon, one tagged prolog, each to be coloured by its own language. JupyterLab is started twice in scratch on a free port with a token, once with the extension copied into its data directory and once
 without, and headless Chrome dumps the page of each notebook. A language is COLOURED when a line of its cell holds a span CodeMirror classed, PLAIN when
 its lines hold text alone. One line a language:
   HIGHLIGHT_LOOK lang=NAME with=COLOURED|PLAIN without=COLOURED|PLAIN spans=N
-and HIGHLIGHT_LOOK ok languages=4 when every language reads COLOURED with the extension and PLAIN without it.
+and HIGHLIGHT_LOOK ok languages=5 when every language reads COLOURED with the extension and PLAIN without it.
 rc 0 so; rc 1 a language reads otherwise; rc 2 could not measure (no Chrome, no JupyterLab, no built extension, a page with no cell).
 Nothing is written outside the scratch folder under /tmp/s4e/<seat>, which is removed; the servers are stopped by their own process handles."""
 import json, os, re, shutil, socket, subprocess, sys, tempfile, time, urllib.request, uuid
@@ -16,7 +16,8 @@ import json, os, re, shutil, socket, subprocess, sys, tempfile, time, urllib.req
 CELLS = {"snobol4": ("text/x-snobol4", ".sno", "* a comment line\nLOOP    X = LT(X, 10) X + 1 ' text' :S(LOOP)F(DONE)\n        OUTPUT = DUPL('ab', 3)\n"),
          "snocone": ("text/x-snocone", ".sc", "// a comment line\nif (GT(x, 10)) { OUTPUT = \"big \" x; }\n"),
          "icon": ("text/x-icon", ".icn", "# a comment line\nprocedure main()\n   every write(\"n \", 1 to 3)\nend\n"),
-         "prolog": ("text/x-prolog", ".pl", "% a comment line\nparent(tom, bob).\ngrand(X, Z) :- parent(X, Y), parent(Y, Z), write('ok').\n")}
+         "prolog": ("text/x-prolog", ".pl", "% a comment line\nparent(tom, bob).\ngrand(X, Z) :- parent(X, Y), parent(Y, Z), write('ok').\n"),
+         "scrip": ("text/x-scrip", ".md", "* the one kernel: a cell with no tag is SNOBOL4\n        OUTPUT = DUPL('ab', 3)\n\f%%icon\nprocedure main()\n   every write(\"n \", 1 to 3)\nend\n\f%%prolog\ngrand(X, Z) :- parent(X, Y), parent(Y, Z).\n")}
 
 
 def refuse(msg):
@@ -28,7 +29,7 @@ def look(top, ext, chrome):
     shutil.rmtree(data, ignore_errors=True); os.makedirs(os.path.join(data, "labextensions")); os.makedirs(work, exist_ok=True)
     if ext: shutil.copytree(ext, os.path.join(data, "labextensions", "scrip-highlight"))
     for name, (mime, fext, src) in CELLS.items():
-        json.dump({"cells": [{"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [], "source": src.splitlines(True)}],
+        json.dump({"cells": [{"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [], "source": part.splitlines(True)} for part in src.split("\f")],
                    "metadata": {"language_info": {"name": name, "file_extension": fext, "mimetype": mime, "codemirror_mode": name}}, "nbformat": 4, "nbformat_minor": 5}, open(os.path.join(work, name + ".ipynb"), "w"))
     s = socket.socket(); s.bind(("127.0.0.1", 0)); port = s.getsockname()[1]; s.close(); tok = uuid.uuid4().hex
     env = dict(os.environ, JUPYTER_DATA_DIR=data, JUPYTER_CONFIG_DIR=os.path.join(top, "cfg"), JUPYTER_RUNTIME_DIR=os.path.join(top, "rt"), JUPYTER_TOKEN=tok)

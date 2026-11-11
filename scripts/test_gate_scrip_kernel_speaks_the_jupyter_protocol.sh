@@ -323,7 +323,7 @@ bad += 0 if ip_ok else 1
 # THE INSTALLED KERNELS (kernels, kernel specs): scrip --kernel-install writes for every kernel it names a kernel.json that says debugger false, an icon logo-svg.svg, and the session program
 # beside them, named by SCRIP_SESSION_SNOBOL4 in the kernel's environment; a kernel started FROM the installed specification, in a folder away from the tree, runs a session cell
 import subprocess, xml.etree.ElementTree as ET
-inst = tempfile.mkdtemp(prefix="scrip-kernel-inst-"); kd = os.path.join(inst, "kernels")
+inst = tempfile.mkdtemp(prefix="scrip-kernel-inst-"); kd = os.path.join(inst, "kernels"); one_li = {}
 r = subprocess.run([scrip, "--kernel-install", kd], capture_output=True, text=True)
 said = [l.split()[1] for l in r.stdout.splitlines() if l.startswith("KERNELSPEC ")]
 src = open(os.path.join(os.path.dirname(os.path.realpath(scrip)), "src", "driver", "kernel_session_snobol4.sno")).read()
@@ -338,9 +338,10 @@ for n in said:
     except Exception as e: why.append("%s: %r" % (n, e))
 if not why:
     os.environ["JUPYTER_PATH"] = inst
-    km = KernelManager(kernel_name="scrip-snobol4"); km.start_kernel(cwd=tempfile.mkdtemp(prefix="scrip-kernel-away-")); kc = km.client(); kc.start_channels()
+    km = KernelManager(kernel_name="scrip"); km.start_kernel(cwd=tempfile.mkdtemp(prefix="scrip-kernel-away-")); kc = km.client(); kc.start_channels()
     try:
         kc.wait_for_ready(timeout=60)
+        one_li = kc.kernel_info(reply=True, timeout=30)["content"].get("language_info", {})
         mid = kc.execute(" OUTPUT = 'installed'\n"); out = ""; err = ""
         while True:
             m = kc.get_iopub_msg(timeout=120)
@@ -353,8 +354,20 @@ if not why:
         kc.stop_channels(); km.shutdown_kernel(now=True)
 print("KERNEL_INSTALL ok" if not why else "KERNEL_INSTALL RED: " + "; ".join(why[:4]))
 bad += 0 if not why else 1
+# THERE IS ONE KERNEL, ITS NAME IS SCRIP, AND IT HANDLES EVERY LANGUAGE (Lon 2026-11-11 in the cto's window: "there is only ONE kernel. Its name is SCRIP and handle all the languages."):
+# the install writes exactly one folder, scrip, display name SCRIP, with no default language; the kernel started from it names its language scrip with the editor mode scrip, runs a cell
+# with no tag as SNOBOL4 (the cell above) and, the arms before this one having read it, a tagged cell in its own language
+try:
+    one_j = json.load(open(os.path.join(kd, "scrip", "kernel.json")))
+except Exception as e:
+    one_j = {"error": repr(e)}
+one = (said == ["scrip"] and sorted(os.listdir(kd)) == ["scrip"] and one_j.get("display_name") == "SCRIP" and one_j.get("language") == "scrip" and "SCRIP_DEFAULT_LANG" not in one_j.get("env", {}) and not why
+       and one_li.get("name") == "scrip" and one_li.get("codemirror_mode") == "scrip" and one_li.get("mimetype") == "text/x-scrip")
+print("KERNEL_ONE ok" if one else "KERNEL_ONE RED: the install wrote %r; kernel.json reads %r; the kernel names its language %r" % (sorted(os.listdir(kd)) if os.path.isdir(kd) else None, {k: one_j.get(k) for k in ("display_name", "language", "env", "error")},
+      one_li if not why else why[:2]))
+bad += 0 if one else 1
 # UNDER A JUPYTER SERVER (the chain a browser uses: WebSocket to the server, ZeroMQ from the server to the kernel): a jupyter_server started here lists the installed kernels with their
-# icons, starts scrip-snobol4, and over its WebSocket a cell runs, the next cell finds the first cell's variable and reads a line by input_request, a display cell shows its type, and
+# icons, starts the one kernel, scrip, and over its WebSocket a cell runs, the next cell finds the first cell's variable and reads a line by input_request, a display cell shows its type, and
 # kernel_info reads 5.5; the server's log holds no traceback
 import asyncio, socket, uuid, urllib.request
 def under_server():
@@ -377,7 +390,7 @@ def under_server():
         for _ in range(200):
             try: api("/api/status"); break
             except Exception: time.sleep(0.3)
-        specs = api("/api/kernelspecs")["kernelspecs"]; kid = api("/api/kernels", {"name": "scrip-snobol4"})["id"]
+        specs = api("/api/kernelspecs")["kernelspecs"]; kid = api("/api/kernels", {"name": "scrip"})["id"]
         ws = await websocket_connect(HTTPRequest("ws://127.0.0.1:%d/api/kernels/%s/channels" % (port, kid), headers={"Authorization": "token " + tok}))
         async def run(code, answers=()):
             mid, m = wsmsg("execute_request", {"code": code, "silent": False, "store_history": True, "user_expressions": {}, "allow_stdin": True, "stop_on_error": True})
