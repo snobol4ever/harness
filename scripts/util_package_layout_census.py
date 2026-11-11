@@ -11,8 +11,10 @@ For every file git tracks under DIR (every file on disk when DIR is in no reposi
   STREAM     STEM.in, STEM.out or STEM.err beside a PROGRAM of that stem
   OMITTED    a program a line of ALL.omit or a row of an EXCLUDED*.tsv names (declared out, with its measurement; not loose), and its streams
   TABLE      CONTRACT.tsv, CONTAINERS.tsv, EXCLUDED*.tsv, PARTITION.tsv, SOURCES.tsv, DRIVERS.tsv, or a .tsv at the root a script of harness/scripts names
-  PART       a file CONTAINERS.tsv or CONTRACT.tsv names by its path or bare name, one ALL.args names as an argument, or one whose bare file name a PROGRAM, an OMITTED program or another PART holds in its text
-  DOCUMENT   README*, LICENSE*, NOTICE*, PROVENANCE*, *.md or *.txt at the package root; and every file under the root folder upstream/ when it holds a
+  PART       a file CONTAINERS.tsv or CONTRACT.tsv names by its path or bare name, one ALL.args names as an argument, a member of a folder whose
+             other files are all PARTs (a library shipped whole), or one whose bare file name a PROGRAM, an OMITTED program or another PART holds in its text
+  DOCUMENT   README*, LICENSE*, COPYING*, NOTICE*, PROVENANCE*, *.md or *.txt at the package root; a root file one of those names by its bare name (the
+             distribution's own script or note, accounted for by the package's own record); and every file under the root folder upstream/ when it holds a
              PROVENANCE.md: the distribution's own drop, kept whole as the record of what the vendoring changed (the cio 2026-11-10, on aisnobol)
   CONTAINER  ALL.<ext>, ALL.ref, ALL.in, ALL.argv, ALL.prelude, ALL.dialect: the form a converted package no longer has
   LOOSE      everything else
@@ -29,7 +31,7 @@ TABLES = ("CONTRACT.tsv", "CONTAINERS.tsv", "PARTITION.tsv", "SOURCES.tsv", "DRI
 CONTAINER_EXT = (".sno", ".icn", ".pl", ".raku", ".pas", ".sc", ".reb")
 CONTAINER = ("ALL.ref", "ALL.in", "ALL.argv", "ALL.prelude", "ALL.dialect") + tuple("ALL" + x for x in CONTAINER_EXT)
 STREAMS = (".in", ".out", ".err")
-DOCS = ("README*", "LICENSE*", "NOTICE*", "PROVENANCE*", "*.md", "*.txt")
+DOCS = ("README*", "LICENSE*", "COPYING*", "NOTICE*", "PROVENANCE*", "_PROVENANCE*", "*.md", "*.txt")
 
 
 def refuse(msg):
@@ -139,6 +141,18 @@ def census(d):
             role[f] = "PART"
         texts += "\n" + "\n".join(text_of(d, f) for f in found)
         rest = [f for f in rest if f not in role]
+    docs = "\n".join(text_of(d, f) for f in files if role.get(f) == "DOCUMENT" and "/" not in f)
+    for f in list(rest):
+        if "/" not in f and len(f) > 3 and f in docs:
+            role[f] = "DOCUMENT"
+    rest = [f for f in rest if f not in role]
+    low = texts.lower()
+    for f in list(rest):
+        folder = os.path.dirname(f)
+        mates = [g for g in files if os.path.dirname(g) == folder and g != f and g not in rest]
+        if os.path.splitext(f)[1] not in STREAMS + (".ref",) and (os.path.basename(f).lower() in low or (folder and mates and all(role.get(g) == "PART" for g in mates))):
+            role[f] = "PART"
+    rest = [f for f in rest if f not in role]
     for f in rest:
         role[f] = "LOOSE"
     return d, files, role
