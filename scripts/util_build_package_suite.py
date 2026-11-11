@@ -683,7 +683,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
             continue
         if ref_beside and not src.with_suffix(".ref").is_file():
             if (src.parent / (src.stem + "_driver.ref")).is_file():
-                excluded.append((src.relative_to(pkg_dir).as_posix(), f"a library graded through its driver {src.stem}_driver, which is the entry "
+                excluded.append((name, f"a library graded through its driver {src.stem}_driver, which is the entry "
                                                                         f"{name}_driver (CONTRACT.tsv units=ref-beside, R-1269)"))
                 print(f"[{i}/{len(srcs)}] {name}: GRADED THROUGH {src.stem}_driver (the driver is the entry)", file=sys.stderr)
                 continue
@@ -1369,6 +1369,98 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
     return entries, excluded, len(names)
 
 
+def _same_but_trailing_newlines(a, b):
+    return a.rstrip(b"\n") == b.rstrip(b"\n")
+
+
+def build_files_form(pkg_dir, lang, twice=False, only=None, src_ext=None):
+    """A PACKAGE IN THE FILES FORM IS REBUILT IN THE FILES FORM, SO A REBUILD NEVER BRINGS THE CONTAINER BACK (the coo 2026-11-10, row
+    packages-form-the-package-builder-writes-a-converted-package-in-its-files-form; CIO-59, CIO-113, CIO-116, CIO-117; Lon 2026-11-10: a
+    package keeps the layout of its distribution, NAME.in, NAME.out and NAME.err beside each program). build() and splice() stay the one
+    cutter: the package is packed to its container for the length of the cut, cut exactly as a container package is, and unpacked again by
+    the grader's own verb (unpack_dir, which writes through write_package_dir), all three in place and behind a whole copy that is put back on any refusal or error, so a failed build changes
+    nothing. What the cut reads beside a program and the files form no longer keeps is written for the cut and removed after it: NAME.argv
+    from ALL.args, and NAME.ref from NAME.out where the contract's units are ref-beside or plunit (the unit's marker, and plunit's answer).
+    A stream file whose new bytes equal the old but for trailing newlines keeps the old bytes: they are the oracle's own (CIO-117), and the
+    container cannot hold a last blank line. An entry with a NAME.err is refused: the container this cutter writes has no place for it."""
+    import shutil
+    ext = LANG_EXT[lang]
+    src = pkg_dir / f"ALL{ext}"
+    if h.pkg_dir_of(str(src)) is None:
+        h.refuse(f"{pkg_dir} is not a package in the files form (its ALL.csv has no path column)")
+    try:
+        entries = h.read_package_dir(pkg_dir, ext)
+    except ValueError as _e:
+        h.refuse(f"files form: {pkg_dir} does not read: {_e}")
+    _err = [e.name for e in entries if getattr(e, "stderr_answer", None)]
+    if _err:
+        h.refuse(f"files form: {len(_err)} entr(ies) carry a NAME.err, which the cut's container cannot hold: {_err[:5]}")
+    units = read_contract(pkg_dir)["units"]
+    fields, rows = h._fmt2_read_csv(pkg_dir)
+    path_of = {r.get("entry"): r.get("path") for r in rows if r.get("path")}
+    _bak_root = Path(tempfile.mkdtemp(prefix="pkgsuite_files_", dir=os.environ.get("TMPDIR") or None))
+    bak = _bak_root / pkg_dir.name
+    shutil.copytree(pkg_dir, bak, symlinks=True)
+    made = []
+    try:
+        for seq, e in enumerate(entries, 1):
+            e.seq = seq
+        wrote_in = h.write_suite(entries, str(src), str(pkg_dir / "ALL.ref"), out_in=str(pkg_dir / "ALL.in"), lang=lang)
+        if not wrote_in and (pkg_dir / "ALL.in").exists():
+            (pkg_dir / "ALL.in").unlink()
+        _av = [e.name + "\t" + "\t".join(e.argv) for e in entries if getattr(e, "argv", None)]
+        if _av:
+            (pkg_dir / "ALL.argv").write_text("\n".join(_av) + "\n", encoding="utf-8")
+        if (pkg_dir / "ALL.args").exists():
+            (pkg_dir / "ALL.args").unlink()
+        for e in entries:
+            prog = pkg_dir / path_of[e.name]
+            if getattr(e, "argv", None) and not prog.with_suffix(".argv").exists():
+                prog.with_suffix(".argv").write_text("\t".join(e.argv) + "\n", encoding="utf-8")
+                made.append(prog.with_suffix(".argv"))
+            if units in ("ref-beside", "plunit") and not prog.with_suffix(".ref").exists():
+                _out = prog.with_suffix(".out")
+                prog.with_suffix(".ref").write_bytes(_out.read_bytes() if _out.is_file() else b"")
+                made.append(prog.with_suffix(".ref"))
+            for _suf in (".out", ".err"):
+                if prog.with_suffix(_suf).is_file():
+                    prog.with_suffix(_suf).unlink()
+        h._fmt2_write_csv(pkg_dir, [c for c in fields if c != "path"], [{k: v for k, v in r.items() if k != "path"} for r in rows])
+        print(f"files form: {pkg_dir.name} packed to its container for the cut ({len(entries)} entries, {len(made)} sidecar(s) written for it)", file=sys.stderr)
+        result = build(pkg_dir, lang, twice=twice, only=only, src_ext=src_ext)
+        for _p in made:
+            if _p.exists():
+                _p.unlink()
+        try:
+            counts, n = h.unpack_dir(pkg_dir)
+        except ValueError as _e:
+            h.refuse(f"files form: the cut container of {pkg_dir.name} does not take the files form again: {_e}")
+        kept = 0
+        for _old in bak.rglob("*"):
+            if _old.suffix in (".out", ".err") and _old.is_file():
+                _new = pkg_dir / _old.relative_to(bak)
+                if _new.is_file() and _new.read_bytes() != _old.read_bytes() and _same_but_trailing_newlines(_new.read_bytes(), _old.read_bytes()):
+                    _new.write_bytes(_old.read_bytes())
+                    kept += 1
+        _left = [x for x in ("ALL" + ext, "ALL.ref", "ALL.in", "ALL.argv") if (pkg_dir / x).exists()]
+        if _left or h.pkg_dir_of(str(src)) is None:
+            h.refuse(f"files form: {pkg_dir.name} did not come back to the files form (container files left: {_left})")
+        print(f"files form: {pkg_dir.name} is in the files form again: {n} entries, in={counts['in']} out={counts['out']} err={counts['err']} "
+              f"args={counts['args']}; {kept} stream file(s) kept the oracle's own trailing bytes", file=sys.stderr)
+        return result
+    except BaseException:
+        for _c in list(pkg_dir.iterdir()):
+            if _c.is_dir() and not _c.is_symlink():
+                shutil.rmtree(_c)
+            else:
+                _c.unlink()
+        shutil.copytree(bak, pkg_dir, symlinks=True, dirs_exist_ok=True)
+        print(f"files form: {pkg_dir.name} is put back as it stood; nothing is changed", file=sys.stderr)
+        raise
+    finally:
+        shutil.rmtree(_bak_root, ignore_errors=True)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("package_dir")
@@ -1390,6 +1482,9 @@ def main():
         only = [n.strip() for a in args.only for n in a.split(",") if n.strip()]
         if not only:
             h.refuse("--only names no program")
+    if h.pkg_dir_of(str(pkg_dir / f"ALL{LANG_EXT[args.lang]}")) is not None:
+        build_files_form(pkg_dir, args.lang, twice=args.twice, only=only, src_ext=args.src_ext or None)
+        return
     build(pkg_dir, args.lang, twice=args.twice, only=only, src_ext=args.src_ext or None)
 
 
