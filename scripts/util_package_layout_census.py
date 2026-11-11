@@ -6,7 +6,9 @@ NAME.out, and NAME.err files. And slightly varying ALL files."). The sister of u
 
 usage: util_package_layout_census.py --package DIR [--check] [--list] | --probe
 For every file git tracks under DIR (every file on disk when DIR is in no repository) one role:
-  INDEX      ALL.csv, ALL.args, ALL.omit, ALL.mask, ALL.rc at the package root
+  INDEX      ALL.csv, ALL.args, ALL.omit, ALL.mask, ALL.rc at the package root; and ALL.dialect there while ALL.csv has no dialect column: the builder's own
+             record of the oracle's mode that cut each answer, which the grader does not read (with the column it is a second home of one fact and reads
+             LOOSE, to leave in the landing that writes the column; the cio's ruling of 2026-11-11 on rosetta-pascal)
   PROGRAM    a file the path column of ALL.csv names for a row ALL.omit does not name
   STREAM     STEM.in, STEM.out or STEM.err beside a PROGRAM of that stem
   OMITTED    a program a line of ALL.omit or a row of an EXCLUDED*.tsv names (declared out, with its measurement; not loose), and its streams
@@ -18,7 +20,7 @@ For every file git tracks under DIR (every file on disk when DIR is in no reposi
   DOCUMENT   README*, LICENSE*, COPYING*, NOTICE*, PROVENANCE*, *.md or *.txt at the package root; a root file one of those names by its bare name (the
              distribution's own script or note, accounted for by the package's own record); and every file under the root folder upstream/ when it holds a
              PROVENANCE.md: the distribution's own drop, kept whole as the record of what the vendoring changed (the cio 2026-11-10, on aisnobol)
-  CONTAINER  ALL.<ext>, ALL.ref, ALL.in, ALL.argv, ALL.prelude, ALL.dialect: the form a converted package no longer has
+  CONTAINER  ALL.<ext>, ALL.ref, ALL.in, ALL.argv, ALL.prelude: the form a converted package no longer has
   LOOSE      everything else
 then PACKAGE_LAYOUT dir=DIR files=N index=N program=N stream=N part=N table=N document=N container=N omitted=N loose=N.
 --list prints one line a file (role, a tab, the path); --check: rc 0 when container=0 and loose=0, else rc 1 with the first twenty CONTAINER and
@@ -31,7 +33,7 @@ ROLES = ("INDEX", "PROGRAM", "STREAM", "PART", "TABLE", "DOCUMENT", "CONTAINER",
 INDEX = ("ALL.csv", "ALL.args", "ALL.omit", "ALL.mask", "ALL.rc")
 TABLES = ("CONTRACT.tsv", "CONTAINERS.tsv", "PARTITION.tsv", "SOURCES.tsv", "DRIVERS.tsv")
 CONTAINER_EXT = (".sno", ".icn", ".pl", ".raku", ".pas", ".sc", ".reb")
-CONTAINER = ("ALL.ref", "ALL.in", "ALL.argv", "ALL.prelude", "ALL.dialect") + tuple("ALL" + x for x in CONTAINER_EXT)
+CONTAINER = ("ALL.ref", "ALL.in", "ALL.argv", "ALL.prelude") + tuple("ALL" + x for x in CONTAINER_EXT)
 STREAMS = (".in", ".out", ".err")
 DOCS = ("README*", "LICENSE*", "COPYING*", "NOTICE*", "PROVENANCE*", "_PROVENANCE*", "*.md", "*.txt")
 
@@ -89,7 +91,9 @@ def census(d):
     files = tracked(d)
     role = {}
     with open(os.path.join(d, "ALL.csv"), newline="", encoding="utf-8") as fh:
-        rows = list(csv.DictReader(fh))
+        rdr = csv.DictReader(fh)
+        rows = list(rdr)
+        has_dialect = "dialect" in (rdr.fieldnames or [])
     omit = omitted_names(d, files)
     progs = {r.get("path") for r in rows if r.get("path") and r.get("entry") not in omit}
     out_progs = {r.get("path") for r in rows if r.get("path") and r.get("entry") in omit}
@@ -121,6 +125,8 @@ def census(d):
         ext = os.path.splitext(f)[1]
         if top and base in INDEX:
             role[f] = "INDEX"
+        elif top and base == "ALL.dialect":
+            role[f] = "LOOSE" if has_dialect else "INDEX"
         elif top and base in CONTAINER:
             role[f] = "CONTAINER"
         elif f in progs:
@@ -194,6 +200,7 @@ def probe():
         plant = {
             "ALL.csv": ("INDEX", "rank,entry,path,origin\n1,sub/run,sub/run.sno,probe\n2,gone,gone.sno,probe\n"),
             "ALL.omit": ("INDEX", "gone: the oracle refuses it\n"),
+            "ALL.dialect": ("INDEX", "sub/run\tiso\n"),
             "sub/run.sno": ("PROGRAM", "-INCLUDE 'lib.inc'\n OUTPUT = 'x'\nEND\n"),
             "sub/run.out": ("STREAM", "x\n"),
             "gone.sno": ("OMITTED", "END\n"),
@@ -210,6 +217,14 @@ def probe():
         d2, files, role = census(d)
         wrong = ["%s read %s, planted %s" % (f, role.get(f), r) for f, (r, body) in plant.items() if role.get(f) != r]
         seen = len({role[f] for f in files})
+        d3 = os.path.join(t, "probe_pkg_dialect_column")
+        os.makedirs(d3)
+        open(os.path.join(d3, "ALL.csv"), "w").write("rank,entry,path,dialect\n1,run,run.sno,\n")
+        open(os.path.join(d3, "run.sno"), "w").write(" OUTPUT = 'x'\nEND\n")
+        open(os.path.join(d3, "ALL.dialect"), "w").write("run\tiso\n")
+        r3 = census(d3)[2].get("ALL.dialect")
+        if r3 != "LOOSE":
+            wrong.append("ALL.dialect beside an index with a dialect column read %s, wanted LOOSE" % r3)
         print("PACKAGE_LAYOUT_PROBE roles=%d" % seen)
         for w in wrong:
             print("  " + w)
