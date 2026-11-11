@@ -1432,7 +1432,7 @@ def _fraction_from_text(text, p_override, t_override):
 # verbatim SUITE_BOARD line it was handed, and when it was handed none it SAYS SO in a greppable line rather than
 # leaving the reader to assume one was kept.
 BOARD_LINE_RX = re.compile(r"(?m)^.*?\b([A-Z0-9_]*SUITE_BOARD\b.*)$")
-BOARD_LINES_DIR = os.path.join(S4E, ".github", "board-lines")
+BOARD_LINES_DIR = os.path.join(S4E, ".github")
 BOARD_LINES_HEADER = (
     "# THE LATEST VERBATIM RUNNER BOARD LINE OF EACH SUITE, the now state only (Lon 2026-11-11: \"We do not need track the\n"
     "# time element anymore just the now state of the test suites.\"). Each write replaces its suite's line. Each line is\n"
