@@ -12,6 +12,7 @@ MD="$PWD/corpus/demos/scriptix/demo01/hello.md"
 [ -x "$SCRIP_BIN" ] || { echo "REFUSE(2): $SCRIP_BIN is not built"; exit 2; }
 [ -r "$MD" ] || { echo "REFUSE(2): no $MD"; exit 2; }
 python3 -c 'import jupyter_client' 2>/dev/null || { echo "REFUSE(2): jupyter_client is not importable"; exit 2; }
+python3 -c 'import jupyter_server, tornado.websocket' 2>/dev/null || { echo "REFUSE(2): jupyter_server is not importable, so the kernel cannot be read under a Jupyter server"; exit 2; }
 "$SCRIP_BIN" --kernel /nonexistent-connection-file >/dev/null 2>&1; [ $? -eq 2 ] || { echo "REFUSE(2): $SCRIP_BIN has no --kernel switch"; exit 2; }
 TREE="$(git -C "$(dirname "$SCRIP_BIN")" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 out="$(timeout -k 5 300 python3 - "$SCRIP_BIN" "$MD" <<'PY'
@@ -351,6 +352,74 @@ if not why:
         kc.stop_channels(); km.shutdown_kernel(now=True)
 print("KERNEL_INSTALL ok" if not why else "KERNEL_INSTALL RED: " + "; ".join(why[:4]))
 bad += 0 if not why else 1
+# UNDER A JUPYTER SERVER (the chain a browser uses: WebSocket to the server, ZeroMQ from the server to the kernel): a jupyter_server started here lists the installed kernels with their
+# icons, starts scrip-snobol4, and over its WebSocket a cell runs, the next cell finds the first cell's variable and reads a line by input_request, a display cell shows its type, and
+# kernel_info reads 5.5; the server's log holds no traceback
+import asyncio, socket, uuid, urllib.request
+def under_server():
+    if why: return ["the installed kernels are not there to start"]
+    from tornado.websocket import websocket_connect
+    from tornado.httpclient import HTTPRequest
+    work = tempfile.mkdtemp(prefix="scrip-kernel-server-"); sk = socket.socket(); sk.bind(("127.0.0.1", 0)); port = sk.getsockname()[1]; sk.close(); tok = uuid.uuid4().hex
+    env = dict(os.environ, JUPYTER_PATH=inst, JUPYTER_TOKEN=tok, JUPYTER_RUNTIME_DIR=os.path.join(work, "rt"), JUPYTER_CONFIG_DIR=os.path.join(work, "cfg"))
+    logp = os.path.join(work, "server.log")
+    srv = subprocess.Popen([sys.executable, "-m", "jupyter_server", "--no-browser", "--port=%d" % port, "--ServerApp.port_retries=0", "--ServerApp.root_dir=" + work], env=env, stdout=open(logp, "w"), stderr=subprocess.STDOUT)
+    def api(path, body=None, method=None):
+        rq = urllib.request.Request("http://127.0.0.1:%d%s" % (port, path), data=None if body is None else json.dumps(body).encode(), method=method, headers={"Authorization": "token " + tok, "Content-Type": "application/json"})
+        b = urllib.request.urlopen(rq, timeout=30).read()
+        return json.loads(b) if b.strip() else {}
+    def wsmsg(t, content, channel="shell"):
+        mid = uuid.uuid4().hex
+        return mid, {"header": {"msg_id": mid, "username": "gate", "session": "gate-session", "msg_type": t, "version": "5.3", "date": "2026-11-11T00:00:00Z"}, "parent_header": {}, "metadata": {}, "content": content, "channel": channel, "buffers": []}
+    async def drive():
+        import time
+        for _ in range(200):
+            try: api("/api/status"); break
+            except Exception: time.sleep(0.3)
+        specs = api("/api/kernelspecs")["kernelspecs"]; kid = api("/api/kernels", {"name": "scrip-snobol4"})["id"]
+        ws = await websocket_connect(HTTPRequest("ws://127.0.0.1:%d/api/kernels/%s/channels" % (port, kid), headers={"Authorization": "token " + tok}))
+        async def run(code, answers=()):
+            mid, m = wsmsg("execute_request", {"code": code, "silent": False, "store_history": True, "user_expressions": {}, "allow_stdin": True, "stop_on_error": True})
+            await ws.write_message(json.dumps(m)); seen = []; ans = list(answers); idle = False; replied = False
+            while not (idle and replied):
+                r = json.loads(await asyncio.wait_for(ws.read_message(), 120))
+                if r.get("parent_header", {}).get("msg_id") != mid: continue
+                t = r["msg_type"]
+                if t == "input_request":
+                    _, a = wsmsg("input_reply", {"value": ans.pop(0) if ans else ""}, "stdin"); a["parent_header"] = r["header"]; seen.append("input_request"); await ws.write_message(json.dumps(a))
+                elif t == "stream": seen.append(r["content"]["text"])
+                elif t == "display_data": seen.append(sorted(r["content"]["data"]))
+                elif t == "execute_reply": replied = True; seen.append(r["content"]["status"])
+                elif t == "status" and r["content"]["execution_state"] == "idle": idle = True
+            return seen
+        c1 = await run(" SRVX = 5\n OUTPUT = SRVX + 1\n")
+        c2 = await run(" OUTPUT = 'name?'\n SRVN = INPUT\n OUTPUT = 'hello ' SRVN ' ' SRVX\n", ["Lon"])
+        c3 = await run("%%html\n<b>bold</b>\n")
+        mid, m = wsmsg("kernel_info_request", {}); await ws.write_message(json.dumps(m)); ver = None
+        while ver is None:
+            r = json.loads(await asyncio.wait_for(ws.read_message(), 60))
+            if r["msg_type"] == "kernel_info_reply": ver = r["content"].get("protocol_version")
+        ws.close(); api("/api/kernels/%s" % kid, method="DELETE")
+        return specs, c1, c2, c3, ver
+    try:
+        specs, c1, c2, c3, ver = asyncio.run(drive())
+    except Exception as e:
+        return ["the server run stopped: %r" % e]
+    finally:
+        srv.terminate()
+        try: srv.wait(30)
+        except Exception: srv.kill()
+    bad_ = []
+    if not all(n in specs and "logo-svg" in specs[n].get("resources", {}) for n in said): bad_.append("the server lists %r" % sorted(specs))
+    if sorted(c1) != ["6\n", "ok"]: bad_.append("the first cell %r" % (c1,))
+    if c2[:3] != ["name?\n", "input_request", "hello Lon 5\n"] or "ok" not in c2: bad_.append("the reading cell %r" % (c2,))
+    if ["text/html", "text/plain"] not in c3 or "ok" not in c3: bad_.append("the display cell %r" % (c3,))
+    if ver != "5.5": bad_.append("kernel_info reads %r" % ver)
+    if "Traceback" in open(logp).read(): bad_.append("the server's log holds a traceback (%s)" % logp)
+    return bad_
+us = under_server()
+print("KERNEL_UNDER_SERVER ok" if not us else "KERNEL_UNDER_SERVER RED: " + "; ".join(us[:4]))
+bad += 0 if not us else 1
 print("scrip --kernel: %d disagreement(s) over %d hello cells and the arms" % (bad, len(blocks)))
 sys.exit(1 if bad else 0)
 PY
