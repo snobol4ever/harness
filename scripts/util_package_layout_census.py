@@ -13,7 +13,8 @@ For every file git tracks under DIR (every file on disk when DIR is in no reposi
   STREAM     STEM.in, STEM.out or STEM.err beside a PROGRAM of that stem
   OMITTED    a program a line of ALL.omit or a row of an EXCLUDED*.tsv names (declared out, with its measurement; not loose), and its streams
   TABLE      CONTRACT.tsv, CONTAINERS.tsv, EXCLUDED*.tsv, PARTITION.tsv, SOURCES.tsv, DRIVERS.tsv, or a .tsv at the root a script of harness/scripts names
-  PART       STEM.E.ref beside a program a row of PREPROCESS.tsv names (the preprocess-only contract's answer; the coo's ask of 2026-11-10 on jcon and
+  PART       NAME.ecp beside a program or an omitted program of a package whose CONTRACT.tsv says units iso-rejection (the distribution's expected compiler
+             listing, which the builder reads for the lines a rejection must name; the coo 2026-11-11 on pat); STEM.E.ref beside a program a row of PREPROCESS.tsv names (the preprocess-only contract's answer; the coo's ask of 2026-11-10 on jcon and
              arizona); NAME.ref.corrected for a name a row of ALL.corrected.tsv carries (the corrected answer the grader reads where the oracle errs;
              the coo 2026-11-10 on fpc_tests); a file CONTAINERS.tsv or CONTRACT.tsv names by its path or bare name, one ALL.args names as an argument, a member of a folder whose
              other files are all PARTs (a library shipped whole), or one whose bare file name a PROGRAM, an OMITTED program or another PART holds in its text
@@ -115,6 +116,7 @@ def census(d):
             if ln.strip() and not ln.startswith("#"):
                 pre.add(os.path.splitext(ln.split("\t", 1)[0].strip())[0] + ".E.ref")
     upstream = "upstream/PROVENANCE.md" in files
+    iso_rej = any(ln.split("\t")[:2] == ["units", "iso-rejection"] for ln in contract.split("\n"))
     argd = set()
     if os.path.isfile(os.path.join(d, "ALL.args")):
         for ln in text_of(d, "ALL.args").split("\n"):
@@ -140,6 +142,8 @@ def census(d):
         elif f in omit or stem(f) in omit or base in omit or (ext not in STREAMS and ext != ".ref" and stem(base) in omit):
             role[f] = "OMITTED"
         elif f in pre:
+            role[f] = "PART"
+        elif iso_rej and ext == ".ecp" and (stem(f) in prog_stems or stem(f) in out_stems):
             role[f] = "PART"
         elif upstream and f.startswith("upstream/"):
             role[f] = "DOCUMENT"
@@ -225,6 +229,15 @@ def probe():
         r3 = census(d3)[2].get("ALL.dialect")
         if r3 != "LOOSE":
             wrong.append("ALL.dialect beside an index with a dialect column read %s, wanted LOOSE" % r3)
+        d4 = os.path.join(t, "probe_pkg_iso_rejection")
+        os.makedirs(d4)
+        open(os.path.join(d4, "ALL.csv"), "w").write("rank,entry,path\n1,rej,rej.pas\n")
+        open(os.path.join(d4, "rej.pas"), "w").write("program rej; begin end.\n")
+        open(os.path.join(d4, "rej.ecp"), "w").write("the distribution's listing\n")
+        open(os.path.join(d4, "CONTRACT.tsv"), "w").write("units\tiso-rejection\tplanted\n")
+        r4 = census(d4)[2].get("rej.ecp")
+        if r4 != "PART":
+            wrong.append("rej.ecp beside a program of an iso-rejection package read %s, wanted PART" % r4)
         print("PACKAGE_LAYOUT_PROBE roles=%d" % seen)
         for w in wrong:
             print("  " + w)
