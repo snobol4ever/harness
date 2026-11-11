@@ -96,6 +96,18 @@ ck "8 SWI counts a library graded by its driver as one case: 1/1, declared 1, gr
 printf 'rank,entry,origin\n1,u/lib,x\n2,u/bare,x\n' > "$D/ALL.csv"; printf ':- module(bare, [bare/0]).\nbare.\n' > "$D/u/bare.pl"
 o9="$(S4E_SUITES_TSV="$T/SUITES.tsv" S4E_CORPUS_ROOT="$T/corpus8" S4E_PROGRESS_DB="$DB" python3 "$SR" from-progress --suite swi --dry-run 2>&1)"; rc9=$?
 ck "9 an SWI entry with neither a ref nor a driver still REFUSES rc 2, naming it" '[ "$rc9" = 2 ] && grep -q "carry no oracle ref.*u/bare.pl" <<<"$o9"'
-[ "$fails" = 0 ] || printf '%s\n%s\n%s\n' "$o1" "$o5" "$o7" | grep -E '^SUITE_ROW|would set|REFUSE' | sed 's/^/      /'
+# arm 10: an Icon package in the files form whose library is graded through its driver (the coo 2026-11-11, row suite-row-arizona-the-row-tool-reads-
+# 89-members-where-the-package-grades-107): the index lists g/lib_driver, g/lib and g/p; ALL.omit names g/lib (graded through its driver); the readings
+# are keyed g/lib (board_key) and g/p. The row is 2/2. PROVEN TO FAIL on origin 3475f0188's util_score_row.py: it reads 1/1, the driver's key dropped.
+A="$T/corpus10/packages/icon/arizona_tests"; mkdir -p "$A/g"
+printf 'rank,entry,path,origin\n1,g/lib_driver,g/lib_driver.icn,x\n2,g/lib,g/lib.icn,x\n3,g/p,g/p.icn,x\n' > "$A/ALL.csv"
+printf 'g/lib: graded through g/lib_driver\n' > "$A/ALL.omit"
+printf 'procedure lib()\n   return 1;\nend\n' > "$A/g/lib.icn"; printf 'link lib\nprocedure main()\n   write(lib());\nend\n' > "$A/g/lib_driver.icn"; printf 'procedure main()\n   write(2);\nend\n' > "$A/g/p.icn"
+printf '1\n' > "$A/g/lib_driver.out"; printf '2\n' > "$A/g/p.out"
+printf 'key\tlabel\ticon\tlang\tfirst_date\tfirst_pass\tfirst_total\ttoday_date\ttoday_pass\ttoday_total\ttree\tcriterion_changed\ttoday_excluded\narizona\tZona\tx\ticon\t2026-10-01\t0\t1\t2026-10-15\t2\t2\tabc1234\t\t0\n' > "$T/SUITES10.tsv"
+row 70 arizona icon g/lib m3 PASS; row 71 arizona icon g/lib m4 PASS; row 72 arizona icon g/p m3 PASS; row 73 arizona icon g/p m4 PASS
+o10="$(S4E_SUITES_TSV="$T/SUITES10.tsv" S4E_CORPUS_ROOT="$T/corpus10" S4E_PROGRESS_DB="$DB" python3 "$SR" from-progress --suite arizona --dry-run 2>&1)"
+ck "10 an Icon files-form package counts a library graded through its driver under the library's key: 2/2" 'grep -q "would set arizona -> 2/2 " <<<"$o10"'
+[ "$fails" = 0 ] || printf '%s\n%s\n%s\n%s\n' "$o1" "$o5" "$o7" "$o10" | grep -E '^SUITE_ROW|would set|REFUSE' | sed 's/^/      /'
 if [ "$fails" = 0 ]; then echo "✅ GATE PASS [from_progress_assembles_a_package_as_shipped_minus_excluded]: $n of $n arms hold"; exit 0; fi
 echo "⛔ GATE FAIL [from_progress_assembles_a_package_as_shipped_minus_excluded]: $fails of $n arm(s) failed"; exit 1

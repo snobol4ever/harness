@@ -1913,6 +1913,15 @@ def cmd_from_progress(a):
     _csvp = os.path.join(tdir, "ALL.csv")
     if pkg and os.path.exists(_omp) and os.path.exists(_csvp) and "path" in open(_csvp, encoding="utf-8", errors="replace").readline().rstrip("\n").split(","):
         _omn = {l.split(": ", 1)[0] for l in open(_omp, encoding="utf-8", errors="replace") if ": " in l and not l.startswith("#")}
+        # ⭐ A LIBRARY GRADED THROUGH ITS DRIVER IS AN ENTRY UNDER THE LIBRARY'S NAME (the coo 2026-11-11, row suite-row-arizona-the-row-tool-reads-89-
+        # members-where-the-package-grades-107; MEASURED on arizona_tests: 18 entries general/NAME_driver are keyed general/NAME by board_key above, as
+        # their readings are, and ALL.omit names the library general/NAME itself as graded through that driver, so this rule dropped the 18 keys and
+        # the row read 89 where the package grades 107): a key an entry the index still grades maps to is kept, whatever ALL.omit says of its name.
+        _live = set()
+        if os.sep + os.path.join("packages", "icon") + os.sep in tdir + os.sep:
+            with open(_csvp, encoding="utf-8", errors="replace", newline="") as _f:
+                _live = {_bk(tdir, "icon", r.get("entry", "")) for r in _csv.DictReader(_f) if r.get("entry", "") and r.get("entry", "") not in _omn}
+        _omn -= _live
         pop = [e for e in pop if e not in _omn]
         pkg_pop = set(pkg_pop) - _omn
     want = set(pop)
