@@ -2483,6 +2483,8 @@ def _read_lf_lines(path):
 def read_suite(sno_path, ref_path, in_path=None, x_path=None, w_path=None, a_path=None, modes=None):
     if fmt2_dir_of(sno_path) is not None:
         return read_container_dir(fmt2_dir_of(sno_path), Path(sno_path).suffix, modes=modes)
+    if pkg_dir_of(sno_path) is not None:
+        return read_package_dir(pkg_dir_of(sno_path), Path(sno_path).suffix, modes=modes)
     """⛔ FOUND AND FIXED (corpus-suites-consolidation, gc family): a block used to be read as running to
     the NEXT banner -- correct only when the next entry is ALSO a block. A block immediately followed by
     one or more one-line entries (no banner of their own, e.g. gc.sno's 210_gc_deep_nesting -> 211/212/213
@@ -2586,6 +2588,8 @@ def read_block_suite(src_path, ref_path, banner_re, in_path=None, x_path=None, w
     ONE_LINE_TAG_RE / _is_entry_start, which are SNOBOL4-format-A-specific and meaningless here."""
     if fmt2_dir_of(src_path) is not None:
         return read_container_dir(fmt2_dir_of(src_path), Path(src_path).suffix, modes=modes)
+    if pkg_dir_of(src_path) is not None:
+        return read_package_dir(pkg_dir_of(src_path), Path(src_path).suffix, modes=modes)
     src_lines = _read_lf_lines(src_path)
     ref_lines = _read_lf_lines(ref_path)
     entries = []
@@ -2998,6 +3002,320 @@ def fmt2_identity(old, new):
             if len(diffs) >= 10:
                 break
     return diffs
+
+
+PKG_OLD = ("ALL{ext}", "ALL.ref", "ALL.in", "ALL.argv")
+PKG_DROP_COLS = ("stdin", "run_args")
+PKG_NOT_A_PROGRAM = (".ref", ".in", ".out", ".err", ".stdin", ".input", ".expected", ".argv", ".rc", ".s", ".o", ".md", ".tsv", ".csv", ".txt")
+
+
+def pkg_dir_of(src_path):
+    """The package directory when SRC_PATH is the old ALL.EXT name of a directory in THE FILES FORM, else None (CIO-59, CIO-60, CIO-113; Lon
+    2026-11-10: a package keeps the layout of its distribution, NAME.in, NAME.out and NAME.err beside each program): the directory's ALL.csv
+    has a path column. Every caller keeps its ALL.EXT ALL.ref command line through the move, as fmt2_dir_of gives a test folder."""
+    p = Path(src_path)
+    if p.suffix not in FMT2_TAG or p.name != "ALL" + p.suffix:
+        return None
+    d = p.parent
+    c = d / "ALL.csv"
+    if not c.is_file() or (d / "MULTI.md").is_file() or (d / f"ONE{p.suffix}").is_file():
+        return None
+    import csv as _csvm
+    with open(c, newline="", encoding="utf-8") as f:
+        head = next(_csvm.reader(f), [])
+    return d if "path" in head else None
+
+
+def container_dir_of(src_path):
+    """The directory a suite is read from when its ALL.EXT need not exist: format 2 of a test folder, or the files form of a package."""
+    return fmt2_dir_of(src_path) or pkg_dir_of(src_path)
+
+
+def _pkg_stem(d, rel):
+    p = Path(d) / rel
+    return p.parent / p.stem
+
+
+def _pkg_omitted(d):
+    """The names ALL.omit says the package ships and does not grade (the builder's file: one line a program, its name, a colon and a
+    space, the reason; lines beginning with # ignored). Their rows stay in ALL.csv, so the index names every program the package
+    ships with its path, and they are no entries."""
+    p = Path(d) / "ALL.omit"
+    if not p.is_file():
+        return set()
+    return {ln.split(": ", 1)[0] for ln in p.read_bytes().decode("utf-8").split("\n") if ln.strip() and not ln.startswith("#") and ": " in ln}
+
+
+def _pkg_read_args(d, entries):
+    """ALL.args at the package root, the form of ALL.rc: one line an entry that has arguments, the entry's name and then each argument
+    after a tab; blank lines and lines beginning with # ignored. A line naming no entry, or an entry named twice, refuses."""
+    p = Path(d) / "ALL.args"
+    if not p.is_file():
+        return
+    by_name = {e.name: e for e in entries}
+    seen = set()
+    for n, raw in enumerate(p.read_bytes().decode("utf-8").split("\n"), 1):
+        if not raw.strip() or raw.startswith("#"):
+            continue
+        parts = raw.split("\t")
+        if parts[0] not in by_name:
+            raise ValueError(f"{p}:{n}: arguments for {parts[0]!r}, which is no entry of the package")
+        if parts[0] in seen or len(parts) < 2:
+            raise ValueError(f"{p}:{n}: {parts[0]!r} is named twice or carries no argument")
+        seen.add(parts[0])
+        by_name[parts[0]].argv = parts[1:]
+
+
+def read_package_dir(d, ext, modes=None):
+    """THE FILES FORM OF A PACKAGE, READ (CIO-59, CIO-60): one Entry a row of ALL.csv, in the index's order; the program is the file the
+    path column names, from the package root; DIR/STEM.out is its stdout answer, DIR/STEM.in its stdin, DIR/STEM.err its stderr answer,
+    an absent one meaning empty (no stdin at all); the arguments are ALL.args; the exit status, the mask, the sizes and every other
+    attribute are read where the container form reads them. The same list of Entry objects read_block_suite returns."""
+    d = Path(d)
+    fields, rows = _fmt2_read_csv(d)
+    if "path" not in fields:
+        raise ValueError(f"{d}: ALL.csv has no path column; this is not the files form of a package")
+    entries, seen, omitted, seq = [], {}, _pkg_omitted(d), 0
+    for rown, r in enumerate(rows, 2):
+        name, rel = (r.get("entry") or ""), (r.get("path") or "")
+        if name in omitted:
+            continue
+        seq += 1
+        if not name or not rel:
+            raise ValueError(f"{d}/ALL.csv row {rown}: an empty entry or path cell")
+        prog = d / rel
+        if not prog.is_file():
+            raise ValueError(f"{d}/ALL.csv row {rown}: {name} names {rel}, which is no file of the package")
+        stem = _pkg_stem(d, rel)
+        if stem in seen:
+            raise ValueError(f"{d}: {name} and {seen[stem]} share the stem {stem.relative_to(d)}; their NAME.in, NAME.out and NAME.err would be one file")
+        seen[stem] = name
+        out = Path(str(stem) + ".out")
+        e = Entry("block", seq, name, _read_lf_lines(prog), _read_lf_lines(out) if out.is_file() else [])
+        inp, err = Path(str(stem) + ".in"), Path(str(stem) + ".err")
+        if inp.is_file():
+            e.stdin = inp.read_bytes().decode("utf-8")
+        if err.is_file():
+            e.stderr_answer = err.read_bytes().decode("utf-8")
+        entries.append(e)
+    src = str(d / ("ALL" + ext))
+    _pkg_read_args(d, entries)
+    read_wantrc_sidecar(sidecar_wantrc_path(src), entries)
+    read_command_line_columns(src, entries, modes)
+    return entries
+
+
+def write_package_dir(entries, d, ext, path_of):
+    """THE FILES FORM OF A PACKAGE, WRITTEN: for each entry, in order, the program at PATH_OF[name] (written when absent; when present its
+    lines must be the entry's), STEM.out, STEM.in and STEM.err beside it, each only when not empty; ALL.args; ALL.csv with path directly
+    after entry, without stdin and run_args, its rows in the entries' order. Raises ValueError, before anything is written, when two
+    entries share a stem, a row or a path is missing, a part exists with other bytes, an argument holds a tab or a newline, or an entry
+    carries what the form cannot hold. -> {"in": n, "out": n, "err": n, "args": n}. The four container files are the caller's to delete."""
+    d = Path(d)
+    fields, rows = _fmt2_read_csv(d)
+    by_row = {r.get("entry"): r for r in rows}
+    plan, seen, args_lines = [], {}, []
+    for e in entries:
+        if e.name not in by_row:
+            raise ValueError(f"{d}: {e.name} has no row in ALL.csv")
+        if e.kind != "block" or e.xfail:
+            raise ValueError(f"{d}: {e.name} is a one-line entry or carries an XFAIL flag; the files form holds neither")
+        rel = path_of.get(e.name)
+        if not rel:
+            raise ValueError(f"{d}: {e.name} has no program file")
+        stem = _pkg_stem(d, rel)
+        if stem in seen:
+            raise ValueError(f"{d}: {e.name} and {seen[stem]} share the stem {stem.relative_to(d)}")
+        seen[stem] = e.name
+        prog = d / rel
+        text = _fmt2_lines_text(e.sno_lines)
+        if prog.is_file():
+            if _read_lf_lines(prog) != e.sno_lines:
+                raise ValueError(f"{d}: {rel} is not the text of entry {e.name}")
+            text = None
+        parts = ((".out", _fmt2_lines_text(e.ref)), (".in", e.stdin or ""), (".err", getattr(e, "stderr_answer", None) or ""))
+        for suf, body in parts:
+            t = Path(str(stem) + suf)
+            if t.is_file() and t.read_bytes() != body.encode("utf-8"):
+                raise ValueError(f"{d}: {t.relative_to(d)} exists with other bytes than entry {e.name}'s")
+        if e.argv:
+            if any(("\t" in a or "\n" in a) for a in e.argv):
+                raise ValueError(f"{d}: an argument of {e.name} holds a tab or a newline; ALL.args cannot carry it")
+            args_lines.append("\t".join([e.name] + list(e.argv)))
+        plan.append((e, rel, prog, text, stem, parts))
+    names = {e.name for e in entries}
+    extra = sorted(set(by_row) - names - _pkg_omitted(d))
+    if extra:
+        raise ValueError(f"{d}: ALL.csv has {len(extra)} row(s) that are no entry of the container and that ALL.omit does not name: {extra[:8]}")
+    counts = {"in": 0, "out": 0, "err": 0, "args": len(args_lines)}
+    for e, rel, prog, text, stem, parts in plan:
+        if text is not None:
+            prog.parent.mkdir(parents=True, exist_ok=True)
+            prog.write_bytes(text.encode("utf-8"))
+        for suf, body in parts:
+            if body:
+                Path(str(stem) + suf).write_bytes(body.encode("utf-8"))
+                counts[suf[1:]] += 1
+    if args_lines:
+        (d / "ALL.args").write_bytes(("\n".join(args_lines) + "\n").encode("utf-8"))
+    new_fields = [f for f in fields if f not in PKG_DROP_COLS and f != "path"]
+    new_fields.insert(new_fields.index("entry") + 1, "path")
+    rel_of = {e.name: rel for e, rel, prog, text, stem, parts in plan}
+    out_rows = []
+    for r0 in [by_row[e.name] for e in entries] + [r for r in rows if r.get("entry") not in names]:
+        r = {k: v for k, v in r0.items() if k in new_fields}
+        r["path"] = rel_of.get(r0.get("entry")) or path_of.get(r0.get("entry")) or ""
+        out_rows.append(r)
+    _fmt2_write_csv(d, new_fields, out_rows)
+    return counts
+
+
+def _pkg_find_program(d, name, ext, files):
+    """An entry's program file, from the package root: DIR/ENTRY.EXT first; else the one file of the package whose path without its
+    extension is the entry and whose extension is no companion's; else None."""
+    if (d / (name + ext)).is_file():
+        return name + ext
+    c = [f for f in files.get(name, ()) if Path(f).suffix.lower() not in PKG_NOT_A_PROGRAM]
+    return c[0] if len(c) == 1 else None
+
+
+def unpack_dir(d, dry_run=False):
+    """A package from its container to the files form (the verb unpack). -> (counts, n) or raises ValueError naming every case that
+    refuses; nothing is written in D unless a scratch copy first took the files form and read back equal in every attribute."""
+    d = Path(d).resolve()
+    cands = [p for p in d.glob("ALL.*") if p.suffix in FMT2_TAG and p.name == "ALL" + p.suffix]
+    if len(cands) != 1:
+        raise ValueError(f"{d} holds {len(cands)} ALL.EXT containers; one is needed")
+    src = cands[0]
+    ext = src.suffix
+    if container_dir_of(src) is not None:
+        raise ValueError(f"{d} is already in format 2 or in the files form")
+    if not (d / "ALL.ref").is_file():
+        raise ValueError(f"{d} has no ALL.ref")
+    lang = next((l for l, c in LANG_CONFIGS.items() if c["ext"] == ext), "snobol4" if ext == ".sno" else None)
+    old = _fmt2_old_read(src, lang)
+    fields, rows = _fmt2_read_csv(d)
+    why = []
+    graders = [r.get("entry") for r in rows if (r.get("grader") or "").strip()]
+    if graders:
+        why.append(f"{len(graders)} row(s) carry a grader cell (a per-case package, CIO-59 (5)): {graders[:5]}")
+    files = {}
+    for root, dirs, names in os.walk(d):
+        dirs[:] = [x for x in dirs if not x.startswith(".")]
+        for n in names:
+            rel = os.path.relpath(os.path.join(root, n), d)
+            files.setdefault(os.path.splitext(rel)[0], []).append(rel)
+    path_of = {e.name: _pkg_find_program(d, e.name, ext, files) for e in old}
+    none = [n for n, p in path_of.items() if not p]
+    for r in rows:
+        if r.get("entry") and r.get("entry") not in path_of:
+            path_of[r.get("entry")] = _pkg_find_program(d, r.get("entry"), ext, files)
+    if old and len(none) == len(old):
+        why.append("the package holds no program file for any entry")
+    elif none:
+        why.append(f"{len(none)} entr(ies) have no program file of their own: {none[:8]}")
+    differ = [e.name for e in old if path_of.get(e.name) and _read_lf_lines(d / path_of[e.name]) != e.sno_lines]
+    if differ:
+        why.append(f"{len(differ)} program file(s) differ from the entry's text in the container: {differ[:8]}")
+    if why:
+        raise ValueError("; ".join(why))
+    work = Path(tempfile.mkdtemp(prefix="unpack_", dir=os.environ.get("TMPDIR") or None))
+    try:
+        shutil.copytree(d, work, dirs_exist_ok=True)
+        counts = write_package_dir(old, work, ext, path_of)
+        for n in PKG_OLD:
+            (work / n.format(ext=ext)).unlink(missing_ok=True)
+        diffs = fmt2_identity(old, read_package_dir(work, ext))
+        if diffs:
+            raise ValueError("the files form did not read back equal: " + " | ".join(diffs[:6]))
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    if not dry_run:
+        write_package_dir(old, d, ext, path_of)
+        for n in PKG_OLD:
+            (d / n.format(ext=ext)).unlink(missing_ok=True)
+        if fmt2_identity(old, read_package_dir(d, ext)):
+            raise ValueError(f"{d} read back equal in the scratch copy and differently in place -- restore it from git")
+    return counts, len(old)
+
+
+_UNPACK_PROBE = (
+    ("sub/echo", ["procedure main(args)", "    write(args[1], \" \", args[2], \" \", read());", "end"], ["left right middle"], "middle\n", ["left", "right"]),
+    ("plain", ["procedure main()", "    write(\"plain\");", "end"], ["plain"], None, None),
+    ("silent", ["procedure main()", "    return;", "end"], [], None, None),
+)
+
+
+def unpack_probe():
+    """unpack --probe: a planted package of three programs (one in a subfolder with stdin and two arguments, one plain, one whose answer
+    is empty) is graded in mode 3 as a container, unpacked, and graded again from its files; the two readings must be the same three
+    verdicts, every one a PASS. Prints UNPACK_PROBE same=3 in=1 out=2 args=1, rc 0; rc 1 when they differ; rc 2 when it cannot run."""
+    t = Path(tempfile.mkdtemp(prefix="unpack_probe_", dir=os.environ.get("TMPDIR") or None))
+    try:
+        d = t / "probe_pkg"
+        (d / "sub").mkdir(parents=True)
+        src, ref, inn, argv = [], [], [], []
+        rows = ["rank,entry,origin,package,n_lines,stdin,want_rc,heap_kb,stack_kb,timeout_s,compile_args,run_args"]
+        for k, (name, body, ans, stdin, args) in enumerate(_UNPACK_PROBE, 1):
+            banner = "#" + "-" * 64 + f" {k} {name}"
+            src += [banner] + body
+            ref += [banner] + ans
+            if stdin is not None:
+                inn += [banner] + stdin.rstrip("\n").split("\n")
+            if args:
+                argv.append("\t".join([name] + args))
+            (d / (name + ".icn")).write_text("".join(l + "\n" for l in body))
+            rows.append(f"{k},{name},probe_pkg__{name},probe_pkg,{len(body)},{1 if stdin else 0},0,131072,4096,60,,")
+        (d / "ALL.icn").write_text("".join(l + "\n" for l in src))
+        (d / "ALL.ref").write_text("".join(l + "\n" for l in ref))
+        (d / "ALL.in").write_text("".join(l + "\n" for l in inn))
+        (d / "ALL.argv").write_text("".join(l + "\n" for l in argv))
+        (d / "ALL.csv").write_text("".join(l + "\n" for l in rows))
+
+        def grade():
+            cmd = [sys.executable, os.path.abspath(__file__), "run", str(d / "ALL.icn"), str(d / "ALL.ref"), "--lang", "icon", "--modes", "m3"]
+            env = dict(os.environ, S4E_ONE_RUNNER_FIXTURE="unpack --probe: a planted package of three programs, not a board")
+            p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env, timeout=600)
+            m = re.search(r"^SUITE_BOARD .*\bm3_n=(\d+) m3_pass=(\d+)", p.stdout, re.M)
+            return ((int(m.group(1)), int(m.group(2))) if m else None), p.stdout
+
+        before, log1 = grade()
+        counts, n = unpack_dir(d)
+        after, log2 = grade()
+        want = len(_UNPACK_PROBE)
+        if before is None or before[0] != want:
+            print("REFUSE(2): unpack --probe could not grade the planted container: " + (log1.strip().splitlines() or ["no output"])[-1][:200], file=sys.stderr)
+            return 2
+        same = min(before[1], after[1]) if after is not None and after[0] == want else 0
+        gone = not any((d / x.format(ext=".icn")).exists() for x in PKG_OLD)
+        print("UNPACK_PROBE same=%d in=%d out=%d args=%d" % (same, counts["in"], counts["out"], counts["args"]))
+        if same != want or not gone:
+            print("  before=%s after=%s container_files_deleted=%s" % (before, after, gone))
+            for ln in log2.strip().splitlines()[-6:]:
+                print("  " + ln)
+            return 1
+        return 0
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
+def cmd_unpack(args):
+    """corpus_suite_harness.py unpack DIR [--dry-run] | unpack --probe: one package from its container (ALL.EXT, ALL.ref, ALL.in,
+    ALL.argv) to THE FILES FORM (CIO-59, CIO-60): the program where the distribution put it, NAME.in, NAME.out and NAME.err beside it,
+    ALL.csv with a path column, one ALL.args. Refuses rc 2 with nothing written, naming each case. --dry-run changes nothing."""
+    if args.probe:
+        return unpack_probe()
+    if not args.dir:
+        refuse("unpack: name the package directory, or --probe")
+    try:
+        counts, n = unpack_dir(args.dir, dry_run=args.dry_run)
+    except ValueError as exc:
+        print("UNPACK_BOARD dir=%s REFUSED" % Path(args.dir).resolve())
+        print("  " + str(exc))
+        refuse(f"unpack: {args.dir} is unchanged")
+    print("UNPACK_BOARD dir=%s entries=%d in=%d out=%d err=%d args=%d%s" % (Path(args.dir).resolve(), n, counts["in"], counts["out"], counts["err"],
+                                                                            counts["args"], " dry-run" if args.dry_run else ""))
+    return 0
 
 
 def cmd_regroup(args):
@@ -4536,7 +4854,7 @@ def cmd_run(args):
     except Exception: _rt_md5 = "unreadable"
     print(("RUNTIME " + os.path.basename(_rt_so) if paths["engine"] != "scrip" else "RUNTIME libscrip_rt.so") + " md5=%s -- the runtime this pass ACTUALLY loaded; out/libscrip_rt.so is one mutable symlink per TREE, not per CONFIGURATION (R-1097)" % _rt_md5)
     for _label, _p in (("suite", args.sno), ("ref", args.ref)):
-        if not Path(_p).is_file() and fmt2_dir_of(args.sno) is None:
+        if not Path(_p).is_file() and container_dir_of(args.sno) is None:
             refuse(f"{_label} file does not exist: {_p} -- nothing was graded, and a run that graded nothing is "
                    f"UNMEASURED, never a red board (check the path, or build the rungs first)")
     if args.lang:
@@ -5375,7 +5693,7 @@ def cmd_pin_ref(args):
     paths = resolve_paths()
     src_path, ref_path = Path(args.sno), Path(args.ref)
     for label, p_ in (("suite", src_path), ("ref", ref_path)):
-        if not p_.is_file() and fmt2_dir_of(src_path) is None:
+        if not p_.is_file() and container_dir_of(src_path) is None:
             refuse(f"{label} file does not exist: {p_}")
     if not args.ruling.strip():
         refuse("--ruling is mandatory: a pinned ref with no stated authority cannot be told from a ref cut "
@@ -6233,7 +6551,7 @@ def cmd_batch_list(args):
     ext = cfg["ext"]
     paths["lang"] = args.lang
     for _label, _p in (("suite", args.sno), ("ref", args.ref)):
-        if not Path(_p).is_file() and fmt2_dir_of(args.sno) is None:
+        if not Path(_p).is_file() and container_dir_of(args.sno) is None:
             refuse(f"{_label} file does not exist: {_p}")
     with contextlib.redirect_stdout(sys.stderr):
         entries = read_block_suite(args.sno, args.ref, banner_re_for(cfg["comment_open"], cfg["comment_close"]), in_path=sidecar_in_path(args.sno),
@@ -7103,6 +7421,11 @@ def main():
     rg.add_argument("dir")
     rg.add_argument("--dry-run", action="store_true", help="regroup a scratch copy and print the counts; the directory is untouched")
     rg.set_defaults(func=cmd_regroup)
+    up = sub.add_parser("unpack", help="THE FILES FORM OF A PACKAGE (CIO-59, CIO-60): the program where the distribution put it, NAME.in, NAME.out and NAME.err beside it, a path column, one ALL.args; refuses unless the read-back is identical")
+    up.add_argument("dir", nargs="?", help="the package directory holding ALL.EXT, ALL.ref and ALL.csv")
+    up.add_argument("--dry-run", action="store_true", help="take the files form in a scratch copy and print the counts; the directory is untouched")
+    up.add_argument("--probe", action="store_true", help="grade a planted package of three programs as a container and again from its files")
+    up.set_defaults(func=cmd_unpack)
     ug = sub.add_parser("ungroup", help="FORMAT 2 BACK TO THE OLD FILES (CIO-45 (1) b): ALL.EXT, ALL.ref, ALL.in from ONE.EXT, ONE.out and MULTI.md, refusing unless the read-back is identical")
     ug.add_argument("dir")
     ug.set_defaults(func=cmd_ungroup)
