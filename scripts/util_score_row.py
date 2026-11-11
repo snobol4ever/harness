@@ -1434,14 +1434,14 @@ def _fraction_from_text(text, p_override, t_override):
 BOARD_LINE_RX = re.compile(r"(?m)^.*?\b([A-Z0-9_]*SUITE_BOARD\b.*)$")
 BOARD_LINES_DIR = os.path.join(S4E, ".github", "board-lines")
 BOARD_LINES_HEADER = (
-    "# VERBATIM RUNNER BOARD LINES, kept so any two readings of one suite are diffable after the fact (R-827).\n"
-    "# Each line is the runner's OWN board output, unedited. A receipt that paraphrases a board cannot be compared by\n"
-    "# util_suite_population_diff.py, which is the gap the coo measured on the 2026-09-17 SNOBOL4 pair.\n"
+    "# THE LATEST VERBATIM RUNNER BOARD LINE OF EACH SUITE, the now state only (Lon 2026-11-11: \"We do not need track the\n"
+    "# time element anymore just the now state of the test suites.\"). Each write replaces its suite's line. Each line is\n"
+    "# the runner's OWN board output, unedited: a receipt that paraphrases a board says nothing a reader can check.\n"
     "# tree\tsuite\tmeasurer\tverbatim line\n")
 
 
 def archive_board_line(text, suite, measurer, tree, dry=False, out=print):
-    """append the verbatim board line this write was handed; return the path written, or None with a printed reason"""
+    """keep the verbatim board line this write was handed as its suite's ONE line; return the path, or None with a reason"""
     m = BOARD_LINE_RX.search(text or "")
     if not m:
         out("  ⛔ BOARD LINE NOT ARCHIVED: --text carries no SUITE_BOARD line, so this receipt is PROSE and no later "
@@ -1449,7 +1449,7 @@ def archive_board_line(text, suite, measurer, tree, dry=False, out=print):
         return None
     line = " ".join(m.group(1).split())          # one physical line, spacing normalised, tokens untouched
     row = "\t".join([tree, suite or "<unnamed-suite>", measurer or "<unnamed>", line]) + "\n"
-    path = os.path.join(BOARD_LINES_DIR, "%s-%s.tsv" % (time.strftime("%Y-%m-%d"), (measurer or "unnamed").replace("/", "_")))
+    path = os.path.join(BOARD_LINES_DIR, "LATEST.tsv")
     if dry:
         out("  board line: WOULD archive to %s" % path)
         out("    %s" % line[:160])
@@ -1462,8 +1462,10 @@ def archive_board_line(text, suite, measurer, tree, dry=False, out=print):
         if row in existing:
             out("  board line: already archived for this tree and suite in %s (unchanged)" % path)
             return path
+        key = suite or "<unnamed-suite>"
+        kept = [l for l in existing.splitlines(True) if l.startswith("#") or l.split("\t")[1:2] != [key]]
         with open(path, "w", encoding="utf-8") as fh:
-            fh.write(existing if existing.endswith("\n") else existing + "\n")
+            fh.write("".join(kept) if "".join(kept).endswith("\n") else "".join(kept) + "\n")
             fh.write(row)
     except OSError as e:
         out("  ⛔ BOARD LINE NOT ARCHIVED: %s (%s) -- the row was still written; archive it by hand" % (path, e))
