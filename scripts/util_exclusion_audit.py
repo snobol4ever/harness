@@ -17,7 +17,9 @@ run    SCRATCH must be under /tmp/s4e and must not exist. DIR is copied to SCRAT
          NO-ANSWER   the copy's ALL.omit names it (evidence: that line's reason)
          NOT-A-TEST  the package's CONTAINERS.tsv names it (evidence: that row's kind)
          UNDECIDED   otherwise (evidence: the audit.log line that names it, or: not named by the build)
-       rc 0; rc 1 when the corpus checkout is not clean after; rc 2 refused (the builder refused the copy: its last lines are printed).
+       rc 0; rc 1 when the corpus checkout is not clean after; rc 2 refused (the builder refused the copy: its last lines are printed; or THE
+       CONTROL: an entry the package grades today is no entry of the copy, so the builder was not invoked as the package is built and every name
+       would read NO-ANSWER: no line is written).
 check  rc 0 when every data row of DIR's declaration tables has a line in FILE for that package and name at DIR's corpus commit; rc 1 naming the
        first ten that have none. --strict: rc 0 when every row the tables hold today has a line, at any commit, whose latest verdict is NO-ANSWER
        (the audit has been acted on: the ANSWERED and the NOT-A-TEST rows are gone and none is UNDECIDED).
@@ -99,6 +101,22 @@ def src_ext_of(d, lang):
     return e if e != LANG_EXT.get(lang) else None
 
 
+def shipped_entries(d):
+    """The entries a package grades today: the entry cells of its index that its ALL.omit does not name."""
+    om = set()
+    op = os.path.join(d, "ALL.omit")
+    if os.path.isfile(op):
+        with open(op, encoding="utf-8", errors="replace") as f:
+            om = {ln.split(": ", 1)[0].strip() for ln in f if ": " in ln and not ln.startswith("#")}
+    out = []
+    with open(os.path.join(d, "ALL.csv"), newline="", encoding="utf-8", errors="replace") as f:
+        for row in csv.DictReader(f):
+            e = (row.get("entry") or "").strip()
+            if e and e not in om:
+                out.append(e)
+    return out
+
+
 def keys_of(name):
     """The spellings a table's name may take in the index: as written, without its extension, and its bare file name without its extension."""
     n = name.split("\t")[0]
@@ -116,6 +134,7 @@ def audit(pkg, lang, work, out, batch=True):
     rows = []
     for t in tables_of(pkg):
         rows += [(n, c, os.path.basename(t)) for n, c in data_rows(t)]
+    shipped = shipped_entries(pkg)
     os.makedirs(work)
     copy = os.path.join(work, os.path.basename(pkg))
     shutil.copytree(pkg, copy, symlinks=True)
@@ -145,6 +164,15 @@ def audit(pkg, lang, work, out, batch=True):
                 if ": " in ln and not ln.startswith("#"):
                     k, _, v = ln.rstrip("\n").partition(": ")
                     omit[k.strip()] = v.strip()
+    # THE CONTROL ARM (the cfo's measurement on gnu_prolog, 2026-11-11): the copy's build is the instrument, and it measures only when it rebuilds
+    # the package AS SHIPPED. A package the plain builder does not build (libraries graded through per-driver arms, another oracle, a generator)
+    # comes out with its own shipped entries omitted for the builder's reason, and then EVERY name reads NO-ANSWER, declared or not. So: every
+    # entry the package grades today must be an entry of the copy that the copy's ALL.omit does not name, or the run refuses and writes no line.
+    copy_entries = set(shipped_entries(copy))
+    lost = [e for e in shipped if e not in copy_entries]
+    if lost:
+        why = omit.get(lost[0], "not in the copy's index")
+        refuse(f"the builder did not rebuild {pkg} as shipped: {len(lost)} of its {len(shipped)} graded entries are not entries of the copy (first: {lost[0]}: {why[:120]}); the audit measures nothing here and writes no line; its output is {log}")
     cp = os.path.join(pkg, "CONTAINERS.tsv")
     if os.path.isfile(cp):
         for n, c in data_rows(cp):
