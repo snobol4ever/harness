@@ -314,7 +314,7 @@ s4e_claim_holder_live() {   # <seat> <claim file> -> rc 0 when the claimant is A
     local _s="$1" _c="$2" _cg _ts _age _now
     _cg="/sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/s4e.slice/s4e-seats.slice/s4e-seat-$_s.scope/cgroup.procs"
     if [ -f "$_cg" ] && [ -s "$_cg" ] && ps -o comm= -p "$(tr '\n' ',' < "$_cg" | sed 's/,$//')" 2>/dev/null | grep -q -x -E 'claude|[0-9.]+'; then return 0; fi
-    _ts="$(sed -n 's/^RESERVED job=[0-9]* tube=[^ ]* \([0-9T:Z-]*\).*/\1/p' "$_c" | tail -1)"
+    _ts="$(grep '^RESERVED ' "$_c" | tail -1 | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z' | tail -1)"
     [ -n "$_ts" ] || return 1
     _age="$(date -u -d "$_ts" +%s 2>/dev/null)" || return 1; _now="$(date -u +%s)"
     [ $(( _now - _age )) -lt "${S4E_CLAIM_LIVE_S:-600}" ]; }
