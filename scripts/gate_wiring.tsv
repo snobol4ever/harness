@@ -97,6 +97,7 @@ test_gate_c2bb_the_generator_arm_is_a_coroutine_start_not_a_box_entry_from_c.sh	
 test_gate_c_allocators_are_eradicated_and_say_where_they_went.sh	WIRED	-	-	-
 test_gate_capture_stdin_and_red_exit.sh	WIRED	-	-	-
 test_gate_cas_island_grows_with_the_declared_stack.sh	WIRED	-	-	-
+test_gate_ccache_shares_every_tree.sh	WIRED	-	-	-
 test_gate_check_cache_hits_on_an_identical_tree.sh	WIRED	-	-	-
 test_gate_claim_and_next_announce_the_start_of_work.sh	WIRED	-	-	-
 test_gate_claim_computes_the_premise.sh	WIRED	-	-	-
