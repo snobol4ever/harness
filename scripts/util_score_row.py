@@ -1790,19 +1790,23 @@ def _wall_only_without_a_table(full_key, _aud):
             fl = line.rstrip("\n").split("\t")
             if len(fl) >= 10 and fl[5] == dbs and fl[8] in ("m3", "m4"):
                 present.add((fl[7], fl[8]))
-    wall = wall_secs(sum(mn.get((dbs, p, m), 0.0) for (p, m) in present))
+    _wm = [mn.get((dbs, p, m), 0.0) for (p, m) in present]
+    wall = int(round(sum(_wm))); wall_text = wall_cell(_wm)
     env = dict(os.environ); env["S4E_SUITES_TSV"] = SUITES_TSV; env["S4E_SCORE_MD"] = SCORE_MD
-    r = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, str(wall)], capture_output=True, text=True, env=env)
+    r = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, wall_text], capture_output=True, text=True, env=env)
     sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
     return r.returncode
 
 
-def wall_secs(total):
-    """The banner's Min cell, whole seconds, from the sum of the members' minimum seconds: a sum above zero is at least 1 (the coo 2026-11-11, on Lon's
-    question the same morning, verbatim: "Why am I not seeing the new test suites with Min times?"; MEASURED in results.tsv.min: FPC's 84 passing
-    programs sum to 0.76 s, TPgm 0.31, RebRungs 0.28, Dotnet 0.24, X32T 0.20, Vanilla 0.16, PasStanford 0.15, PasCocoR 0.03; each rounded to 0, and
-    the banner's --set-wall 0 blanks the cell, so a suite that ran read like one that never ran). Zero stays zero: no member has a minimum."""
-    return 0 if total <= 0 else max(1, int(round(total)))
+def wall_cell(mins):
+    """The text handed to the banner's --set-wall, from the minimum seconds of the members that have one: the whole seconds of their sum, 0 included,
+    or the word none when no member has a minimum (Lon 2026-11-11 09:3x CST, in the coo's window, verbatim: "Why am I not seeing the new test suites
+    with Min times?" then "Well, stupid, 0 seconds is a valid measure I suppose at this scale." then "I want to see the time measurement in the stop
+    hook banner."; MEASURED in results.tsv.min: FPC's passing programs sum to 0.76 s, TPgm 0.31, RebRungs 0.28, Dotnet 0.24, X32T 0.20, Vanilla 0.16,
+    PasStanford 0.15, PasCocoR 0.03; a sum that rounded to 0 was handed over as 0 and shown as a blank, so a suite that ran read like one that never
+    ran). A suite that ran in under half a second reads 0s; only a suite with no minimum at all reads blank."""
+    mins = [x for x in mins if x > 0]
+    return str(int(round(sum(mins)))) if mins else "none"
 
 
 def cmd_from_progress(a):
@@ -1992,13 +1996,15 @@ def cmd_from_progress(a):
                 if (dbsuite, prog + sfx, m) in _mn:
                     return _mn[(dbsuite, prog + sfx, m)]
             return 0.0
-        wall = wall_secs(sum(_mnv(prog, m) for (prog, m) in last))
+        _wm = [_mnv(prog, m) for (prog, m) in last]
+        wall = int(round(sum(_wm))); wall_text = wall_cell(_wm)
         # the ledger spans every PASS ever recorded, so a subset re-take cannot shrink the sum (the reason for the timed == len(last) guard below): the Wall is
         # complete when every program that PASSES NOW has its minimum; a program that does not pass has no run time to add
         _ledger_complete = all(_mnv(prog, m) > 0 for (prog, m), v in last.items() if v[0] == "PASS")
     else:
         _ledger_complete = None
-        wall = wall_secs(sum(_f(v[4]) for v in last.values()))
+        _wm = [_f(v[4]) for v in last.values()]
+        wall = int(round(sum(_wm))); wall_text = wall_cell(_wm)
     timed = sum(1 for v in last.values() if _f(v[4]) > 0)        # a reading taken before the runner recorded seconds carries 0
     if _ledger_complete is not None:
         timed = len(last) if _ledger_complete else 0
@@ -2120,7 +2126,7 @@ def cmd_from_progress(a):
             print("REFUSE(2): from-progress --wall-only: no minimum-seconds ledger beside %s -- the Wall is the sum of minimums and none exists to sum" % db)
             return 2
         env = dict(os.environ); env["S4E_SUITES_TSV"] = SUITES_TSV; env["S4E_SCORE_MD"] = SCORE_MD
-        r = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, str(wall)], capture_output=True, text=True, env=env)
+        r = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, wall_text], capture_output=True, text=True, env=env)
         sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
         return r.returncode
     if a.dry_run:
@@ -2159,7 +2165,7 @@ def cmd_from_progress(a):
     sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
     if r.returncode == 0 and _have_ledger:
         # the Wall is the sum of each member's minimum (see --wall-only): REPLACED here, so a run's clock or an older, larger sum never stands
-        w = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, str(wall)], capture_output=True, text=True, env=env)
+        w = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, wall_text], capture_output=True, text=True, env=env)
         sys.stdout.write(w.stdout); sys.stderr.write(w.stderr)
         return w.returncode
     return r.returncode

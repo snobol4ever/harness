@@ -46,10 +46,12 @@ set_wall() { S4E_SUITES_TSV="$T/SUITES.tsv" S4E_SCORE_MD="$T/SCORE.md" python3 "
 set_wall 900
 arm "8 --set-wall REPLACES the cell, a larger sum included (a member gained its first minimum)" '[ "$(secs)" = 900 ]'
 set_wall 0
-arm "9 --set-wall 0 blanks the cell: no member has a minimum, so no number is shown"        '[ -z "$(secs)" ]'
+arm "9 --set-wall 0 writes 0: zero seconds is a measure and the grid shows 0s"              '[ "$(secs)" = 0 ] && [ "$(cd "$(dirname "$B")" && python3 -I -c "import sys; sys.path.insert(0, \".\"); import util_suite_banner as b; print(b.wall({\"today_secs\": \"0\"}), b.wall({\"today_secs\": \"\"}) or \"blank\")" 2> /dev/null)" = "0s blank" ]'
+set_wall none
+arm "9b --set-wall none blanks the cell: no member has a minimum, so no number is shown"    '[ -z "$(secs)" ]'
 set_wall 41 ; set_wall abc
 arm "10 --set-wall refuses a non-number and leaves the cell as it stood"                     '[ "$(secs)" = 41 ] && grep -q "REFUSE(rc=2)" "$T/wall.out"'
-arm "12 a sum of minimums under one second is 1 s, never a blank; zero stays zero (wall_secs)" '[ "$(cd "$H" && python3 -I -c "import sys; sys.path.insert(0, \".\"); import util_score_row as s; print(s.wall_secs(0.3), s.wall_secs(0), s.wall_secs(41.6))" 2> /dev/null)" = "1 0 42" ]'
+arm "12 minimums that sum to under half a second are handed over as 0, a suite with no minimum as none (wall_cell)" '[ "$(cd "$H" && python3 -I -c "import sys; sys.path.insert(0, \".\"); import util_score_row as s; print(s.wall_cell([0.2, 0.1]), s.wall_cell([0.0, 0.0]), s.wall_cell([]), s.wall_cell([41.2, 0.4]))" 2> /dev/null)" = "0 none none 42" ]'
 arm "11 a write forwards no run's clock to the banner (the --secs forwarding is gone)"      '! grep -nE "cmd \+= \[\"--secs\"" "$H/util_score_row.py" | grep -q .'
 if [ "$fail" = 0 ]; then echo "GATE PASS [$G]: $n arms -- the ledger keeps the smallest PASS seconds, the banner keeps the smaller wall under --secs, and --set-wall sets the sum of minimums"; exit 0; fi
 echo "GATE FAIL [$G]: $fail of $n arm(s) red -- Wall would again be a loaded run's clock, not the minimum time to run the test"; exit 1
