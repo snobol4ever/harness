@@ -46,7 +46,11 @@ container_package_run() {
   . "$here/lib_inventory.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_inventory.sh unloadable"; return 2; }
   [ -x "$sd/scrip" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $sd/scrip -- build first (make)"; return 2; }
   "$here/util_require_fresh.sh" --gate "$gate" "$sd/scrip" "${RT_DIR:-$sd/out}/libscrip_rt.so" || return 2
-  [ -f "$suite/ALL.$ext" ] && [ -f "$suite/ALL.ref" ] || { echo "⛔ REFUSE(rc=2): no container at $suite/ALL.{$ext,ref} -- run: python3 ../harness/scripts/util_build_package_suite.py $suite --lang $lang --twice"; return 2; }
+  # THE FILES FORM (CIO-113; run-switches step 12): a package whose ALL.csv has a path column has no container; its mode 3 runs in one
+  # scrip --run-files process, called by the grader's --run-files, and is graded from the switch's OUT and report.
+  local rf=""
+  if [ -f "$suite/ALL.csv" ] && head -1 "$suite/ALL.csv" | tr ',' '\n' | grep -qx path; then case ",${S4E_MODES:-m3}," in *,m3,*) rf="--run-files";; esac; fi
+  [ -n "$rf" ] || { [ -f "$suite/ALL.$ext" ] && [ -f "$suite/ALL.ref" ]; } || { echo "⛔ REFUSE(rc=2): no container at $suite/ALL.{$ext,ref} -- run: python3 ../harness/scripts/util_build_package_suite.py $suite --lang $lang --twice"; return 2; }
   # ⛔⭐ ONE CHUNK, NOT THE SUITE (R-1802, Lon 2026-10-15 via the officer: "Why are we running suites at a time versus sets/blocks at a time in a round
   # robin approach?"): S4E_CHUNK=chunk:NN grades that stored PARTITION.tsv chunk of the container in the modes S4E_MODES names, default m3 (CIO-7), through the harness, which appends one
   # progress row per program and mode stamped partition=chunk:NN, and writes NO suite row -- util_score_row.py from-progress --suite <key> assembles the
@@ -54,7 +58,7 @@ container_package_run() {
   if [ -n "${S4E_CHUNK:-}" ]; then
     case "$S4E_CHUNK" in core|core@*|chunk:[0-9]*|entry:*) ;; *) echo "⛔ REFUSE(rc=2): S4E_CHUNK=$S4E_CHUNK is not core[@entry], chunk:NN[@entry] or entry:<name>[,entry:<name>...] (a request, R-1806)"; return 2;; esac
     [ -f "$suite/PARTITION.tsv" ] || { echo "⛔ REFUSE(rc=2): no $suite/PARTITION.tsv -- build it: python3 ../harness/scripts/util_suite_partition.py build $suite/ALL.csv"; return 2; }
-    out="$(cd "$sd" && SUITE_LIST_ALL=1 python3 ../harness/scripts/corpus_suite_harness.py run "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$S4E_CHUNK" 2>&1)"; rc=$?
+    out="$(cd "$sd" && SUITE_LIST_ALL=1 python3 ../harness/scripts/corpus_suite_harness.py run "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" $rf --partition "$S4E_CHUNK" 2>&1)"; rc=$?
     printf '%s\n' "$out"
     printf '%s\n' "$out" | grep -q '^SUITE_BOARD ' || { echo "⛔ REFUSE(rc=2): corpus_suite_harness.py printed no SUITE_BOARD line for $S4E_CHUNK (above) -- nothing measured"; return 2; }
     echo "$(printf '%s' "$key" | tr 'a-z-' 'A-Z_')_CHUNK $S4E_CHUNK graded: one progress row per program and mode; no suite row from a chunk -- the row is util_score_row.py from-progress --suite $key (R-1802)"
@@ -67,7 +71,7 @@ container_package_run() {
   conts="$(inventory_container_names "$suite")" && xc="$(container_package_excl "$suite" "$ext")" \
     || { echo "⛔ REFUSE(rc=2): $suite/CONTAINERS.tsv or EXCLUDED.tsv is refused (the reader said why above) -- no row over an unread exclusion"; return 2; }
   excl="${xc% *}"; ncont="${xc#* }"
-  out="$(cd "$sd" && SUITE_LIST_ALL=1 python3 ../harness/scripts/corpus_suite_harness.py run "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" --modes "$modes" 2>&1)"; rc=$?
+  out="$(cd "$sd" && SUITE_LIST_ALL=1 python3 ../harness/scripts/corpus_suite_harness.py run "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" --modes "$modes" $rf 2>&1)"; rc=$?
   printf '%s\n' "$out"
   board="$(printf '%s\n' "$out" | grep -m1 '^SUITE_BOARD ')"
   [ -n "$board" ] || { echo "⛔ REFUSE(rc=2): corpus_suite_harness.py printed no SUITE_BOARD line (above) -- nothing measured, no row written"; return 2; }

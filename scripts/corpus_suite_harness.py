@@ -3046,6 +3046,14 @@ def _pkg_omitted(d):
     return {ln.split(": ", 1)[0] for ln in p.read_bytes().decode("utf-8").split("\n") if ln.strip() and not ln.startswith("#") and ": " in ln}
 
 
+def _pkg_stage_name(name, rel, ext):
+    """The name a files-form entry's program is staged under on the per-process road: its own file name where the distribution's differs
+    from ENTRY.EXT (spitbol_testpgms: test6.spt), so a program that prints its own file name answers as it does run in place by
+    scrip --run-files (run-switches step 12: the two roads read one answer). None when the two are the same name."""
+    base = Path(rel).name
+    return None if base == Path(name).name + ext else str(Path(name).parent / base)
+
+
 def _pkg_read_args(d, entries):
     """ALL.args at the package root, the form of ALL.rc: one line an entry that has arguments, the entry's name and then each argument
     after a tab; blank lines and lines beginning with # ignored. A line naming no entry, or an entry named twice, refuses."""
@@ -3098,6 +3106,9 @@ def read_package_dir(d, ext, modes=None):
             e.stdin = inp.read_bytes().decode("utf-8")
         if err.is_file():
             e.stderr_answer = err.read_bytes().decode("utf-8")
+        _sn = _pkg_stage_name(name, rel, ext)
+        if _sn:
+            e.stage_name = _sn
         entries.append(e)
     src = str(d / ("ALL" + ext))
     _pkg_read_args(d, entries)
@@ -3224,6 +3235,10 @@ def unpack_dir(d, dry_run=False):
         why.append(f"{len(differ)} program file(s) differ from the entry's text in the container: {differ[:8]}")
     if why:
         raise ValueError("; ".join(why))
+    for e in old:
+        _sn = _pkg_stage_name(e.name, path_of[e.name], ext)
+        if _sn and not getattr(e, "stage_name", None):
+            e.stage_name = _sn
     work = Path(tempfile.mkdtemp(prefix="unpack_", dir=os.environ.get("TMPDIR") or None))
     try:
         shutil.copytree(d, work, dirs_exist_ok=True)
@@ -3879,6 +3894,37 @@ def batch_m3_verdicts(paths, entries, tmp_root, ext, companion_dir):
         v.secs = secs
         out[name] = {"m3": against_expect(v, _ex)}
     return out
+
+
+def run_files_switch(paths, args, run_entries, n_all, modes, tmp_root):
+    """THE PACKAGE SWITCH, CALLED (run-switches step 12; CTO-588 the interface as built, CIO-113 the files form): mode 3 of a package in the
+    files form runs in ONE process, scrip --run-files DIR --out OUT, its report on standard output, and the post step grades OUT against
+    NAME.out and NAME.err beside each program with the masks, the compare rules and the exit status the tables declare. The caller supplies
+    what the switch leaves to it: the include library (SNO_LIB) and, for a partition, the list of the entries to run (--only). A test the
+    switch defers, times out on or does not report runs on the per-process road, as the post step rules. -> the [(OUT, REPORT)] of --post."""
+    if getattr(args, "post", None):
+        refuse("--run-files and --post are the same road named twice: give one")
+    pd = pkg_dir_of(args.sno)
+    if pd is None:
+        refuse(f"--run-files: {Path(args.sno).parent} is not a package in the files form (its ALL.csv has no path column)")
+    if "m3" not in modes:
+        refuse("--run-files runs mode 3: --modes must include m3")
+    if paths["engine"] != "scrip":
+        refuse("--run-files is SCRIP's own switch; a port engine runs each test in its own process")
+    out_dir, rep = tmp_root / "run_files_out", tmp_root / "run_files.report"
+    pd = Path(pd).resolve()
+    argv = [str(paths["scrip_bin"]), "--run-files", str(pd), "--out", str(out_dir)]
+    if len(run_entries) != n_all or getattr(args, "partition", None):
+        only = tmp_root / "run_files.only"
+        only.write_text("".join(e.name + "\n" for e in run_entries), encoding="utf-8")
+        argv += ["--only", str(only)]
+    bound = sum(((None if "TIMEOUT" in os.environ else getattr(e, "timeout_s", None)) or paths["timeout"]) for e in run_entries) + 60
+    rc, so, se, why = _bounded_run(argv, bound, str(tmp_root), dict(os.environ, SNO_LIB=str(paths["inc"])), None, False)
+    if why or rc != 0:
+        refuse(f"--run-files: scrip --run-files {pd} ended rc {rc}{' ' + why if why else ''}: {(se or b'').decode('utf-8', 'replace').strip()[-300:]}")
+    rep.write_bytes(so or b"")
+    print("RUN_FILES_BOARD dir=%s entries=%d of %d report_lines=%d" % (pd, len(run_entries), n_all, len([l for l in (so or b"").split(b"\n") if l])))
+    return [[str(out_dir), str(rep)]]
 
 
 def post_m3_verdicts(paths, entries, posts):
@@ -5168,6 +5214,8 @@ def cmd_run(args):
     _xr_rx = re.compile(_xr_re.encode()) if expected_refusals else None
     tmp_root = Path(tempfile.mkdtemp(prefix="csh_run_"))
     # ⭐ S4E_BATCH=1 (step 5): mode 3 of every eligible entry of this partition runs in ONE scrip --harness process, before the loop (see batch_m3_verdicts)
+    if getattr(args, "run_files", False):
+        args.post = run_files_switch(paths, args, run_entries, len(entries), modes, tmp_root)
     if getattr(args, "post", None):
         if "m3" not in modes:
             refuse("--post reads the switches' mode-3 outputs: --modes must include m3")
@@ -7353,6 +7401,8 @@ def main():
     r.add_argument("--partition", default="", help="core | shell:<feature> | chunk:NN, or a comma-separated union of them: grade exactly that subset of the suite's stored PARTITION.tsv (R-1676), both modes, progress rows per program carrying partition=NAME in their note and config; the SUITE_BOARD carries partition=NAME, which util_score_row.py refuses as a suite row (a partition is never the suite). Incompatible with --shard")
     r.add_argument("--post", nargs=2, action="append", metavar=("OUT", "REPORT"), default=None,
                    help="THE POST STEP (CIO-32 (6)): mode 3 is read from scrip --run-one-liners/--run-multi-liners' OUT directory and report, not run; repeat for each switch; the per-process road runs DEFERRED, TIMEOUT, HANG, REFUSED and unreported entries")
+    r.add_argument("--run-files", action="store_true",
+                   help="THE PACKAGE SWITCH (run-switches step 12): mode 3 of a package in the files form runs in one scrip --run-files process and is graded from its OUT directory and report; the per-process road runs what it defers")
     r.set_defaults(func=cmd_run)
 
     pt = sub.add_parser("partition", help="THE SELECTION VERB (R-1676): print PARTITION <name>: <k> of <n> entries from the suite's stored PARTITION.tsv (core | shell:<feature> | chunk:NN; every part without --name); runs nothing, records nothing")
