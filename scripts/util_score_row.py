@@ -1790,11 +1790,19 @@ def _wall_only_without_a_table(full_key, _aud):
             fl = line.rstrip("\n").split("\t")
             if len(fl) >= 10 and fl[5] == dbs and fl[8] in ("m3", "m4"):
                 present.add((fl[7], fl[8]))
-    wall = int(round(sum(mn.get((dbs, p, m), 0.0) for (p, m) in present)))
+    wall = wall_secs(sum(mn.get((dbs, p, m), 0.0) for (p, m) in present))
     env = dict(os.environ); env["S4E_SUITES_TSV"] = SUITES_TSV; env["S4E_SCORE_MD"] = SCORE_MD
     r = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, str(wall)], capture_output=True, text=True, env=env)
     sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
     return r.returncode
+
+
+def wall_secs(total):
+    """The banner's Min cell, whole seconds, from the sum of the members' minimum seconds: a sum above zero is at least 1 (the coo 2026-11-11, on Lon's
+    question the same morning, verbatim: "Why am I not seeing the new test suites with Min times?"; MEASURED in results.tsv.min: FPC's 84 passing
+    programs sum to 0.76 s, TPgm 0.31, RebRungs 0.28, Dotnet 0.24, X32T 0.20, Vanilla 0.16, PasStanford 0.15, PasCocoR 0.03; each rounded to 0, and
+    the banner's --set-wall 0 blanks the cell, so a suite that ran read like one that never ran). Zero stays zero: no member has a minimum."""
+    return 0 if total <= 0 else max(1, int(round(total)))
 
 
 def cmd_from_progress(a):
@@ -1984,13 +1992,13 @@ def cmd_from_progress(a):
                 if (dbsuite, prog + sfx, m) in _mn:
                     return _mn[(dbsuite, prog + sfx, m)]
             return 0.0
-        wall = int(round(sum(_mnv(prog, m) for (prog, m) in last)))
+        wall = wall_secs(sum(_mnv(prog, m) for (prog, m) in last))
         # the ledger spans every PASS ever recorded, so a subset re-take cannot shrink the sum (the reason for the timed == len(last) guard below): the Wall is
         # complete when every program that PASSES NOW has its minimum; a program that does not pass has no run time to add
         _ledger_complete = all(_mnv(prog, m) > 0 for (prog, m), v in last.items() if v[0] == "PASS")
     else:
         _ledger_complete = None
-        wall = int(round(sum(_f(v[4]) for v in last.values())))
+        wall = wall_secs(sum(_f(v[4]) for v in last.values()))
     timed = sum(1 for v in last.values() if _f(v[4]) > 0)        # a reading taken before the runner recorded seconds carries 0
     if _ledger_complete is not None:
         timed = len(last) if _ledger_complete else 0
