@@ -77,6 +77,8 @@ def main(argv):
     if not rows or "path" not in rows[0]: refuse(f"{key} is not on the package switch (its index has no path column): convert the package first")
     om = os.path.join(d, "ALL.omit")
     omitted = {l.split(": ", 1)[0] for l in open(om, "rb").read().decode("utf-8", "replace").split("\n") if l.strip() and not l.startswith("#") and ": " in l} if os.path.isfile(om) else set()
+    ex = os.path.join(d, "EXCLUDED.tsv")
+    omitted |= {os.path.splitext(l.split("\t", 1)[0])[0] for l in open(ex, encoding="utf-8", errors="replace") if l.strip() and not l.startswith("#") and "\t" in l} if os.path.isfile(ex) else set()
     path_of = {r["entry"]: r["path"] for r in rows if r["entry"] not in omitted}
     sr = os.path.join(d, "ALL.source")
     src_root = next((l.rstrip("\n").split("\t", 1)[1] for l in open(sr, encoding="utf-8") if l.startswith("root\t")), None) if os.path.isfile(sr) else None
@@ -90,6 +92,9 @@ def main(argv):
             c = l.rstrip("\n").split("\t")
             if len(c) > 9 and c[5] == key and c[8] == "m3": last[c[7]] = c[9]
     failing = sorted(n for n, o in last.items() if o in ("FAIL", "CRASH", "HANG", "OOM") and n in path_of)[:limit]
+    if "--list" in argv:
+        for n in failing: print(n)
+        print(f"RED_CENSUS_LIST suite={key} failing={len(failing)}"); return 0
     if not failing:
         print(f"RED_CENSUS suite={key} failing=0 ran=0 groups=0"); return 0
     scrip = os.path.join(ROOT, "SCRIP", "scrip")
