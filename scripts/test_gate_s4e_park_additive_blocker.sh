@@ -13,7 +13,7 @@
 # with the BLOCKER ledger line removed (FAIL-ONCE, INSTRUMENT LAWS fifth batch):
 #   (A) park X BLOCKED-ON:B1, then park X BLOCKED-ON:B2 -> column reads BLOCKED-ON:B2 (the one blocker REPLACED) and
 #       the baton's LEDGER gains `BLOCKER B1 -> B2`; mark B2 DONE; `next` reconsiders X -> self-heals and serves it.
-#   (B) park Y BLOCKED-ON:<topic absent from QUEUE.tsv and QUEUE.done.tsv> -> REFUSED rc=2, column unchanged.
+#   (B) park Y BLOCKED-ON:<topic absent from QUEUE.tsv> -> REFUSED rc=2, column unchanged.
 # EXIT 0 both arms hold on the live script AND arm (A) goes red on the mutated copy; 1 otherwise; 2 REFUSED.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; MSG="$HERE/s4e_msg.sh"
@@ -22,7 +22,7 @@ W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }; trap 'rm -rf
 PO="$W/po"; SEAT=hq_C; THIRD=seat04
 mk_po() {
   rm -rf "$PO"; mkdir -p "$PO/tasks" "$PO/claims" "$PO/released" "$PO/$SEAT/inbox" "$PO/$THIRD/inbox" || return 2
-  : > "$PO/BOARD.md"; : > "$PO/QUEUE.done.tsv"; printf "TENET\nROSTER: hq_C seat04\n" > "$PO/MODE"
+  : > "$PO/BOARD.md"; printf "TENET\nROSTER: hq_C seat04\n" > "$PO/MODE"
   { printf '# gate fixture queue\n'; printf '0\tt-target\tunassigned\tFREE\n'; printf '5\tt-b1\tunassigned\tFREE\n'; printf '5\tt-b2\tunassigned\tFREE\n'; printf '0\tt-target-b\tunassigned\tFREE\n'; } > "$PO/QUEUE.tsv"
   local t; for t in t-target t-b1 t-b2 t-target-b; do
   # ⛔ THE FIXTURE CRITERION MUST BE **RED**, and it used to be `test -f <the baton itself>` -- always
@@ -65,7 +65,7 @@ arm_b() {   # arm_b <script> -> 0 iff parking on an unresolvable topic REFUSES r
 echo "s4e park: re-park replaces the one blocker (BLOCKER ledger line) + refuse-unresolvable-topic (scratch postoffice under $W)"
 a_ok=1; b_ok=1
 if arm_a "$MSG"; then echo "  [PASS A] re-park BLOCKED-ON:t-b1 -> BLOCKED-ON:t-b2 REPLACES the one blocker and writes BLOCKER t-b1 -> t-b2; t-b2 DONE self-heals and serves the row"; else a_ok=$?; [ "$a_ok" = 2 ] && { echo "⛔ REFUSED: arm A fixture could not be built (rc=2)"; exit 2; }; a_ok=0; fi
-if arm_b "$MSG"; then echo "  [PASS B] park on a topic absent from QUEUE.tsv/QUEUE.done.tsv REFUSES rc=2, column left FREE"; else b_ok=$?; [ "$b_ok" = 2 ] && { echo "⛔ REFUSED: arm B fixture could not be built (rc=2)"; exit 2; }; b_ok=0; fi
+if arm_b "$MSG"; then echo "  [PASS B] park on a topic absent from QUEUE.tsv REFUSES rc=2, column left FREE"; else b_ok=$?; [ "$b_ok" = 2 ] && { echo "⛔ REFUSED: arm B fixture could not be built (rc=2)"; exit 2; }; b_ok=0; fi
 # ⛔ THE MUTANT IS STAGED WITH ITS SIBLING LIBS. Since the DONE-WHEN extractor moved into lib_donewhen.sh
 # (cto's ruling, 2026-09-23) the bus REFUSES rc=2 when that lib is not beside it, so a mutant dropped into a
 # bare $W refuses EVERY verb -- and this gate's fail-once then prints "red as required" over a refusal that

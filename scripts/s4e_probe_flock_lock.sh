@@ -52,8 +52,8 @@ wait "$vpid" 2>/dev/null; rc=$?
 bg=""
 [ -n "$first" ] && [ -n "$sent" ] || { sed 's/^/  | /' "$w/done.out" | tail -15; refuse "the done never reached its criterion (rc ${rc:-?})"; }
 # QUEUE.tsv is a VIEW since fleet-queue step 12 (84d8951): it is rebuilt from the batons and drops a closed row, so the closure is read from
-# what done writes: the claim's DONE line and the DONE record in QUEUE.done.tsv.
-{ grep -q '^DONE$' "$w/claims/$t.claim" && grep -qP "^2\t\Q$t\E\t[^\t]*\tDONE$" "$w/QUEUE.done.tsv"; } \
+# what done writes: the claim's DONE line.
+grep -q '^DONE$' "$w/claims/$t.claim" \
     || { sed 's/^/  | /' "$w/done.out" | tail -15; refuse "the done did not close the plant row (rc ${rc:-?})"; }
 c="$(sed -n 's/.*DONE-WHEN exited 0 in \([0-9]*\)s.*/\1/p' "$w/done.out" | head -1)"
 [ -f "$trace" ] || : > "$trace"

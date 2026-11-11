@@ -12,8 +12,8 @@
 #   s4e_msg.sh ask <topic> "text"         question box: sends to hq as q-<topic>
 #   s4e_msg.sh send <to> <topic> "text"   s4e_msg.sh check   s4e_msg.sh clear
 #   s4e_msg.sh claim <topic>              s4e_msg.sh board [my new status text]
-#   s4e_msg.sh sweep                      ⭐ LAW 4: move landed (DONE) rows out of QUEUE.tsv into
-#                                         QUEUE.done.tsv — the buffer must never become a graveyard again
+#   s4e_msg.sh sweep                      ⭐ LAW 4: delete landed (DONE) rows, their task files and claims;
+#                                         no index of finished rows is kept — the buffer must never become a graveyard again
 #   s4e_msg.sh sweep --close-green [--only T] [--timeout S]   CTO-496 step 8: every open row with no RUNNING claim is put
 #                                         through done; green closes (receipt in its LEDGER), red and rc 2 keep the row untouched
 #   s4e_msg.sh sweep --plant-green        step 8's probe: the same phase on a scratch postoffice; the live queue is never written
@@ -555,10 +555,8 @@ BODY
     printf 'MINT goal_once=%d next_from_goal=%d template_lines=%d\n' "$_g1" "$((_g2 * _g3))" "$_tl"
     [ "$_g1" = 1 ] && [ "$_g2" = 1 ] && [ "$_g3" = 1 ] && [ "$_tl" = 0 ]; exit $?; }
 # ⭐ picker-skips-blocked-rows (2026-08-28) -- SHARED BY next()'s PASS 3. Is the topic named by a
-# BLOCKED-ON:/PARKED-AWAITING: state DONE? `done` only ever APPENDS the DONE marker (never deletes a
-# claim) and `park` only ever clears a LIVE non-done claim, so claims/*.claim is the durable record;
-# QUEUE.done.tsv is the DONE-WHEN's own belt-and-suspenders for a blocker whose claim some future law
-# ever does prune.
+# BLOCKED-ON:/PARKED-AWAITING: state DONE? `done` appends the DONE marker to the claim; the sweep then deletes
+# the row, its task file and its claim, so a blocker with no QUEUE.tsv row is a finished one (Lon 2026-11-10).
 S4E_REQ_DIR="${S4E_TEST_REQUEST_DIR:-$PO/test_requests}"
 s4e_is_request_id() { case "${1:-}" in [0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]T[0-9][0-9][0-9][0-9][0-9][0-9]-*-[0-9]*) return 0;; esac; return 1; }   # s4e_test_request.sh's id
 s4e_request_verdict_in() { s4e_is_request_id "$1" && [ -f "$S4E_REQ_DIR/done/$1.req" ]; }      # the coo's loop moves a graded request to done/ with its served= line
@@ -568,21 +566,7 @@ s4e_blocker_done() {
     local b="$1"; [ -n "$b" ] || return 1
     s4e_request_verdict_in "$b" && return 0   # box-scheduler step 31: PARKED-AWAITING:<request-id> clears on the coo's verdict
     [ -f "$PO/claims/$b.claim" ] && grep -q '^DONE$' "$PO/claims/$b.claim" && return 0
-    # ⛔⭐ DO NOT "FIX" THIS BY ALSO CHECKING THE ROW'S STATE COLUMN — PRESENCE IS THE WHOLE SIGNAL, AND IT IS SOUND.
-    # `sweep` moves a row into QUEUE.done.tsv ONLY IF its claim carries DONE — the IDENTICAL test to the line above
-    # (see the sweep) case). So membership here == "claim carried DONE at sweep time", which is exactly what this
-    # branch is for. ⛔ QUEUE.done.tsv's col3/col4 are the BUFFER'S values copied verbatim at sweep time and are
-    # STALE BY CONSTRUCTION: `done`/OVERRIDE appends DONE to claims/<topic>.claim and nothing rewrites the queue
-    # row's state column first, so 171 of 300 landed rows read FREE/ASSIGNED and are nonetheless genuinely DONE.
-    # A state check here would reject ~57% of legitimately-done blockers and re-block every row behind them.
-    # ⭐ MEASURED, not hypothetical (hq_C 2026-08-28, on seat06's report): this file's HEADER used to name legacy v1
-    # columns (`brief`/`first-step-and-done-when`) it has never carried, which makes col4 read as an authoritative
-    # state field and makes this branch look like a presence-vs-state bug. It is not. seat06 read this function
-    # carefully, reproduced the symptom twice, and released a rank-1 row (tests-consolidate-icon) TWICE on a
-    # correctly-observed symptom with a non-existent root cause — the blocker (icon-corpus-semicolonize) had been
-    # genuinely DONE by documented OVERRIDE since 2026-08-24, and branch 1 above fires on it anyway.
-    # FINDING-2026-08-28-hq_C-the-done-tsv-header-named-columns-the-file-does-not-have.md
-    grep -qP "^[0-9]+\t\Q$b\E\t" "$PO/QUEUE.done.tsv" 2>/dev/null
+    [ -f "$PO/QUEUE.tsv" ] && ! grep -qP "^[0-9]+\t\Q$b\E\t" "$PO/QUEUE.tsv"
 }
 
 # ⭐ s4e-park-adds-a-blocker-and-refuses-an-unresolvable-topic — a state may now be a '+'-joined SET of
@@ -610,8 +594,8 @@ s4e_first_resolved_blocker() {   # <possibly '+'-joined blockers> -> prints the 
 # reads only the thin QUEUE.tsv record, never the baton text. So the annotation lives where the dispatcher
 # already looks: the BLOCKER's own state column, spelled `DOES-NOT-CLEAR:<dep1>[,<dep2>,...]` appended
 # after its base state (e.g. `DONE:DOES-NOT-CLEAR:snocone-parser-fixture-family5`). ⛔ Deliberately NOT a
-# check of `s4e_blocker_done` above — that function's own law is "presence in the claim/QUEUE.done.tsv is
-# the WHOLE done-ness signal, never the state column" (the state column is stale on ~57% of landed rows).
+# check of `s4e_blocker_done` above — that function's own law is "the claim's DONE line or the row's absence from
+# QUEUE.tsv is the WHOLE done-ness signal, never the state column" (the state column is stale on ~57% of landed rows).
 # This function answers a DIFFERENT question (did the blocker's author name ME as an exception), which is
 # the one place the state column IS the authority per ruling — the two never overlap in what they
 # certify, and neither should read the other's evidence.
@@ -1251,9 +1235,10 @@ s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the arch
   printf 'plant-owner\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_g.claim"
   printf 'plant-other\nASSIGNED-BY plant %s\nRUNNING\n' "$_now" > "$_w/claims/$_k.claim"; cp "$_w/claims/$_k.claim" "$_w/live.before"; printf 'plant-other\n' > "$_w/claims/$_b.claim"; cp "$_w/claims/$_b.claim" "$_w/bare.before"
   _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 60 2>&1)"
-  grep -qP "^2\t\Q$_g\E\tplant-owner\tDONE$" "$_w/QUEUE.done.tsv" 2>/dev/null || { _ok=0; _why="$_why the green row is not archived DONE;"; }
   grep -qP "^2\t\Q$_g\E\t" "$_w/QUEUE.tsv" && { _ok=0; _why="$_why the green row is still live;"; }
-  grep -q 'CLOSED BY THE SWEEP' "$_w/tasks/$_g.task.md" || { _ok=0; _why="$_why the green row has no ledger receipt;"; }
+  compgen -G "$_w/QUEUE.d*" > /dev/null && { _ok=0; _why="$_why an index of finished rows was written;"; }
+  { [ -e "$_w/tasks/$_g.task.md" ] || [ -e "$_w/claims/$_g.claim" ]; } && { _ok=0; _why="$_why the green row kept its task file or claim;"; }
+  printf '%s\n' "$_o" | grep -q "^SWEEP closed $_g " || { _ok=0; _why="$_why the green row was not closed by the sweep;"; }
   grep -qP "^2\t\Q$_r\E\tplant-owner\tFREE$" "$_w/QUEUE.tsv" || { _ok=0; _why="$_why the red row moved;"; }
   [ -e "$_w/claims/$_r.claim" ] && { _ok=0; _why="$_why the red row kept a sweep claim;"; }
   { grep -qP "^2\t\Q$_k\E\tplant-other\tCLAIMED:plant-other$" "$_w/QUEUE.tsv" && cmp -s "$_w/live.before" "$_w/claims/$_k.claim"; } || { _ok=0; _why="$_why live claim $_k did not read CLAIMED:plant-other with its file untouched;"; }
@@ -1261,6 +1246,25 @@ s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the arch
   { grep -qP "^2\t\Q$_sw\E\tplant-owner\tCLAIMED:plant-other$" "$_w/QUEUE.tsv" && cmp -s "$_w/swap.foreign" "$_w/claims/$_sw.claim"; } || { _ok=0; _why="$_why swapped claim $_sw did not read CLAIMED:plant-other with its file left as found;"; }
   if [ "$_ok" = 1 ]; then printf 'SWEEP closed plant %s (red %s kept FREE with no claim; live claim %s, bare claim %s and swapped claim %s untouched)\n' "$_g" "$_r" "$_k" "$_b" "$_sw"; rm -rf "$_w"; return 0; fi
   printf 'SWEEP plant RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -20 | sed 's/^/  | /'; rm -rf "$_w"; return 1
+}
+s4e_sweep_plant_gone() {   # a DONE row, its task file and its claim are gone after the sweep, no index of finished rows exists, and a row blocked on it is served; scratch postoffice only
+  local _w _g _bl _o _why="" _now
+  _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_sweep_plant_gone.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
+  mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox"; cp "$PO/MODE" "$_w/MODE" 2>/dev/null; _now="$(date -u +%FT%TZ)"
+  _g="sweep-plant-gone-$$"; _bl="sweep-plant-gone-blocked-$$"
+  printf '# plant queue\n2\t%s\tplant-owner\tDONE\n2\t%s\tplant-owner\tBLOCKED-ON:%s\n' "$_g" "$_bl" "$_g" > "$_w/QUEUE.tsv"
+  printf '# TASK %s\nGOAL: plant\nDONE-WHEN: true\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_g" > "$_w/tasks/$_g.task.md"
+  printf '# TASK %s\nGOAL: plant\nDONE-WHEN: true\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_bl" > "$_w/tasks/$_bl.task.md"
+  printf 'plant-owner\nASSIGNED-BY plant %s\nDONE\n' "$_now" > "$_w/claims/$_g.claim"
+  _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep 2>&1)"
+  grep -qP "^2\t\Q$_g\E\t" "$_w/QUEUE.tsv" && _why="$_why the done row is still in the queue;"
+  [ -e "$_w/tasks/$_g.task.md" ] && _why="$_why the done row kept its task file;"
+  [ -e "$_w/claims/$_g.claim" ] && _why="$_why the done row kept its claim;"
+  compgen -G "$_w/QUEUE.d*" > /dev/null && _why="$_why an index of finished rows exists;"
+  grep -qP "^2\t\Q$_bl\E\t" "$_w/QUEUE.tsv" || _why="$_why the blocked row vanished;"
+  ( PO="$_w"; s4e_blocker_done "$_g" ) || _why="$_why the row blocked on the done row does not read its blocker done;"
+  if [ -z "$_why" ]; then printf 'SWEEP_PLANT_GONE ok\n'; rm -rf "$_w"; return 0; fi
+  printf 'SWEEP_PLANT_GONE red:%s\n' "$_why"; printf '%s\n' "$_o" | tail -20 | sed 's/^/  | /'; rm -rf "$_w"; return 1
 }
 s4e_sweep_plant_measuring_dead() {   # the cure's probe (box-scheduler step 8): a MEASURING row whose pid is gone is reverted AND closed in ONE pass; scratch postoffice only
   local _w _g _p _o _rev=0 _cls=0 _why=""
@@ -1273,7 +1277,7 @@ s4e_sweep_plant_measuring_dead() {   # the cure's probe (box-scheduler step 8): 
   _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 60 2>&1)"
   _rev="$(printf '%s\n' "$_o" | grep -c "^SWEEP reverted $_g to ")"
   _cls="$(printf '%s\n' "$_o" | grep -c "^SWEEP closed $_g ")"
-  grep -qP "^2\t\Q$_g\E\tplant-owner\tDONE$" "$_w/QUEUE.done.tsv" 2>/dev/null || _why="$_why the row is not archived DONE;"
+  grep -qP "^2\t\Q$_g\E\t" "$_w/QUEUE.tsv" && _why="$_why the row is still live;"
   printf 'SWEEP measuring_dead reverted=%d closed_same_pass=%d\n' "$_rev" "$_cls"
   [ "$_rev" = 1 ] && [ "$_cls" = 1 ] && [ -z "$_why" ] && { rm -rf "$_w"; return 0; }
   printf 'SWEEP measuring_dead RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -20 | sed 's/^/  | /'; rm -rf "$_w"; return 1
@@ -3688,8 +3692,8 @@ case "$cmd" in
          # goodwill. Un-park with: park <topic> FREE.
          # ⭐ picker-skips-blocked-rows: `park <topic> BLOCKED-ON:<other-topic>` (or PARKED-AWAITING:<other-topic>,
          # the pre-existing spelling several rows already use) is not just cosmetic prose — next()'s PASS 3 parses
-         # it and un-parks the row back to FREE BY ITSELF the moment <other-topic>'s claim goes DONE (or it is
-         # swept into QUEUE.done.tsv). Recording a block this way, not as bare PARKED/BLOCKED text, is what makes
+         # it and un-parks the row back to FREE BY ITSELF the moment <other-topic>'s claim goes DONE (or its row
+         # is swept away). Recording a block this way, not as bare PARKED/BLOCKED text, is what makes
          # it self-clearing instead of needing a human to remember to come back and re-park it.
          [ "${2:-}" = --probe-awaiting ] && s4e_sweep_plant_awaiting
          [ -n "${2:-}" ] || s4e_need park "a topic" "s4e_msg.sh park <topic> [STATE]" "Takes a row out of the picker WITHOUT closing it (default state PARKED; park <topic> FREE puts it back). It has no no-argument listing -- \`board\` is the verb that prints the board."
@@ -3727,9 +3731,9 @@ case "$cmd" in
          esac
          grep -qP "^[0-9]+\t\Q$topic\E\t" "$q" || { echo "⛔ no QUEUE.tsv row named $topic"; exit 1; }
          # ⛔⭐ picker-dangling-blocker-parks-a-row-forever-in-silence (hq_B mint, cured here). A BLOCKED-ON:/
-         # PARKED-AWAITING: value naming a topic with NO row (live or swept-done) can never self-clear: the
+         # PARKED-AWAITING: value naming a topic with NO live row can never self-clear: the
          # promotion walk's own dangling branch ("no row exists to serve") and the self-heal check
-         # (s4e_blocker_done, which needs a claim/QUEUE.done.tsv hit) both just silently return false forever
+         # (s4e_blocker_done, which needs a DONE claim or an absent row) both just silently return false forever
          # for a name nothing ever refers to. MEASURED (hq_B, queue-wide sweep): pz4 parked behind
          # "icon-n2-generator-activation-frames-items-3-4" — a sub-item gloss appended to a real row name,
          # itself not a row — with 3 more rows parked behind pz4, all silently permanent. Refuse the bad
@@ -3741,8 +3745,8 @@ case "$cmd" in
              if s4e_is_request_id "$_blk" && ! s4e_request_pending "$_blk" && ! s4e_request_verdict_in "$_blk"; then
                printf '⛔ REFUSED (rc=2): %s names test request %s, which is neither pending under %s nor graded under its done/ -- nothing written.\n' "$st" "$_blk" "$S4E_REQ_DIR" >&2; exit 2
              fi
-             if [ -z "$(qrow "$_blk")" ] && ! s4e_blocker_done "$_blk" && ! s4e_request_pending "$_blk"; then
-               printf '\n⛔⛔⛔ REFUSED: %s names blocker "%s", which has no QUEUE.tsv row (live or swept-done) ⛔⛔⛔\n' "$st" "$_blk" >&2
+             if [ -z "$(qrow "$_blk")" ] && ! s4e_request_pending "$_blk" && ! s4e_request_verdict_in "$_blk"; then
+               printf '\n⛔⛔⛔ REFUSED: %s names blocker "%s", which is not a live QUEUE.tsv row ⛔⛔⛔\n' "$st" "$_blk" >&2
                printf '    This state can never self-clear — s4e_blocker_done has nothing to ever find true for a\n' >&2
                printf '    name that is not a real row, so the block would be PERMANENT and SILENT.\n' >&2
                printf '    If you meant a SUB-ITEM of an existing row, name the ROW itself here and put the\n' >&2
@@ -4317,7 +4321,7 @@ case "$cmd" in
          [ -n "$row" ] || { echo "⛔ REFUSED: no QUEUE.tsv row named '$topic'. You cannot assign work that has no row." >&2; exit 2; }
          c="$PO/claims/$topic.claim"
          if [ -f "$c" ]; then own="$(head -1 "$c")"
-           if grep -q '^DONE$' "$c"; then echo "⛔ REFUSED: '$topic' is already DONE (held by $own). Sweep it to QUEUE.done.tsv — do NOT re-dispatch landed work." >&2; exit 1; fi
+           if grep -q '^DONE$' "$c"; then echo "⛔ REFUSED: '$topic' is already DONE (held by $own). The sweep deletes it — do NOT re-dispatch landed work." >&2; exit 1; fi
            if [ "$own" = "$seat" ]; then echo "already assigned: $topic -> $seat"; exit 0; fi
            echo "⛔ REFUSED: '$topic' is held by $own, not $seat. Release that claim first (that is a deliberate act, not a retry)." >&2; exit 1; fi
          # ⛔⭐ PRE-CLAIM PLACEHOLDER REFUSAL (row mint-dispatch-refuses-a-placeholder-done-when, R-286
@@ -4549,14 +4553,13 @@ MINTED-WITHOUT-CRITERION: ${S4E_MINT_NO_CRITERION} (S4E_MINT_NO_CRITERION; R-138
            printf '   completeness owners, from the one table: %s\n' "$(s4e_lane_help)" >&2
            printf '   any standing seat may be named: %s\n' "$(s4e_hqboxes | tr '\n' ' ')" >&2
            exit 2; fi
-         q="$PO/QUEUE.tsv"; d="$PO/QUEUE.done.tsv"; b="$PO/tasks/$topic.task.md"; mkdir -p "$PO/tasks"
+         q="$PO/QUEUE.tsv"; b="$PO/tasks/$topic.task.md"; mkdir -p "$PO/tasks"
          s4e_mint_dup() { grep -qP "^[0-9]+\t\Q$topic\E\t" "$q" 2>/dev/null && return 0
-                           [ -f "$d" ] && grep -qP "^[0-9]+\t\Q$topic\E\t" "$d" 2>/dev/null && return 0
                            [ -f "$b" ]; }
          # Cheap pre-check OUTSIDE the lock — refuses the common case (an existing topic) without making
          # every mint wait on the lock for a duplicate that was always going to be refused. This is an
          # optimization, never the actual guard: the lock below re-checks for the real TOCTOU race.
-         if s4e_mint_dup; then echo "⛔ REFUSED: '$topic' already exists (a live QUEUE.tsv row, a QUEUE.done.tsv row, or an existing task file) — pick a different name." >&2; exit 1; fi
+         if s4e_mint_dup; then echo "⛔ REFUSED: '$topic' already exists (a live QUEUE.tsv row or an existing task file) — pick a different name." >&2; exit 1; fi
          # ⭐ THE ATOMIC APPEND THE GOAL DEMANDS. QUEUE.tsv is ONE FILE every topic's row shares, unlike a
          # claim (one file per topic, where the `ln` hard-link trick above is already atomic per-target) — so
          # the lock is a DIRECTORY, not the row: mkdir is atomic on every POSIX filesystem, same guarantee
@@ -5699,17 +5702,17 @@ TASKEOF
          printf '\n';;
   sweep) # ⭐ LAW 4 — THE QUEUE IS A DISPATCH BUFFER, NOT A MEMORY. v1 reached 62% dead rows (112 of 181 DONE) because
          # nothing ever moved a landed row out, so the picker walked a graveyard and HQ re-dispatched finished work.
-         # This moves every row whose claim carries DONE into QUEUE.done.tsv (the memory) and rewrites the buffer.
-         # ⛔ IT NEVER DELETES: every swept row is appended to QUEUE.done.tsv and the pre-sweep buffer is backed up.
+         # This deletes every row whose claim carries DONE from QUEUE.tsv, with its task file and its claim, and keeps no index of it
+         # (Lon 2026-11-10 12:0x: "Delete those finished rows and do NOT keep them in a seperate index.").
          # ⛔ AN UNKNOWN FLAG REFUSES rc 2 BEFORE ANY WRITE (worker_08 2026-11-07 14:1x: `sweep --plant-measuring-dead`, before that flag existed, fell through to a LIVE sweep). Arguments after --close-green belong to its helper, which refuses its own unknowns.
-         for _a in "${@:2}"; do case "$_a" in --close-green) break;; --plant-green|--plant-measuring-dead|--plant-rc2|--retire-jobs) ;; --*) printf '⛔ REFUSED(2): sweep takes no flag %s\n   usage: %s sweep [--close-green --only <topic>] [--timeout <s>] | [--plant-green|--plant-measuring-dead|--plant-rc2]\n' "$_a" "$0" >&2; exit 2;; esac; done
+         for _a in "${@:2}"; do case "$_a" in --close-green) break;; --plant-green|--plant-gone|--plant-measuring-dead|--plant-rc2|--retire-jobs) ;; --*) printf '⛔ REFUSED(2): sweep takes no flag %s\n   usage: %s sweep [--close-green --only <topic>] [--timeout <s>] | [--plant-green|--plant-measuring-dead|--plant-rc2]\n' "$_a" "$0" >&2; exit 2;; esac; done
          [ "${2:-}" = "--plant-green" ] && { s4e_sweep_plant_green; exit $?; }
+         [ "${2:-}" = "--plant-gone" ] && { s4e_sweep_plant_gone; exit $?; }
          [ "${2:-}" = "--plant-measuring-dead" ] && { s4e_sweep_plant_measuring_dead; exit $?; }
          [ "${2:-}" = "--plant-rc2" ] && { s4e_sweep_plant_rc2_stale; exit $?; }
          [ "${2:-}" = "--retire-jobs" ] && { s4e_sweep_retire_jobs; exit $?; }
          if [ "${2:-}" = "--close-green" ]; then shift 2; s4e_sweep_close_green "$@" || exit $?; fi
-         q="$PO/QUEUE.tsv"; d="$PO/QUEUE.done.tsv"; [ -f "$q" ] || { echo "no QUEUE.tsv"; exit 1; }
-         cp "$q" "$q.bak.sweep-$(date -u +%Y%m%dT%H%M%SZ)"
+         q="$PO/QUEUE.tsv"; [ -f "$q" ] || { echo "no QUEUE.tsv"; exit 1; }
          keep="$(mktemp)"; gone="$(mktemp)"; nk=0; ng=0
          while IFS= read -r line; do
            case "$line" in \#*) printf '%s\n' "$line" >> "$keep"; continue;; '') continue;; esac
@@ -5718,11 +5721,10 @@ TASKEOF
            else printf '%s\n' "$line" >> "$keep"; nk=$((nk+1)); fi
          done < "$q"
          if [ "$ng" -gt 0 ]; then
-           [ -s "$d" ] || printf '# S4E QUEUE — LANDED ROWS (the MEMORY; QUEUE.tsv is the BUFFER). Append-only.\n# rank\ttopic\tbrief\tfirst-step-and-done-when\n' > "$d"
-           printf '# --- swept %s by %s: %s rows ---\n' "$(date -u +%FT%TZ)" "$ME" "$ng" >> "$d"; cat "$gone" >> "$d"
+           while IFS= read -r line; do topic="$(printf '%s' "$line" | cut -f2)"; rm -f "$PO/tasks/$topic.task.md" "$PO/claims/$topic.claim"; done < "$gone"
            mv "$keep" "$q"; chmod 664 "$q"; else rm -f "$keep"; fi
          s4e_queue_view   # fleet-queue step 12: the sweep's move regenerates the view too
-         rm -f "$gone"; printf 'sweep: %s live rows kept, %s DONE rows moved to QUEUE.done.tsv (nothing deleted; buffer backed up)\n' "$nk" "$ng"
+         rm -f "$gone"; printf 'sweep: %s live rows kept, %s DONE rows deleted\n' "$nk" "$ng"
          s4e_sweep_verdicts   # box-scheduler step 31: a PARKED-AWAITING:<request-id> row returns to its seat when the verdict is in
          s4e_sweep_repair_columns   # row 618 (the cio 2026-11-07): a CLAIMED or ASSIGNED column with no claim file behind it is repaired, one ledger line each
          _mc="$(dirname "${BASH_SOURCE[0]}")/util_mode_cap.sh"   # box-scheduler step 14: MODE capped to its header, the history archived; the sweep keeps it so
@@ -5749,11 +5751,11 @@ TASKEOF
          # `done` now mirrors its close into the column, so a claim reaching this point has already had every chance
          # to be recorded). ⭐ WHY IT MATTERS AND WHY IT IS NOT COSMETIC: PASS 3 skips ANY topic that has a claim
          # file, DONE or not. Measured that day: 227 claim files against 205 live rows, 195 of them residue for
-         # topics already in QUEUE.done.tsv. Re-mint any one of those 195 NAMES and the new row is INVISIBLE ON
+         # topics whose row was already swept. Re-mint any one of those 195 NAMES and the new row is INVISIBLE ON
          # ARRIVAL -- it never reaches a seat, and the queue still reads FREE. That is a trap armed by ordinary
          # success: the more work the fleet lands, the more names become undispatchable.
-         # ⛔ DELETES ONLY THE REDUNDANT ONES. A claim with no live row AND a DONE latch is duplicated by
-         # QUEUE.done.tsv, so removing it loses nothing. A claim with no live row and NO DONE latch is NOT residue
+         # ⛔ DELETES ONLY THE REDUNDANT ONES. A claim with no live row AND a DONE latch is residue, so
+         # removing it loses nothing. A claim with no live row and NO DONE latch is NOT residue
          # -- it is a live lock whose row was renamed or dropped underneath it, i.e. possible work in flight -- so
          # it is REPORTED AND KEPT. Deleting that one would destroy the only trace of an in-flight claim, which is
          # the mirror of the bug this whole row exists to fix.
@@ -5765,7 +5767,7 @@ TASKEOF
            if grep -q '^DONE$' "$_c"; then rm -f "$_c"; _gc=$((_gc+1))
            else _orph="$_orph $_t"; fi
          done
-         printf 'sweep: %s residue claim(s) garbage-collected (DONE + no live row; QUEUE.done.tsv keeps the record)\n' "$_gc"
+         printf 'sweep: %s residue claim(s) garbage-collected (DONE + no live row)\n' "$_gc"
          [ -n "$_orph" ] && printf '⚠ KEPT, NOT DELETED — claim with NO live row and NO DONE latch (a live lock whose row vanished; investigate, do not assume residue):%s\n' "$_orph"
          :;;
   board) if [ $# -gt 1 ]; then shift; grep -v "^$ME |" "$PO/BOARD.md" 2>/dev/null > "$PO/.b.$$" || true; printf '%s | %s | %s\n' "$ME" "$*" "$(date -u +%H:%M)" >> "$PO/.b.$$"; mv "$PO/.b.$$" "$PO/BOARD.md"; fi; cat "$PO/BOARD.md"

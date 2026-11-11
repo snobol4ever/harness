@@ -15,7 +15,7 @@
 # ARMS (hermetic scratch postoffice under mktemp; S4E_POST/S4E_SEAT/S4E_HOME; MODE TRIO):
 #   (a) `done` on a live claimed row with a real green DONE-WHEN writes the RECEIPT line (rc=0, tree=, via=computed) then DONE
 #   (b) the census names the orphan DONE row (no claim) under R and not the receipted one; rc=1
-#   (c) `sweep` moves the receipted row to QUEUE.done.tsv, keeps the orphan, exits 2 naming it
+#   (c) `sweep` deletes the receipted row and its baton, keeps the orphan, exits 2 naming it
 # FAIL_ONCE=1 strips the RECEIPT line from (a)'s claim before its assertion, to prove the arm trips.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; MSG="$HERE/s4e_msg.sh"; CENSUS="$HERE/util_queue_visibility_census.py"
@@ -24,7 +24,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 W="$(mktemp -d)" || { echo "⛔ REFUSED-TO-GRADE: mktemp failed"; exit 2; }; trap 'rm -rf "$W"' EXIT
 PO="$W/po"; ME=hq_T
 mkdir -p "$PO/tasks" "$PO/claims" "$PO/released" "$PO/$ME/inbox" "$PO/cto/inbox"; : > "$PO/BOARD.md"; printf 'TRIO\n' > "$PO/MODE"
-printf '# fixture\n1\tfx-live\t%s\tFREE\n1\tfx-receipted\t%s\tDONE\n1\tfx-orphan\tunassigned\tDONE\n' "$ME" "$ME" > "$PO/QUEUE.tsv"; : > "$PO/QUEUE.done.tsv"
+printf '# fixture\n1\tfx-live\t%s\tFREE\n1\tfx-receipted\t%s\tDONE\n1\tfx-orphan\tunassigned\tDONE\n' "$ME" "$ME" > "$PO/QUEUE.tsv"
 for t in fx-live fx-receipted fx-orphan; do printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: grep -q green-body %s/green.txt\nLINKS: none\n## NEXT\n(none)\n## LEDGER\n' "$t" "$W" > "$PO/tasks/$t.task.md"; done
 printf 'green-body\n' > "$W/green.txt"
 printf '%s\nDONE\nRECEIPT done rc=0 tree=fixture elapsed=0s via=computed 2026-09-16T00:00:00Z by %s\n' "$ME" "$ME" > "$PO/claims/fx-receipted.claim"
@@ -43,8 +43,8 @@ if [ "$crc" = 1 ] && grep -q 'fx-orphan' <<<"$rblock" && ! grep -q 'fx-receipted
   ck ok "(b) the census names fx-orphan under R and neither receipted row; rc=1"
 else ck no "(b) census rc=$crc -- R block: $(head -4 <<<"$rblock" | tr '\n' '|' | cut -c1-200)"; fi
 sout="$(run sweep)"; src=$?
-if [ "$src" = 2 ] && grep -q 'fx-receipted' "$PO/QUEUE.done.tsv" && grep -qP '\tfx-orphan\t' "$PO/QUEUE.tsv" && ! grep -qP '\tfx-receipted\t' "$PO/QUEUE.tsv" && grep -q 'fx-orphan' <<<"$sout" && grep -q 'NO COMPUTED RECEIPT' <<<"$sout"; then
-  ck ok "(c) sweep moved the receipted rows, kept fx-orphan, and REFUSED rc=2 naming it"
+if [ "$src" = 2 ] && [ ! -e "$PO/tasks/fx-receipted.task.md" ] && grep -qP '\tfx-orphan\t' "$PO/QUEUE.tsv" && ! grep -qP '\tfx-receipted\t' "$PO/QUEUE.tsv" && grep -q 'fx-orphan' <<<"$sout" && grep -q 'NO COMPUTED RECEIPT' <<<"$sout"; then
+  ck ok "(c) sweep deleted the receipted row and its baton, kept fx-orphan, and REFUSED rc=2 naming it"
 else ck no "(c) sweep rc=$src -- got: $(grep -E 'sweep|REFUSES|fx-' <<<"$sout" | head -3 | cut -c1-160)"; fi
 echo "population: $checks arm(s) graded, $fails FAIL"
 [ "$fails" = 0 ] && { echo "GATE PASS [s4e_done_rows_carry_a_computed_receipt]: $checks of $checks arms hold"; exit 0; }
