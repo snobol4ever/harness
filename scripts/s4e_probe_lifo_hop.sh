@@ -3,9 +3,9 @@
 # A1, A2, B, C AND D (the cto's CTO-631, GOAL-CTO.md de19e5991; written by officer_02 2026-11-11): A COMMIT UNMARK CARRIES THE HOP CHAIN TO ITS
 # BOUND'S RECORD ON THE SPINE, STAGED BEHIND THE PLAN-TIME SWITCH SCRIP_PL_BOUND_HOP=1 THAT ROW D DELETES. Columns are found by their PLAN_COLUMNS names.
 #   plan     (A1) under the switch, --dump-plan of lifo_catch_findall prints, inside one PLAN graph, a PLAN_ROW kind=IR_UNMARK whose hop_n reads 1
-#            or more and a PLAN_ROW kind=IR_BOUND whose definite reads 0 and whose K reads 1 or more (an indefinite record carved on the spine).
-#            MEASURED 2026-11-11 at SCRIP 145ad3835 (officer_02, this arm): no hop_n column, RED; 36 of the 146 IR_BOUND rows already read SPINE
-#            (33 definite, 3 indefinite with no retaining edge on the road), so a K alone proves nothing: the chain is what the switch adds.
+#            or more and a PLAN_ROW kind=IR_BOUND whose K reads 1 or more (a record carved on the spine; the definite column is the run's base,
+#            not the BOUND's definiteness, so it is not read). MEASURED 2026-11-11 at SCRIP 145ad3835 (officer_02, this arm): no hop_n column,
+#            RED; 36 of the 146 IR_BOUND rows already read SPINE, so a K alone proves nothing: the chain on the UNMARK is what the switch adds.
 #   offsets  (A2) plan GREEN, and every IR_UNMARK row with hop_n N of 1 or more prints hop_rec as N comma-separated integers and hop_c as one
 #            integer; every row with hop_n 0 or -1 prints hop_rec - and hop_c -.
 #   run      (B) offsets GREEN, and under the switch test_design_prolog_lifo_steps.sh --step 4 reads m3 and m4 full (every step-4 witness
@@ -66,14 +66,14 @@ plan_dump() {   # <switch 1|unset> <out>
 plan_verdict() {   # <dump> <label> -> rc 0 GREEN, 1 RED; prints the board line
     local cols hopped carved both undecided
     read -r cols hopped carved both undecided <<< "$(awk '
-        /^PLAN_COLUMNS /{ h=0; k=0; d=0; for (i=2; i<=NF; i++) { if ($i=="hop_n") h=i-1; if ($i=="K") k=i-1; if ($i=="definite") d=i-1 } }
+        /^PLAN_COLUMNS /{ h=0; k=0; for (i=2; i<=NF; i++) { if ($i=="hop_n") h=i-1; if ($i=="K") k=i-1 } }
         /^PLAN graph=/{ if (gu && gb) both++; gu=0; gb=0 }
         /^PLAN_ROW / && h && /kind=IR_UNMARK/ { v=$(h+4); if (v+0 >= 1) { gu=1; hu++ } else if (v == "-1") und++ }
-        /^PLAN_ROW / && k && d && /kind=IR_BOUND/ && $(d+4) == "0" && ($(k+4)+0) >= 1 { gb=1; kb++ }
+        /^PLAN_ROW / && k && /kind=IR_BOUND/ && ($(k+4)+0) >= 1 { gb=1; kb++ }
         END{ if (gu && gb) both++; print (h ? 1 : 0), hu+0, kb+0, both+0, und+0 }' "$1")"
-    echo "LIFO_HOP_PLAN_BOARD $2 hop_column=$cols unmark_rows_with_chain=$hopped indefinite_bounds_on_spine=$carved graphs_with_both=$both undecided_unmarks=$undecided (tree $tree)"
+    echo "LIFO_HOP_PLAN_BOARD $2 hop_column=$cols unmark_rows_with_chain=$hopped bounds_on_spine=$carved graphs_with_both=$both undecided_unmarks=$undecided (tree $tree)"
     [ "$cols" = 1 ] || { echo "  RED: PLAN_COLUMNS names no hop_n column"; return 1; }
-    [ "$both" -ge 1 ] || { echo "  RED: no PLAN graph holds both an IR_UNMARK with hop_n 1 or more ($hopped rows) and an indefinite IR_BOUND with K 1 or more ($carved rows)"; return 1; }
+    [ "$both" -ge 1 ] || { echo "  RED: no PLAN graph holds both an IR_UNMARK with hop_n 1 or more ($hopped rows) and an IR_BOUND with K 1 or more ($carved rows)"; return 1; }
     return 0
 }
 step4() {   # <switch 1|unset> -> prints the STEP line into $t/step4.txt; rc of the harness
@@ -91,7 +91,7 @@ if [ "$arm" = final ]; then
     echo "GATE FAIL [$me final]: switch files $n, plan rc $pr, step 4 rc $sr"; exit 1
 fi
 plan_dump 1 "$t/plan.txt"; plan_verdict "$t/plan.txt" switch=1; pr=$?
-[ "$arm" = plan ] && { [ "$pr" = 0 ] && { echo "GATE OK [$me plan]: a commit UNMARK of lifo_catch_findall carries a hop chain beside an indefinite BOUND carved on the spine"; exit 0; }; echo "GATE FAIL [$me plan]"; exit 1; }
+[ "$arm" = plan ] && { [ "$pr" = 0 ] && { echo "GATE OK [$me plan]: a commit UNMARK of lifo_catch_findall carries a hop chain beside a BOUND carved on the spine"; exit 0; }; echo "GATE FAIL [$me plan]"; exit 1; }
 [ "$pr" = 0 ] || { echo "GATE FAIL [$me $arm]: the plan arm reads RED first"; exit 1; }
 read -r good badrows <<< "$(awk '
     /^PLAN_COLUMNS /{ h=0; r=0; c=0; for (i=2; i<=NF; i++) { if ($i=="hop_n") h=i-1; if ($i=="hop_rec") r=i-1; if ($i=="hop_c") c=i-1 } }
