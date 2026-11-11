@@ -89,7 +89,25 @@ run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23
 # cell: the file moves to serving/ (a restart puts it back), the one launch runs its entries (entry:A,entry:B) in S4E_MODES under the budget of that
 # entry cell, the suite row is recorded, and the file lands in done/ with graded=/rc= per entry and one served= line, as the grade worker wrote it.
 RQ="${S4E_TEST_REQUEST_DIR:-/home/resources/postoffice/test_requests}"
-next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && { printf '%s\n' "$f"; return 0; }; done; return 1; }
+# A REQUEST WAITS FOR THE TREE THAT HOLDS ITS ENTRIES (the coo 2026-11-11, row cycle-a-test-request-for-an-entry-the-cycles-tree-does-not-hold-yet-waits-for-the-next-sync).
+# MEASURED: the cycle syncs once a lap; the cio's request for eight csnobol4 entries admitted at 04:5x was served at 04:53 on the tree of 02:28, each entry refused rc 2
+# (PARTITION.tsv has no entry atn), and the request was spent. So a request is READY when every entry it names is a row of its suite's PARTITION.tsv in this tree, or
+# when its file is older than this lap's sync (it has seen a sync: it is served and refuses as written, so a wrong request cannot wait for ever).
+request_ready() {   # pending file -> 0 ready, 1 waits for the next sync
+    local f="$1" key ents row kind lang dir e
+    key="$(sed -n 's/^suite=//p' "$f" | head -1)"; ents="$(sed -n 's/^entries=//p' "$f" | head -1 | tr -s ' ,' '\n\n' | grep -v '^$')"
+    row="$(awk -F'\t' -v k="$key" '!/^#/ && $1 == k && ($2 == "master" || $2 == "pkg") {print $2 "\t" $3 "\t" $5; exit}' "$RUNNERS")"
+    [ -n "$row" ] && [ -n "$ents" ] || return 0
+    IFS=$'\t' read -r kind lang dir <<< "$row"; [ "$kind" = master ] && dir="$S4E/corpus/tests/$lang" || dir="$S4E/$dir"
+    [ -f "$dir/PARTITION.tsv" ] || return 0
+    for e in $ents; do
+        awk -F'\t' -v e="$e" '$1 == e {f = 1} END {exit !f}' "$dir/PARTITION.tsv" && continue
+        [ "$f" -nt "$TMPDIR/cycle/lap.sync" ] && return 1
+        return 0
+    done
+    return 0
+}
+next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && request_ready "$f" && { printf '%s\n' "$f"; return 0; }; done; return 1; }
 run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMPDIR/cycle/req.<name>.log
     local f="$1" name key ents row kind lang dir alls ttr t0 rc out
     name="$(basename "$f")"; out="$TMPDIR/cycle/req.$name.log"; t0=$(date +%s)
@@ -128,6 +146,7 @@ lap_start() {
     # rendering is the cycle's own scratch and is restored before the sync when it is the only tracked change, so the lap reads origin's .github.
     if [ "$(git -C "$S4E/.github" status --porcelain --untracked-files=no 2>/dev/null)" = " M SCORE.md" ]; then git -C "$S4E/.github" checkout -q -- SCORE.md >> "$TMPDIR/cycle/sync.log" 2>&1; fi
     ( cd "$S4E" && bash harness/scripts/util_sync_root.sh ) >> "$TMPDIR/cycle/sync.log" 2>&1 < /dev/null; sy=$?
+    : > "$TMPDIR/cycle/lap.sync"   # the marker request_ready compares a pending request with: a request filed after it may name what the next sync brings
     ( cd "$S4E/SCRIP" && make -j8 ) >> "$TMPDIR/cycle/make.log" 2>&1 < /dev/null; mk=$?
     log "LAP $1 start sync_rc=$sy make_rc=$mk scrip=$(git -C "$S4E/SCRIP" rev-parse --short=9 HEAD 2>/dev/null) corpus=$(git -C "$S4E/corpus" rev-parse --short=9 HEAD 2>/dev/null)"
     [ "$mk" = 0 ] || { log "LAP $1 REFUSED: make rc $mk (see $TMPDIR/cycle/make.log); exit 1, cron starts the next try"; exit 1; }

@@ -12,6 +12,10 @@
 #       cycle-a-package-whose-contract-names-the-run-files-road-is-run-by-the-package-switch-fpc-first)
 # GREEN: the stand-in harness is launched for c1, m1, f1 and r1 (each CELL line rc=0) and never for x1 (its CELL line rc=2); r1's launch carries
 # --run-files and f1's, in the same form with no such row, does not (road=flagged on the board line). No live store is read or
+# AND A TEST REQUEST WAITS FOR ITS ENTRIES (row cycle-a-test-request-for-an-entry-the-cycles-tree-does-not-hold-yet-waits-for-the-next-sync): the cycle's own
+# request_ready, taken from the script, is asked three things over the planted table: a request filed after the lap's sync that names an entry the tree does not hold
+# waits (rc 1); one that names c1_e is ready (rc 0); the first, once a sync is newer than it, is ready too (it is served and refuses as written). request=waits on
+# the board line; a script with no such test spends the request (request=spent).
 # written: the progress dir, the request folder, the postoffice and the results table are all scratch. rc 0 GREEN, rc 1 RED, rc 2 could not measure.
 set -u
 G=test_gate_cycle_runs_a_suite_in_format_2_or_the_files_form
@@ -45,10 +49,20 @@ grep -q ' LAP 1 start ' "$w/prog/CYCLE.log" 2>/dev/null || { echo "⛔ GATE REFU
 [ "${n:-0}" -ge 5 ] || { echo "CYCLE_FORMS_BOARD cells=${n:-0}/5"; echo "⛔ GATE REFUSE(2) [$G]: only ${n:-0} of 5 CELL lines in 45 s"; exit 2; }
 rc_of() { grep ' CELL lap=1 ' "$w/prog/CYCLE.log" | sed -n "s/.* CELL lap=1 [0-9]*\/[0-9]* $1 [^ ]* rc=\([0-9]*\) .*/\1/p" | head -1; }
 ran() { grep -c "/pkg/$1/" "$w/launched" 2>/dev/null; }
+req=spent; REQF="$(sed -n '/^request_ready() {/,/^}/p' "$CYC")"
+if [ -n "$REQF" ]; then
+    q="$w/q"; mkdir -p "$q/cycle" "$q/rq"
+    printf 'seat=gate\nsuite=c1\nentries=not_in_this_tree\n' > "$q/rq/a.req"; printf 'seat=gate\nsuite=c1\nentries=c1_e\n' > "$q/rq/b.req"
+    : > "$q/cycle/lap.sync"; touch -d 2000-01-01 "$q/cycle/lap.sync"
+    ask() { RUNNERS="$H/harness/scripts/SUITE_RUNNERS.tsv" S4E="$H" TMPDIR="$q" bash -c "$REQF"'; request_ready "$1"; echo $?' _ "$1" 2> /dev/null; }
+    q1="$(ask "$q/rq/a.req")"; q2="$(ask "$q/rq/b.req")"
+    touch -d 2000-01-01 "$q/rq/a.req"; touch "$q/cycle/lap.sync"; q3="$(ask "$q/rq/a.req")"
+    [ "$q1" = 1 ] && [ "$q2" = 0 ] && [ "$q3" = 0 ] && req=waits
+fi
 c=$(rc_of c1); m=$(rc_of m1); f=$(rc_of f1); x=$(rc_of x1); r=$(rc_of r1)
 road=unflagged; grep "/pkg/r1/" "$w/launched" 2>/dev/null | grep -q -- ' --run-files' && ! grep "/pkg/f1/" "$w/launched" 2>/dev/null | grep -q -- ' --run-files' && road=flagged
-echo "CYCLE_FORMS_BOARD cells=5 container=rc${c:-?}/launched$(ran c1) format2=rc${m:-?}/launched$(ran m1) files_form=rc${f:-?}/launched$(ran f1) nothing=rc${x:-?}/launched$(ran x1) contract_road=rc${r:-?}/launched$(ran r1) road=$road (tree $(git -C "$HERE/.." rev-parse --short HEAD 2>/dev/null))"
+echo "CYCLE_FORMS_BOARD cells=5 container=rc${c:-?}/launched$(ran c1) format2=rc${m:-?}/launched$(ran m1) files_form=rc${f:-?}/launched$(ran f1) nothing=rc${x:-?}/launched$(ran x1) contract_road=rc${r:-?}/launched$(ran r1) road=$road request=$req (tree $(git -C "$HERE/.." rev-parse --short HEAD 2>/dev/null))"
 [ "$c" = 0 ] && [ "$(ran c1)" -ge 1 ] || { echo "⛔ GATE REFUSE(2) [$G]: the control did not run: the container suite read rc=${c:-?}"; exit 2; }
-[ "$m" = 0 ] && [ "$f" = 0 ] && [ "$(ran m1)" -ge 1 ] && [ "$(ran f1)" -ge 1 ] && [ "$x" = 2 ] && [ "$(ran x1)" = 0 ] && [ "$r" = 0 ] && [ "$road" = flagged ] \
+[ "$m" = 0 ] && [ "$f" = 0 ] && [ "$(ran m1)" -ge 1 ] && [ "$(ran f1)" -ge 1 ] && [ "$x" = 2 ] && [ "$(ran x1)" = 0 ] && [ "$r" = 0 ] && [ "$road" = flagged ] && [ "$req" = waits ] \
     && { echo "GATE OK [$G]: the cycle launched the container, format 2 and the files form, and refused the suite that is not on disk"; exit 0; }
-echo "⛔ GATE FAIL(1) [$G]: format 2 rc=${m:-?}, the files form rc=${f:-?} (want 0 and a launch each); nothing on disk rc=${x:-?} (want 2 and no launch); the contract's road rc=${r:-?} road=$road (want 0 and flagged)"; exit 1
+echo "⛔ GATE FAIL(1) [$G]: format 2 rc=${m:-?}, the files form rc=${f:-?} (want 0 and a launch each); nothing on disk rc=${x:-?} (want 2 and no launch); the contract's road rc=${r:-?} road=$road (want 0 and flagged); request=$req (want waits: a request newer than the sync that names a missing entry waits, a ready one and one older than the sync do not)"; exit 1
