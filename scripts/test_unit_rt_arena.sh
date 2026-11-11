@@ -45,7 +45,7 @@ int main(void) {
     return 0;
 }
 EOF
-gcc -I"$REPO/src" -I"$REPO/src/runtime/rt" -o "$T/t" "$T/t.c" \
-    "$REPO/src/runtime/rt/rt_slab.c" "$REPO/src/runtime/rt/rt_arena.c" -lpthread
+[ -f "$REPO/out/libscrip_rt.so" ] || { echo "REFUSE(2): $REPO/out/libscrip_rt.so not built (cd SCRIP && make -j8)"; exit 2; }
+gcc -I"$REPO/src" -I"$REPO/src/runtime/rt" -o "$T/t" "$T/t.c" -L"$REPO/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$REPO/out"
 "$T/t"
 rm -rf "$T"
