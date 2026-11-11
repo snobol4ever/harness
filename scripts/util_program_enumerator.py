@@ -41,34 +41,42 @@ HERE = os.path.dirname(os.path.abspath(__file__)); PORTS = ('dotnet', 'jvm')
 TREES = {'scrip': SCRIP_DIR, 'dotnet': os.path.join(S4E, 'snobol4dotnet'), 'jvm': os.path.join(S4E, 'snobol4jvm')}
 def runner(engine): return os.path.join(HERE, 'run_snobol4%s.sh' % engine)
 LEAF = 'L'
-BIN_TERM = ['+', '-']; BIN_FACTOR = ['*', '/']; UNARY = ['+', '-']
+BIN_TERM = ['+', '-']; BIN_FACTOR = ['*', '/']; UNARY = ['+', '-']; UNARY_ITEM = ['*', '$', '.', '~', '?', '@']
 def refuse(msg):
     print('REFUSE (rc=2) [util_program_enumerator]: %s' % msg); sys.exit(2)
 @functools.lru_cache(maxsize=None)
-def shapes(nt, n):
-    """Every string of the nonterminal `nt` with EXACTLY n tokens, leaves as LEAF. Lon's grammar, right-recursive as written."""
+def shapes(nt, n, g='arith'):
+    """Every string of the nonterminal `nt` with EXACTLY n tokens, leaves as LEAF, under grammar g (arith, unary, match; each cumulative). Lon's grammar, right-recursive as written."""
     out = []
     if n <= 0: return tuple(out)
     if nt == 'item':
         if n == 1: out.append(LEAF)
-        if n >= 3: out += ['(' + t + ')' for t in shapes('term', n - 2)]
-    elif nt == 'element':
-        out += shapes('item', n)
-        if n >= 2: out += [u + e for u in UNARY for e in shapes('element', n - 1)]
-    elif nt == 'factor':
-        out += shapes('element', n)
+        if n >= 3: out += ['(' + t + ')' for t in shapes('term', n - 2, g)]
+        if g in ('unary', 'match') and n >= 2: out += [op + i for op in UNARY_ITEM for i in shapes('item', n - 1, g)]
+    elif nt == 'match':
+        out += shapes('term', n, g)
         for k in range(1, n - 1):
-            for l in shapes('element', k):
-                for r in shapes('factor', n - 1 - k):
+            for l in shapes('term', k, g):
+                for r in shapes('term', n - 1 - k, g):
+                    out.append(l + ' ? ' + r)
+    elif nt == 'element':
+        out += shapes('item', n, g)
+        if n >= 2: out += [u + e for u in UNARY for e in shapes('element', n - 1, g)]
+    elif nt == 'factor':
+        out += shapes('element', n, g)
+        for k in range(1, n - 1):
+            for l in shapes('element', k, g):
+                for r in shapes('factor', n - 1 - k, g):
                     out += [l + ' ' + op + ' ' + r for op in BIN_FACTOR]
     elif nt == 'term':
-        out += shapes('factor', n)
+        out += shapes('factor', n, g)
         for k in range(1, n - 1):
-            for l in shapes('factor', k):
-                for r in shapes('term', n - 1 - k):
+            for l in shapes('factor', k, g):
+                for r in shapes('term', n - 1 - k, g):
                     out += [l + ' ' + op + ' ' + r for op in BIN_TERM]
     return tuple(out)
-def shape_count(n): return len(shapes('term', n))
+def top(g): return 'match' if g == 'match' else 'term'
+def shape_count(n, g='arith'): return len(shapes(top(g), n, g))
 def instantiate(shape, alphabet, limit, rnd):
     """Every leaf assignment over `alphabet` when the count is within `limit`, else `limit` seeded samples."""
     k = shape.count(LEAF); total = len(alphabet) ** k
@@ -107,7 +115,7 @@ def random_expr(rnd, depth):
 LEAF_KINDS = {'int': ['0', '1', '2'], 'var': ['x', 'y', 'z'], 'str': ["'a'", "''", "'1'"], 'real': ['1.5', '0.']}
 def canon(expr):
     s = re.sub(r"'[^']*'", 'S', expr); s = re.sub(r'\b\d+\.\d*', 'R', s); s = re.sub(r'\b\d+\b', 'N', s); s = re.sub(r'\b[xyz]\b', 'V', s); return s
-def ntokens(expr): return len(re.findall(r"'[^']*'|\d+\.\d*|\(|\)|\d+|[xyz]|[-+*/]", expr))
+def ntokens(expr): return len(re.findall(r"'[^']*'|\d+\.\d*|\(|\)|\d+|[xyz]|[-+*/?$.~@]", expr))
 def nchars(expr): return len(expr.replace(' ', ''))
 def program(exprs, env):
     """One SNOBOL4 program printing "<id>=<value>" per expression; a runtime error prints "<id>=E<errtype>" and continues."""
@@ -222,8 +230,10 @@ def selftest():
     if canon("'a' + 1.5") != 'S + R': fails.append("canon must fold a string to S and a real to R, got %r" % canon("'a' + 1.5"))
     if ntokens("'' * 0.") != 3: fails.append("ntokens(\"'' * 0.\") must be 3, got %d" % ntokens("'' * 0."))
     if sum(len(LEAF_KINDS[k]) for k in ('int', 'var', 'str', 'real')) != 11: fails.append('the int,var,str,real leaf kinds must hold 11 leaves')
+    if shape_count(2, 'unary') != 8: fails.append('shape_count(2, unary) must be 8: +L -L and the six UNARY_ITEM forms on L, got %d' % shape_count(2, 'unary'))
+    if shape_count(3, 'match') - shape_count(3, 'unary') != 1: fails.append('match adds exactly one length-3 shape over unary: L ? L')
     for f in fails: print('SELFTEST FAIL: ' + f)
-    print('SELFTEST %s: %d checks, %d failures' % ('PASS' if not fails else 'FAIL', 15, len(fails)))
+    print('SELFTEST %s: %d checks, %d failures' % ('PASS' if not fails else 'FAIL', 17, len(fails)))
     return 0 if not fails else 1
 def main():
     ap = argparse.ArgumentParser(description='exhaustive / random program enumerator graded against the oracle')
@@ -237,6 +247,7 @@ def main():
     ap.add_argument('--out', help='witness folder (default SCRIP/out/enumerator for scrip, <root>/.scratch/enumerator/<engine> for a port)')
     ap.add_argument('--report', action='store_true'); ap.add_argument('--count-only', action='store_true', help='print shape and program counts per length and exit')
     ap.add_argument('--selftest', action='store_true'); ap.add_argument('--keep-batches', action='store_true')
+    ap.add_argument('--grammar', default='arith', choices=('arith', 'unary', 'match'), help='arith (Expressions.py); unary adds the prefix operators on an item; match adds term ? term at the top')
     ap.add_argument('--leaf-kinds', help='comma list of int,var,str,real; replaces --alphabet when given')
     a = ap.parse_args()
     if a.selftest: sys.exit(selftest())
@@ -248,12 +259,13 @@ def main():
     else: alphabet = a.alphabet.split(',')
     rnd = random.Random(a.seed)
     if a.count_only:
-        print('length(tokens) shapes programs(alphabet=%s leaf-kinds=%s per-shape<=%d)' % (','.join(alphabet), a.leaf_kinds or '-', a.per_shape))
+        print('grammar=%s length(tokens) shapes programs(alphabet=%s leaf-kinds=%s per-shape<=%d)' % (a.grammar, ','.join(alphabet), a.leaf_kinds or '-', a.per_shape))
         for n in range(1, (a.to_length or 10) + 1):
-            sh = shapes('term', n); progs = sum(min(len(alphabet) ** s.count(LEAF), a.per_shape) for s in sh)
+            sh = shapes(top(a.grammar), n, a.grammar); progs = sum(min(len(alphabet) ** s.count(LEAF), a.per_shape) for s in sh)
             print('%2d %8d %9d' % (n, len(sh), progs))
         return 0
     if not a.to_length and not a.random: refuse('nothing to enumerate: pass --to-length N and/or --random K')
+    if a.random and a.grammar != 'arith': refuse('--random walks the arith grammar only; --grammar is for --to-length')
     if not os.path.exists(SBL): refuse('oracle absent at %s -- every verdict would be a plausible false table' % SBL)
     if a.engine in PORTS:
         if a.modes: refuse('--modes is scrip\'s; the %s engine runs one way, through %s' % (a.engine, os.path.basename(runner(a.engine))))
@@ -268,7 +280,7 @@ def main():
     pop = []
     if a.to_length:
         for n in range(1, a.to_length + 1):
-            for sh in shapes('term', n):
+            for sh in shapes(top(a.grammar), n, a.grammar):
                 for e in instantiate(sh, alphabet, a.per_shape, rnd): pop.append((n, e))
     if a.random:
         for _ in range(a.random):
@@ -290,11 +302,11 @@ def main():
             witnesses.append((mode, v, n, e, write_witness(a.out, a.lang, a.engine, n, k, e, env, grader.oracle_rows.get(i, '?')), grader.oracle_rows.get(i, '?')))
     total = len(ids); graded = sum(1 for i, _ in ids for m in modes if results.get(i, {}).get(m) not in (None, 'UNGRADED', 'ORACLE-BAD'))
     agree = sum(1 for i, _ in ids for m in modes if results.get(i, {}).get(m) == 'AGREE')
-    print('=== ENUMERATOR %s: engine=%s to-length=%d random=%d alphabet=%s leaf-kinds=%s per-shape<=%d env=%s modes=%s batches=%d ===' % (
-        a.lang, a.engine, a.to_length, a.random, ','.join(alphabet), a.leaf_kinds or '-', a.per_shape, a.env, ','.join(modes), grader.n_batches))
+    print('=== ENUMERATOR %s: engine=%s grammar=%s to-length=%d random=%d alphabet=%s leaf-kinds=%s per-shape<=%d env=%s modes=%s batches=%d ===' % (
+        a.lang, a.engine, a.grammar, a.to_length, a.random, ','.join(alphabet), a.leaf_kinds or '-', a.per_shape, a.env, ','.join(modes), grader.n_batches))
     print('length(tokens) shapes programs  ' + '  '.join('%s:AGREE/DIFF/CRASH/HANG/ORACLE-BAD' % m for m in modes))
     for n in sorted(by_len):
-        sh = shape_count(n) if a.to_length and n <= a.to_length else '-'
+        sh = shape_count(n, a.grammar) if a.to_length and n <= a.to_length else '-'
         progs = sum(1 for _, (m, _) in ids if m == n)
         cells = []
         for m in modes:
