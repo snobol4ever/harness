@@ -12,4 +12,4 @@ run-grader	s4e-run-grader	4	-	-	the slots only the grader (S4E_CLASS=grader) is 
 run-seats	s4e-run-seats	8	-	-	the slots every other taker shares (8 since 2026-11-11: three live seats, four runs each; 4 before; 12 on 2026-11-08; 8 for 39 seats before)
 compile-seat	s4e-compile-seat-	3	-	-	one seat's share of the compile class (id prefix + seat name)
 run-seat	s4e-run-seat-	4	-	-	one seat's share of the run class (id prefix + seat name; 4 since 2026-11-11, a seat's scope having four cores; 2 before; 4 on 2026-11-08)
-land	s4e-land	4	3600	1800	the landing class (DESIGN-PLAN fleet-control step 3, the cio 2026-11-07; 4 since 2026-11-08 10:4x: 12 land-admit waits of 1491 s by 10:35 at load 8): four landings build and gate at once on the box, a fifth waits; a timeout refuses rc 2 and nothing runs
+land	s4e-land	12	3600	1800	the landing class, the guard on concurrent landers' builds (CIO-136: width 12, a HYPOTHESIS, unmeasured: a landing's peak memory is its worktree build), taken around make only and never held across the gate; the lease serializes the pushes

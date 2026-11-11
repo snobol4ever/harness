@@ -75,6 +75,7 @@ while [ $# -gt 0 ]; do
         --probe-serial) mode=probe_serial; shift ;;
         --probe-mail) mode=probe_mail; shift ;;
         --probe-orphan-lock) mode=probe_orphan_lock; shift ;;
+        --probe-land-class) mode=probe_land_class; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
         --proved) proved="${2:-}"; shift 2 ;;
@@ -86,9 +87,6 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$home" ] || home="$(cd "$HERE/../.." && pwd)"
 PROBE_GREEN="${S4E_LAND_PROBE_GREEN:-/home/resources/progress/LAND_PROBE_GREEN.tsv}"   # hash, utc, seat, stages: one green probe per lander hash, box-wide
-if [ "$mode" = land ] && [ -z "${S4E_ADMITTED:-}" ] && [ -z "${S4E_LAND_UNADMITTED:-}" ]; then   # fleet-control step 3 (the cio 2026-11-07): two landings build and gate at once on the box, through GNU sem class land (SLOTS.tsv); a third waits at the door, bounded; a refusal lands nothing
-    exec bash "$HERE/util_run_slot.sh" --admit land bash "$RUNNING_COPY" "${ORIG_ARGS[@]}"
-fi
 [ -n "$home" ] || refuse "--home is empty: name the root that holds SCRIP harness corpus and .github (worker_02 2026-11-07 16:0x: a backgrounded shell passed an unset variable)"
 home="$(cd "$home" 2>/dev/null && pwd)" || refuse "no root at $home"
 TSV="$home/harness/scripts/generated_tables.tsv"
@@ -390,6 +388,22 @@ probe_orphan_lock() {   # a stopped lander leaves nothing behind (row fleet-land
     [ "$second" = landed ] && [ "$n" = 0 ] && exit 0
     exit 1
 }
+probe_land_class() {   # the land class guards the build only (row bus-land-the-lander-holds-no-class-across-its-gate-the-land-class-guards-the-build-only-cio-136): on scratch origins a landing runs its gate with no land-class holder and with S4E_ADMITTED unset in the gate's environment; mail that arrives during the gate does not refuse the landing (the CIO's second defect)
+    local T gate n a rc mail
+    T="$(mktemp -d "/tmp/s4e/$seat/land-class.XXXXXX")" || refuse "cannot make a scratch directory"
+    trap 'rm -rf "$T"' EXIT
+    scratch_clone "$T"
+    for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: the land-class commit in $r" || refuse "probe: cannot commit in $r"; done
+    gate="n=\$(ls \"$T/sem/semaphores\" 2>/dev/null | grep -c s4e-land); a=\${S4E_ADMITTED:+set}; echo \"\${n:-0} \${a:-unset}\" > \"$T/gate.out\"; mkdir -p \"$T/po/$seat/inbox\"; printf 'FROM coo TO %s RE probe-mail-after-preflight\nbody\n' \"$seat\" > \"$T/po/$seat/inbox/9-mail-after-preflight.msg\"; echo 'probe: gate ran'"
+    env -u S4E_ADMITTED -u S4E_LAND_UNADMITTED S4E_SEM_HOME="$T/sem" S4E_POSTOFFICE="$T/po" S4E_POST="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate "$gate" > "$T/land.log" 2>&1 < /dev/null; rc=$?
+    read -r n a < "$T/gate.out" 2>/dev/null || { n=none; a=none; }
+    mail=refused; [ "$rc" = 0 ] && grep -q '^LAND ok ' "$T/land.log" && mail=landed
+    if [ "$rc" = 0 ] && grep -q '^LAND ok ' "$T/land.log" && [ "$n" = 0 ] && [ "$a" = unset ] && [ "$mail" = landed ]; then
+        echo "LAND_CLASS_PROBE ok held_at_gate=$n gate_admitted=$a mail_after_preflight=$mail"; exit 0
+    fi
+    sed 's/^/    land| /' "$T/land.log" | tail -4
+    echo "LAND_CLASS_PROBE red held_at_gate=$n gate_admitted=$a mail_after_preflight=$mail"; exit 1
+}
 mail_guard() {   # ⛔ A STOP ORDER LANDS BEFORE THE LANDING (fleet-bus; the cio's ruling on row bus-the-unread-banner-names-an-old-message): rc 2 while seat $2 holds unread mail under PO $1 newer than its claim $3 (any unread mail when there is no claim); a message listed in the seat's .last-check was displayed by check, so it is read
     local po="$1" sd="$2" claim="$3" f b names=""
     for f in "$po/$sd/inbox"/*.msg; do [ -f "$f" ] || continue; b="$(basename "$f")"
@@ -419,6 +433,7 @@ probe_mail() {   # the mail guard's proof on scratch (row bus-the-unread-banner-
 [ "$mode" = probe_push_refusal ] && probe_push_refusal
 [ "$mode" = probe_serial ] && probe_serial
 [ "$mode" = probe_orphan_lock ] && probe_orphan_lock
+[ "$mode" = probe_land_class ] && probe_land_class
 [ "$mode" = merge_probe ] && merge_probe
 # THE LEASE IS HELD ONLY AROUND THE PUSH (the cio 2026-11-04 20:1x CST, on hq_pascal's 14-minute wait behind hq_unicon's gate and seven landings queued behind
 # hq_templates' 35-minute gate): the gate runs UNLEASED on the rebased tree; the lease is taken after it, origin is fetched again under the lease, and if it moved
@@ -594,8 +609,10 @@ commit_regen() {
     done
     return 0
 }
-build() {
-    spawn "$LOG/make.$1.log" "$home/SCRIP" timeout -k 5 1800 make -j8 || red "$1" "make -j8 rc=$?: $(grep -m1 -E 'error|Error' "$LOG/make.$1.log" | cut -c1-200)"
+build() {   # THE LAND CLASS GUARDS THE BUILD ONLY (CIO-136): the make alone takes a land slot, with S4E_ADMITTED unset for the make so the Makefile's compile door takes its own slots; the gate, the fetch and the rebase take none
+    local -a adm=(bash "$HERE/util_run_slot.sh" --admit land env -u S4E_ADMITTED)
+    [ -n "${S4E_LAND_UNADMITTED:-}" ] && adm=(env)
+    spawn "$LOG/make.$1.log" "$home/SCRIP" "${adm[@]}" timeout -k 5 1800 make -j8 || red "$1" "make -j8 rc=$?: $(grep -m1 -E 'error|Error' "$LOG/make.$1.log" | cut -c1-200)"
     binfo="$(sed -n 's/^source //p' "$home/SCRIP/out/buildinfo" 2>/dev/null | head -1)"
 }
 gate_run() {
