@@ -3085,6 +3085,42 @@ def _pkg_read_args(d, entries):
         by_name[parts[0]].argv = parts[1:]
 
 
+PKG_SOURCE_KEYS = ("root", "origin", "version", "licence")
+
+
+def pkg_source_root(d):
+    """ALL.source of a package (CTO-583 (3), CIO-92): four keys and no fifth, a key, one tab, its value; -> the root directory a row's program is
+    read from when the package itself does not hold the file, or None when the package has no ALL.source. Raises ValueError on a malformed
+    file, a missing key, a key named twice, or a root that is no directory."""
+    p = Path(d) / "ALL.source"
+    if not p.is_file():
+        return None
+    got = {}
+    for n, raw in enumerate(p.read_bytes().decode("utf-8").split("\n"), 1):
+        if not raw.strip() or raw.startswith("#"):
+            continue
+        c = raw.split("\t")
+        if len(c) != 2 or c[0] not in PKG_SOURCE_KEYS or not c[1].strip():
+            raise ValueError(f"{p}:{n}: a line of ALL.source is one of {', '.join(PKG_SOURCE_KEYS)}, one tab, its value; read {raw[:80]!r}")
+        if c[0] in got:
+            raise ValueError(f"{p}:{n}: {c[0]} is named twice")
+        got[c[0]] = c[1].strip()
+    missing = [k for k in PKG_SOURCE_KEYS if k not in got]
+    if missing:
+        raise ValueError(f"{p}: ALL.source names no {', '.join(missing)}")
+    root = Path(got["root"])
+    if not root.is_dir():
+        raise ValueError(f"{p}: the root {root} is no directory")
+    return root
+
+
+def pkg_runs_by_the_switch_alone(d):
+    """A package whose rows are read in place (ALL.source) or launched around or under a driver (ALL.launch) is staged by scrip --run-files and by
+    nothing else: the per-process road has no second copy of that staging (CIO-122)."""
+    d = Path(d)
+    return (d / "ALL.source").is_file() or (d / "ALL.launch").is_file()
+
+
 def read_package_dir(d, ext, modes=None):
     """THE FILES FORM OF A PACKAGE, READ (CIO-59, CIO-60): one Entry a row of ALL.csv, in the index's order; the program is the file the
     path column names, from the package root; DIR/STEM.out is its stdout answer, DIR/STEM.in its stdin, DIR/STEM.err its stderr answer,
@@ -3096,6 +3132,10 @@ def read_package_dir(d, ext, modes=None):
     if "path" not in fields:
         raise ValueError(f"{d}: ALL.csv has no path column; this is not the files form of a package")
     entries, seen, omitted, seq = [], {}, _pkg_omitted(d), 0
+    try:
+        src_root = pkg_source_root(d)
+    except ValueError as _ex:
+        refuse(str(_ex))   # a root that is not there is could-not-measure, never a red (CIO-92; the mining tool row, step 2)
     for rown, r in enumerate(rows, 2):
         name, rel = (r.get("entry") or ""), (r.get("path") or "")
         if name in omitted:
@@ -3103,7 +3143,11 @@ def read_package_dir(d, ext, modes=None):
         seq += 1
         if not name or not rel:
             raise ValueError(f"{d}/ALL.csv row {rown}: an empty entry or path cell")
-        prog = d / rel
+        prog, in_place = d / rel, False
+        if not prog.is_file() and src_root is not None and (src_root / rel).is_file():
+            prog, in_place = src_root / rel, True
+        if not prog.is_file() and src_root is not None:
+            refuse(f"{d}/ALL.csv row {rown}: {name} names {rel}, which is no file of the package nor of its source root {src_root}")
         if not prog.is_file():
             raise ValueError(f"{d}/ALL.csv row {rown}: {name} names {rel}, which is no file of the package")
         stem = _pkg_stem(d, rel)
@@ -3111,7 +3155,9 @@ def read_package_dir(d, ext, modes=None):
             raise ValueError(f"{d}: {name} and {seen[stem]} share the stem {stem.relative_to(d)}; their NAME.in, NAME.out and NAME.err would be one file")
         seen[stem] = name
         out = Path(str(stem) + ".out")
-        e = Entry("block", seq, name, _read_lf_lines(prog), _read_stream_lines(out) if out.is_file() else [])
+        e = Entry("block", seq, name, _read_stream_lines(prog) if in_place else _read_lf_lines(prog), _read_stream_lines(out) if out.is_file() else [])
+        if in_place:
+            e.in_place = str(prog)   # the collection's own file: never written back, never staged here; the switch runs it from a copy of its folder
         inp, err = Path(str(stem) + ".in"), Path(str(stem) + ".err")
         if inp.is_file():
             e.stdin = inp.read_bytes().decode("utf-8")
@@ -3326,6 +3372,50 @@ def unpack_probe():
                 print("  " + ln)
             return 1
         return 0
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
+def source_probe():
+    """--probe-source (the mining tool row, CIO-92, CIO-122): a scratch collection of two programs, one in a subfolder reading a data file beside
+    it, stands OUTSIDE a scratch package whose ALL.source names it and which holds only the index and the answers; run grades both PASS in mode 3
+    and the collection is byte for byte what it was; with the root renamed the same run refuses rc 2. Prints SOURCE_PROBE in_place=ok
+    missing_root=refused, rc 0; another word in a cell and rc 1 when an arm reads otherwise; rc 2 when it cannot run."""
+    t = Path(tempfile.mkdtemp(prefix="source_probe_", dir=os.environ.get("TMPDIR") or None))
+    try:
+        coll, pkg = t / "coll", t / "pkg"
+        (coll / "sub").mkdir(parents=True)
+        (pkg / "sub").mkdir(parents=True)
+        (coll / "sub" / "beside.txt").write_text("beside line\n")
+        (coll / "sub" / "a.sno").write_text("        INPUT(.IN, 5, 'beside.txt')\n        OUTPUT = IN\nEND\n")
+        (coll / "b.sno").write_text("        OUTPUT = 'two'\nEND\n")
+        (pkg / "ALL.csv").write_text("entry,path,timeout_s,heap_kb,stack_kb,compile_args\nsub/a,sub/a.sno,60,131072,4096,\nb,b.sno,60,131072,4096,\n")
+        (pkg / "ALL.source").write_text(f"root\t{coll}\norigin\ta scratch collection of the probe\nversion\tprobe\nlicence\tpublic domain\n")
+        (pkg / "sub" / "a.out").write_text("beside line\n")
+        (pkg / "b.out").write_text("two\n")
+
+        def snap():
+            return sorted((str(f.relative_to(coll)), f.read_bytes()) for f in coll.rglob("*") if f.is_file())
+
+        def grade():
+            cmd = [sys.executable, os.path.abspath(__file__), "run", str(pkg / "ALL.sno"), str(pkg / "ALL.ref"), "--lang", "snobol4", "--modes", "m3"]
+            env = dict(os.environ, S4E_ONE_RUNNER_FIXTURE="--probe-source: a planted collection and package of two programs, not a board", S4E_PROGRESS_DB=str(t / "progress.tsv"))
+            r = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env, timeout=1800)
+            m = re.search(r"^SUITE_BOARD .*\bm3_n=(\d+) m3_pass=(\d+)", r.stdout, re.M)
+            return r.returncode, ((int(m.group(1)), int(m.group(2))) if m else None), r.stdout
+
+        before = snap()
+        rc1, got, log1 = grade()
+        in_place = "ok" if (rc1 == 0 and got == (2, 2) and snap() == before and not any(f.suffix == ".sno" for f in pkg.rglob("*"))) else "RED"
+        coll.rename(t / "coll_renamed")
+        rc2, got2, log2 = grade()
+        missing = "refused" if (rc2 == 2 and got2 is None) else "RED"
+        print(f"SOURCE_PROBE in_place={in_place} missing_root={missing}")
+        if in_place != "ok":
+            print("  in place: rc %s board %s\n%s" % (rc1, got, "\n".join(log1.strip().split("\n")[-6:])))
+        if missing != "refused":
+            print("  missing root: rc %s board %s\n%s" % (rc2, got2, "\n".join(log2.strip().split("\n")[-6:])))
+        return 0 if (in_place == "ok" and missing == "refused") else 1
     finally:
         shutil.rmtree(t, ignore_errors=True)
 
@@ -3941,7 +4031,43 @@ def run_files_switch(paths, args, run_entries, n_all, modes, tmp_root):
     return [[str(out_dir), str(rep)]]
 
 
-def post_m3_verdicts(paths, entries, posts):
+def run_files_leftovers(paths, args, run_entries, graded, tmp_root):
+    """A PACKAGE THE SWITCH ALONE CAN STAGE (ALL.source or ALL.launch, CIO-122): a test the first pass did not grade (TIMEOUT, HANG, DEFERRED, REFUSED,
+    an EXIT of 127, or no report line) is run again by scrip --run-files, alone, at twice its time limit, and graded by the post step; what is still
+    not graded then is a verdict here, never a per-process run: HANG for a second TIMEOUT or HANG, UNPROVEN for the rest, the report's own word in
+    the detail. -> {entry: {"m3": Verdict}} for every leftover."""
+    pd = Path(pkg_dir_of(args.sno)).resolve()
+    out = {}
+    left = [e for e in run_entries if e.name not in graded]
+    for k, e in enumerate(left):
+        od, rep, only = tmp_root / f"run_files_one_{k}", tmp_root / f"run_files_one_{k}.report", tmp_root / f"run_files_one_{k}.only"
+        only.write_text(e.name + "\n", encoding="utf-8")
+        lim = ((None if "TIMEOUT" in os.environ else getattr(e, "timeout_s", None)) or paths["timeout"])
+        argv = [str(paths["scrip_bin"]), "--run-files", str(pd), "--out", str(od), "--only", str(only)]
+        rc, so, se, why = _bounded_run(argv, 2 * lim + 60, str(tmp_root), dict(os.environ, SNO_LIB=str(paths["inc"]), TIMEOUT=str(2 * lim)), None, False)
+        word = "NO-REPORT"
+        if not why and rc == 0:
+            rep.write_bytes(so or b"")
+            one = post_m3_verdicts(paths, [e], [(od, rep)], quiet=True)
+            if e.name in one:
+                out[e.name] = one[e.name]
+                continue
+            for ln in (so or b"").decode("utf-8", "replace").split("\n"):
+                f = ln.split("\t")
+                if len(f) == 6 and f[0] == e.name:
+                    word = f[1] + (" " + f[2] if f[1] == "EXIT" else "")
+        else:
+            word = f"the switch ended rc {rc}{' ' + why if why else ''}"
+        out[e.name] = {"m3": Verdict("HANG" if word.split(" ")[0] in ("TIMEOUT", "HANG") else "UNPROVEN", b"", (se or b"")[-400:], None, detail=f"run alone by the switch at twice its limit: {word}")}
+    if left:
+        kinds = {}
+        for e in left:
+            kinds[out[e.name]["m3"].kind] = kinds.get(out[e.name]["m3"].kind, 0) + 1
+        print("RUN_FILES_LEFTOVERS run_alone=%d %s" % (len(left), " ".join(f"{k}={kinds[k]}" for k in sorted(kinds))))
+    return out
+
+
+def post_m3_verdicts(paths, entries, posts, quiet=False):
     """THE POST STEP (CIO-32 (6), CIO-34 (4); the switches are officer_01's, the agreed bytes in both LEDGERs): mode 3 of each entry read from
     what scrip --run-one-liners / --run-multi-liners wrote, never run here. POSTS is [(OUT directory, report file)]; a report line is entry,
     type, number, wall seconds, processor seconds, peak KB, and the entry's streams are OUT/NAME.out and OUT/NAME.err (NAME every slash an
@@ -3998,8 +4124,9 @@ def post_m3_verdicts(paths, entries, posts):
             refuse(f"--post: {where}: unknown result type {typ!r}")
         v.secs = float(wall)
         out[e.name] = {"m3": against_expect(v, _ex)}
-    print("POST_BOARD graded_from_out=%d per_process=%d %s" % (len(out), len(entries) - len(out),
-          " ".join(f"{k}={tally[k]}" for k in sorted(tally))))
+    if not quiet:
+        print("POST_BOARD graded_from_out=%d per_process=%d %s" % (len(out), len(entries) - len(out),
+              " ".join(f"{k}={tally[k]}" for k in sorted(tally))))
     return out
 
 
@@ -5228,12 +5355,20 @@ def cmd_run(args):
     _xr_rx = re.compile(_xr_re.encode()) if expected_refusals else None
     tmp_root = Path(tempfile.mkdtemp(prefix="csh_run_"))
     # ⭐ S4E_BATCH=1 (step 5): mode 3 of every eligible entry of this partition runs in ONE scrip --harness process, before the loop (see batch_m3_verdicts)
+    _switch_alone = pkg_dir_of(args.sno) is not None and pkg_runs_by_the_switch_alone(pkg_dir_of(args.sno))
+    if _switch_alone:
+        if modes != ["m3"] or paths["engine"] != "scrip":
+            refuse(f"{Path(args.sno).parent} holds ALL.source or ALL.launch: only scrip --run-files stages such a package, in mode 3 (CIO-122); asked modes {','.join(modes)}, engine {paths['engine']}")
+        if not getattr(args, "post", None):
+            args.run_files = True
     if getattr(args, "run_files", False):
         args.post = run_files_switch(paths, args, run_entries, len(entries), modes, tmp_root)
     if getattr(args, "post", None):
         if "m3" not in modes:
             refuse("--post reads the switches' mode-3 outputs: --modes must include m3")
         _batch_m3 = post_m3_verdicts(paths, run_entries, [(Path(o), Path(r)) for o, r in args.post])
+        if _switch_alone:
+            _batch_m3.update(run_files_leftovers(paths, args, run_entries, _batch_m3, tmp_root))
     else:
         _batch_m3 = batch_m3_verdicts(paths, run_entries, tmp_root, ext, Path(args.sno).parent) if (os.environ.get("S4E_BATCH") == "1" and "m3" in modes) else {}
     if os.environ.get("S4E_BATCH") == "1" and "m4" in modes:
@@ -7381,6 +7516,8 @@ def cmd_list(args):
 
 
 def main():
+    if sys.argv[1:] == ["--probe-source"]:
+        return source_probe()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
 
