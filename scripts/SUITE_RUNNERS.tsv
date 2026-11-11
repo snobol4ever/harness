@@ -73,7 +73,7 @@ vanilla	none	snobol4	-	-
 snobol4-more	none	snobol4	-	-
 icon-packs	none	icon	-	-
 unicon-uni	none	icon	-	-
-chat80	none	prolog	-	-
+chat80	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/chat80
 press	none	prolog	-	-
 hakank-more	none	prolog	-	-
 trealla-more	none	prolog	-	-
