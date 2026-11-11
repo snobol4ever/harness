@@ -884,7 +884,9 @@ def _run_slot():
                         f.close()
                 time.sleep(0.25 + random.random() * 0.25)
         seat_f = None if grader else take([os.path.join(sd, "%d" % i) for i in range(cap)])
-        pool_f = take([os.path.join(d, "slot%d" % i) for i in range(hi + 1)])
+        _res_lo = max(0, n - int(os.environ.get("S4E_RUN_GRADER_RESERVED", str(k["S4E_RUN_GRADER_RESERVED_DEFAULT"]))))
+        _order = (list(range(_res_lo, hi + 1)) + list(range(0, _res_lo))) if grader else list(range(hi + 1))   # the grader takes its reserved slots first (CIO-120)
+        pool_f = take([os.path.join(d, "slot%d" % i) for i in _order])
         return _SlotHold(seat_f, pool_f)
     except OSError:
         return None

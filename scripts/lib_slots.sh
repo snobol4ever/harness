@@ -16,9 +16,9 @@
 # leaf that starts nothing. The census reads the holders from /proc/*/fd (a held file is open for the holder's life: kernel truth, no sidecar). The seat is S4E_SEAT (every root's settings env sets it),
 # else the first path component under /home of the working directory. A wait of a second or more is one line in SLOT_WAITS.tsv (R-2078).
 S4E_CC_POOL_DEFAULT=6
-S4E_RUN_POOL_DEFAULT=8
+S4E_RUN_POOL_DEFAULT=12
 S4E_CC_SEAT_CAP_DEFAULT=3
-S4E_RUN_SEAT_CAP_DEFAULT=2
+S4E_RUN_SEAT_CAP_DEFAULT=4
 S4E_RUN_GRADER_RESERVED_DEFAULT=4
 s4e_slot_seat() { if [ -n "${S4E_SEAT:-}" ]; then printf '%s' "$S4E_SEAT"; else pwd -P | sed -n 's|^/home/\([^/]*\).*|\1|p' | grep . || printf 'seat'; fi; }
 s4e_slot_note() {   # <kind> <t0> <cmd>... -- one line per wait of a second or more
@@ -60,13 +60,16 @@ s4e_slot_hold() {
             sleep 0.5
         done
     fi
+    # THE GRADER TAKES ITS RESERVED SLOTS FIRST (the coo's measurement of 2026-11-11 01:25, CIO-120: it sat in two of the seats' four slots while three of
+    # its own four stood empty, because every taker tried slot 0 first): the reserved range, the top of the pool, then the shared slots.
+    local order res_lo
+    if [ "$grader" = 1 ]; then res_lo=$((n - ${S4E_RUN_GRADER_RESERVED:-$S4E_RUN_GRADER_RESERVED_DEFAULT})); [ "$res_lo" -ge 0 ] || res_lo=0; order="$(seq "$res_lo" "$hi") $([ "$res_lo" -gt 0 ] && seq 0 $((res_lo - 1)))"
+    else order="$(seq 0 "$hi")"; fi
     while :; do
-        i=0
-        while [ "$i" -le "$hi" ]; do
+        for i in $order; do
             eval "exec $pfd>>\"$dir/slot$i\"" || return 1
             if flock -n "$pfd"; then break 2; fi
             eval "exec $pfd>&-"
-            i=$((i + 1))
         done
         s4e_slot_bound || { [ "$grader" = 0 ] && eval "exec $sfd>&-"; return 2; }
         sleep 0.5
