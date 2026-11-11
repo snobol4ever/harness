@@ -10,7 +10,8 @@
 #   1  the census names each planted verdict: ENTRY (a plain program, one that reads a data file beside it, one that writes a file in its
 #      folder), NEEDS-INPUT, ORACLE-REFUSES, NO-OUTPUT, DIFFERS-BETWEEN-RUNS, LIBRARY
 #   2  the package holds ALL.source, ALL.csv, the three NAME.out, each the oracle's bytes, and ALL.omit naming the six programs that are no
-#      entry with their verdict (the cio 2026-11-11: so nobody reads them as lost); the path cells are paths from the root, and no program
+#      entry by their path with their verdict (the cio 2026-11-11: so nobody reads them as lost; by path, because a name without its extension
+#      may be an entry's: fasta.p5.raku beside fasta.raku); the path cells are paths from the root, and no program
 #      file is in the package
 #   3  the collection is byte for byte what it was (the program that writes a file wrote it in a scratch copy)
 #   4  the layout census reads the package with no loose file
@@ -58,7 +59,7 @@ sub/writer.raku ENTRY"
 got="$(grep -v '^#' "$T/census.tsv" 2>/dev/null | cut -f1,2 | tr '\t' ' ' | sort)"
 [ "$got" = "$want" ] && ck ok "(1) the census names each planted verdict" || ck no "(1) the census read: $(printf '%s' "$got" | tr '\n' ';')"
 files="$(cd "$P" && find . -type f | sort | tr '\n' ' ')"
-[ "$files" = "./ALL.csv ./ALL.omit ./ALL.source ./plain.out ./sub/beside.out ./sub/writer.out " ] && [ "$(grep -c . "$P/ALL.omit")" = 6 ] && grep -q '^quiet: NO-OUTPUT: ' "$P/ALL.omit" && [ "$(cat "$P/plain.out")" = plain ] \
+[ "$files" = "./ALL.csv ./ALL.omit ./ALL.source ./plain.out ./sub/beside.out ./sub/writer.out " ] && [ "$(grep -c . "$P/ALL.omit")" = 6 ] && grep -q '^quiet.raku: NO-OUTPUT: ' "$P/ALL.omit" && [ "$(cat "$P/plain.out")" = plain ] \
   && [ "$(cat "$P/sub/beside.out")" = "a line beside" ] && [ "$(cut -d, -f3 "$P/ALL.csv" | tr '\n' ' ')" = "path plain.raku sub/beside.raku sub/writer.raku " ] \
   && ck ok "(2) the package holds the index and three answers, the path cells are paths from the root, and no program" \
   || ck no "(2) files=[$files] paths=[$(cut -d, -f3 "$P/ALL.csv" 2>/dev/null | tr '\n' ' ')]"

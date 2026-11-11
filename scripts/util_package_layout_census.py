@@ -14,7 +14,8 @@ For every file git tracks under DIR (every file on disk when DIR is in no reposi
   STREAM     STEM.in, STEM.out or STEM.err beside a PROGRAM of that stem
   OMITTED    a program a line of ALL.omit or a row of an EXCLUDED*.tsv names (declared out, with its measurement; not loose), and its streams
   TABLE      CONTRACT.tsv, CONTAINERS.tsv, EXCLUDED*.tsv, PARTITION.tsv, SOURCES.tsv, DRIVERS.tsv, or a .tsv at the root a script of harness/scripts names
-  PART       NAME.ecp beside a program or an omitted program of a package whose CONTRACT.tsv says units iso-rejection (the distribution's expected compiler
+  PART       a file ALL.launch names (the package's own driver around or under which each row runs; the grader 2026-11-11 on chat80's drive.pl);
+             NAME.ecp beside a program or an omitted program of a package whose CONTRACT.tsv says units iso-rejection (the distribution's expected compiler
              listing, which the builder reads for the lines a rejection must name; the coo 2026-11-11 on pat); STEM.E.ref beside a program a row of PREPROCESS.tsv names (the preprocess-only contract's answer; the coo's ask of 2026-11-10 on jcon and
              arizona); NAME.ref.corrected for a name a row of ALL.corrected.tsv carries (the corrected answer the grader reads where the oracle errs;
              the coo 2026-11-10 on fpc_tests); a file CONTAINERS.tsv or CONTRACT.tsv names by its path or bare name, one ALL.args names as an argument, a member of a folder whose
@@ -123,11 +124,18 @@ def census(d):
         for ln in text_of(d, "ALL.args").split("\n"):
             if ln.strip() and not ln.startswith("#"):
                 argd.update(ln.split("\t")[1:])
+    launched = set()
+    if os.path.isfile(os.path.join(d, "ALL.launch")):
+        for ln in text_of(d, "ALL.launch").split("\n"):
+            if ln.strip() and not ln.startswith("#"):
+                launched.update(ln.split())
     for f in files:
         base, top = os.path.basename(f), "/" not in f
         ext = os.path.splitext(f)[1]
         if top and base in INDEX:
             role[f] = "INDEX"
+        elif f in launched and f not in progs:
+            role[f] = "PART"
         elif top and base == "ALL.dialect":
             role[f] = "LOOSE" if has_dialect else "INDEX"
         elif top and base in CONTAINER:
@@ -207,7 +215,8 @@ def probe():
             "ALL.omit": ("INDEX", "gone: the oracle refuses it\n"),
             "ALL.dialect": ("INDEX", "sub/run\tiso\n"),
             "ALL.source": ("INDEX", "root\t/nowhere\norigin\tprobe\nversion\tprobe\nlicence\tpublic domain\n"),
-            "ALL.launch": ("INDEX", "around\tsub/run\n"),
+            "ALL.launch": ("INDEX", "scrip around - drive.sno\n"),
+            "drive.sno": ("PART", "* the package's own driver, named by ALL.launch\nEND\n"),
             "sub/run.sno": ("PROGRAM", "-INCLUDE 'lib.inc'\n OUTPUT = 'x'\nEND\n"),
             "sub/run.out": ("STREAM", "x\n"),
             "gone.sno": ("OMITTED", "END\n"),

@@ -84,4 +84,4 @@ fpc-source	none	pascal	-	-
 pascal-sets	none	pascal	-	-
 tex	none	pascal	-	-
 rakudo-t	none	raku	-	-
-raku-examples	none	raku	-	-
+raku-examples	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/raku_examples

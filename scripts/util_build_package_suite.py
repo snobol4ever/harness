@@ -1608,7 +1608,7 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None):
             rcs.append(f"{name}\t{rc}\n")
         rows.append({"rank": len(rows) + 1, "entry": name, "path": r, "language": "" if r.endswith(MINE_OWN_EXT[lang]) else lang, "origin": f"{pkg_dir.name}__{name}", "package": pkg_dir.name,
                      "n_lines": len((root / r).read_text(errors="replace").splitlines()), "want_rc": rc, "heap_kb": 131072, "stack_kb": 4096,
-                     "timeout_s": 300, "compile_args": ""})
+                     "timeout_s": cap, "compile_args": ""})
     if held:
         with open(census, "a") as f:
             f.write("".join(f"{r}\tHELD-ELSEWHERE\t{held[r]}\n" for r in sorted(held)))
@@ -1621,7 +1621,7 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None):
         (pkg_dir / "ALL.rc").write_text("".join(rcs))
     else:
         (pkg_dir / "ALL.rc").unlink(missing_ok=True)
-    left = [f"{os.path.splitext(r)[0]}: {v}: {note}\n" for r, (v, note, rc, out) in zip(rels, got) if v != "ENTRY"]
+    left = [f"{r}: {v}: {note}\n" for r, (v, note, rc, out) in zip(rels, got) if v != "ENTRY"]
     if left:
         (pkg_dir / "ALL.omit").write_text("".join(left))
     else:
