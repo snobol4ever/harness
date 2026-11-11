@@ -1465,15 +1465,19 @@ def build_files_form(pkg_dir, lang, twice=False, only=None, src_ext=None):
 
 MINE_KEYS = ("root", "origin", "version", "licence")
 MINE_OPTIONAL = {"copy": ("root", "folder"), "cwd": ("root", "folder")}
-MINE_EXTS = {"raku": (".raku", ".p6", ".pl6", ".t", ".rakutest"), "pascal": (".pas", ".pp", ".p", ".lpr"), "icon": (".icn",)}
-MINE_ORACLE = {"raku": "rakudo"}
+MINE_EXTS = {"raku": (".raku", ".p6", ".pl6", ".t", ".rakutest"), "pascal": (".pas", ".pp", ".p", ".lpr"), "icon": (".icn",), "prolog": (".pl", ".pro")}
+MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl"}
+MINE_FLAGS = {"prolog": ("-q",)}   # the oracle's own flags before the program's name: swipl -q, as corpus_suite_harness.py resolve_oracle_bin gives it
+MINE_DIALECT = {"prolog": "swi"}   # the dialect cell of a mined row: the oracle that cut its answer (run-switches step 4; swipl answers, so SCRIP reads the program as SWI)
 MINE_STATIC = {
     "raku": (("LIBRARY", r"^\s*unit\s+(module|class|role|grammar|package)\b"),
              ("NEEDS-NETWORK", r"\b(IO::Socket|LWP::|HTTP::|Cro::|Net::|WWW|WebService::|DBIish)\b"),
              ("NEEDS-DISPLAY", r"\b(Term::|Terminal::|NCurses|GTK::|SDL2?::|NativeCall|Inline::)")),
+    "prolog": (("NEEDS-DISPLAY", r"\blibrary\(\s*(pce|xpce|pce_\w+|plot/\w+)\s*\)|\b(send|new)\(\s*@\w"),
+               ("NEEDS-NETWORK", r"\blibrary\(\s*(socket|ssl|http/\w+|http_open|www_browser)\s*\)|\btcp_(connect|socket|bind|open_socket)\(")),
 }
-MINE_OWN_EXT = {"raku": (".raku",), "pascal": (".pas", ".p", ".pp", ".lpr"), "icon": (".icn",)}
-MINE_HEADER = ("rank", "entry", "path", "language", "origin", "package", "n_lines", "want_rc", "heap_kb", "stack_kb", "timeout_s", "compile_args")
+MINE_OWN_EXT = {"raku": (".raku",), "pascal": (".pas", ".p", ".pp", ".lpr"), "icon": (".icn",), "prolog": (".pl",)}
+MINE_HEADER = ("rank", "entry", "path", "language", "origin", "package", "n_lines", "want_rc", "heap_kb", "stack_kb", "timeout_s", "compile_args", "dialect")
 
 
 def mine_read_source(pkg_dir):
@@ -1511,7 +1515,7 @@ def _mine_run(lang, folder, name, cap, stdin_bytes):
         shutil.copytree(folder, work / "f", symlinks=True)
         sin = work / "stdin"
         sin.write_bytes(stdin_bytes)
-        argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", name]
+        argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), name]
         pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True)
         here = (str(work / "f") + "/").encode()
         return pr.returncode, pr.stdout, pr.stderr.replace(here, b"")
@@ -1549,7 +1553,7 @@ def _mine_one(lang, root, rel, cap, whole=False):
     return "ENTRY", (f"stderr not graded: {first}" if first else ""), rc1, out1
 
 
-def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None):
+def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None):
     """A PACKAGE WHOSE PROGRAMS ARE READ IN PLACE (CIO-92, CIO-96, COO-508): the census of the collection ALL.source names, one verdict a program,
     then the index of the ENTRY programs (path = the path from the root) and each one's NAME.out and exit status, cut from the oracle, at the
     same relative path in the package folder. No program file is written into the package."""
@@ -1568,6 +1572,18 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None):
         rels = [r for r in rels if r.startswith(under.rstrip("/") + "/")]
     if not rels:
         h.refuse(f"no {' '.join(MINE_EXTS[lang])} program under {root}")
+    held = {}
+    if skip:
+        for ln in Path(skip).read_text().splitlines():
+            k, tab, why = ln.partition("\t")
+            if not ln.strip() or ln.startswith("#"):
+                continue
+            if not tab or not why.strip() or k not in rels:
+                h.refuse(f"{skip} is malformed at the line {ln!r}: a line is a program's path from the root (one --mine would census), a tab, and where it is graded already")
+            held[k] = why.strip()
+        rels = [r for r in rels if r not in held]
+        if not rels:
+            h.refuse(f"{skip} names every program under {root}: nothing is left to census")
     stems = {}
     for r in rels:
         stems.setdefault(os.path.splitext(r)[0], []).append(r)
@@ -1593,8 +1609,14 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None):
         rows.append({"rank": len(rows) + 1, "entry": name, "path": r, "language": "" if r.endswith(MINE_OWN_EXT[lang]) else lang, "origin": f"{pkg_dir.name}__{name}", "package": pkg_dir.name,
                      "n_lines": len((root / r).read_text(errors="replace").splitlines()), "want_rc": rc, "heap_kb": 131072, "stack_kb": 4096,
                      "timeout_s": 300, "compile_args": ""})
-    h._fmt2_write_csv(pkg_dir, [c for c in MINE_HEADER if c != "language" or any(x["language"] for x in rows)],
-                      [{k: v for k, v in x.items() if k != "language" or any(y["language"] for y in rows)} for x in rows])
+    if held:
+        with open(census, "a") as f:
+            f.write("".join(f"{r}\tHELD-ELSEWHERE\t{held[r]}\n" for r in sorted(held)))
+        print(f"MINE_HELD package={pkg_dir.name} held_elsewhere={len(held)} (in the census, not run, no entry, not in ALL.omit)")
+    for x in rows:
+        x["dialect"] = MINE_DIALECT.get(lang, "")
+    cols = [c for c in MINE_HEADER if c not in ("language", "dialect") or any(x[c] for x in rows)]
+    h._fmt2_write_csv(pkg_dir, cols, [{k: x[k] for k in cols} for x in rows])
     if rcs:
         (pkg_dir / "ALL.rc").write_text("".join(rcs))
     else:
@@ -1629,12 +1651,15 @@ def main():
     ap.add_argument("--mine-cap", type=int, default=60, help="seconds the oracle has for one program under --mine (default 60)")
     ap.add_argument("--mine-jobs", type=int, default=4, help="oracle runs side by side under --mine (default 4, a seat's share of the run pool)")
     ap.add_argument("--mine-under", default="", metavar="FOLDER", help="under --mine, only the programs under this folder of the root")
+    ap.add_argument("--mine-skip", default="", metavar="FILE",
+                    help="under --mine, programs another package grades already: a line is the path from the root, a tab, and where it is graded; "
+                         "each reads HELD-ELSEWHERE in the census, is not run and is no entry")
     args = ap.parse_args()
     pkg_dir = Path(args.package_dir).resolve()
     if not pkg_dir.is_dir():
         h.refuse(f"not a directory: {pkg_dir}")
     if args.mine:
-        sys.exit(mine(pkg_dir, args.lang, args.mine, cap=args.mine_cap, jobs=args.mine_jobs, under=args.mine_under or None))
+        sys.exit(mine(pkg_dir, args.lang, args.mine, cap=args.mine_cap, jobs=args.mine_jobs, under=args.mine_under or None, skip=args.mine_skip or None))
     only = None
     if args.only is not None:
         only = [n.strip() for a in args.only for n in a.split(",") if n.strip()]
