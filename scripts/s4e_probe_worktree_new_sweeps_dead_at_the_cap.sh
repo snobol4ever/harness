@@ -17,7 +17,6 @@ for n in dead dead2 live orphan; do mkdir -p "$top/$ME/wt-$n"; printf 'name=%s\n
 touch -d '10 minutes ago' "$top/$ME/wt-orphan"
 for r in dead dead2 live; do printf '# TASK r-%s\nGOAL: plant\nDONE-WHEN: false\nWORKTREE: %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$r" "$top/$ME/wt-$r" > "$p/tasks/r-$r.task.md"; done
 printf '3\tr-dead\t%s\tDONE\n3\tr-live\t%s\tCLAIMED:%s\n' "$ME" "$ME" "$ME" > "$p/QUEUE.tsv"
-printf '3\tr-dead2\t%s\tDONE\n' "$ME" > "$p/QUEUE.done.tsv"
 rmdead2() { mv "$top/$ME/wt-dead2" "$t/dead2.parked"; }
 rmdead2
 wt() { env S4E_WT_TOP="$top" S4E_POSTOFFICE="$p" WT_MAX=2 S4E_SEAT="$ME" timeout -k 5 300 bash "$WT" "$@" < /dev/null 2>&1; }

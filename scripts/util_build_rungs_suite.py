@@ -491,8 +491,8 @@ COMPANION_EXTS = {".inc", ".dat", ".input", ".in", ".json"}
 # SYNC. A second, looser matcher here would silently reopen the substring/scope bugs that gate already paid
 # to fix (root KEEP.md's bare "plunit.pl" once also declared a same-named file three directories away).
 # ⭐ A PENDING deferral blocks absorption ONLY while its row is LIVE -- mirroring the gate's own
-# pending_row_state(), a straight port (claim file says DONE -> EXPIRED; else listed in QUEUE.done.tsv ->
-# EXPIRED; else listed in QUEUE.tsv -> LIVE; else DANGLING). MEASURED WHY THIS MUST RESOLVE STATE, not just
+# pending_row_state(), a straight port (claim file says DONE -> EXPIRED; else listed in QUEUE.tsv -> LIVE;
+# else DANGLING, a row absent from QUEUE.tsv). MEASURED WHY THIS MUST RESOLVE STATE, not just
 # "listed = blocked": tests/icon/PENDING.md defers rung36_jcon_scan/rung36_jcon_scan2 to row
 # icon-scan-env-value-residue, and that row is DONE (its claim file's last line is literally "DONE") --
 # test_gate_suite_conversion_complete.sh's own PBAD bucket already calls this "a deferral whose row has
@@ -571,7 +571,7 @@ def _pending_row_of(text):
 
 def _pending_row_state(row, po_dir):
     """LIVE | EXPIRED | DANGLING | UNVERIFIABLE -- a direct port of the gate's own pending_row_state():
-    a claim file whose LAST line is exactly DONE, or a row listed in QUEUE.done.tsv, is EXPIRED; a row
+    a claim file whose LAST line is exactly DONE is EXPIRED; a row
     listed in QUEUE.tsv (regardless of that row's own state column) is LIVE; otherwise DANGLING; the queue
     being unreadable at all is UNVERIFIABLE. Deliberately NOT re-derived from QUEUE.tsv's state column --
     same two-independent-copies risk the gate itself was built to avoid, just one file mirroring another."""
@@ -586,13 +586,6 @@ def _pending_row_state(row, po_dir):
         except OSError:
             pass
     row_pat = re.compile(r"^[0-9]+\t%s\t" % re.escape(row))
-    d = os.path.join(po_dir, "QUEUE.done.tsv")
-    if os.access(d, os.R_OK):
-        try:
-            if any(row_pat.match(line) for line in open(d, encoding="utf-8", errors="replace")):
-                return "EXPIRED"
-        except OSError:
-            pass
     try:
         if any(row_pat.match(line) for line in open(q, encoding="utf-8", errors="replace")):
             return "LIVE"

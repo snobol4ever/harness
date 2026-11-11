@@ -119,8 +119,8 @@ wt_cap_scan() {
     done
 }
 
-# sweep_dead -- every marker worktree under $TOP/<seat>/ that a baton names (WORKTREE: <path>) whose row reads DONE, SUPERSEDED or RETIRED (QUEUE.tsv, QUEUE.done.tsv
-# or QUEUE.retired.tsv), idle 30 minutes or more by its directory mtime, with no process whose cwd lies inside it, is removed AS ITS OWNER by this script's own rm
+# sweep_dead -- every marker worktree under $TOP/<seat>/ that a baton names (WORKTREE: <path>) whose row reads DONE, SUPERSEDED or RETIRED (QUEUE.tsv or QUEUE.retired.tsv; a row in neither is DONE),
+# idle 30 minutes or more by its directory mtime, with no process whose cwd lies inside it, is removed AS ITS OWNER by this script's own rm
 # (so the guard of wt_unlanded applies); a worktree no baton names is never swept. Prints one line, SWEPT <n>.
 sweep_dead() {
     local d b row st owner name n=0 nd=0 nl=0 nu=0 now p t busy cls floor lost pf flag
@@ -134,8 +134,8 @@ sweep_dead() {
         else
             row="$(basename "$b" .task.md)"
             st="$(awk -F'\t' -v t="$row" '!/^#/ && $2 == t { print $4; exit }' "$PO/QUEUE.tsv" 2>/dev/null)"
-            [ -n "$st" ] || { grep -qF "$(printf '\t')$row$(printf '\t')" "$PO/QUEUE.done.tsv" 2>/dev/null && st=DONE; }
             [ -n "$st" ] || { grep -qF "$(printf '\t')$row$(printf '\t')" "$PO/QUEUE.retired.tsv" 2>/dev/null && st=RETIRED; }
+            [ -n "$st" ] || st=DONE
             case "$st" in
                 DONE*|SUPERSEDED*|RETIRED*) cls=done; floor=1800 ;;
                 "CLAIMED:$owner"|"ASSIGNED:$owner") continue ;;
