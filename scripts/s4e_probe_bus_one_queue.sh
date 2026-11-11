@@ -38,15 +38,16 @@ bus() { local s="$1"; shift; env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$s" S4E
 why=""
 verdict() { if [ -z "$why" ]; then echo "BUSQ step=$N ok=1 $1"; exit 0; fi; echo "BUSQ step=$N ok=0 $1 RED:$why"; exit 1; }
 case "$N" in
-1)  # next serves a QUEUED row from the file: ask-<tier>, then seat-<me>, then tier-<tier>; within a tube the lowest rank, then the oldest mint stamp (Q4)
+1)  # next serves a QUEUED row from the file: ask-<tier>, then seat-<me>, then tier-<tier>; within a tube the lowest rank, then the seat's own key over the topic (bus-tube-herd-2): the two rank-2 rows are served in either order
     a=busq1-ask-$$; s=busq1-seat-$$; r1=busq1-tier-r1-$$; o=busq1-tier-old-$$; n=busq1-tier-new-$$; x=busq1-sonnet-$$
     row 3 "$a" @haiku QUEUED:ask-haiku; row 3 "$s" "$J" "QUEUED:seat-$J"; row 1 "$r1" @haiku QUEUED:tier-haiku; row 2 "$o" @haiku QUEUED:tier-haiku
     row 2 "$n" @haiku QUEUED:tier-haiku; row 0 "$x" @sonnet QUEUED:tier-sonnet
     baton "$a" 2026-11-05T00:00:00Z; baton "$s" 2026-11-05T00:00:00Z; baton "$r1" 2026-11-04T00:00:00Z; baton "$o" 2026-11-01T00:00:00Z; baton "$n" 2026-11-02T00:00:00Z; baton "$x"
     live_claude "$J" >/dev/null; got=""
-    for want in "$a" "$s" "$r1" "$o" "$n"; do
+    for want in "$a" "$s" "$r1" "$o $n" "$o $n"; do
         out="$(bus "$J" next)"; g="$(printf '%s\n' "$out" | sed -n 's/^RESERVED \([^ ]*\) .*/\1/p' | head -1)"; got="$got ${g:-none}"
-        [ "$g" = "$want" ] || { why="$why serve wanted $want got ${g:-none} [$(printf '%s' "$out" | grep -m1 -E 'RESERVED|nothing|REFUSE|⛔' | cut -c1-90)];"; break; }
+        case " $want " in *" $g "*) [ -n "$g" ] && hit=1 || hit=0;; *) hit=0;; esac
+        [ "$hit" = 1 ] || { why="$why serve wanted $want got ${g:-none} [$(printf '%s' "$out" | grep -m1 -E 'RESERVED|nothing|REFUSE|⛔' | cut -c1-90)];"; break; }
         [ "$(st "$g")" = "CLAIMED:$J" ] || why="$why $g reads $(st "$g") after its serve, not CLAIMED:$J;"
         [ "$(head -1 "$w/claims/$g.claim" 2>/dev/null)" = "$J" ] || why="$why $g has no claim naming $J;"
         awk -F'\t' -v OFS='\t' -v t="$g" '$2 == t { $4 = "DONE" } { print }' "$w/QUEUE.tsv" > "$w/q.tmp" && cat "$w/q.tmp" > "$w/QUEUE.tsv"; rm -f "$w/claims/$g.claim"
@@ -54,7 +55,7 @@ case "$N" in
     out="$(bus "$J" next)"; printf '%s\n' "$out" | grep -q "^RESERVED $x " && why="$why a tier-sonnet row was served to a haiku seat;"
     verdict "order=ask,seat,tier-rank,tier-oldest served=$(echo $got | tr ' ' ',')";;
 2)  # the reserve: next and claim write "RESERVED file tube=<tube> session=<SESSION> pid=<pid> <ts>" and the column, under one flock on PO/.queue.flock (Q2, Q3)
-    t=busq2-$$; c=busq2-claim-$$; row 2 "$t" @haiku QUEUED:tier-haiku; row 2 "$c" @haiku QUEUED:tier-haiku; baton "$t"; baton "$c" 2026-11-03T00:00:00Z
+    t=busq2-$$; c=busq2-claim-$$; row 1 "$t" @haiku QUEUED:tier-haiku; row 2 "$c" @haiku QUEUED:tier-haiku; baton "$t"; baton "$c" 2026-11-03T00:00:00Z
     p="$(live_claude "$J")"; out="$(bus "$J" next)"
     l2="$(sed -n 2p "$w/claims/$t.claim" 2>/dev/null)"
     printf '%s' "$l2" | grep -qE "^RESERVED file tube=tier-haiku session=PJ97 pid=$p [0-9]{4}-[0-9]{2}-[0-9]{2}T" || why="$why next's reserve line reads '${l2:-none}', not RESERVED file tube=tier-haiku session=PJ97 pid=$p <ts>;"

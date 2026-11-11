@@ -428,11 +428,11 @@ s4e_refuse_red_head() {   # <topic> <job> <tube>: bury the reserved head through
     s4e_ledger_prepend "$_t" "- [$ME·$(date -u +%F)] PREMISE-WHEN read RED at dispatch on $ME's root ($_h): reserved job $_j from $_tb was $_how; the row is PARKED-PREMISE-RED:$ME. The designer re-reads the premise on origin: wrong, recut it; right, the row is done or superseded by its own measurement; then queue it again."
     printf 'NEXT refused_head job=%s topic=%s buried=%s state=PARKED-PREMISE-RED\n' "$_j" "$_t" "$_ok"
     return 0; }
-s4e_file_reserve_pass() {   # bus-one-queue step 1: next on the file road; ask-<tier>, then seat-<me>, then tier-<tier>; lowest rank, then the oldest mint stamp
-    local _tier _tube _rk _ts _t _rc
+s4e_file_reserve_pass() {   # bus-one-queue step 1: next on the file road; ask-<tier>, then seat-<me>, then tier-<tier>; lowest rank, then the seat's own key over the topic, then the oldest mint stamp
+    local _tier _tube _rk _key _ts _t _rc
     _tier="$(s4e_tier_of "$ME")" || return 1
     for _tube in "ask-$_tier" "seat-$ME" "tier-$_tier"; do
-        while IFS=$'\t' read -r _rk _ts _t; do
+        while IFS=$'\t' read -r _rk _key _ts _t; do
             [ -n "$_t" ] || continue
             s4e_queue_take_claim "$_t" file "$_tube"; _rc=$?
             if [ "$_rc" = 0 ]; then serve "$_t" "RESERVED" "(from $_tube on the file road; the claim is the reserve)"; exit 0; fi
@@ -440,7 +440,7 @@ s4e_file_reserve_pass() {   # bus-one-queue step 1: next on the file road; ask-<
                 s4e_set_row_state "$_t" "PARKED-PREMISE-RED:$ME@$(git -C "$S4E/SCRIP" rev-parse --short HEAD 2>/dev/null)" >/dev/null 2>&1 || true
                 s4e_ledger_prepend "$_t" "- [$ME·$(date -u +%F)] PREMISE-WHEN read RED at a file-road serve on $ME's root; the row is parked, not retired (CIO-10)"
             fi
-        done < <(awk -F'\t' -v s="QUEUED:$_tube" '/^[0-9]/ && $4 == s {print $1"\t"$2}' "$PO/QUEUE.tsv" | while IFS=$'\t' read -r _r _n; do printf '%s\t%s\t%s\n' "$_r" "$(s4e_mint_ts "$_n")" "$_n"; done | sort -t$'\t' -k1,1n -k2,2)
+        done < <(awk -F'\t' -v s="QUEUED:$_tube" '/^[0-9]/ && $4 == s {print $1"\t"$2}' "$PO/QUEUE.tsv" | while IFS=$'\t' read -r _r _n; do printf '%s\t%s\t%s\t%s\n' "$_r" "$(printf '%s %s' "$ME" "$_n" | cksum | cut -d' ' -f1)" "$(s4e_mint_ts "$_n")" "$_n"; done | sort -t$'\t' -k1,1n -k2,2n -k3,3)
     done
     return 1; }
 s4e_mint_probe_queue() {   # fleet-queue step 3's probe on the file road (CIO-82): the SKILLS gate a haiku row passes only with a SKILLS: line; mint --tier writes the column (bus-one-queue probe 3), no job exists
