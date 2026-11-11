@@ -13,6 +13,8 @@
 #   3  the collection is byte for byte what it was, no compiler output beside a source, and no scratch copy is left behind
 #   4  --mine-dialects fpc gives every entry the dialect fpc; a name outside the ladder refuses rc 2
 #   5  the one grader reads the mined package in mode 3 (the dialect cells iso and fpc are admitted): every entry is graded and passes
+#   6  --mine-under FOLDER --mine-add cuts one folder more: the index gains its entry, and every other folder's rows, answers, ALL.omit lines and
+#      census lines stand byte for byte; --mine-add without a folder refuses rc 2
 # EXIT: 0 all arms pass, 1 an arm failed, 2 REFUSED (no binary, no oracle).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -61,6 +63,16 @@ n5="$(printf '%s' "$board" | grep -oE 'm3_n=[0-9]+' | cut -d= -f2)"; p5="$(print
 [ "$r5" = 0 ] && [ "${n5:-0}" = 3 ] && [ "${p5:-0}" = 3 ] \
   && ck ok "(5) the grader reads the mined package in mode 3 and all three entries pass" \
   || ck no "(5) rc=$r5 board=[$(printf '%s' "$board" | cut -c1-110)] :: $(grep -E '^ +(PASS|FAIL|CRASH)' "$T/5.log" | head -3 | cut -c1-200 | tr '\n' ';')"
-echo "BUILDER_MINES_PASCAL_BOARD arms=5 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
-[ "$fail" = 0 ] && [ "$pass" = 5 ] && { echo "GATE OK [$NAME]: a Pascal collection is mined in place by fpc, the dialect found"; exit 0; }
+mkdir -p "$C/two"; printf "program w(output);\nbegin\n  writeln('two')\nend.\n" > "$C/two/w.pas"; printf 'program q;\nbegin\nend.\n' > "$C/two/q.pas"
+cp "$P/ALL.omit" "$T/omit.before"; grep -v '^#' "$T/census.tsv" | sort > "$T/census.before"; cp "$P/plain.out" "$T/plain.out.before"
+timeout -k 5 900 python3 "$B" "$P" --lang pascal --mine "$T/census.tsv" --mine-cap 30 --mine-under two --mine-add > "$T/6.log" 2>&1; r6=$?
+ents="$(awk -F, 'NR > 1 {printf "%s;", $2}' "$P/ALL.csv" 2>/dev/null)"
+timeout -k 5 60 python3 "$B" "$P" --lang pascal --mine "$T/census9.tsv" --mine-add > "$T/6b.log" 2>&1; r6b=$?
+[ "$r6" = 0 ] && [ "$ents" = "modern;plain;sub/writer;two/w;" ] && [ "$(cat "$P/two/w.out" 2>/dev/null)" = two ] && cmp -s "$P/plain.out" "$T/plain.out.before" \
+  && [ "$(grep -v '^two/' "$P/ALL.omit")" = "$(cat "$T/omit.before")" ] && grep -q '^two/q.pas: NO-OUTPUT: ' "$P/ALL.omit" \
+  && [ "$(grep -v '^#' "$T/census.tsv" | grep -v '^two/' | sort)" = "$(cat "$T/census.before")" ] && [ "$(grep -c '^two/' "$T/census.tsv")" = 2 ] && [ "$r6b" = 2 ] \
+  && ck ok "(6) --mine-add cuts one folder more and keeps every other folder's rows, answers, omit lines and census lines" \
+  || ck no "(6) rc=$r6 entries=[$ents] add without a folder rc=$r6b :: $(tail -1 "$T/6.log" | cut -c1-140)"
+echo "BUILDER_MINES_PASCAL_BOARD arms=6 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
+[ "$fail" = 0 ] && [ "$pass" = 6 ] && { echo "GATE OK [$NAME]: a Pascal collection is mined in place by fpc, the dialect found"; exit 0; }
 echo "GATE FAIL [$NAME]: $fail arm(s) failed"; exit 1

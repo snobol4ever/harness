@@ -1599,7 +1599,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None):
     return "ENTRY", (f"stderr not graded: {first}" if first else ""), rc1, out1
 
 
-def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dialects=None):
+def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dialects=None, add=False):
     """A PACKAGE WHOSE PROGRAMS ARE READ IN PLACE (CIO-92, CIO-96, COO-508): the census of the collection ALL.source names, one verdict a program,
     then the index of the ENTRY programs (path = the path from the root) and each one's NAME.out and exit status, cut from the oracle, at the
     same relative path in the package folder. No program file is written into the package."""
@@ -1651,10 +1651,19 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
             got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder), rels))
     finally:
         _mine_scratch_drop()
+    # ONE FOLDER MORE (--mine-add with --mine-under, the coo 2026-11-11: Free Pascal's tree is cut one folder a landing): the rows, the answers,
+    # the ALL.rc and ALL.omit lines and the census lines of every OTHER folder stand as they are; only what is under FOLDER is cut again.
+    pre = (under.rstrip("/") + "/") if (add and under) else None
     census = Path(census_path)
     census.parent.mkdir(parents=True, exist_ok=True)
+    kept_census = [ln + "\n" for ln in census.read_text().splitlines() if ln.strip() and not ln.startswith("#") and not ln.startswith(pre)] if (pre and census.is_file()) else []
+    kept_rows = []
+    if pre and (pkg_dir / "ALL.csv").is_file():
+        kept_rows = [x for x in h._fmt2_read_csv(pkg_dir)[1] if not (x.get("path") or "").startswith(pre)]
+        for old in (pkg_dir / pre).rglob("*.out") if (pkg_dir / pre).is_dir() else ():
+            old.unlink()
     census.write_text(f"# the census of {root} by {MINE_ORACLE[lang]} ({source['version']}), {time.strftime('%Y-%m-%d')}: path from the root, verdict, note\n"
-                      + "".join(f"{r}\t{v}\t{note}\n" for r, (v, note, rc, out) in zip(rels, got)))
+                      + "".join(kept_census) + "".join(f"{r}\t{v}\t{note}\n" for r, (v, note, rc, out) in zip(rels, got)))
     rows, rcs = [], []
     for r, (v, note, rc, out) in zip(rels, got):
         if v != "ENTRY":
@@ -1677,6 +1686,13 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
         print(f"MINE_HELD package={pkg_dir.name} held_elsewhere={len(held)} (in the census, not run, no entry, not in ALL.omit)")
     for x in rows:
         x["dialect"] = MINE_FOUND.get(x["path"]) or MINE_DIALECT.get(lang, "")
+    if pre:
+        rows = sorted(kept_rows + rows, key=lambda x: x["path"])
+        for i, x in enumerate(rows):
+            x["rank"] = i + 1
+            for c in MINE_HEADER:
+                x.setdefault(c, "")
+        rcs = [ln + "\n" for ln in ((pkg_dir / "ALL.rc").read_text().splitlines() if (pkg_dir / "ALL.rc").is_file() else []) if ln.strip() and not ln.startswith(pre)] + rcs
     cols = [c for c in MINE_HEADER if c not in ("language", "dialect") or any(x[c] for x in rows)]
     h._fmt2_write_csv(pkg_dir, cols, [{k: x[k] for k in cols} for x in rows])
     if rcs:
@@ -1684,6 +1700,8 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
     else:
         (pkg_dir / "ALL.rc").unlink(missing_ok=True)
     left = [f"{r}: {v}: {note}\n" for r, (v, note, rc, out) in zip(rels, got) if v != "ENTRY"]
+    if pre and (pkg_dir / "ALL.omit").is_file():
+        left = [ln + "\n" for ln in (pkg_dir / "ALL.omit").read_text().splitlines() if ln.strip() and not ln.startswith(pre)] + left
     if left:
         (pkg_dir / "ALL.omit").write_text("".join(left))
     else:
@@ -1691,7 +1709,7 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
     tally = {}
     for v, note, rc, out in got:
         tally[v] = tally.get(v, 0) + 1
-    print(f"MINE package={pkg_dir.name} root={root} programs={len(rels)} entries={len(rows)} " + " ".join(f"{k}={tally[k]}" for k in sorted(tally)))
+    print(f"MINE package={pkg_dir.name} root={root} programs={len(rels)} entries={len(rows) - len(kept_rows)}" + (f" kept={len(kept_rows)}" if pre else "") + " " + " ".join(f"{k}={tally[k]}" for k in sorted(tally)))
     return 0
 
 
@@ -1713,6 +1731,8 @@ def main():
     ap.add_argument("--mine-cap", type=int, default=60, help="seconds the oracle has for one program under --mine (default 60)")
     ap.add_argument("--mine-jobs", type=int, default=4, help="oracle runs side by side under --mine (default 4, a seat's share of the run pool)")
     ap.add_argument("--mine-under", default="", metavar="FOLDER", help="under --mine, only the programs under this folder of the root")
+    ap.add_argument("--mine-add", action="store_true",
+                    help="with --mine-under FOLDER: cut that folder alone and keep the rows, answers and census lines of every other folder")
     ap.add_argument("--mine-dialects", default="", metavar="NAME[,NAME...]",
                     help="under --mine, the dialect ladder to try in order (Pascal: iso, fpc, objfpc, delphi, tp; default all five, iso first)")
     ap.add_argument("--mine-skip", default="", metavar="FILE",
@@ -1722,9 +1742,11 @@ def main():
     pkg_dir = Path(args.package_dir).resolve()
     if not pkg_dir.is_dir():
         h.refuse(f"not a directory: {pkg_dir}")
+    if args.mine and args.mine_add and not args.mine_under:
+        h.refuse("--mine-add adds one folder to a mined package: it needs --mine-under FOLDER")
     if args.mine:
         sys.exit(mine(pkg_dir, args.lang, args.mine, cap=args.mine_cap, jobs=args.mine_jobs, under=args.mine_under or None, skip=args.mine_skip or None,
-                      dialects=[d.strip() for d in args.mine_dialects.split(",") if d.strip()] or None))
+                      dialects=[d.strip() for d in args.mine_dialects.split(",") if d.strip()] or None, add=args.mine_add))
     only = None
     if args.only is not None:
         only = [n.strip() for a in args.only for n in a.split(",") if n.strip()]
