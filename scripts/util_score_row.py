@@ -1907,15 +1907,14 @@ def cmd_from_progress(a):
             _aen = {_stem(l.split(":", 1)[0]) for l in open(_ae, encoding="utf-8", errors="replace") if l.strip()}
             shipped = {x for x in shipped if x in set(pop) or x not in _aen}
         pkg_pop = (set(pop) | shipped) - xnames - cnames
-    if key == "gimpel":   # its rows are keyed by library, its table by driver (R-1269)
-        pop, _driven = _gimpel_population(tdir)
-        _owed = set(pop) - _driven
-        shipped = set()
-        _gst = lambda k: k.rsplit("/", 1)[-1].rsplit(".", 1)[0]   # EXCLUDED.tsv and CONTAINERS.tsv name a library by file; _stem dropped its extension
-        _gx, _gc = {_gst(x) for x in xnames}, {_gst(x) for x in cnames}   # both sides by library stem: a name like dextern.inc (_stem keeps .inc) named nothing before
-        xnames = {k for k in pop if _gst(k) in _gx}
-        cnames = {k for k in pop if _gst(k) in _gc}
-        pkg_pop = set(pop) - xnames - cnames
+    # ⭐ A ROW OF THE INDEX THAT ALL.omit NAMES IS NO ENTRY (CIO-113 (3b), the files form of a package: its ALL.csv keeps a row, with its path, for every
+    # program the package ships and does not grade; the coo 2026-11-11, COO-507, measured on gimpel: dextern_driver, omitted, read UNREAD and stood in the total).
+    _omp = os.path.join(tdir, "ALL.omit")
+    _csvp = os.path.join(tdir, "ALL.csv")
+    if pkg and os.path.exists(_omp) and os.path.exists(_csvp) and "path" in open(_csvp, encoding="utf-8", errors="replace").readline().rstrip("\n").split(","):
+        _omn = {l.split(": ", 1)[0] for l in open(_omp, encoding="utf-8", errors="replace") if ": " in l and not l.startswith("#")}
+        pop = [e for e in pop if e not in _omn]
+        pkg_pop = set(pkg_pop) - _omn
     want = set(pop)
     # (program, mode) -> (outcome, note, tree, ts, secs) at the NEWEST timestamp: the table is compacted (older keys kept ahead of today's
     # appends, 380 backward steps measured 2026-10-11), so file order is not time order; a tie keeps the later line, the later append
