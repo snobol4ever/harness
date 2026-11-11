@@ -1,35 +1,41 @@
 #!/usr/bin/env bash
-# test_gate_pas_fpc_suite_grades_against_a_corrected_ref_and_refuses_a_stale_or_missing_one.sh -- the FPC runner's ALL.corrected.tsv block (Lon 2026-10-05: where the
-# oracle is wrong and we are right, the program is graded PASSING against the ISO-correct output, never the oracle's defect). Exercises the block alone over mktemp
-# fixtures (the runner itself is lane-guarded and writes score rows): a good row is read and printed with its reason; a name not in the suite, a missing
-# .ref.corrected, and a .ref.corrected equal to the oracle's .ref (stale: the oracle was fixed) each REFUSE with rc 2; and the shipped test_tisobuf3 row grades
-# green in BOTH modes -- SCRIP's stdout equals its corrected ref and its exit code equals ALL.rc. FAIL_ONCE=1 corrupts the shipped corrected ref.
+# test_gate_pas_fpc_suite_grades_against_a_corrected_ref_and_refuses_a_stale_or_missing_one.sh -- the ALL.corrected.tsv arms of the corpus harness (Lon 2026-10-05: where the
+# oracle is wrong and we are right, the program is graded PASSING against the ISO-correct output, never the oracle's defect). The deleted test_pascal_fpc_suite.sh
+# held these arms until 2026-11-08; corpus_suite_harness.py run holds them today (the block at its ALL.corrected.tsv reader). This gate grades the one grader
+# (ruling of gates-the-37-gates-of-the-coos-lanes-that-name-a-deleted-package-runner-are-ruled-one-by-one, officer_01 2026-11-11: RE-AIM).
+# Every arm runs the harness over a mktemp copy of the shipped container corpus/packages/pascal/fpc_tests with progress OFF (S4E_PROGRESS_OFF=1: no row is written):
+#   good    the shipped test_tisobuf3 row is read, printed with its reason, and grades PASS in mode 3 (the harness drops mode 4 by COO-487)
+#   unknown a corrected row naming an entry the container lacks REFUSES rc 2
+#   missing the row's .ref.corrected deleted REFUSES rc 2
+#   stale   the .ref.corrected made equal to the oracle's .out (the shipped oracle output) REFUSES rc 2
+# FAIL_ONCE=1 corrupts the .ref.corrected in the good copy; the good arm must then read FAIL. EXIT: 0 every arm as stated, 1 an arm differs, 2 REFUSED (no SCRIP,
+# no harness, no shipped container, no shipped row).
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate "$G" || exit $?
-SCRIP="$ROOT/scrip"; RT="$ROOT/out"; RUNNER="$HERE/test_pascal_fpc_suite.sh"; SHIP="$ROOT/../corpus/packages/pascal/fpc_tests"
-[ -f "$RUNNER" ] && [ -d "$SHIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: runner or shipped suite missing"; exit 2; }
-BLOCK="$(sed -n '/^CORRECTED_TSV=/,/^fi$/p' "$RUNNER")"; [ -n "$BLOCK" ] || { echo "⛔ GATE REFUSE(2) [$G]: the runner has no ALL.corrected.tsv block"; exit 2; }
+PY="$HERE/corpus_suite_harness.py"; SHIP="$ROOT/../corpus/packages/pascal/fpc_tests"; N=test_tisobuf3
+[ -f "$PY" ] && [ -d "$SHIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: harness or shipped container missing"; exit 2; }
+[ -f "$SHIP/$N.ref.corrected" ] && [ -f "$SHIP/$N.out" ] || { echo "⛔ GATE REFUSE(2) [$G]: no shipped $N.out and $N.ref.corrected"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
-RC=0; N=0
-chk() { N=$((N+1)); if [ "$2" = "$3" ]; then echo "  ok   $1"; else echo "  ⛔ $1: got [$2] want [$3]"; RC=1; fi; }
-blk() { ( SUITE="$1"; eval "$BLOCK" ) 2>&1; }
-S="$T/s"; mkdir -p "$S"; printf 'program p; begin end.\n' > "$S/p.pas"; printf 'bug\n' > "$S/p.ref"; printf 'right\n' > "$S/p.ref.corrected"
-printf 'p\tfpc issue 1\n' > "$S/ALL.corrected.tsv"
-out=$(blk "$S"); rc=$?; chk "a good row is read and printed with its reason" "$(printf '%s' "$out" | grep -c 'corrected ref.*p (fpc issue 1)')" 1
-printf 'ghost\tx\n' > "$S/ALL.corrected.tsv"; out=$(blk "$S"); blk "$S" >/dev/null; r=$(bash -c "SUITE='$S'; $BLOCK" >/dev/null 2>&1; echo $?); chk "a name not in the suite refuses" "$r" 2
-printf 'p\tx\n' > "$S/ALL.corrected.tsv"; rm "$S/p.ref.corrected"; r=$(bash -c "SUITE='$S'; $BLOCK" >/dev/null 2>&1; echo $?); chk "a missing .ref.corrected refuses" "$r" 2
-printf 'bug\n' > "$S/p.ref.corrected"; r=$(bash -c "SUITE='$S'; $BLOCK" >/dev/null 2>&1; echo $?); chk "a corrected ref equal to the oracle's ref refuses as stale" "$r" 2
-# the shipped row, both modes
-n=test_tisobuf3; [ -f "$SHIP/$n.ref.corrected" ] || { echo "⛔ GATE REFUSE(2) [$G]: no shipped $n.ref.corrected"; exit 2; }
-want="$(cat "$SHIP/$n.ref.corrected")"; [ -n "${FAIL_ONCE:-}" ] && want="$want corrupted"
-wantrc=$(awk -F'\t' -v n="$n" '$1==n{print $2; exit}' "$SHIP/ALL.rc"); wantrc=${wantrc:-0}
-W="$T/w"; mkdir -p "$W"; cp "$SHIP/$n.pas" "$W/"
-got3=$(cd "$W" && timeout -k 5 20 "$SCRIP" --run "$n.pas" </dev/null 2>/dev/null); rc3=$?
-chk "$n m3 prints the corrected ref" "$got3" "$want"; chk "$n m3 exits as ALL.rc says" "$rc3" "$wantrc"
-( cd "$W" && timeout -k 5 20 "$SCRIP" --compile --out="$n.s" "$n.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$n.s" -o "$n.m4" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: $n would not compile or link in mode 4"; exit 2; }
-got4=$(cd "$W" && timeout -k 5 20 "./$n.m4" </dev/null 2>/dev/null); rc4=$?
-chk "$n m4 prints the corrected ref" "$got4" "$want"; chk "$n m4 exits as ALL.rc says" "$rc4" "$wantrc"
-if [ "$RC" = 0 ]; then echo "GATE PASS [$G]: the corrected-ref block reads, refuses stale/missing/unknown rows, and $n grades green in both modes, $N of $N arms"; else echo "GATE FAIL(1) [$G]: see above"; fi
+export S4E_PROGRESS_OFF=1
+RC=0; NARM=0
+chk() { NARM=$((NARM+1)); if [ "$2" = "$3" ]; then echo "  ok   $1"; else echo "  ⛔ $1: got [$2] want [$3]"; RC=1; fi; }
+copy() { local d="$T/$1"; cp -r "$SHIP" "$d" && echo "$d"; }
+run() { RUNOUT="$(timeout -k 5 600 python3 "$PY" run "$1/ALL.pas" "$1/ALL.ref" --lang pascal --modes m3 --partition "entry:$N" 2>&1)"; RUNRC=$?; }
+G1=$(copy good); [ -n "${FAIL_ONCE:-}" ] && printf 'corrupted\n' >> "$G1/$N.ref.corrected"
+run "$G1"
+chk "good: the shipped row is read and printed with its reason" "$(grep -c "CORRECTED_REFS n=1 .*$N" <<<"$RUNOUT")" 1
+chk "good: the run exits 0" "$RUNRC" 0
+chk "good: $N grades PASS in mode 3 on the board" "$(grep -cE '^SUITE_BOARD .*m3_pass=1 m3_fail=0 ' <<<"$RUNOUT")" 1
+G2=$(copy unknown); printf 'ghost\tx\n' > "$G2/ALL.corrected.tsv"; run "$G2"
+chk "unknown: a row naming an entry the container lacks refuses rc 2" "$RUNRC" 2
+chk "unknown: the refusal names the missing entry" "$(grep -c 'does not carry' <<<"$RUNOUT")" 1
+G3=$(copy missing); rm "$G3/$N.ref.corrected"; run "$G3"
+chk "missing: a row whose .ref.corrected is missing refuses rc 2" "$RUNRC" 2
+chk "missing: the refusal names the missing file" "$(grep -c 'missing beside it' <<<"$RUNOUT")" 1
+G4=$(copy stale); cp "$G4/$N.out" "$G4/$N.ref.corrected"; run "$G4"
+chk "stale: a .ref.corrected equal to the oracle's ref refuses rc 2" "$RUNRC" 2
+chk "stale: the refusal names the stale file" "$(grep -c 'equals the oracle' <<<"$RUNOUT")" 1
+if [ "$RC" = 0 ]; then echo "GATE PASS [$G]: the harness's corrected-ref arms read, refuse unknown/missing/stale rows, and $N grades green in mode 3, $NARM of $NARM arms"; else echo "GATE FAIL(1) [$G]: see above"; fi
 exit $RC
