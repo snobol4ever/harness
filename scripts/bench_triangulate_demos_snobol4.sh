@@ -41,6 +41,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #        BUDGET_MS=3000 REPS_A2=5 TOL_PCT=15 ENGINES="sbl m3 m4" DEMOS="claws5 json" ...
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+"$HERE/util_require_fresh.sh" --gate bench_triangulate_demos_snobol4 "${SCRIP:-$HERE/../../SCRIP/scrip}" "$HERE/../../SCRIP/out/libscrip_rt.so" || exit 2
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP:-$ROOT/scrip}"
 D="${DEMO_DIR:-$S4E/corpus/demos/snobol4}"

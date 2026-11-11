@@ -17,6 +17,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # EXIT: 0 = every kernel measured on both engines. 2 = REFUSED -- missing scrip/valgrind/oracle/corpus.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+"$HERE/util_require_fresh.sh" --gate bench_triangulate_snocone "${SCRIP:-$HERE/../../SCRIP/scrip}" "$HERE/../../SCRIP/out/libscrip_rt.so" || exit 2
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SCRIP_BIN="${SCRIP:-$HERE/../../SCRIP/scrip}"
 RT_DIR="$HERE/../../SCRIP/out"
