@@ -11,7 +11,8 @@ For every file git tracks under DIR (every file on disk when DIR is in no reposi
   STREAM     STEM.in, STEM.out or STEM.err beside a PROGRAM of that stem
   OMITTED    a program a line of ALL.omit or a row of an EXCLUDED*.tsv names (declared out, with its measurement; not loose), and its streams
   TABLE      CONTRACT.tsv, CONTAINERS.tsv, EXCLUDED*.tsv, PARTITION.tsv, SOURCES.tsv, DRIVERS.tsv, or a .tsv at the root a script of harness/scripts names
-  PART       a file CONTAINERS.tsv or CONTRACT.tsv names by its path or bare name, one ALL.args names as an argument, a member of a folder whose
+  PART       STEM.E.ref beside a program a row of PREPROCESS.tsv names (the preprocess-only contract's answer; the coo's ask of 2026-11-10 on jcon and
+             arizona); a file CONTAINERS.tsv or CONTRACT.tsv names by its path or bare name, one ALL.args names as an argument, a member of a folder whose
              other files are all PARTs (a library shipped whole), or one whose bare file name a PROGRAM, an OMITTED program or another PART holds in its text
   DOCUMENT   README*, LICENSE*, COPYING*, NOTICE*, PROVENANCE*, *.md or *.txt at the package root; a root file one of those names by its bare name (the
              distribution's own script or note, accounted for by the package's own record); and every file under the root folder upstream/ when it holds a
@@ -99,6 +100,11 @@ def census(d):
             if ln.strip() and not ln.startswith("#"):
                 contained.update(c.strip() for c in ln.split("\t") if c.strip())
     contract = text_of(d, "CONTRACT.tsv") if os.path.isfile(os.path.join(d, "CONTRACT.tsv")) else ""
+    pre = set()
+    if os.path.isfile(os.path.join(d, "PREPROCESS.tsv")):
+        for ln in text_of(d, "PREPROCESS.tsv").split("\n"):
+            if ln.strip() and not ln.startswith("#"):
+                pre.add(os.path.splitext(ln.split("\t", 1)[0].strip())[0] + ".E.ref")
     upstream = "upstream/PROVENANCE.md" in files
     argd = set()
     if os.path.isfile(os.path.join(d, "ALL.args")):
@@ -122,6 +128,8 @@ def census(d):
             role[f] = "TABLE"
         elif f in omit or stem(f) in omit or base in omit or (ext not in STREAMS and ext != ".ref" and stem(base) in omit):
             role[f] = "OMITTED"
+        elif f in pre:
+            role[f] = "PART"
         elif upstream and f.startswith("upstream/"):
             role[f] = "DOCUMENT"
         elif f in contained or base in contained or f in argd or (contract and ext not in STREAMS + (".ref",) and base in contract) or (contract and ext in STREAMS and stem(f) not in prog_stems and base in contract):
