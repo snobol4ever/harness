@@ -240,6 +240,39 @@ try:
     print("KERNEL_EXPRESSIONS ok" if ue else "KERNEL_EXPRESSIONS RED: the four expressions %r; the next cell %r %r; an Icon cell's expression %r; inspect of a set name %r, of an unset name %r" % (ux, u2r.get("status"), u2,
           u3r.get("user_expressions"), i3, i4))
     bad += 0 if ue else 1
+    # STANDARD INPUT (messaging, the stdin channel; CIO-103 and CTO-584): a cell that reads standard input, sent with allow_stdin true, makes the kernel send input_request to the front end that
+    # sent the cell, with what the cell printed before the read already published; the answer is the line the program reads. Two reads are two requests. A cell that reads nothing asks nothing.
+    # With allow_stdin false no request is sent and the program reads end of file. The session cell and the one-program cell alike.
+    def reading(code, answers, allow=True):
+        mid = kc.execute(code, allow_stdin=allow); out = ""; asked = []; left = list(answers)
+        while True:
+            if kc.stdin_channel.msg_ready():
+                r = kc.get_stdin_msg(timeout=5)
+                if r["parent_header"].get("msg_id") == mid and r["msg_type"] == "input_request":
+                    while kc.iopub_channel.msg_ready():   # what was published before the request is read before the answer is sent
+                        m = kc.get_iopub_msg(timeout=5)
+                        if m["parent_header"].get("msg_id") == mid and m["msg_type"] == "stream" and m["content"]["name"] == "stdout": out += m["content"]["text"]
+                    asked.append((r["content"], out)); kc.input(left.pop(0) if left else "")
+                continue
+            try: m = kc.get_iopub_msg(timeout=1)
+            except Exception: continue
+            if m["parent_header"].get("msg_id") != mid: continue
+            if m["msg_type"] == "stream" and m["content"]["name"] == "stdout": out += m["content"]["text"]
+            if m["msg_type"] == "status" and m["content"]["execution_state"] == "idle": break
+        return ask(mid).get("status"), out, asked
+    sn = " OUTPUT = 'what is your name'\n GSN%d = INPUT :F(GSE%d)\n OUTPUT = 'got ' GSN%d :(GSK%d)\nGSE%d OUTPUT = 'end of file'\nGSK%d\n"
+    ic = "%%icon\nprocedure main();\n  writes(\"n? \");\n  l := read() | \"end of file\";\n  write(\"got \", l);\nend\n"
+    g1 = reading(sn % ((1,) * 6), ["hello"])
+    g2 = reading(" GSA = INPUT\n GSB = INPUT\n OUTPUT = GSB ' then ' GSA\n", ["first", "second"])
+    g3 = reading(" OUTPUT = 'reads nothing'\n", [])
+    g4 = reading(ic, ["zed"])
+    g5 = reading(ic, [], allow=False)
+    g6 = reading(sn % ((2,) * 6), [], allow=False)
+    rq = {"prompt": "", "password": False}
+    si_ok = (g1 == ("ok", "what is your name\ngot hello\n", [(rq, "what is your name\n")]) and g2[0] == "ok" and g2[1] == "second then first\n" and len(g2[2]) == 2 and g3 == ("ok", "reads nothing\n", [])
+             and g4 == ("ok", "n? got zed\n", [(rq, "n? ")]) and g5 == ("ok", "n? got end of file\n", []) and g6 == ("ok", "what is your name\nend of file\n", []))
+    print("KERNEL_STDIN ok" if si_ok else "KERNEL_STDIN RED: one read %r; two reads %r; no read %r; an Icon read %r; Icon without leave %r; the session without leave %r" % (g1, g2, g3, g4, g5, g6))
+    bad += 0 if si_ok else 1
 finally:
     kc.stop_channels(); km.shutdown_kernel(now=False)
 # A CELL RUNS IN THE KERNEL'S OWN DIRECTORY (CIO-78): a second kernel started in a scratch folder reads the file beside the notebook by its bare name, from a session cell and from a one-program cell
