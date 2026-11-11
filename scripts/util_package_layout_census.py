@@ -6,7 +6,8 @@ NAME.out, and NAME.err files. And slightly varying ALL files."). The sister of u
 
 usage: util_package_layout_census.py --package DIR [--check] [--list] | --probe
 For every file git tracks under DIR (every file on disk when DIR is in no repository) one role:
-  INDEX      ALL.csv, ALL.args, ALL.omit, ALL.mask, ALL.rc at the package root; and ALL.dialect there while ALL.csv has no dialect column: the builder's own
+  INDEX      ALL.csv, ALL.args, ALL.omit, ALL.mask, ALL.rc, ALL.source (the collection a row's program is read from in place, CIO-92) and ALL.launch at the
+             package root; and ALL.dialect there while ALL.csv has no dialect column: the builder's own
              record of the oracle's mode that cut each answer, which the grader does not read (with the column it is a second home of one fact and reads
              LOOSE, to leave in the landing that writes the column; the cio's ruling of 2026-11-11 on rosetta-pascal)
   PROGRAM    a file the path column of ALL.csv names for a row ALL.omit does not name
@@ -31,7 +32,7 @@ import csv, fnmatch, os, shutil, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROLES = ("INDEX", "PROGRAM", "STREAM", "PART", "TABLE", "DOCUMENT", "CONTAINER", "OMITTED", "LOOSE")
-INDEX = ("ALL.csv", "ALL.args", "ALL.omit", "ALL.mask", "ALL.rc")
+INDEX = ("ALL.csv", "ALL.args", "ALL.omit", "ALL.mask", "ALL.rc", "ALL.source", "ALL.launch")
 TABLES = ("CONTRACT.tsv", "CONTAINERS.tsv", "PARTITION.tsv", "SOURCES.tsv", "DRIVERS.tsv")
 CONTAINER_EXT = (".sno", ".icn", ".pl", ".raku", ".pas", ".sc", ".reb")
 CONTAINER = ("ALL.ref", "ALL.in", "ALL.argv", "ALL.prelude") + tuple("ALL" + x for x in CONTAINER_EXT)
@@ -205,6 +206,8 @@ def probe():
             "ALL.csv": ("INDEX", "rank,entry,path,origin\n1,sub/run,sub/run.sno,probe\n2,gone,gone.sno,probe\n"),
             "ALL.omit": ("INDEX", "gone: the oracle refuses it\n"),
             "ALL.dialect": ("INDEX", "sub/run\tiso\n"),
+            "ALL.source": ("INDEX", "root\t/nowhere\norigin\tprobe\nversion\tprobe\nlicence\tpublic domain\n"),
+            "ALL.launch": ("INDEX", "around\tsub/run\n"),
             "sub/run.sno": ("PROGRAM", "-INCLUDE 'lib.inc'\n OUTPUT = 'x'\nEND\n"),
             "sub/run.out": ("STREAM", "x\n"),
             "gone.sno": ("OMITTED", "END\n"),

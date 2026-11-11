@@ -1463,6 +1463,154 @@ def build_files_form(pkg_dir, lang, twice=False, only=None, src_ext=None):
         shutil.rmtree(_bak_root, ignore_errors=True)
 
 
+MINE_KEYS = ("root", "origin", "version", "licence")
+MINE_OPTIONAL = {"copy": ("root", "folder"), "cwd": ("root", "folder")}
+MINE_EXTS = {"raku": (".raku", ".p6", ".pl6", ".t", ".rakutest"), "pascal": (".pas", ".pp", ".p", ".lpr"), "icon": (".icn",)}
+MINE_ORACLE = {"raku": "rakudo"}
+MINE_STATIC = {
+    "raku": (("LIBRARY", r"^\s*unit\s+(module|class|role|grammar|package)\b"),
+             ("NEEDS-NETWORK", r"\b(IO::Socket|LWP::|HTTP::|Cro::|Net::|WWW|WebService::|DBIish)\b"),
+             ("NEEDS-DISPLAY", r"\b(Term::|Terminal::|NCurses|GTK::|SDL2?::|NativeCall|Inline::)")),
+}
+MINE_OWN_EXT = {"raku": (".raku",), "pascal": (".pas", ".p", ".pp", ".lpr"), "icon": (".icn",)}
+MINE_HEADER = ("rank", "entry", "path", "language", "origin", "package", "n_lines", "want_rc", "heap_kb", "stack_kb", "timeout_s", "compile_args")
+
+
+def mine_read_source(pkg_dir):
+    """ALL.source of a package read in place (CIO-92, CTO-583): four lines of key, a tab, value. -> {key: value}, refusing a malformed file."""
+    f = Path(pkg_dir) / "ALL.source"
+    if not f.is_file():
+        h.refuse(f"{pkg_dir} holds no ALL.source; --mine builds a package whose programs are read in place from the collection it names")
+    got = {}
+    for ln in f.read_text().splitlines():
+        if not ln.strip():
+            continue
+        k, tab, v = ln.partition("\t")
+        if not tab or (k not in MINE_KEYS and k not in MINE_OPTIONAL) or k in got or not v.strip() or (k in MINE_OPTIONAL and v.strip() not in MINE_OPTIONAL[k]):
+            h.refuse(f"{f} is malformed at the line {ln!r}: its keys are root, origin, version and licence, each once, a tab, a value; "
+                     f"copy and cwd may follow, each root or folder (CTO-591)")
+        got[k] = v.strip()
+    lost = [k for k in MINE_KEYS if k not in got]
+    if lost:
+        h.refuse(f"{f} is malformed: no line for {', '.join(lost)}")
+    if not Path(got["root"]).is_dir():
+        h.refuse(f"{f} names the root {got['root']}, which is no folder on this box")
+    if got.get("cwd") == "root" and got.get("copy") != "root":
+        h.refuse(f"{f}: cwd root needs copy root (CTO-591)")
+    return got
+
+
+def _mine_run(lang, folder, name, cap, stdin_bytes):
+    """One oracle run of NAME in a fresh scratch copy of FOLDER (subfolders included; the collection is never written to), from the top of that
+    copy: the program's own folder and its bare name, or under copy root and cwd root the whole collection and the path from its root (CTO-591).
+    -> (rc, out, err)."""
+    import shutil
+    import subprocess
+    work = Path(tempfile.mkdtemp(prefix="mine_", dir=os.environ.get("TMPDIR") or None))
+    try:
+        shutil.copytree(folder, work / "f", symlinks=True)
+        sin = work / "stdin"
+        sin.write_bytes(stdin_bytes)
+        argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", name]
+        pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True)
+        here = (str(work / "f") + "/").encode()
+        return pr.returncode, pr.stdout, pr.stderr.replace(here, b"")
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
+def _mine_one(lang, root, rel, cap, whole=False):
+    """The census verdict of one program (the mining rows' classes). -> (verdict, note, rc, stdout bytes)."""
+    src = root / rel
+    at, name = (root, rel) if whole else (src.parent, src.name)
+    text = src.read_text(errors="replace")
+    for verdict, pat in MINE_STATIC.get(lang, ()):
+        mt = re.search(pat, text, re.M)
+        if mt:
+            return verdict, f"the source names {mt.group(0).strip()}", None, b""
+    rc1, out1, err1 = _mine_run(lang, at, name, cap, b"")
+    first = (err1.decode("utf-8", "replace").strip().splitlines() or [""])[0][:160]
+    if rc1 in (124, 137):
+        return "DOES-NOT-END", f"no answer inside {cap} s", None, b""
+    if rc1 == 2 and first.startswith("REFUSE(2)"):
+        h.refuse(f"the oracle wrapper refused on {rel}: {first}")
+    if lang == "raku" and b"===SORRY!===" in err1:
+        return "ORACLE-REFUSES", (err1.decode("utf-8", "replace").replace("===SORRY!===", "").strip().splitlines() or [""])[0][:160], None, b""
+    if lang == "raku" and rc1 == 2 and first.startswith("Usage:"):
+        return "NEEDS-INPUT", "it asks for arguments (rakudo prints its usage, exit 2)", None, b""
+    rc2, out2, err2 = _mine_run(lang, at, name, cap, b"")
+    if (rc2, out2) != (rc1, out1):
+        return "DIFFERS-BETWEEN-RUNS", f"exit {rc1} and {rc2}, {len(out1)} and {len(out2)} bytes", None, b""
+    rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n")
+    if (rc3, out3) != (rc1, out1):
+        return "NEEDS-INPUT", "its answer changes with what standard input holds", None, b""
+    if not out1.strip():
+        return "NO-OUTPUT", f"nothing on standard output, exit {rc1}; a dead engine would earn the same" + (f"; stderr: {first}" if first else ""), None, b""
+    return "ENTRY", (f"stderr not graded: {first}" if first else ""), rc1, out1
+
+
+def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None):
+    """A PACKAGE WHOSE PROGRAMS ARE READ IN PLACE (CIO-92, CIO-96, COO-508): the census of the collection ALL.source names, one verdict a program,
+    then the index of the ENTRY programs (path = the path from the root) and each one's NAME.out and exit status, cut from the oracle, at the
+    same relative path in the package folder. No program file is written into the package."""
+    from concurrent.futures import ThreadPoolExecutor
+    if lang not in MINE_ORACLE:
+        h.refuse(f"--mine knows the oracle of {', '.join(sorted(MINE_ORACLE))}; {lang or 'snobol4'} is not one yet")
+    source = mine_read_source(pkg_dir)
+    root = Path(source["root"]).resolve()
+    if (source.get("copy") == "root") != (source.get("cwd") == "root"):
+        h.refuse(f"{pkg_dir}/ALL.source: --mine runs a program from the top of the copied collection (copy root with cwd root) or inside the copy of "
+                 f"its own folder (neither key); copy {source.get('copy', 'folder')} with cwd {source.get('cwd', 'folder')} is neither")
+    whole = source.get("cwd") == "root"
+    rels = sorted(p.relative_to(root).as_posix() for e in MINE_EXTS[lang] for p in root.rglob(f"*{e}")
+                  if p.is_file() and not any(part.startswith(".") for part in p.relative_to(root).parts))
+    if under:
+        rels = [r for r in rels if r.startswith(under.rstrip("/") + "/")]
+    if not rels:
+        h.refuse(f"no {' '.join(MINE_EXTS[lang])} program under {root}")
+    stems = {}
+    for r in rels:
+        stems.setdefault(os.path.splitext(r)[0], []).append(r)
+    twins = {k: v for k, v in stems.items() if len(v) > 1}
+    if twins:
+        h.refuse(f"{len(twins)} stem(s) name two programs, so their NAME.out would be one file: {sorted(twins)[:5]}")
+    with ThreadPoolExecutor(max_workers=jobs) as ex:
+        got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole), rels))
+    census = Path(census_path)
+    census.parent.mkdir(parents=True, exist_ok=True)
+    census.write_text(f"# the census of {root} by {MINE_ORACLE[lang]} ({source['version']}), {time.strftime('%Y-%m-%d')}: path from the root, verdict, note\n"
+                      + "".join(f"{r}\t{v}\t{note}\n" for r, (v, note, rc, out) in zip(rels, got)))
+    rows, rcs = [], []
+    for r, (v, note, rc, out) in zip(rels, got):
+        if v != "ENTRY":
+            continue
+        name = os.path.splitext(r)[0]
+        ans = pkg_dir / (name + ".out")
+        ans.parent.mkdir(parents=True, exist_ok=True)
+        ans.write_bytes(out)
+        if rc:
+            rcs.append(f"{name}\t{rc}\n")
+        rows.append({"rank": len(rows) + 1, "entry": name, "path": r, "language": "" if r.endswith(MINE_OWN_EXT[lang]) else lang, "origin": f"{pkg_dir.name}__{name}", "package": pkg_dir.name,
+                     "n_lines": len((root / r).read_text(errors="replace").splitlines()), "want_rc": rc, "heap_kb": 131072, "stack_kb": 4096,
+                     "timeout_s": 300, "compile_args": ""})
+    h._fmt2_write_csv(pkg_dir, [c for c in MINE_HEADER if c != "language" or any(x["language"] for x in rows)],
+                      [{k: v for k, v in x.items() if k != "language" or any(y["language"] for y in rows)} for x in rows])
+    if rcs:
+        (pkg_dir / "ALL.rc").write_text("".join(rcs))
+    else:
+        (pkg_dir / "ALL.rc").unlink(missing_ok=True)
+    left = [f"{os.path.splitext(r)[0]}: {v}: {note}\n" for r, (v, note, rc, out) in zip(rels, got) if v != "ENTRY"]
+    if left:
+        (pkg_dir / "ALL.omit").write_text("".join(left))
+    else:
+        (pkg_dir / "ALL.omit").unlink(missing_ok=True)
+    tally = {}
+    for v, note, rc, out in got:
+        tally[v] = tally.get(v, 0) + 1
+    print(f"MINE package={pkg_dir.name} root={root} programs={len(rels)} entries={len(rows)} " + " ".join(f"{k}={tally[k]}" for k in sorted(tally)))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("package_dir")
@@ -1475,10 +1623,18 @@ def main():
     ap.add_argument("--src-ext", default="", metavar=".EXT",
                     help="the extension the package's source programs carry, when it is not the lang's container extension "
                          "(SPITBOL's own suite ships .sbl; the container is still ALL.sno for snobol4)")
+    ap.add_argument("--mine", default="", metavar="CENSUS.tsv",
+                    help="the package holds ALL.source: take the census of the collection it names into CENSUS.tsv and write the index and the "
+                         "answers of the programs the oracle answers the same twice; no program is copied into the package")
+    ap.add_argument("--mine-cap", type=int, default=60, help="seconds the oracle has for one program under --mine (default 60)")
+    ap.add_argument("--mine-jobs", type=int, default=4, help="oracle runs side by side under --mine (default 4, a seat's share of the run pool)")
+    ap.add_argument("--mine-under", default="", metavar="FOLDER", help="under --mine, only the programs under this folder of the root")
     args = ap.parse_args()
     pkg_dir = Path(args.package_dir).resolve()
     if not pkg_dir.is_dir():
         h.refuse(f"not a directory: {pkg_dir}")
+    if args.mine:
+        sys.exit(mine(pkg_dir, args.lang, args.mine, cap=args.mine_cap, jobs=args.mine_jobs, under=args.mine_under or None))
     only = None
     if args.only is not None:
         only = [n.strip() for a in args.only for n in a.split(",") if n.strip()]
