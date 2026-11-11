@@ -6,7 +6,7 @@ measuring it and has its own measured reasons for leaving a program out. So a pa
 the audit: what the builder then admits the oracle answers; what it still leaves out carries a measured reason.
 
 usage: util_exclusion_audit.py run --package DIR --lang LANG --work SCRATCH [--out FILE]
-       util_exclusion_audit.py check --package DIR [--out FILE]
+       util_exclusion_audit.py check --package DIR [--strict] [--out FILE]
        util_exclusion_audit.py --probe
 run    SCRATCH must be under /tmp/s4e and must not exist. DIR is copied to SCRATCH/<its name>; in the copy EXCLUDED.tsv, EXCLUDED_CASES.tsv,
        UNGRADABLE.tsv and every EXCLUDED.*.tsv keep their comment lines alone; the builder runs on the copy with --twice (and --src-ext when the
@@ -19,7 +19,8 @@ run    SCRATCH must be under /tmp/s4e and must not exist. DIR is copied to SCRAT
          UNDECIDED   otherwise (evidence: the audit.log line that names it, or: not named by the build)
        rc 0; rc 1 when the corpus checkout is not clean after; rc 2 refused (the builder refused the copy: its last lines are printed).
 check  rc 0 when every data row of DIR's declaration tables has a line in FILE for that package and name at DIR's corpus commit; rc 1 naming the
-       first ten that have none.
+       first ten that have none. --strict: rc 0 when every row the tables hold today has a line, at any commit, whose latest verdict is NO-ANSWER
+       (the audit has been acted on: the ANSWERED and the NOT-A-TEST rows are gone and none is UNDECIDED).
 --probe a planted package of three SNOBOL4 programs (one the oracle answers, one that prints nothing, one a planted CONTAINERS.tsv names) with a
        planted EXCLUDED.tsv naming all three reads AUDIT_PROBE answered=1 no_answer=1 not_a_test=1, rc 0; rc 1 with the lines read otherwise;
        rc 2 when the builder or the oracle cannot run here. It writes only under its own scratch folder."""
@@ -182,6 +183,30 @@ def audit(pkg, lang, work, out, batch=True):
     return 0, tally
 
 
+def check_strict(pkg, out):
+    """check --strict: THE AUDIT HAS BEEN ACTED ON. rc 0 when every data row the package's declaration tables hold TODAY has a line in the audit
+    table, at any commit, and the LATEST line for that name reads NO-ANSWER: what the oracle answers (ANSWERED) and what is no test (NOT-A-TEST)
+    has left the tables, and nothing stands UNDECIDED. rc 1 naming the first ten rows that are not audited or whose latest verdict is another."""
+    pkg = os.path.abspath(pkg)
+    top = corpus_of(pkg)
+    rel = os.path.relpath(pkg, top) if top else pkg
+    latest = {}
+    if os.path.isfile(out):
+        with open(out, encoding="utf-8", errors="replace") as f:
+            for ln in f:
+                c = ln.rstrip("\n").split("\t")
+                if len(c) >= 7 and c[1] == rel:
+                    latest[c[2]] = c[4]
+    want = []
+    for t in tables_of(pkg):
+        want += [n.replace("\t", " ") for n, _ in data_rows(t)]
+    bad = [(n, latest.get(n, "NOT AUDITED")) for n in want if latest.get(n) != "NO-ANSWER"]
+    print("EXCLUSION_AUDIT_STRICT package=%s declared=%d standing_on_the_oracles_no_answer=%d" % (rel, len(want), len(want) - len(bad)))
+    for n, v in bad[:10]:
+        print(f"  {v}: {n} is still declared")
+    return 1 if bad else 0
+
+
 def check(pkg, out):
     pkg = os.path.abspath(pkg)
     top = corpus_of(pkg)
@@ -247,6 +272,8 @@ def main(argv):
     if not argv or argv[0] not in ("run", "check"):
         refuse("usage: util_exclusion_audit.py run --package DIR --lang LANG --work SCRATCH [--out FILE] | check --package DIR [--out FILE] | --probe")
     opt, i = {}, 1
+    strict = "--strict" in argv
+    argv = [a for a in argv if a != "--strict"]
     while i < len(argv):
         if argv[i] in ("--package", "--lang", "--work", "--out") and i + 1 < len(argv):
             opt[argv[i][2:]] = argv[i + 1]
@@ -257,7 +284,7 @@ def main(argv):
     if argv[0] == "check":
         if "package" not in opt:
             refuse("check needs --package DIR")
-        return check(opt["package"], out)
+        return check_strict(opt["package"], out) if strict else check(opt["package"], out)
     for k in ("package", "lang", "work"):
         if k not in opt:
             refuse(f"run needs --{k}")
