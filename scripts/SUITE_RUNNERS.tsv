@@ -69,7 +69,7 @@ x64tests@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spi
 gimpel@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gimpel
 snoflake@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snoflake_suite
 unitests	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/unicon_tests
-vanilla	none	snobol4	-	-
+vanilla	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/vanilla
 icon-packs	none	icon	-	-
 unicon-uni	none	icon	-	-
 chat80	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/chat80
