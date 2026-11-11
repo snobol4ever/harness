@@ -3919,6 +3919,14 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         _want = _ex.rc if (_ex is not None and _ex.ending == "EXIT" and _ex.rc is not None) else getattr(entry, 'want_rc', 0)
         _rc_dir = (Path(companion_dir) / entry.cwd) if (getattr(entry, "cwd", None) and companion_dir is not None) else None
         _origin = (Path(companion_dir) / entry.cwd / (Path(entry.name).name + ext)) if (_rc_dir is not None) else None
+        if _rc_dir is not None and getattr(entry, "grader", None) != "swi-cases":
+            # A CWD IS RUN IN A SCRATCH COPY OF THAT FOLDER, NEVER IN THE PACKAGE (CIO-92's rule for a collection, CTO-583 (2), here for a
+            # generated case, the cio 2026-11-11): the case finds the files that stand beside its source, and a file it writes lands in scratch.
+            # MEASURED need: Logtalk's stream cases create and delete files in their working directory; run in place they would leave the
+            # package, and so the cycle's tree, dirty. A swi-cases entry keeps its place: its launch names the origin file by its real path.
+            _scratch = Path(td) / "cwd_copy"
+            shutil.copytree(_rc_dir, _scratch)
+            _rc_dir, _origin = _scratch, None
         _src = str(_origin.resolve()) if (_origin is not None and _origin.is_file()) else None
         _sf = None
         if getattr(entry, "grader", None) == "swi-cases":

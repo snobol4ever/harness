@@ -44,7 +44,9 @@ import lib_timeout_retry as _ltr   # noqa: E402 -- a graded run's timeout under 
 # the work owed reads off the board instead of hiding inside a red count. Keep it in sync with
 # lib_logtalk_lgtunit.pl by reading that file (below), never by retyping the list -- two lists that can
 # disagree about what is implemented is the same defect as two counts that can disagree about a population.
-SHIM = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib_logtalk_lgtunit.pl")
+# THE SHIM LIVES IN THE PACKAGE IT SERVES (the cio 2026-11-11; it was harness/scripts/lib_logtalk_lgtunit.pl): every generated case includes it by
+# name, so it stands beside the suite as the one copy and the container holds no copy of it (3,524 copies were 72 MB).
+SHIM = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "corpus", "packages", "prolog", "logtalk_iso", "lgtunit_shim.pl"))
 
 # Directives in a file's database section that are Logtalk/dialect scaffolding, not Prolog the case needs.
 DROP_DIRECTIVES = ("if", "elif", "else", "endif", "import", "use_module", "ensure_loaded",
