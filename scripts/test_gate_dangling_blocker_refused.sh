@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_dangling_blocker_refused.sh -- DONE-WHEN gate for row `picker-dangling-blocker-parks-a-row-forever-in-silence`.
 #
-# Exercises BOTH cures in a fully isolated sandbox postoffice (S4E_POST override) plus S4E_QUEUE/S4E_QUEUE_DONE
-# overrides for the audit script -- never touches the live /home/resources/postoffice.
+# Exercises BOTH cures in a fully isolated sandbox postoffice (S4E_POST override) plus S4E_QUEUE
+# override for the audit script -- never touches the live /home/resources/postoffice.
 #   cure 1: `s4e_msg.sh park <topic> BLOCKED-ON:<dangling>` REFUSES rc=2, leaves QUEUE.tsv untouched.
 #           A real-blocker park, a swept-done-blocker park, an unpark to FREE, and a plain PARKED (no colon
 #           blocker at all) must all still SUCCEED -- this is a refusal of ONE new bad shape, not a regression
@@ -25,9 +25,8 @@ cat > "$T/po/QUEUE.tsv" <<'EOF'
 0	real-row-a	unassigned	FREE
 1	target-row	unassigned	FREE
 EOF
-cat > "$T/po/QUEUE.done.tsv" <<'EOF'
-99	already-finished-row	seat01	DONE
-EOF
+printf 'seat01\nDONE\n' > "$T/po/claims/already-finished-row.claim"
+for _t in real-row-a target-row; do printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: false\nPREMISE-WHEN: true\nLINKS: minted by gate, 2026-11-01T00:00:00Z\n## NEXT\nplant\n## QA\n## LEDGER\n- [gate] minted\n' "$_t" > "$T/po/tasks/$_t.task.md"; done   # park's file road rebuilds QUEUE.tsv from the batons: without them every park empties the queue (measured 2026-11-11)
 fail=0
 check() { # <label> <expected-rc> <actual-rc>
   if [ "$2" = "$3" ]; then echo "  ok   $1 (rc=$3)"; else echo "  FAIL $1 (expected rc=$2, got rc=$3)"; fail=1; fi
@@ -53,10 +52,10 @@ cat > "$T/po/QUEUE2.tsv" <<'EOF'
 2	blocked-on-dangling	unassigned	PARKED-AWAITING:some-subitem-gloss-not-a-row
 3	blocked-on-swept-done	unassigned	BLOCKED-ON:already-finished-row
 EOF
-S4E_QUEUE="$T/po/QUEUE2.tsv" S4E_QUEUE_DONE="$T/po/QUEUE.done.tsv" bash "$AUDIT" --quiet >/dev/null 2>&1
+S4E_QUEUE="$T/po/QUEUE2.tsv" bash "$AUDIT" --quiet >/dev/null 2>&1
 check "audit reports the dangling row (rc=1)" 1 "$?"
 sed -i '/blocked-on-dangling/d' "$T/po/QUEUE2.tsv"
-S4E_QUEUE="$T/po/QUEUE2.tsv" S4E_QUEUE_DONE="$T/po/QUEUE.done.tsv" bash "$AUDIT" --quiet >/dev/null 2>&1
+S4E_QUEUE="$T/po/QUEUE2.tsv" bash "$AUDIT" --quiet >/dev/null 2>&1
 check "audit is clean once the dangling row is removed (rc=0)" 0 "$?"
 S4E_QUEUE="/tmp/nonexistent-$$" bash "$AUDIT" >/dev/null 2>&1
 check "audit REFUSES rc=2 on an unreadable QUEUE" 2 "$?"
