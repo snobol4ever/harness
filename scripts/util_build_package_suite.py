@@ -1472,7 +1472,16 @@ MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl", "pascal": "fpc", "snobol4": 
 # fpc refuses the source). The dialect is found by the census: the first mode of the ladder in which fpc compiles the program cut its answer and is
 # the row's dialect cell (SCRIP's own names: iso, fpc, objfpc, delphi, tp); --mine-dialects names another ladder (fpc alone for Free Pascal's own
 # tests, which state their mode in the source).
-MINE_LADDER = {"pascal": (("iso", "-Miso"), ("fpc", ""), ("objfpc", "-Mobjfpc"), ("delphi", "-Mdelphi"), ("tp", "-Mtp"))}
+MINE_LADDER = {"pascal": (("iso", "-Miso"), ("fpc", ""), ("objfpc", "-Mobjfpc"), ("delphi", "-Mdelphi"), ("tp", "-Mtp")),
+               "prolog": (("swi", ""), ("xsb", "--xsb"))}
+# PROLOG BY XSB (the grader 2026-11-11, row mining-a-test-suite-from-xsb-examples; RULES.md: XSB is the third Prolog oracle, for XSB's own programs):
+# --mine-dialects xsb reads the collection's .P files and asks xsb, through util_oracle.sh, to consult the program and halt
+# (xsb --noprompt --quietload --nobanner -e "consult('NAME'), halt."), the form the fleet's XSB gates use; the row's dialect cell is xsb and its
+# language cell prolog (.P is not Prolog's own extension, CTO-591), so SCRIP reads it as XSB. With no --mine-dialects the ladder's first rung, swi,
+# answers as before: swipl -q NAME, .pl and .pro. MEASURED (xsb 5.0.0): a program consulted by xsb -e does not see standard input (get_char
+# answers -1, read answers end_of_file, whatever it holds), so the third run never differs and no XSB program reads NEEDS-INPUT.
+MINE_DIALECT_EXTS = {("prolog", "xsb"): (".P",)}
+MINE_XSB_FLAGS = ("--noprompt", "--quietload", "--nobanner")
 MINE_FOUND = {}
 MINE_SCRATCH = {}
 # A MINED PROGRAM RUNS IN A SCRUBBED ENVIRONMENT (the coo 2026-11-11, COO-513 (4); MEASURED: Free Pascal's test/units/dos/tenv.pp prints its
@@ -1510,7 +1519,11 @@ MINE_STATIC = {
              ("NEEDS-NETWORK", r"\b(IO::Socket|LWP::|HTTP::|Cro::|Net::|WWW|WebService::|DBIish)\b"),
              ("NEEDS-DISPLAY", r"\b(Term::|Terminal::|NCurses|GTK::|SDL2?::|NativeCall|Inline::)")),
     "prolog": (("NEEDS-DISPLAY", r"\blibrary\(\s*(pce|xpce|pce_\w+|plot/\w+)\s*\)|\b(send|new)\(\s*@\w"),
-               ("NEEDS-NETWORK", r"\blibrary\(\s*(socket|ssl|http/\w+|http_open|www_browser)\s*\)|\btcp_(connect|socket|bind|open_socket)\(")),
+               ("NEEDS-NETWORK", r"\blibrary\(\s*(socket|ssl|http/\w+|http_open|www_browser)\s*\)|\btcp_(connect|socket|bind|open_socket)\(|\burl\(\s*'?https?://"),
+               # XSB (the grader 2026-11-11, MEASURED on XSB's examples: the six programs that printed anything at load ran gcc, and their answers held
+               # the compiler's command lines and this machine's paths): a program that asks XSB for its C compiler, or imports from an XSB package
+               # written in C (compiled by gcc when first loaded), answers about the machine's C toolchain, not about the program.
+               ("NEEDS-C-COMPILER", r"\bxsb_configuration\(\s*compiler\s*,|\bimport\b[^.]*\bfrom\s+(sgml|xpath|curl|pcre|libwww)\s*\.")),
 }
 MINE_OWN_EXT = {"raku": (".raku",), "pascal": (".pas", ".p", ".pp", ".lpr"), "icon": (".icn",), "prolog": (".pl",), "snobol4": (".sno",)}
 MINE_HEADER = ("rank", "entry", "path", "language", "origin", "package", "n_lines", "want_rc", "heap_kb", "stack_kb", "timeout_s", "compile_args", "dialect")
@@ -1566,6 +1579,10 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=()):
             argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "fpc_oracle_run.sh"), *flags, name]
             with open(sin, "rb") as fin:
                 pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
+        elif lang == "prolog" and "--xsb" in flags:
+            goal = "consult('" + str(name).replace("\\", "\\\\").replace("'", "\\'") + "'), halt."
+            argv = ["bash", os.path.join(HERE, "util_oracle.sh"), "xsb", "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_XSB_FLAGS, "-e", goal]
+            pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
         else:
             argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *flags, name]
             pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
@@ -1681,12 +1698,13 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
         h.refuse(f"{pkg_dir}/ALL.source: --mine runs a program from the top of the copied collection (copy root with cwd root) or inside the copy of "
                  f"its own folder (neither key); copy {source.get('copy', 'folder')} with cwd {source.get('cwd', 'folder')} is neither")
     whole = source.get("cwd") == "root"
-    rels = sorted(p.relative_to(root).as_posix() for e in MINE_EXTS[lang] for p in root.rglob(f"*{e}")
+    exts = MINE_DIALECT_EXTS.get((lang, dialects[0]), MINE_EXTS[lang]) if dialects and len(dialects) == 1 else MINE_EXTS[lang]
+    rels = sorted(p.relative_to(root).as_posix() for e in exts for p in root.rglob(f"*{e}")
                   if p.is_file() and not any(part.startswith(".") for part in p.relative_to(root).parts))
     if under:
         rels = [r for r in rels if r.startswith(under.rstrip("/") + "/")]
     if not rels:
-        h.refuse(f"no {' '.join(MINE_EXTS[lang])} program under {root}")
+        h.refuse(f"no {' '.join(exts)} program under {root}")
     held = {}
     if skip:
         for ln in Path(skip).read_text().splitlines():
@@ -1703,7 +1721,7 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
     # lists first is the candidate, the other reads SHARES-A-STEM in the census and is not run; it is not named in ALL.omit, where a name whose
     # extension-less form is an entry would drop that entry.
     stems, twin = {}, {}
-    for r in sorted(rels, key=lambda r: (MINE_EXTS[lang].index(os.path.splitext(r)[1]) if os.path.splitext(r)[1] in MINE_EXTS[lang] else 99, r)):
+    for r in sorted(rels, key=lambda r: (exts.index(os.path.splitext(r)[1]) if os.path.splitext(r)[1] in exts else 99, r)):
         if os.path.splitext(r)[0] in stems:
             twin[r] = stems[os.path.splitext(r)[0]]
         else:
@@ -1737,9 +1755,14 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
         kept_rows = [x for x in h._fmt2_read_csv(pkg_dir)[1] if not (x.get("path") or "").startswith(pre)]
         for old in (pkg_dir / pre).rglob("*.out") if (pkg_dir / pre).is_dir() else ():
             old.unlink()
-    census.write_text(f"# the census of {root} by {MINE_ORACLE[lang]} ({source['version']}), {time.strftime('%Y-%m-%d')}: path from the root, verdict, note\n"
+    census.write_text(f"# the census of {root} by {'xsb' if (lang == 'prolog' and dialects == ['xsb']) else MINE_ORACLE[lang]} ({source['version']}), {time.strftime('%Y-%m-%d')}: path from the root, verdict, note\n"
                       + "".join(kept_census) + "".join(f"{r}\t{v}\t{note}\n" for r, (v, note, rc, out) in zip(rels, got)))
     rows, rcs = [], []
+    # A PROGRAM THAT IS NO ENTRY ANY MORE KEEPS NO ANSWER (the grader 2026-11-11, MEASURED on xsb_examples: six programs read ENTRY, the builder
+    # gained the class that names them, and the second census left their six NAME.out in the package): the answer of every program this census
+    # read is removed before the entries' answers are written. Under --mine-add the folder's answers went above; another folder's stand.
+    for r in rels:
+        (pkg_dir / (os.path.splitext(r)[0] + ".out")).unlink(missing_ok=True)
     for r, (v, note, rc, out) in zip(rels, got):
         if v != "ENTRY":
             continue
@@ -1811,7 +1834,8 @@ def main():
     ap.add_argument("--mine-add", action="store_true",
                     help="with --mine-under FOLDER: cut that folder alone and keep the rows, answers and census lines of every other folder")
     ap.add_argument("--mine-dialects", default="", metavar="NAME[,NAME...]",
-                    help="under --mine, the dialect ladder to try in order (Pascal: iso, fpc, objfpc, delphi, tp; default all five, iso first)")
+                    help="under --mine, the dialect ladder to try in order (Pascal: iso, fpc, objfpc, delphi, tp; default all five, iso first. "
+                         "Prolog: swi, the default, reads .pl and .pro by swipl; xsb alone reads .P by xsb)")
     ap.add_argument("--mine-skip", default="", metavar="FILE",
                     help="under --mine, programs another package grades already: a line is the path from the root, a tab, and where it is graded; "
                          "each reads HELD-ELSEWHERE in the census, is not run and is no entry")
