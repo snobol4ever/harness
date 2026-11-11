@@ -26,6 +26,9 @@ def exports_of(src):
     for m in re.finditer(r"^[ \t]*(?:(?:proto|multi)[ \t]+)*sub[ \t]+([A-Za-z_][A-Za-z0-9_-]*)", src, re.M):
         if m.group(1) not in names:
             names.append(m.group(1))
+    for m in re.finditer(r"^my[ \t]+(\$\*[A-Za-z_][A-Za-z0-9_-]*)", src, re.M):
+        if m.group(1) not in names:
+            names.append(m.group(1))
     return " " + " ".join(names) + " " if names else ""
 
 
