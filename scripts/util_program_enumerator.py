@@ -104,9 +104,10 @@ def random_expr(rnd, depth):
         if r <= 70 or d <= 0: return factor(d)
         return factor(d - 1) + (' + ' if r <= 85 else ' - ') + term(d - 1)
     return term(depth)
+LEAF_KINDS = {'int': ['0', '1', '2'], 'var': ['x', 'y', 'z'], 'str': ["'a'", "''", "'1'"], 'real': ['1.5', '0.']}
 def canon(expr):
-    s = re.sub(r'\b\d+\b', 'N', expr); s = re.sub(r'\b[xyz]\b', 'V', s); return s
-def ntokens(expr): return len(re.findall(r'\(|\)|\d+|[xyz]|[-+*/]', expr))
+    s = re.sub(r"'[^']*'", 'S', expr); s = re.sub(r'\b\d+\.\d*', 'R', s); s = re.sub(r'\b\d+\b', 'N', s); s = re.sub(r'\b[xyz]\b', 'V', s); return s
+def ntokens(expr): return len(re.findall(r"'[^']*'|\d+\.\d*|\(|\)|\d+|[xyz]|[-+*/]", expr))
 def nchars(expr): return len(expr.replace(' ', ''))
 def program(exprs, env):
     """One SNOBOL4 program printing "<id>=<value>" per expression; a runtime error prints "<id>=E<errtype>" and continues."""
@@ -218,8 +219,11 @@ def selftest():
     inst = list(instantiate('L + L', ['x', 'y'], 100, rnd))
     if sorted(inst) != sorted(['x + x', 'x + y', 'y + x', 'y + y']): fails.append('instantiate must produce every leaf assignment when within the limit')
     if len(list(instantiate('L + L + L', ['x', 'y', 'z'], 5, rnd))) != 5: fails.append('instantiate must produce exactly the limit when the assignment count exceeds it')
+    if canon("'a' + 1.5") != 'S + R': fails.append("canon must fold a string to S and a real to R, got %r" % canon("'a' + 1.5"))
+    if ntokens("'' * 0.") != 3: fails.append("ntokens(\"'' * 0.\") must be 3, got %d" % ntokens("'' * 0."))
+    if sum(len(LEAF_KINDS[k]) for k in ('int', 'var', 'str', 'real')) != 11: fails.append('the int,var,str,real leaf kinds must hold 11 leaves')
     for f in fails: print('SELFTEST FAIL: ' + f)
-    print('SELFTEST %s: %d checks, %d failures' % ('PASS' if not fails else 'FAIL', 12, len(fails)))
+    print('SELFTEST %s: %d checks, %d failures' % ('PASS' if not fails else 'FAIL', 15, len(fails)))
     return 0 if not fails else 1
 def main():
     ap = argparse.ArgumentParser(description='exhaustive / random program enumerator graded against the oracle')
@@ -233,12 +237,18 @@ def main():
     ap.add_argument('--out', help='witness folder (default SCRIP/out/enumerator for scrip, <root>/.scratch/enumerator/<engine> for a port)')
     ap.add_argument('--report', action='store_true'); ap.add_argument('--count-only', action='store_true', help='print shape and program counts per length and exit')
     ap.add_argument('--selftest', action='store_true'); ap.add_argument('--keep-batches', action='store_true')
+    ap.add_argument('--leaf-kinds', help='comma list of int,var,str,real; replaces --alphabet when given')
     a = ap.parse_args()
     if a.selftest: sys.exit(selftest())
     if a.lang != 'snobol4': refuse('only the snobol4 grammar exists today (Expressions.py); %s is the next lane\'s rung' % a.lang)
-    alphabet = a.alphabet.split(','); rnd = random.Random(a.seed)
+    if a.leaf_kinds:
+        bad = [k for k in a.leaf_kinds.split(',') if k not in LEAF_KINDS]
+        if bad: refuse('unknown --leaf-kinds %s: choose from %s' % (','.join(bad), ','.join(sorted(LEAF_KINDS))))
+        alphabet = [leaf for k in a.leaf_kinds.split(',') for leaf in LEAF_KINDS[k]]
+    else: alphabet = a.alphabet.split(',')
+    rnd = random.Random(a.seed)
     if a.count_only:
-        print('length(tokens) shapes programs(alphabet=%s per-shape<=%d)' % (a.alphabet, a.per_shape))
+        print('length(tokens) shapes programs(alphabet=%s leaf-kinds=%s per-shape<=%d)' % (','.join(alphabet), a.leaf_kinds or '-', a.per_shape))
         for n in range(1, (a.to_length or 10) + 1):
             sh = shapes('term', n); progs = sum(min(len(alphabet) ** s.count(LEAF), a.per_shape) for s in sh)
             print('%2d %8d %9d' % (n, len(sh), progs))
@@ -280,8 +290,8 @@ def main():
             witnesses.append((mode, v, n, e, write_witness(a.out, a.lang, a.engine, n, k, e, env, grader.oracle_rows.get(i, '?')), grader.oracle_rows.get(i, '?')))
     total = len(ids); graded = sum(1 for i, _ in ids for m in modes if results.get(i, {}).get(m) not in (None, 'UNGRADED', 'ORACLE-BAD'))
     agree = sum(1 for i, _ in ids for m in modes if results.get(i, {}).get(m) == 'AGREE')
-    print('=== ENUMERATOR %s: engine=%s to-length=%d random=%d alphabet=%s per-shape<=%d env=%s modes=%s batches=%d ===' % (
-        a.lang, a.engine, a.to_length, a.random, a.alphabet, a.per_shape, a.env, ','.join(modes), grader.n_batches))
+    print('=== ENUMERATOR %s: engine=%s to-length=%d random=%d alphabet=%s leaf-kinds=%s per-shape<=%d env=%s modes=%s batches=%d ===' % (
+        a.lang, a.engine, a.to_length, a.random, ','.join(alphabet), a.leaf_kinds or '-', a.per_shape, a.env, ','.join(modes), grader.n_batches))
     print('length(tokens) shapes programs  ' + '  '.join('%s:AGREE/DIFF/CRASH/HANG/ORACLE-BAD' % m for m in modes))
     for n in sorted(by_len):
         sh = shape_count(n) if a.to_length and n <= a.to_length else '-'
