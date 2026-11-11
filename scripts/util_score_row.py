@@ -1784,17 +1784,22 @@ def _wall_only_without_a_table(full_key, _aud):
         return 2
     dbs = _aud.dbname(full_key)
     present = set()
+    latest = {}   # (program, mode) -> the stamp of its newest reading, in the modes the row is read in: the row's Run is the range over these (COO-517)
+    _rm = set((os.environ.get("S4E_MODES") or "m3,m4").split(","))
     with open(db, encoding="utf-8", errors="replace") as fh:
         fh.readline()
         for line in fh:
             fl = line.rstrip("\n").split("\t")
             if len(fl) >= 10 and fl[5] == dbs and fl[8] in ("m3", "m4"):
                 present.add((fl[7], fl[8]))
+                if fl[8] in _rm and not fl[1].lower().endswith("-dirty") and fl[0] > latest.get((fl[7], fl[8]), ""):
+                    latest[(fl[7], fl[8])] = fl[0]
     _wm = [mn.get((dbs, p, m), 0.0) for (p, m) in present]
     wall = int(round(sum(_wm))); wall_text = wall_cell(_wm)
     env = dict(os.environ); env["S4E_SUITES_TSV"] = SUITES_TSV; env["S4E_SCORE_MD"] = SCORE_MD
     r = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, wall_text], capture_output=True, text=True, env=env)
     sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
+    _set_run(full_key, (min(latest.values()),) if latest else None, (max(latest.values()),) if latest else None, env)
     return r.returncode
 
 
