@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # util_ladder_walk.py — THE LADDER WALK (instrument, Lon 2026-09-01: "Make a master plan and being [officer] ensure the fleet walks along the ladders").
 # Reads the rung tables of .github/MASTER-PLAN.md (### LADDER <ID> — <name> ... | rung | row | lane | gate |) and joins each rung's ROW
-# with the postoffice (QUEUE.tsv rank/owner/state · claims/<row>.claim holder+DONE · QUEUE.done.tsv · QUEUE.retired.tsv · tasks/<row>.task.md) to print,
+# with the postoffice (QUEUE.tsv rank/owner/state · claims/<row>.claim holder+DONE · QUEUE.retired.tsv · tasks/<row>.task.md) to print,
 # per ladder, where every rung stands, then the VIOLATIONS the officer must act on:
 #   V1 RUNG-WITHOUT-ROW   a rung whose row is TO-MINT or has no QUEUE row (the lane named owes the mint) -- a row the zero-base sweep RETIRED
 #                         is no violation: it returns only by re-mint from a current red (R-1386), so the rung prints RETIRED (R-1510)
@@ -26,7 +26,7 @@ def refuse(msg): print('⛔ REFUSE(2): ' + msg); sys.exit(2)
 try: plan = open(a.plan, encoding='utf-8').read().split('\n')
 except OSError as e: refuse('plan unreadable: %s' % e)
 PO = a.po
-for need in ('QUEUE.tsv', 'QUEUE.done.tsv', 'claims', 'tasks'):
+for need in ('QUEUE.tsv', 'claims', 'tasks'):
     if not os.path.exists(os.path.join(PO, need)): refuse('postoffice missing %s under %s' % (need, PO))
 # ---- postoffice state
 queue = {}
@@ -34,11 +34,6 @@ for line in open(os.path.join(PO, 'QUEUE.tsv'), encoding='utf-8', errors='replac
     if line.startswith('#') or not line.strip(): continue
     f = line.rstrip('\n').split('\t')
     if len(f) >= 4 and f[0].isdigit(): queue[f[1]] = {'rank': int(f[0]), 'owner': f[2], 'state': f[3]}
-done_rows = set()
-for line in open(os.path.join(PO, 'QUEUE.done.tsv'), encoding='utf-8', errors='replace'):
-    if line.startswith('#') or not line.strip(): continue
-    f = line.rstrip('\n').split('\t')
-    if len(f) >= 2 and f[0].isdigit(): done_rows.add(f[1])
 retired_rows = set()
 if os.path.exists(os.path.join(PO, 'QUEUE.retired.tsv')):
     for line in open(os.path.join(PO, 'QUEUE.retired.tsv'), encoding='utf-8', errors='replace'):
@@ -52,6 +47,7 @@ for c in glob.glob(os.path.join(PO, 'claims', '*.claim')):
     except OSError: continue
     claims[t] = {'holder': body[0].strip(), 'done': any(l.strip() == 'DONE' for l in body)}
 tasks = {os.path.basename(p)[:-8] for p in glob.glob(os.path.join(PO, 'tasks', '*.task.md'))}
+done_rows = {t for t in (set(claims) | tasks) if t not in queue and t not in retired_rows}
 def is_done(t): return t in done_rows or (t in claims and claims[t]['done'])
 # ---- the seven language tables: six map 1:1 to a MASTER-PLAN ladder id; PL has none of its own (Prolog is split T/C/P) so it is the union of those three
 LANG_LADDERS = {'SNO': {'SNO'}, 'SC': {'SC'}, 'ICN': {'ICN'}, 'PAS': {'PAS'}, 'RAKU': {'RAKU'}, 'REB': {'REB'}, 'PL': {'T', 'C', 'P'}}

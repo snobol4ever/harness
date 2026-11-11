@@ -37,7 +37,6 @@ command -v python3 >/dev/null 2>&1 || { echo "⛔ REFUSED-TO-GRADE rc=2: python3
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_walk_v4.XXXXXX")" || { echo "⛔ REFUSED-TO-GRADE rc=2: mktemp failed"; exit 2; }
 trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/po/claims" "$W/po/tasks"
-printf '# scratch index\n' > "$W/po/QUEUE.done.tsv"
 printf '# scratch index\n0\tsno-scratch-rung-row\thq_C\tFREE\n1\ticon-arizona-class-scratch-package-class\thq_B\tFREE\n1\ticon-scratch-genuine-off-ladder-row\thq_B\tFREE\n1\tprolog-master-red-class-scratch-two-tokens\thq_C\tFREE\n2\tpascal-fpc-class-scratch-rank-two\thq_P\tFREE\n1\ticon-jcon-scratch-pre-shape-no-class-token\thq_B\tFREE\n1\tpascal-iso7185-pat-scratch-package-at-segment-two\thq_P\tFREE\n1\tsnobol4-every-non-package-source-scratch\thq_B\tFREE\n' > "$W/po/QUEUE.tsv"
 # ⛔ THE PACKAGE VOCABULARY IS CENSUSED FROM DISK, so this gate builds a SCRATCH tree for it rather than reading
 # the real corpus: an arm that depended on the live corpus would grade whatever anyone vendored today, and could

@@ -164,7 +164,8 @@ def work():
     fails = sum(1 for l in recent if "\tFAIL\t" in l)
     def steps(table, harness):
         rows = [l.split("\t") for l in rd(table).split("\n") if l and l[0].isdigit()]
-        done = sum(1 for l in rd(PO + "/QUEUE.done.tsv").split("\n") if harness in l)
+        live = [l.split("\t")[1] for l in rd(PO + "/QUEUE.tsv").split("\n") if l.count("\t") >= 2 and not l.startswith("#")]
+        done = sum(1 for r in rows if len(r) > 1 and not any(t.startswith(r[1]) for t in live))
         return "%d/%d steps closed" % (done, len(rows))
     landings = 0
     for repo in ("SCRIP", "harness", "corpus", ".github"):
@@ -211,7 +212,7 @@ def main():
         for k in ("S4E_POST", "S4E_PROGRESS", "S4E_BOX_S"): os.environ[k] = d
         PO = P = V = d; SLEEPING = d + "/sleeping"
         os.makedirs(d + "/claims"); open(d + "/BOX.state", "w").write("busy=8.0\ngrader_width=4\n"); open(d + "/QUEUE.tsv", "w").write("2\tplant-row\t@haiku\tQUEUED:tier-haiku\n")
-        open(d + "/QUEUE.done.tsv", "w").write(""); open(d + "/SUITES.tsv", "w").write("plant\tx\ty\tz\t10/10\n"); open(d + "/results.tsv", "w").write("")
+        open(d + "/SUITES.tsv", "w").write("plant\tx\ty\tz\t10/10\n"); open(d + "/results.tsv", "w").write("")
         q = [box(), queue(), seats(), work()]
         ok = all(v for _, v, _ in q)
         print(grid(q)); print("HEALTH_PROBE quadrants=4 verdicts=%d" % sum(1 for _, v, _ in q if v)); sys.exit(0 if ok else 1)
