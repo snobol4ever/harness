@@ -259,7 +259,9 @@ def read_contract(pkg_dir):
     stderr as one stream and every absorbed entry's ALL.csv stderr cell reads "merged" (corpus_suite_harness.py grades m3 and
     m4 the same way). And `units<TAB>ref-beside` -- the package's own harness grades a source only when a <stem>.ref sits beside
     it (the Icon packages' boards), so a source without one (a library graded through its driver, a spliced include) is no unit
-    here either. Absent file = stdout alone and every source a unit, as every package before the file existed. Any other key or
+    here either. Absent file = stdout alone and every source a unit, as every package before the file existed. And `argv<TAB>name-first` (R-328;
+    the grader 2026-11-11): every NAME.argv is one line NAME<TAB>arg..., the program's own name first, as the deleted IPL runner read it; the
+    program is handed the fields after its name, and a sidecar whose first field is another name is excluded by name. Any other key or
     value refuses. ⭐ XSB's own contract (R-1927, 2026-10-23; RULES.md § Oracles, FACT RULE XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB
     PACKAGE): `oracle<TAB>xsb-gentest` -- each ref is cut from XSB 5.0.0 (xsb_bin) as XSB's own test scripts run the program, the run each
     entry's row of ORACLE_RUNS.tsv records, in a copy of `upstream<TAB><dir>` (the upstream test tree, an absolute path), its answer the
@@ -274,7 +276,7 @@ def read_contract(pkg_dir):
     ⭐ CIO-22 D (the coo 2026-11-10, on the cio's design; CIO-15 d revised): `units<TAB>generated` with `generator<TAB><module>` -- a per-goal
     suite (INRIA's goals, Logtalk's cases) is a container of GENERATED programs: the module (harness/scripts/<module>.py) yields each case of the
     package's own table and the builder runs no oracle (see build_generated)."""
-    out = {"stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": ""}
+    out = {"argv": "", "stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -326,13 +328,15 @@ def read_contract(pkg_dir):
             out["not_shipped"] = f[1].strip()
         elif f[0] == "unmarked_compile_args" and f[1].startswith("--dialect="):
             out["unmarked_compile_args"] = f[1].strip()
+        elif f[0] == "argv" and f[1] == "name-first":
+            out["argv"] = "name-first"   # R-328: NAME.argv is one line NAME<TAB>arg..., the program's own name first, as the deleted test_icon_ipl_suite.sh read it (ipl_argv_read)
         elif f[0] == "road" and f[1] == "run-files":
             pass   # the cycle's own key (s4e_cycle.sh road_flag): the package is run by the package switch; the builder cuts the same answers either way
         elif f[0] == "stdin":
             if not (pkg_dir / f[1]).is_file(): h.refuse(f"{cf}:{n}: stdin {f[1]!r} names no file beside the package (every entry with no stem-named stdin of its own would read it)")
             out["stdin"] = f[1].strip()
         else:
-            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, units=ref-beside,units=plunit,units=tap, units=iso-rejection, dialect=any-fpc-mode, fatal=gradable, bom=as-shipped, units=generated, generator=MODULE, "
+            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, argv=name-first, units=ref-beside,units=plunit,units=tap, units=iso-rejection, dialect=any-fpc-mode, fatal=gradable, bom=as-shipped, units=generated, generator=MODULE, "
                      f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space, ipath=DIR, lpath=DIR and unmarked_compile_args=--dialect=NAME only")
     if (out["units"] == "generated") != bool(out["generator"]):
         h.refuse(f"{cf}: units=generated and generator=<module> go together (got units={out['units']!r}, generator={out['generator']!r})")
@@ -754,6 +758,17 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
         if argv_path.is_file():
             _al = [ln for ln in argv_path.read_text().split("\n") if ln.strip() and not ln.lstrip().startswith("#")]
             prog_args = _al[0].rstrip("\n").split("\t") if _al else None
+            if prog_args and contract["argv"] == "name-first":
+                # ⭐ THE NAME-FIRST SIDECAR (R-328; CONTRACT.tsv argv=name-first; the grader 2026-11-11, row packages-ipl-the-83-...): the line is NAME<TAB>arg...,
+                # so the program is handed the fields after its own name; measured on progs/lam: handed all three it read a file named lam and its
+                # ref a1b1 a2 a3 was cut as nothing; handed lam.in1 lam.in2 it answers its ref byte for byte. A first field naming another program, or no
+                # argument after the name, is a sidecar arming the wrong program or stating nothing: excluded by name, as the deleted reader refused it.
+                if prog_args[0] != src.stem or len(prog_args) < 2:
+                    excluded.append((name, f"{argv_path.name} is not NAME<TAB>arg... under argv=name-first (first field {prog_args[0]!r}, {len(prog_args) - 1} argument(s)) -- "
+                                                "a sidecar arming the wrong program or stating nothing (R-328)"))
+                    print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (argv sidecar not name-first)", file=sys.stderr)
+                    continue
+                prog_args = prog_args[1:]
         stdin_text, stdin_latin1 = read_text_tolerant(stdin_path) if stdin_path else (None, False)
         if stdin_latin1:
             excluded.append((name, f"stdin {stdin_path.name} is not valid UTF-8 (binary or 8-bit data) -- the container's stdin cell is text, "
@@ -1402,7 +1417,8 @@ def build_files_form(pkg_dir, lang, twice=False, only=None, src_ext=None):
     _err = [e.name for e in entries if getattr(e, "stderr_answer", None)]
     if _err:
         h.refuse(f"files form: {len(_err)} entr(ies) carry a NAME.err, which the cut's container cannot hold: {_err[:5]}")
-    units = read_contract(pkg_dir)["units"]
+    _ct = read_contract(pkg_dir)
+    units, _nf = _ct["units"], _ct["argv"] == "name-first"
     fields, rows = h._fmt2_read_csv(pkg_dir)
     path_of = {r.get("entry"): r.get("path") for r in rows if r.get("path")}
     _bak_root = Path(tempfile.mkdtemp(prefix="pkgsuite_files_", dir=os.environ.get("TMPDIR") or None))
@@ -1423,7 +1439,7 @@ def build_files_form(pkg_dir, lang, twice=False, only=None, src_ext=None):
         for e in entries:
             prog = pkg_dir / path_of[e.name]
             if getattr(e, "argv", None) and not prog.with_suffix(".argv").exists():
-                prog.with_suffix(".argv").write_text("\t".join(e.argv) + "\n", encoding="utf-8")
+                prog.with_suffix(".argv").write_text((prog.stem + "\t" if _nf else "") + "\t".join(e.argv) + "\n", encoding="utf-8")   # argv=name-first: the form build() reads back
                 made.append(prog.with_suffix(".argv"))
             if units in ("ref-beside", "plunit") and not prog.with_suffix(".ref").exists():
                 _out = prog.with_suffix(".out")
