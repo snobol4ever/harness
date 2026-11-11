@@ -5428,9 +5428,10 @@ TASKEOF
          # so a handoff that measured clean printed SUCCESS over unpushed work. rc is unchanged (see the exit line below).
          elif [ "$onlyhere" -eq 0 ]; then printf '%s\n' "SUCCESS"
          else printf '%s\n' "IN-PROGRESS"; fi
-         # S4E_BANNER_GRID=1 PRINTS THE SUITE GRID; unset or anything else, the banner keeps its status lines and verdict and leaves the grid out (Lon 2026-11-08 12:4x: "Just not the test suite banner.").
+         # THE STOP-TURN BANNER IS THE STATUS AND THE TEST SUITE GRID (Lon 2026-11-10 22:3x CST, in the cio's window, verbatim: "add the stop turn banner, status and test suite."; CIO-114;
+         # it reverses his 2026-11-08 12:4x "Just not the test suite banner."). S4E_BANNER_GRID=0 leaves the grid out; unset or anything else prints it after the status lines and the verdict.
          _sb="$S4E/.github/scripts/util_suite_banner.py"
-         if [ "${S4E_BANNER_GRID:-0}" != 1 ]; then :
+         if [ "${S4E_BANNER_GRID:-1}" = 0 ]; then :
          elif [ -f "$_sb" ]; then timeout -k 5 30 python3 "$_sb" || printf '%s\n' "⛔ SUITE GRID REFUSED (rc=$?) -- $_sb ran and did not render"
          else printf '%s\n' "⛔ SUITE GRID MISSING -- no $_sb"; fi
          { [ "$hrc" -eq 0 ] || [ "$onlyhere" -eq 0 ]; } && [ -z "$diverged" ] && exit 0 || exit 1;;
