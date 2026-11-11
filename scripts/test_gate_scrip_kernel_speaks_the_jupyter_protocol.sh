@@ -124,6 +124,18 @@ try:
     ic = [whole("%%prolog\nfoo :- bar"), whole("%%prolog\nfoo :- bar."), whole("%%icon\nprocedure main();\n  write(\"a\""), whole("%%icon\nprocedure main(); write(\"(\"); end"), whole(" OUTPUT = 'a'")]
     print("KERNEL_IS_COMPLETE ok" if ic == ["incomplete", "complete", "incomplete", "complete", "complete"] else "KERNEL_IS_COMPLETE RED: the five answers are %r" % ic)
     bad += 0 if ic == ["incomplete", "complete", "incomplete", "complete", "complete"] else 1
+    # COMPLETION FROM THE BUILTIN TABLE OF THE CELL'S LANGUAGE (CIO-73 (2)(f)): SNOBOL4 offers DUPL for DUP, Icon offers writes for wri, Prolog (whose table rows are internal names) offers nothing
+    def names(code):
+        mid = kc.complete(code, len(code))
+        while True:
+            m = kc.get_shell_msg(timeout=30)
+            if m["parent_header"].get("msg_id") == mid: return m["content"]
+    k1, k2, k3 = names(" OUTPUT = DUP"), names("%%icon\nprocedure main();\n  wri"), names("%%prolog\nfoo :- atom_")
+    co = ("DUPL" in k1.get("matches", []) and k1.get("cursor_end", 0) - k1.get("cursor_start", 0) == 3 and "writes" in k2.get("matches", []) and "write" in k2.get("matches", [])
+          and k3.get("status") == "ok" and k3.get("matches") == [])
+    print("KERNEL_COMPLETE ok" if co else "KERNEL_COMPLETE RED: SNOBOL4 %r from %r to %r, Icon %r, Prolog %r %r" % (k1.get("matches"), k1.get("cursor_start"), k1.get("cursor_end"), k2.get("matches"), k3.get("status"),
+          k3.get("matches")))
+    bad += 0 if co else 1
 finally:
     kc.stop_channels(); km.shutdown_kernel(now=False)
 # A CELL RUNS IN THE KERNEL'S OWN DIRECTORY (CIO-78): a second kernel started in a scratch folder reads the file beside the notebook by its bare name, from a session cell and from a one-program cell
