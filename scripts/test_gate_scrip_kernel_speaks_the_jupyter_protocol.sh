@@ -115,14 +115,28 @@ try:
     print("KERNEL_SILENT ok" if si else "KERNEL_SILENT RED: silent broadcast %r count %r, unstored %r count %r, stored count %r, the count before %r" % (s1["types"], s1["reply"]["execution_count"], s2["out"],
           s2["reply"]["execution_count"], s3["reply"]["execution_count"], n0))
     bad += 0 if si else 1
+    # IS THIS CELL COMPLETE, BY THE CELL'S LANGUAGE (CIO-73): a Prolog clause without its full stop and an Icon call with an open bracket are incomplete; a bracket inside a string does not count; SNOBOL4 is always complete
+    def whole(code):
+        mid = kc.is_complete(code)
+        while True:
+            m = kc.get_shell_msg(timeout=30)
+            if m["parent_header"].get("msg_id") == mid: return m["content"]["status"]
+    ic = [whole("%%prolog\nfoo :- bar"), whole("%%prolog\nfoo :- bar."), whole("%%icon\nprocedure main();\n  write(\"a\""), whole("%%icon\nprocedure main(); write(\"(\"); end"), whole(" OUTPUT = 'a'")]
+    print("KERNEL_IS_COMPLETE ok" if ic == ["incomplete", "complete", "incomplete", "complete", "complete"] else "KERNEL_IS_COMPLETE RED: the five answers are %r" % ic)
+    bad += 0 if ic == ["incomplete", "complete", "incomplete", "complete", "complete"] else 1
 finally:
     kc.stop_channels(); km.shutdown_kernel(now=False)
 # A CELL RUNS IN THE KERNEL'S OWN DIRECTORY (CIO-78): a second kernel started in a scratch folder reads the file beside the notebook by its bare name, from a session cell and from a one-program cell
 wd = tempfile.mkdtemp(prefix="scrip-kernel-cwd-")
 open(os.path.join(wd, "kcwd.dat"), "w").write("beside the notebook\n")
-km = KernelManager(kernel_name="scrip-gate"); km.start_kernel(cwd=wd); kc = km.client(); kc.start_channels()
+km = KernelManager(kernel_name="scrip-gate"); km.start_kernel(cwd=wd, env=dict(os.environ, SCRIP_DEFAULT_LANG="Prolog")); kc = km.client(); kc.start_channels()
 try:
     kc.wait_for_ready(timeout=60)
+    # THE KERNEL NAMES ITS SESSION'S LANGUAGE (CIO-73 (2)(g)): started with the default language Prolog it answers kernel_info with Prolog's name, extension and highlighter
+    li = kc.kernel_info(reply=True, timeout=30)["content"].get("language_info", {})
+    il = li.get("name") == "prolog" and li.get("file_extension") == ".pl" and li.get("pygments_lexer") == "prolog" and li.get("mimetype") == "text/x-prolog"
+    print("KERNEL_INFO_LANG ok" if il else "KERNEL_INFO_LANG RED: language_info reads %r" % li)
+    bad += 0 if il else 1
     def run2(code):
         mid = kc.execute(code); out = ""
         while True:
@@ -131,7 +145,7 @@ try:
             if m["msg_type"] == "stream" and m["content"]["name"] == "stdout": out += m["content"]["text"]
             if m["msg_type"] == "status" and m["content"]["execution_state"] == "idle": break
         return kc.get_shell_msg(timeout=30)["content"]["status"], out
-    s1, c1 = run2("        INPUT(.KCWDLINE, 5, 'kcwd.dat')\n        OUTPUT = KCWDLINE\n        ENDFILE(5)\n")
+    s1, c1 = run2("%%snobol4\n        INPUT(.KCWDLINE, 5, 'kcwd.dat')\n        OUTPUT = KCWDLINE\n        ENDFILE(5)\n")
     s2, c2 = run2("%%icon\nprocedure main();\n  f := open(\"kcwd.dat\") | stop(\"no kcwd.dat here\");\n  write(read(f));\n  close(f);\nend\n")
     cw = s1 == "ok" and c1 == "beside the notebook\n" and s2 == "ok" and c2 == "beside the notebook\n"
     print("KERNEL_CWD ok" if cw else "KERNEL_CWD RED: the session cell %s %r, the one-program cell %s %r" % (s1, c1, s2, c2))
