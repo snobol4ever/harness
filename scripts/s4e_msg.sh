@@ -2775,7 +2775,7 @@ s4e_need() {   # $1 = verb, $2 = what is missing, $3 = the usage line, $4 = one 
     [ -n "${4:-}" ] && printf '   %s\n' "$4" >&2
     printf '   All verbs: %s\n' "$_S4E_VERBS" >&2
     exit 2; }
-_S4E_VERBS="next|claim|unclaim|park|done|assign|reown|mint|recut|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|premise|whoami"
+_S4E_VERBS="next|claim|unclaim|park|done|assign|reown|mint|recut|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|premise|whoami|flush"
 s4e_premise_is_placeholder() {   # $1 = raw PREMISE-WHEN text; rc 0 = the field is present but expresses nothing
     case "$(printf '%s' "${1:-}" | tr -d '[:space:]')" in
       ''|'⛔NOTEXPRESSED'*|'NOTEXPRESSED'*|TODO*|TBD*|'⛔TODO'*) return 0;; esac
@@ -3457,6 +3457,30 @@ case "$cmd" in
          s4e_set_row_state "$topic" "QUEUED:$q_tube" || true
          printf -- '- [%s·%s] QUEUED into %s by %s (owner %s).\n' "$ME" "$(date -u +%F)" "$q_tube" "$ME" "$q_owner" > "$_tmp" 2>/dev/null; _tmp2="$(mktemp)"; awk -v l="$(cat "$_tmp" 2>/dev/null)" '{print} /^## LEDGER$/ && !d {print l; d=1}' "$PO/tasks/$topic.task.md" > "$_tmp2" && cat "$_tmp2" > "$PO/tasks/$topic.task.md"; rm -f "$_tmp" "$_tmp2"
          echo "queued $topic -> $q_tube (owner $q_owner, state QUEUED:$q_tube)"; s4e_wake_hint "$q_tube" "$topic" queue; exit 0;;
+  flush) # flush step 1 (the cio 2026-11-11 on Lon): archive every dead claim and every .bak or .release leftover older than S4E_FLUSH_GRACE_S (default 600, by mtime) into claims/archive/flush-<ts>-<seat>/; a move, never an rm
+         ( exec 8>>"$PO/.queue.flock" && flock -w 10 8 || { echo "⛔ REFUSED (rc 2): $PO/.queue.flock busy 10 s; nothing moved."; exit 2; }
+           _fg="${S4E_FLUSH_GRACE_S:-600}"; _fn=0; _fk=0; _fd=""; _fnow="$(date +%s)"; _fts="$(date -u +%Y%m%dT%H%M%SZ)"
+           for _fc in "$PO"/claims/*; do
+             [ -f "$_fc" ] || continue
+             _fb="$(basename "$_fc")"; _fm=0
+             case "$_fb" in
+               *.bak*|*.release*) [ $((_fnow - $(stat -c %Y "$_fc"))) -gt "$_fg" ] && _fm=1;;
+               *.claim)
+                 if [ $((_fnow - $(stat -c %Y "$_fc"))) -le "$_fg" ] || grep -qx 'DONE' "$_fc"; then _fk=$((_fk+1)); continue; fi
+                 _fh="$(head -1 "$_fc")"; _ft="${_fb%.claim}"; _fs="$(awk -F'\t' -v t="$_ft" '$2 == t { print $4; exit }' "$PO/QUEUE.tsv" 2>/dev/null)"
+                 case "$_fs" in "CLAIMED:$_fh"|"ASSIGNED:$_fh"|MEASURING:"$_fh":*|PARKED-AWAITING:*) _fk=$((_fk+1)); continue;; esac
+                 _fm=1;;
+               *) continue;;
+             esac
+             [ "$_fm" = 1 ] || continue
+             [ -n "$_fd" ] || { _fd="$PO/claims/archive/flush-$_fts-$ME"; mkdir -p "$_fd"; }
+             mv "$_fc" "$_fd/$_fb" && _fn=$((_fn+1))
+             if [ "${_fb%.claim}" != "$_fb" ] && [ -f "$PO/tasks/${_fb%.claim}.task.md" ]; then
+               s4e_ledger_prepend "${_fb%.claim}" "- [$ME·$(date -u +%FT%TZ)] FLUSHED the claim of $_fh: the row read ${_fs:-no row}"
+             fi
+           done
+           echo "FLUSH archived=$_fn kept=$_fk" )
+         exit $?;;
   expire) # fleet-queue step 5 (the cio 2026-11-05), the file road (CIO-82): a claim whose holder's pid is gone is archived and its row goes back to its tube (the queue released it when the holder's
          # connection closed, or its TTR ran out); the tick calls this for every claim whose RESERVED job reads ready: the claim is archived, the LEDGER
          # says so, the row reads QUEUED:<tube>, and the next seat that reserves it resumes at the baton's RESUME line. Nothing is deleted or re-put.
@@ -5747,7 +5771,7 @@ TASKEOF
   board) if [ $# -gt 1 ]; then shift; grep -v "^$ME |" "$PO/BOARD.md" 2>/dev/null > "$PO/.b.$$" || true; printf '%s | %s | %s\n' "$ME" "$*" "$(date -u +%H:%M)" >> "$PO/.b.$$"; mv "$PO/.b.$$" "$PO/BOARD.md"; fi; cat "$PO/BOARD.md"
          # posting a board line IS the handoff gesture -- so the banner fires here too (see `done` above).
          [ "${S4E_NO_BANNER:-0}" = "1" ] || S4E_BANNER_NO_BOARD=1 "$0" banner;;
-  *) echo "usage: next|claim|unclaim|park|done|assign|reown|delete|mint|recut|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|whoami"
+  *) echo "usage: next|claim|unclaim|park|done|assign|reown|delete|mint|recut|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|whoami|flush"
      # ⛔⭐ THE BACKTICK TRAP -- FIVE MEASURED OCCURRENCES, and it is printed here because THIS SCRIPT CANNOT
      # DETECT IT. A backtick used for emphasis inside a double-quoted body is COMMAND SUBSTITUTION: the
      # caller's shell runs the word, prints "X: command not found" on the CALLER's stderr, and substitutes
