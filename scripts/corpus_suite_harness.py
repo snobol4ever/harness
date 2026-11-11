@@ -3086,12 +3086,14 @@ def _pkg_read_args(d, entries):
 
 
 PKG_SOURCE_KEYS = ("root", "origin", "version", "licence")
+PKG_SOURCE_OPTIONAL = {"copy": ("root", "folder"), "cwd": ("root", "folder")}   # CTO-591: what the switch copies to scratch and where the test runs; the switch's to act on, read here only to be refused when malformed
 
 
 def pkg_source_root(d):
-    """ALL.source of a package (CTO-583 (3), CIO-92): four keys and no fifth, a key, one tab, its value; -> the root directory a row's program is
-    read from when the package itself does not hold the file, or None when the package has no ALL.source. Raises ValueError on a malformed
-    file, a missing key, a key named twice, or a root that is no directory."""
+    """ALL.source of a package (CTO-583 (3), CIO-92; CTO-591): the four keys root, origin, version, licence, and the two optional keys copy and
+    cwd (each root or folder), a key, one tab, its value; -> the root directory a row's program is read from when the package itself does not
+    hold the file, or None when the package has no ALL.source. Raises ValueError on a malformed file, another key, a missing key of the four,
+    a key named twice, an optional key with another value, or a root that is no directory."""
     p = Path(d) / "ALL.source"
     if not p.is_file():
         return None
@@ -3100,8 +3102,10 @@ def pkg_source_root(d):
         if not raw.strip() or raw.startswith("#"):
             continue
         c = raw.split("\t")
-        if len(c) != 2 or c[0] not in PKG_SOURCE_KEYS or not c[1].strip():
-            raise ValueError(f"{p}:{n}: a line of ALL.source is one of {', '.join(PKG_SOURCE_KEYS)}, one tab, its value; read {raw[:80]!r}")
+        if len(c) != 2 or (c[0] not in PKG_SOURCE_KEYS and c[0] not in PKG_SOURCE_OPTIONAL) or not c[1].strip():
+            raise ValueError(f"{p}:{n}: a line of ALL.source is one of {', '.join(PKG_SOURCE_KEYS + tuple(PKG_SOURCE_OPTIONAL))}, one tab, its value; read {raw[:80]!r}")
+        if c[0] in PKG_SOURCE_OPTIONAL and c[1].strip() not in PKG_SOURCE_OPTIONAL[c[0]]:
+            raise ValueError(f"{p}:{n}: {c[0]} is {' or '.join(PKG_SOURCE_OPTIONAL[c[0]])}; read {c[1].strip()[:40]!r}")
         if c[0] in got:
             raise ValueError(f"{p}:{n}: {c[0]} is named twice")
         got[c[0]] = c[1].strip()
