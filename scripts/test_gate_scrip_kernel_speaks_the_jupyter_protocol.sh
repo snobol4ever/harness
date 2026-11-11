@@ -99,8 +99,7 @@ try:
     a1, a2, a3 = many([(slow_fail, {}), (" OUTPUT = 'second ran'\n", {}), (" OUTPUT = 'third ran'\n", {})])
     b1, b2 = many([(slow_fail, {"stop_on_error": False}), (" OUTPUT = 'ran after a failure that does not stop'\n", {})])
     c1, = many([(" OUTPUT = 'the queue is open again'\n", {})])
-    so = (a1["reply"]["status"] == "error" and a1["reply"].get("ename") == "SNOBOL4 error 14" and a2["reply"]["status"] == "error" and a2["reply"].get("evalue") == "aborted" and a3["reply"]["status"] == "error"
-          and a3["reply"].get("evalue") == "aborted" and a2["out"] == "" and a3["out"] == "" and b1["reply"]["status"] == "error" and b2["reply"]["status"] == "ok"
+    so = (a1["reply"]["status"] == "error" and a1["reply"].get("ename") == "SNOBOL4 error 14" and a2["reply"]["status"] == "aborted" and a3["reply"]["status"] == "aborted" and "execution_count" in a2["reply"] and a2["out"] == "" and a3["out"] == "" and b1["reply"]["status"] == "error" and b2["reply"]["status"] == "ok"
           and b2["out"] == "ran after a failure that does not stop\n" and c1["reply"]["status"] == "ok" and c1["out"] == "the queue is open again\n")
     print("KERNEL_STOP_ON_ERROR ok" if so else "KERNEL_STOP_ON_ERROR RED: replies %s %r, %s %r, %s %r; outputs %r %r; without the stop %s %r; after %r" % (a1["reply"]["status"], a1["reply"].get("ename"),
           a2["reply"]["status"], a2["reply"].get("evalue"), a3["reply"]["status"], a3["reply"].get("evalue"), a2["out"], a3["out"], b2["reply"]["status"], b2["out"], c1["out"]))
@@ -136,6 +135,98 @@ try:
     print("KERNEL_COMPLETE ok" if co else "KERNEL_COMPLETE RED: SNOBOL4 %r from %r to %r, Icon %r, Prolog %r %r" % (k1.get("matches"), k1.get("cursor_start"), k1.get("cursor_end"), k2.get("matches"), k3.get("status"),
           k3.get("matches")))
     bad += 0 if co else 1
+    # THE REST OF THE PROTOCOL (CTO-597, the scan of the Jupyter documentation against kernel.c). Each arm below reads one message exchange the specification names.
+    def ask(msg_or_id, chan="shell"):   # the reply to a request already sent (a message id) or sent here on the shell channel (a message)
+        mid = msg_or_id if isinstance(msg_or_id, str) else (kc.shell_channel.send(msg_or_id), msg_or_id["header"]["msg_id"])[1]
+        try:
+            while True:
+                m = kc.get_shell_msg(timeout=30)
+                if m["parent_header"].get("msg_id") == mid: return m["content"]
+        except Exception: return {"status": "no reply"}   # a request the kernel does not answer reads RED in its own arm and the arms after it are still read
+    def cell(code, **kw):   # one cell: its reply and every broadcast message it caused, in order, as (type, content)
+        mid = kc.execute(code, **kw); got = []
+        while True:
+            m = kc.get_iopub_msg(timeout=120)
+            if m["parent_header"].get("msg_id") != mid: continue
+            if m["msg_type"] == "status":
+                if m["content"]["execution_state"] == "idle": break
+                continue
+            if m["msg_type"] != "execute_input": got.append((m["msg_type"], m["content"]))
+        return ask(mid), got
+    # KERNEL INFORMATION (messaging 5.5): the version, no optional feature claimed, the help links of every language for the many-language kernel
+    hl1 = info.get("help_links") or []
+    ks = (info.get("protocol_version") == "5.5" and info.get("supported_features") == [] and info.get("debugger") is False and len(hl1) >= 7
+          and all(isinstance(h.get("text"), str) and str(h.get("url", "")).startswith("https://") for h in hl1) and len({h["url"] for h in hl1}) == len(hl1))
+    print("KERNEL_INFO_SPEC ok" if ks else "KERNEL_INFO_SPEC RED: protocol %r, features %r, debugger %r, help links %r" % (info.get("protocol_version"), info.get("supported_features"), info.get("debugger"), hl1))
+    bad += 0 if ks else 1
+    # THE WELCOME MESSAGE (messaging 5.5): a subscriber that connects to the broadcast socket is sent iopub_welcome naming its subscription, with no parent
+    sub = zmq.Context.instance().socket(zmq.SUB); sub.setsockopt(zmq.LINGER, 0); sub.setsockopt(zmq.SUBSCRIBE, b"gate.topic")
+    sub.connect("%s://%s:%d" % (ci["transport"], ci["ip"], ci["iopub_port"]))
+    wl = None
+    if sub.poll(20000):
+        fr = sub.recv_multipart(); d = fr.index(b"<IDS|MSG>")
+        wl = (fr[0], json.loads(fr[d + 2]).get("msg_type"), json.loads(fr[d + 3]), json.loads(fr[d + 5]))
+    sub.close()
+    we = wl is not None and wl[0] == b"gate.topic" and wl[1] == "iopub_welcome" and wl[2] == {} and wl[3] == {"subscription": "gate.topic"}
+    print("KERNEL_WELCOME ok" if we else "KERNEL_WELCOME RED: a new subscriber read %r" % (wl,))
+    bad += 0 if we else 1
+    # HISTORY (messaging, history_request): the stored cells in order; a silent and an unstored cell are not history; tail, range, search with a pattern, and the output form
+    h_tail = ask(kc.history(hist_access_type="tail", n=3)).get("history") or []
+    h_rng = ask(kc.history(hist_access_type="range", session=0, start=1, stop=3)).get("history") or []
+    h_srch = ask(kc.history(hist_access_type="search", pattern="*stored output*", n=10)).get("history") or []
+    h_sil = ask(kc.history(hist_access_type="search", pattern="*silent output*", n=10)).get("history")
+    h_out = ask(kc.history(hist_access_type="tail", n=1, output=True)).get("history") or []
+    hi = (len(h_tail) == 3 and [e[1] for e in h_tail] == sorted(e[1] for e in h_tail) and h_tail[-1][1] == n0 + 1 and h_tail[-1][2] == " OUTPUT = 'stored output'\n" and [e[1] for e in h_rng] == [1, 2]
+          and [e[2] for e in h_srch] == [" OUTPUT = 'stored output'\n"] and h_sil == [] and len(h_out) == 1 and h_out[0][2] == [" OUTPUT = 'stored output'\n", None])
+    print("KERNEL_HISTORY ok" if hi else "KERNEL_HISTORY RED: tail %r, range %r, search %r, silent %r, with output %r" % (h_tail, h_rng, h_srch, h_sil, h_out))
+    bad += 0 if hi else 1
+    # COMMS (messaging, custom messages): a comm the front end opens for a target the kernel does not have is closed at once; the kernel holds no comm
+    cm = kc.session.msg("comm_open", {"comm_id": "gate-comm-1", "target_name": "no.such.target", "data": {}}); kc.shell_channel.send(cm); closed = None
+    while True:
+        m = kc.get_iopub_msg(timeout=60)
+        if m["parent_header"].get("msg_id") != cm["header"]["msg_id"]: continue
+        if m["msg_type"] == "comm_close": closed = m["content"]
+        if m["msg_type"] == "status" and m["content"]["execution_state"] == "idle": break
+    ci_r = ask(kc.comm_info())
+    cmok = closed is not None and closed.get("comm_id") == "gate-comm-1" and closed.get("data") == {} and ci_r.get("status") == "ok" and ci_r.get("comms") == {}
+    print("KERNEL_COMM ok" if cmok else "KERNEL_COMM RED: the open was answered %r, comm_info %r" % (closed, ci_r))
+    bad += 0 if cmok else 1
+    # CONNECT (messaging, connect_request; deprecated and still asked by old clients): the five ports of the connection file
+    cr = ask(kc.session.msg("connect_request", {}))
+    cn = all(cr.get(n) == ci[n] for n in ("shell_port", "iopub_port", "stdin_port", "hb_port", "control_port"))
+    print("KERNEL_CONNECT ok" if cn else "KERNEL_CONNECT RED: the reply reads %r" % cr)
+    bad += 0 if cn else 1
+    # INSPECTION (messaging, inspect_request): the builtin under the cursor is found and described from the builtin table; a name that is no builtin is not found
+    i1, i2 = ask(kc.inspect(" OUTPUT = DUPL('a', 3)", 12)), ask(kc.inspect(" OUTPUT = NOSUCHBUILTIN(1)", 14))
+    ins = i1.get("found") is True and str(i1.get("data", {}).get("text/plain", "")).startswith("DUPL: a builtin of SNOBOL4") and i2.get("status") == "ok" and i2.get("found") is False and i2.get("data") == {}
+    print("KERNEL_INSPECT ok" if ins else "KERNEL_INSPECT RED: DUPL %r, an unknown name %r" % (i1, i2))
+    bad += 0 if ins else 1
+    # COMPLETION BEYOND THE BUILTINS: a name an earlier cell used, a name of the cell being typed, a language after the two percent signs, and the type of each match
+    cell(" GATEWORDALPHA = 1\n")
+    w1, w2, w3 = names(" OUTPUT = GATEWORDA"), names(" GATEHEREBETA = 2\n OUTPUT = GATEHEREB"), names("%%pro")
+    t1 = {t.get("text"): t.get("type") for t in names(" OUTPUT = DUP").get("metadata", {}).get("_jupyter_types_experimental", [])}
+    cw = w1.get("matches") == ["GATEWORDALPHA"] and w2.get("matches") == ["GATEHEREBETA"] and w3.get("matches") == ["prolog"] and w3.get("cursor_start") == 2 and t1.get("DUPL") == "function"
+    print("KERNEL_COMPLETE_WORDS ok" if cw else "KERNEL_COMPLETE_WORDS RED: an earlier name %r, a name of this cell %r, a language %r from %r, types %r" % (w1.get("matches"), w2.get("matches"), w3.get("matches"), w3.get("cursor_start"), t1))
+    bad += 0 if cw else 1
+    # RICH DISPLAY (messaging, display_data and update_display_data): a display cell shows its own text; a language cell with display= shows what it printed as that type and prints nothing;
+    # id= names the display, update= replaces every display of that name; JSON is carried as a value; an image is carried in base 64
+    d1r, d1 = cell("%%html\n<b>bold</b>\n")
+    d2r, d2 = cell("%%icon display=svg id=gate1\nprocedure main();\n  write(\"<svg xmlns='http://www.w3.org/2000/svg'/>\");\nend\n")
+    d3r, d3 = cell("%%snobol4 display=html update=gate1\n OUTPUT = '<i>x</i>'\n")
+    d4r, d4 = cell("%%json\n{\"a\": [1, 2]}\n")
+    d5r, d5 = cell("%%snobol4 display=png\n OUTPUT = 'abc'\n")
+    def only(got, typ): return got[0][1] if len(got) == 1 and got[0][0] == typ else {}
+    dp = (d1r["status"] == "ok" and only(d1, "display_data").get("data", {}).get("text/html") == "<b>bold</b>\n" and only(d1, "display_data").get("metadata") == {}
+          and d2r["status"] == "ok" and only(d2, "display_data").get("data", {}).get("image/svg+xml") == "<svg xmlns='http://www.w3.org/2000/svg'/>\n" and only(d2, "display_data").get("transient") == {"display_id": "gate1"}
+          and d3r["status"] == "ok" and only(d3, "update_display_data").get("data", {}).get("text/html") == "<i>x</i>\n" and only(d3, "update_display_data").get("transient") == {"display_id": "gate1"}
+          and only(d4, "display_data").get("data", {}).get("application/json") == {"a": [1, 2]} and only(d5, "display_data").get("data", {}).get("image/png") == "YWJjCg==")
+    print("KERNEL_DISPLAY ok" if dp else "KERNEL_DISPLAY RED: html %r; svg %r; update %r; json %r; png %r" % (d1, d2, d3, d4, d5))
+    bad += 0 if dp else 1
+    # CLEAR OUTPUT (messaging, clear_output): a form feed in what a cell prints clears the cell's output, waiting for the next output
+    c5r, c5 = cell(" OUTPUT = 'one' CHAR(12) 'two'\n")
+    cl = c5r["status"] == "ok" and [t for t, _ in c5] == ["stream", "clear_output", "stream"] and c5[0][1].get("text") == "one" and c5[1][1] == {"wait": True} and c5[2][1].get("text") == "two\n"
+    print("KERNEL_CLEAR ok" if cl else "KERNEL_CLEAR RED: the cell broadcast %r" % (c5,))
+    bad += 0 if cl else 1
 finally:
     kc.stop_channels(); km.shutdown_kernel(now=False)
 # A CELL RUNS IN THE KERNEL'S OWN DIRECTORY (CIO-78): a second kernel started in a scratch folder reads the file beside the notebook by its bare name, from a session cell and from a one-program cell
@@ -164,11 +255,31 @@ try:
     bad += 0 if cw else 1
 finally:
     kc.stop_channels(); km.shutdown_kernel(now=False)
+# THE IPC TRANSPORT (kernels, connection files): a kernel whose connection file names transport ipc binds its five sockets on path-and-port names and runs a cell
+km = KernelManager(kernel_name="scrip-gate", transport="ipc", ip=os.path.join(tempfile.mkdtemp(prefix="scrip-kernel-ipc-"), "k")); km.start_kernel(); kc = km.client(); kc.start_channels()
+try:
+    kc.wait_for_ready(timeout=60)
+    mid = kc.execute(" OUTPUT = 'over ipc'\n"); out = ""
+    while True:
+        m = kc.get_iopub_msg(timeout=120)
+        if m["parent_header"].get("msg_id") != mid: continue
+        if m["msg_type"] == "stream" and m["content"]["name"] == "stdout": out += m["content"]["text"]
+        if m["msg_type"] == "status" and m["content"]["execution_state"] == "idle": break
+    ip_ok = out == "over ipc\n"
+except Exception as e:
+    ip_ok = False; out = repr(e)
+finally:
+    kc.stop_channels(); km.shutdown_kernel(now=True)
+print("KERNEL_IPC ok" if ip_ok else "KERNEL_IPC RED: the cell over ipc read %r" % out)
+bad += 0 if ip_ok else 1
 print("scrip --kernel: %d disagreement(s) over %d hello cells and the arms" % (bad, len(blocks)))
 sys.exit(1 if bad else 0)
 PY
 )"; rc=$?
 printf '%s\n' "$out"
+# ZEROMQ IS LOADED ONLY BY THE KERNEL (Lon 2026-11-11, in the cto's window: "Do use dlopen. Seems better."): the binary names no ZeroMQ library among the libraries it needs, and the arms above ran through it
+need="$(readelf -d "$SCRIP_BIN" 2>/dev/null | grep -c 'NEEDED.*libzmq')"
+if [ "$need" = 0 ] && [ "$rc" != 2 ]; then echo "KERNEL_DLOPEN ok"; else echo "KERNEL_DLOPEN RED: the binary names libzmq among its needed libraries ($need), so every run of scrip loads it"; [ "$rc" = 0 ] && rc=1; fi
 case $rc in
   0) echo "SCRIP_KERNEL_JUPYTER_PROTOCOL_BOARD cells=3 agree=3 (tree $TREE)"; echo "GATE OK [test_gate_scrip_kernel_speaks_the_jupyter_protocol]: three cells through scrip --kernel print Hello, World!"; exit 0 ;;
   1) echo "SCRIP_KERNEL_JUPYTER_PROTOCOL_BOARD cells=3 agree=<3 (tree $TREE)"; echo "GATE FAIL [test_gate_scrip_kernel_speaks_the_jupyter_protocol]: a cell disagreed, see above"; exit 1 ;;
