@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_prolog_gnu_gaps_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: prolog-gnu-gaps (the cto, 2026-11-07, CTO-543; skill prolog
-# reference section 8). The plan is corpus/tests/prolog/gnu_gaps/STEPS.tsv; the witnesses are the gg_*.pl beside it, each with a .ref cut from
+# reference section 8). The plan is harness/designs/prolog_gnu_gaps/STEPS.tsv; a witness W is the entry gnu_gaps__W of the Prolog master
+# (corpus/tests/prolog, dialect cell gnu), extracted by lib_design_witness.sh into the step's scratch, or the loose corpus/tests/prolog/gnu_gaps/W.pl
+# while the master has not absorbed it (gg_listing_0: listing/0 prints its file's absolute path, so its answer is no stable entry; the cto
+# 2026-11-12, row tests-folder-consolidation-cto). Each answer is cut from
 # GNU Prolog 1.6.0 through gprolog_bin() (lib_oracle_flags.sh: --consult-file W --query-goal halt, the output through gprolog_output_filter, run
 # TWICE and refused on a disagreement), the one GNU-dialect oracle. Every witness is a GNU-dialect program (R-1810: a gprolog-graded program
 # declares --dialect=gnu), run from a scratch folder so a file a witness writes never lands under the root; the witness folder's path is written
@@ -21,7 +24,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/prolog/gnu_gaps"
-STEPS="$WD/STEPS.tsv"
+STEPS="$ROOT/harness/designs/prolog_gnu_gaps/STEPS.tsv"
+. "$HERE/lib_design_witness.sh"
 OUT="/tmp/s4e/${S4E_SEAT:-cto}/design-prolog-gnu-gaps"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
@@ -51,6 +55,7 @@ if [ "$mode" = cut ]; then
     [ "${#cutlist[@]}" -gt 0 ] || { for n in $(steps); do for w in $(col "$n" 6); do cutlist+=("$w"); done; done; }
     mkdir -p "$OUT/cut" || refuse "cannot make $OUT/cut"
     for w in "${cutlist[@]}"; do
+        design_witness_has prolog "gnu_gaps__$w" && refuse "$w is the entry gnu_gaps__$w of the master: its answer is re-cut by util_add_ladder_witness.py, never here"
         src="$WD/$w.pl"; [ -f "$src" ] || refuse "no witness $src"
         d="$OUT/cut/$w"; rm -rf "$d"; mkdir -p "$d"
         a="$(cd "$d" && timeout -k 5 60 "$GP" --consult-file "$src" --query-goal halt < /dev/null 2>/dev/null | gprolog_output_filter | norm)"
@@ -73,7 +78,11 @@ if [ -z "${S4E_RUN_SLOT_HELD:-}" ] && [ -f "$HERE/lib_slots.sh" ]; then . "$HERE
 m3p=0; m4p=0; n=0; reds=""
 for w in $wits; do
     n=$((n + 1)); src="$WD/$w.pl"; ref="$WD/$w.ref"; o="$OUT/step$step/$w"; d="$OUT/step$step/run-$w"
-    [ -f "$src" ] && [ -f "$ref" ] || refuse "witness $w has no .pl or .ref in $WD"
+    if design_witness_has prolog "gnu_gaps__$w"; then
+        design_witness_extract prolog "gnu_gaps__$w" "$OUT/step$step/wit" > /dev/null || refuse "the master would not extract gnu_gaps__$w"
+        src="$OUT/step$step/wit/gnu_gaps__$w.pl"; ref="$OUT/step$step/wit/gnu_gaps__$w.ref"
+    fi
+    [ -f "$src" ] && [ -f "$ref" ] || refuse "witness $w has no .pl or .ref (neither the entry gnu_gaps__$w nor the loose pair in $WD)"
     rm -rf "$d"; mkdir -p "$d"
     ( cd "$d" && timeout -k 5 60 "$SC/scrip" --run --dialect=gnu "$src" < /dev/null 2> "$o.m3.err" | norm > "$o.m3.out"; exit "${PIPESTATUS[0]}" ); rc=$?
     if [ "$rc" = 0 ] && cmp -s "$o.m3.out" "$ref"; then m3p=$((m3p + 1)); else reds="$reds m3:$w(rc$rc)"; fi
