@@ -6291,6 +6291,8 @@ def cmd_extract(args):
             Path(args.out_ref).write_text(ref_text + "\n")
         if e.stdin is not None:
             Path(args.out_in).write_text(e.stdin)
+        for _fn, _body in (getattr(e, "files", None) or {}).items():   # THE FILE FENCES (CIO-55): a companion stands beside the extracted program, as stage_entry puts it (the cfo 2026-11-12)
+            (Path(args.out_sno).parent / _fn).write_text(_body)
         if args.out_xfail and e.xfail_reason:
             Path(args.out_xfail).write_text(e.xfail_reason + "\n")
         _write_extracted_unit_sidecars(args.sno, e.name, args.out_sno)

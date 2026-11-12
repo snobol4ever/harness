@@ -122,6 +122,7 @@ FIXED = ["rank", "entry", "origin", "family", "kind", "xfail", "n_lines"]
 # rows (the convention every ladder row carries, 131072 / 4096 / --stlimit / empty run_args on the SNOBOL4-family rung suites),
 # an explicit --heap-kb/--stack-kb/--compile-args/--run-args overrides, and a column the ladder rows disagree on REFUSES.
 ATTR_COLUMNS = ["heap_kb", "stack_kb", "compile_args", "run_args"]
+PASCAL_DIALECT_MODE = {"iso": "-Miso", "fpc": "-Mfpc", "objfpc": "-Mobjfpc", "delphi": "-Mdelphi", "tp": "-Mtp"}   # the dialect cell -> fpc's mode switch (CEO-1624; corpus_suite_harness.DIALECT_CELLS' Pascal five)
 
 
 def ladder_convention(rows, fields, overrides):
@@ -386,6 +387,8 @@ def main():
                     help="this witness is deliberately the FIRST for its rung (rungs 24-33 are all brand new); "
                          "everything is derived from --source, so no sibling is needed -- the flag exists so a "
                          "typo'd rung number is still caught")
+    ap.add_argument("--dialect", default="", help="pascal: the fpc mode that cuts the answer (iso, fpc, objfpc, delphi, tp), written to the row's dialect cell, which the reader turns into scrip --dialect=D in both modes (the cfo 2026-11-12, the tests/pascal consolidation)")
+    ap.add_argument("--file", action="append", default=[], dest="files", help="a companion beside --source the program reads or uses, carried as a file fence of the entry's MULTI.md section (CIO-55); format 2 only, repeatable (the cfo 2026-11-12)")
     ap.add_argument("--apply", action="store_true", help="write the files; omit for a dry-run report")
     ap.add_argument("--rungs-dir", default="", help="the rungs' directory (default corpus/tests/<lang>); a gate points it at a scratch copy")
     for _a in ATTR_COLUMNS:
@@ -489,6 +492,31 @@ def main():
         refuse("--source is empty")
 
     oracle_argv = ORACLE["unicon" if getattr(args, "oracle", None) == "unicon" else lang]
+    if args.dialect:
+        if lang != "pascal" or args.dialect not in PASCAL_DIALECT_MODE:
+            refuse("--dialect %r: only pascal takes one here, as one of %s" % (args.dialect, ", ".join(PASCAL_DIALECT_MODE)))
+        with open(rungs_csv, newline="") as fh:
+            if "dialect" not in (next(csv.reader(fh), []) or []):
+                refuse("--dialect: %s has no dialect column" % rungs_csv)
+        oracle_argv = [oracle_argv[0], PASCAL_DIALECT_MODE[args.dialect]]
+    fence_files = {}
+    for _f in args.files:
+        _fp2 = Path(_f)
+        if not fmt2:
+            refuse("--file: %s is not in format 2; a file fence exists only in MULTI.md (regroup the folder first)" % rungs_dir)
+        if not _fp2.is_file() or _fp2.resolve().parent != src_path.resolve().parent:
+            refuse("--file %s: not a file beside %s (the oracle cuts the program in its own folder, so a companion must stand there)" % (_f, src_path))
+        _b = _fp2.read_bytes()
+        try:
+            _t = _b.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            refuse("--file %s is not UTF-8 (%s); a file fence holds text" % (_f, exc))
+        if not _b.endswith(b"\n") or "\r" in _t:
+            refuse("--file %s: a file fence holds LF lines ending in a newline" % _f)
+        if _fp2.name in fence_files or _fp2.name == src_path.name:
+            refuse("--file %s: named twice, or the program itself" % _f)
+        fence_files[_fp2.name] = _t
+    args.fence_files = fence_files
     if lang == "snocone" and not args.oracle_twin:
         # ⭐ THE ORACLE ROAD WITH NO TWIN (the coo 2026-11-10, the snocone folder; skill snobol4 section 1: "Snocone: scrip --transpile prog.sc
         # gives portable SNOBOL4 that runs on sbl -bf first; its output is the ref", the road rebus takes above and the builder takes, CIO-58):
@@ -674,6 +702,8 @@ def main():
     # next invocation. It was invisible for as long as rank and position coincided; corpus a6646f04c removed
     # the 620 AST-graded entries from all seven rung suites and separated them permanently (hq_T 2026-09-13).
     new_entry = csh.Entry("block", len(entries) + 1, entry_name, sno_lines, ref_lines, want_rc=want_rc, stdin=stdin_text)
+    if fence_files:
+        new_entry.files = dict(sorted(fence_files.items()))
     new_row = {"rank": str(rank), "entry": entry_name, "origin": args.origin, "family": args.family or "ladder",
                "kind": "block", "xfail": "0", "n_lines": str(len(sno_lines))}
     for k in flag_order:
@@ -682,6 +712,8 @@ def main():
         if "stderr" not in fields:
             refuse("--stderr-merged: %s has no stderr column" % rungs_csv)
         new_row["stderr"] = "merged"
+    if args.dialect:
+        new_row["dialect"] = args.dialect
     if args.stage_as_cut:
         if "stage_name" not in fields:
             refuse("--stage-as-cut: %s has no stage_name column (harness f77838edd adds it to the snobol4 master)" % rungs_csv)
@@ -865,6 +897,9 @@ def _after_write(args, lang, cfg, rungs_dir, rungs_src, rungs_ref, rungs_csv, en
         # So the pre-write contents are restored before refusing, and the refusal says the tree is clean.
         refuse("post-write extraction proof failed for %s (stderr: %s) -- %s"
                % (entry_name, err.stderr, _rollback()))
+    _want_files = dict(sorted(getattr(args, "fence_files", {}).items()))
+    if _want_files and next((dict(getattr(e, "files", None) or {}) for e in read_entries() if e.name == entry_name), None) != _want_files:
+        refuse("post-write proof failed for %s: its file fences did not read back as given -- %s" % (entry_name, _rollback()))
     print("APPLIED: %s rank=%s -> %s / %s / %s (extraction round-trip verified)"
           % (entry_name, rank, rungs_src, rungs_ref, rungs_csv))
     _pt = subprocess.run([sys.executable, str(HERE / "util_suite_partition.py"), "build", "ALL.csv"], cwd=str(rungs_dir), capture_output=True, text=True)
@@ -890,6 +925,8 @@ def batch_from_dir(args):
         base += ["--rungs-dir", args.rungs_dir]
     if args.accept_fresh:
         base += ["--accept-fresh", args.accept_fresh]
+    if args.dialect:
+        base += ["--dialect", args.dialect]
     for _a in ATTR_COLUMNS:
         if getattr(args, "attr_" + _a) is not None:
             base += ["--" + _a.replace("_", "-"), getattr(args, "attr_" + _a)]
