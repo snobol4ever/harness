@@ -11,7 +11,7 @@
 # the oracle from a SIMPLE CLONE plus that patch, which is what Lon asked for.
 set -eu
 BASE="${BASE:-/tmp/bench-oracle-build}"
-PATCH="${PATCH:-$(cd "$(dirname "$0")/../../.github" && pwd)/wip-patches/spitbol-bench-oracle-4fe74db.patch}"
+PATCH="${PATCH:-$(cd "$(dirname "$0")" && pwd)/spitbol-bench-oracle-4fe74db.patch}"
 [ -f "$PATCH" ] || { echo "⛔ patch not found: $PATCH"; exit 2; }
 rm -rf "$BASE"; mkdir -p "$BASE"
 echo "1/4 simple clone of upstream"; git clone -q https://github.com/spitbol/spitbol "$BASE/spitbol"
