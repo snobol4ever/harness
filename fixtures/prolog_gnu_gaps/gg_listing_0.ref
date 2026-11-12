@@ -1,0 +1,24 @@
+
+% file: DIR/gg_listing_0.pl
+
+foo(a).
+foo(A) :-
+	bar(A), !.
+
+bar(1).
+bar(A) :-
+	foo(A),
+	A > 0.
+
+baz :-
+	write(hi),
+	nl.
+
+main :-
+	assertz(foo(a)),
+	assertz((foo(A) :- bar(A), !)),
+	listing,
+	write(end),
+	nl,
+	halt.
+end

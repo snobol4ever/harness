@@ -1,0 +1,3 @@
+# harness/fixtures/prolog_gnu_gaps -- the one witness of DESIGN-PLAN prolog-gnu-gaps that no master entry can hold (the cfo 2026-11-12, row tests-consolidation-finish-cfo; moved byte for byte from corpus/tests/prolog/gnu_gaps with the paragraph of corpus/tests/prolog/PENDING.md that declared it, below; the batch_grader bg08 precedent)
+
+- `gnu_gaps/gg_listing_0.pl` with its `.ref`: GNU Prolog's listing/0 prints the consulted file's absolute path, so an answer cut by the witness tool differs run to run (it refused: NONDETERMINISTIC) and no staged entry could match it; test_design_prolog_gnu_gaps_steps.sh step 7 reads the loose pair with the path written DIR.

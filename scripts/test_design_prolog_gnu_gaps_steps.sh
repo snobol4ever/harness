@@ -2,7 +2,7 @@
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_prolog_gnu_gaps_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: prolog-gnu-gaps (the cto, 2026-11-07, CTO-543; skill prolog
 # reference section 8). The plan is harness/designs/prolog_gnu_gaps/STEPS.tsv; a witness W is the entry gnu_gaps__W of the Prolog master
-# (corpus/tests/prolog, dialect cell gnu), extracted by lib_design_witness.sh into the step's scratch, or the loose corpus/tests/prolog/gnu_gaps/W.pl
+# (corpus/tests/prolog, dialect cell gnu), extracted by lib_design_witness.sh into the step's scratch, or the fixture harness/fixtures/prolog_gnu_gaps/W.pl
 # while the master has not absorbed it (gg_listing_0: listing/0 prints its file's absolute path, so its answer is no stable entry; the cto
 # 2026-11-12, row tests-folder-consolidation-cto). Each answer is cut from
 # GNU Prolog 1.6.0 through gprolog_bin() (lib_oracle_flags.sh: --consult-file W --query-goal halt, the output through gprolog_output_filter, run
@@ -23,7 +23,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/prolog/gnu_gaps"
+WD="$ROOT/harness/fixtures/prolog_gnu_gaps"   # gg_listing_0, the one witness no entry can hold (its answer names its own absolute path), moved from corpus/tests/prolog/gnu_gaps (the cfo 2026-11-12, row tests-consolidation-finish-cfo)
 STEPS="$ROOT/harness/designs/prolog_gnu_gaps/STEPS.tsv"
 . "$HERE/lib_design_witness.sh"
 OUT="/tmp/s4e/${S4E_SEAT:-cto}/design-prolog-gnu-gaps"
