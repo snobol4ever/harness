@@ -277,6 +277,10 @@ def main():
             same += 1; continue
         if len(P[k]) == 1 and len(C[k]) == 1 and P[k][0][:2] == C[k][0][:2] and reconcile(P[k][0][2], C[k][0][2]):
             same += 1; continue
+        if len(P[k]) == len(C[k]) > 1:
+            strip = lambda v: (v[0], v[1], tuple(r for r in v[2] if not (r[1] == 'R' and isinstance(r[3], bytes) and r[3].decode('latin1').endswith(srcs))))
+            if sorted(map(repr, map(strip, P[k]))) == sorted(map(repr, map(strip, C[k]))):
+                fl += 1; continue
         if k[1].endswith('{lambda') and sorted(x[1] for x in P[k]) == sorted(x[1] for x in C[k]):
             lam += 1; continue
         if len(P[k]) == 1 and len(C[k]) == 1 and align_only(P[k][0], C[k][0]):

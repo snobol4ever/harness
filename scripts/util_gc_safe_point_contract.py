@@ -181,7 +181,7 @@ def strip_storage_class(t):
 
 
 DECLARED_POINTER_FREE = {
-    "CVSPINE_t": ("src/ir/descr.h", "DESCR_SASSERT(sizeof(CVSPINE_t) == 16",
+    "CVSPINE_t": ("src/ir/descr_asserts.c", "DESCR_SASSERT(sizeof(CVSPINE_t) == 16",
                   "fn in rax is the callee box entry (a CODE address, 0 declines) and act0 in rdx is 0 or 2"),
 }
 DECLARED_POINTER_FREE_FN = {
