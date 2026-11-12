@@ -103,6 +103,9 @@ case "$N" in
     case "$(st "$k")" in BLOCKED-ON:"$qt") ;; *) why="$why the asker reads $(st "$k"), not BLOCKED-ON:$qt;";; esac
     printf '%s\n' "$out" | grep -q '^WAKE: SendMessage to PS97 ' || why="$why ask printed no WAKE line for PS97;"
     printf '%s\n' "$out" | grep -qE 'job=[0-9]' && why="$why ask printed a job id;"
+    if [ -n "$qt" ]; then   # the senior's next serves the question: the ask verb's baton carries no mint stamp (officer_03 2026-11-12: next skipped every such row)
+        out="$(bus "$S" next)"; printf '%s\n' "$out" | grep -q "^RESERVED $qt " || why="$why next did not serve the question row to $S [$(printf '%s' "$out" | grep -m1 -E 'RESERVED|EMPTY|nothing|REFUSE|⛔' | cut -c1-90)];"
+    fi
     if [ -n "$qt" ]; then
         out="$(printf 'this one, the probe answers\n' | NOPC=1 bus "$S" answer "$qt" --stdin)"
         case "$(st "$qt")" in DONE|"") ;; *) why="$why the answered question reads $(st "$qt"), not DONE or gone [$(printf '%s' "$out" | grep -m1 -E '⚠|⛔|REFUSE' | cut -c1-90)];";; esac   # CLOSED: QUEUE.tsv reads DONE or holds no row (the view moves a done row out; the cio 2026-11-10 14:5x)
