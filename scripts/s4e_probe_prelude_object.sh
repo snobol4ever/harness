@@ -31,7 +31,7 @@ bash "$here/util_require_fresh.sh" --gate s4e_probe_prelude_object >/dev/null 2>
 seat="${S4E_SEAT:-probe}"; mkdir -p "/tmp/s4e/$seat"; t="$(mktemp -d "/tmp/s4e/$seat/prelude_object_arm$arm.XXXXXX")" || refuse "no scratch"
 trap 'rm -rf "$t"' EXIT
 tree="$(git -C "$root/SCRIP" rev-parse --short=9 HEAD 2>/dev/null)"
-run() { ( cd "$t" && SCRIP_PL_PRELUDE_SO="$1" timeout -k 5 "${S4E_PROBE_RUN_S:-60}" bash "$here/util_run_slot.sh" "$scrip" --dialect=swi --run "$2" < /dev/null 2>&1; rc=$?; [ "$rc" = 124 ] || [ "$rc" = 137 ] && echo "(no end within ${S4E_PROBE_RUN_S:-60} s: killed)"; true ); }
+run() { ( cd "$t" && SCRIP_PL_PRELUDE_SO="$1" bash "$here/util_run_slot.sh" timeout -k 5 "${S4E_PROBE_RUN_S:-60}" "$scrip" --dialect=swi --run "$2" < /dev/null 2>&1; rc=$?; [ "$rc" = 124 ] || [ "$rc" = 137 ] && echo "(no end within ${S4E_PROBE_RUN_S:-60} s: killed)"; true ); }
 if [ "$arm" = 1 ]; then
     command -v strace >/dev/null || refuse "no strace on the box"
     printf ':- initialization(main).\nmain :- write(a), nl.\n' > "$t/w.pl"
