@@ -44,8 +44,8 @@ o4="$(run)"
 ck "4 a clean re-grade after the dirty reading counts: 2/3" 'grep -q "would set reb-rungs -> 2/3 stamped" <<<"$o4"'
 row 10 abc1234 r3 m3 PASS; row 11 abc1234 r3 m4 PASS
 GH="$(cd "${S4E_HOME:-$HERE/../..}/.github" 2>/dev/null && pwd)"
-[ -f "$GH/SCORE.md" ] && [ -f "$GH/scripts/util_suite_banner.py" ] && [ -f /home/resources/progress/SUITES.tsv ] || { echo "GATE REFUSE(2): no SCORE.md, banner or SUITES.tsv to copy for arm 5"; exit 2; }
-mkdir -p "$T/root/.github/scripts" "$T/scr" && cp "$GH/SCORE.md" "$T/root/.github/SCORE.md" && cp "$GH/SCORE.md" "$T/scr/SCORE.md" && cp "$GH/scripts/util_suite_banner.py" "$T/root/.github/scripts/" && cp /home/resources/progress/SUITES.tsv "$T/scr/SUITES.tsv"
+[ -f "$GH/SCORE.md" ] && [ -f "$HERE/util_suite_banner.py" ] && [ -f /home/resources/progress/SUITES.tsv ] || { echo "GATE REFUSE(2): no SCORE.md, banner or SUITES.tsv to copy for arm 5"; exit 2; }
+mkdir -p "$T/root/harness/scripts" "$T/root/.github" "$T/scr" && cp "$GH/SCORE.md" "$T/root/.github/SCORE.md" && cp "$GH/SCORE.md" "$T/scr/SCORE.md" && cp "$HERE/util_suite_banner.py" "$T/root/harness/scripts/" && cp /home/resources/progress/SUITES.tsv "$T/scr/SUITES.tsv"
 o5="$(S4E_HOME="$T/root" S4E_CORPUS_ROOT="$T/corpus" S4E_PROGRESS_DB="$DB" S4E_SUITES_TSV="$T/scr/SUITES.tsv" S4E_SCORE_MD="$T/scr/SCORE.md" python3 "$SR" from-progress --suite reb-rungs --criterion-changed "2026-11-04:a three-entry fixture" 2>&1)"; r5=$?
 [ "$r5" = 0 ] || { tail -5 <<<"$o5"; echo "GATE REFUSE(2): the written from-progress of arm 5 did not run (rc $r5)"; exit 2; }
 ck "5 a scratch S4E_SCORE_MD takes the display write and the root SCORE.md stays byte-equal" 'cmp -s "$GH/SCORE.md" "$T/root/.github/SCORE.md" && ! cmp -s "$GH/SCORE.md" "$T/scr/SCORE.md"'

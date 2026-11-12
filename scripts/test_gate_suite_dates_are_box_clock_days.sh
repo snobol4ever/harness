@@ -20,7 +20,7 @@ ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside ha
 GATE_NAME=suite_dates_are_box_clock_days
 GATE_STRICT=1
 gate_parse_args "$@"
-GH="$(cd "$ROOT/.." && pwd)/.github"; B="$GH/scripts/util_suite_banner.py"; SR="$HERE/util_score_row.py"
+GH="$(cd "$ROOT/.." && pwd)/.github"; B="$HERE/util_suite_banner.py"; SR="$HERE/util_score_row.py"
 gate_require "$B" "util_suite_banner.py" || exit 2
 gate_require "$SR" "util_score_row.py" || exit 2
 . "$HERE/lib_suites_tsv.sh" || exit 2

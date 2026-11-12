@@ -26,8 +26,8 @@ PINNED=0; for a in "$@"; do [ "$a" = --pinned ] && PINNED=1; done
 gate_parse_args "$@"
 GH="$(cd "$ROOT/.." && pwd)/.github"
 . "$(dirname "${BASH_SOURCE[0]}")/lib_suites_tsv.sh" || { echo "REFUSED(2): cannot load lib_suites_tsv.sh"; exit 2; }
-B="$GH/scripts/util_suite_banner.py"
-gate_require "$B" "the renderer .github/scripts/util_suite_banner.py" || exit 2
+B="$HERE/util_suite_banner.py"
+gate_require "$B" "the renderer harness/scripts/util_suite_banner.py" || exit 2
 gate_require "$SUITES_TSV_REAL" "the machine record $SUITES_TSV_REAL" || exit 2
 gate_require "$ROOT/README.md" "SCRIP/README.md" || exit 2
 SCRATCH="${S4E_SCRATCH:-$(cd "$ROOT/.." && pwd)/.scratch}"

@@ -17,7 +17,7 @@ ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside ha
 GATE_NAME=suite_table_graded_cell_is_a_date_never_an_age
 GATE_STRICT=1
 gate_parse_args "$@"
-GH="$(cd "$ROOT/.." && pwd)/.github"; B="$GH/scripts/util_suite_banner.py"
+GH="$(cd "$ROOT/.." && pwd)/.github"; B="$HERE/util_suite_banner.py"
 gate_require "$B" "util_suite_banner.py" || exit 2
 gate_require "$GH/SCORE.md" ".github/SCORE.md" || exit 2
 W=$(mktemp -d) || exit 2; trap 'rm -rf "$W"' EXIT INT TERM

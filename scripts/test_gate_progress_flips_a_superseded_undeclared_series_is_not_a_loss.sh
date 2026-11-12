@@ -37,7 +37,7 @@ GATE_NAME=progress_flips_a_superseded_undeclared_series_is_not_a_loss
 GATE_STRICT=1
 gate_parse_args "$@"
 GH="$(cd "$ROOT/.." && pwd)/.github"
-F="$GH/scripts/util_progress_flips.py"
+F="$HERE/util_progress_flips.py"
 gate_require "$F" "util_progress_flips.py" || exit 2
 SCRATCH="${S4E_SCRATCH:-$(cd "$ROOT/.." && pwd)/.scratch}"
 mkdir -p "$SCRATCH" || { echo "REFUSING(2) [$GATE_NAME]: cannot create $SCRATCH"; exit 2; }

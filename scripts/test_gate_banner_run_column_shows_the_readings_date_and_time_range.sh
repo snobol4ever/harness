@@ -13,7 +13,7 @@
 # EXIT: 0 all arms pass, 1 an arm failed, 2 REFUSED (no banner script, no scratch directory).
 set -u
 H="$(cd "$(dirname "$0")" && pwd)"; NAME=banner_run_column_shows_the_readings_date_and_time_range; ROOT="${S4E_HOME:-$(cd "$H/../.." && pwd)}"
-B="$ROOT/.github/scripts/util_suite_banner.py"
+B="$H/util_suite_banner.py"
 [ -f "$B" ] || { echo "REFUSE(2) [$NAME]: no $B"; exit 2; }
 T="$(mktemp -d "${TMPDIR:-/tmp}/gate_banner_run.XXXXXX")" || { echo "REFUSE(2) [$NAME]: no scratch directory"; exit 2; }
 trap 'rm -rf "$T"' EXIT

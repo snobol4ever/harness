@@ -31,12 +31,12 @@ export S4E_SEAT=coo   # the one call shape below reads it (test_gate_seat_identi
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GH="${S4E_GITHUB_DIR:-$HERE/../../.github}"
 . "$(dirname "${BASH_SOURCE[0]}")/lib_suites_tsv.sh" || { echo "REFUSED(2): cannot load lib_suites_tsv.sh"; exit 2; }
-BANNER="$GH/scripts/util_suite_banner.py"; HELPER="$HERE/util_score_row.py"
+BANNER="$HERE/util_suite_banner.py"; HELPER="$HERE/util_score_row.py"
 refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 [ -f "$SUITES_TSV_REAL" ] && [ -f "$GH/SCORE.md" ] && [ -f "$BANNER" ] && [ -f "$HELPER" ] || refuse "need $SUITES_TSV_REAL, SCORE.md, ../harness/scripts/util_suite_banner.py and $HELPER"
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_criterion_stamp.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$W"' EXIT
-mkdir -p "$W/.github/scripts"; cp "$SUITES_TSV_REAL" "$W/.github/SUITES.tsv"; cp "$GH/SCORE.md" "$W/.github/SCORE.md"; cp "$BANNER" "$W/.github/scripts/util_suite_banner.py"
+mkdir -p "$W/harness/scripts" "$W/.github"; cp "$SUITES_TSV_REAL" "$W/.github/SUITES.tsv"; cp "$GH/SCORE.md" "$W/.github/SCORE.md"; cp "$BANNER" "$W/harness/scripts/util_suite_banner.py"
 TSV="$W/.github/SUITES.tsv"; cp "$TSV" "$W/orig.tsv"
 KEY="$(awk -F'\t' '!/^#/ && $1!="key" && $10 ~ /^[0-9]+$/ {print $1; exit}' "$TSV")"; [ -n "$KEY" ] || refuse "no SUITES.tsv row with a numeric today_total to plant on"
 OLDT="$(awk -F'\t' -v k="$KEY" '$1==k{print $10}' "$TSV")"; OLDP="$(awk -F'\t' -v k="$KEY" '$1==k{print $9}' "$TSV")"; NEWT=$((OLDT+7))
@@ -81,15 +81,15 @@ out="$(S4E_HOME="$W" python3 "$HELPER" write --lang icon --column vendor --suite
 out="$(S4E_CRITERION_CHANGED='2026-09-25:gate fixture preview through the environment' S4E_HOME="$W" python3 "$HELPER" write --lang icon --column vendor --suite Arizona --text "Arizona: m3 $AZP/$AZN · m4 $AZP/$AZN (\`test_icon_arizona_suite.sh\`)" --measurer "${S4E_SEAT:-}" --dry-run 2>&1)"; rc=$?
 [ "$rc" = 0 ] && grep -q 'WOULD' <<<"$out" && ck ok "(e4) the same --dry-run with the stamp only in S4E_CRITERION_CHANGED previews rc=0 -- the writer reads the environment when the flag is absent" || ck no "(e4) rc=$rc -- got: $(tail -2 <<<"$out" | cut -c1-200)"
 # (f) a planted OLD banner (the flag string removed) -- the writer must refuse BEFORE any write, naming .github behind
-cp "$W/orig.tsv" "$TSV"; cp "$GH/SCORE.md" "$W/.github/SCORE.md"; cp "$BANNER" "$W/.github/scripts/util_suite_banner.py"
-sed -i 's/--criterion-changed/--criterion-chAnged/g' "$W/.github/scripts/util_suite_banner.py"
+cp "$W/orig.tsv" "$TSV"; cp "$GH/SCORE.md" "$W/.github/SCORE.md"; cp "$BANNER" "$W/harness/scripts/util_suite_banner.py"
+sed -i 's/--criterion-changed/--criterion-chAnged/g' "$W/harness/scripts/util_suite_banner.py"
 m0="$(cat "$TSV" "$W/.github/SCORE.md" | md5sum)"
 out="$(S4E_HOME="$W" python3 "$HELPER" write --lang icon --column vendor --suite Arizona --text "Arizona: m3 $AZP/$AZN · m4 $AZP/$AZN (\`test_icon_arizona_suite.sh\`)" --measurer "${S4E_SEAT:-}" --criterion-changed '2026-09-16:gate fixture old banner' 2>&1)"; rc=$?
 m1="$(cat "$TSV" "$W/.github/SCORE.md" | md5sum)"
 [ "$rc" = 2 ] && [ "$m0" = "$m1" ] && grep -q 'does not know the flag' <<<"$out" && ck ok "(f) a banner without the flag: write REFUSED rc=2 BEFORE any write, naming the old banner and .github behind origin" || ck no "(f) rc=$rc identical=$([ "$m0" = "$m1" ] && echo yes || echo no) -- got: $(tail -2 <<<"$out" | cut -c1-200)"
 # (g) a planted STUB banner that accepts the flag string and drops it (exits 0, writes nothing) -- the read-back must refuse
 cp "$W/orig.tsv" "$TSV"; cp "$GH/SCORE.md" "$W/.github/SCORE.md"
-printf '#!/usr/bin/env python3\n# stub: knows the words --criterion-changed and --set but writes nothing\nimport sys; print("stub banner: ok"); sys.exit(0)\n' > "$W/.github/scripts/util_suite_banner.py"
+printf '#!/usr/bin/env python3\n# stub: knows the words --criterion-changed and --set but writes nothing\nimport sys; print("stub banner: ok"); sys.exit(0)\n' > "$W/harness/scripts/util_suite_banner.py"
 out="$(S4E_HOME="$W" python3 "$HELPER" write --lang icon --column vendor --suite Arizona --text "Arizona: m3 $AZP/$AZN · m4 $AZP/$AZN (\`test_icon_arizona_suite.sh\`)" --measurer "${S4E_SEAT:-}" --criterion-changed '2026-09-16:gate fixture stub banner' 2>&1)"; rc=$?
 [ "$rc" = 2 ] && grep -q 'READ BACK' <<<"$out" && grep -q 'PARTIAL' <<<"$out" && cmp -s "$TSV" "$W/orig.tsv" && ck ok "(g) a banner that accepts the flag and drops it: the READ-BACK REFUSED rc=2 naming the PARTIAL state (SCORE.md written, SUITES.tsv not)" || ck no "(g) rc=$rc -- got: $(tail -3 <<<"$out" | cut -c1-200)"
 echo "population: $checks arm(s) graded, $fails FAIL"

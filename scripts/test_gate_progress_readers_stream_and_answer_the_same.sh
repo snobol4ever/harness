@@ -29,7 +29,7 @@ GATE_STRICT=1
 gate_parse_args "$@"
 GH="$(cd "$ROOT/.." && pwd)/.github"
 . "$(dirname "${BASH_SOURCE[0]}")/lib_suites_tsv.sh" || { echo "REFUSED(2): cannot load lib_suites_tsv.sh"; exit 2; }
-F="$GH/scripts/util_progress_flips.py"; B="$GH/scripts/util_suite_banner.py"; DB="${S4E_PROGRESS_DB_LIVE:-/home/resources/progress/results.tsv}"
+F="$HERE/util_progress_flips.py"; B="$HERE/util_suite_banner.py"; DB="${S4E_PROGRESS_DB_LIVE:-/home/resources/progress/results.tsv}"
 gate_require "$F" "util_progress_flips.py" || exit 2
 gate_require "$B" "util_suite_banner.py" || exit 2
 gate_require "$DB" "the live progress table (read, never written)" || exit 2

@@ -21,7 +21,7 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GH="$HERE/../../.github"
-B="$GH/scripts/util_suite_banner.py"
+B="$HERE/util_suite_banner.py"
 [ -f "$B" ] || { echo "⛔ REFUSE(rc=2): $B missing -- cannot measure, which is never green"; exit 2; }
 grep -q 'def xfail_by_lang' "$B" || { echo "⛔ REFUSE(rc=2): util_suite_banner.py no longer defines xfail_by_lang -- this gate grades a rule that is gone, which must never read green"; exit 2; }
 . "$HERE/lib_suites_tsv.sh" || exit 2; REAL="$(suites_real_mark)"

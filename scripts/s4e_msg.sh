@@ -5510,7 +5510,7 @@ TASKEOF
          # it reverses his 2026-11-08 12:4x "Just not the test suite banner."). S4E_BANNER_GRID=0 leaves the grid out; unset or anything else prints it after the status lines and the verdict.
          # WORK THAT IS NOT ON main IS NAMED AT EVERY STOP (the cio 2026-11-11, CIO-125; Lon, in the cio's window, verbatim: "Investigate how hundreds of fixes went un-pushed."): MEASURED that day, 466 patches in 147
          # branches stood off main in 26 seat folders and on origin and no tool counted them. One line when this seat's folders hold a branch or a worktree with commits origin/main lacks; nothing when they hold none.
-         _sb="$S4E/.github/scripts/util_suite_banner.py"
+         _sb="$S4E/harness/scripts/util_suite_banner.py"
          # ONLY THE COO'S BANNER CARRIES THE GRID (Lon 2026-11-11 10:4x CST, in the cto's window, verbatim: "Fix your stop hook banner to be status only, no test suite. COO will be the only one with
          # the banner. It is just too big now for all the seats and one seat will do. The COO." / "Tell CIO to fix all the seats banners."; CIO-129; it narrows CIO-114). The default is the grid for the
          # seat coo and status only for every other seat; S4E_BANNER_GRID=1 asks for the grid anywhere (the banner gate does) and 0 leaves it out anywhere.

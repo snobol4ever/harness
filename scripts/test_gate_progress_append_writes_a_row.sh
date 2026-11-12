@@ -18,7 +18,7 @@ ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside ha
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
-H="$HERE/corpus_suite_harness.py"; PY="$HERE/util_progress_append.py"; Q="$S4E/.github/scripts/util_progress_flips.py"
+H="$HERE/corpus_suite_harness.py"; PY="$HERE/util_progress_append.py"; Q="$S4E/harness/scripts/util_progress_flips.py"
 [ -f "$H" ] && [ -f "$PY" ] || { echo "GATE UNPROVEN(2) [progress_append_writes_a_row]: harness or writer missing under $HERE"; exit 2; }
 [ -f "$Q" ] || { echo "GATE UNPROVEN(2) [progress_append_writes_a_row]: query tool missing at $Q (pull .github)"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate test_gate_progress_append_writes_a_row >/dev/null 2>&1 || { echo "GATE UNPROVEN(2) [progress_append_writes_a_row]: this tree's binary is stale or unbuilt -- arms 5-7 run a real program. Run 'make'."; exit 2; }

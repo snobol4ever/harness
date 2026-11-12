@@ -26,7 +26,7 @@ ASCII-only width and SAYS NOTHING, because a banner printed slightly wide beats 
 import sys, os, io, contextlib, importlib.util
 def _load_dw():
     here = os.path.dirname(os.path.abspath(__file__))
-    for cand in (os.path.join(here, "..", "..", "SCRIP", "..", ".github", "scripts", "util_suite_banner.py"),
+    for cand in (os.path.join(here, "util_suite_banner.py"), os.path.join(here, "..", "..", "SCRIP", "..", ".github", "scripts", "util_suite_banner.py"),
                  os.path.join(here, "..", "..", "SCRIP", ".github", "scripts", "util_suite_banner.py")):
         cand = os.path.abspath(cand)
         if not os.path.exists(cand): continue

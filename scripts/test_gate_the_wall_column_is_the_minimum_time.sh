@@ -9,7 +9,7 @@
 set -u
 unset S4E_PROGRESS_DB S4E_SUITES_TSV S4E_SCORE_MD S4E_PROGRESS_OFF
 H="$(cd "$(dirname "$0")" && pwd)"; G=the_wall_column_is_the_minimum_time; ROOT="${S4E_HOME:-$(cd "$H/../.." && pwd)}"
-B="$ROOT/.github/scripts/util_suite_banner.py"
+B="$H/util_suite_banner.py"
 [ -r "$H/util_progress_append.py" ] && [ -r "$B" ] || { echo "REFUSE(2) [$G]: util_progress_append.py or the banner is missing -- cannot measure"; exit 2; }
 T="$(mktemp -d)" || { echo "REFUSE(2) [$G]: mktemp failed"; exit 2; }; trap 'rm -rf "$T"' EXIT
 fail=0; n=0

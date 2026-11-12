@@ -63,7 +63,7 @@ ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside ha
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
-Q="$S4E/.github/scripts/util_progress_flips.py"
+Q="$S4E/harness/scripts/util_progress_flips.py"
 [ -f "$Q" ] || { echo "GATE UNPROVEN(2) [progress_configuration_ratchet]: query tool missing at $Q (pull .github)"; exit 2; }
 LIVE_DB="${S4E_PROGRESS_DB_LIVE:-/home/resources/progress/results.tsv}"
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_progress_ratchet.XXXXXX")" || { echo "GATE UNPROVEN(2): mktemp failed"; exit 2; }

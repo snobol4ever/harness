@@ -45,7 +45,7 @@ ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside ha
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
-PY="$HERE/util_progress_append.py"; Q="$S4E/.github/scripts/util_progress_flips.py"
+PY="$HERE/util_progress_append.py"; Q="$S4E/harness/scripts/util_progress_flips.py"
 [ -f "$PY" ] || { echo "GATE UNPROVEN(2) [progress_records_the_configuration]: writer missing at $PY"; exit 2; }
 [ -f "$Q" ] || { echo "GATE UNPROVEN(2) [progress_records_the_configuration]: query tool missing at $Q (pull .github)"; exit 2; }
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_progress_config.XXXXXX")" || { echo "GATE UNPROVEN(2): mktemp failed"; exit 2; }

@@ -15,7 +15,7 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; GH="$(cd "$ROOT/.." && pwd)/.github"
 . "$(dirname "${BASH_SOURCE[0]}")/lib_suites_tsv.sh" || { echo "REFUSED(2): cannot load lib_suites_tsv.sh"; exit 2; }
-B="$GH/scripts/util_suite_banner.py"; R="$HERE/util_score_row.py"
+B="$HERE/util_suite_banner.py"; R="$HERE/util_score_row.py"
 [ -f "$B" ] && [ -f "$SUITES_TSV_REAL" ] && [ -f "$GH/SCORE.md" ] && [ -f "$R" ] || { echo "⛔ REFUSED(2): $B, the shared SUITES.tsv, SCORE.md or util_score_row.py missing"; exit 2; }
 T="$(mktemp -d)"; trap 'kill $(jobs -p) 2>/dev/null; rm -rf "$T"' EXIT
 fails=0; checks=0

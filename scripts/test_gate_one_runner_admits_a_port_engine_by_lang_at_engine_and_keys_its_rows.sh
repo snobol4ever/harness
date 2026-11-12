@@ -100,7 +100,7 @@ sed 's/\tsnobol4-rungs@dotnet\t/\tsnobol4-rungs\t/' "$T/admitted.tsv" > "$T/bare
 arm "8c CONTROL: the same rows under the bare key are read (2 of 2)"  'assemble "$T/bare_control.tsv" | grep -q " read=2 unread=0 "'
 # THE FIRST PUBLISH OPENS THE PORT ROW (R-1822): from-progress --suite sno-rungs@dotnet over a table that holds only SCRIP's bare row
 # opens sno-rungs@dotnet through util_suite_banner.py --open (the bare row's nick, emoji, lang) and fills it; a second publish adds no row
-B="$H/../../.github/scripts/util_suite_banner.py"
+B="$H/util_suite_banner.py"
 [ -r "$B" ] || { echo "REFUSE(2) [$G]: no util_suite_banner.py at $B beside this harness -- the first-publish arms cannot be measured"; exit 2; }
 mkdir -p "$R/.github/scripts"; cp "$B" "$R/.github/scripts/"
 printf 'key\tnick\temoji\tlang\tfirst_date\tfirst_pass\tfirst_total\ttoday_date\ttoday_pass\ttoday_total\ttree\tcriterion_changed\ttoday_excluded\ttoday_secs\ttoday_void\n' > "$T/SUITES.tsv"

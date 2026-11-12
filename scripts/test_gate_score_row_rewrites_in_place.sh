@@ -334,13 +334,13 @@ fi
 # leave the file byte-identical -- a preview that previews by writing is the defect it exists to prevent.
 examined=$((examined + 1))
 S10="$(mktemp -d "${TMPDIR:-/tmp}/score_dryrun.XXXXXX")"
-mkdir -p "$S10/.github/scripts"; cp "$GH/SCORE.md" "$S10/.github/SCORE.md"
+mkdir -p "$S10/harness/scripts" "$S10/.github"; cp "$GH/SCORE.md" "$S10/.github/SCORE.md"
 # ⭐ THE SCRATCH TREE NEEDS THE SUITE TABLE TOO (hq_T 2026-09-06, R-363): a V/M write now mirrors into
 # .github/SUITES.tsv or refuses naming the row, so a scratch tree carrying only SCORE.md is not a scratch
 # copy of what this command touches -- it is half of one, and the preview would refuse for a reason that is
 # about the fixture rather than about the write.
 [ -f "$SUITES_TSV_REAL" ] && cp "$SUITES_TSV_REAL" "$S10/.github/SUITES.tsv"
-[ -f "$GH/scripts/util_suite_banner.py" ] && cp "$GH/scripts/util_suite_banner.py" "$S10/.github/scripts/util_suite_banner.py"
+[ -f "$HERE/util_suite_banner.py" ] && cp "$HERE/util_suite_banner.py" "$S10/harness/scripts/util_suite_banner.py"
 d10_before="$(md5sum < "$S10/.github/SCORE.md")"
 d10out="$(S4E_HOME="$S10" python3 "$HELPER" write --lang icon --column vendor --suite Arizona \
     --text 'Arizona: m3 46/124 · m4 46/124 (`test_icon_arizona_suite.sh`)' --measurer hq_T --dry-run \

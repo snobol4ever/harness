@@ -1242,7 +1242,7 @@ def _suite_table_lock():
             time.sleep(0.05)
     _SUITE_TABLE_LOCK_FD = fd
     os.environ["S4E_SUITE_TABLE_LOCKED"] = str(os.getpid())
-SUITE_BANNER = os.path.join(S4E, ".github", "scripts", "util_suite_banner.py")
+SUITE_BANNER = os.path.join(S4E, "harness", "scripts", "util_suite_banner.py")
 SUITE_SYNC_ROW = "suite-table-row-rewritten-by-the-runner-through-util-suite-banner-set"
 # ⭐⭐ A COLUMN THAT IS A SUITE-TABLE ROW AND NO GRID CELL (Lon 2026-09-23 17:2x, in-chat, verbatim: "You messed up and
 # forgot to have the benchmarks in the test suite grid." -- "The reason to force a benchmark to also be a test is to guarantee it is

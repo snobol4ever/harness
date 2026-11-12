@@ -18,7 +18,7 @@
 #   (d) a TSV row whose criterion stamp ends 'OUTSIDE=7' renders its result cell as 'pass/total OUTSIDE=7' (with EXCLUDED=k between them when the row carries today_excluded, R-1286, and WALL=<n>s after it when the row carries today_secs, R-1562)
 # FAIL_ONCE=1 runs arm (a)'s check on an AGREEING pair so the expected disagreement never comes, proving the arm trips.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; GH="$HERE/../../.github"; B="$GH/scripts/util_suite_banner.py"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; GH="$HERE/../../.github"; B="$HERE/util_suite_banner.py"
 . "$(dirname "${BASH_SOURCE[0]}")/lib_suites_tsv.sh" || { echo "REFUSED(2): cannot load lib_suites_tsv.sh"; exit 2; }
 refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 [ -f "$B" ] && [ -f "$SUITES_TSV_REAL" ] && [ -f "$GH/SCORE.md" ] || refuse "need $B, SUITES.tsv and SCORE.md"

@@ -22,7 +22,7 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GH="$HERE/../../.github"
-BANNER="$GH/scripts/util_suite_banner.py"
+BANNER="$HERE/util_suite_banner.py"
 . "$HERE/lib_suites_tsv.sh" || exit 2
 for f in "$BANNER" "$SUITES_TSV_REAL" "$GH/SCORE.md"; do
     [ -f "$f" ] || { echo "⛔ REFUSE(rc=2): missing $f -- cannot measure, which is never green"; exit 2; }

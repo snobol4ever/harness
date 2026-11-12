@@ -28,7 +28,7 @@ GATE_NAME=progress_flips_a_program_that_stops_being_graded_went_dark
 GATE_STRICT=1
 gate_parse_args "$@"
 GH="$(cd "$ROOT/.." && pwd)/.github"
-F="$GH/scripts/util_progress_flips.py"
+F="$HERE/util_progress_flips.py"
 gate_require "$F" "util_progress_flips.py" || exit 2
 SCRATCH="${S4E_SCRATCH:-$(cd "$ROOT/.." && pwd)/.scratch}"
 mkdir -p "$SCRATCH" || { echo "REFUSING(2) [$GATE_NAME]: cannot create $SCRATCH"; exit 2; }
