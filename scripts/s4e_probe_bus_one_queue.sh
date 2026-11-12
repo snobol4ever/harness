@@ -92,7 +92,20 @@ case "$N" in
     [ "$(st "$m")" = QUEUED:tier-haiku ] || why="$why the minted row reads $(st "$m"), not QUEUED:tier-haiku (today mint --tier leaves FREE beside its job);"
     printf '%s\n' "$out" | grep -q '^WAKE: SendMessage to PJ97 ' || why="$why mint printed no WAKE line for PJ97;"
     grep -l '^QUEUE-JOB:' "$w"/tasks/*.task.md >/dev/null 2>&1 && why="$why a baton carries a QUEUE-JOB line;"
-    verdict "queue=QUEUED escalate=QUEUED:tier-sonnet assign=ASSIGNED mint=QUEUED wake=4";;
+    # THE TOP RUNG (the cio 2026-11-12 13:2x, on the coo's telegram ladder-top-rung-no-lon-hold; Lon 12:4x: "I release ALL holds."): the coo's own escalation
+    # parks PARKED-CHAIRMAN:escalated, telegrams and wakes the cio, and an officer lifts it with a bare park FREE, no S4E_GRANT_BY
+    printf 'coo\tPCOO97\t/tmp\tclaude-opus-5-5\txhigh\tblue\t2\tboss\ncio\tPCIO97\t/tmp\tclaude-fable-5-2\txhigh\tblue\t1\tboss\n' >> "$w/TIERS.tsv"
+    printf 'BOSSES: cio coo\n' >> "$w/MODE"; mkdir -p "$w/coo/inbox" "$w/cio/inbox"
+    c=busq3-chair-$$; row 2 "$c" coo CLAIMED:coo; baton "$c"; pc="$(live_claude coo)"
+    printf 'coo\nRESERVED file tube=seat-coo session=PCOO97 pid=%s 2026-11-12T00:00:00Z\n' "$pc" > "$w/claims/$c.claim"
+    out="$(printf 'measured: the probe step 3 top rung\n' | bus coo escalate "$c" --stdin)"; rc=$?
+    [ "$rc" = 0 ] || why="$why the coo's escalate exited $rc [$(printf '%s' "$out" | grep -m1 -E '⚠|⛔|REFUSE' | cut -c1-90)];"
+    [ "$(st "$c")" = PARKED-CHAIRMAN:escalated ] || why="$why the coo's escalated row reads $(st "$c"), not PARKED-CHAIRMAN:escalated;"
+    printf '%s\n' "$out" | grep -q '^WAKE: SendMessage to PCIO97 ' || why="$why the coo's escalate printed no WAKE line for the cio;"
+    ls "$w/cio/inbox/" 2>/dev/null | grep -q "escalated-$c-rung" || why="$why the cio got no telegram of the top rung;"
+    out="$(env -u S4E_GRANT_BY true; bus "$O" park "$c" FREE)"; rc=$?
+    [ "$rc" = 0 ] && [ "$(st "$c")" = FREE ] || why="$why an officer's bare park FREE did not lift the chairman's row (rc $rc, reads $(st "$c")) [$(printf '%s' "$out" | grep -m1 -E '⛔|REFUSE' | cut -c1-90)];"
+    verdict "queue=QUEUED escalate=QUEUED:tier-sonnet assign=ASSIGNED mint=QUEUED wake=4 top=PARKED-CHAIRMAN lift=park-FREE";;
 4)  # ask and answer through s4e_ask.sh on the file road (Q5): the question row is QUEUED:ask-<tier above>, the asker BLOCKED-ON it; answer closes it and the asker returns
     k=busq4-$$; row 2 "$k" "$J" "CLAIMED:$J"; baton "$k"; p="$(live_claude "$J")"; live_claude "$S" >/dev/null
     printf '%s\nRESERVED file tube=tier-haiku session=PJ97 pid=%s 2026-11-08T00:00:00Z\n' "$J" "$p" > "$w/claims/$k.claim"

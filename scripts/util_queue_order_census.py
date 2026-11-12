@@ -21,7 +21,7 @@ import sys, os, re, glob, time, fcntl
 PO = "/home/resources/postoffice"
 Q = PO + "/QUEUE.tsv"
 TASKS = PO + "/tasks"
-LIVE = ("FREE", "CLAIMED", "ASSIGNED", "PARKED-AWAITING", "BLOCKED-ON", "PARKED-UMBRELLA", "PARKED-LON-HOLD", "GRANT-NEEDED", "PARKED", "RESTRICTED")
+LIVE = ("FREE", "CLAIMED", "ASSIGNED", "PARKED-AWAITING", "BLOCKED-ON", "PARKED-UMBRELLA", "PARKED-LON-HOLD", "PARKED-CHAIRMAN", "GRANT-NEEDED", "PARKED", "RESTRICTED")
 RANK = {"completeness": 1, "correctness": 1, "instrument": 2, "law": 2, "speed": 3, "bootstrap": 3}
 SEAT_ROOT = {"cto": "cto", "coo": "coo", "cfo": "cfo"}
 STALE_H = 48

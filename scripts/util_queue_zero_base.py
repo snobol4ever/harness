@@ -166,7 +166,7 @@ for f in parsed:
     # machine-defect-re-measured-when-its-rung-lands, a topic with no row anywhere, and this sweep kept them forever; re-measured 10-31, ten
     # read green, four red, two past 240 s and nine could not measure. Such a row is swept as FREE: its own DONE-WHEN decides it.
     if s == "PARKED-UMBRELLA" and ":" in state and state.split(":", 1)[1] not in topics_live: s = "FREE"
-    if s == "PARKED-LON-HOLD" or s == "PARKED-UMBRELLA": decisions[topic] = ("KEEP-" + s, "", "KEEP"); continue
+    if s in ("PARKED-LON-HOLD", "PARKED-CHAIRMAN", "PARKED-UMBRELLA"): decisions[topic] = ("KEEP-" + s, "", "KEEP"); continue
     if s == "PARKED": decisions[topic] = ("KEEP-PARKED-SEATED" if owner in SEATED else "KEEP-PARKED-STOOD-DOWN", "", "KEEP"); continue   # the coo 2026-11-04: a seated seat's plain PARKED row is live work
     # (a cure waiting on its grade, a design step), not litter: retiring it lost the cto's euler14 and predicate_property rows in a dry run. A stood-down seat's is kept too: MODE parks its rows in place until Lon's word (CEO-755c, no re-lane).
     if s in ("PARKED-EXECUTIVE-NO-SEAT", "PARKED-REBUS-CLOSED", "PARKED"): decisions[topic] = ("RETIRE-" + s.lower(), "", "RETIRED"); continue

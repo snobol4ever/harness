@@ -212,8 +212,9 @@ s4e_skills_required_ok() {   # <tier> <goal text>: a sonnet or haiku row carries
 s4e_queue_pri() { case "$1" in seat-*) echo $((100 + $2));; ask-*) echo 50;; *) echo $((1000 + $2));; esac; }   # <tube> <rank>: a directed job outranks tier work, an ask outranks both
 s4e_queue_enqueue_row() { echo "queued tube=$2 (file road: the column is the tube, no job put)"; return 0; }   # <topic> <tube> <rank> <tier>: bus-one-queue (CIO-82): queue and mint write the column; no job exists
 s4e_tier_below() { case "$1" in fable) echo opus;; opus) echo sonnet;; sonnet) echo haiku;; *) return 1;; esac; }
-# THE COO IS THE TOP of the ladder: its own escalation parks PARKED-LON-HOLD for Lon (Lon 2026-11-12 10:4x CST: "junior ... senior, then officer,
-# then BOSS (COO), the CHARIMAN-OF-THE-BOARD, me."); until then the coo's escalation went to tier-fable.
+# THE COO IS THE TOP of the ladder and the chairman sits above it (Lon 2026-11-12 10:4x CST: "junior ... senior, then officer, then BOSS (COO), the
+# CHARIMAN-OF-THE-BOARD, me."): the coo's own escalation parks PARKED-CHAIRMAN:escalated, an ordinary park and no hold (Lon 12:4x: "I release ALL holds.
+# I do not remember making any holds."; the cio 13:2x): any boss lifts it with park FREE or queue, no grant named; the cio is told and woken, Lon sees it there.
 s4e_escalate_above() {   # <tube> -> the tube one rung up (fleet-queue step 7): tier-haiku (or a haiku seat's seat-<me>) -> tier-sonnet, tier-sonnet (or a sonnet seat) -> tier-opus, the escalation officers (TIERS.tsv role escalation), the double escalation; an opus tube or seat -> tier-fable, the triple escalation (COO-485, Lon 2026-11-08 13:0x: junior, senior, officer, then the cio or the cto; the bosses sleep); rc 1 at the top
     local _tier
     case "$1" in seat-*) _tier="$(s4e_tier_of "${1#seat-}" 2>/dev/null || s4e_tier_of "$ME")" || return 1;; tier-*) _tier="${1#tier-}";; *) return 1;; esac
@@ -260,15 +261,15 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
         if _above="$(s4e_escalate_above "$_tube")"; then _top=0; else _top=1; _above=""; fi
         _rung="$(s4e_escalate_rung_set "$_t")"; mkdir -p "$PO/escalations"; _mf="$PO/escalations/$_t.rung$_rung.md"; printf '%s\n' "$_body" > "$_mf"
         if [ "$_top" = 1 ]; then
-            s4e_escalate_ledger "$_t" "$_rung" "$_tube" lon-hold "$_iso" "$_mf"; rm -f "$_c"; s4e_set_row_state "$_t" "PARKED-LON-HOLD:escalated" || true
-            s4e_escalate_tell cio "$_t" "$_rung" "$_tube" lon-hold "$_mf" && _tg=$((_tg+1))
+            s4e_escalate_ledger "$_t" "$_rung" "$_tube" chairman "$_iso" "$_mf"; rm -f "$_c"; s4e_set_row_state "$_t" "PARKED-CHAIRMAN:escalated" || true
+            s4e_escalate_tell cio "$_t" "$_rung" "$_tube" chairman "$_mf" && _tg=$((_tg+1))
         else
             s4e_escalate_ledger "$_t" "$_rung" "$_tube" "$_above" "$_iso" "$_mf"
             _own="@${_above#tier-}"; case "$_above" in seat-*) _own="${_above#seat-}";; esac
             rm -f "$_c"; s4e_set_row_state "$_t" "QUEUED:$_above" || true; s4e_reown_cell "$_t" "$_own" || true
             for _seat in $(printf '%s\n%s\n' "$_by" "$_des" | awk 'NF && !_s[$0]++'); do s4e_escalate_tell "$_seat" "$_t" "$_rung" "$_tube" "$_above" "$_mf" && _tg=$((_tg+1)); done
         fi
-        printf 'escalated %s rung=%s from=%s to=%s measurement=%s telegrams=%s (file road)\n' "$_t" "$_rung" "$_tube" "${_above:-lon-hold}" "$_mf" "$_tg"; s4e_wake_hint "${_above:-lon-hold}" "$_t" escalate; return 0
+        printf 'escalated %s rung=%s from=%s to=%s measurement=%s telegrams=%s (file road)\n' "$_t" "$_rung" "$_tube" "${_above:-chairman}" "$_mf" "$_tg"; if [ "$_top" = 1 ]; then [ "$ME" = cio ] || s4e_wake_hint seat-cio "$_t" escalate; else s4e_wake_hint "$_above" "$_t" escalate; fi; return 0
     fi
 }
 s4e_step_owned_refuse() {   # <topic>: the cio's ruling 2026-11-07 (one owner per job): a sub-step (-step-N- in its topic) whose parent job sits ready or reserved in a tube this seat does not serve is refused, rc 2; rc 0 otherwise
@@ -3584,8 +3585,8 @@ case "$cmd" in
                 # the same reasoning hq_P used to put the queue-column write here rather than in each verb.
                 s4e_announce_claim "$topic"
                 else rm -f "$t"; echo "RACE LOST: $(head -1 "$c" 2>/dev/null) owns it"; exit 1; fi; fi;;
-  escalate) # ⭐ fleet-queue step 7 (the cio, 2026-11-05 17:5x): after one honest try, the claim's holder (or a boss) moves the job one tube up with the measurement on stdin; at the top the row parks PARKED-LON-HOLD:escalated for Lon. escalate --probe proves it on a scratch postoffice.
-         [ -n "${2:-}" ] || s4e_need escalate "a topic" "s4e_msg.sh escalate <topic> --stdin   (the measurement on stdin)" "Moves the job of a row you hold one tube up (haiku to sonnet to opus to fable) at priority 200, with the measurement on the baton; at the top the row parks PARKED-LON-HOLD:escalated for Lon."
+  escalate) # ⭐ fleet-queue step 7 (the cio, 2026-11-05 17:5x): after one honest try, the claim's holder (or a boss) moves the job one tube up with the measurement on stdin; at the top (the coo's own escalation) the row parks PARKED-CHAIRMAN:escalated, an ordinary park any boss lifts, and the cio is told for Lon (no hold, Lon 2026-11-12 12:4x). s4e_probe_bus_one_queue.sh step 3 proves it on a scratch postoffice.
+         [ -n "${2:-}" ] || s4e_need escalate "a topic" "s4e_msg.sh escalate <topic> --stdin   (the measurement on stdin)" "Moves the job of a row you hold one tube up (haiku to sonnet to opus to fable) at priority 200, with the measurement on the baton; at the top the row parks PARKED-CHAIRMAN:escalated, an ordinary park any boss lifts, and the cio is told for Lon."
          [ "${3:-}" = --to ] && { s4e_escalate_takeup "$2" "${4:-}"; exit $?; }
          s4e_escalate "$2"; exit $?;;
   unclaim) # ⭐ s265 — RELEASE AN UNWORKED CLAIM. Minted because THREE seats hit its absence in one day (seat08,
@@ -3717,7 +3718,7 @@ case "$cmd" in
          esac
          case "$st" in
            FREE|PARKED|BLOCKED|ASSIGNED|DONE|SUPERSEDED|RETIRED|GRANT-NEEDED|PARKED-LON-HOLD) : ;;
-           PARKED-AWAITING:?*|BLOCKED-ON:?*|ASSIGNED:?*|CLAIMED:?*|RESTRICTED:?*|DONE:?*|RETIRED:?*|SUPERSEDED:?*|GRANT-NEEDED:?*|PARKED-UMBRELLA:?*|PARKED-LON-HOLD:?*) : ;;
+           PARKED-AWAITING:?*|BLOCKED-ON:?*|ASSIGNED:?*|CLAIMED:?*|RESTRICTED:?*|DONE:?*|RETIRED:?*|SUPERSEDED:?*|GRANT-NEEDED:?*|PARKED-UMBRELLA:?*|PARKED-LON-HOLD:?*|PARKED-CHAIRMAN:?*) : ;;
            MEASURING:?*) _mseat="${st#MEASURING:}"; _mpid="${_mseat##*:}"; _mseat="${_mseat%%:*}"
               { [ "$_mseat" = "$ME" ] && [ "$_mpid" != "$_mseat" ]; } || { printf '⛔ REFUSED: a MEASURING state is MEASURING:<your seat>:<pid>, not "%s".\n' "$st" >&2; exit 2; }
               s4e_pid_is_mine "$_mpid" || { printf '⛔ REFUSED: pid %s is not a live process of %s (S4E_SEAT in its environment, or its cwd under your root or /tmp/s4e/%s); a MEASURING park names the measurement you wait on.\n' "$_mpid" "$ME" "$ME" >&2; exit 2; } ;;
@@ -3726,7 +3727,7 @@ case "$cmd" in
               printf '   Accepted: FREE PARKED BLOCKED ASSIGNED DONE SUPERSEDED RETIRED GRANT-NEEDED PARKED-LON-HOLD\n' >&2
               printf '             PARKED-AWAITING:<topic>  BLOCKED-ON:<topic>  ASSIGNED:<seat>  CLAIMED:<seat>\n' >&2
               printf '             RESTRICTED:<seat>   (only <seat> may ever work it; survives unclaim -- for R-19 HQ-only rows)\n' >&2
-              printf '             DONE:<why>  SUPERSEDED:<why>  GRANT-NEEDED:<why>  PARKED-UMBRELLA:<why>\n' >&2
+              printf '             DONE:<why>  SUPERSEDED:<why>  GRANT-NEEDED:<why>  PARKED-UMBRELLA:<why>  PARKED-CHAIRMAN:<why>  (the top rung; an ordinary park)\n' >&2
               printf '   ⭐ Put the REASON in the baton (%s/tasks/%s.task.md) — the queue is an INDEX, not a brief store.\n' "$PO" "$topic" >&2
               printf '   ⭐ To make a park SELF-CLEARING, spell it PARKED-AWAITING:<blocker> or BLOCKED-ON:<blocker>;\n' >&2
               printf '      next() re-asks whether that blocker is DONE and un-parks this row by itself.\n' >&2
