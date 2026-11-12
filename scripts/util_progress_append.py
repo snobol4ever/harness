@@ -167,9 +167,9 @@ def recording_off():
     return os.environ.get("S4E_PROGRESS_OFF", "") == "1"
 
 
-def _git_short(repo):
+def _git_short(repo, full=False):
     try:
-        out = subprocess.run(["git", "-C", repo, "rev-parse", "--short", "HEAD"], capture_output=True, text=True, timeout=20)
+        out = subprocess.run(["git", "-C", repo, "rev-parse"] + ([] if full else ["--short"]) + ["HEAD"], capture_output=True, text=True, timeout=20)
         h = out.stdout.strip()
         if out.returncode == 0 and re.fullmatch(r"[0-9a-f]{7,}", h):
             dirty = subprocess.run(["git", "-C", repo, "status", "--porcelain", "--untracked-files=no"], capture_output=True, text=True, timeout=60)
@@ -278,8 +278,12 @@ def _ground(scrip_bin=None, rt_dir=None):
     SCRIP=), and this used to re-read S4E_HOME/SCRIP/scrip at append time -- so every worktree run ended THE GROUND MOVED rc 2 after a
     green board, and a row's scrip stamp named the seat root's commit, a tree that never graded it. The tree hash is the graded binary's
     own checkout; the corpus stays S4E_HOME's (the population the run read)."""
-    return {"scrip": _git_short(_tree_of_binary(scrip_bin) if scrip_bin else _tree_default()),
-            "corpus": _git_short(os.path.join(S4E, "corpus")), "fp": _bin_digest(scrip_bin, rt_dir)}
+    # ⛔ THE MOVE IS READ ON THE FULL HASH (the grader 2026-11-12, MEASURED: git lengthened its abbreviation from 9 to 10 characters mid-lap, so
+    # the same commit read scrip ea374ea10 -> ea374ea103 and three graded cells of lap 23 appended nothing: xsb chunk:03, puzzles chunk:01 and
+    # chunk:02, about 5 h). A row's stamp stays the short form; the comparison is the commit itself, dirtiness included.
+    st, ct = (_tree_of_binary(scrip_bin) if scrip_bin else _tree_default()), os.path.join(S4E, "corpus")
+    return {"scrip": _git_short(st), "corpus": _git_short(ct), "fp": _bin_digest(scrip_bin, rt_dir),
+            "scrip_id": _git_short(st, full=True), "corpus_id": _git_short(ct, full=True)}
 
 
 _PINNED = {}
@@ -310,7 +314,7 @@ def assert_ground_unmoved():
     if not _PINNED:
         return
     now = _ground(_PINNED_BIN.get("scrip_bin"), _PINNED_BIN.get("rt_dir"))
-    moved = [k for k in ("scrip", "corpus", "fp") if _PINNED.get(k) != now.get(k)]
+    moved = [k for k, c in (("scrip", "scrip_id"), ("corpus", "corpus_id"), ("fp", "fp")) if _PINNED.get(c) != now.get(c)]
     if moved:
         what = ", ".join("%s %s -> %s" % (k, _PINNED.get(k), now.get(k)) for k in moved)
         raise ProgressGroundMoved(
