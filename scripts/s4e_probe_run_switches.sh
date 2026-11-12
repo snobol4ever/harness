@@ -61,7 +61,7 @@ step1() {   # the reader writes file fences and the stage name beside the progra
 end'
         printf '## f_bare\n\n'; fence SNOBOL4 "        OUTPUT = 'a staged test with no fence and no stage name is not run'
 END"
-    } > "$C/MULTI.md"
+    } > "$C/MULTI-LINERS.md"
     ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-multi-liners "$C" --out "$T/o" --work "$T/w" > rep.tsv 2> err.txt < /dev/null ); local rc=$?
     [ "$rc" = 0 ] || red "the switch exits $rc ($(head -1 "$T/err.txt" | cut -c1-120))"
     want "$T/rep.tsv" f_staged EXIT 0 && same "$T/o/f_staged.out" 'hello file' f_staged
@@ -116,13 +116,13 @@ PAS
     b="$(cd "$T/cut" && timeout -k 5 60 bash "$HERE/fpc_oracle_run.sh" -Mdelphi dswfn.pas < /dev/null 2>/dev/null)" || refuse "fpc -Mdelphi did not answer dswfn"
     [ -n "$a" ] && [ -n "$b" ] && [ "$a" != "$b" ] || refuse "the oracle's two answers do not tell the dialects apart ('$a' and '$b')"
     printf '%s\n' "$HDR" 'p_objfpc,multi,direct,,,,,,,,objfpc' 'p_delphi,multi,direct,,,,,,,,delphi' > "$C/ALL.csv"
-    { printf '## p_objfpc\n\n'; fence Pascal "$(cat "$T/cut/dswfn.pas")"; printf '## p_delphi\n\n'; fence Pascal "$(cat "$T/cut/dswfn.pas")"; } > "$C/MULTI.md"
+    { printf '## p_objfpc\n\n'; fence Pascal "$(cat "$T/cut/dswfn.pas")"; printf '## p_delphi\n\n'; fence Pascal "$(cat "$T/cut/dswfn.pas")"; } > "$C/MULTI-LINERS.md"
     ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-multi-liners "$C" --out "$T/o" > rep.tsv 2> err.txt < /dev/null ); local rc=$?
     [ "$rc" = 0 ] || red "the switch exits $rc ($(head -1 "$T/err.txt" | cut -c1-120))"
     want "$T/rep.tsv" p_objfpc EXIT 0 && same "$T/o/p_objfpc.out" "$a" "p_objfpc against fpc -Mobjfpc"
     want "$T/rep.tsv" p_delphi EXIT 0 && same "$T/o/p_delphi.out" "$b" "p_delphi against fpc -Mdelphi"
     printf '%s\n' "$HDR" 'p_both,multi,direct,,,,,--dialect=tp,,,delphi' > "$D/ALL.csv"
-    { printf '## p_both\n\n'; fence Pascal "$(cat "$T/cut/dswfn.pas")"; } > "$D/MULTI.md"
+    { printf '## p_both\n\n'; fence Pascal "$(cat "$T/cut/dswfn.pas")"; } > "$D/MULTI-LINERS.md"
     ( cd "$T" && timeout -k 5 60 "$SCRIP" --run-multi-liners "$D" --out "$T/o2" > rep2.tsv 2> err2.txt < /dev/null ); rc=$?
     [ "$rc" = 2 ] || red "a dialect cell beside a dialect token in compile_args exits $rc, want the refusal 2"
     [ ! -s "$T/rep2.tsv" ] || red "the refused container still ran a test"
@@ -214,12 +214,12 @@ step7() {   # batch-grader 8c: the child of a warm parent compiles only its own 
 
 pl_container() {   # <dir> <dialect cell of the last test> <witness stems...>: a format-2 Prolog container cut from the batch-grader witnesses
     local C="$1" dl="$2" w last; shift 2; bg_stage
-    mkdir -p "$C"; printf '%s\n' "$HDR" > "$C/ALL.csv"; : > "$C/MULTI.md"
+    mkdir -p "$C"; printf '%s\n' "$HDR" > "$C/ALL.csv"; : > "$C/MULTI-LINERS.md"
     for w in "$@"; do last="$w"; done
     for w in "$@"; do
         [ -f "$BG/$w.pl" ] && [ -f "$BG/$w.ref" ] || refuse "no witness $BG/$w.pl with its answer"
         printf '%s,multi,direct,,60,131072,4096,,,,%s\n' "$w" "$([ "$w" = "$last" ] && printf '%s' "$dl")" >> "$C/ALL.csv"
-        { printf '## %s\n\n' "$w"; fence Prolog "$(cat "$BG/$w.pl")"; } >> "$C/MULTI.md"
+        { printf '## %s\n\n' "$w"; fence Prolog "$(cat "$BG/$w.pl")"; } >> "$C/MULTI-LINERS.md"
     done
 }
 
@@ -237,8 +237,8 @@ step8() {   # the two switches warm a Prolog selection and say so; a selection t
     want "$T/repg.tsv" bg10_pl_hello EXIT 0
     command -v perf > /dev/null 2>&1 || refuse "no perf for the instruction count"
     pl_container "$T/c1" '' bg10_pl_hello; bg_stage
-    printf '%s\n' "$HDR" > "$T/c21.csv"; mkdir -p "$T/c21"; : > "$T/c21/MULTI.md"
-    for w in $(seq -w 1 21); do printf 'h%s,multi,direct,,60,131072,4096,,,,\n' "$w" >> "$T/c21.csv"; { printf '## h%s\n\n' "$w"; fence Prolog "$(cat "$BG/bg10_pl_hello.pl")"; } >> "$T/c21/MULTI.md"; done
+    printf '%s\n' "$HDR" > "$T/c21.csv"; mkdir -p "$T/c21"; : > "$T/c21/MULTI-LINERS.md"
+    for w in $(seq -w 1 21); do printf 'h%s,multi,direct,,60,131072,4096,,,,\n' "$w" >> "$T/c21.csv"; { printf '## h%s\n\n' "$w"; fence Prolog "$(cat "$BG/bg10_pl_hello.pl")"; } >> "$T/c21/MULTI-LINERS.md"; done
     mv "$T/c21.csv" "$T/c21/ALL.csv"
     icount() { ( cd "$T" && perf stat -x, -e instructions:u -o "$T/perf.$2" timeout -k 5 600 "$SCRIP" --run-multi-liners "$1" --out "$T/op.$2" > /dev/null 2>&1 < /dev/null ); awk -F, '/instructions/ {print $1; exit}' "$T/perf.$2"; }
     one="$(icount "$T/c1" a)"; many="$(icount "$T/c21" b)"
@@ -416,7 +416,7 @@ END"
     want "$T/rep.tsv" a EXIT 0 && same "$T/o/a.out" "$(printf 'out one\nout three')" "a (an empty cell: standard output alone)"
     same "$T/o/a.err" 'err two' "a (an empty cell: standard error apart)"
     printf '%s\n' 'entry,group,road,nonl,timeout_s,stderr' 'cm,multi,direct,,,merged' > "$C/ALL.csv"
-    { printf '## cm\n\n'; fence SNOBOL4 "$PG"; } > "$C/MULTI.md"
+    { printf '## cm\n\n'; fence SNOBOL4 "$PG"; } > "$C/MULTI-LINERS.md"
     ( cd "$T" && timeout -k 5 120 "$SCRIP" --run-multi-liners "$C" --out "$T/o2" > rep2.tsv 2> err2.txt < /dev/null ); rc=$?
     [ "$rc" = 0 ] || red "the multi-liner switch exits $rc ($(head -1 "$T/err2.txt" | cut -c1-120))"
     want "$T/rep2.tsv" cm EXIT 0 && same "$T/o2/cm.out" "$(printf 'out one\nerr two\nout three')" "cm (merged in a container test)"

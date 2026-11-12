@@ -4,7 +4,7 @@ cio's window, verbatim: "I suspect the $/corpus/tests folder should contain one 
 confusing is the ONE-LINER and MULTI-LINER programs are not grouped into the one file. Why are these folders not organized properly. Get to work.").
 
 THE LAW it reads against is Lon's of 2026-08-29/30 (corpus 11a36c87f): a language's folder is FLAT, its container files side by side (ALL.<ext>,
-ALL.ref, ALL.csv and the other ALL.* sidecars, or in format 2 ONE.<ext>, ONE.out and MULTI.md (CIO-24 f, CIO-44), PARTITION.tsv, EXCLUDED.tsv, the declaration of what is out of the denominator, and LADDER.tsv, the construct census), and every program absorbed
+ALL.ref, ALL.csv and the other ALL.* sidecars, or in format 2 ONE-LINERS.<ext>, ONE-LINERS.out and MULTI-LINERS.md (CIO-24 f, CIO-44), PARTITION.tsv, EXCLUDED.tsv, the declaration of what is out of the denominator, and LADDER.tsv, the construct census), and every program absorbed
 into the container. THERE IS NO config/ FOLDER (CIO-55, Lon 2026-11-10 10:5x, verbatim: "I do not see the need for a config folder inside
 $/corpus/tests/snobol4 folder. We have all other configuration files at the level one higher."): a role file stands beside the container as
 ALL.<role> (ALL.path the companion search path), and a tracked file under LANG/config/ is loose like any other subfolder's.
@@ -64,7 +64,7 @@ def main():
         for rel in files:
             top = rel.split("/", 1)[0] if "/" in rel else "."
             b = os.path.basename(rel)
-            if top == "." and (b.startswith("ALL.") or b.startswith("ONE.") or b in ("MULTI.md", "PARTITION.tsv", "EXCLUDED.tsv", "LADDER.tsv")):
+            if top == "." and (b.startswith("ALL.") or b.startswith("ONE-LINERS.") or b in ("MULTI-LINERS.md", "PARTITION.tsv", "EXCLUDED.tsv", "LADDER.tsv")):
                 continue
             if top != ".":
                 subs[top] += 1

@@ -185,7 +185,7 @@ M4_PASS_FLOOR="${ICON_RUNGS_M4_PASS_FLOOR:-900}"
 # exit code for both is how a vanished corpus reads as a clean run.
 if [ ! -x "$SCRIP" ];       then echo "⛔ BOARD REFUSES (rc=2): scrip not built at $SCRIP"; exit 2; fi
 if [ ! -f "$HARNESS" ];     then echo "⛔ BOARD REFUSES (rc=2): corpus_suite_harness.py missing at $HARNESS"; exit 2; fi
-if { [ ! -f "$RUNGS_ICN" ] || [ ! -f "$RUNGS_REF" ]; } && [ ! -f "$CORPUS/MULTI.md" ] && [ ! -f "$CORPUS/ONE.icn" ]; then   # format 2 (CIO-24 f) is read from the same names
+if { [ ! -f "$RUNGS_ICN" ] || [ ! -f "$RUNGS_REF" ]; } && [ ! -f "$CORPUS/MULTI-LINERS.md" ] && [ ! -f "$CORPUS/ONE-LINERS.icn" ]; then   # format 2 (CIO-24 f) is read from the same names
     echo "⛔ BOARD REFUSES (rc=2): the Icon rungs suite is missing at $RUNGS_ICN"
     echo "   Do NOT read a family-by-family rung grader's smaller total as this board — that substitution"
     echo "   is the exact failure this board was minted to make impossible. Pull corpus."

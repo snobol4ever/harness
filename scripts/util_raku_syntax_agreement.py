@@ -51,7 +51,7 @@ def refuse(msg):
 def rungs_units(workdir):
     sys.path.insert(0, str(HERE))
     import corpus_suite_harness as h
-    _d = h.fmt2_dir_of(str(RUNGS))   # format 2 (MULTI.md, ONE.raku) under the ALL.raku name (CIO-24 f; the cfo 2026-11-12)
+    _d = h.fmt2_dir_of(str(RUNGS))   # format 2 (MULTI-LINERS.md, ONE-LINERS.raku) under the ALL.raku name (CIO-24 f; the cfo 2026-11-12)
     if _d:
         entries = h.read_container_dir(_d, ".raku")
     else:

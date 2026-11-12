@@ -117,7 +117,7 @@ ref_masters() {
   { find "$CORPUS" -type f -name 'ALL.ref' 2>/dev/null
     while IFS= read -r d; do
       r="${d#$CORPUS/}"; mkdir -p "$SC/$r" && cp -r "$d"/. "$SC/$r"/ && python3 "$HERE/corpus_suite_harness.py" ungroup "$SC/$r" > /dev/null 2>&1 && printf '%s\n' "$SC/$r/ALL.ref"
-    done < <(find "$CORPUS" -type f \( -name MULTI.md -o -name 'ONE.*' \) -printf '%h\n' 2>/dev/null | sort -u)
+    done < <(find "$CORPUS" -type f \( -name MULTI-LINERS.md -o -name 'ONE-LINERS.*' \) -printf '%h\n' 2>/dev/null | sort -u)
   } | while IFS= read -r f; do r="${f#$CORPUS/}"; printf '%s\t%s\n' "${r#$SC/}" "$f"; done | sort | cut -f2
 }
 echo

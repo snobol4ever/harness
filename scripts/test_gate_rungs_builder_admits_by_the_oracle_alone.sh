@@ -11,7 +11,7 @@ GATE_NAME=test_gate_rungs_builder_admits_by_the_oracle_alone
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../.." && pwd)"
 SBL=/home/resources/x64/bin/sbl
 [ -x "$SBL" ] || { echo "⛔ REFUSE(2) [$GATE_NAME]: no SPITBOL oracle at $SBL"; exit 2; }
-[ -f "$ROOT/corpus/tests/snobol4/ALL.csv" ] && { [ -f "$ROOT/corpus/tests/snobol4/ALL.sno" ] || [ -f "$ROOT/corpus/tests/snobol4/MULTI.md" ] || [ -f "$ROOT/corpus/tests/snobol4/ONE.sno" ]; } || { echo "⛔ REFUSE(2) [$GATE_NAME]: no SNOBOL4 master to copy"; exit 2; }
+[ -f "$ROOT/corpus/tests/snobol4/ALL.csv" ] && { [ -f "$ROOT/corpus/tests/snobol4/ALL.sno" ] || [ -f "$ROOT/corpus/tests/snobol4/MULTI-LINERS.md" ] || [ -f "$ROOT/corpus/tests/snobol4/ONE-LINERS.sno" ]; } || { echo "⛔ REFUSE(2) [$GATE_NAME]: no SNOBOL4 master to copy"; exit 2; }
 D=$(mktemp -d "${TMPDIR:-/tmp}/rungs_oracle_gate.XXXXXX") || { echo "⛔ REFUSE(2) [$GATE_NAME]: no tmpdir"; exit 2; }
 trap 'rm -rf "$D"' EXIT
 [ -x "$ROOT/SCRIP/scrip" ] || { echo "⛔ REFUSE(2) [$GATE_NAME]: no scrip at $ROOT/SCRIP/scrip (the builder's own build-behaviour probe compiles with it)"; exit 2; }
@@ -39,8 +39,8 @@ arm "no entry already in the master moved (lost 0, changed 0, gained 2)" "$(prin
 # CIO-64: THE BUILDER EDITS A FORMAT-2 MASTER NATIVELY. The snobol4 master is format 2 and holds an entry the old form cannot hold (the fwctx
 # standalone entry, corpus ddbd15a22); before the cure every builder run on it refused at the ungroup. After the run the scratch master is still
 # format 2 (no ALL.sno came back) and reads back through the harness with that entry in it.
-if [ -f "$ROOT/corpus/tests/snobol4/MULTI.md" ]; then
-    arm "snobol4: the master stays format 2 (MULTI.md present, no ALL.sno written)" "$([ -f "$D/corpus/tests/snobol4/MULTI.md" ] && [ ! -f "$D/corpus/tests/snobol4/ALL.sno" ] && echo yes)" yes
+if [ -f "$ROOT/corpus/tests/snobol4/MULTI-LINERS.md" ]; then
+    arm "snobol4: the master stays format 2 (MULTI-LINERS.md present, no ALL.sno written)" "$([ -f "$D/corpus/tests/snobol4/MULTI-LINERS.md" ] && [ ! -f "$D/corpus/tests/snobol4/ALL.sno" ] && echo yes)" yes
     arm "snobol4: every entry of the master reads back after the native write" "$(printf '%s\n' "$names" | grep -c .)" "$(( $(python3 "$HERE/corpus_suite_harness.py" list "$ROOT/corpus/tests/snobol4/ALL.sno" "$ROOT/corpus/tests/snobol4/ALL.ref" --lang snobol4 2>/dev/null | grep -c .) + 2 ))"
 fi
 # ---- THE TRANSPILE ROAD AND THE STALE OMIT KEY (CIO-56 (d), row tests-layout-the-rungs-builder-admits-by-the-oracle-cut-alone-in-every-language-

@@ -33,7 +33,7 @@ ENVS=("$@"); [ ${#ENVS[@]} -eq 0 ] && ENVS=("SCRIP_ZDP=1")
 # identical note) -- the TOTAL<100 vacuity floor below still protects against a fully-empty sweep, it
 # does not restore that coverage.
 CORPUS_DIRS="${CORPUS_DIRS:-$S4E/corpus/tests/snobol4}"
-LIST=$(find $CORPUS_DIRS -name '*.sno' ! -name 'ALL.sno' ! -name 'ONE.sno' 2>/dev/null | sort)
+LIST=$(find $CORPUS_DIRS -name '*.sno' ! -name 'ALL.sno' ! -name 'ONE-LINERS.sno' 2>/dev/null | sort)
 TOTAL=0; MOVED=0; FLAKY=0; MOVERS=""; FLAKIES=""
 for f in $LIST; do
     TOTAL=$((TOTAL + 1))

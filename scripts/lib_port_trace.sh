@@ -97,7 +97,7 @@ port_trace_main() {
   # a worktree whose make had refused rc 2 graded the PREVIOUS tree's binary here and stamped the NEW tree's hash on the
   # verdict -- a reading of nothing wearing a hash. The guard every other gate carries, in the ONE body all seven share.
   [ -n "${SCRIP_BIN:-}" ] || "$HERE/util_require_fresh.sh" --gate "$GATE_NAME" "$SCRIP" "$RT/libscrip_rt.so" || exit 2
-  [ -f "$RUNGS_DIR/MULTI.md" ] || [ -f "$RUNGS_DIR/ONE$PORTTRACE_EXT" ] || gate_require "$RUNGS_DIR/ALL$PORTTRACE_EXT" "$PORTTRACE_LANG rungs suite"   # format 2 (CIO-24 f) is read from the same names (the icon gate's idiom, ba02c2e1; the cfo 2026-11-12)
+  [ -f "$RUNGS_DIR/MULTI-LINERS.md" ] || [ -f "$RUNGS_DIR/ONE-LINERS$PORTTRACE_EXT" ] || gate_require "$RUNGS_DIR/ALL$PORTTRACE_EXT" "$PORTTRACE_LANG rungs suite"   # format 2 (CIO-24 f) is read from the same names (the icon gate's idiom, ba02c2e1; the cfo 2026-11-12)
   gate_require "$RUNGS_DIR/ALL.csv" "$PORTTRACE_LANG rungs suite index"
   [ "$CUT" = 1 ] || gate_require "$REF" "trace refs (run with --cut to create them)"
   . "$HERE/lib_rungs_extract.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: cannot source lib_rungs_extract.sh"; exit 2; }

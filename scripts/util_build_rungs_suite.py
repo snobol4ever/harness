@@ -95,7 +95,7 @@ def _stage_name_for(entry_name, origin, ref_lines, ext):
 
 
 # ⭐ A FORMAT-2 MASTER IS EDITED NATIVELY (CIO-64, the coo 2026-11-10 on its own case of 11:59): the builder reads it through read_suite and
-# read_block_suite, which read ONE.EXT, ONE.out and MULTI.md when the directory holds them, and writes it here, through write_container_dir,
+# read_block_suite, which read ONE-LINERS.EXT, ONE-LINERS.out and MULTI-LINERS.md when the directory holds them, and writes it here, through write_container_dir,
 # never through the old files. The old form cannot hold an entry whose program carries the old format's own markers (the fwctx standalone
 # entry of the snobol4 master, corpus ddbd15a22), so the edit road through ungroup (fmt2_edit_in_old_format, CIO-45 (1) b) retires.
 def fmt2_master(outdir, ext):
@@ -114,12 +114,12 @@ def _fmt2_core(e):
 
 
 def fmt2_install(outdir, ext, entries, tmp_csv=None):
-    """Write ENTRIES as the format-2 master in OUTDIR: TMP_CSV (when given) replaces ALL.csv, then write_container_dir writes ONE.EXT,
-    ONE.out and MULTI.md and the index's last three columns, then read_container_dir reads them back. A read-back that differs from ENTRIES
+    """Write ENTRIES as the format-2 master in OUTDIR: TMP_CSV (when given) replaces ALL.csv, then write_container_dir writes ONE-LINERS.EXT,
+    ONE-LINERS.out and MULTI-LINERS.md and the index's last three columns, then read_container_dir reads them back. A read-back that differs from ENTRIES
     in any entry's name, order, kind, program, answer, stdin, arguments or file fences restores the four files byte for byte and refuses
     rc 2. The config copies the writer fenced leave, as regroup's do (CIO-55 (6)). Returns the counts {"one": n, "multi": n}."""
     d = pathlib.Path(outdir)
-    names = ("ONE" + ext, "ONE.out", "MULTI.md", "ALL.csv")
+    names = ("ONE-LINERS" + ext, "ONE-LINERS.out", "MULTI-LINERS.md", "ALL.csv")
     back = {n: (d / n).read_bytes() for n in names if (d / n).is_file()}
     if tmp_csv is not None:
         os.replace(tmp_csv, d / "ALL.csv")
@@ -763,7 +763,7 @@ def split_write(OUTDIR, EXT, lang, _CO, _CC, do_write):
         print("\nVERIFY-ONLY. Nothing written. Add --write to emit the two pairs.")
         return 0
     out = []
-    for tag, subset in (("ONE", one), ("MULTI", multi)):
+    for tag, subset in (("ONE-LINERS", one), ("MULTI-LINERS", multi)):
         o_src = os.path.join(OUTDIR, tag + EXT)
         o_ref = os.path.join(OUTDIR, tag + ".ref")
         if lang == "snobol4":
@@ -861,7 +861,7 @@ def _build_arg_parser():
                         "REFUSES rc=2 if any loose absorbable pair is present, unless --absorb-only names it (under --reindex that "
                         "flag ACKNOWLEDGES a pair, it never absorbs it).")
     p.add_argument("--split-write", action="store_true",
-                    help="rungs-to-rungs: emit ALL.* split into ONE.*/MULTI.* by entry kind; verify-only unless --write")
+                    help="rungs-to-rungs: emit ALL.* split into ONE-LINERS.*/MULTI-LINERS.* by entry kind; verify-only unless --write")
     p.add_argument("--write", action="store_true", help="with --split-write, actually write the split files")
     # -- THE BUILDER EXTENSION (task master-builder-absorbs-demos-benchmarks-programs-and-loose-pairs-
     # additively, Lon 2026-09-04): absorb corpus/demos/<lang> and corpus/benchmarks/<lang> into the SAME
@@ -1893,7 +1893,7 @@ def main():
     COLS, NAME_FEATURES = LANG_TABLES[lang]
     os.makedirs(OUTDIR, exist_ok=True)
     if args.split_write and h.fmt2_dir_of(os.path.join(OUTDIR, "ALL" + EXT)) is not None:
-        sys.stderr.write("REFUSED: --split-write writes ONE.*/MULTI.* by kind, which is not format 2 (CIO-25); %s is format 2\n" % OUTDIR)
+        sys.stderr.write("REFUSED: --split-write writes ONE-LINERS.*/MULTI-LINERS.* by kind, which is not format 2 (CIO-25); %s is format 2\n" % OUTDIR)
         raise SystemExit(2)
     delete_absorbed = args.delete_absorbed
     # ⛔ SURGICAL AND NAMED, never a blanket --force. A deliberate retirement is spelled out origin by
@@ -2669,7 +2669,7 @@ def main():
             os.remove(_stale)
     if _f2:   # CIO-64: the master in format 2 is written last, so a companion copied above is fenced into its entry's section (CIO-55)
         fmt2_install(OUTDIR, EXT, all_entries)
-        _committed += [os.path.join(OUTDIR, n) for n in ("ONE" + EXT, "ONE.out", "MULTI.md") if os.path.isfile(os.path.join(OUTDIR, n))]
+        _committed += [os.path.join(OUTDIR, n) for n in ("ONE-LINERS" + EXT, "ONE-LINERS.out", "MULTI-LINERS.md") if os.path.isfile(os.path.join(OUTDIR, n))]
     # ⛔⭐⭐ AND THEN THE CLOSURE THE ENTRIES THEMSELVES NAME, WHICH THE LOOP ABOVE STRUCTURALLY CANNOT SEE
     # (hq_T 2026-09-05; FINDING-2026-09-05-hq_T-companions-live-outside-the-master-directory-so-26-of-31-entries-
     # cannot-resolve-them.md, the officer routed the instrument half here). The copy above rides along with an ABSORPTION:

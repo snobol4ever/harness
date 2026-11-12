@@ -66,7 +66,7 @@ for name in $STDIN_FAMILIES; do
 done
 
 RUNGS_PASS=0; RUNGS_FAIL=0; RUNGS_EXAMINED=0
-if { [ -f "$RUNGS_SRC" ] && [ -f "$RUNGS_REF" ]; } || [ -f "$(dirname "$RUNGS_SRC")/MULTI.md" ] || [ -f "$(dirname "$RUNGS_SRC")/ONE.pas" ]; then   # format 2 (MULTI.md, ONE.pas) is read by the harness under the same ALL.pas ALL.ref line (CIO-24 f; the cfo 2026-11-12, the tests/pascal regroup)
+if { [ -f "$RUNGS_SRC" ] && [ -f "$RUNGS_REF" ]; } || [ -f "$(dirname "$RUNGS_SRC")/MULTI-LINERS.md" ] || [ -f "$(dirname "$RUNGS_SRC")/ONE-LINERS.pas" ]; then   # format 2 (MULTI-LINERS.md, ONE-LINERS.pas) is read by the harness under the same ALL.pas ALL.ref line (CIO-24 f; the cfo 2026-11-12, the tests/pascal regroup)
     # Every rung suite entry is graded in this gate's mode: there is no modes column (Lon 2026-09-23, R-1218/1230).
     # ⛔⭐ CAPTURE THE HARNESS rc AND ITS stderr -- A REFUSAL IS NOT A RED AND IS NOT A CORPUS DEFECT (hq_B 2026-09-13,
     # row pascal-gates-report-a-one-runner-refusal-as-an-unpopulated-master). `2>/dev/null` here threw away the ONE sentence

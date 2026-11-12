@@ -2,7 +2,7 @@
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_scrip_runs_one_liners_and_multi_liners_from_the_container_files.sh -- CIO-32 with CIO-34 (GOAL-CIO.md), row
 # scrip-run-one-liners-and-run-multi-liners-read-the-container-files-and-run-each-test-anew, officer_01 2026-11-10. SCRIP reads a format-2
-# container itself (ALL.csv by column name, ONE.EXT line for line, MULTI.md sections of fences: language, args, stdin, stdout, stderr) and runs
+# container itself (ALL.csv by column name, ONE-LINERS.EXT line for line, MULTI-LINERS.md sections of fences: language, args, stdin, stdout, stderr) and runs
 # each test anew in a fork with its stdin and args, writing OUT/NAME.out and OUT/NAME.err and one report line a test: name, result type, number,
 # wall s, cpu s, peak KB. It compares nothing. The format bytes are the ones agreed with officer_04 (both LEDGERs, 2026-11-10 09:1x CST).
 # This gate builds a scratch container in that format and reads: every result type (EXIT with its status, ABORT, CRASH, TIMEOUT, HANG,
@@ -44,7 +44,7 @@ m_streams,multi,,,,,,,,
 m_fence4,multi,,,,,,,,
 $LONG,multi,,,,,,,,
 EOF
-cat > "$C/ONE.sno" <<'EOF'
+cat > "$C/ONE-LINERS.sno" <<'EOF'
  OUTPUT = 'hello';END;* one_hello
  X = 'set'; OUTPUT = X;END;* one_setx
  OUTPUT = IDENT(X) 'unset';END;* one_seex
@@ -179,7 +179,7 @@ END
 
 EOF
 printf '## %s\n\n```SNOBOL4\n        OUTPUT = %s\nEND\n```\n\n' "$LONG" "'long'"
-} > "$C/MULTI.md"
+} > "$C/MULTI-LINERS.md"
 reds=""
 red() { reds="$reds $1"; echo "  RED $1"; }
 field() { awk -F'\t' -v n="$2" -v k="$3" '$1 == n { print $k; exit }' "$1"; }
@@ -260,11 +260,11 @@ refusal() {
   [ ! -s "$T/r.$tag.tsv" ] || red "refuse-$tag:a-test-ran-before-the-refusal"
 }
 mk() { rm -rf "$T/$1"; cp -r "$C" "$T/$1"; }
-mk extra && echo " OUTPUT = 'extra';END;* extra" >> "$T/extra/ONE.sno"
+mk extra && echo " OUTPUT = 'extra';END;* extra" >> "$T/extra/ONE-LINERS.sno"
 refusal one-line-count timeout -k 5 30 "$SCRIP" --run-one-liners "$T/extra" --out "$T/rx"
-mk head && printf '## no_such_entry\n\n```SNOBOL4\nEND\n```\n' >> "$T/head/MULTI.md"
+mk head && printf '## no_such_entry\n\n```SNOBOL4\nEND\n```\n' >> "$T/head/MULTI-LINERS.md"
 refusal heading-the-index-lacks timeout -k 5 30 "$SCRIP" --run-multi-liners "$T/head" --out "$T/rh"
-mk open && sed -i 's/^````$/```/' "$T/open/MULTI.md"
+mk open && sed -i 's/^````$/```/' "$T/open/MULTI-LINERS.md"
 refusal unclosed-fence timeout -k 5 30 "$SCRIP" --run-multi-liners "$T/open" --out "$T/ro"
 echo m_no_such > nosuch.txt
 refusal only-name-the-group-lacks timeout -k 5 30 "$SCRIP" --run-multi-liners "$C" --out "$T/rn" --only nosuch.txt

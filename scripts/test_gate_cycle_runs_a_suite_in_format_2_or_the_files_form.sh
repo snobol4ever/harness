@@ -5,7 +5,7 @@
 # A scratch home holds a planted runner table of four one-cell suites and stand-ins for every outside call the cycle makes (sync, make, budget, run
 # slot, the harness, the score row); the real harness/scripts/s4e_cycle.sh beside this gate runs one lap over it with every store scratch:
 #   c1  the container: ALL.sno and ALL.ref
-#   m1  format 2 of a test folder: MULTI.md and ALL.csv, no ALL.sno (CIO-24)
+#   m1  format 2 of a test folder: MULTI-LINERS.md and ALL.csv, no ALL.sno (CIO-24)
 #   f1  the files form of a package: ALL.csv with a path column, no ALL.sno (CIO-59, CIO-113)
 #   x1  nothing but its partition: no suite on disk
 #   r1  the files form, and its CONTRACT.tsv names the road run-files (the package switch, run-switches step 12; the row
@@ -33,7 +33,7 @@ for s in c1 m1 f1 x1 r1; do
     printf '%s\tpkg\tsnobol4\tcorpus_suite_harness.py\tpkg/%s\n' "$s" "$s" >> "$H/harness/scripts/SUITE_RUNNERS.tsv"
 done
 : > "$H/pkg/c1/ALL.sno"; : > "$H/pkg/c1/ALL.ref"
-printf '# planted\n' > "$H/pkg/m1/MULTI.md"; printf 'entry\nm1_e\n' > "$H/pkg/m1/ALL.csv"
+printf '# planted\n' > "$H/pkg/m1/MULTI-LINERS.md"; printf 'entry\nm1_e\n' > "$H/pkg/m1/ALL.csv"
 printf 'entry,path\nf1_e,f1_e.sno\n' > "$H/pkg/f1/ALL.csv"; printf ' OUTPUT = 1\nEND\n' > "$H/pkg/f1/f1_e.sno"
 printf 'entry,path\nr1_e,r1_e.sno\n' > "$H/pkg/r1/ALL.csv"; printf ' OUTPUT = 1\nEND\n' > "$H/pkg/r1/r1_e.sno"
 printf '# planted\nroad\trun-files\tread equal on both roads (planted)\n' > "$H/pkg/r1/CONTRACT.tsv"

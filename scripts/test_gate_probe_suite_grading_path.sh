@@ -13,7 +13,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # the snobol4 master. THE POSITIVE ARM TAKES ITS FAMILY THROUGH THE HARNESS READER AND OPENS NO MASTER FILE
 # ITSELF: the family column comes from the harness's own index reader (_fmt2_read_csv, the reader format 2
 # keeps), and the entries are graded by `run` over the master's ALL.sno ALL.ref command line with an entry
-# partition -- the harness follows that command line into ONE.sno, ONE.out and MULTI.md at the regroup
+# partition -- the harness follows that command line into ONE-LINERS.sno, ONE-LINERS.out and MULTI-LINERS.md at the regroup
 # (fmt2_dir_of), which a find, cat, grep or test -f here would not. The family is the first probe_* family by
 # name with 2 to 8 entries: more than one entry proves entry-by-entry grading, and at most eight is a seat's
 # own test, admitted for every seat (R-1893). The NEGATIVE arm plants its suite file in bb_probes's loose

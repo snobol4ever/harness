@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # test_gate_container_format_2_two_groups_read_back_identical.sh -- A CONTAINER DIRECTORY IN FORMAT 2 (CIO-24 f, CIO-25, CIO-34; row
-# tests-layout-the-container-is-two-groups-one-liner-and-multi-liner-with-stdin-and-stdout-named): ONE.EXT and ONE.out line for line,
-# MULTI.md one section a test (the language, args, stdin, stdout and stderr fences), ALL.csv with group, road and nonl as its last three columns (CIO-50). The
+# tests-layout-the-container-is-two-groups-one-liner-and-multi-liner-with-stdin-and-stdout-named): ONE-LINERS.EXT and ONE-LINERS.out line for line,
+# MULTI-LINERS.md one section a test (the language, args, stdin, stdout and stderr fences), ALL.csv with group, road and nonl as its last three columns (CIO-50). The
 # bytes were agreed by officer_01 (the SCRIP switches) and officer_04 (this reader) on 2026-11-10; both LEDGERs hold the text.
 # THE ARMS, over a scratch container whose answers are cut from sbl -bf (the ONE oracle, through sbl_correctness_bin):
-#   1  regroup converts it: ALL.sno, ALL.ref and ALL.in are gone, ONE.sno holds the one one-liner, MULTI.md the rest, a block holding
+#   1  regroup converts it: ALL.sno, ALL.ref and ALL.in are gone, ONE-LINERS.sno holds the one one-liner, MULTI-LINERS.md the rest, a block holding
 #      three backticks is fenced with four, a stdin with no final newline is named in nonl, run_args moved into an args fence;
 #   2  READ BACK IDENTICAL: every entry read from the new files equals the entry read from the old ones, every attribute (an independent
 #      reading here, beside regroup's own);
-#   3  REFUSALS: a one-liner with two answer lines is never put in ONE (it is in MULTI.md); a ONE.out given a second line for its one
+#   3  REFUSALS: a one-liner with two answer lines is never put in ONE (it is in MULTI-LINERS.md); a ONE-LINERS.out given a second line for its one
 #      row, a section out of index order and an unclosed fence each refuse rc 2; regroup of a container with an XFAIL entry refuses rc 2
 #      and leaves every byte as it was;
 #   4  THE VERDICT: the container graded in mode 3 through corpus_suite_harness.py run reads the same board before and after, every entry
-#      PASS; FAIL-ONCE: the one-liner's ONE.out line corrupted in a copy reads that entry FAIL (the new reader is what grades).
+#      PASS; FAIL-ONCE: the one-liner's ONE-LINERS.out line corrupted in a copy reads that entry FAIL (the new reader is what grades).
 #   5  THE POST STEP (CIO-32 (6)): scrip --run-one-liners and --run-multi-liners run the container, run --post grades their OUT and reads
 #      the board arm 4 read; a corrupted NAME.out reads FAIL; a report naming a test twice refuses rc 2;
 #   6  UNGROUP, THE INVERSE (CIO-45 (1) b): the old ALL.sno, ALL.ref and ALL.in come back byte for byte and read the old entries (the
@@ -74,11 +74,11 @@ o1=$(timeout -k 5 120 python3 "$H" regroup "$W/new" 2>&1); r1=$?
 echo "$o1" | grep '^REGROUP_BOARD' | sed 's/^/  /'
 ck "regroup rc 0 and its board line" '[ $r1 = 0 ] && grep -q "^REGROUP_BOARD .* entries=6 one=1 multi=5 " <<<"$o1"'
 ck "the old files are gone" '! test -e "$W/new/ALL.sno" && ! test -e "$W/new/ALL.ref" && ! test -e "$W/new/ALL.in"'
-ck "ONE.sno holds the one one-liner, ONE.out its answer" '[ "$(cat "$W/new/ONE.sno")" = " OUTPUT = '"'"'one'"'"';END;* a" ] && [ "$(cat "$W/new/ONE.out")" = one ]'
-ck "MULTI.md: five sections in index order; a stdin line opening with two hashes stays stdin" '[ "$(grep -x -e "## b" -e "## c" -e "## e" -e "## g" -e "## k" "$W/new/MULTI.md" | tr "\n" " ")" = "## b ## c ## e ## g ## k " ] && grep -qx "## not a heading" "$W/new/MULTI.md" && [ "$(python3 -c "import sys;sys.path.insert(0,sys.argv[1]);import corpus_suite_harness as h;print(len(h._fmt2_parse_md(sys.argv[2],\".sno\")))" "$HERE" "$W/new/MULTI.md")" = 5 ]'
-ck "three backticks inside a block take a fence of four" 'grep -qx "\`\`\`\`stdin" "$W/new/MULTI.md" && grep -qx "\`\`\`\`stdout" "$W/new/MULTI.md"'
+ck "ONE-LINERS.sno holds the one one-liner, ONE-LINERS.out its answer" '[ "$(cat "$W/new/ONE-LINERS.sno")" = " OUTPUT = '"'"'one'"'"';END;* a" ] && [ "$(cat "$W/new/ONE-LINERS.out")" = one ]'
+ck "MULTI-LINERS.md: five sections in index order; a stdin line opening with two hashes stays stdin" '[ "$(grep -x -e "## b" -e "## c" -e "## e" -e "## g" -e "## k" "$W/new/MULTI-LINERS.md" | tr "\n" " ")" = "## b ## c ## e ## g ## k " ] && grep -qx "## not a heading" "$W/new/MULTI-LINERS.md" && [ "$(python3 -c "import sys;sys.path.insert(0,sys.argv[1]);import corpus_suite_harness as h;print(len(h._fmt2_parse_md(sys.argv[2],\".sno\")))" "$HERE" "$W/new/MULTI-LINERS.md")" = 5 ]'
+ck "three backticks inside a block take a fence of four" 'grep -qx "\`\`\`\`stdin" "$W/new/MULTI-LINERS.md" && grep -qx "\`\`\`\`stdout" "$W/new/MULTI-LINERS.md"'
 ck "ALL.csv: group road nonl the LAST three columns (CIO-50), columns before them unmoved; c names stdin in nonl; g run_args emptied" 'head -1 "$W/new/ALL.csv" | grep -q "^rank,entry,origin,family,kind,xfail,n_lines,heap_kb,stack_kb,compile_args,run_args,group,road,nonl$" && python3 -c "import csv,sys;r={x[\"entry\"]:x for x in csv.DictReader(open(sys.argv[1]))};c,g=r[\"c\"],r[\"g\"];sys.exit(0 if (c[\"group\"],c[\"road\"],c[\"nonl\"])==(\"multi\",\"direct\",\"stdin\") and g[\"run_args\"]==\"\" and g[\"group\"]==\"multi\" and r[\"a\"][\"group\"]==\"one\" else 1)" "$W/new/ALL.csv"'
-ck "g's arguments are an args fence, one a line" 'awk "/^## g\$/{f=1} f" "$W/new/MULTI.md" | grep -A2 -x "\`\`\`args" | tail -2 | tr "\n" " " | grep -qx "alpha beta "'
+ck "g's arguments are an args fence, one a line" 'awk "/^## g\$/{f=1} f" "$W/new/MULTI-LINERS.md" | grep -A2 -x "\`\`\`args" | tail -2 | tr "\n" " " | grep -qx "alpha beta "'
 
 # ---- arm 2: read back identical, read here independently ------------------------------------------------------------------------
 o2=$(python3 - "$HERE" "$W" <<'PY' 2>&1
@@ -93,20 +93,20 @@ for o, e in zip(old, new):
 PY
 )
 ck "every entry read from format 2 equals its old reading, every attribute" '[ "$(grep -c "^SAME" <<<"$o2")" = 6 ] && grep -q "^N 6 6$" <<<"$o2"'
-ck "CIO-46 (D): the answer holding VT FF CR FS GS RS is one line of MULTI.md, its six bytes kept" 'awk "/^## k\$/{f=1} f" "$W/new/MULTI.md" | grep -c "$(printf "a\\013\\014\\015b\\034\\035\\036c")" | grep -qx 1'
+ck "CIO-46 (D): the answer holding VT FF CR FS GS RS is one line of MULTI-LINERS.md, its six bytes kept" 'awk "/^## k\$/{f=1} f" "$W/new/MULTI-LINERS.md" | grep -c "$(printf "a\\013\\014\\015b\\034\\035\\036c")" | grep -qx 1'
 
 # ---- arm 3: the refusals ----------------------------------------------------------------------------------------------------------
-ck "the one-liner with two answer lines is in MULTI.md, never in ONE" '[ "$(wc -l < "$W/new/ONE.sno")" = 1 ] && grep -qx "## b" "$W/new/MULTI.md"'
-cp -a "$W/new" "$W/r1"; echo "two" >> "$W/r1/ONE.out"
+ck "the one-liner with two answer lines is in MULTI-LINERS.md, never in ONE" '[ "$(wc -l < "$W/new/ONE-LINERS.sno")" = 1 ] && grep -qx "## b" "$W/new/MULTI-LINERS.md"'
+cp -a "$W/new" "$W/r1"; echo "two" >> "$W/r1/ONE-LINERS.out"
 timeout -k 5 60 python3 "$H" list "$W/r1/ALL.sno" "$W/r1/ALL.ref" >/dev/null 2>&1; rr1=$?
-ck "a ONE.out with a second answer line for its one row refuses" '[ $rr1 != 0 ]'
-cp -a "$W/new" "$W/r2"; python3 - "$W/r2/MULTI.md" <<'PY'
+ck "a ONE-LINERS.out with a second answer line for its one row refuses" '[ $rr1 != 0 ]'
+cp -a "$W/new" "$W/r2"; python3 - "$W/r2/MULTI-LINERS.md" <<'PY'
 import sys; t = open(sys.argv[1]).read(); a, b = t.index("## b\n"), t.index("## c\n"); c = t.index("## e\n")
 open(sys.argv[1], "w").write(t[b:c] + t[a:b] + t[c:])
 PY
 timeout -k 5 60 python3 "$H" list "$W/r2/ALL.sno" "$W/r2/ALL.ref" >/dev/null 2>&1; rr2=$?
 ck "a section out of index order refuses" '[ $rr2 != 0 ]'
-cp -a "$W/new" "$W/r3"; python3 -c "import sys;p=sys.argv[1];t=open(p).read();open(p,'w').write(t[:t.rindex('\`\`\`')])" "$W/r3/MULTI.md"
+cp -a "$W/new" "$W/r3"; python3 -c "import sys;p=sys.argv[1];t=open(p).read();open(p,'w').write(t[:t.rindex('\`\`\`')])" "$W/r3/MULTI-LINERS.md"
 timeout -k 5 60 python3 "$H" list "$W/r3/ALL.sno" "$W/r3/ALL.ref" >/dev/null 2>&1; rr3=$?
 ck "an unclosed fence refuses" '[ $rr3 != 0 ]'
 before=$(cd "$W/xf" && sha1sum * | sha1sum)
@@ -120,9 +120,9 @@ bo=$(board "$W/old" old); bn=$(board "$W/new" new)
 echo "  old: $bo"; echo "  new: $bn"
 ck "mode 3 reads the same board before and after regroup" '[ "$bo" = "$bn" ]'
 ck "every entry PASS in mode 3 (the fixture grades what it claims)" 'grep -q "m3_n=6 m3_pass=6 m3_fail=0" <<<"$bn"'
-cp -a "$W/new" "$W/bad"; echo "not one" > "$W/bad/ONE.out"
+cp -a "$W/new" "$W/bad"; echo "not one" > "$W/bad/ONE-LINERS.out"
 bb=$(board "$W/bad" bad)
-ck "FAIL-ONCE: the corrupted ONE.out answer reads FAIL" 'grep -q "m3_pass=5 m3_fail=1" <<<"$bb"'
+ck "FAIL-ONCE: the corrupted ONE-LINERS.out answer reads FAIL" 'grep -q "m3_pass=5 m3_fail=1" <<<"$bb"'
 
 # ---- arm 5: THE POST STEP (CIO-32 (6)): the switches run the tests, run --post grades their OUT; the same board; fail once ----------
 SC="$HERE/../../SCRIP/scrip"
@@ -144,7 +144,7 @@ ck "a report naming one test twice refuses rc 2" '[ $rt = 2 ]'
 
 # ---- arm 6: ungroup, the inverse (CIO-45 (1) b, the builder and the witness tool write format 2 through it) --------------------------
 cp -a "$W/new" "$W/ug"; timeout -k 5 120 python3 "$H" ungroup "$W/ug" >/dev/null 2>&1; ru=$?
-ck "ungroup gives back ALL.sno, ALL.ref and ALL.in byte for byte, and no format-2 file" '[ $ru = 0 ] && cmp -s "$W/ug/ALL.sno" "$W/old/ALL.sno" && cmp -s "$W/ug/ALL.ref" "$W/old/ALL.ref" && cmp -s "$W/ug/ALL.in" "$W/old/ALL.in" && ! ls "$W/ug" | grep -qE "^(ONE\.|MULTI\.md)"'
+ck "ungroup gives back ALL.sno, ALL.ref and ALL.in byte for byte, and no format-2 file" '[ $ru = 0 ] && cmp -s "$W/ug/ALL.sno" "$W/old/ALL.sno" && cmp -s "$W/ug/ALL.ref" "$W/old/ALL.ref" && cmp -s "$W/ug/ALL.in" "$W/old/ALL.in" && ! ls "$W/ug" | grep -qE "^(ONE-LINERS\.|MULTI-LINERS\.md)"'
 ou=$(python3 - "$HERE" "$W" <<'PY' 2>&1
 import sys; from pathlib import Path
 sys.path.insert(0, sys.argv[1]); import corpus_suite_harness as h
@@ -155,7 +155,7 @@ print("IDENT" if not h.fmt2_identity(a, b) else h.fmt2_identity(a, b))
 PY
 )
 ck "the ungrouped files read the old entries, g's arguments in ALL.argv" '[ "$ou" = IDENT ] && grep -q "^g	alpha	beta$" "$W/ug/ALL.argv"'
-cp -a "$W/new" "$W/ue"; printf '```stderr\nboom\n```\n\n' >> "$W/ue/MULTI.md"; before=$(cd "$W/ue" && sha1sum * | sha1sum)
+cp -a "$W/new" "$W/ue"; printf '```stderr\nboom\n```\n\n' >> "$W/ue/MULTI-LINERS.md"; before=$(cd "$W/ue" && sha1sum * | sha1sum)
 timeout -k 5 60 python3 "$H" ungroup "$W/ue" >/dev/null 2>&1; rue=$?
 ck "ungroup of a test with a stderr fence refuses rc 2 and changes no byte" '[ $rue = 2 ] && [ "$(cd "$W/ue" && sha1sum * | sha1sum)" = "$before" ]'
 

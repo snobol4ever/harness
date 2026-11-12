@@ -16,7 +16,7 @@ _dw_dir() { echo "${DESIGN_WITNESS_DIR:-$_dw_root/corpus/tests/$1}"; }
 _dw_check() {
     local ext dir; ext="$(_dw_ext "$1")"; dir="$(_dw_dir "$1")"
     [ -n "$ext" ] || { echo "REFUSE(2) [lib_design_witness]: no language $1" >&2; return 2; }
-    { [ -f "$dir/ALL.$ext" ] && [ -f "$dir/ALL.ref" ]; } || [ -f "$dir/ONE.$ext" ] || [ -f "$dir/MULTI.md" ] || { echo "REFUSE(2) [lib_design_witness]: no container in $dir (ALL.$ext and ALL.ref, or format 2 ONE.$ext or MULTI.md)" >&2; return 2; }
+    { [ -f "$dir/ALL.$ext" ] && [ -f "$dir/ALL.ref" ]; } || [ -f "$dir/ONE-LINERS.$ext" ] || [ -f "$dir/MULTI-LINERS.md" ] || { echo "REFUSE(2) [lib_design_witness]: no container in $dir (ALL.$ext and ALL.ref, or format 2 ONE-LINERS.$ext or MULTI-LINERS.md)" >&2; return 2; }
     return 0
 }
 design_witness_grade() {

@@ -73,7 +73,7 @@ es = h.read_suite(p, os.path.join(T, "ALL.ref"),
 # test those guards instead of the origin check. Reaching a late guard means satisfying every earlier one.
 drop = [e for e in es if not e.xfail and not e.stdin][:5]
 names = {e.name for e in drop}
-for f in ("ONE.sno", "ONE.out", "MULTI.md"):
+for f in ("ONE-LINERS.sno", "ONE-LINERS.out", "MULTI-LINERS.md"):
     if os.path.isfile(os.path.join(T, f)): os.remove(os.path.join(T, f))
 h.write_suite([e for e in es if e.name not in names], p, os.path.join(T, "ALL.ref"))
 PYA
@@ -114,7 +114,7 @@ echo "== B. POSITIVE: a rebuild that loses nothing must PROCEED (the guard can s
 # ⭐ The property a positive arm must show is not "a small rungs accepts pairs" but "a rebuild that LOSES
 # NOTHING proceeds". So: keep the rungs whole, add ONE genuinely new pair, expect it absorbed.
 mkscratch "$W/b"
-find "$W/b/corpus/tests/snobol4" -name '*.sno' ! -name 'ALL.sno' ! -name 'ONE.sno' -delete 2>/dev/null
+find "$W/b/corpus/tests/snobol4" -name '*.sno' ! -name 'ALL.sno' ! -name 'ONE-LINERS.sno' -delete 2>/dev/null
 # not-a-corpus-path: tests/snobol4/zz_gate_brandnew.sno -- a fixture this gate writes into its own mktemp copy, never read from the live tree
 # not-a-corpus-path: tests/snobol4/zz_gate_brandnew.ref -- the .ref half of the same scratch fixture
 printf '\tOUTPUT = "brandnew"\nEND\n' > "$W/b/corpus/tests/snobol4/zz_gate_brandnew.sno"
@@ -133,7 +133,7 @@ mkscratch "$W/c"
 # carries .sno files under config/ too, so a depth-1 delete left ONE pair behind, the builder correctly took
 # the COLLAPSE branch at pairs=1, and the arm reported an ORDER REGRESSION THAT DOES NOT EXIST. The fixture
 # was wrong, not the builder. Reaching "zero absorbable pairs" means every .sno but the rungs, at any depth.
-find "$W/c/corpus/tests/snobol4" -name '*.sno' ! -name 'ALL.sno' ! -name 'ONE.sno' -delete 2>/dev/null
+find "$W/c/corpus/tests/snobol4" -name '*.sno' ! -name 'ALL.sno' ! -name 'ONE-LINERS.sno' -delete 2>/dev/null
 out="$(S4E_HOME="$W/c" python3 "$BUILDER" --lang snobol4 2>&1)"; rc=$?
 if [ "$rc" -eq 0 ] && printf '%s' "$out" | grep -q 'RUNGS CURRENT'; then good "zero pairs over a full rungs exits 0 as RUNGS CURRENT"
 elif printf '%s' "$out" | grep -q 'COLLAPSE'; then bad "⛔ ORDER REGRESSION: zero pairs took the COLLAPSE branch — that refuses every language the moment its consolidation SUCCEEDS"

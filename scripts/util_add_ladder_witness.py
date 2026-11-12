@@ -390,7 +390,7 @@ def main():
                          "everything is derived from --source, so no sibling is needed -- the flag exists so a "
                          "typo'd rung number is still caught")
     ap.add_argument("--dialect", default="", help="pascal: the fpc mode that cuts the answer (iso, fpc, objfpc, delphi, tp); prolog: gnu, cut by GNU Prolog 1.6.0 (gprolog_oracle_run.sh); written to the row's dialect cell, which the reader turns into scrip --dialect=D in both modes (the cfo 2026-11-12, the tests/pascal consolidation; prolog the cto 2026-11-12)")
-    ap.add_argument("--file", action="append", default=[], dest="files", help="a companion beside --source the program reads or uses, carried as a file fence of the entry's MULTI.md section (CIO-55); format 2 only, repeatable (the cfo 2026-11-12)")
+    ap.add_argument("--file", action="append", default=[], dest="files", help="a companion beside --source the program reads or uses, carried as a file fence of the entry's MULTI-LINERS.md section (CIO-55); format 2 only, repeatable (the cfo 2026-11-12)")
     ap.add_argument("--apply", action="store_true", help="write the files; omit for a dry-run report")
     ap.add_argument("--rungs-dir", default="", help="the rungs' directory (default corpus/tests/<lang>); a gate points it at a scratch copy")
     for _a in ATTR_COLUMNS:
@@ -448,7 +448,7 @@ def main():
                                            rungs_dir / "ALL.csv")
     # ⭐ FORMAT 2 IS WRITTEN DIRECTLY (CIO-54, CIO-55; officer_04): the section and the row go in through csh.write_container_dir, never
     # through the old form, which cannot hold a block whose lines end in a ";* name" tag (the fwctx pairs: ungroup's read-back split
-    # them into one-line entries and the door refused). fmt2 is True when the folder is ONE.<ext> / MULTI.md beside ALL.csv.
+    # them into one-line entries and the door refused). fmt2 is True when the folder is ONE-LINERS.<ext> / MULTI-LINERS.md beside ALL.csv.
     fmt2 = csh.fmt2_dir_of(rungs_src) is not None
     for p in ((rungs_csv,) if fmt2 else (rungs_src, rungs_ref, rungs_csv)):
         if not p.is_file():
@@ -505,7 +505,7 @@ def main():
     for _f in args.files:
         _fp2 = Path(_f)
         if not fmt2:
-            refuse("--file: %s is not in format 2; a file fence exists only in MULTI.md (regroup the folder first)" % rungs_dir)
+            refuse("--file: %s is not in format 2; a file fence exists only in MULTI-LINERS.md (regroup the folder first)" % rungs_dir)
         if not _fp2.is_file() or _fp2.resolve().parent != src_path.resolve().parent:
             refuse("--file %s: not a file beside %s (the oracle cuts the program in its own folder, so a companion must stand there)" % (_f, src_path))
         _b = _fp2.read_bytes()
@@ -627,12 +627,12 @@ def main():
         import shutil, tempfile
         _rt = Path(tempfile.mkdtemp(prefix="witness_fmt2_rt_"))
         try:
-            for _n in ("ALL.csv", "ONE" + cfg["ext"], "ONE.out", "MULTI.md", "ALL.rc", "ALL.prelude"):
+            for _n in ("ALL.csv", "ONE-LINERS" + cfg["ext"], "ONE-LINERS.out", "MULTI-LINERS.md", "ALL.rc", "ALL.prelude"):
                 if (rungs_dir / _n).is_file():
                     shutil.copyfile(rungs_dir / _n, _rt / _n)
             csh.write_container_dir(entries, _rt, cfg["ext"], road_of=lambda e: next(r.get("road", "direct") for r in rows if r["entry"] == e.name))
             _rtd = csh.fmt2_identity(entries, csh.read_container_dir(_rt, cfg["ext"]))
-            same = not _rtd and all((_rt / _n).read_bytes() == (rungs_dir / _n).read_bytes() for _n in ("ONE" + cfg["ext"], "ONE.out", "MULTI.md") if (rungs_dir / _n).is_file())
+            same = not _rtd and all((_rt / _n).read_bytes() == (rungs_dir / _n).read_bytes() for _n in ("ONE-LINERS" + cfg["ext"], "ONE-LINERS.out", "MULTI-LINERS.md") if (rungs_dir / _n).is_file())
         except ValueError as exc:
             same, _rtd = False, [str(exc)]
         finally:
@@ -741,7 +741,7 @@ def main():
         return
 
     _companions = {n: ((rungs_dir / n).read_bytes() if (rungs_dir / n).is_file() else None)
-                   for n in (("ONE" + cfg["ext"], "ONE.out", "MULTI.md", "ALL.rc") if fmt2 else ("ALL.in", "ALL.xfail", "ALL.rc"))}
+                   for n in (("ONE-LINERS" + cfg["ext"], "ONE-LINERS.out", "MULTI-LINERS.md", "ALL.rc") if fmt2 else ("ALL.in", "ALL.xfail", "ALL.rc"))}
     old_csv_bytes = rungs_csv.read_bytes()
     old_src_text = None if fmt2 else rungs_src.read_text()
     old_ref_bytes = None if fmt2 else rungs_ref.read_bytes()
@@ -765,7 +765,7 @@ def main():
 
 def _fmt2_write(rungs_dir, rungs_csv, ext, lang, rows, fields, new_row, all_entries, _rollback):
     """THE FORMAT-2 APPEND (CIO-54): the new entry placed by the builder's key, every row's rank renumbered positionally as resort_rungs
-    does, ALL.csv written in that order, then write_container_dir writes ONE.<ext>, ONE.out and MULTI.md and the three last columns."""
+    does, ALL.csv written in that order, then write_container_dir writes ONE-LINERS.<ext>, ONE-LINERS.out and MULTI-LINERS.md and the three last columns."""
     ordered = builder_order(lang, all_entries)
     by = {r["entry"]: dict(r) for r in rows}
     by[new_row["entry"]] = dict({f: "" for f in fields}, **new_row)

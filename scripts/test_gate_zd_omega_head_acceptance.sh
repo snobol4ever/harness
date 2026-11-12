@@ -49,8 +49,8 @@ PASCAL_BENCH="${PASCAL_BENCH:-$S4E/corpus/benchmarks/pascal}"
 
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(2): no executable $SCRIP -- build first (make pristine)" >&2; exit 2; }
 [ -f "$RT" ] || { echo "⛔ REFUSE(2): no $RT -- run make libscrip_rt first" >&2; exit 2; }
-{ [ -f "$PASCAL_TESTS/ALL.pas" ] && [ -f "$PASCAL_TESTS/ALL.ref" ]; } || [ -f "$PASCAL_TESTS/MULTI.md" ] || [ -f "$PASCAL_TESTS/ONE.pas" ] \
-    || { echo "⛔ REFUSE(2): no pascal master in $PASCAL_TESTS (ALL.pas and ALL.ref, or format 2 MULTI.md or ONE.pas)" >&2; exit 2; }
+{ [ -f "$PASCAL_TESTS/ALL.pas" ] && [ -f "$PASCAL_TESTS/ALL.ref" ]; } || [ -f "$PASCAL_TESTS/MULTI-LINERS.md" ] || [ -f "$PASCAL_TESTS/ONE-LINERS.pas" ] \
+    || { echo "⛔ REFUSE(2): no pascal master in $PASCAL_TESTS (ALL.pas and ALL.ref, or format 2 MULTI-LINERS.md or ONE-LINERS.pas)" >&2; exit 2; }
 for f in "$PASCAL_TESTS/ALL.csv" \
          "$PASCAL_BENCH/bubble.pas" "$PASCAL_BENCH/bubble.ref" "$PASCAL_BENCH/quick.pas" "$PASCAL_BENCH/quick.ref"; do
     [ -f "$f" ] || { echo "⛔ REFUSE(2): missing witness file $f" >&2; exit 2; }

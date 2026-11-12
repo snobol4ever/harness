@@ -40,7 +40,7 @@ def harness():
 def master_entries(csh, lang, outdir):
     src = os.path.join(CORPUS, 'tests', lang, MASTER[lang])
     ref = os.path.join(CORPUS, 'tests', lang, 'ALL.ref')
-    fmt2 = csh.fmt2_dir_of(src)   # format 2 (MULTI.md, ONE.EXT) under the old ALL.EXT name (CIO-24 f; the cfo 2026-11-12)
+    fmt2 = csh.fmt2_dir_of(src)   # format 2 (MULTI-LINERS.md, ONE-LINERS.EXT) under the old ALL.EXT name (CIO-24 f; the cfo 2026-11-12)
     if not fmt2 and not (os.path.isfile(src) and os.path.isfile(ref)):
         return []
     ext = os.path.splitext(src)[1]

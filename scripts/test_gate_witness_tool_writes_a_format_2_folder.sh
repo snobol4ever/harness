@@ -3,7 +3,7 @@
 # CIO-24 f, CIO-25, CIO-44). util_add_ladder_witness.py appended to ALL.<ext> and ALL.ref by text comparison, and since harness ac2eaea02 it
 # refuses a format-2 folder by name. THE ARMS, on a scratch root holding a copy of the snobol4 master in format 2 (lib_fmt2_fixture.sh):
 #   1  adding one witness (--family fmt2probe, its answer cut from sbl -bf by the tool) reads rc 0;
-#   2  the folder is still format 2: MULTI.md, ONE.sno and ONE.out stand, ALL.sno, ALL.ref and ALL.in do not;
+#   2  the folder is still format 2: MULTI-LINERS.md, ONE-LINERS.sno and ONE-LINERS.out stand, ALL.sno, ALL.ref and ALL.in do not;
 #   3  the reader reads one test more, the new one named fmt2probe__<stem> with the oracle's answer, one line holding the bytes 013 to 015
 #      and 034 to 036 kept (CIO-46 (D): a writer that splits a line on anything but LF reads red here), and every other test as before;
 #   4  a dry run (no --apply) changes no byte;
@@ -30,7 +30,7 @@ n0=$(wc -l < "$W/e0"); [ "$n0" -gt 0 ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]:
 printf "%s\n" "        B = &ALPHABET" "        OUTPUT = 'format two witness ' SUBSTR(B,12,1) SUBSTR(B,13,1) SUBSTR(B,14,1) 'x' SUBSTR(B,29,1) SUBSTR(B,30,1) SUBSTR(B,31,1) 'y'" "END" > "$W/zw.sno"
 fails=0; n=0
 ck() { n=$((n+1)); if eval "$2"; then echo "  ok   $1"; else fails=$((fails+1)); echo "  FAIL $1"; fi; }
-is_fmt2() { [ -f "$D/MULTI.md" ] && [ -f "$D/ONE.sno" ] && [ -f "$D/ONE.out" ] && [ ! -e "$D/ALL.sno" ] && [ ! -e "$D/ALL.ref" ] && [ ! -e "$D/ALL.in" ]; }
+is_fmt2() { [ -f "$D/MULTI-LINERS.md" ] && [ -f "$D/ONE-LINERS.sno" ] && [ -f "$D/ONE-LINERS.out" ] && [ ! -e "$D/ALL.sno" ] && [ ! -e "$D/ALL.ref" ] && [ ! -e "$D/ALL.in" ]; }
 add() { S4E_HOME="$W/r" timeout -k 5 600 python3 "$T" --lang snobol4 --family fmt2probe --source "$W/zw.sno" --rungs-dir "$D" --compile-args "" "$@"; }
 
 before=$(cd "$D" && find . -type f | sort | xargs sha1sum | sha1sum)

@@ -14,7 +14,7 @@ S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SNO="$S4E/corpus/tests/raku/ALL.raku"
 REF="$S4E/corpus/tests/raku/ALL.ref"
 
-if { [ ! -f "$SNO" ] || [ ! -f "$REF" ]; } && [ ! -f "$(dirname "$SNO")/MULTI.md" ] && [ ! -f "$(dirname "$SNO")/ONE.raku" ]; then   # format 2 is read under the same line (CIO-24 f)
+if { [ ! -f "$SNO" ] || [ ! -f "$REF" ]; } && [ ! -f "$(dirname "$SNO")/MULTI-LINERS.md" ] && [ ! -f "$(dirname "$SNO")/ONE-LINERS.raku" ]; then   # format 2 is read under the same line (CIO-24 f)
     echo "⛔ REFUSING (rc=2): raku rungs suite population absent -- expected $SNO + $REF" >&2
     exit 2
 fi

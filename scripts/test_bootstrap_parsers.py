@@ -96,7 +96,7 @@ def rungs_entries(lang, work):
     ref = src.with_suffix(".ref")
     sys.path.insert(0, str(HERE))
     import corpus_suite_harness as h
-    fmt2 = h.fmt2_dir_of(src)   # format 2 (MULTI.md, ONE.EXT) under the old ALL.EXT name (CIO-24 f; the cfo 2026-11-12)
+    fmt2 = h.fmt2_dir_of(src)   # format 2 (MULTI-LINERS.md, ONE-LINERS.EXT) under the old ALL.EXT name (CIO-24 f; the cfo 2026-11-12)
     if not fmt2 and (not src.is_file() or not ref.is_file()):
         return []
     if fmt2:
@@ -124,7 +124,7 @@ def corpus_files(lang):
     for p in sorted(CORPUS.rglob("*")):
         if ".git" in p.parts or not p.is_file() or p.suffix not in exts:
             continue
-        if (p.name.startswith("ALL.") or p.name.startswith("ONE.")) and p.parent == CORPUS / "tests" / lang:
+        if (p.name.startswith("ALL.") or p.name.startswith("ONE-LINERS.")) and p.parent == CORPUS / "tests" / lang:
             continue
         res.append((str(p.relative_to(CORPUS)), p))
     return res

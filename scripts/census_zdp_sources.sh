@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# format-2: ONE.sno skipped like ALL.sno (a container, never a program); same output on both forms
+# format-2: ONE-LINERS.sno skipped like ALL.sno (a container, never a program); same output on both forms
 # census_zdp_sources.sh — corpus-wide ZDP TOP-source histogram + tier totals.  Re-run at every zeta-traversal handoff; the ACTIVATION percentage must be explainable, never merely low.
 # ZDP corpus sweep: TOP-source op histogram + tier totals.  Reads compile STDERR only; never touches committed .s artifacts.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
@@ -15,7 +15,7 @@ mkdir -p "$OUT"; : > "$OUT/sources.txt"; : > "$OUT/tiers.txt"
 # coverage needs the census to walk ALL.csv/harness-decompose the rungs, a bigger follow-up than a
 # dead-path repoint. Flagged, not silently accepted as "the corpus is just smaller now."
 n=0
-for f in $(find $S4E/corpus/tests/snobol4 -name '*.sno' ! -name 'ALL.sno' ! -name 'ONE.sno' | sort); do
+for f in $(find $S4E/corpus/tests/snobol4 -name '*.sno' ! -name 'ALL.sno' ! -name 'ONE-LINERS.sno' | sort); do
     n=$((n+1))
     SCRIP_ZDP=2 timeout -k 5 15 ./scrip --compile "$f" < /dev/null 2>"$OUT/.err" >/dev/null
     grep "^\[ZDP\]   node" "$OUT/.err" | sed 's/.*op=\([A-Za-z0-9_]*\) \([A-Z-]*\) tier=\([A-Z]*\).*/\1 \2 \3/' >> "$OUT/sources.txt"

@@ -67,13 +67,13 @@ container_key() { case "$1" in snobol4) echo sno-rungs;; icon) echo icn-rungs;; 
 ext_of() { case "$1" in snobol4) echo sno;; icon) echo icn;; prolog) echo pl;; pascal) echo pas;; raku) echo raku;; rebus) echo reb;; snocone) echo sc;; esac; }
 # A SUITE IS ON DISK IN ONE OF THREE FORMS, AND THE ONE LAUNCH READS ALL THREE UNDER THE SAME ALL.<ext> ALL.ref COMMAND LINE (the coo 2026-11-10, row
 # cycle-a-suite-in-format-2-or-the-files-form-is-run-not-refused-sno-rungs-refused-three-laps; fmt2_dir_of and pkg_dir_of of corpus_suite_harness.py):
-# the container (ALL.<ext> and ALL.ref), format 2 of a test folder (MULTI.md or ONE.<ext>, CIO-24), the files form of a package (a path column in
+# the container (ALL.<ext> and ALL.ref), format 2 of a test folder (MULTI-LINERS.md or ONE-LINERS.<ext>, CIO-24), the files form of a package (a path column in
 # ALL.csv, CIO-59, CIO-113). MEASURED: testing for the container alone refused all 24 cells of the SNOBOL4 master in laps 12, 13 and 14 (format 2 since
 # 2026-11-10) and the cells of aisnobol and dotnet in lap 14 (the files form), each logged rc=2 secs=0.
 suite_on_disk() {   # dir alls -> 0 when the launch can read a suite there
     local d="$1" a="$2"
     if [ -f "$a" ] && [ -f "$d/ALL.ref" ]; then return 0; fi
-    if [ -f "$d/MULTI.md" ] || [ -f "$d/ONE.${a##*.}" ]; then return 0; fi
+    if [ -f "$d/MULTI-LINERS.md" ] || [ -f "$d/ONE-LINERS.${a##*.}" ]; then return 0; fi
     [ -f "$d/ALL.csv" ] && head -1 "$d/ALL.csv" | tr -d '\r' | tr ',' '\n' | grep -qx path
 }
 # THE ROAD OF A PACKAGE IS ITS OWN DECLARATION (the coo 2026-11-11, row cycle-a-package-whose-contract-names-the-run-files-road-is-run-by-the-package-switch-fpc-first;
@@ -111,7 +111,7 @@ run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23
         echo "$rc $(( $(date +%s) - t0 ))"; return "$rc"
     fi
     alls="$dir/ALL.$(ext_of "$lang")"
-    if ! suite_on_disk "$dir" "$alls"; then echo "REFUSE(2): no suite in $dir: no container ($alls and ALL.ref), no format 2 (MULTI.md or ONE.$(ext_of "$lang")), no files form (a path column in ALL.csv) -- the unified layout is owed (util_build_package_suite.py)" > "$out"; echo "2 0"; return 2; fi
+    if ! suite_on_disk "$dir" "$alls"; then echo "REFUSE(2): no suite in $dir: no container ($alls and ALL.ref), no format 2 (MULTI-LINERS.md or ONE-LINERS.$(ext_of "$lang")), no files form (a path column in ALL.csv) -- the unified layout is owed (util_build_package_suite.py)" > "$out"; echo "2 0"; return 2; fi
     ( cd "$S4E" && SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" $(road_flag "$dir") ) > "$out" 2>&1 < /dev/null; rc=$?
     echo "$rc $(( $(date +%s) - t0 ))"
 }

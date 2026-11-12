@@ -44,7 +44,7 @@ ICONT="$(icont_bin)" || exit 2
 DIR="$S4E/corpus/tests/icon"
 ICN="$DIR/ALL.icn"; REF="$DIR/ALL.ref"; CSV="$DIR/ALL.csv"
 [ -f "$CSV" ] || { echo "⛔ $GATE REFUSES rc=2: missing rungs file: $CSV" >&2; exit 2; }
-{ [ -f "$ICN" ] && [ -f "$REF" ]; } || [ -f "$DIR/MULTI.md" ] || [ -f "$DIR/ONE.icn" ] || { echo "⛔ $GATE REFUSES rc=2: no rungs container in $DIR (ALL.icn and ALL.ref, or format 2 MULTI.md or ONE.icn)" >&2; exit 2; }
+{ [ -f "$ICN" ] && [ -f "$REF" ]; } || [ -f "$DIR/MULTI-LINERS.md" ] || [ -f "$DIR/ONE-LINERS.icn" ] || { echo "⛔ $GATE REFUSES rc=2: no rungs container in $DIR (ALL.icn and ALL.ref, or format 2 MULTI-LINERS.md or ONE-LINERS.icn)" >&2; exit 2; }
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/icn_rungs_icont_gate.XXXXXX")" || { echo "⛔ $GATE REFUSES rc=2: mktemp failed" >&2; exit 2; }
 trap 'rm -rf "$WORK"' EXIT
 

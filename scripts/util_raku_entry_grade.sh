@@ -16,7 +16,7 @@ here=$(cd "$(dirname "$0")" && pwd); root=$(cd "$here/../../SCRIP" && pwd); corp
 M="$corpus/tests/raku"
 [ $# -ge 1 ] || { echo "⛔ REFUSE(2) [util_raku_entry_grade]: no entry named -- a grader with an empty population cannot report a verdict" >&2; exit 2; }
 [ -x "$root/scrip" ] || { echo "⛔ REFUSE(2) [util_raku_entry_grade]: no $root/scrip -- run make first" >&2; exit 2; }
-{ [ -f "$M/ALL.raku" ] && [ -f "$M/ALL.ref" ]; } || [ -f "$M/MULTI.md" ] || [ -f "$M/ONE.raku" ] || { echo "⛔ REFUSE(2) [util_raku_entry_grade]: no raku rungs at $M" >&2; exit 2; }
+{ [ -f "$M/ALL.raku" ] && [ -f "$M/ALL.ref" ]; } || [ -f "$M/MULTI-LINERS.md" ] || [ -f "$M/ONE-LINERS.raku" ] || { echo "⛔ REFUSE(2) [util_raku_entry_grade]: no raku rungs at $M" >&2; exit 2; }
 graded=0; green=0; red=0
 for n in "$@"; do
     d=$(mktemp -d) || exit 2

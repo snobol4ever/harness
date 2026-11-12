@@ -133,7 +133,7 @@ run_rungs() {  # $1=lang $2=stdout-file $3=stderr-file ; returns the harness's o
     local lang="$1" out="$2" err="$3" src ref
     src="$(lang_src "$lang")"; ref="$(lang_ref "$lang")"
     [ -n "$src" ] || refuse "unknown language '$lang' -- only snobol4, icon, prolog are wired"
-    { [ -f "$src" ] && [ -f "$ref" ]; } || { [ -f "$(dirname "$src")/ALL.csv" ] && { [ -f "$(dirname "$src")/MULTI.md" ] || [ -f "$(dirname "$src")/ONE.${src##*.}" ]; }; } || refuse "$lang rungs suite missing ($src / $ref) -- pull corpus"
+    { [ -f "$src" ] && [ -f "$ref" ]; } || { [ -f "$(dirname "$src")/ALL.csv" ] && { [ -f "$(dirname "$src")/MULTI-LINERS.md" ] || [ -f "$(dirname "$src")/ONE-LINERS.${src##*.}" ]; }; } || refuse "$lang rungs suite missing ($src / $ref) -- pull corpus"
     local args=(); read -ra args <<<"$(lang_args "$lang")"
     [ -n "${SHARD:-}" ] && args+=(--shard "$SHARD")
     local rc=0
@@ -234,7 +234,7 @@ run_selftest() {
     local lang src ref
     for lang in snobol4 icon prolog; do
         src="$(lang_src "$lang")"; ref="$(lang_ref "$lang")"
-        { [ -f "$src" ] && [ -f "$ref" ]; } || { [ -f "$(dirname "$src")/ALL.csv" ] && { [ -f "$(dirname "$src")/MULTI.md" ] || [ -f "$(dirname "$src")/ONE.${src##*.}" ]; }; } || { echo "SELFTEST FAIL: $lang rungs suite missing ($src / $ref)"; fail=1; }
+        { [ -f "$src" ] && [ -f "$ref" ]; } || { [ -f "$(dirname "$src")/ALL.csv" ] && { [ -f "$(dirname "$src")/MULTI-LINERS.md" ] || [ -f "$(dirname "$src")/ONE-LINERS.${src##*.}" ]; }; } || { echo "SELFTEST FAIL: $lang rungs suite missing ($src / $ref)"; fail=1; }
     done
     command -v git >/dev/null || { echo "SELFTEST FAIL: git not found"; fail=1; }
     command -v python3 >/dev/null || { echo "SELFTEST FAIL: python3 not found"; fail=1; }

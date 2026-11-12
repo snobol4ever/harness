@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # test_gate_rungs_builder_writes_a_format_2_folder.sh -- THE BUILDER WRITES THE FORMAT ITS FOLDER IS IN (CIO-45 (1) b; the format CIO-24 f,
 # CIO-25, CIO-44). util_build_rungs_suite.py reads a format-2 folder through read_suite already; its writes went to ALL.<ext>, ALL.ref and
-# ALL.csv by os.replace, so a run on a converted folder put the old files back beside MULTI.md, or rewrote ALL.csv without its group column,
+# ALL.csv by os.replace, so a run on a converted folder put the old files back beside MULTI-LINERS.md, or rewrote ALL.csv without its group column,
 # and every reader then refused rc 2. THE ARMS, on a scratch root holding a copy of the snobol4 master in format 2 (lib_fmt2_fixture.sh):
-#   1  --reindex reads rc 0 and the folder is still format 2: MULTI.md, ONE.sno and ONE.out stand, ALL.sno, ALL.ref and ALL.in do not,
+#   1  --reindex reads rc 0 and the folder is still format 2: MULTI-LINERS.md, ONE-LINERS.sno and ONE-LINERS.out stand, ALL.sno, ALL.ref and ALL.in do not,
 #      ALL.csv has its group column, and every test reads back as it read before (name, order, every attribute);
 #   2  --resort reads rc 0 and leaves the same;
-#   3  --split-write, whose ONE.*/MULTI.* by kind is not format 2, refuses rc 2 on a format-2 folder and changes no byte.
+#   3  --split-write, whose ONE-LINERS.*/MULTI-LINERS.* by kind is not format 2, refuses rc 2 on a format-2 folder and changes no byte.
 # EXIT 0 all hold; 1 an arm failed; 2 could not measure.
 export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the builder over a scratch root outside the corpus, not a board (R-547)"
 set -uo pipefail
@@ -26,7 +26,7 @@ fmt2_entries "$D" "$W/e0" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: the fixture 
 [ -s "$W/e0" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: the fixture holds no test"; exit 2; }
 fails=0; n=0
 ck() { n=$((n+1)); if eval "$2"; then echo "  ok   $1"; else fails=$((fails+1)); echo "  FAIL $1"; fi; }
-is_fmt2() { [ -f "$D/MULTI.md" ] && [ -f "$D/ONE.sno" ] && [ -f "$D/ONE.out" ] && [ ! -e "$D/ALL.sno" ] && [ ! -e "$D/ALL.ref" ] && [ ! -e "$D/ALL.in" ] && head -1 "$D/ALL.csv" | grep -q ',group,road,nonl$'; }
+is_fmt2() { [ -f "$D/MULTI-LINERS.md" ] && [ -f "$D/ONE-LINERS.sno" ] && [ -f "$D/ONE-LINERS.out" ] && [ ! -e "$D/ALL.sno" ] && [ ! -e "$D/ALL.ref" ] && [ ! -e "$D/ALL.in" ] && head -1 "$D/ALL.csv" | grep -q ',group,road,nonl$'; }
 same() { fmt2_entries "$D" "$W/e1" 2>/dev/null && cmp -s "$W/e0" "$W/e1"; }
 
 S4E_HOME="$W/r" timeout -k 5 600 python3 "$B" --lang snobol4 --reindex > "$W/a1.log" 2>&1; r1=$?

@@ -2760,7 +2760,7 @@ def read_block_suite(src_path, ref_path, banner_re, in_path=None, x_path=None, w
 
 
 # ================================================ FORMAT 2: ONE AND MULTI (CIO-24 f, CIO-25, CIO-34) ===
-# ⭐ A CONTAINER DIRECTORY IN FORMAT 2 holds ONE.EXT and ONE.out (line N of each is the Nth ALL.csv row whose group is one), MULTI.md
+# ⭐ A CONTAINER DIRECTORY IN FORMAT 2 holds ONE-LINERS.EXT and ONE-LINERS.out (line N of each is the Nth ALL.csv row whose group is one), MULTI-LINERS.md
 # (one section a multi row, in index order: a heading of two hashes and the entry name, then fences tagged with the language, args, stdin,
 # stdout, stderr, each optional, an absent one meaning empty) and ALL.csv with three LAST columns (CIO-50): group (one or multi), road
 # (direct or staged) and nonl (the space-separated parts whose last line has no LF). THE BYTES were agreed by officer_01 (the SCRIP
@@ -2798,7 +2798,7 @@ def fmt2_dir_of(src_path):
     if not p.name.startswith("ALL.") or p.suffix not in FMT2_TAG or p.name != "ALL" + p.suffix:
         return None
     d = p.parent
-    return d if ((d / "MULTI.md").is_file() or (d / f"ONE{p.suffix}").is_file()) else None
+    return d if ((d / "MULTI-LINERS.md").is_file() or (d / f"ONE{p.suffix}").is_file()) else None
 
 
 def fmt2_out_name(name):
@@ -2847,7 +2847,7 @@ def _fmt2_fence(tag, text):
 
 
 def _fmt2_section(e, tag):
-    """One MULTI.md section and the entry's nonl parts. stdout of a line entry is its ref text plus one LF (the ref is a string, maybe
+    """One MULTI-LINERS.md section and the entry's nonl parts. stdout of a line entry is its ref text plus one LF (the ref is a string, maybe
     with LFs inside); of a block entry its lines, the fence absent when it has none."""
     nonl = []
     out = [f"## {e.name}\n\n", _fmt2_fence(tag, _fmt2_lines_text(e.sno_lines))]
@@ -2933,7 +2933,7 @@ def fmt2_drop_config_companions(d, srcs):
 
 
 def write_container_dir(entries, d, ext, road_of=None, fenced=None):
-    """THE FORMAT-2 WRITER: ONE.EXT, ONE.out and MULTI.md from ENTRIES, and ALL.csv's group, road and nonl columns rewritten for
+    """THE FORMAT-2 WRITER: ONE-LINERS.EXT, ONE-LINERS.out and MULTI-LINERS.md from ENTRIES, and ALL.csv's group, road and nonl columns rewritten for
     every row (the last three columns, CIO-50: a reader by position never sees them move), its rows in ENTRIES' order, run_args emptied into the args fence (agreed A2). Refuses before
     writing on an XFAIL entry (no XFAIL, CEO-1696), an entry with no ALL.csv row or a row with no entry, a name holding a newline, two
     names one OUT name (A3). A group with no entry has no file. Returns {"one": n, "multi": n}."""
@@ -2985,7 +2985,7 @@ def write_container_dir(entries, d, ext, road_of=None, fenced=None):
             r["run_args"] = ""
         out_rows.append(r)
     new_fields = [f for f in fields if f not in FMT2_COLS] + list(FMT2_COLS)   # CIO-50: the LAST three columns; columns before them never move
-    for name, parts in ((f"ONE{ext}", one_src), ("ONE.out", one_out), ("MULTI.md", md)):
+    for name, parts in ((f"ONE-LINERS{ext}", one_src), ("ONE-LINERS.out", one_out), ("MULTI-LINERS.md", md)):
         p = d / name
         if parts:
             p.write_bytes("".join(parts).encode("utf-8"))
@@ -2996,7 +2996,7 @@ def write_container_dir(entries, d, ext, road_of=None, fenced=None):
 
 
 def _fmt2_parse_md(path, ext):
-    """MULTI.md -> [(name, program text, {part: text})] in file order; refuses (ValueError) on everything agreed line 5 refuses."""
+    """MULTI-LINERS.md -> [(name, program text, {part: text})] in file order; refuses (ValueError) on everything agreed line 5 refuses."""
     lines = _read_lf_lines(path)
     secs, cur, i, order = [], None, 0, ("lang", "file") + FMT2_PARTS
     while i < len(lines):
@@ -3059,6 +3059,10 @@ def read_container_dir(d, ext, modes=None, allow_old=False):
     order, every sidecar and column applied by the same readers. ⛔ Refuses a directory that also holds the old ALL.EXT, ALL.ref or
     ALL.in (two formats in one directory) unless ALLOW_OLD, which only regroup's own read-back passes."""
     d = Path(d)
+    stale = [n for n in ("MULTI" + ".md", "ONE" + ext, "ONE" + ".out") if (d / n).exists()]
+    if stale:
+        raise ValueError(f"{d}: format-2 files under their old names ({', '.join(stale)}); Lon 2026-11-12 09:5x CST renamed them ONE-LINERS{ext}, "
+                         "ONE-LINERS.out and MULTI-LINERS.md: git mv them, never read a folder half renamed")
     if not allow_old:
         both = [n.format(ext=ext) for n in FMT2_OLD[:3] if (d / n.format(ext=ext)).exists()]
         if both:
@@ -3071,15 +3075,15 @@ def read_container_dir(d, ext, modes=None, allow_old=False):
         raise ValueError(f"{d}/ALL.csv: group must be one or multi: {bad[:8]}")
     ones = [r for r in rows if r["group"] == "one"]
     multis = [r for r in rows if r["group"] == "multi"]
-    one_src = _read_lf_lines(d / f"ONE{ext}") if (d / f"ONE{ext}").is_file() else []
-    one_out = _read_lf_lines(d / "ONE.out") if (d / "ONE.out").is_file() else []
+    one_src = _read_lf_lines(d / f"ONE-LINERS{ext}") if (d / f"ONE-LINERS{ext}").is_file() else []
+    one_out = _read_lf_lines(d / "ONE-LINERS.out") if (d / "ONE-LINERS.out").is_file() else []
     if len(one_src) != len(ones) or len(one_out) != len(ones):
-        raise ValueError(f"{d}: {len(ones)} one rows, ONE{ext} has {len(one_src)} lines, ONE.out {len(one_out)}")
-    secs = _fmt2_parse_md(d / "MULTI.md", ext) if (d / "MULTI.md").is_file() else []
+        raise ValueError(f"{d}: {len(ones)} one rows, ONE-LINERS{ext} has {len(one_src)} lines, ONE-LINERS.out {len(one_out)}")
+    secs = _fmt2_parse_md(d / "MULTI-LINERS.md", ext) if (d / "MULTI-LINERS.md").is_file() else []
     sn, mn = [s["name"] for s in secs], [r["entry"] for r in multis]
     if sn != mn:
         k = next((i for i, (a, b) in enumerate(zip(sn, mn)) if a != b), min(len(sn), len(mn)))
-        raise ValueError(f"{d}/MULTI.md: {len(sn)} sections against {len(mn)} multi rows; first difference at {k + 1}: "
+        raise ValueError(f"{d}/MULTI-LINERS.md: {len(sn)} sections against {len(mn)} multi rows; first difference at {k + 1}: "
                          f"section {sn[k] if k < len(sn) else None!r}, row {mn[k] if k < len(mn) else None!r}")
     one_it, sec_it = iter(zip(one_src, one_out)), iter(secs)
     entries = []
@@ -3158,7 +3162,7 @@ def pkg_dir_of(src_path):
         return None
     d = p.parent
     c = d / "ALL.csv"
-    if not c.is_file() or (d / "MULTI.md").is_file() or (d / f"ONE{p.suffix}").is_file():
+    if not c.is_file() or (d / "MULTI-LINERS.md").is_file() or (d / f"ONE{p.suffix}").is_file():
         return None
     import csv as _csvm
     with open(c, newline="", encoding="utf-8") as f:
@@ -3621,7 +3625,7 @@ def cmd_regroup(args):
     src = cands[0]
     ext = src.suffix
     if fmt2_dir_of(src) is not None:
-        refuse(f"regroup: {d} already holds ONE{ext} or MULTI.md")
+        refuse(f"regroup: {d} already holds ONE-LINERS{ext} or MULTI-LINERS.md")
     if not (d / "ALL.ref").is_file():
         refuse(f"regroup: {d} has no ALL.ref")
     lang = next((l for l, c in LANG_CONFIGS.items() if c["ext"] == ext), "snobol4" if ext == ".sno" else None)
@@ -3641,7 +3645,7 @@ def cmd_regroup(args):
     except ValueError as exc:
         diffs, counts = [f"refused: {exc}"], None
     if diffs:
-        for n in (f"ONE{ext}", "ONE.out", "MULTI.md"):
+        for n in (f"ONE-LINERS{ext}", "ONE-LINERS.out", "MULTI-LINERS.md"):
             (work / n).unlink(missing_ok=True)
         (work / "ALL.csv").write_bytes(csv_bytes)
         print("REGROUP_BOARD dir=%s REFUSED" % d)
@@ -3668,7 +3672,7 @@ def ungroup_dir(d, ext):
     """THE INVERSE OF regroup (CIO-45 (1) b: the builder and the add-a-witness tool write format 2 by ungrouping at their start and
     regrouping at their end): a format-2 directory back to ALL.EXT, ALL.ref and ALL.in (and ALL.argv for the args fences), ALL.csv
     without group, road and nonl. Refuses (ValueError), every format-2 file put back, unless the old reader gives the same entries;
-    only then are ONE.EXT, ONE.out and MULTI.md deleted. A test with a stderr fence cannot go back: the old format has no stderr."""
+    only then are ONE-LINERS.EXT, ONE-LINERS.out and MULTI-LINERS.md deleted. A test with a stderr fence cannot go back: the old format has no stderr."""
     d = Path(d)
     entries = read_container_dir(d, ext)
     bad = [e.name for e in entries if hasattr(e, "stderr_answer")]
@@ -3689,7 +3693,7 @@ def ungroup_dir(d, ext):
     lang = next((l for l, c in LANG_CONFIGS.items() if c["ext"] == ext), "snobol4" if ext == ".sno" else None)
     fields, rows = _fmt2_read_csv(d)
     csv_bytes = (d / "ALL.csv").read_bytes()
-    g = [d / f"ONE{ext}", d / "ONE.out", d / "MULTI.md"]
+    g = [d / f"ONE-LINERS{ext}", d / "ONE-LINERS.out", d / "MULTI-LINERS.md"]
     held = {p: p.read_bytes() for p in g if p.is_file()}
     for p in held:
         p.unlink()
@@ -3740,7 +3744,7 @@ def regroup_dir(d, ext):
     except ValueError as exc:
         diffs, counts = [f"refused: {exc}"], None
     if diffs:
-        for n in (f"ONE{ext}", "ONE.out", "MULTI.md"):
+        for n in (f"ONE-LINERS{ext}", "ONE-LINERS.out", "MULTI-LINERS.md"):
             (d / n).unlink(missing_ok=True)
         (d / "ALL.csv").write_bytes(csv_bytes)
         raise ValueError(f"{d}: regroup did not read back identical; the old format stands: " + "; ".join(diffs[:4]))
@@ -3753,14 +3757,14 @@ def regroup_dir(d, ext):
 def cmd_ungroup(args):
     """corpus_suite_harness.py ungroup DIR: format 2 back to the old files, refusing rc 2 (format 2 restored) unless identical."""
     d = Path(args.dir).resolve()
-    ext = next((x for x in FMT2_TAG if (d / f"ONE{x}").is_file()), None)
+    ext = next((x for x in FMT2_TAG if (d / f"ONE-LINERS{x}").is_file()), None)
     if ext is None:
-        _md = d / "MULTI.md"
+        _md = d / "MULTI-LINERS.md"
         if _md.is_file():
             _t = next((l[3:].strip() for l in _read_lf_lines(_md) if _FMT2_FENCE_RE.match(l) and l.lstrip("`") in FMT2_EXT), None)
             ext = FMT2_EXT.get(_t) if _t else None
     if ext is None:
-        refuse(f"ungroup: {d} holds no ONE.EXT or MULTI.md")
+        refuse(f"ungroup: {d} holds no ONE-LINERS.EXT or MULTI-LINERS.md")
     try:
         n = ungroup_dir(d, ext)
     except ValueError as exc:
@@ -7346,7 +7350,7 @@ def smoke_tables(corpus_root):
         lang = rel.split("/")[1]
         ext = ".sno" if lang not in LANG_CONFIGS else LANG_CONFIGS[lang]["ext"]
         suite = d / ("ALL" + ext)
-        out.append((rel, csv_path, suite if suite.is_file() else None, lang))
+        out.append((rel, csv_path, suite if (suite.is_file() or fmt2_dir_of(suite) is not None) else None, lang))   # a format-2 folder is a suite too (the coo 2026-11-12: the raku reps and smoke refused after its regroup)
     return out
 
 
@@ -7527,7 +7531,7 @@ def cmd_smoke(args):
             continue
         suite, lang = s["suite"], s["lang"]
         ref = suite.with_name("ALL.ref")
-        if not ref.is_file():
+        if not ref.is_file() and fmt2_dir_of(suite) is None:   # a format-2 folder holds its answers in ONE-LINERS.out and MULTI-LINERS.md
             refuse(f"smoke: {suite} has no ALL.ref beside it -- nothing to grade against")
         if lang in LANG_CONFIGS:
             cfg = LANG_CONFIGS[lang]
@@ -7857,7 +7861,7 @@ def main():
     bl.add_argument("--partition", required=True, help="the stored PARTITION.tsv cell: core | shell:<feature> | chunk:NN | entry:<name>")
     bl.set_defaults(func=cmd_batch_list)
 
-    rg = sub.add_parser("regroup", help="FORMAT 2 (CIO-24 f, CIO-25): rewrite one container directory into ONE.EXT, ONE.out and MULTI.md, refusing unless the read-back is identical")
+    rg = sub.add_parser("regroup", help="FORMAT 2 (CIO-24 f, CIO-25): rewrite one container directory into ONE-LINERS.EXT, ONE-LINERS.out and MULTI-LINERS.md, refusing unless the read-back is identical")
     rg.add_argument("dir")
     rg.add_argument("--dry-run", action="store_true", help="regroup a scratch copy and print the counts; the directory is untouched")
     rg.set_defaults(func=cmd_regroup)
@@ -7866,7 +7870,7 @@ def main():
     up.add_argument("--dry-run", action="store_true", help="take the files form in a scratch copy and print the counts; the directory is untouched")
     up.add_argument("--probe", action="store_true", help="grade a planted package of three programs as a container and again from its files")
     up.set_defaults(func=cmd_unpack)
-    ug = sub.add_parser("ungroup", help="FORMAT 2 BACK TO THE OLD FILES (CIO-45 (1) b): ALL.EXT, ALL.ref, ALL.in from ONE.EXT, ONE.out and MULTI.md, refusing unless the read-back is identical")
+    ug = sub.add_parser("ungroup", help="FORMAT 2 BACK TO THE OLD FILES (CIO-45 (1) b): ALL.EXT, ALL.ref, ALL.in from ONE-LINERS.EXT, ONE-LINERS.out and MULTI-LINERS.md, refusing unless the read-back is identical")
     ug.add_argument("dir")
     ug.set_defaults(func=cmd_ungroup)
     l = sub.add_parser("list", help="print every entry name in a suite, one per line, in file order")

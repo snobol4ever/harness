@@ -82,7 +82,7 @@ for L in ${GATE_LANGS:-snobol4 snocone icon prolog rebus pascal raku}; do
     ext=${EXT[$L]}; exe="$ROOT/out/parser_$L"
     ( . "$HERE/lib_build_currency.sh" && assert_parser_current "$L" "$ROOT" ) || { echo "  $L: ⛔ REFUSE(2) $exe is missing or older than a source it was compiled from (named above) -- make parsers"; RC=2; continue; }
     SW="$(declared_switches_beside "$B/parser_$L.sc")" && [ -n "$SW" ] || { echo "  $L: ⛔ REFUSE(2) bootstrap/parser_$L.sc declares no heap or stack, or the declaration is refused"; RC=2; continue; }
-    if [ "$POP" = corpus ]; then { find "$CORPUS" -type f -name "*.$ext" -not -name 'ALL.*' -not -path '*/.git/*' -not -path "$CORPUS/library/*"; ls "$HERE/../fixtures/parser_$L"/*."$ext" 2>/dev/null; } | sort > "$T/$L.files"
+    if [ "$POP" = corpus ]; then { find "$CORPUS" -type f -name "*.$ext" -not -name 'ALL.*' -not -name 'ONE-LINERS.*' -not -path '*/.git/*' -not -path "$CORPUS/library/*"; ls "$HERE/../fixtures/parser_$L"/*."$ext" 2>/dev/null; } | sort > "$T/$L.files"
     elif [ "$POP" = fixtures ]; then ls "$HERE/../fixtures/parser_$L"/*."$ext" 2>/dev/null | sort > "$T/$L.files"
     else ls "$CORPUS/benchmarks/$L"/*."$ext" 2>/dev/null | sort > "$T/$L.files"; fi
     nf=$(wc -l < "$T/$L.files"); [ "$nf" -gt 0 ] || { echo "  $L: ⛔ REFUSE(2) empty population ($POP)"; RC=2; continue; }

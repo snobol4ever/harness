@@ -63,7 +63,7 @@ lang="$1"; entry="${2:-}"
 [ -n "$entry" ] || { echo "REFUSE(2): usage: $0 <lang> <entry>"; exit 2; }
 case "$lang" in snobol4) ext=sno;; icon) ext=icn;; prolog) ext=pl;; raku) ext=raku;; pascal) ext=pas;; snocone) ext=sc;; rebus) ext=reb;; *) echo "REFUSE(2): unknown language $lang"; exit 2;; esac
 D="$CORPUS/tests/$lang"
-{ [ -f "$D/ALL.$ext" ] && [ -f "$D/ALL.ref" ]; } || [ -f "$D/MULTI.md" ] || [ -f "$D/ONE.$ext" ] || { echo "REFUSE(2): $D has no ALL.$ext or ALL.ref"; exit 2; }
+{ [ -f "$D/ALL.$ext" ] && [ -f "$D/ALL.ref" ]; } || [ -f "$D/MULTI-LINERS.md" ] || [ -f "$D/ONE-LINERS.$ext" ] || { echo "REFUSE(2): $D has no ALL.$ext or ALL.ref"; exit 2; }
 python3 "$HERE/corpus_suite_harness.py" extract "$D/ALL.$ext" "$D/ALL.ref" "$entry" "$W/e.$ext" --out-ref "$W/e.ref" --out-in "$W/e.in" > /dev/null 2>&1 && [ -s "$W/e.$ext" ] \
     || { echo "REFUSE(2): no entry $entry in $D/ALL.$ext"; exit 2; }
 check_one "$entry" "$W/e.$ext"

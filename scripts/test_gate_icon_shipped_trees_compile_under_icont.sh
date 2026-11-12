@@ -74,7 +74,7 @@ done
 # WHOLE (RULES.md; the correction this seat sent hq_C on 09-10). Its ENTRIES are graded one at a time by the
 # sibling gate test_gate_icon_rungs_entries_compile_under_icont.sh, which is where that question is asked and
 # answered. Feeding the container to icont here would produce one meaningless refusal standing for 758 files.
-mapfile -t FILES < <(cd "$CORPUS" && find "${TREES[@]}" -path '*.fixtures' -prune -o -name '*.icn' -type f ! -name 'ALL.icn' ! -name 'ONE.icn' -print | sort)
+mapfile -t FILES < <(cd "$CORPUS" && find "${TREES[@]}" -path '*.fixtures' -prune -o -name '*.icn' -type f ! -name 'ALL.icn' ! -name 'ONE-LINERS.icn' -print | sort)
 N=${#FILES[@]}
 # ⛔ REFUSE ON A COLLAPSED POPULATION rather than print the success shape over nothing (RULES.md: a DONE-WHEN
 # never pins a population count in a literal -- this reads the denominator it actually found, and only refuses

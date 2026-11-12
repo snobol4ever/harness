@@ -16,11 +16,11 @@ declare -A EXT=([snobol4]=sno [snocone]=sc [icon]=icn [prolog]=pl [rebus]=reb [r
 [ -n "$L" ] && [ -n "${EXT[$L]:-}" ] || { echo "PARSER-SC-RECOGNITION ⛔ REFUSE(2): lang must be one of ${!EXT[*]}"; exit 2; }
 e=${EXT[$L]}; X="$W/out/parser_$L"; M="$C/tests/$L"
 ( . "$here/lib_build_currency.sh" && assert_parser_current "$L" "$W" ) || { echo "PARSER-SC-RECOGNITION ⛔ REFUSE(2): $X is missing or older than a source it was compiled from (named above) -- make parsers"; exit 2; }
-MC="$M/ALL.$e"; [ -f "$MC" ] || { [ -f "$M/MULTI.md" ] && MC="$M/MULTI.md"; } || { [ -f "$M/ONE.$e" ] && MC="$M/ONE.$e"; }   # format 2: the harness reads it under the ALL.$e line (CIO-24 f)
+MC="$M/ALL.$e"; [ -f "$MC" ] || { [ -f "$M/MULTI-LINERS.md" ] && MC="$M/MULTI-LINERS.md"; } || { [ -f "$M/ONE-LINERS.$e" ] && MC="$M/ONE-LINERS.$e"; }   # format 2: the harness reads it under the ALL.$e line (CIO-24 f)
 [ -f "$MC" ] && [ -f "$M/ALL.csv" ] || { echo "PARSER-SC-RECOGNITION ⛔ REFUSE(2): no master under $M"; exit 2; }
 LIST="$OUT/list.txt"
 if [ ! -s "$LIST" ] || [ "$MC" -nt "$LIST" ] || [ "$M/ALL.csv" -nt "$LIST" ]; then
-    find "$C" -type f -name "*.$e" -not -name 'ALL.*' -not -path "$M/ONE.$e" -not -path '*/.git/*' -not -path "$C/library/*" | sort > "$LIST"
+    find "$C" -type f -name "*.$e" -not -name 'ALL.*' -not -path "$M/ONE-LINERS.$e" -not -path '*/.git/*' -not -path "$C/library/*" | sort > "$LIST"
     python3 - "$M/ALL.csv" <<'PY' > "$OUT/entries.txt"
 import csv, sys
 for r in csv.DictReader(open(sys.argv[1])): print(r["entry"])

@@ -85,7 +85,7 @@ def read_rungs(tests_dir, lang):
     d = Path(tests_dir) / lang
     sno = d / f"ALL{EXT[lang]}"
     ref = d / "ALL.ref"
-    # format 2 (CIO-24 f): the folder holds ONE.EXT, ONE.out, MULTI.md and ALL.csv and no ALL.EXT or ALL.ref; read_suite follows the
+    # format 2 (CIO-24 f): the folder holds ONE-LINERS.EXT, ONE-LINERS.out, MULTI-LINERS.md and ALL.csv and no ALL.EXT or ALL.ref; read_suite follows the
     # folder through fmt2_dir_of, so the old command line still names the population and no presence test of ALL.EXT is made.
     if h.fmt2_dir_of(sno) is not None:
         return d, sno, h.read_suite(sno, ref)
