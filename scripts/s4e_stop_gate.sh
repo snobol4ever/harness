@@ -26,7 +26,7 @@ fi
 root="${1:?root}"; seat="${2:?seat}"; shift 2; dry=0; json=0
 for a in "$@"; do case "$a" in --dry) dry=1;; --json) json=1;; esac; done
 PO="${S4E_POST:-/home/resources/postoffice}"
-in=""; [ -t 0 ] || in="$(timeout 2 cat 2>/dev/null)"
+in=""; [ -t 0 ] || in="$(timeout -k 5 2 cat 2>/dev/null)"
 cap="${S4E_STOP_CAP:-12}"; case "$cap" in ''|*[!0-9]*) cap=12;; esac
 hour="$(date +%Y%m%d%H)"; cf="/tmp/s4e/$seat/stop_blocks.$hour"; mkdir -p "/tmp/s4e/$seat" 2>/dev/null
 n=0; [ -f "$cf" ] && n="$(wc -l < "$cf")"

@@ -74,8 +74,8 @@ fi
 # the pool width and the queue, and its newest line prints here. Each step is bounded and can never break the banner above.
 if [ "$ME" = coo ] && [ -f /home/claude_coo/.scratch/verifier/opswatch.sh ]; then
   _V=/home/claude_coo/.scratch/verifier
-  _w="$(timeout 20 bash "$_V/watchdog.sh" 2>/dev/null || true)"; [ -n "$_w" ] && printf '⛔ %s\n' "$_w"
-  timeout 20 bash "$_V/opswatch.sh" > /dev/null 2>&1 || true
+  _w="$(timeout -k 5 20 bash "$_V/watchdog.sh" 2>/dev/null || true)"; [ -n "$_w" ] && printf '⛔ %s\n' "$_w"
+  timeout -k 5 20 bash "$_V/opswatch.sh" > /dev/null 2>&1 || true
   _o="$(tail -1 "$_V/ops.tsv" 2>/dev/null)"; [ -n "$_o" ] && printf 'OPS [coo] %s\n' "$(printf '%s' "$_o" | tr '\t' ' ')"
 fi
 # ⭐ SAME DUTY-INTO-HARNESS CLASS AS THIS HOOK ITSELF (hq_B 2026-08-30, row

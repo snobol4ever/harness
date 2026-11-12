@@ -52,7 +52,7 @@ sense() {   # the sensors of box_controller.sh's --decide, read the same way; se
   sqc=$(awk -F'\t' '$1=="sessions"{gsub("%","",$4); print $4}' $PO/BUDGET.tsv 2>/dev/null); sqc=${sqc:-1000}
   sq=$(awk '{if ($1=="max") print 1600; else printf "%d", $1/$2*100}' $TERM_SL/cpu.max 2>/dev/null); sq=${sq:-$sqc}
   jtc=$(awk -F'\t' '$1=="jobserver"{if (match($10,/tokens_ceiling=[0-9]+/)) print substr($10,RSTART+15,RLENGTH-15)}' $PO/BUDGET.tsv 2>/dev/null); jtc=${jtc:-12}
-  jt=$(timeout 10 bash "$ROOT/harness/scripts/util_jobserver.sh" status 2>/dev/null | grep -oE 'tokens=[0-9]+' | head -1 | cut -d= -f2); jt=${jt:-$jtc}
+  jt=$(timeout -k 5 10 bash "$ROOT/harness/scripts/util_jobserver.sh" status 2>/dev/null | grep -oE 'tokens=[0-9]+' | head -1 | cut -d= -f2); jt=${jt:-$jtc}
   slotless=$(cat $OLD/slotless.last 2>/dev/null | tr '\n' ' ')
   capped=""
   for f in $OLD/governor/*.cap; do [ -e "$f" ] || continue; s=$(basename "$f" .cap); read -r t0 u _ us0 < "$f"; us=$(awk '/usage_usec/{print $2}' $TERM_SL/$u/cpu.stat 2>/dev/null)
@@ -129,12 +129,12 @@ leases() {   # fleet-queue step 5: a RESERVED claim whose job reads ready (the h
   local c t out
   for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue; grep -q '^RESERVED job=' "$c" || continue; grep -q '^DONE$' "$c" && continue
     t="$(basename "$c" .claim)"
-    out=$(S4E_NO_BANNER=1 timeout 60 bash "$ROOT/harness/scripts/s4e_msg.sh" expire "$t" 2>&1 < /dev/null) || continue
+    out=$(S4E_NO_BANNER=1 timeout -k 5 60 bash "$ROOT/harness/scripts/s4e_msg.sh" expire "$t" 2>&1 < /dev/null) || continue
     printf '%s %s\n' "$(date '+%F %T')" "$(printf '%s' "$out" | tail -1 | cut -c1-200)" >> "$TICK_DIR/leases.log"
   done; return 0; }
 flush_claims() {   # bus-flush-2 (the cio's order 2026-11-11: the tick flushes every pass): s4e_msg.sh flush archives the dead claims; its last line lands in flush.log; it never fails the tick
   local out
-  out=$(S4E_NO_BANNER=1 timeout 60 bash "$ROOT/harness/scripts/s4e_msg.sh" flush 2>&1 < /dev/null) || true
+  out=$(S4E_NO_BANNER=1 timeout -k 5 60 bash "$ROOT/harness/scripts/s4e_msg.sh" flush 2>&1 < /dev/null) || true
   printf '%s %s\n' "$(date '+%F %T')" "$(printf '%s' "$out" | tail -1 | cut -c1-200)" >> "$TICK_DIR/flush.log"; return 0; }
 view_stamp() {   # the view's inputs (the coo's ruling, row tick-costs-13-to-20-s-cpu): the nanosecond mtimes of tasks/ and claims/, and every row state of the queue file (a queue, a claim or a done moves it); QUEUE.tsv is regenerated only when this moved
   printf '%s|%s' "$(stat -c '%.9Y' "$PO/tasks" "$PO/claims" 2>/dev/null | tr '\n' ' ')" "$(cut -f2,4 "$PO/QUEUE.tsv" 2>/dev/null | md5sum | cut -c1-32)"; }   # bus-one-queue: the tubes are the file's state column
@@ -170,7 +170,7 @@ tick() {
   else view=kept; fi
   if [ "${S4E_TICK_DRY:-0}" != 1 ]; then wake > /dev/null; leases; flush_claims; fi   # fleet-queue step 11 and step 5; step 4e's scale; the dry probe plants no seat, expires no claim, starts no unit
   if [ $(( tkn % ${S4E_PLANT_EVERY:-10} )) -eq 0 ]; then   # the plant sweep is a self-test: every tenth tick only, the others carry the last reading
-    swp_out=$(timeout 300 bash "$ROOT/harness/scripts/s4e_msg.sh" sweep --plant-green 2>&1 < /dev/null); rc_s=$?
+    swp_out=$(timeout -k 5 300 bash "$ROOT/harness/scripts/s4e_msg.sh" sweep --plant-green 2>&1 < /dev/null); rc_s=$?
     printf '%s\n' "$swp_out" | tail -20 > "$TICK_DIR/sweep.last"; sweep=ran
     printf '%s\n' "$swp_out" | grep -q '^SWEEP closed plant ' && swp=1
   else
