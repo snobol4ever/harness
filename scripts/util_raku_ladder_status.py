@@ -3,7 +3,7 @@
 raku-ladder-step-0-the-ladder-instrument-util-raku-ladder-status-reads-the-rungs-and-replaces-the-map-r-2044). A READ: it runs no program.
 
 READS  corpus/tests/raku/LADDER.tsv (every declared rung, its construct and family), corpus/tests/raku/ALL.csv (the RakRungs master:
-       a rung's FORMS are its ladder__rungNNN_* entries), corpus/tests/raku/config/ROAST-RUNG-MAP.tsv (every red Roast program's first-block
+       a rung's FORMS are its ladder__rungNNN_* entries), corpus/packages/raku/roast/ROAST-RUNG-MAP.tsv (every red Roast program's first-block
        and unblock rung) and /home/resources/progress/results.tsv (the latest reading per program and mode). A reading stamped on a -dirty
        SCRIP tree measures no tree on origin and is UNREAD here (R-2060).
 A RUNG is GREEN when it has at least one form and every form reads PASS in m3 AND m4 at its latest reading; a rung with no form yet is RED
@@ -24,7 +24,7 @@ import argparse, csv, importlib.util, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 LADDER = os.path.join(ROOT, 'corpus/tests/raku/LADDER.tsv')
-MAP = os.path.join(ROOT, 'corpus/tests/raku/config/ROAST-RUNG-MAP.tsv')
+MAP = os.path.join(ROOT, 'corpus/packages/raku/roast/ROAST-RUNG-MAP.tsv')   # moved from corpus/tests/raku/config (the cfo 2026-11-12, CIO-55)
 MASTER = os.path.join(ROOT, 'corpus/tests/raku/ALL.csv')
 RESULTS = os.environ.get('S4E_LADDER_RESULTS', '/home/resources/progress/results.tsv')
 RUNGS_SUITE, ROAST_SUITE = 'raku-rungs', 'roast'

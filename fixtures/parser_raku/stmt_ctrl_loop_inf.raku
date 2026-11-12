@@ -1,0 +1,1 @@
+loop { say "tick"; }

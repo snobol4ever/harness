@@ -14,7 +14,7 @@ THE POPULATION, three parts, every unit named by a durable key:
 
 THE ORACLE is Rakudo's syntax check, `raku -c FILE` (v2022.12 on the box), run with the file at its own path so
 a roast file's `use lib $*PROGRAM.parent(2).add(...)` resolves. Its verdict per unit is CACHED in
-corpus/tests/raku/config/RAKUDO-SYNTAX-VERDICTS.tsv, keyed by the unit's key and the md5 of its text: a unit
+harness/designs/raku_ladder/RAKUDO-SYNTAX-VERDICTS.tsv, keyed by the unit's key and the md5 of its text: a unit
 whose text changed is re-cut automatically, `--recut` re-cuts all. Verdicts: accept (rc 0), reject (rc != 0,
 with Rakudo's first error line kept as the class), timeout (the oracle did not answer: UNGRADABLE, named).
 
@@ -37,7 +37,7 @@ RUNGS = CORPUS / "tests" / "raku" / "ALL.raku"
 RUNGS_REF = CORPUS / "tests" / "raku" / "ALL.ref"
 BENCH = CORPUS / "benchmarks" / "raku"
 ROAST = Path(os.environ.get("RAKU_ROAST_DIR", "/home/resources/roast-master"))
-CACHE = CORPUS / "tests" / "raku" / "config" / "RAKUDO-SYNTAX-VERDICTS.tsv"
+CACHE = HERE.parent / "designs" / "raku_ladder" / "RAKUDO-SYNTAX-VERDICTS.tsv"   # moved from corpus/tests/raku/config (the cfo 2026-11-12, CIO-55)
 RAKU = os.environ.get("RAKU_BIN", "/usr/bin/raku")
 SCRIP = SCRIP_DIR / "scrip"
 FIELDS = ["key", "md5", "verdict", "rc", "first_error"]
