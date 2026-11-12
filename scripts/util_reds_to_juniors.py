@@ -12,7 +12,7 @@ as a design job; this road sends it to a junior as a bug, with the steps a junio
   ROWED    a red is skipped when its topic (KEY-red-<entry slug>, the designers' own topic) is a live row of QUEUE.tsv, or a live row's DONE-WHEN
            names the entry (util_reds_to_designers.live_rows and plan).
   DEALING  each new row goes to the junior holding the fewest live rows in QUEUE.tsv (owner, ASSIGNED:, CLAIMED: or QUEUED:seat-), ties by number:
-           round robin over junior_01..junior_20 with no state of its own, so one call or many never fill one tube (the stagger rule).
+           round robin over the juniors of TIERS.tsv (role junior, the roster the seat folders make) with no state of its own, so one call or many never fill one tube (the stagger rule).
   OUTPUT   one line per bug: JUNIOR_BUG suite=K entry=E junior=J topic=T reading=R; then FEED_BOARD suites_read=N reds=N rowed=N bugs=N limit=N.
   --apply  mints each bug: s4e_msg.sh mint TOPIC 1 --to JUNIOR --stdin. The mint's WAKE line is PRINTED, never sent (the coo wakes in waves).
   --limit N  at most N bugs in one call (default 20).   --suites K1,K2  only these suite keys.   --juniors J1,J2  another seat list.
@@ -30,7 +30,8 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 PO = os.environ.get("S4E_POST", "/home/resources/postoffice")
 SUITES = os.environ.get("S4E_SUITES_TSV", "/home/resources/progress/SUITES.tsv")
 RUNNERS = os.path.join(HERE, "SUITE_RUNNERS.tsv")
-JUNIORS = ["junior_%02d" % i for i in range(1, 21)]
+import util_tiers
+JUNIORS = [r["seat"] for r in util_tiers.load()[0] if r["role"] == "junior"]
 EXT = {"snobol4": "sno", "icon": "icn", "prolog": "pl", "pascal": "pas", "raku": "raku", "rebus": "reb", "snocone": "sc"}
 LANG_SKILL = {"snobol4": "snobol4", "snocone": "snobol4", "rebus": "snobol4", "icon": "icon", "prolog": "prolog", "pascal": "pascal", "raku": "raku",
               "scriptix": "scrip-architecture"}
