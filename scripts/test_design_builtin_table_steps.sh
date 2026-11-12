@@ -12,7 +12,7 @@
 #                ircall=W:N (callgrind Ir per call of loop witness W's mode-4 binary, 200000 calls, at most N)
 #                nosym=a,b (no definition or reference of the names under SCRIP/src, read) | gate=name (bash name.sh rc 0) | smoke=L|ALL (test_smoke_L.sh green; ALL = the eight)
 #                rows=L|ALL (SUITES.tsv today_pass not below the pass recorded in ROWS0.tsv beside STEPS.tsv) | rowsmin=N (harness/scripts/builtins.tsv holds at least N rows) | -
-#                leafbound (the finish: builtin_leaf.inc declares no weak entry, and every conv leaf or open row of builtins.tsv names a symbol the built runtime DEFINES, so no g_bt_leaf or g_bt_open slot reads 0;
+#                leafbound (the finish: builtin_leaf.h declares no weak entry, and every conv leaf or open row of builtins.tsv names a symbol the built runtime DEFINES, so no g_bt_leaf or g_bt_open slot reads 0;
 #                           the nm of out/libscrip_rt.so cannot show an unbound hidden weak, the linker drops it, so the source and the table are read beside the defined symbols; cto 2026-11-04)
 #   --cut        re-cut every witness ref from its oracle (the design seat's road; an HQ that changes a witness re-cuts it the same way)
 #   --rows0      record SUITES.tsv's rows into ROWS0.tsv (the reading the rows probe compares against; the design seat records it once; an executor re-records before its step)
@@ -144,7 +144,7 @@ ircall() { # $1 witness -> Ir per call of its mode-4 binary under callgrind
     echo $(( ir / CALLS ))
 }
 leafbound() { # -> "weak=W zero=Z rows=R": W lines of builtin_leaf.inc that declare a weak entry, Z conv leaf|open rows whose entry is not a defined bt_ symbol of the built runtime (the generator binds only bt_ entries, so the slot reads 0); REFUSED when it cannot measure
-    local inc="${S4E_BT_LEAF_INC:-$SC/src/runtime/builtin_leaf.inc}" tsv="${S4E_BT_TSV:-$TSV}" nmf="${S4E_BT_NM:-}" so="$SC/out/libscrip_rt.so" defined w
+    local inc="${S4E_BT_LEAF_INC:-$SC/src/runtime/builtin_leaf.h}" tsv="${S4E_BT_TSV:-$TSV}" nmf="${S4E_BT_NM:-}" so="$SC/out/libscrip_rt.so" defined w
     [ -r "$inc" ] && [ -r "$tsv" ] || { echo REFUSED; return; }
     if [ -n "$nmf" ]; then [ -r "$nmf" ] || { echo REFUSED; return; }; defined="$(awk '$2 == "T" || $2 == "t" {print $3}' "$nmf")"
     else [ -r "$so" ] || { echo REFUSED; return; }; defined="$(nm "$so" 2> /dev/null | awk '$2 == "T" || $2 == "t" {print $3}')"; fi

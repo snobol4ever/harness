@@ -8,8 +8,9 @@
 name	phase	output	check	write
 box_cell_shapes	source	SCRIP/src/planner/box_cell_shapes.inc	python3 harness/scripts/util_gen_box_cell_shapes.py --check	python3 harness/scripts/util_gen_box_cell_shapes.py --write
 builtin_table	source	SCRIP/src/runtime/builtin_table.h	python3 harness/scripts/util_gen_builtin_table.py --check	python3 harness/scripts/util_gen_builtin_table.py --write
-builtin_table	source	SCRIP/src/runtime/builtin_table.inc	python3 harness/scripts/util_gen_builtin_table.py --check	python3 harness/scripts/util_gen_builtin_table.py --write
-builtin_table	source	SCRIP/src/runtime/builtin_leaf.inc	python3 harness/scripts/util_gen_builtin_table.py --check	python3 harness/scripts/util_gen_builtin_table.py --write
+builtin_table	source	SCRIP/src/runtime/builtin_table.c	python3 harness/scripts/util_gen_builtin_table.py --check	python3 harness/scripts/util_gen_builtin_table.py --write
+builtin_table	source	SCRIP/src/runtime/builtin_leaf.c	python3 harness/scripts/util_gen_builtin_table.py --check	python3 harness/scripts/util_gen_builtin_table.py --write
+builtin_table	source	SCRIP/src/runtime/builtin_leaf.h	python3 harness/scripts/util_gen_builtin_table.py --check	python3 harness/scripts/util_gen_builtin_table.py --write
 core_fn_table	source	SCRIP/src/runtime/core/core_fn_table.inc	python3 harness/scripts/util_gen_core_fn_table.py --check	python3 harness/scripts/util_gen_core_fn_table.py --write
 pascal_prelude_units	source	SCRIP/src/parsers/pascal/pascal_prelude_units.inc	python3 harness/scripts/util_gen_pascal_prelude_units.py --check	python3 harness/scripts/util_gen_pascal_prelude_units.py
 pl_meta_specs	source	SCRIP/src/runtime/pl_meta_specs.inc	python3 harness/scripts/util_gen_pl_meta_specs.py --check	python3 harness/scripts/util_gen_pl_meta_specs.py

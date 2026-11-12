@@ -15,7 +15,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 NAME=builtin_table_is_current
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
-for f in "$HERE/builtins.tsv" "$HERE/util_gen_builtin_table.py" "$HERE/util_builtin_sources.py" "$ROOT/src/runtime/builtin_table.h" "$ROOT/src/runtime/builtin_table.inc" "$ROOT/src/runtime/builtin_ids.h"; do
+for f in "$HERE/builtins.tsv" "$HERE/util_gen_builtin_table.py" "$HERE/util_builtin_sources.py" "$ROOT/src/runtime/builtin_table.h" "$ROOT/src/runtime/builtin_table.c" "$ROOT/src/runtime/builtin_ids.h"; do
     [ -r "$f" ] || refuse "cannot read $f"
 done
 command -v gcc > /dev/null || refuse "no gcc"
@@ -75,7 +75,7 @@ grade('arm 3: the %d ids of builtin_ids.h keep their numbers' % len(ids_t[0]), n
 hdr = open(os.path.join(ROOT, 'src/runtime/builtin_ids.h'), encoding='utf-8').read()
 grade('arm 4: builtin_ids.h carries no private hash, bid_of is bt_bid_legacy', 'g_bid_tab' not in hdr and 'return bt_bid_legacy(s, len)' in hdr, 'g_bid_tab still there or bid_of does not call bt_bid_legacy')
 
-c = ['#include <stdio.h>', '#include <string.h>', '#include "builtin_ids.h"', '#include "builtin_table.inc"', 'static int bad = 0;',
+c = ['#include <stdio.h>', '#include <string.h>', '#include "builtin_ids.h"', '#include "builtin_table.c"', 'static int bad = 0;',
      'static void want(const char * what, const char * nm, int got, int exp) { if (got != exp) { bad++; if (bad < 12) printf("%s %s: got %d want %d\\n", what, nm, got, exp); } }',
      'int main(void) {']
 legacy_of = {x['name']: x['bid'] for x in rows if 'ids' in x['src'].split(',')}
@@ -86,7 +86,7 @@ for rr in rows:
 c += ['    want("BT_BID_MAX", "-", BT_BID_MAX < BID_TABSZ, 1);', '    want("bid_of NULL", "-", bid_of(0, 3), 0);', '    want("bid_of empty", "-", bid_of("", 0), 0);',
       '    want("bid_of unknown", "-", bid_of("no_such_builtin", 15), 0);', '    printf("checked %d rows, %d disagree\\n", BT_ROWS, bad);', '    return bad != 0;', '}']
 open(TD + '/chk.c', 'w', encoding='utf-8').write('\n'.join(c) + '\n')
-rc = subprocess.run(['gcc', '-O0', '-Wno-unused-function', '-I' + ROOT + '/src/runtime', '-o', TD + '/chk', TD + '/chk.c'], capture_output=True, text=True)
+rc = subprocess.run(['gcc', '-O0', '-Wno-unused-function', '-I' + ROOT + '/src/runtime', '-I' + ROOT + '/src', '-o', TD + '/chk', TD + '/chk.c'], capture_output=True, text=True)
 if rc.returncode != 0:
     grade('arm 5: the C check builds against the real headers', False, rc.stderr[:400])
 else:

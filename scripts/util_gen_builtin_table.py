@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-# util_gen_builtin_table.py [--check | --write] [--tsv FILE] [--out DIR] -- harness/scripts/builtins.tsv -> SCRIP/src/runtime/builtin_table.h and builtin_table.inc
+# util_gen_builtin_table.py [--check | --write] [--tsv FILE] [--out DIR] -- harness/scripts/builtins.tsv -> SCRIP/src/runtime/builtin_table.h, builtin_table.c, builtin_leaf.h and builtin_leaf.c
 # (DESIGN-PLAN builtin-table step 1; ARCH-BUILTIN-TABLE.md section 3; R-2016).
 #
 # builtins.tsv is the ONE table of builtins: one row per builtin per vocabulary. This writes the two generated files the runtime and the compiler include:
 #   builtin_table.h    bt_row_t, the enums, BT_ROWS, BT_BID_MAX, BT_LEGACY_LAST, and bt_bid_legacy(s, len): the vocabulary-blind hash of the 186 names that carried an id before the
 #                      table existed (builtin_ids.h). bid_of in builtin_ids.h IS bt_bid_legacy, so every name resolves to exactly the id it resolved to before the table: step 1
 #                      changes no resolution. A row with a bid above BT_LEGACY_LAST is a name no code resolves yet; its language step lifts it.
-#   builtin_table.inc  g_builtins[BT_ROWS] (the rows in bid order), bt_row_of(vocab, s, len) (the row index of a name, -1 for none) and bt_bid_of(vocab, s, len): the open-addressed
+#   builtin_table.c    (a data unit of its own since DESIGN-PLAN cache-tree C1, CTO-636; it was builtin_table.inc, spliced into by_name_dispatch.c) g_builtins[BT_ROWS] (the rows in bid order), bt_row_of(vocab, s, len) (the row index of a name, -1 for none) and bt_bid_of(vocab, s, len): the open-addressed
 #                      hash of every row by vocabulary and name. Included by ONE translation unit of the runtime.
-#   builtin_leaf.inc   bt_leaf_t and g_bt_leaf[BT_ROWS]: the leaf of every row whose conv is leaf and whose entry is a bt_ name (a bt_ entry promises the leaf shape
+#   builtin_leaf.h and builtin_leaf.c (C1 as above: the declarations, and the two tables as hidden definitions in a unit of their own) bt_leaf_t and g_bt_leaf[BT_ROWS]: the leaf of every row whose conv is leaf and whose entry is a bt_ name (a bt_ entry promises the leaf shape
 #                      DESCR_t f(DESCR_t *args, int nargs); a leaf that declines returns a DESCR_t whose .v is RTX_NOT_HANDLED); bt_open_t and g_bt_open[BT_ROWS]: the same for a
 #                      row whose conv is open (int f(DESCR_t *args, int nargs, DESCR_t *out, long *rq): the road that may ask the box to open a call; it returns 0 when it declines). A leaf not written yet is a weak hidden reference that
 #                      resolves to 0, so a step lands one chain at a time; test_gate_every_leaf_row_has_its_leaf closes that at the finish. Included by ONE translation unit.
@@ -193,6 +193,7 @@ def gen(rows):
     h.append('}')
     h.append('#endif')
     c = []
+    c.append('#include "runtime/builtin_table.h"')
     c.append('const bt_row_t g_builtins[BT_ROWS] = {')
     for r in rows:
         c.append('    { %s, %s, %d, BT_VOC_%s, BT_CONV_%s, %d, %d, %d, %d, %d },' % (cstr(r['name']), cstr(r['entry']) if r['entry'] != '-' else '""', r['bid'], r['vocab'].upper(), r['conv'].upper(),
@@ -214,43 +215,53 @@ def gen(rows):
     c.append('    int k = bt_row_of(vocab, s, len);')
     c.append('    return k < 0 ? 0 : g_builtins[k].bid;')
     c.append('}')
-    l = []
+    l, ld = [], []
+    l.append('#ifndef BUILTIN_LEAF_H')
+    l.append('#define BUILTIN_LEAF_H')
+    l.append('#include "ir/descr.h"')
+    l.append('#include "runtime/builtin_table.h"')
     l.append('typedef DESCR_t (*bt_leaf_t)(DESCR_t * args, int nargs);')
+    ld.append('#include "runtime/builtin_leaf.h"')
     seen = []
     for r in rows:
         if is_leaf_row(r) and slot_sym(r) not in seen:
             seen.append(slot_sym(r))
             l.append('extern DESCR_t %s(DESCR_t * args, int nargs) __attribute__((weak, visibility("hidden")));' % slot_sym(r))
-    l.append('static const bt_leaf_t g_bt_leaf[BT_ROWS] = {')
+    l.append('extern __attribute__((visibility("hidden"))) const bt_leaf_t g_bt_leaf[BT_ROWS];')
+    ld.append('__attribute__((visibility("hidden"))) const bt_leaf_t g_bt_leaf[BT_ROWS] = {')
     for i in range(0, n, 8):
-        l.append('    ' + ' '.join(('%s,' % slot_sym(r)) if is_leaf_row(r) else '0,' for r in rows[i:i + 8]))
-    l.append('};')
+        ld.append('    ' + ' '.join(('%s,' % slot_sym(r)) if is_leaf_row(r) else '0,' for r in rows[i:i + 8]))
+    ld.append('};')
     l.append('typedef int (*bt_open_t)(DESCR_t * args, int nargs, DESCR_t * out, long * rq);')
     for r in rows:
         if is_open_row(r) and slot_sym(r) not in seen:
             seen.append(slot_sym(r))
             l.append('extern int %s(DESCR_t * args, int nargs, DESCR_t * out, long * rq) __attribute__((weak, visibility("hidden")));' % slot_sym(r))
-    l.append('static const bt_open_t g_bt_open[BT_ROWS] = {')
+    l.append('extern __attribute__((visibility("hidden"))) const bt_open_t g_bt_open[BT_ROWS];')
+    l.append('#endif')
+    ld.append('__attribute__((visibility("hidden"))) const bt_open_t g_bt_open[BT_ROWS] = {')
     for i in range(0, n, 8):
-        l.append('    ' + ' '.join(('%s,' % slot_sym(r)) if is_open_row(r) else '0,' for r in rows[i:i + 8]))
-    l.append('};')
-    return '\n'.join(h) + '\n', '\n'.join(c) + '\n', '\n'.join(l) + '\n'
+        ld.append('    ' + ' '.join(('%s,' % slot_sym(r)) if is_open_row(r) else '0,' for r in rows[i:i + 8]))
+    ld.append('};')
+    return '\n'.join(h) + '\n', '\n'.join(c) + '\n', '\n'.join(l) + '\n', '\n'.join(ld) + '\n'
 
 
-def styled(h, c, l):
+OUTS = ('builtin_table.h', 'builtin_table.c', 'builtin_leaf.h', 'builtin_leaf.c')
+
+
+def styled(*texts):
     """The generated text laid out by the fleet's own 200-column tool (util_reflow_200.py), so a regenerated file is the file a seat commits and --check compares like with like."""
     tool = os.path.join(HERE, 'util_reflow_200.py')
     if not os.path.exists(tool):
         raise OSError('no %s' % tool)
     with tempfile.TemporaryDirectory() as d:
-        ph, pc, pl = os.path.join(d, 'builtin_table.h'), os.path.join(d, 'builtin_table.inc'), os.path.join(d, 'builtin_leaf.inc')
-        open(ph, 'w', encoding='utf-8').write(h)
-        open(pc, 'w', encoding='utf-8').write(c)
-        open(pl, 'w', encoding='utf-8').write(l)
-        r = subprocess.run([sys.executable, '-I', tool, '--apply', ph, pc, pl], capture_output=True, text=True)
+        ps = [os.path.join(d, n) for n in OUTS]
+        for p, t in zip(ps, texts):
+            open(p, 'w', encoding='utf-8').write(t)
+        r = subprocess.run([sys.executable, '-I', tool, '--apply'] + ps, capture_output=True, text=True)
         if r.returncode != 0:
             raise OSError('util_reflow_200.py --apply failed: %s' % (r.stdout + r.stderr)[-300:])
-        return open(ph, encoding='utf-8').read(), open(pc, encoding='utf-8').read(), open(pl, encoding='utf-8').read()
+        return tuple(open(p, encoding='utf-8').read() for p in ps)
 
 
 def main(argv):
@@ -269,18 +280,17 @@ def main(argv):
         print('GATE RED: the table is invalid: %s' % e)
         return 1
     try:
-        h, c, l = styled(*gen(rows))
+        texts = styled(*gen(rows))
     except OSError as e:
         print('util_gen_builtin_table: %s' % e, file=sys.stderr)
         return 2
-    ph, pc, pl = os.path.join(out, 'builtin_table.h'), os.path.join(out, 'builtin_table.inc'), os.path.join(out, 'builtin_leaf.inc')
+    paths = [os.path.join(out, n) for n in OUTS]
     if '--write' in argv:
-        open(ph, 'w', encoding='utf-8').write(h)
-        open(pc, 'w', encoding='utf-8').write(c)
-        open(pl, 'w', encoding='utf-8').write(l)
-        print('wrote %s, %s and %s: %d rows, bids up to %d, %d legacy' % (ph, pc, pl, len(rows), max(r['bid'] for r in rows), len(legacy_rows(rows))))
+        for p, t in zip(paths, texts):
+            open(p, 'w', encoding='utf-8').write(t)
+        print('wrote %s: %d rows, bids up to %d, %d legacy' % (', '.join(paths), len(rows), max(r['bid'] for r in rows), len(legacy_rows(rows))))
         return 0
-    stale = [p for p, want in ((ph, h), (pc, c), (pl, l)) if not os.path.exists(p) or open(p, encoding='utf-8').read() != want]
+    stale = [p for p, want in zip(paths, texts) if not os.path.exists(p) or open(p, encoding='utf-8').read() != want]
     if stale:
         print('GATE RED: stale or missing: %s -- run: python3 harness/scripts/util_gen_builtin_table.py --write' % ', '.join(stale))
         return 1
