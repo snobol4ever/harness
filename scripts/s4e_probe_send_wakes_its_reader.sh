@@ -23,7 +23,7 @@ o="$(printf 'a plant body that asks px for work\n' | env -u S4E_PID_LOCK S4E_POS
 s=0; printf '%s\n' "$o" | grep -qxF "sent -> px/$t" && s=1
 [ "$s" = 1 ] || { echo "REFUSE(2): send did not deliver on the scratch postoffice: $(printf '%s' "$o" | tail -3 | tr '\n' '|' | cut -c1-200)"; exit 2; }
 k=0; printf '%s\n' "$o" | grep -q '^WAKE: SendMessage to PX-PLANT' && k=1
-# ARM 2 (the cio, 2026-11-12 13:0x CST, on the cfo's find of 12:4x): under FLEET: IDLE every seat reads asleep, so CIO-106's override named the operating
+# ARM 2 (the cio, 2026-11-12 12:4x CST, on the cfo's find of 12:4x): under FLEET: IDLE every seat reads asleep, so CIO-106's override named the operating
 # boss for a fable seat's tube, and send to the cio printed "SendMessage to COO (seat coo; tube seat-cio)"; a telegram is read only by its addressee.
 # A scratch MODE with FLEET: IDLE and BOSSES fx ox (ox the tier-2 operating boss), no seat scopes: send fx must name FX-PLANT, never OX-PLANT.
 mkdir -p "$w/po/fx/inbox" "$w/po/ox/inbox" "$w/scopes"
