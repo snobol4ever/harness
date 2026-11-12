@@ -52,7 +52,7 @@ if [ "$mode" = list ]; then
     rows | awk -F'\t' '{ printf "%-3s %-66s %-8s %-8s %s\n", $1, $2, $3, $4, $6 }'
     exit 0
 fi
-[ -f "$MASTER/ALL.pl" ] && [ -f "$MASTER/ALL.ref" ] && [ -f "$MASTER/ALL.csv" ] || refuse "no Prolog master at $MASTER"
+[ -f "$MASTER/ALL.csv" ] && python3 "$HERE/corpus_suite_harness.py" list "$MASTER/ALL.pl" "$MASTER/ALL.ref" --lang prolog > /dev/null 2>&1 || refuse "no Prolog master at $MASTER"   # the harness reads either container format through these names (CIO-24 f)
 in_master() { awk -F, -v e="$1" 'NR > 1 && $2 == e { f = 1 } END { exit f ? 0 : 1 }' "$MASTER/ALL.csv"; }
 if [ "$mode" = cut ]; then
     wits="$(rows | awk -F'\t' '{ print $6 }' | tr ' ' '\n' | grep -v '^$' | sort -u)"

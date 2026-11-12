@@ -25,7 +25,7 @@ SCRIP="${SCRIP:-$ROOT/scrip}"; P="${PL_SUITE_DIR:-$S4E/corpus/tests/prolog}"
 PIN_M3="${PIN_M3:-230}"; PIN_M4="${PIN_M4:-230}"; SHARDS="${SHARDS:-16}"
 refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "scrip not built at $SCRIP"
-[ -f "$P/ALL.pl" ] && [ -f "$P/ALL.ref" ] || refuse "rungs suite not found at $P"
+python3 "$HERE/corpus_suite_harness.py" list "$P/ALL.pl" "$P/ALL.ref" --lang prolog > /dev/null 2>&1 || refuse "rungs suite not found at $P"   # the harness reads either container format through these names (CIO-24 f)
 W="$(mktemp -d)" || refuse "mktemp failed"; trap 'rm -rf "$W"' EXIT
 for k in $(seq 1 "$SHARDS"); do
   # Every entry is graded in both modes: there is no modes column (Lon 2026-09-23, R-1218/1230).

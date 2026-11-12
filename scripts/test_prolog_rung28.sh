@@ -35,7 +35,7 @@ echo "=== rung28: throw/catch exceptions ==="
 # own docstring: family membership comes from the CSV, not from a name convention).
 if [ ! -f "$SNO" ] || [ ! -f "$REF" ]; then
     _ALLP="$CORPUS/ALL.pl"; _ALLR="$CORPUS/ALL.ref"; _ALLC="$CORPUS/ALL.csv"
-    if [ -f "$_ALLP" ] && [ -f "$_ALLR" ] && [ -f "$_ALLC" ]; then
+    if [ -f "$_ALLC" ] && python3 "$HERE/corpus_suite_harness.py" list "$_ALLP" "$_ALLR" --lang prolog > /dev/null 2>&1; then   # the harness reads either container format through these names (CIO-24 f)
         _absdir="$(mktemp -d)"; _n=0
         for _fam in $(python3 -c "import csv,sys; print(chr(10).join(sorted({r['family'] for r in csv.DictReader(open(sys.argv[1])) if (r['origin'] or '').startswith(sys.argv[2])})))" "$_ALLC" "$FAMILY"); do
             if python3 "$HERE/corpus_suite_harness.py" extract-family "$_ALLP" "$_ALLR" "$_ALLC" "$_fam" "$_absdir/p_${_n}.pl" "$_absdir/p_${_n}.ref" >/dev/null 2>&1; then _n=$((_n+1)); fi

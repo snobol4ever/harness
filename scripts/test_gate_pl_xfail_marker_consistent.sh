@@ -20,6 +20,25 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"; P="${PL_SUITE_DIR:-$S4E/corpus/tests/prolog}"
 refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
+if python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import corpus_suite_harness as H; sys.exit(0 if H.fmt2_dir_of(sys.argv[2]) is not None else 1)' "$HERE" "$P/ALL.pl"; then
+    # FORMAT 2 (CIO-24 f; the cto 2026-11-12, row tests-folder-consolidation-cto): no banner carries an XFAIL, so the two places are the container's own
+    # xfail fact (read_container_dir) and ALL.csv's xfail column; (b) and (d) are banner facts with no format-2 counterpart. No file name of the
+    # format is written here: the harness's fmt2_dir_of decides.
+    [ -f "$P/ALL.csv" ] || refuse "missing $P/ALL.csv"
+    python3 - "$HERE" "$P" <<'PY2' || exit $?
+import csv, sys
+sys.path.insert(0, sys.argv[1]); import corpus_suite_harness as H
+P = sys.argv[2]; es = H.read_container_dir(H.fmt2_dir_of(P + "/ALL.pl"), ".pl")
+rows = list(csv.DictReader(open(P + "/ALL.csv", newline="")))
+cx = {r["entry"] for r in rows if r["xfail"] == "1"}; ex = {e.name for e in es if e.xfail}
+fails = sorted("(a) %s: container xfail=%s but ALL.csv xfail=%s" % (n, n in ex, n in cx) for n in cx ^ ex)
+fails += sorted("(a) %s: in the container but absent from ALL.csv" % n for n in {e.name for e in es} - {r["entry"] for r in rows})
+print("  entries: container=%d ALL.csv=%d   XFAIL marked: %d (format 2)" % (len(es), len(rows), len(ex)))
+for f in fails[:20]: print("  FAIL  " + f)
+if fails: print("\u26d4 GATE FAIL: %d inconsistency(ies)" % len(fails)); sys.exit(1)
+print("  ok    (a) the container and ALL.csv agree for every entry")
+PY2
+else
 for f in ALL.pl ALL.ref ALL.csv; do [ -f "$P/$f" ] || refuse "missing $P/$f"; done
 python3 - "$P" <<'PY'
 import csv,io,re,sys,subprocess,os
@@ -50,6 +69,7 @@ print('  ok    (b) banner lists identical across ALL.pl and ALL.ref')
 print('  ok    (d) banner width uniform at %d'%w.pop())
 PY
 rc=$?; [ "$rc" -eq 0 ] || exit "$rc"
+fi
 n="$(python3 "$HERE/corpus_suite_harness.py" list "$P/ALL.pl" "$P/ALL.ref" --lang prolog 2>/dev/null | grep -c .)" || refuse "read_suite could not list the rungs -- the grader cannot load this tree"
 [ "${n:-0}" -gt 0 ] || refuse "read_suite listed 0 entries -- the grader cannot load this tree"
 echo "  ok    (c) read_suite lists $n entries in this tree"

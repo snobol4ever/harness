@@ -87,7 +87,7 @@ STRESS_TIMEOUT="${STRESS_TIMEOUT:-1800}"; SHARD_TIMEOUT="${SHARD_TIMEOUT:-5400}"
 ARMS="control arena"; for _n in $STRESS_BAND; do ARMS="$ARMS stress:$_n"; done; ARMS="${ARMS_OVERRIDE:-$ARMS}"
 refuse(){ GATE_VERDICT=2; echo "⛔ REFUSED-TO-GRADE(2): $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "scrip not built at $SCRIP"
-[ -f "$P/ALL.pl" ] && [ -f "$P/ALL.ref" ] || refuse "rungs suite not found at $P (want ALL.pl + ALL.ref)"
+python3 "$HERE/corpus_suite_harness.py" list "$P/ALL.pl" "$P/ALL.ref" --lang prolog > /dev/null 2>&1 || refuse "rungs suite not found at $P (the harness could not list it)"   # the harness reads either container format through these names (CIO-24 f)
 W="$(mktemp -d)" || refuse "mktemp failed"
 # ⛔⭐⭐ A REFUSAL MUST NOT DESTROY THE EVIDENCE NEEDED TO DIAGNOSE THE REFUSAL. Measured on this gate's own
 # first band run: it refused on a key-set mismatch and then deleted its mktemp workdir on the way out, so the

@@ -91,7 +91,7 @@ done
 # ---- THE REF ARM. The rungs entry the coo's board lost on this defect, graded against its OWN ref bytes rather
 # than against a string typed in here -- a gate that retypes the expected output is a gate that can drift from it.
 RUNGS="${S4E_CORPUS:-$ROOT/../corpus}/tests/prolog"
-if [ -f "$RUNGS/ALL.pl" ] && [ -f "$RUNGS/ALL.ref" ]; then
+if python3 "$HERE/corpus_suite_harness.py" list "$RUNGS/ALL.pl" "$RUNGS/ALL.ref" --lang prolog > /dev/null 2>&1; then   # the harness reads either container format through these names (CIO-24 f)
     if python3 "$HERE/corpus_suite_harness.py" extract "$RUNGS/ALL.pl" "$RUNGS/ALL.ref" format_directive_6 \
             "$D/fd6.pl" --out-ref "$D/fd6.ref" >/dev/null 2>&1 && [ -s "$D/fd6.ref" ]; then
         grep -q "it''s" "$D/fd6.ref" || { echo "⛔ REFUSE(2) [$GATE_NAME]: format_directive_6's ref no longer carries the doubled apostrophe, so this arm is grading something else -- read the ref before changing this gate"; exit 2; }

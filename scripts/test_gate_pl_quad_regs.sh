@@ -42,7 +42,7 @@ gate_require_exec "$SCRIP" "scrip binary"
 gate_require "$RT/libscrip_rt.so" "runtime library"
 gate_require "$SCAN" "scanner pl_quad_regs_scan.py"
 gate_require "$RTX/rtx_abi.inc" "rtx asm tree"
-gate_require "$RUNGS_DIR/ALL.pl" "Prolog rungs suite"
+python3 "$HERE/corpus_suite_harness.py" list "$RUNGS_DIR/ALL.pl" "$RUNGS_DIR/ALL.ref" --lang prolog > /dev/null 2>&1 || gate_require "$RUNGS_DIR/ALL.pl" "Prolog rungs suite"   # the harness reads either container format through these names (CIO-24 f)
 gate_require "$RUNGS_DIR/ALL.csv" "Prolog rungs suite index"
 command -v python3 >/dev/null 2>&1 || { echo "GATE UNPROVEN(2) [$GATE_NAME]: python3 not found"; gate_stamp; exit 2; }
 . "$HERE/lib_rungs_extract.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: cannot source lib_rungs_extract.sh"; gate_stamp; exit 2; }
