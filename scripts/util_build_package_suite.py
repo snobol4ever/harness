@@ -531,6 +531,9 @@ def build_generated(pkg_dir, lang, out_prefix, contract, only):
     return 0
 
 
+FX_STAGED = set()   # the entries whose cut ran over their NAME.fixtures/ tree (h.stage_fixtures): their ALL.csv fixtures cell reads staged, so stage_entry stages the same tree to grade
+
+
 def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None):
     _c0 = read_contract(pkg_dir)
     if _c0["units"] == "generated":
@@ -834,6 +837,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
                     for _cf in src.parent.iterdir():
                         if _cf.is_file() and not _cf.name.startswith("ALL.") and _cf.name != src.name:
                             (Path(_iso_dir) / _cf.name).write_bytes(_cf.read_bytes())
+                if h.stage_fixtures(src.parent, src.stem, Path(_iso_dir)):   # NAME.fixtures/ staged where the oracle runs; the fixtures cell tells stage_entry to stage it to grade
+                    FX_STAGED.add(name)
                 _iso_src.write_bytes(src.read_bytes())
                 if lang == "icon" and merged and contract["oracle"] == "unicon" and contract["prebuild"]:
                     _unicon_prebuild(Path(_iso_dir), contract["ipath"], contract["prebuild"].split())
@@ -1097,7 +1102,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
     _old_cmd = {}     # compile_args and run_args: the unit's command line, carried forward the same way (clause 8 (f), R-1281)
     _cmd_cols = ["compile_args", "run_args"]   # a new table gets both; a rebuild keeps the ones the table has, never imposes one
     _of_col = ["out_files"] if any(getattr(e, "out_files", None) for e in entries) or any(d.get("out_files") for d in _decl.values()) else []   # from <stem>.outfiles, else the table's own declaration
-    _se_col = ["stderr"] if merged or any(d.get("stderr") for d in _decl.values()) else []   # from CONTRACT.tsv (every entry), else the table's own per-entry declaration
+    _se_col = ["stderr"] if merged or any(d.get("stderr") for d in _decl.values()) else []
+    _fx_col = ["fixtures"] if FX_STAGED else []   # the entries cut over their NAME.fixtures/ tree, read by corpus_suite_harness.py stage_entry   # from CONTRACT.tsv (every entry), else the table's own per-entry declaration
     _tmo_col = ["timeout_s"] if "timeout_s" in _decl_cols else []   # the declared bound (test-cycle step 6), carried forward; a table that never declared one gains none here
     # ⭐ fresh-vars and error-context (corpus_suite_harness.py _grade_output): a Prolog ref prints a fresh variable as the oracle names it
     # (ISO/IEC 13211-1 7.10.5) and an error term's context as the oracle builds it (7.12.1), both the implementation's; each is derived
@@ -1148,19 +1154,19 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
                     _old_gap[_row.get("entry")] = _g
     with open(out_csv, "w", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
-        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _tmo_col + _cmd_cols + _of_col + _se_col + _cm_col + _sg_col + _gr_col + _gap_col + [c for c, _fn in cols])
+        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _tmo_col + _cmd_cols + _of_col + _se_col + _cm_col + _sg_col + _gr_col + _gap_col + _fx_col + [c for c, _fn in cols])
         for e in entries:
             joined = "\n".join(e.sno_lines)
             flags_row = m.attrs_for_text(joined, table_lang)
             w.writerow([e.seq, e.name, f"{pkg_dir.name}__{e.name}", pkg_dir.name, len(e.sno_lines),
-                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_decl.get(e.name, {}).get("timeout_s", "") for c in _tmo_col] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + [("merged" if getattr(e, "decl_stderr", merged) else "") for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + ((["swi-cases", e.name.rsplit("/", 1)[0] if "/" in e.name else "."] if plunit else ["tap-cases"]) if _gr_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [flags_row[c] for c, _fn in cols])
+                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_decl.get(e.name, {}).get("timeout_s", "") for c in _tmo_col] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + [("merged" if getattr(e, "decl_stderr", merged) else "") for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + ((["swi-cases", e.name.rsplit("/", 1)[0] if "/" in e.name else "."] if plunit else ["tap-cases"]) if _gr_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [("staged" if e.name in FX_STAGED else "") for c in _fx_col] + [flags_row[c] for c, _fn in cols])
         _rank = max([e.seq for e in entries] or [0])
         for _row in sorted(_carried, key=lambda r: r.get("entry") or ""):
             _rank += 1
             w.writerow([_rank, _row.get("entry"), _row.get("origin") or f"{pkg_dir.name}__{_row.get('entry')}", _row.get("package") or pkg_dir.name,
                         _row.get("n_lines") or "", _row.get("stdin") or "0", _row.get("want_rc") or "0",
                         (_row.get("heap_kb") or "").strip() or m.DEFAULT_HEAP_KB, (_row.get("stack_kb") or "").strip() or m.DEFAULT_STACK_KB] + [(_row.get(c) or "").strip() for c in _tmo_col] + [(_row.get(c) or "").strip() for c in _cmd_cols]
-                       + [(_row.get(c) or "").strip() for c in _of_col] + [(_row.get(c) or "").strip() for c in _se_col] + ["" for c in _cm_col] + ["" for c in _sg_col] + ["" for c in _gr_col] + [(_row.get(c) or "").strip() for c in _gap_col] + ["" for c, _fn in cols])
+                       + [(_row.get(c) or "").strip() for c in _of_col] + [(_row.get(c) or "").strip() for c in _se_col] + ["" for c in _cm_col] + ["" for c in _sg_col] + ["" for c in _gr_col] + [(_row.get(c) or "").strip() for c in _gap_col] + [(_row.get(c) or "").strip() for c in _fx_col] + ["" for c, _fn in cols])
     if _carried:
         print("    settings rows: %d unit(s) still shipped and not absorbed by this build carried forward, declarations kept, no block: %s"
               % (len(_carried), ", ".join(sorted(r.get("entry") or "" for r in _carried))), file=sys.stderr)
@@ -1314,11 +1320,11 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
     hdr = next(csv.reader([csv_lines[0]]))
     ix = {c: i for i, c in enumerate(hdr)}
     known = {"rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb", "compile_args", "run_args", "out_files", "stderr",
-             "compare", "stage", "answer", "mode_gap_s", "timeout_s"} | {c for c, _fn in cols}
+             "compare", "stage", "answer", "mode_gap_s", "timeout_s", "fixtures"} | {c for c, _fn in cols}
     if set(hdr) - known or "entry" not in ix or "rank" not in ix:
         h.refuse(f"splice gate: {f_csv}'s header is not one the splice can fill: unknown {sorted(set(hdr) - known)}")
     for e in entries:
-        for _col, _need in (("out_files", getattr(e, "out_files", None)), ("compare", _cm_val(e)), ("stderr", merged), ("stage", e.name in staged)):
+        for _col, _need in (("out_files", getattr(e, "out_files", None)), ("compare", _cm_val(e)), ("stderr", merged), ("stage", e.name in staged), ("fixtures", e.name in FX_STAGED)):
             if _need and _col not in ix:
                 h.refuse(f"splice gate: {e.name} needs a {_col} cell and {f_csv} has no {_col} column -- a whole rebuild adds it")
     rows = [next(csv.reader([ln])) for ln in csv_lines[1:]]
@@ -1335,7 +1341,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
              "want_rc": e.want_rc, "heap_kb": m.DEFAULT_HEAP_KB, "stack_kb": m.DEFAULT_STACK_KB, "run_args": "", "mode_gap_s": "", "timeout_s": "",
              "compile_args": contract["unmarked_compile_args"] if contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "",
              "out_files": " ".join(getattr(e, "out_files", None) or []), "stderr": "merged" if merged else "", "compare": _cm_val(e),
-             "stage": "upstream" if e.name in staged else "", "answer": ("" if staged[e.name] == "stdout" else staged[e.name]) if e.name in staged else ""}
+             "stage": "upstream" if e.name in staged else "", "fixtures": "staged" if e.name in FX_STAGED else "", "answer": ("" if staged[e.name] == "stdout" else staged[e.name]) if e.name in staged else ""}
         v.update({c: flags_row[c] for c, _fn in cols})
         if e.name in row_at:
             prev = rows[row_at[e.name]]

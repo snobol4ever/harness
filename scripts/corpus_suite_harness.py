@@ -3942,6 +3942,25 @@ def _copy_companions(text, companion_dir, dest_dir):
                 break
 
 
+def stage_fixtures(src_dir, stem, dest):
+    """NAME.fixtures/ BESIDE A SOURCE IS STAGED WHERE THE PROGRAM RUNS (the grader 2026-11-12, ipl-owed-77; Lon, in the grader's window: "get to grading
+    and scoring to get the banner up to date."): the deleted IPL runner staged the tree as ipl_fixtures_stage did (cp -R NAME.fixtures/. into the run
+    directory, dotfiles and subdirectories included, a symlink or a special file anywhere refused) when it cut a ref and when it graded, so the
+    builder's cut (util_build_package_suite.py) and stage_entry here call this one function and run in the same world. MEASURED: 35 of IPL's owed
+    programs answered "cannot open x1.txt" and the like without it. Absent directory: nothing staged, byte-identical to before."""
+    import shutil
+    d = Path(src_dir) / f"{stem}.fixtures"
+    if not d.exists() and not d.is_symlink():
+        return False
+    if d.is_symlink() or not d.is_dir():
+        refuse(f"{d} exists but is not a plain directory (a fixture tree is a directory of regular files)")
+    for q in d.rglob("*"):
+        if q.is_symlink() or not (q.is_file() or q.is_dir()):
+            refuse(f"{q} is not a plain regular file or directory: a fixture tree never carries a symlink or a special file")
+    shutil.copytree(d, Path(dest), dirs_exist_ok=True)
+    return True
+
+
 def stage_entry(entry, td, ext=".sno", companion_dir=None):
     """THE ONE WRITER OF AN ENTRY'S PROGRAM (split out of run_suite_entry 2026-11-05 for the expect census, so the oracle and SCRIP read
     the same bytes): the program file in td (its prelude, its companions, its argv files beside it); returns (path, expected text)."""
@@ -3988,6 +4007,8 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
     if _cdir != companion_dir:
         _copy_companions(text, companion_dir, cand.parent)   # the suite directory first, as before, so nothing a nested entry found there is lost
     _copy_companions(text, _cdir, cand.parent)               # then the entry's own directory, which wins where both hold the name
+    if _cdir and getattr(entry, "fixtures", False):
+        stage_fixtures(_cdir, Path(entry.name).name, cand.parent)   # ALL.csv fixtures=staged: NAME.fixtures/ beside the entry's source, as the builder's cut staged it
     for _fn, _body in (getattr(entry, "files", None) or {}).items():   # THE FILE FENCES (CIO-55): the entry's own companions, beside the program
         (cand.parent / _fn).write_bytes(_body.encode("utf-8"))
     # PROGRAM ARGUMENTS THAT NAME A COMPANION (AIS HSORT: its input file name arrives in HOST(0)): an argv token
@@ -6907,7 +6928,7 @@ def read_command_line_columns(src_path, entries, modes=None):
     import csv as _csvm
     with open(csv_path, newline="") as f:
         rdr = _csvm.DictReader(f)
-        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s", "grader", "cwd", "stage_name", "dialect") if rdr.fieldnames and c in rdr.fieldnames]
+        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s", "grader", "cwd", "stage_name", "dialect", "fixtures") if rdr.fieldnames and c in rdr.fieldnames]
         if not cols:
             return
         rows = [(n, r) for n, r in enumerate(rdr, 2)]
@@ -6940,6 +6961,11 @@ def read_command_line_columns(src_path, entries, modes=None):
         of = validate_out_files_cell(row.get("out_files"), where)
         if of:
             e.out_files = of
+        _fx = (row.get("fixtures") or "").strip()
+        if _fx not in ("", "staged"):
+            refuse(f"{where}: fixtures {_fx!r} must be staged or empty (staged: the entry's NAME.fixtures/ tree is staged where it runs, as its ref was cut)")
+        if _fx:
+            e.fixtures = True
         if validate_stderr_cell(row.get("stderr"), where):
             e.merge_stderr = True
         _cmp = validate_compare_cell(row.get("compare"), where)
