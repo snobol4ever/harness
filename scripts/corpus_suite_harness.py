@@ -6288,7 +6288,7 @@ def cmd_extract(args):
         Path(args.out_sno).write_text(text + "\n")
         if args.out_ref:
             ref_text = e.ref if e.kind == "line" else "\n".join(e.ref)
-            Path(args.out_ref).write_text(ref_text + "\n")
+            Path(args.out_ref).write_text(ref_text + "\n" if (e.kind == "line" or e.ref) else "")   # a block whose answer is no line is an empty file, the "" stage_entry grades (it was one newline; the cfo 2026-11-12)
         if e.stdin is not None:
             Path(args.out_in).write_text(e.stdin)
         for _fn, _body in (getattr(e, "files", None) or {}).items():   # THE FILE FENCES (CIO-55): a companion stands beside the extracted program, as stage_entry puts it (the cfo 2026-11-12)
