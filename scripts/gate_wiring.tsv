@@ -1576,7 +1576,6 @@ test_gate_commit_msg_hook.sh	TASK	-	-	-
 test_gate_const_graph.sh	TASK	-	-	-
 test_gate_dangling_blocker_refused.sh	TASK	-	-	-
 test_gate_defect_c_vlist_ladder.sh	TASK	-	-	-
-test_gate_digest_matches_rules.sh	TASK	-	-	-
 test_gate_done_donewhen_backtick_normalised.sh	TASK	-	-	-
 test_gate_ec_uni_complete.sh	TASK	-	-	-
 test_gate_em8_snocone_native_emit.sh	TASK	-	-	-

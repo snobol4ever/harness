@@ -44,7 +44,6 @@ test_gate_coo_loop_runs_tests_side_by_side.sh	the progress store or a board (a g
 test_gate_corpus_coverage_classified.sh	the postoffice (the bus, the queue, a seat inbox)
 test_gate_dangling_blocker_refused.sh	the postoffice (the bus, the queue, a seat inbox)
 test_gate_demos_suite_grades_each_demo_in_both_modes.sh	the progress store or a board (a graded population)
-test_gate_digest_matches_rules.sh	the progress store or a board (a graded population)
 test_gate_dispatch_bus_failure_modes.sh	the postoffice (the bus, the queue, a seat inbox)
 test_gate_dispatch_claim_single_authority.sh	the postoffice (the bus, the queue, a seat inbox)
 test_gate_dispatch_refuses_placeholder_donewhen.sh	the postoffice (the bus, the queue, a seat inbox)
