@@ -1503,7 +1503,8 @@ def _additive_write_sidecar_merge(path, new_lines, digest=False, fresh_wins=Fals
         for line in open(path, encoding="utf-8", errors="replace"):
             line = line.rstrip("\n")
             if not line or "\t" not in line:
-                if not seen_data:
+                # ⛔ the digest line is the writer's, rewritten below: kept as header it doubles on a file with no data lines
+                if not seen_data and not line.startswith(EXCL_DIGEST_TAG):
                     header.append(line)
                 continue
             seen_data = True
