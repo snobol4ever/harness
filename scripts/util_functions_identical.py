@@ -63,7 +63,25 @@ def dem(name):
     return _DEM[name]
 
 
+RELMAP = []
+
+
+def remap(t):
+    """--relmap: a reference into a range of one symbol that a move put at another symbol (a sub-record that left a struct for a global of
+    its own, the members after it moved down) is named by where it is now."""
+    if len(t) >= 4 and t[1] == 'sym' and isinstance(t[3], int):
+        for sym, lo, hi, nsym, nlo in RELMAP:
+            if t[2] == sym and lo <= t[3] <= hi:
+                return (t[0], 'sym', nsym, t[3] - lo + nlo) + tuple(t[4:])
+    return t
+
+
 def nrel(r):
+    t = _nrel(r)
+    return remap(t) if RELMAP else t
+
+
+def _nrel(r):
     roff,typ,cls,a,b=r
     if cls=='V' and isinstance(b,tuple): return (roff,'sym',norm(b[0]),b[1])
     if cls=='N' and typ in PC: return (roff,'sym',norm(dem(a)),b+4,'pc')
@@ -205,7 +223,15 @@ def main():
     ap.add_argument('--show', type=int, default=20)
     ap.add_argument('--selftest', action='store_true')
     ap.add_argument('--renames', action='append', default=[], help='a TSV new<TAB>old the split tool wrote: an exported static it renamed')
+    ap.add_argument('--relmap', action='append', default=[], help='lines "sym lo hi newsym newlo": a reference to sym+off, lo<=off<=hi, is newsym+(off-lo+newlo)')
+    ap.add_argument('--skip', action='append', default=[], help='a data symbol compared outside this tool (a struct that lost a member)')
     a = ap.parse_args()
+    for f in a.relmap:
+        for ln in open(f, encoding='utf-8'):
+            if ln.strip() and not ln.startswith('#'):
+                q = ln.split()
+                RELMAP.append((q[0], int(q[1]), int(q[2]), q[3], int(q[4])))
+    skip = set(a.skip)
     for f in a.renames:
         for ln in open(f, encoding='utf-8'):
             if ln.strip() and not ln.startswith('#'):
@@ -236,6 +262,8 @@ def main():
     where_p, where_c = where(pa), where(ch)
     copies = 0
     for k in sorted(set(P) | set(C)):
+        if k[1] in skip:
+            continue
         if k in P and k not in C and k[0].startswith('.rodata') and all(not r for v in P[k] for r in [v[2]]):
             dropped += 1; continue
         if k not in C or k not in P:
