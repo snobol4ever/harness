@@ -22,6 +22,11 @@ PROG="${S4E_CYCLE_PROG:-/home/resources/progress}"
 STATE="$PROG/CYCLE.state"; LOG="$PROG/CYCLE.log"; PIDF="$PROG/CYCLE.pid"; CRASH="$PROG/CYCLE.crash"; SKIP="$PROG/CYCLE.skip"
 RUNNERS="$S4E/harness/scripts/SUITE_RUNNERS.tsv"
 mkdir -p "$TMPDIR/cycle" "$PROG" || exit 2
+# THE CYCLE RENDERS INTO ITS SCRATCH, NEVER INTO A TRACKED FILE OF THE ROOT (the cio 2026-11-12, row cycle-score-md-dirties-the-grader-root; MEASURED
+# 13:5x: the grader root's .github read M SCORE.md between laps, so next refused that seat's jobs rc 2): util_score_row.py and util_suite_banner.py
+# render the suite table into S4E_SCORE_MD, the record stays /home/resources/progress/SUITES.tsv; the scratch is seeded from the root's SCORE.md.
+export S4E_SCORE_MD="${S4E_SCORE_MD:-$TMPDIR/cycle/SCORE.md}"
+[ -s "$S4E_SCORE_MD" ] || [ ! -f "$S4E/.github/SCORE.md" ] || cp -f "$S4E/.github/SCORE.md" "$S4E_SCORE_MD"
 [ -f "$RUNNERS" ] || { echo "REFUSE(2) [cycle]: no $RUNNERS"; exit 2; }
 MODE_ARG="${1:-}"
 SELF="$(readlink -f "${BASH_SOURCE[0]}")"; SELF_SUM="$(md5sum < "$SELF" 2>/dev/null)"
@@ -187,10 +192,11 @@ lap_start() {
     local sy mk
     # THE GRADER ROOT'S OWN RENDERING NEVER BLOCKS ITS SYNC (the cio 2026-11-10; MEASURED: sync_rc=1 at every lap start since lap 2, sync.log
     # "Your local changes to the following files would be overwritten by merge: SCORE.md", the grader root's .github held at 75efb44b0 while origin
-    # moved to 21c79e39a): the record step re-renders SCORE.md in this root from /home/resources/progress/SUITES.tsv, which is the record; the
-    # rendering is the cycle's own scratch and is restored before the sync when it is the only tracked change, so the lap reads origin's .github.
+    # moved to 21c79e39a). Since 2026-11-12 the record step renders into S4E_SCORE_MD, the cycle's scratch (above), so the root stays clean;
+    # the restore stays for a hand run in this root, and after the sync the scratch is seeded from the root's SCORE.md as origin has it.
     if [ "$(git -C "$S4E/.github" status --porcelain --untracked-files=no 2>/dev/null)" = " M SCORE.md" ]; then git -C "$S4E/.github" checkout -q -- SCORE.md >> "$TMPDIR/cycle/sync.log" 2>&1; fi
     ( cd "$S4E" && bash harness/scripts/util_sync_root.sh ) >> "$TMPDIR/cycle/sync.log" 2>&1 < /dev/null; sy=$?
+    [ ! -f "$S4E/.github/SCORE.md" ] || cp -f "$S4E/.github/SCORE.md" "$S4E_SCORE_MD" 2>> "$TMPDIR/cycle/sync.log"
     : > "$TMPDIR/cycle/lap.sync"   # the marker request_ready compares a pending request with: a request filed after it may name what the next sync brings
     ( cd "$S4E/SCRIP" && make -j8 ) >> "$TMPDIR/cycle/make.log" 2>&1 < /dev/null; mk=$?
     log "LAP $1 start sync_rc=$sy make_rc=$mk scrip=$(git -C "$S4E/SCRIP" rev-parse --short=9 HEAD 2>/dev/null) corpus=$(git -C "$S4E/corpus" rev-parse --short=9 HEAD 2>/dev/null)"
