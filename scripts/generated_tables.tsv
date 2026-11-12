@@ -18,17 +18,17 @@ pl_meta_specs	source	SCRIP/src/runtime/pl_meta_specs.inc	python3 harness/scripts
 prolog_prelude_libs	source	SCRIP/src/parsers/prolog/prolog_prelude_libs.inc	python3 harness/scripts/util_gen_prolog_prelude_libs.py --check	python3 harness/scripts/util_gen_prolog_prelude_libs.py
 raku_setting	source	SCRIP/src/parsers/raku/raku_setting.inc	python3 harness/scripts/util_gen_raku_setting.py --check	python3 harness/scripts/util_gen_raku_setting.py
 rt_entry_table	source	SCRIP/src/runtime/rt_entry_table.inc	python3 harness/scripts/util_gen_rt_entry_table.py --check	python3 harness/scripts/util_gen_rt_entry_table.py --write
-parsers	built	SCRIP/src/parsers/snobol4/snobol4.tab.c	bash harness/scripts/test_gate_parser_generated_files_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
-parsers	built	SCRIP/src/parsers/snobol4/snobol4.tab.h	bash harness/scripts/test_gate_parser_generated_files_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
-parsers	built	SCRIP/src/parsers/snobol4/snobol4.lex.c	bash harness/scripts/test_gate_parser_generated_files_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
-parsers	built	SCRIP/src/parsers/snocone/snocone_parse.tab.c	bash harness/scripts/test_gate_parser_generated_files_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
-parsers	built	SCRIP/src/parsers/snocone/snocone_parse.tab.h	bash harness/scripts/test_gate_parser_generated_files_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
-parsers	built	SCRIP/src/parsers/rebus/rebus.tab.c	bash harness/scripts/test_gate_parser_generated_files_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
-parsers	built	SCRIP/src/parsers/rebus/rebus.tab.h	bash harness/scripts/test_gate_parser_generated_files_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
-parsers	built	SCRIP/src/parsers/rebus/lex.rebus.c	bash harness/scripts/test_gate_parser_generated_files_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
-parsers	built	SCRIP/src/parsers/pascal/pascal.tab.c	bash harness/scripts/test_gate_parser_generated_files_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
-parsers	built	SCRIP/src/parsers/pascal/pascal.tab.h	bash harness/scripts/test_gate_parser_generated_files_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
-parsers	built	SCRIP/src/parsers/pascal/pascal.lex.c	bash harness/scripts/test_gate_parser_generated_files_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
+parsers	built	SCRIP/src/parsers/snobol4/snobol4.tab.c	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
+parsers	built	SCRIP/src/parsers/snobol4/snobol4.tab.h	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
+parsers	built	SCRIP/src/parsers/snobol4/snobol4.lex.c	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
+parsers	built	SCRIP/src/parsers/snocone/snocone_parse.tab.c	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
+parsers	built	SCRIP/src/parsers/snocone/snocone_parse.tab.h	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
+parsers	built	SCRIP/src/parsers/rebus/rebus.tab.c	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
+parsers	built	SCRIP/src/parsers/rebus/rebus.tab.h	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
+parsers	built	SCRIP/src/parsers/rebus/lex.rebus.c	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
+parsers	built	SCRIP/src/parsers/pascal/pascal.tab.c	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
+parsers	built	SCRIP/src/parsers/pascal/pascal.tab.h	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
+parsers	built	SCRIP/src/parsers/pascal/pascal.lex.c	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
 gc_allocating_table	binary	SCRIP/src/templates/x86/gc_allocating_table.inc	python3 harness/scripts/util_gen_gc_allocating_table.py --check	python3 harness/scripts/util_gen_gc_allocating_table.py
 rt_entries_asm	binary	harness/scripts/rt_entries.tsv	python3 harness/scripts/util_gen_rt_entry_table.py --check-asm	python3 harness/scripts/util_gen_rt_entry_table.py --sync-asm
 rt_entries_alloc	binary	harness/scripts/rt_entries.tsv	python3 harness/scripts/util_gen_rt_entry_table.py --check-alloc	python3 harness/scripts/util_gen_rt_entry_table.py --sync-alloc
