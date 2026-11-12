@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_swi_shim_grades_all_by_each_plunit_comparison.sh -- the plunit shim (corpus/tests/prolog/plunit.pl) grades a test
+# test_gate_pl_swi_shim_grades_all_by_each_plunit_comparison.sh -- the plunit shim (corpus/packages/prolog/swi_tests/plunit.pl) grades a test
 # carrying all(Template Cmp Expected) for each comparison swipl's plunit takes, ==, =:=, = and =@=, element by element as plunit's
 # cmp_list/3 does (the coo, 2026-10-11, on hq_prolog's report: library/test_yall.pl disjunction and free read "no verdict from the
 # shim" whatever the program did, because pj_do_all had a clause for == alone). RED BEFORE, measured on SCRIP 765ce1154 with the
@@ -15,7 +15,7 @@ GATE_NAME=test_gate_pl_swi_shim_grades_all_by_each_plunit_comparison
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 CORPUS="${S4E_CORPUS:-$ROOT/corpus}"
-PLUNIT="$CORPUS/tests/prolog/plunit.pl"
+PLUNIT="$CORPUS/packages/prolog/swi_tests/plunit.pl"
 SCRIP="${SCRIP_BIN:-$HERE/../../SCRIP/scrip}"; RT="${RT_DIR:-$HERE/../../SCRIP/out}"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -f "$PLUNIT" ] || refuse "no shim at $PLUNIT"

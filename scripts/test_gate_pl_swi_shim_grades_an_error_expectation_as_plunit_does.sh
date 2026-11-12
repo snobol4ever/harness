@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_swi_shim_grades_an_error_expectation_as_plunit_does.sh -- the plunit shim (corpus/tests/prolog/plunit.pl)
+# test_gate_pl_swi_shim_grades_an_error_expectation_as_plunit_does.sh -- the plunit shim (corpus/packages/prolog/swi_tests/plunit.pl)
 # grades a case declared error(E) as plunit does: (A) a ball that is NOT error(_,_) is that case's FAIL and the run carries on (hq_prolog to
 # the coo, 2026-10-14 13:2x); (B) the case passes only when E SUBSUMES the actual formal, never on a shared functor (the cfo's FINDING of
 # 13:4x: SWI core/test_dict dict_create:convert expects type_error('dict-key', a(x)), SCRIP raised type_error(dict, ...), and the shim's
@@ -21,7 +21,7 @@ GATE_NAME=test_gate_pl_swi_shim_grades_an_error_expectation_as_plunit_does
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 CORPUS="${S4E_CORPUS:-$ROOT/corpus}"
-PLUNIT="$CORPUS/tests/prolog/plunit.pl"
+PLUNIT="$CORPUS/packages/prolog/swi_tests/plunit.pl"
 SCRIP="$HERE/../../SCRIP/scrip"; RT="${RT_DIR:-$HERE/../../SCRIP/out}"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -f "$PLUNIT" ] || refuse "no shim at $PLUNIT"

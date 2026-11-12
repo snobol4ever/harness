@@ -8,7 +8,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SWIT="$S4E/corpus/packages/prolog/swi_tests"
-PLUNIT="$S4E/corpus/tests/prolog/plunit.pl"
+PLUNIT="$S4E/corpus/packages/prolog/swi_tests/plunit.pl"
 SCRIP="$HERE/../../SCRIP/scrip"; RT="${RT_DIR:-$HERE/../../SCRIP/out}"
 REL="${1:?usage: util_diagnose_prolog_swi.sh <rel/path.pl> [--mode m3|m4]}"; MODE="${3:-m3}"
 f="$SWIT/$REL"; ref="${f%.pl}.ref"

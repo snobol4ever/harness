@@ -30,7 +30,7 @@ GATE_NAME=test_gate_pl_integer_division_floors_and_int64_overflow_promotes
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 CORPUS="${S4E_CORPUS:-$ROOT/corpus}"
-SWIT="$CORPUS/packages/prolog/swi_tests"; PLUNIT="$CORPUS/tests/prolog/plunit.pl"
+SWIT="$CORPUS/packages/prolog/swi_tests"; PLUNIT="$CORPUS/packages/prolog/swi_tests/plunit.pl"
 SCRIP="$HERE/../../SCRIP/scrip"; RT="${RT_DIR:-$HERE/../../SCRIP/out}"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -f "$PLUNIT" ] || refuse "no shim at $PLUNIT"; [ -f "$SWIT/core/test_arith.pl" ] || refuse "no vendored core/test_arith.pl"

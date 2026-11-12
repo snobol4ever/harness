@@ -25,7 +25,7 @@ G=test_gate_pl_ssu_rules_in_a_module_or_unit_and_their_no_match_error_answer_as_
 refuse() { echo "⛔ REFUSED(2) [$G]: $*"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" || refuse "lib_oracle_flags.sh unloadable -- the one accessor of the oracle binaries"
 SW="$(swipl_bin)"; [ -x "$SW" ] || refuse "no swipl at $SW -- the oracle (swipl_bin)"
-PLUNIT="${S4E_CORPUS:-$B/../corpus}/tests/prolog/plunit.pl"; [ -f "$PLUNIT" ] || refuse "no plunit shim at $PLUNIT"
+PLUNIT="${S4E_CORPUS:-$B/../corpus}/packages/prolog/swi_tests/plunit.pl"; [ -f "$PLUNIT" ] || refuse "no plunit shim at $PLUNIT"
 [ -x "$B/scrip" ] || refuse "$B/scrip is not built"
 [ -f "$B/out/libscrip_rt.so" ] || refuse "out/libscrip_rt.so is not built -- mode 4 cannot link"
 "$HERE/util_require_fresh.sh" --gate "$G" || exit $?

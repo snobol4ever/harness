@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_patch_plunit.sh — patch corpus/tests/prolog/plunit.pl:
+# util_patch_plunit.sh — patch corpus/packages/prolog/swi_tests/plunit.pl:
 #
 # Fix 1 (determinism cuts): pj_run_list/pj_run_suite/pj_run_tests leave choice
 #   points; backtracking re-enters earlier suites when a later suite fails.
@@ -19,7 +19,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CORPUS=$S4E/corpus
-PLUNIT=$CORPUS/tests/prolog/plunit.pl
+PLUNIT=$CORPUS/packages/prolog/swi_tests/plunit.pl
 
 [ -f "$PLUNIT" ] || { echo "ERROR: $PLUNIT not found"; exit 1; }
 

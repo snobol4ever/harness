@@ -49,7 +49,7 @@ yes
 erased
 resource_error(stack)'
 red=0
-CORPUS="${S4E_CORPUS:-$HERE/../../corpus}"; PLUNIT="$CORPUS/tests/prolog/plunit.pl"; TARITH="$CORPUS/packages/prolog/swi_tests/core/test_arith.pl"
+CORPUS="${S4E_CORPUS:-$HERE/../../corpus}"; PLUNIT="$CORPUS/packages/prolog/swi_tests/plunit.pl"; TARITH="$CORPUS/packages/prolog/swi_tests/core/test_arith.pl"
 [ -f "$PLUNIT" ] && [ -f "$TARITH" ] || refuse "no plunit shim or test_arith.pl under $CORPUS"
 printf 'main :- run_tests.\n:- initialization(main).\n' > "$TMPD/wrap.pl"
 for mode in m3 m4; do

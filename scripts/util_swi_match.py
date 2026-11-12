@@ -4,7 +4,7 @@
 Usage: util_swi_match.py SOURCE.pl REF ACTUAL [RC]
 
   REF      the oracle's verdicts beside the source, cut by util_swi_cut_refs.sh: PASS|FAIL|BLOCKED unit:test, EMPTY unit, UNGRADABLE unit reason
-  ACTUAL   SCRIP's stdout through corpus/tests/prolog/plunit.pl: '  pass: unit:test', '  FAIL: unit:test  (why)', '  skip: unit:test  [why]'
+  ACTUAL   SCRIP's stdout through corpus/packages/prolog/swi_tests/plunit.pl: '  pass: unit:test', '  FAIL: unit:test  (why)', '  skip: unit:test  [why]'
 
 THE POPULATION IS THE ORACLE'S ENUMERATION: every case the ref names (a forall(Gen) test is one case per generator
 instance, recorded by plunit as @(name,Bindings); a macro-generated test has no test/2 head in the source at all), plus,

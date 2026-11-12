@@ -22,7 +22,7 @@ set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"; ROOT="${S4E_HOME:-$(cd "$HERE/../../SCRIP" && pwd)}"; [ -x "$ROOT/scrip" ] || ROOT="$(cd "$HERE/../.." && pwd)/SCRIP"
 cd "$ROOT" || exit 2
 CORPUS="${S4E_CORPUS:-$(cd "$ROOT/.." && pwd)/corpus}"
-PLUNIT="$CORPUS/tests/prolog/plunit.pl"; F="$CORPUS/packages/prolog/swi_tests/core/test_hash.pl"; REF="${F%.pl}.ref"
+PLUNIT="$CORPUS/packages/prolog/swi_tests/plunit.pl"; F="$CORPUS/packages/prolog/swi_tests/core/test_hash.pl"; REF="${F%.pl}.ref"
 for x in "$PLUNIT" "$F" "$REF" ../harness/scripts/util_swi_match.py; do [ -f "$x" ] || { echo "⛔ REFUSE(2): $x is absent -- nothing measured"; exit 2; }; done
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 printf 'main :- run_tests.\n:- initialization(main).\n' > "$T/wrap.pl"

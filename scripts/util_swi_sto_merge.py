@@ -4,7 +4,7 @@
 
 plunit runs a sto(rational_trees) test with occurs_check=false, both engines' default, so it is an ordinary test; but one that builds a cyclic
 term can loop or exhaust the stack and end its whole file (measured on 4783ee83e: core/test_arith 221 cases -> 61, core/test_term 52 -> 9).
-So corpus/tests/prolog/plunit.pl DEFERS each one in the file's run -- '  skip: U:T  [sto-deferred only(U,T)]' -- and test_prolog_swi_suite.sh
+So corpus/packages/prolog/swi_tests/plunit.pl DEFERS each one in the file's run -- '  skip: U:T  [sto-deferred only(U,T)]' -- and test_prolog_swi_suite.sh
 runs each spec ALONE, in the same program, with only(U,T). in a pj_sto_only.pl in its own directory and its own timeout. This merges:
 
   ACTUAL         the file's run output (rewritten on stdout)

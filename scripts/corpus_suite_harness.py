@@ -4044,7 +4044,7 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         if getattr(entry, "grader", None) == "swi-cases":
             # ⭐ CIO-21 (three files): a swi-cases entry runs under the one launch as THREE FILES, the plunit shim, the entry's origin file and a
             # wrapper beside them, exactly as the deleted runner ran it; the container's entry text is the test file alone, with no --source-path.
-            _shim = Path(paths["scrip_root"]).parent / "corpus" / "tests" / "prolog" / "plunit.pl"
+            _shim = Path(paths["scrip_root"]).parent / "corpus" / "packages" / "prolog" / "swi_tests" / "plunit.pl"   # moved from corpus/tests/prolog (the coo's ruling 2026-11-12, row tests-folder-consolidation-cto)
             _org = (Path(companion_dir) / entry.cwd / (Path(entry.name).name + ext)) if (companion_dir is not None and getattr(entry, "cwd", None)) else None
             if not _shim.is_file(): refuse(f"{entry.name}: swi-cases needs the plunit shim {_shim} (the root corpus has none)")
             if _org is None or not _org.is_file(): refuse(f"{entry.name}: swi-cases entry has no origin file {_org}")

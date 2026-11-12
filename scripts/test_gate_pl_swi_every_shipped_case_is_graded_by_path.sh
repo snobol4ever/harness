@@ -16,7 +16,7 @@ GATE_NAME=test_gate_pl_swi_every_shipped_case_is_graded_by_path
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SWIT="${S4E_CORPUS:-$ROOT/corpus}/packages/prolog/swi_tests"
-PLUNIT="${S4E_CORPUS:-$ROOT/corpus}/tests/prolog/plunit.pl"
+PLUNIT="${S4E_CORPUS:-$ROOT/corpus}/packages/prolog/swi_tests/plunit.pl"
 SCRIP="$HERE/../../SCRIP/scrip"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -d "$SWIT" ] || refuse "no vendored package at $SWIT"

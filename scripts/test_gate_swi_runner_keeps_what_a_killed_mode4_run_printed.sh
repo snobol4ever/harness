@@ -17,7 +17,7 @@ SCRIP="${SCRIP:-$ROOT/scrip}"; gate_require_exec "$SCRIP" "scrip binary"
 [ "$SCRIP" = "$ROOT/scrip" ] && { "$HERE/util_require_fresh.sh" --gate "$GATE_NAME" "$SCRIP" "$ROOT/out/libscrip_rt.so" || exit 2; }
 command -v stdbuf >/dev/null 2>&1 || { echo "GATE UNPROVEN(2) [$GATE_NAME]: no stdbuf on this machine -- the cure has nothing to run under"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-PLU="$S4E/corpus/tests/prolog/plunit.pl"; [ -f "$PLU" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: no plunit shim at $PLU"; exit 2; }
+PLU="$S4E/corpus/packages/prolog/swi_tests/plunit.pl"; [ -f "$PLU" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: no plunit shim at $PLU"; exit 2; }
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_swibuf.XXXXXX")" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: mktemp failed"; exit 2; }
 trap 'rm -rf "$W"' EXIT
 D="$W/corpus/packages/prolog/swi_tests"; mkdir -p "$D" "$W/corpus/tests/prolog"; cp "$PLU" "$W/corpus/tests/prolog/"

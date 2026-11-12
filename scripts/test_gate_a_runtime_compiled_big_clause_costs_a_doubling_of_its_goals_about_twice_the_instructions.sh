@@ -16,7 +16,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"; SC="$ROOT/SCRIP/scrip"
 NAME=test_gate_a_runtime_compiled_big_clause_costs_a_doubling_of_its_goals_about_twice_the_instructions
 [ "${1:-}" != --scrip ] || { SC="${2:-}"; shift 2; }
 [ -x "$SC" ] || { echo "REFUSE(2): $SC is not an executable scrip"; exit 2; }
-SRC="$ROOT/corpus/packages/prolog/swi_tests/db/test_db.pl"; PLUNIT="$ROOT/corpus/tests/prolog/plunit.pl"
+SRC="$ROOT/corpus/packages/prolog/swi_tests/db/test_db.pl"; PLUNIT="$ROOT/corpus/packages/prolog/swi_tests/plunit.pl"
 [ -f "$SRC" ] && [ -f "$PLUNIT" ] || { echo "REFUSE(2): no $SRC or $PLUNIT"; exit 2; }
 PERF=""
 for p in perf /usr/lib/linux-tools-*/perf; do command -v "$p" > /dev/null 2>&1 || [ -x "$p" ] || continue; "$p" stat -x, -e instructions:u -o /dev/null true > /dev/null 2>&1 && { PERF="$p"; break; }; done

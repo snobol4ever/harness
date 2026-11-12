@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_swi_shim_calls_a_condition_it_does_not_recognise.sh -- the plunit shim (corpus/tests/prolog/plunit.pl) CALLS a test's
+# test_gate_pl_swi_shim_calls_a_condition_it_does_not_recognise.sh -- the plunit shim (corpus/packages/prolog/swi_tests/plunit.pl) CALLS a test's
 # condition(C) goal, as plunit does: the test runs when C succeeds and is skipped when C fails or raises (hq_prolog to the coo,
 # 2026-10-14 12:4x). THE DEFECT, MEASURED: pj_cond_fails/1 knew fail, false, true and current_prolog_flag/2, and its last clause
 # `pj_cond_fails(_) :- true` SKIPPED every other condition unrun -- core/test_locale's collation_key:WCSXFRM_BUFFER_OVERRUN carries
@@ -18,7 +18,7 @@ GATE_NAME=test_gate_pl_swi_shim_calls_a_condition_it_does_not_recognise
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 CORPUS="${S4E_CORPUS:-$ROOT/corpus}"
-PLUNIT="$CORPUS/tests/prolog/plunit.pl"
+PLUNIT="$CORPUS/packages/prolog/swi_tests/plunit.pl"
 SCRIP="$HERE/../../SCRIP/scrip"; RT="${RT_DIR:-$HERE/../../SCRIP/out}"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -f "$PLUNIT" ] || refuse "no shim at $PLUNIT"

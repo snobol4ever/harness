@@ -6,7 +6,7 @@
 # test_big_clause builds its clause from link_clause/4 and asserts the variable).  THE CURE: pl_mod_rt_clause rewrites such a goal inside a flattened module to
 # '$mctx_assertz'(M1, M2, C) (assert, asserta, assertz in both arities, retract, retractall, clause) and the prelude's '$mctx_head' renames the head to M1:name or M2:name
 # when that predicate is declared or defined, else leaves it - the context-module semantics of swipl for the unit's goals.
-# THE ARM: the unit below runs under swipl -g run_tests (the W: lines its bodies print) and under SCRIP's plunit shim (corpus/tests/prolog/plunit.pl) in mode 3 and mode 4.
+# THE ARM: the unit below runs under swipl -g run_tests (the W: lines its bodies print) and under SCRIP's plunit shim (corpus/packages/prolog/swi_tests/plunit.pl) in mode 3 and mode 4.
 # RED BEFORE (the parent): tests a to d print nothing (their calls found no clause); test i is the core/test_arith bigint:clause_1 shape (clause/3 on a head the call
 # renamed to plunit_mq:cnt answers the renamed head, so the unit's clause comparison fails).
 # rc=0 both modes print swipl's lines - rc=1 a divergence - rc=2 REFUSAL (no swipl, no build, no shim).  ~4 s.
@@ -16,7 +16,7 @@ B="$HERE/../../SCRIP"
 GATE=test_gate_pl_swi_a_clause_asserted_from_a_runtime_term_inside_a_plunit_unit_lands_in_the_unit_predicate_answers_as_swipl
 refuse() { echo "REFUSED(2) [$GATE]: $*"; exit 2; }
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-PLUNIT="${S4E_CORPUS:-$ROOT/corpus}/tests/prolog/plunit.pl"
+PLUNIT="${S4E_CORPUS:-$ROOT/corpus}/packages/prolog/swi_tests/plunit.pl"
 command -v swipl >/dev/null 2>&1 || refuse "no swipl on PATH -- the oracle"
 [ -f "$PLUNIT" ] || refuse "no plunit shim at $PLUNIT"
 [ -x "$B/scrip" ] || refuse "$B/scrip is not built"

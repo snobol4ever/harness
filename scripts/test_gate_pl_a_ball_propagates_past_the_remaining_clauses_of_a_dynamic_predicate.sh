@@ -18,7 +18,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SCRIP="${SCRIP_BIN:-$HERE/../../SCRIP/scrip}"
 RT="${RT_DIR:-$(dirname "$SCRIP")/out}"
-PLU="${S4E_CORPUS:-$ROOT/corpus}/tests/prolog/plunit.pl"
+PLU="${S4E_CORPUS:-$ROOT/corpus}/packages/prolog/swi_tests/plunit.pl"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"
 [ -f "$PLU" ] || refuse "no plunit shim at $PLU"

@@ -6,7 +6,7 @@
 # plunit_) as '$mctx_call'(Unit, Goal), an explicit M:G qualifier replacing the unit (user: replacing it by nothing); (2) pl_mod_var_call in prolog_lower.c wraps a
 # variable goal that is a conjunct of a unit clause the same way; (3) the mctx library's '$mctx_call'/2 catches existence_error(procedure, N/A) and rethrows M:N/A only
 # when N/A is the functor of the goal or of one of its control-construct leaves, so an error from a deeper call in a user helper passes unchanged.
-# THE ARM: the unit below runs under swipl -g run_tests (the W: lines its bodies print) and under SCRIP's plunit shim (corpus/tests/prolog/plunit.pl) in mode 3 and mode 4.
+# THE ARM: the unit below runs under swipl -g run_tests (the W: lines its bodies print) and under SCRIP's plunit shim (corpus/packages/prolog/swi_tests/plunit.pl) in mode 3 and mode 4.
 # RED BEFORE (the parent): W: lines 1 to 3, 7 and 8 print the bare name/arity.
 # rc=0 both modes print swipl's lines - rc=1 a divergence - rc=2 REFUSAL (no swipl, no build, no shim).  ~4 s.
 set -u
@@ -15,7 +15,7 @@ B="$HERE/../../SCRIP"
 GATE=test_gate_pl_swi_an_unknown_procedure_called_from_a_plunit_unit_is_module_qualified_in_its_existence_error_answers_as_swipl
 refuse() { echo "REFUSED(2) [$GATE]: $*"; exit 2; }
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-PLUNIT="${S4E_CORPUS:-$ROOT/corpus}/tests/prolog/plunit.pl"
+PLUNIT="${S4E_CORPUS:-$ROOT/corpus}/packages/prolog/swi_tests/plunit.pl"
 command -v swipl >/dev/null 2>&1 || refuse "no swipl on PATH -- the oracle"
 [ -f "$PLUNIT" ] || refuse "no plunit shim at $PLUNIT"
 [ -x "$B/scrip" ] || refuse "$B/scrip is not built"

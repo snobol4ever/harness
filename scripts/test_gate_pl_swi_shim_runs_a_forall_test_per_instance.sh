@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_swi_shim_runs_a_forall_test_per_instance.sh -- the plunit shim (corpus/tests/prolog/plunit.pl) runs a test
+# test_gate_pl_swi_shim_runs_a_forall_test_per_instance.sh -- the plunit shim (corpus/packages/prolog/swi_tests/plunit.pl) runs a test
 # carrying forall(Gen) once per solution of Gen, printing one verdict line per instance, as plunit does (cto, 2026-09-12,
 # row prolog-swi-shim-runs-a-forall-test-once-per-generator-instance, the officer re CTO-33). RED BEFORE: 4/94 agree on
 # library/test_utf8.pl, every instance after the first reading 'no verdict from scrip'.
@@ -10,7 +10,7 @@ GATE_NAME=test_gate_pl_swi_shim_runs_a_forall_test_per_instance
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 CORPUS="${S4E_CORPUS:-$ROOT/corpus}"
-SWIT="$CORPUS/packages/prolog/swi_tests"; PLUNIT="$CORPUS/tests/prolog/plunit.pl"
+SWIT="$CORPUS/packages/prolog/swi_tests"; PLUNIT="$CORPUS/packages/prolog/swi_tests/plunit.pl"
 SCRIP="$HERE/../../SCRIP/scrip"; RT="${RT_DIR:-$HERE/../../SCRIP/out}"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -f "$PLUNIT" ] || refuse "no shim at $PLUNIT"; [ -f "$SWIT/library/test_utf8.pl" ] || refuse "no vendored test_utf8.pl"

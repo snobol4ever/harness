@@ -10,7 +10,7 @@
 # answer prolog_load_context(module, M) as plunit_record inside begin_tests(record) (SWI library/test_record point#11). The
 # cure deletes the deferral (a directive is a statement in source order like every other), lower_prolog.c's load-unit reader
 # reads the bare begin_tests/end_tests directive, the prelude's prolog_load_context(module, M) answers the source module
-# '$set_source_module'/1,2 set (user until one is set), and the shim (corpus tests/prolog/plunit.pl) seeds its suite list in
+# '$set_source_module'/1,2 set (user until one is set), and the shim (corpus packages/prolog/swi_tests/plunit.pl) seeds its suite list in
 # place and opens and closes the unit's module. NOT HERE: :- module/2 setting the source module (SCRIP's one flat module stays
 # user outside a unit), prolog_load_context/2 at run time (swipl fails, nothing is loading) and every key but module.
 #
@@ -26,7 +26,7 @@ G=test_gate_pl_directives_run_in_place_in_source_order_as_swipl
 refuse() { echo "⛔ REFUSED(2) [$G]: $*"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" || refuse "lib_oracle_flags.sh unloadable -- the one accessor of the oracle binaries"
 SW="$(swipl_bin)"; [ -x "$SW" ] || refuse "no swipl at $SW -- the oracle (swipl_bin)"
-PLUNIT="${S4E_CORPUS:-$B/../corpus}/tests/prolog/plunit.pl"; [ -f "$PLUNIT" ] || refuse "no plunit shim at $PLUNIT"
+PLUNIT="${S4E_CORPUS:-$B/../corpus}/packages/prolog/swi_tests/plunit.pl"; [ -f "$PLUNIT" ] || refuse "no plunit shim at $PLUNIT"
 [ -x "$B/scrip" ] || refuse "$B/scrip is not built"
 [ -f "$B/out/libscrip_rt.so" ] || refuse "out/libscrip_rt.so is not built -- mode 4 cannot link"
 "$HERE/util_require_fresh.sh" --gate "$G" || exit $?
