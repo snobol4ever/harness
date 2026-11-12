@@ -18,7 +18,7 @@ WIT="$HERE/gc_witnesses/pl_dead_slot_aliased_cell.pl"
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 printf '5\n5\nf(1)\nf(2)\ng(3)\ng(4)\nh(5)\nk(6)\n' > "$T/ref"
 if [ -x /usr/bin/swipl ]; then
-    ( cd "$T" && timeout 30 /usr/bin/swipl -q -g halt "$WIT" < /dev/null > "$T/swipl.out" 2> /dev/null )
+    ( cd "$T" && timeout -k 5 30 /usr/bin/swipl -q -g halt "$WIT" < /dev/null > "$T/swipl.out" 2> /dev/null )
     cmp -s "$T/swipl.out" "$T/ref" || { echo "⛔ REFUSE(2) [$G]: swipl no longer prints the ref -- the ref is not the oracle's answer"; diff "$T/ref" "$T/swipl.out" | head -4; exit 2; }
 fi
 sed 's/^5$/_G0/' "$T/ref" > "$T/corrupt"
@@ -26,11 +26,11 @@ cmp -s "$T/corrupt" "$T/ref" && { echo "⛔ REFUSE(2) [$G]: the corrupted ref eq
 red=0
 for mode in m3 m4; do
     if [ "$mode" = m3 ]; then
-        ( cd "$T" && timeout 60 "$ROOT/scrip" "$WIT" < /dev/null > "$T/$mode.out" 2> "$T/$mode.err" ); rc=$?
+        ( cd "$T" && timeout -k 5 60 "$ROOT/scrip" "$WIT" < /dev/null > "$T/$mode.out" 2> "$T/$mode.err" ); rc=$?
     else
-        ( cd "$T" && timeout 60 "$ROOT/scrip" --compile --out="$T/w.s" "$WIT" < /dev/null > /dev/null 2> "$T/cc.err" ) || { echo "⛔ REFUSE(2) [$G]: the m4 compile failed"; sed -n '1,3p' "$T/cc.err"; exit 2; }
+        ( cd "$T" && timeout -k 5 60 "$ROOT/scrip" --compile --out="$T/w.s" "$WIT" < /dev/null > /dev/null 2> "$T/cc.err" ) || { echo "⛔ REFUSE(2) [$G]: the m4 compile failed"; sed -n '1,3p' "$T/cc.err"; exit 2; }
         gcc "$T/w.s" -o "$T/w.bin" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2> "$T/l.err" || { echo "⛔ REFUSE(2) [$G]: the m4 link failed"; exit 2; }
-        ( cd "$T" && timeout 60 "$T/w.bin" < /dev/null > "$T/$mode.out" 2> "$T/$mode.err" ); rc=$?
+        ( cd "$T" && timeout -k 5 60 "$T/w.bin" < /dev/null > "$T/$mode.out" 2> "$T/$mode.err" ); rc=$?
     fi
     [ "$rc" = 0 ] || { echo "⛔ REFUSE(2) [$G]: the $mode run exited rc=$rc"; sed -n '1,3p' "$T/$mode.err"; exit 2; }
     if cmp -s "$T/$mode.out" "$T/ref"; then echo "[$G] $mode: every variable bound to a killed variable keeps its value (8 of 8 lines as swipl)"

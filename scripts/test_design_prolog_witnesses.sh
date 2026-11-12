@@ -18,13 +18,13 @@ for w in "${stems[@]}"; do
     src=$D/$w.pl; ref=$D/$w.ref; args=""; [ -f "$D/$w.args" ] && args=$(cat "$D/$w.args")
     [ -f "$src" ] && [ -f "$ref" ] || { echo "REFUSE(2): $w needs $w.pl and $w.ref"; exit 2; }
     case $modes in *3*)
-        n=$((n+1)); (cd "$T" && timeout 8s "$OLDPWD/SCRIP/scrip" $args "$src" < /dev/null > "$T/$w.m3.out" 2> "$T/$w.m3.err"); rc=$?
+        n=$((n+1)); (cd "$T" && timeout -k 5 8s "$OLDPWD/SCRIP/scrip" $args "$src" < /dev/null > "$T/$w.m3.out" 2> "$T/$w.m3.err"); rc=$?
         if cmp -s "$T/$w.m3.out" "$ref"; then echo "AGREE m3 $w"; else red=$((red+1)); echo "DIFF  m3 $w rc=$rc :: got $(head -c 160 "$T/$w.m3.out" | tr '\n' '|') :: err $(head -c 160 "$T/$w.m3.err" | tr '\n' '|')"; fi;;
     esac
     case $modes in *4*)
         n=$((n+1))
-        if (cd "$T" && timeout 30s "$OLDPWD/SCRIP/scrip" --compile "$src" < /dev/null > "$T/$w.s" 2> "$T/$w.m4.cerr" && gcc -c "$T/$w.s" -o "$T/$w.o" 2>> "$T/$w.m4.cerr" && gcc "$T/$w.o" -L"$OLDPWD/SCRIP/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$OLDPWD/SCRIP/out" -o "$T/$w.bin" 2>> "$T/$w.m4.cerr"); then
-            (cd "$T" && timeout 8s "$T/$w.bin" $args < /dev/null > "$T/$w.m4.out" 2> "$T/$w.m4.err"); rc=$?
+        if (cd "$T" && timeout -k 5 30s "$OLDPWD/SCRIP/scrip" --compile "$src" < /dev/null > "$T/$w.s" 2> "$T/$w.m4.cerr" && gcc -c "$T/$w.s" -o "$T/$w.o" 2>> "$T/$w.m4.cerr" && gcc "$T/$w.o" -L"$OLDPWD/SCRIP/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$OLDPWD/SCRIP/out" -o "$T/$w.bin" 2>> "$T/$w.m4.cerr"); then
+            (cd "$T" && timeout -k 5 8s "$T/$w.bin" $args < /dev/null > "$T/$w.m4.out" 2> "$T/$w.m4.err"); rc=$?
             if cmp -s "$T/$w.m4.out" "$ref"; then echo "AGREE m4 $w"; else red=$((red+1)); echo "DIFF  m4 $w rc=$rc :: got $(head -c 160 "$T/$w.m4.out" | tr '\n' '|') :: err $(head -c 160 "$T/$w.m4.err" | tr '\n' '|')"; fi
         else red=$((red+1)); echo "DIFF  m4 $w could not build :: $(head -c 200 "$T/$w.m4.cerr" | tr '\n' '|')"; fi;;
     esac

@@ -92,7 +92,7 @@ n_cmp=$(python3 -c "import csv,sys; r=list(csv.DictReader(open('$P/ALL.csv'))); 
 [ "$n_cmp" = "8 8" ] && ok "arm 5: 8 of 8 absorbed rows read compare=ignore-all-space" || bad "arm 5: compare cells [$n_cmp], want 8 of 8"
 n_stg=$(python3 -c "import csv; r={x['entry']:x for x in csv.DictReader(open('$P/ALL.csv'))}; print(r.get('ft_tests_t_sib',{}).get('stage'), r.get('ft_tests_t_tmp',{}).get('answer'), r.get('ft_tests_t_ws',{}).get('stage'))" 2>/dev/null)
 [ "$n_stg" = "upstream temp-sorted " ] && ok "arm 5b: STAGED.tsv's entries are absorbed with stage=upstream (t_tmp answer=temp-sorted); an unstaged entry's cells are empty" || bad "arm 5b: stage/answer cells read [$n_stg]"
-S4E_PROGRESS_OFF=1 timeout 300 python3 "$HERE/corpus_suite_harness.py" run "$P/ALL.pl" "$P/ALL.ref" --lang prolog --modes m3 > $T/grade.out 2>&1
+S4E_PROGRESS_OFF=1 timeout -k 5 300 python3 "$HERE/corpus_suite_harness.py" run "$P/ALL.pl" "$P/ALL.ref" --lang prolog --modes m3 > $T/grade.out 2>&1
 v_of() {  # the board lists every non-pass by name; an entry on a board that ran and not listed passed
   local f="${2:-$T/grade.out}" v; v=$(grep -E "^  [A-Z_]+ m3 $1:" "$f" | grep -oE 'FAIL|CRASH|HANG|UNPROVEN' | head -1)
   [ -n "$v" ] && { echo "$v"; return; }; grep -q '^SUITE_BOARD ' "$f" && echo PASS; }
@@ -104,10 +104,10 @@ v_of() {  # the board lists every non-pass by name; an entry on a board that ran
 # the control: the same container with the compare column cut out of ALL.csv grades t_ws byte for byte, and must FAIL -- the column is what passes it
 C=$T/pkg/ctl; mkdir -p $C; cp -r $P/* $C/
 python3 -c "import csv,sys; r=list(csv.DictReader(open('$P/ALL.csv'))); f=[c for c in r[0].keys() if c!='compare']; w=csv.DictWriter(open('$C/ALL.csv','w',newline=''),f,extrasaction='ignore',lineterminator='\\n'); w.writeheader(); [w.writerow(x) for x in r]"
-S4E_PROGRESS_OFF=1 timeout 300 python3 "$HERE/corpus_suite_harness.py" run "$C/ALL.pl" "$C/ALL.ref" --lang prolog --modes m3 > $T/ctl.out 2>&1
+S4E_PROGRESS_OFF=1 timeout -k 5 300 python3 "$HERE/corpus_suite_harness.py" run "$C/ALL.pl" "$C/ALL.ref" --lang prolog --modes m3 > $T/ctl.out 2>&1
 S2=$T/pkg/ctl2; mkdir -p $S2; cp -r $P/* $S2/
 python3 -c "import csv,sys; r=list(csv.DictReader(open('$P/ALL.csv'))); f=[c for c in r[0].keys() if c not in ('stage','answer')]; w=csv.DictWriter(open('$S2/ALL.csv','w',newline=''),f,extrasaction='ignore',lineterminator='\\n'); w.writeheader(); [w.writerow(x) for x in r]"
-S4E_PROGRESS_OFF=1 timeout 300 python3 "$HERE/corpus_suite_harness.py" run "$S2/ALL.pl" "$S2/ALL.ref" --lang prolog --modes m3 > $T/ctl2.out 2>&1
+S4E_PROGRESS_OFF=1 timeout -k 5 300 python3 "$HERE/corpus_suite_harness.py" run "$S2/ALL.pl" "$S2/ALL.ref" --lang prolog --modes m3 > $T/ctl2.out 2>&1
 [ "$(v_of ft_tests_t_sib $T/ctl2.out)" = FAIL ] && [ "$(v_of ft_tests_t_tmp $T/ctl2.out)" = FAIL ] && [ "$(v_of ft_tests_t_dat $T/ctl2.out)" = FAIL ] \
   && ok "arm 8/9/10: control -- without the stage and answer columns t_sib, t_tmp and t_dat FAIL (the columns are what pass them)" \
   || bad "arm 8/9/10: control -- without the columns t_sib reads [$(v_of ft_tests_t_sib $T/ctl2.out)], t_tmp [$(v_of ft_tests_t_tmp $T/ctl2.out)], t_dat [$(v_of ft_tests_t_dat $T/ctl2.out)], want FAIL FAIL FAIL"
@@ -125,12 +125,12 @@ else bad "arm 7b: window.pl's 'Cannot open display' was absorbed as a ref"; fi
 crref() { awk '/^%-+ [0-9]+ cr$/{f=1; next} /^%-+ [0-9]+ /{f=0} f' "$1/ALL.ref" 2>/dev/null | od -An -c | tr -s ' ' | tr -d '\n'; }
 if grep -q '^[0-9]*,cr,' $O/ALL.csv 2>/dev/null && [ "$(crref $O)" = ' x \r \n y \n' ]; then ok "arm 11: cr.pl's answer (x CR LF y) is absorbed, its ref carrying the CR at end of line byte for byte"
 else bad "arm 11: cr.pl not absorbed, or its ref reads [$(crref $O)] -- want x CR LF y LF"; fi
-S4E_PROGRESS_OFF=1 timeout 300 python3 "$HERE/corpus_suite_harness.py" run "$O/ALL.pl" "$O/ALL.ref" --lang prolog --modes m3 > $T/cr.out 2>&1
+S4E_PROGRESS_OFF=1 timeout -k 5 300 python3 "$HERE/corpus_suite_harness.py" run "$O/ALL.pl" "$O/ALL.ref" --lang prolog --modes m3 > $T/cr.out 2>&1
 grep -q '^[0-9]*,cr,' $O/ALL.csv 2>/dev/null && [ "$(v_of cr $T/cr.out)" = PASS ] && ok "arm 11: graded, cr PASSES -- SCRIP prints the same CR the oracle printed" \
   || bad "arm 11: cr is not on the board or reads [$(v_of cr $T/cr.out)], want PASS"
 O2=$T/pkg/ovf_lf; mkdir -p $O2; cp $O/ALL.* $O2/; sed -i 's/put_code(13)/put_code(10)/' $O2/ALL.pl
 if grep -q 'put_code(10)' $O2/ALL.pl; then
-  S4E_PROGRESS_OFF=1 timeout 300 python3 "$HERE/corpus_suite_harness.py" run "$O2/ALL.pl" "$O2/ALL.ref" --lang prolog --modes m3 > $T/cr2.out 2>&1
+  S4E_PROGRESS_OFF=1 timeout -k 5 300 python3 "$HERE/corpus_suite_harness.py" run "$O2/ALL.pl" "$O2/ALL.ref" --lang prolog --modes m3 > $T/cr2.out 2>&1
   [ "$(v_of cr $T/cr2.out)" = FAIL ] && ok "arm 11: control -- cr printing LF where the oracle printed CR FAILS against the same ref" || bad "arm 11: control -- the LF cr reads [$(v_of cr $T/cr2.out)], want FAIL"
 else bad "arm 11: control -- the LF substitution did not apply to the control's ALL.pl (nothing measured)"; fi
 echo "population: 12 fixture programs under xsb-gentest, 4 under the plain prolog builder; the oracle $XSB"
