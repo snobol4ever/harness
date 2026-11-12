@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+"""util_reds_to_juniors.py -- EVERY RED OF THE TEST SUITE IS A JUNIOR'S BUG ROW (the grader 2026-11-12, on the coo's brief reds-to-juniors-feeder;
+Lon 2026-11-12 10:4x CST, in the coo's window, verbatim: "We are about to start the entore fleet on fixing all the bugs ONE at a tIME." / "Send every bug
+fro the test suite to a junior. Then we'll watch somethings escaalate to senior, then officer, then BOSS (COO), the CHARIMAN-OF-THE-BOARD, me.").
+
+The sibling of util_reds_to_designers.py (COO-488), whose reading and whose rowed test it reuses: the designers' road sends a red to its area officer
+as a design job; this road sends it to a junior as a bug, with the steps a junior follows, and it walks every suite, not one.
+  ORDER    the suites of SUITES.tsv with reds (today_total - today_pass > 0), the smallest red count first, so a suite reaches 100 soonest; a suite's
+           reds are read only when the limit is not yet reached, so a call with a small --limit reads one or two suites, never the table.
+  READING  util_score_row.py from-progress --suite KEY --reds --dry-run under S4E_MODES=m3 (it writes nothing): its SUITE_ROW board line first, then
+           its SUITE_ROW_RED lines; a suite whose writer prints no board line is skipped and named (SKIP_SUITE), never read as no reds.
+  ROWED    a red is skipped when its topic (KEY-red-<entry slug>, the designers' own topic) is a live row of QUEUE.tsv, or a live row's DONE-WHEN
+           names the entry (util_reds_to_designers.live_rows and plan).
+  DEALING  each new row goes to the junior holding the fewest live rows in QUEUE.tsv (owner, ASSIGNED:, CLAIMED: or QUEUED:seat-), ties by number:
+           round robin over junior_01..junior_20 with no state of its own, so one call or many never fill one tube (the stagger rule).
+  OUTPUT   one line per bug: JUNIOR_BUG suite=K entry=E junior=J topic=T reading=R; then FEED_BOARD suites_read=N reds=N rowed=N bugs=N limit=N.
+  --apply  mints each bug: s4e_msg.sh mint TOPIC 1 --to JUNIOR --stdin. The mint's WAKE line is PRINTED, never sent (the coo wakes in waves).
+  --limit N  at most N bugs in one call (default 20).   --suites K1,K2  only these suite keys.   --juniors J1,J2  another seat list.
+  --probe  plants a scratch postoffice (S4E_POST) with two suites' reds, a live row and a DONE row, runs --apply there with real mints, and prints
+           FEED_PROBE; rc 0 only when the limit, the order, the rowed skip and the dealing read as designed. It never touches the live queue.
+rc 0 read; 1 a probe that read otherwise; 2 REFUSE (no SUITES.tsv, no SUITE_RUNNERS.tsv, a mint refused under --probe).
+"""
+import os, re, subprocess, sys, tempfile, shutil
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import util_reds_to_designers as d2d
+
+ROOT = os.path.dirname(os.path.dirname(HERE))
+PO = os.environ.get("S4E_POST", "/home/resources/postoffice")
+SUITES = os.environ.get("S4E_SUITES_TSV", "/home/resources/progress/SUITES.tsv")
+RUNNERS = os.path.join(HERE, "SUITE_RUNNERS.tsv")
+JUNIORS = ["junior_%02d" % i for i in range(1, 21)]
+EXT = {"snobol4": "sno", "icon": "icn", "prolog": "pl", "pascal": "pas", "raku": "raku", "rebus": "reb", "snocone": "sc"}
+LANG_SKILL = {"snobol4": "snobol4", "snocone": "snobol4", "rebus": "snobol4", "icon": "icon", "prolog": "prolog", "pascal": "pascal", "raku": "raku",
+              "scriptix": "scrip-architecture"}
+
+
+def refuse(why):
+    print("REFUSE(2): " + why); sys.exit(2)
+
+
+def arg(name, default):
+    a = sys.argv[1:]
+    return a[a.index(name) + 1] if name in a and a.index(name) + 1 < len(a) else default
+
+
+def suites_with_reds(path, only):
+    if not os.path.isfile(path): refuse("no suite table %s" % path)
+    out = []
+    for l in open(path, encoding="utf-8", errors="replace"):
+        c = l.rstrip("\n").split("\t")
+        if l.startswith("#") or len(c) < 10 or c[0] == "key": continue
+        try: reds = int(c[9]) - int(c[8])
+        except ValueError: continue
+        if reds > 0 and (not only or c[0] in only): out.append((reds, c[0], c[3]))
+    return [(k, lang, n) for n, k, lang in sorted(out)]
+
+
+def runner_rows(path):
+    if not os.path.isfile(path): refuse("no %s" % path)
+    rows = {}
+    for l in open(path, encoding="utf-8", errors="replace"):
+        c = l.rstrip("\n").split("\t")
+        if l.startswith("#") or len(c) < 5: continue
+        rows[c[0]] = c
+    return rows
+
+
+def reproduce(key, lang, entry, rows):
+    r = rows.get(key)
+    if r and r[1] in ("master", "pkg"):
+        d = "corpus/tests/" + r[2] if r[1] == "master" else r[4]
+        x = EXT.get(r[2], r[2])
+        return ("python3 harness/scripts/corpus_suite_harness.py run %s/ALL.%s %s/ALL.ref --lang %s --modes m3 --partition 'entry:%s'" % (d, x, d, r[2], entry),
+                "python3 harness/scripts/corpus_suite_harness.py extract %s/ALL.%s %s/ALL.ref '%s' /tmp/s4e/$S4E_SEAT/bug.%s --out-ref /tmp/s4e/$S4E_SEAT/bug.ref --out-in /tmp/s4e/$S4E_SEAT/bug.in" % (d, x, d, entry, x),
+                "bash harness/scripts/monitor_run.sh /tmp/s4e/$S4E_SEAT/bug.%s --oracle" % x)
+    if r and r[1] == "small":
+        return ("bash harness/scripts/%s (the suite's own runner; the entry %s is one of its programs)" % (r[3], entry),
+                "the program %s as its runner names it" % entry, "bash harness/scripts/monitor_run.sh <that program> --oracle")
+    return ("the suite %s has no runner row in SUITE_RUNNERS.tsv: grade %s by the command its suite row names" % (key, entry),
+            "the program %s" % entry, "bash harness/scripts/monitor_run.sh <that program> --oracle")
+
+
+def load(po, juniors):
+    q = os.path.join(po, "QUEUE.tsv"); n = {j: 0 for j in juniors}
+    for l in open(q, encoding="utf-8", errors="replace"):
+        c = l.rstrip("\n").split("\t")
+        if l.startswith("#") or len(c) < 4 or c[3].startswith("DONE"): continue
+        for j in juniors:
+            if c[2] == j or c[3] in ("ASSIGNED:" + j, "CLAIMED:" + j, "QUEUED:seat-" + j): n[j] += 1; break
+    return n
+
+
+def body(key, lang, entry, reading, rows):
+    rep, ext, ora = reproduce(key, lang, entry, rows)
+    q = '"${S4E_HOME:?REFUSE(2): S4E_HOME unset}"'
+    rd = 'o="$(S4E_MODES=m3 python3 -I harness/scripts/util_score_row.py from-progress --suite %s --reds --dry-run 2>&1)"' % key
+    have = "printf '%%s\\n' \"$o\" | grep -q '^SUITE_ROW suite=%s '" % key
+    red = "printf '%%s\\n' \"$o\" | grep -qE '^SUITE_ROW_RED %s '" % re.escape(entry)
+    sk = "fleet-bus seat-conduct suites-and-grading gates-and-witnesses " + LANG_SKILL.get(lang, "scrip-architecture")
+    return ("GOAL: BUG. The %s entry %s reads red in mode 3 (%s). Find the cause, cure it, land it. One bug, one row; after one honest try that cannot land, escalate it.\n"
+            "SKILLS: %s\n"
+            "DONE-WHEN: cd %s && %s; %s && ! %s\n"
+            "PREMISE-WHEN: cd %s && %s; %s && %s\n"
+            "## NEXT\n"
+            "1. Reproduce, from the root with S4E_HOME set: %s\n"
+            "2. The oracle: %s ; then %s\n"
+            "3. Find the cause and cure it in a clean worktree: bash harness/scripts/s4e_worktree.sh new %s (load the skill the gate names before each edit).\n"
+            "4. Prove it in the worktree: the reproduce line of step 1 reads PASS for the entry in mode 3; bash harness/scripts/test_feature_reps.sh %s <the feature you touched>; bash harness/scripts/test_smoke_%s.sh.\n"
+            "5. Land it: bash harness/scripts/s4e_land.sh --home <the worktree> --gate '<the step 1 line, grepping m3_pass=1 m3_fail=0>' <the repos you changed>; then s4e_msg.sh claim and done.\n"
+            "6. After one honest try that cannot land: bash harness/scripts/s4e_msg.sh escalate %s --stdin with the measurement (what you ran, what it printed), and send the WAKE it prints.\n"
+            % (key, entry, reading, sk, q, rd, have, red, q, rd, have, red, rep, ext, ora, re.sub(r"[^a-z0-9]+", "-", entry.lower()).strip("-")[:40] or "bug",
+               lang, {"rebus": "rebus", "snocone": "snocone"}.get(lang, lang), d2d.topic_of(key, entry)))
+
+
+def read_suite(key):
+    env = dict(os.environ, S4E_MODES="m3")
+    p = subprocess.run([sys.executable, "-I", os.path.join(HERE, "util_score_row.py"), "from-progress", "--suite", key, "--reds", "--dry-run"],
+                       capture_output=True, text=True, env=env, timeout=1800)
+    return p.stdout + p.stderr
+
+
+def feed(order, reader, po, rows, limit, juniors, apply):
+    topics, dw = d2d.live_rows(po)
+    n = load(po, juniors); bugs = []; reds_n = rowed_n = read_n = unread_n = 0
+    for key, lang in order:
+        if len(bugs) >= limit: break
+        text = reader(key)
+        if not re.search(r"^SUITE_ROW suite=", text, re.M):
+            print("SKIP_SUITE suite=%s (the score writer printed no SUITE_ROW board line: %s)" % (key, (text.strip().splitlines() or ["no output"])[-1][:160])); continue
+        read_n += 1
+        reds = [(m.group(1), m.group(2).strip()) for m in re.finditer(r"^SUITE_ROW_RED (\S+) (.*)$", text, re.M)]
+        # ⛔ AN UNREAD ENTRY IS NO BUG (the coo 2026-11-12, measured: junior_05, junior_09 and junior_10 each found their row's entry passing,
+        # its red the label m3=UNREAD on a tree no reading covers yet -- raku-rungs read 95 UNREAD and 1 FAIL): only a measured red is minted;
+        # an unread entry waits for the cycle's lap
+        unread_n += sum(1 for _e, r in reds if "UNREAD" in r)
+        reds = [(e, r) for e, r in reds if "UNREAD" not in r]
+        reds_n += len(reds)
+        for e, reading in reds:
+            pat = re.compile(r"(^|[^A-Za-z0-9_/])" + re.escape(e) + r"($|[^A-Za-z0-9_/])")
+            t = d2d.topic_of(key, e)
+            if t in topics or any(pat.search(l) for l in dw.values()): rowed_n += 1; continue
+            if len(bugs) >= limit: break
+            j = min(juniors, key=lambda s: (n[s], juniors.index(s))); n[j] += 1; topics.add(t)
+            bugs.append((key, lang, e, j, t, reading))
+            print("JUNIOR_BUG suite=%s entry=%s junior=%s topic=%s reading=%s" % (key, e, j, t, reading))
+    minted = 0
+    if apply:
+        for key, lang, e, j, t, reading in bugs:
+            p = subprocess.run(["bash", os.path.join(HERE, "s4e_msg.sh"), "mint", t, "1", "--to", j, "--stdin"], input=body(key, lang, e, reading, rows),
+                               capture_output=True, text=True, env=dict(os.environ, S4E_POST=po))
+            ok = p.returncode == 0; minted += int(ok)
+            for l in (p.stdout + p.stderr).splitlines():
+                if l.startswith(("minted ", "WAKE:", "queued ", "⛔", "REFUSE")): print(l)
+            if not ok: print("MINT_REFUSED topic=%s rc=%d" % (t, p.returncode))
+    tree = subprocess.run(["git", "-C", os.path.join(ROOT, "harness"), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
+    print("FEED_BOARD suites_read=%d reds=%d unread=%d rowed=%d bugs=%d minted=%d limit=%d (tree %s)" % (read_n, reds_n, unread_n, rowed_n, len(bugs), minted, limit, tree or "?"))
+    return bugs, rowed_n, minted
+
+
+def probe():
+    w = tempfile.mkdtemp(prefix="feed_probe_", dir=os.environ.get("TMPDIR") or None)
+    try:
+        for sub in ["tasks", "claims"] + ["%s/inbox" % j for j in JUNIORS[:3] + [os.environ.get("S4E_SEAT") or "grader"]]: os.makedirs(os.path.join(w, sub), exist_ok=True)
+        open(os.path.join(w, "BOARD.md"), "w").close()
+        try: shutil.copy(os.path.join(PO, "MODE"), os.path.join(w, "MODE"))
+        except OSError: open(os.path.join(w, "MODE"), "w").write("TENET\n")
+        open(os.path.join(w, "QUEUE.tsv"), "w").write("1\tlive-row\tjunior_01\tQUEUED:seat-junior_01\n1\tdone-row\tjunior_02\tDONE\n")
+        open(os.path.join(w, "tasks", "live-row.task.md"), "w").write("# TASK live-row\nDONE-WHEN: grep -q '^SUITE_ROW_RED progs/rowed ' x\n")
+        planted = {"tiny": "SUITE_ROW suite=tiny pass=1 total=3\nSUITE_ROW_RED progs/rowed m3=FAIL@a\nSUITE_ROW_RED progs/a1 m3=FAIL@a\n",
+                   "big": "SUITE_ROW suite=big pass=1 total=5\nSUITE_ROW_RED b/x1 m3=FAIL@a\nSUITE_ROW_RED b/x2 m3=CRASH@a\nSUITE_ROW_RED b/x3 m3=FAIL@a\nSUITE_ROW_RED b/x4 m3=FAIL@a\n",
+                   "mute": "REFUSE(2): planted refusal\n"}
+        rows = {"tiny": ["tiny", "pkg", "icon", "corpus_suite_harness.py", "corpus/packages/icon/tiny"]}
+        bugs, rowed, minted = feed([("mute", "icon"), ("tiny", "icon"), ("big", "prolog")], lambda k: planted[k], w, rows, 3, JUNIORS[:3], True)
+        q = open(os.path.join(w, "QUEUE.tsv"), encoding="utf-8").read()
+        got = [(b[2], b[3]) for b in bugs]
+        want = [("progs/a1", "junior_02"), ("b/x1", "junior_03"), ("b/x2", "junior_01")]
+        baton = open(os.path.join(w, "tasks", "tiny-red-progs-a1.task.md"), encoding="utf-8", errors="replace").read() if os.path.isfile(os.path.join(w, "tasks", "tiny-red-progs-a1.task.md")) else ""
+        steps = all(s in baton for s in ("## NEXT", "--partition 'entry:progs/a1'", "monitor_run.sh", "s4e_worktree.sh new", "s4e_land.sh", "escalate tiny-red-progs-a1", "SKILLS: fleet-bus"))
+        ok = got == want and rowed == 1 and minted == 3 and "tiny-red-progs-a1" in q and "b/x3" not in str(bugs) and steps
+        print("FEED_PROBE bugs=%d minted=%d rowed=%d limit_held=%d dealt=%s baton_steps=%d ok=%d" % (len(bugs), minted, rowed, int(len(bugs) == 3),
+              ",".join(j for _, j in got), int(steps), int(ok)))
+        return ok
+    finally:
+        shutil.rmtree(w, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    if "--probe" in sys.argv[1:]: sys.exit(0 if probe() else 1)
+    only = set(x for x in arg("--suites", "").split(",") if x)
+    juniors = [x for x in arg("--juniors", ",".join(JUNIORS)).split(",") if x]
+    order = suites_with_reds(SUITES, only)
+    feed([(k, lang) for k, lang, _ in order], read_suite, PO, runner_rows(RUNNERS), int(arg("--limit", "20")), juniors, "--apply" in sys.argv[1:])
+    sys.exit(0)

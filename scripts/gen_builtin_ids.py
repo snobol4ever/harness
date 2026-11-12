@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+"""gen_builtin_ids.py — BID-1: turn try_call_builtin_by_name's linear strcmp chain into
+integer-ID compares.
+
+MEASURED MOTIVATION (callgrind, tgrlink, RT_OPT=-O0, 2026-07-25):
+  __strcmp_avx2 .......... 34.46% of Ir (41.6M calls, ALL from try_call_builtin_by_name)
+  try_call_builtin_by_name 22.24% of Ir (the chain walk + per-call argument setup)
+  => ~52% of the whole program is linear builtin-name lookup.
+
+TRANSFORM (semantics-preserving, mechanical):
+  every  !strcmp(fn, "NAME")  ->  (_bid == BID_<sanitized>)
+  one hash lookup at function entry computes _bid once.
+  A name absent from the table gets _bid == 0, which matches no BID_* constant, so an
+  unknown name falls through the chain exactly as before.
+
+The table is a compile-time-generated open-addressed array (power-of-two, linear probe),
+so there is no runtime initialization and no ordering dependence.
+"""
+import re, sys, os
+
+SRC = sys.argv[1] if len(sys.argv) > 1 else "src/runtime/by_name_dispatch.c"
+FUNC_RE = re.compile(r'^int try_call_builtin_by_name\(')
+PAT = re.compile(r'!strcmp\(fn,\s*"((?:[^"\\]|\\.)*)"\)')
+
+
+def sanitize(name):
+    """Map an arbitrary builtin name to a unique, valid C identifier suffix."""
+    out = []
+    for ch in name:
+        if ch.isalnum() or ch == '_':
+            out.append(ch)
+        else:
+            out.append('x%02X' % ord(ch))
+    s = ''.join(out)
+    if s and s[0].isdigit():
+        s = '_' + s
+    return s
+
+
+def find_func_span(lines):
+    start = None
+    for i, ln in enumerate(lines):
+        if FUNC_RE.match(ln):
+            start = i
+            break
+    if start is None:
+        sys.exit("ERROR: could not locate try_call_builtin_by_name")
+    for j in range(start + 1, len(lines)):
+        if lines[j].startswith('}'):
+            return start, j
+    sys.exit("ERROR: could not locate end of try_call_builtin_by_name")
+
+
+SPENT_BANNER = """
+⛔ gen_builtin_ids.py IS A SPENT ONE-SHOT MIGRATION. IT MUST NOT BE RUN AGAINST THE TREE.
+
+It harvests !strcmp(fn,"...") sites out of try_call_builtin_by_name_bl and REWRITES them into
+(_bid == BID_...) comparisons, then regenerates src/runtime/builtin_ids.h from exactly the names it
+harvested. That migration has already been performed: the sites it feeds on are the ones it already
+consumed, so a second run does not regenerate the numbering, it REPLACES it with whatever handful of
+strcmp sites were never migrated.
+
+It looks harmless today only because its FUNC_RE anchors on a DECLARATION at column 0 rather than on
+the definition, so it exits rc=1 having written nothing. That is an accident, not a safeguard, and
+"repair the anchor" is the catastrophe rather than the cure.
+
+MEASURED 2026-09-11 (hq_U, on a scratch copy, anchor corrected to the real definition and declarations
+skipped): it runs rc=0 and writes a table of NINE names where the committed one has 188 -- deleting 179
+builtin ids and renumbering what survived. Emitted code BAKES those ids into a mov32 immediate
+(bid_bake_of in src/templates/bb/bb_call.cpp and bb_call_fn.cpp) and the runtime reads them back WITHOUT
+revalidating against the name, so every committed .s carrying a baked id would dispatch a different
+builtin with no diagnostic.
+
+The numbering is now pinned by ../harness/scripts/test_gate_shared_builtin_id_table_is_self_consistent.sh, whose
+entry floor turns exactly this into a red arm instead of a silent 95% deletion.
+
+TO ADD A BUILTIN: add its #define and its g_bid_tab entry BY HAND with a fresh id, and let that gate
+prove the table still round-trips. Do not run this script.
+
+If you have read all of the above and still mean to run it, set SCRIP_GEN_BUILTIN_IDS_I_MEAN_IT=1.
+"""
+
+
+def main():
+    if os.environ.get("SCRIP_GEN_BUILTIN_IDS_I_MEAN_IT") != "1":
+        sys.stderr.write(SPENT_BANNER)
+        sys.exit(2)
+    with open(SRC, 'r', encoding='utf-8', errors='surrogateescape') as f:
+        lines = f.read().split('\n')
+    lo, hi = find_func_span(lines)
+    body = '\n'.join(lines[lo:hi + 1])
+
+    names = sorted(set(PAT.findall(body)))
+    if not names:
+        sys.exit("ERROR: no !strcmp(fn,\"...\") sites found")
+    for n in names:
+        if '\\' in n:
+            sys.exit("ERROR: escape sequence in name %r — sanitizer not proven for this" % n)
+
+    ids = {n: i + 1 for i, n in enumerate(names)}
+
+    # ---- open-addressed table, power of two, >= 4x names for short probe chains ----
+    size = 1
+    while size < len(names) * 4:
+        size <<= 1
+
+    def h(s):
+        v = 5381
+        for c in s.encode():
+            v = (v * 33 + c) & 0xFFFFFFFF
+        return v
+
+    slots = [None] * size
+    maxprobe = 0
+    for n in names:
+        k = h(n) & (size - 1)
+        p = 0
+        while slots[k] is not None:
+            k = (k + 1) & (size - 1)
+            p += 1
+        slots[k] = n
+        maxprobe = max(maxprobe, p)
+
+    hdr = []
+    hdr.append('/* GENERATED by ../harness/scripts/gen_builtin_ids.py — DO NOT EDIT BY HAND. */')
+    hdr.append('/* BID-1: builtin-name -> integer id, replacing the linear strcmp chain in try_call_builtin_by_name. */')
+    hdr.append('#ifndef BUILTIN_IDS_H')
+    hdr.append('#define BUILTIN_IDS_H')
+    hdr.append('#include <string.h>')
+    for n in names:
+        hdr.append('#define BID_%s %d' % (sanitize(n), ids[n]))
+    hdr.append('#define BID_TABSZ %d' % size)
+    hdr.append('static const struct { const char *nm; unsigned char len; short id; } g_bid_tab[BID_TABSZ] = {')
+    row = []
+    for i, s in enumerate(slots):
+        if s is None:
+            row.append('{0,0,0}')
+        else:
+            esc = s.replace('\\', '\\\\').replace('"', '\\"')
+            row.append('{"%s",%d,%d}' % (esc, len(s), ids[s]))
+        if len(row) == 8:
+            hdr.append('  ' + ','.join(row) + ',')
+            row = []
+    if row:
+        hdr.append('  ' + ','.join(row) + ',')
+    hdr.append('};')
+    hdr.append('static int bid_of(const char *s, unsigned len) {')
+    hdr.append('    unsigned hv = 5381u; unsigned i;')
+    hdr.append('    if (!s || !len) return 0;')
+    hdr.append('    for (i = 0; i < len; i++) hv = hv * 33u + (unsigned char)s[i];')
+    hdr.append('    hv &= (unsigned)(BID_TABSZ - 1);')
+    hdr.append('    for (;;) {')
+    hdr.append('        const char *n = g_bid_tab[hv].nm;')
+    hdr.append('        if (!n) return 0;')
+    hdr.append('        if (g_bid_tab[hv].len == len && !memcmp(n, s, len)) return g_bid_tab[hv].id;')
+    hdr.append('        hv = (hv + 1u) & (unsigned)(BID_TABSZ - 1);')
+    hdr.append('    }')
+    hdr.append('}')
+    hdr.append('#endif')
+
+    outh = os.path.join(os.path.dirname(SRC), 'builtin_ids.h')
+    with open(outh, 'w') as f:
+        f.write('\n'.join(hdr) + '\n')
+
+    def repl(m):
+        return '(_bid == BID_%s)' % sanitize(m.group(1))
+
+    newbody, nsub = PAT.subn(repl, body)
+
+    anchor = '    if (!fn || !out) return 0;'
+    if anchor not in newbody:
+        sys.exit("ERROR: entry anchor not found — refusing to guess insertion point")
+    newbody = newbody.replace(
+        anchor,
+        anchor + '\n    const int _bid = bid_of(fn, (unsigned)strlen(fn));',
+        1)
+
+    lines[lo:hi + 1] = newbody.split('\n')
+    with open(SRC, 'w', encoding='utf-8', errors='surrogateescape') as f:
+        f.write('\n'.join(lines))
+
+    print("names=%d table=%d maxprobe=%d sites_rewritten=%d" % (len(names), size, maxprobe, nsub))
+    print("header: %s" % outh)
+
+
+if __name__ == '__main__':
+    main()
