@@ -114,11 +114,28 @@ def random_expr(rnd, depth):
     return term(depth)
 LEAF_KINDS = {'int': ['0', '1', '2'], 'var': ['x', 'y', 'z'], 'str': ["'a'", "''", "'1'"], 'real': ['1.5', '0.']}
 def canon(expr):
+    if isinstance(expr, tuple): f, v, e = expr; expr = FORMS[f].format(V=v, E=e, i='')
     s = re.sub(r"'[^']*'", 'S', expr); s = re.sub(r'\b\d+\.\d*', 'R', s); s = re.sub(r'\b\d+\b', 'N', s); s = re.sub(r'\b[xyz]\b', 'V', s); return s
 def ntokens(expr): return len(re.findall(r"'[^']*'|\d+\.\d*|\(|\)|\d+|[xyz]|[-+*/?$.~@]", expr))
-def nchars(expr): return len(expr.replace(' ', ''))
+def nchars(expr): return len((expr[2] if isinstance(expr, tuple) else expr).replace(' ', ''))
+STMT = False
+FORMS = ['{E} :S(K{i})F(F{i})', '{V} = {E} :S(K{i})F(F{i})', '{V} ? {E} :S(K{i})F(F{i})', "{V} ? {E} = '' :S(K{i})F(F{i})", '{E} :(K{i})', '{V} = {E} :(K{i})']
+SUBJECTS = ['x', 'y', 'z']
+def stmts_of(e): return [(f, v, e) for f in range(len(FORMS)) for v in SUBJECTS]
+def program_stmt(items, env):
+    lines = ['\t&ERRLIMIT = 1000000']
+    for i, (f, v, e) in items:
+        lines += ['\t%s = %s' % (x, val) for x, val in env]
+        lines.append('\tC = CODE(" %s")\t:F(D%d)' % (FORMS[f].format(V=v, E=e, i=i), i))
+        lines.append('\t:<C>')
+        lines.append("D%d\tOUTPUT = '%d=CODE-ERROR'\t:(N%d)" % (i, i, i))
+        lines.append("K%d\tOUTPUT = '%d=OK ' x ',' y ',' z\t:(N%d)" % (i, i, i))
+        lines.append("F%d\tOUTPUT = '%d=FAILED ' x ',' y ',' z" % (i, i))
+        lines.append('N%d' % i)
+    lines.append('END'); return '\n'.join(lines) + '\n'
 def program(exprs, env):
     """One SNOBOL4 program printing "<id>=<value>" per expression; a runtime error prints "<id>=E<errtype>" and continues."""
+    if STMT: return program_stmt(exprs, env)
     lines = ['\t&ERRLIMIT = 1000000']
     lines += ['\t%s = %s' % (v, val) for v, val in env]
     for i, e in exprs:
@@ -211,6 +228,9 @@ def selftest():
     if n2 != 2: fails.append('shape_count(2)=%d, expected 2 (+L, -L)' % n2)
     if n3 != 1 + 4 + 4: fails.append('shape_count(3)=%d, expected 9: (L), ++L +-L -+L --L, L+L L-L L*L L/L' % n3)
     if len(shapes('term', 0)) != 0: fails.append('an empty budget must enumerate nothing, not a phantom program')
+    if len(stmts_of('x')) != 18: fails.append('stmts_of must give 6 forms x 3 subjects = 18 statement items per expression')
+    sp = program_stmt([(1, (1, 'y', 'x + 1'))], [('x', 7)])
+    if 'CODE(" y = x + 1 :S(K1)F(F1)")' not in sp or '\t:<C>' not in sp: fails.append('program_stmt must CODE the form text with its variable and expression, then goto the compiled label')
     exprs = [(1, 'x + 1'), (2, 'y * 2'), (3, 'z / 0')]
     src = program(exprs, [('x', 7), ('y', -3), ('z', 2)])
     if src.count('OUTPUT = "') != 2 * len(exprs): fails.append('a batch program must carry exactly two OUTPUT sites per expression (value, error)')
@@ -233,7 +253,7 @@ def selftest():
     if shape_count(2, 'unary') != 8: fails.append('shape_count(2, unary) must be 8: +L -L and the six UNARY_ITEM forms on L, got %d' % shape_count(2, 'unary'))
     if shape_count(3, 'match') - shape_count(3, 'unary') != 1: fails.append('match adds exactly one length-3 shape over unary: L ? L')
     for f in fails: print('SELFTEST FAIL: ' + f)
-    print('SELFTEST %s: %d checks, %d failures' % ('PASS' if not fails else 'FAIL', 17, len(fails)))
+    print('SELFTEST %s: %d checks, %d failures' % ('PASS' if not fails else 'FAIL', 19, len(fails)))
     return 0 if not fails else 1
 def main():
     ap = argparse.ArgumentParser(description='exhaustive / random program enumerator graded against the oracle')
@@ -249,7 +269,9 @@ def main():
     ap.add_argument('--selftest', action='store_true'); ap.add_argument('--keep-batches', action='store_true')
     ap.add_argument('--grammar', default='arith', choices=('arith', 'unary', 'match'), help='arith (Expressions.py); unary adds the prefix operators on an item; match adds term ? term at the top')
     ap.add_argument('--leaf-kinds', help='comma list of int,var,str,real; replaces --alphabet when given')
+    ap.add_argument('--statements', action='store_true', help='each expression under the six statement forms x three subjects, as a statement, not an expression')
     a = ap.parse_args()
+    global STMT; STMT = a.statements; mult = len(FORMS) * len(SUBJECTS) if a.statements else 1
     if a.selftest: sys.exit(selftest())
     if a.lang != 'snobol4': refuse('only the snobol4 grammar exists today (Expressions.py); %s is the next lane\'s rung' % a.lang)
     if a.leaf_kinds:
@@ -261,11 +283,12 @@ def main():
     if a.count_only:
         print('grammar=%s length(tokens) shapes programs(alphabet=%s leaf-kinds=%s per-shape<=%d)' % (a.grammar, ','.join(alphabet), a.leaf_kinds or '-', a.per_shape))
         for n in range(1, (a.to_length or 10) + 1):
-            sh = shapes(top(a.grammar), n, a.grammar); progs = sum(min(len(alphabet) ** s.count(LEAF), a.per_shape) for s in sh)
+            sh = shapes(top(a.grammar), n, a.grammar); progs = mult * sum(min(len(alphabet) ** s.count(LEAF), a.per_shape) for s in sh)
             print('%2d %8d %9d' % (n, len(sh), progs))
         return 0
     if not a.to_length and not a.random: refuse('nothing to enumerate: pass --to-length N and/or --random K')
     if a.random and a.grammar != 'arith': refuse('--random walks the arith grammar only; --grammar is for --to-length')
+    if a.random and a.statements: refuse('--statements is for --to-length')
     if not os.path.exists(SBL): refuse('oracle absent at %s -- every verdict would be a plausible false table' % SBL)
     if a.engine in PORTS:
         if a.modes: refuse('--modes is scrip\'s; the %s engine runs one way, through %s' % (a.engine, os.path.basename(runner(a.engine))))
@@ -281,7 +304,7 @@ def main():
     if a.to_length:
         for n in range(1, a.to_length + 1):
             for sh in shapes(top(a.grammar), n, a.grammar):
-                for e in instantiate(sh, alphabet, a.per_shape, rnd): pop.append((n, e))
+                for e in instantiate(sh, alphabet, a.per_shape, rnd): pop += [(n, t) for t in stmts_of(e)] if a.statements else [(n, e)]
     if a.random:
         for _ in range(a.random):
             e = random_expr(rnd, a.depth); pop.append((ntokens(e), e))
@@ -302,8 +325,8 @@ def main():
             witnesses.append((mode, v, n, e, write_witness(a.out, a.lang, a.engine, n, k, e, env, grader.oracle_rows.get(i, '?')), grader.oracle_rows.get(i, '?')))
     total = len(ids); graded = sum(1 for i, _ in ids for m in modes if results.get(i, {}).get(m) not in (None, 'UNGRADED', 'ORACLE-BAD'))
     agree = sum(1 for i, _ in ids for m in modes if results.get(i, {}).get(m) == 'AGREE')
-    print('=== ENUMERATOR %s: engine=%s grammar=%s to-length=%d random=%d alphabet=%s leaf-kinds=%s per-shape<=%d env=%s modes=%s batches=%d ===' % (
-        a.lang, a.engine, a.grammar, a.to_length, a.random, ','.join(alphabet), a.leaf_kinds or '-', a.per_shape, a.env, ','.join(modes), grader.n_batches))
+    print('=== ENUMERATOR %s: engine=%s grammar=%s to-length=%d random=%d statements=%d alphabet=%s leaf-kinds=%s per-shape<=%d env=%s modes=%s batches=%d ===' % (
+        a.lang, a.engine, a.grammar, a.to_length, a.random, int(a.statements), ','.join(alphabet), a.leaf_kinds or '-', a.per_shape, a.env, ','.join(modes), grader.n_batches))
     print('length(tokens) shapes programs  ' + '  '.join('%s:AGREE/DIFF/CRASH/HANG/ORACLE-BAD' % m for m in modes))
     for n in sorted(by_len):
         sh = shape_count(n, a.grammar) if a.to_length and n <= a.to_length else '-'
@@ -319,7 +342,7 @@ def main():
         total, graded, agree, len(witnesses), a.engine, os.path.basename(tree),
         subprocess.run(['git', '-C', tree, 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True).stdout.strip() or '?'))
     for mode, v, n, e, path, oval in witnesses:
-        print('  [%s %-12s] x%-4d len=%d  %-40s oracle=%-10s -> %s' % (mode, v, seen[(mode, v, canon(e))], n, e[:40], oval[:10], os.path.basename(path)))
+        print('  [%s %-12s] x%-4d len=%d  %-40s oracle=%-10s -> %s' % (mode, v, seen[(mode, v, canon(e))], n, (canon(e) if isinstance(e, tuple) else e)[:40], oval[:10], os.path.basename(path)))
     if graded == 0: refuse('zero programs graded -- the oracle produced no lines (batch dir kept: %s)' % work)
     if not a.keep_batches:
         for f in os.listdir(work): os.remove(os.path.join(work, f))
