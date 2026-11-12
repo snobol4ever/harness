@@ -1676,6 +1676,13 @@ def _logtalk_case_population(tdir, names):
             r = l.rstrip("\n").split("\t")
             if l.strip() and not l.lstrip().startswith("#") and len(r) >= 2:
                 excl[r[0].strip()] = r[1].strip()
+    # THE TABLE NAMES THE INSTANCE (the grader 2026-11-12, on Lon's word "Get IPL, Logtalk, etc items in the banner up-to-date."): since corpus be3b0a7ec ALL.csv keys a
+    # repeated case name#k itself and ALL.omit names each instance it leaves out, so the population is the table less ALL.omit. MEASURED: counting those names again
+    # missed the 21 guard-class instances by base name and read 3545 where the container grades 3524.
+    op = os.path.join(tdir, "ALL.omit")
+    if any(re.match(r"^.*#\d+$", n) for n in names) and os.path.exists(op):
+        om = {l.split(": ", 1)[0] for l in open(op, encoding="utf-8", errors="replace") if ": " in l and not l.startswith("#")}
+        return set(names) - om, len(set(names) & om)
     keys, nex = set(), 0
     for n, c in cnt.items():
         cls = excl.get(n)
@@ -1979,7 +1986,7 @@ def cmd_from_progress(a):
                 continue
             if key == "logtalk":   # a repeated case's rows are name#k (util_logtalk_grade.py's key); the table lists the name
                 _lm = re.match(r"^(.*)#\d+$", fl[7])
-                if (_lm.group(1) if _lm else fl[7]) in want:
+                if fl[7] in want or (_lm and _lm.group(1) in want):   # the table names name#k itself since corpus be3b0a7ec
                     k = (fl[7], fl[8])
                     if k not in last or fl[0] >= last[k][3]:
                         last[k] = (fl[9], fl[11] if len(fl) > 11 else "", fl[1], fl[0], fl[10])
