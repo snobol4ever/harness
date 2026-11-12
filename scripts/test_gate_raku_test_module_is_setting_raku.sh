@@ -31,11 +31,11 @@ W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 red=0
 want_rc="$(cat "$WIT.rc")"
 cp "$WIT.raku" "$W/w.raku"
-( cd "$W" && timeout 30 "$ROOT/scrip" w.raku > o3 2> e3 < /dev/null ); rc3=$?
+( cd "$W" && timeout -k 5 30 "$ROOT/scrip" w.raku > o3 2> e3 < /dev/null ); rc3=$?
 if cmp -s "$WIT.ref" "$W/o3" && [ "$rc3" = "$want_rc" ]; then echo "  GREEN m3 witness (rc $rc3)"; else echo "  RED   m3 witness: rc $rc3 want $want_rc"; diff "$WIT.ref" "$W/o3" | head -12; red=1; fi
-( cd "$W" && timeout 60 "$ROOT/scrip" --compile --out=w.s w.raku < /dev/null > /dev/null 2> c4 && gcc w.s -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o w4 2>> c4 ) || { echo "  RED   m4 witness: compile or link failed"; head -3 "$W/c4"; red=1; }
+( cd "$W" && timeout -k 5 60 "$ROOT/scrip" --compile --out=w.s w.raku < /dev/null > /dev/null 2> c4 && gcc w.s -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o w4 2>> c4 ) || { echo "  RED   m4 witness: compile or link failed"; head -3 "$W/c4"; red=1; }
 if [ -x "$W/w4" ]; then
-    ( cd "$W" && timeout 30 ./w4 > o4 2> e4 < /dev/null ); rc4=$?
+    ( cd "$W" && timeout -k 5 30 ./w4 > o4 2> e4 < /dev/null ); rc4=$?
     if cmp -s "$WIT.ref" "$W/o4" && [ "$rc4" = "$want_rc" ]; then echo "  GREEN m4 witness (rc $rc4)"; else echo "  RED   m4 witness: rc $rc4 want $want_rc"; diff "$WIT.ref" "$W/o4" | head -12; red=1; fi
 fi
 left="$(grep -n '__rk_test_' src/parsers/raku/rk_tree.c src/lower/lower_raku.c src/runtime/by_name_dispatch.c "$HERE/builtins.tsv" 2>/dev/null)"

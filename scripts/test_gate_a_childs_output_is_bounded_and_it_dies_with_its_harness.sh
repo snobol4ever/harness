@@ -38,7 +38,7 @@ printer_alive() { local p; for p in $(pgrep -f 'printer[.]py'); do [ "$(readlink
 
 # ARM 1 -- the bound: OVERFLOW, exactly the bound kept, the child gone, long before the 60 s timeout.
 examined=$((examined+1))
-out=$(cd "$WORK" && timeout 120 python3 -c "$PYH
+out=$(cd "$WORK" && timeout -k 5 120 python3 -c "$PYH
 t0 = time.monotonic()
 k, o, e, rc = h._run_raw(['python3', 'printer.py'], 60, cwd='$WORK')
 print('KIND', k, 'LEN', len(o), 'CAP', h._OUTPUT_CAP if hasattr(h, '_OUTPUT_CAP') else -1, 'SECS', int(time.monotonic() - t0))" 2>&1)
@@ -48,7 +48,7 @@ else echo "  ok  arm1: $out"; fi
 
 # ARM 2 -- the grade: FAIL naming the bound, never retried.
 examined=$((examined+1))
-out=$(cd "$WORK" && timeout 120 python3 -c "$PYH
+out=$(cd "$WORK" && timeout -k 5 120 python3 -c "$PYH
 v = h.classify(['python3', 'printer.py'], 6, 'x', cwd='$WORK')
 print('VERDICT', v.kind, 'RETRY', repr(v.retry), 'DETAIL', v.detail)" 2>&1)
 if ! printf '%s\n' "$out" | grep -qE "^VERDICT FAIL RETRY '' DETAIL output passed the S4E_OUTPUT_CAP_MB bound of 1048576 bytes"; then arm_fail 2 "classify does not grade the bounded printer FAIL with the bound named and no retry"
@@ -57,7 +57,7 @@ else echo "  ok  arm2: $out"; fi
 # ARM 3 -- the oracle side: run_oracle returns a kind other than RAN (every oracle caller's guard reads that as no answer).
 examined=$((examined+1))
 printf '#!/bin/bash\nexec python3 %s/printer.py\n' "$WORK" > "$WORK/fake_oracle"; chmod +x "$WORK/fake_oracle"; : > "$WORK/p.sno"
-out=$(timeout 120 python3 -c "$PYH
+out=$(timeout -k 5 120 python3 -c "$PYH
 text, rc, kind = h.run_oracle('$WORK/fake_oracle', '', '$WORK/p.sno', 6)
 print('ORACLE', kind, 'TEXTLEN', len(text))" 2>&1)
 if ! printf '%s\n' "$out" | grep -qE '^ORACLE OVERFLOW TEXTLEN [0-9]+$'; then arm_fail 3 "run_oracle does not hand back the OVERFLOW kind for an oracle printing forever"
@@ -80,7 +80,7 @@ fi
 
 # ARM 5 -- the old contract.
 examined=$((examined+1))
-out=$(cd "$WORK" && timeout 120 python3 -c "$PYH
+out=$(cd "$WORK" && timeout -k 5 120 python3 -c "$PYH
 def show(tag, r): print(tag, r[0], repr(r[1][:60]), r[3])
 show('PLAIN', h._run_raw(['printf', 'a\\\\nb'], 10))
 show('STDIN', h._run_raw(['cat'], 10, stdin_text='hello\\n'))

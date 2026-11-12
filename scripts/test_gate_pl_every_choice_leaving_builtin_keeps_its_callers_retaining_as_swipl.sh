@@ -90,16 +90,16 @@ main :- assertz(fd(2)),
     run(16, q16(X16), X16), run(17, q17(X17), X17), run(18, q18(X18), X18), run(19, q19(X19), X19), run(20, q20(X20), X20),
     run(21, q21(X21), X21), run(22, q22(X22), X22).
 PL
-( cd "$D" && timeout 60 swipl -q -t halt nd.pl < /dev/null > want 2> /dev/null )
+( cd "$D" && timeout -k 5 60 swipl -q -t halt nd.pl < /dev/null > want 2> /dev/null )
 [ "$(wc -l < "$D/want")" = 22 ] || refuse "swipl did not print twenty-two answers"
 [ "${GATE_CORRUPT_REF:-0}" = 1 ] && sed -i '10s/.*/10-[a,b]/' "$D/want"
-( cd "$D" && timeout 120 "$B/scrip" --compile --out=nd.s nd.pl < /dev/null > /dev/null 2> m4.err && gcc nd.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o nd 2>> m4.err ) || refuse "mode 4 did not build: $(tail -2 "$D/m4.err")"
+( cd "$D" && timeout -k 5 120 "$B/scrip" --compile --out=nd.s nd.pl < /dev/null > /dev/null 2> m4.err && gcc nd.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o nd 2>> m4.err ) || refuse "mode 4 did not build: $(tail -2 "$D/m4.err")"
 red=0; n=0
 for env in "PLAIN=1" "SCRIP_GC_STRESS=1" "SCRIP_GC_CHAIN_CHECK=1" "SCRIP_GC_STRESS=1 SCRIP_GC_CHAIN_CHECK=1"; do
     for m in m3 m4; do
         n=$((n + 1))
-        if [ $m = m3 ]; then ( cd "$D" && env $env timeout 120 "$B/scrip" nd.pl < /dev/null > got 2> /dev/null )
-        else ( cd "$D" && env $env timeout 120 ./nd < /dev/null > got 2> /dev/null ); fi
+        if [ $m = m3 ]; then ( cd "$D" && env $env timeout -k 5 120 "$B/scrip" nd.pl < /dev/null > got 2> /dev/null )
+        else ( cd "$D" && env $env timeout -k 5 120 ./nd < /dev/null > got 2> /dev/null ); fi
         if cmp -s "$D/want" "$D/got"; then echo "  $m [$env] GREEN: 22 of 22 answers as swipl"
         else echo "  $m [$env] RED: $(diff "$D/want" "$D/got" | grep -c '^<') of 22 answers differ from swipl"; diff "$D/want" "$D/got" | head -6 | sed 's/^/    /'; red=1; fi
     done
