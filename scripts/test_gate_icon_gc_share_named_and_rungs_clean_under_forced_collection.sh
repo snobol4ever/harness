@@ -64,7 +64,8 @@ ARENA="${ICN_GC_ARENA:-1}"
 fail() { echo "⛔ RED: $*" >&2; exit 1; }
 refuse() { echo "REFUSES rc=2: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "scrip not built at $SCRIP -- cannot measure"
-for f in ALL.icn ALL.ref ALL.csv; do [ -f "$M/$f" ] || refuse "rungs file $M/$f missing -- cannot measure"; done
+[ -f "$M/ALL.csv" ] || refuse "rungs file $M/ALL.csv missing -- cannot measure"
+{ [ -f "$M/ALL.icn" ] && [ -f "$M/ALL.ref" ]; } || [ -f "$M/MULTI.md" ] || [ -f "$M/ONE.icn" ] || refuse "no rungs container in $M (ALL.icn and ALL.ref, or format 2 MULTI.md or ONE.icn) -- cannot measure"
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 cd "$SCRIP_DIR" || refuse "cannot cd to $SCRIP_DIR"
 # --- materialize the graded population OUT of the rungs, by ORIGIN, never by a filename glob ---
@@ -90,7 +91,7 @@ done < <(awk -F, 'NR>1{print $3}' "$M/ALL.csv")
 # board and merely FAILS TO REFUSE the m4 half. Widening it to both modes doubles the arm's cost and is owed;
 # until it lands, this gate's green is a statement about m3 decidability and m3+m4 grading, stated here rather
 # than left for the next seat to discover in the way hq_icon discovered the 815.
-nargv=$(grep -v '^#' "$M/ALL.argv" 2>/dev/null | awk -F'\t' 'NF>1' | wc -l)
+if [ -f "$M/MULTI.md" ]; then nargv=$(grep -c -E '^`{3,}args$' "$M/MULTI.md"); else nargv=$(grep -v '^#' "$M/ALL.argv" 2>/dev/null | awk -F'\t' 'NF>1' | wc -l); fi
 echo "ARM 0 population=$got/$rows materialized whole; argv-bearing entries run WITHOUT argv in ARM 1: $nargv (declared, inside the denominator, biases ARM 1 toward refusal only)"
 echo "ARM 0 DECLARED: ARM 1 measures decidability in m3 and not yet in m4; ARM 3 grades m3+m4. The m4 half of every band point is UNLICENSED by ARM 1 -- owed, and not a refusal"
 # --- ARM 2: static reads, independent of the plant ---

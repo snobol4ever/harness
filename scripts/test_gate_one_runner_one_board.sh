@@ -21,7 +21,7 @@ set -u
 unset S4E_DONE_WHEN_RUN S4E_ONE_RUNNER_OVERRIDE S4E_ONE_RUNNER_FIXTURE S4E_SEAT
 H="$(cd "$(dirname "$0")" && pwd)"; L="$H/lib_one_runner.sh"; G=one_runner_one_board; fail=0; examined=0
 CORPUS="${S4E_CORPUS:-${S4E_HOME:-$(cd "$H/../.." && pwd)}/corpus}"
-[ -r "$CORPUS/tests/icon/ALL.icn" ] || { echo "REFUSE(2) [$G]: no corpus rungs at $CORPUS/tests/icon/ALL.icn -- the board/not-a-board arms cannot be measured"; exit 2; }
+[ -r "$CORPUS/tests/icon/ALL.icn" ] || [ -r "$CORPUS/tests/icon/MULTI.md" ] || { echo "REFUSE(2) [$G]: no corpus rungs at $CORPUS/tests/icon/ALL.icn -- the board/not-a-board arms cannot be measured"; exit 2; }
 [ -r "$L" ] || { echo "REFUSE(2) [$G]: $L missing -- cannot measure"; exit 2; }
 [ -x "$H/../../SCRIP/scrip" ] || { echo "REFUSE(2) [$G]: no built SCRIP beside harness at $H/../../SCRIP (a port root) -- the guard fingerprints SCRIP's binary, so the owner arms cannot be measured here"; exit 2; }
 arm() { examined=$((examined+1)); if eval "$2"; then echo "  ok   $1"; else echo "  FAIL $1"; fail=$((fail+1)); fi; }

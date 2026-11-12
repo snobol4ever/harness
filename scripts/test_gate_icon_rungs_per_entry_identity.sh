@@ -67,8 +67,10 @@ for a in "$@"; do [ "$a" = "--repin" ] && REPIN=1; done
 gate_require_exec "$SCRIP_BIN" "scrip binary"
 gate_require "$RT/libscrip_rt.so" "runtime library"
 gate_require "$HARNESS" "corpus_suite_harness.py"
+if [ ! -f "$CORPUS/MULTI.md" ] && [ ! -f "$CORPUS/ONE.icn" ]; then   # format 2 (CIO-24 f) is read from the same names
 gate_require "$CORPUS/ALL.icn" "the Icon rungs suite"
 gate_require "$CORPUS/ALL.ref" "the Icon rungs suite's expected output"
+fi
 gate_require "$CORPUS/ALL.csv" "ALL.csv -- without it there is no origin key and no per-entry provenance"
 gate_require_fresh "$ROOT" src "$SCRIP_BIN" "$RT/libscrip_rt.so"
 if [ "$REPIN" -eq 0 ]; then

@@ -75,7 +75,7 @@ RUNGS_DIR="$S4E/corpus/tests/icon"; RUNGS_EXT=.icn; export RUNGS_DIR RUNGS_EXT
 REF="$RUNGS_DIR/ALL.trace"; PREFIX_CAP="${PREFIX_CAP:-400}"; T="${TIMEOUT:-20}"
 gate_require_exec "$SCRIP" "scrip binary"
 gate_require "$RT/libscrip_rt.so" "runtime library"
-gate_require "$RUNGS_DIR/ALL.icn" "Icon rungs suite"
+[ -f "$RUNGS_DIR/MULTI.md" ] || [ -f "$RUNGS_DIR/ONE.icn" ] || gate_require "$RUNGS_DIR/ALL.icn" "Icon rungs suite"   # format 2 (CIO-24 f) is read from the same names
 gate_require "$RUNGS_DIR/ALL.csv" "Icon rungs suite index"
 [ "$CUT" = 1 ] || gate_require "$REF" "trace refs (run with --cut to create them)"
 . "$HERE/lib_rungs_extract.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: cannot source lib_rungs_extract.sh"; exit 2; }

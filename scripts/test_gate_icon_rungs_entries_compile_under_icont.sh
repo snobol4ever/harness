@@ -43,9 +43,8 @@ GATE="test_gate_icon_rungs_entries_compile_under_icont"
 ICONT="$(icont_bin)" || exit 2
 DIR="$S4E/corpus/tests/icon"
 ICN="$DIR/ALL.icn"; REF="$DIR/ALL.ref"; CSV="$DIR/ALL.csv"
-for f in "$ICN" "$REF" "$CSV"; do
-    [ -f "$f" ] || { echo "⛔ $GATE REFUSES rc=2: missing rungs file: $f" >&2; exit 2; }
-done
+[ -f "$CSV" ] || { echo "⛔ $GATE REFUSES rc=2: missing rungs file: $CSV" >&2; exit 2; }
+{ [ -f "$ICN" ] && [ -f "$REF" ]; } || [ -f "$DIR/MULTI.md" ] || [ -f "$DIR/ONE.icn" ] || { echo "⛔ $GATE REFUSES rc=2: no rungs container in $DIR (ALL.icn and ALL.ref, or format 2 MULTI.md or ONE.icn)" >&2; exit 2; }
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/icn_rungs_icont_gate.XXXXXX")" || { echo "⛔ $GATE REFUSES rc=2: mktemp failed" >&2; exit 2; }
 trap 'rm -rf "$WORK"' EXIT
 
@@ -84,7 +83,7 @@ MAT="$WORK/.materialize.log"
 python3 - "$HERE/../../SCRIP" "$ICN" "$REF" "$DIR" "$WORK" <<'MATPY' > "$MAT" 2>&1
 import sys
 from pathlib import Path
-sys.path.insert(0, sys.argv[1] + "/scripts")
+sys.path.insert(0, sys.argv[1] + "/../harness/scripts")
 import corpus_suite_harness as H
 icn, ref, family_dir, work = sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 copen, cclose = "*", ""

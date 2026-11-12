@@ -102,7 +102,7 @@ else
   say_fail "oracle answers forms this gate does not recognise (bare '$O_BARE' · dot '$O_DOT') -- re-measure before trusting any ref that prints &progname"
 fi
 RUNGS="$S4E/corpus/tests/icon"; JC="$S4E/corpus/packages/icon/jcon_tests"; AZ="$S4E/corpus/packages/icon/arizona_tests/general"
-if grep -q '^   &progname: procedure_every_alt_replace_4$' "$RUNGS/ALL.ref"; then say_ok "IcnRungs entry procedure_every_alt_replace_4: the ref line reads the bare stem"; else say_fail "IcnRungs entry procedure_every_alt_replace_4: the ref line does not read the bare stem"; fi
+if cat "$RUNGS/ALL.ref" "$RUNGS/MULTI.md" 2>/dev/null | grep -q '^   &progname: procedure_every_alt_replace_4$'; then   # the ref is ALL.ref, or the stdout fence in MULTI.md (format 2) say_ok "IcnRungs entry procedure_every_alt_replace_4: the ref line reads the bare stem"; else say_fail "IcnRungs entry procedure_every_alt_replace_4: the ref line does not read the bare stem"; fi
 if grep -q '^   &progname: kwds$' "$JC/kwds.ref"; then say_ok "jcon kwds.ref: the ref line reads the bare stem"; else say_fail "jcon kwds.ref: the ref line does not read the bare stem"; fi
 if grep -q '^   &progname: kwds$' "$AZ/kwds.ref"; then say_ok "arizona kwds.ref: the ref line reads the bare stem"; else say_fail "arizona kwds.ref: the ref line does not read the bare stem"; fi
 n_decl=$(find "$S4E/corpus" -name '*.moderef' -not -path '*/.git/*' 2>/dev/null | wc -l)
