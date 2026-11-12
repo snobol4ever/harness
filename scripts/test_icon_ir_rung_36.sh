@@ -28,8 +28,21 @@ PASS=0; FAIL=0; XFAIL=0
 if [ ! -x "$SCRIP" ];  then echo "⛔ REFUSES rc=2: scrip not built at $SCRIP — this is NOT a pass; nothing was examined."; exit 2; fi
 if [ ! -d "$CORPUS" ]; then echo "⛔ REFUSES rc=2: corpus not found at $CORPUS — the layout moved; do not read a smaller total as a pass."; exit 2; fi
 
+# ⭐ A NAME WITH NO LOOSE FILE IS LOOKED UP, NEVER SKIPPED (the coo 2026-11-12, the tests/icon consolidation): its program is an entry
+# of the icon master under one of the three origin spellings the absorptions used, graded by the IcnRungs board and not counted here;
+# a name in neither place REFUSES rc=2 (the old SKIP returned success for every name absorbed and deleted since 2026-08-29).
+moved_auto() {
+    local name="$1" o
+    for o in "rung36_all__$name" "${name}__$name" "$name"; do
+        if grep -q ",${o}," "$CORPUS/ALL.csv"; then echo "  MOVED $name -> the icon master, origin $o (graded by the IcnRungs board, not counted twice here)"; return; fi
+    done
+    # a jcon program the vendored package already carries (rung36_jcon_toby, deleted 2026-09-03 at a4d591ad4, is packages/icon/jcon_tests/toby.icn)
+    if grep -q ",jcon_tests__${name#rung36_jcon_}," "$S4E/corpus/packages/icon/jcon_tests/ALL.csv" 2>/dev/null; then echo "  MOVED $name -> the jcon package, origin jcon_tests__${name#rung36_jcon_} (graded by the jcon suite, not counted twice here)"; return; fi
+    echo "⛔ REFUSES rc=2: $name is neither loose in $CORPUS nor an origin in $CORPUS/ALL.csv -- the coverage is in neither place; this is not a pass"; exit 2
+}
 run() {
     local base="$CORPUS/$1"
+    [ -f "${base}.icn" ] || { moved_auto "$1"; return; }
     [ -f "${base}.xfail" ] && { echo "  XFAIL $1"; XFAIL=$((XFAIL+1)); return; }
     [ -f "${base}.ref" ] || { echo "  SKIP  $1 (no .ref)"; return; }
     local stdin_f="${base}.stdin"; [ -f "$stdin_f" ] || stdin_f="$(dirname "$base")/config/$(basename "$base").stdin"
@@ -122,16 +135,15 @@ run rung36_jcon_toby
 run rung36_jcon_var
 
 echo ""
-echo "=== rung36: converted suite delegation (32 entries in rung36_all.icn/.ref) ==="
-SUITE_SNO="$CORPUS/rung36_all.icn"
-SUITE_REF="$CORPUS/rung36_all.ref"
-if [ ! -f "$SUITE_SNO" ] || [ ! -f "$SUITE_REF" ]; then
-    echo "REFUSE (rc=2): rung36_all suite not found under $CORPUS -- cannot measure the 32 converted entries, not a pass"
+echo "=== rung36: the converted family rung36_all, graded from the icon master (rung36_all.icn left 2026-11-12, its 42 programs entries) ==="
+names=$(awk -F, 'NR>1 && $4=="rung36_all" {print "entry:" $2}' "$CORPUS/ALL.csv" | paste -sd, -)
+if [ -z "$names" ]; then
+    echo "REFUSE (rc=2): no entry of family rung36_all in $CORPUS/ALL.csv -- cannot measure the converted entries, not a pass"
     exit 2
 fi
-board=$(python3 "$HERE/corpus_suite_harness.py" run "$SUITE_SNO" "$SUITE_REF" --lang icon --modes m3,m4 2>&1 | grep '^SUITE_BOARD') || true
+board=$(python3 "$HERE/corpus_suite_harness.py" run "$CORPUS/ALL.icn" "$CORPUS/ALL.ref" --lang icon --modes m3,m4 --partition "$names" 2>&1 | grep '^SUITE_BOARD') || true
 if [ -z "$board" ]; then
-    echo "REFUSE (rc=2): rung36_all harness produced no SUITE_BOARD line -- cannot measure, not a pass"
+    echo "REFUSE (rc=2): the rung36_all family produced no SUITE_BOARD line -- cannot measure, not a pass"
     exit 2
 fi
 echo "  $board"

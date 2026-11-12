@@ -74,9 +74,9 @@ is_suite_file() { [ -f "${1%.icn}.ref" ] && grep -qE '^#-{3,} [0-9]+ [^[:space:]
 WORK="$(mktemp -d /tmp/icon_m4_rungs.XXXXXX)"
 trap 'rm -rf "$WORK"' EXIT
 
-# rung36 per-category tally (sidecar map at corpus/rung36_categories.txt)
+# rung36 per-category tally (the map beside this runner, harness/scripts/rung36_categories.txt; it left corpus/tests/icon 2026-11-12)
 declare -A R36_CAT_P R36_CAT_F R36_CAT_X
-R36_MAP_FILE="$CORPUS/rung36_categories.txt"
+R36_MAP_FILE="$HERE/rung36_categories.txt"
 declare -A R36_NAME_TO_CAT
 if [ -f "$R36_MAP_FILE" ]; then
     while IFS=$'\t' read -r r36_name r36_cat; do

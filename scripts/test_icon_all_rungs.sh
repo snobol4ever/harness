@@ -68,9 +68,9 @@ declare -a SUITE_FILES=()
 # R-1222 every loose expected output is a .ref as well, so the source's own shape is what tells a container.
 is_suite_file() { [ -f "${1%.icn}.ref" ] && grep -qE '^#-{3,} [0-9]+ [^[:space:]]' "$1"; }
 
-# rung36 per-category tally (sidecar map at corpus/rung36_categories.txt)
+# rung36 per-category tally (the map beside this runner, harness/scripts/rung36_categories.txt; it left corpus/tests/icon 2026-11-12)
 declare -A R36_CAT_P R36_CAT_F R36_CAT_X R36_CAT_XP
-R36_MAP_FILE="$CORPUS/rung36_categories.txt"
+R36_MAP_FILE="$HERE/rung36_categories.txt"
 declare -A R36_NAME_TO_CAT
 if [ -f "$R36_MAP_FILE" ]; then
     while IFS=$'\t' read -r r36_name r36_cat; do

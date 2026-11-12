@@ -212,7 +212,7 @@ def census(tests_dir, langs):
             examined += 1
             text = "\n".join(e.sno_lines)
             owes_in = bool(rs.search(text)) and e.stdin is None
-            owes_argv = (bool(ra.search(text)) and not inert_argv_match(lang, text)
+            owes_argv = (bool(ra.search(text)) and not inert_argv_match(lang, text) and not getattr(e, "argv", None)   # a format-2 args fence (2026-11-12)
                          and e.name not in decl_a and e.name not in decl_bare)
             if owes_in or owes_argv:
                 rows.append({"lang": lang, "name": e.name, "seq": e.seq, "kind": e.kind,

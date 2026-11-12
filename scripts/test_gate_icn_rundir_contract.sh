@@ -238,7 +238,7 @@ done
 # /dev/null, and a witness that fails to finish THERE TOO is slow or looping, not stdin-hungry, and is
 # excluded rather than convicted. Conviction needs BOTH: blocks on the fifo AND completes on /dev/null.
 # Graded on icont, never on us, so a SCRIP bug can neither raise nor suppress a finding here.
-sweep=0; suspects=0; undecided=0
+sweep=0; suspects=0; undecided=0; loose_rung=0
 for icn in "$CORPUS"/*.icn; do
     b="$(basename "$icn" .icn)"
     [ -f "$CORPUS/$b.ref" ] || continue                           # ungraded: no verdict depends on its stdin
@@ -247,6 +247,7 @@ for icn in "$CORPUS"/*.icn; do
     # would also sweep the containers (fed their NAME.in by the suite harness) and the loose non-rung pairs.
     case "$b" in rung[0-9][0-9]_*) ;; *) continue ;; esac
     grep -qE '^#-{3,} [0-9]+ [^[:space:]]' "$icn" && continue
+    loose_rung=$((loose_rung+1))
     [ "$(icn_rundir_stdin "$icn")" = /dev/null ] || continue      # already declares one; arms 1-4 own it
     sweep=$((sweep+1))
     (cd "$WORK" && "$ICONT" -s -o "$WORK/$b.a5" "$icn") >/dev/null 2>&1 || continue
@@ -268,6 +269,12 @@ for icn in "$CORPUS"/*.icn; do
         echo "     looping, not necessarily stdin-hungry. Excluded from the verdict rather than convicted."
     fi
 done
+# ⭐ A FOLDER WITH NO LOOSE RUNG WITNESS LEFT (the tests/icon consolidation, the coo 2026-11-12): every other rung program is an entry
+# of the format-2 master, its stdin a fence, and the master's undeclared-stdin debt is test_gate_rungs_sidecars_cover_stdin_and_argv's
+# population; arm 5 names that and refuses only when loose rung witnesses exist and every one declares stdin (the suspicious state).
+if [ "$loose_rung" -eq "$checked" ] && [ "$sweep" -eq 0 ]; then
+    echo "ARM5 NONE TO SWEEP: the $loose_rung loose rung witness(es) are the $checked contracted ones of arms 1-4; every other rung program is a master entry whose stdin is its fence, swept by test_gate_rungs_sidecars_cover_stdin_and_argv"
+else
 [ "$sweep" -gt 0 ] || refuse "ARM 5 examined no witness at all -- every graded witness appears to declare a stdin sidecar, which is not a state this corpus has ever been in. The sweep is vacuous, and a vacuous arm prints the same green as a passing one."
 # ⛔ THE VERDICT WORD MUST FOLLOW THE COUNT BESIDE IT. This line read "PASS ARM5 ... 1 starved silently" in
 # its first cut -- a summary announcing PASS while printing its own failure count on the same line. That is
@@ -277,6 +284,7 @@ if [ "$suspects" -eq 0 ]; then
     echo "PASS ARM5 ($sweep graded witness(es) with no stdin sidecar swept, none starved, $undecided undecided)"
 else
     echo "FAIL ARM5 ($sweep swept, $suspects STARVED SILENTLY, $undecided undecided) -- named above"
+fi
 fi
 
 echo "--- $checked witness(es) with a declared run-directory contract; $fail failure(s)"
