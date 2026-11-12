@@ -1649,7 +1649,7 @@ def mine_read_launch(pkg_dir, lang, dialects):
     return got
 
 
-def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None):
+def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=()):
     """One oracle run of NAME in a scratch copy of FOLDER (subfolders included; the collection is never written to), from the top of that
     copy: the program's own folder and its bare name, or under copy root and cwd root the whole collection and the path from its root (CTO-591).
     The copy is made once per worker and folder and made again after any run that changed a file in it (CTO-583 (2)), so a run always starts
@@ -1690,7 +1690,7 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None):
             argv = ["bash", os.path.join(HERE, "util_oracle.sh"), "xsb", "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_XSB_FLAGS, "-e", goal]
             pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
         else:
-            argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *flags, *files]
+            argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *flags, *files, *args]
             pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
         here = (str(work / "f") + "/").encode()
         there = (str(work / "launch") + "/").encode()
@@ -1708,11 +1708,14 @@ def _mine_scratch_drop():
     MINE_SCRATCH.clear()
 
 
-def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=None):
+def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=None, args=None):
     """The census verdict of one program (the mining rows' classes). -> (verdict, note, rc, stdout bytes). FEED is (what it is, its bytes) when the
     package names the program's standard input (ALL.stdin, a file of the collection by its path; or our own NAME.in in the package): both runs are
     fed it, and the third run, which asks whether the answer changes with standard input, is not made."""
     fed = feed[1] if feed else b""
+    args = tuple(args or ())
+    if args and (lang in ("pascal", "icon") or launch):
+        h.refuse(f"{rel}: ALL.args names arguments, which the mine road passes on the generic oracle road only (not {lang or 'snobol4'}'s, nor with a launch shim)")
     src = root / rel
     at, name = (root, rel) if whole else (src.parent, src.name)
     text = src.read_text(errors="replace")
@@ -1725,7 +1728,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     flags = ()
     for dialect, flag in (ladder or MINE_LADDER.get(lang) or (("", ""),)):
         flags = (flag,) if flag else ()
-        rc1, out1, err1 = _mine_run(lang, at, name, cap, fed, flags, launch)
+        rc1, out1, err1 = _mine_run(lang, at, name, cap, fed, flags, launch, args)
         t1 = time.time()
         if not (lang == "pascal" and rc1 == 126):
             if dialect:
@@ -1753,16 +1756,41 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     if lang == "raku" and rc1 == 2 and first.startswith("Usage:"):
         return "NEEDS-INPUT", "it asks for arguments (rakudo prints its usage, exit 2)", None, b""
     time.sleep(max(0.0, math.floor(t1) + 1.05 - time.time()))
-    rc2, out2, err2 = _mine_run(lang, at, name, cap, fed, flags, launch)
+    rc2, out2, err2 = _mine_run(lang, at, name, cap, fed, flags, launch, args)
     if (rc2, out2) != (rc1, out1):
         return "DIFFERS-BETWEEN-RUNS", f"exit {rc1} and {rc2}, {len(out1)} and {len(out2)} bytes", None, b""
     if not feed:
-        rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags, launch)
+        rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags, launch, args)
         if (rc3, out3) != (rc1, out1):
             return "NEEDS-INPUT", "its answer changes with what standard input holds", None, b""
     if not out1.strip():
         return "NO-OUTPUT", f"nothing on standard output, exit {rc1}; a dead engine would earn the same" + (f"; stderr: {first}" if first else ""), None, b""
     return "ENTRY", "; ".join(x for x in ((f"standard input is {feed[0]}" if feed else ""), (f"stderr not graded: {first}" if first else "")) if x), rc1, out1
+
+
+def _mine_args(pkg_dir, root, stems, under):
+    """THE ARGUMENTS THE PACKAGE NAMES FOR A PROGRAM (the cfo 2026-11-12, row packages-owed-raku-examples-thirty-one: wsg/advanced-2008/event010-dwhipp
+    answers the same twice only under --computer-player, which deals a fixed hand). ALL.args at the package root, the form the grader reads
+    (corpus_suite_harness.py _pkg_read_args): one line an entry, the entry's name (its path from the collection's root without the extension), then
+    each argument after a tab; written by a person, never by the census, so a rebuild keeps it. Both runs and the stdin probe pass them after the
+    program. -> {program's path from the root: [argument, ...]}. Refuses a malformed line, an entry named twice, and a name that is no program the
+    census reads (under --mine-under a line for another folder is left alone)."""
+    out = {}
+    f = pkg_dir / "ALL.args"
+    for n, raw in enumerate(f.read_text().split("\n") if f.is_file() else (), 1):
+        if not raw.strip() or raw.startswith("#"):
+            continue
+        c = raw.split("\t")
+        if len(c) < 2 or not all(c[1:]):
+            h.refuse(f"{f}:{n}: a line of ALL.args is an entry and then each argument after a tab; read {raw[:80]!r}")
+        if c[0] not in stems:
+            if under and not c[0].startswith(under.rstrip("/") + "/"):
+                continue
+            h.refuse(f"{f}:{n}: {c[0]!r} is no program the census reads under {root} (an entry's name is its path from the root without the extension)")
+        if stems[c[0]] in out:
+            h.refuse(f"{f}:{n}: {c[0]!r} is named twice")
+        out[stems[c[0]]] = c[1:]
+    return out
 
 
 def _mine_feeds(pkg_dir, root, stems, under):
@@ -1848,13 +1876,14 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
             h.refuse(f"--mine-dialects {','.join(dialects)}: the ladder of {lang or 'snobol4'} is {', '.join(known) or 'empty'}")
         ladder = tuple((d, known[d]) for d in dialects)
     feeds = _mine_feeds(pkg_dir, root, {k: v for k, v in stems.items() if v in rels}, under)
+    margs = _mine_args(pkg_dir, root, {k: v for k, v in stems.items() if v in rels}, under)
     launch = mine_read_launch(pkg_dir, lang, dialects)
     try:
         with ThreadPoolExecutor(max_workers=jobs) as ex:
-            got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder, feeds.get(r), launch), rels))
+            got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder, feeds.get(r), launch, margs.get(r)), rels))
     finally:
         _mine_scratch_drop()
-    unfed = [f"{r} ({feeds[r][0]}): {v}: {note}" for r, (v, note, rc, out) in zip(rels, got) if r in feeds and v != "ENTRY"]
+    unfed = [f"{r} ({feeds[r][0] if r in feeds else 'ALL.args ' + ' '.join(margs[r])}): {v}: {note}" for r, (v, note, rc, out) in zip(rels, got) if (r in feeds or r in margs) and v != "ENTRY"]
     if unfed:
         h.refuse(f"{pkg_dir.name}: the package names a standard input for {len(unfed)} program(s) the oracle does not answer with it, and nothing is "
                  f"written: {'; '.join(unfed)[:600]}. Correct the input, or take its line out of ALL.stdin (or its NAME.in out of the package) and "
