@@ -63,20 +63,6 @@ SUBTREE	demos/scriptix	GATED	test_demos_suite.sh
 SUBTREE	demos/pascal	GATED	test_demos_suite.sh
 SUBTREE	benchmarks/snocone	GATED	test_snocone_bench_suite.sh
 SUBTREE	benchmarks/rebus	GATED	test_rebus_bench_suite.sh
-# tests/scrip_test is TRANSIENT STAGING, not a stable corpus location: SCRIP/test was moved here wholesale
-# (2026-08-29, "11a36c87", repo-boundary ruling, 594 files) and the officer all-hands-consolidation broadcast the
-# same day split its per-language drain across seats (seat03=icon, hq_B+seat05=prolog, seat06=raku,
-# seat07=snocone+rebus, seat04+hq_P=pascal, seat09+seat10=snobol4). Every real destination is already its own
-# GATED SUBTREE above (tests/snobol4, tests/icon, tests/prolog, tests/pascal, tests/snocone, tests/raku,
-# tests/rebus) -- scrip_test itself never gets its own harness, it just shrinks toward zero as each language's
-# absorption lands. seat09's slice is DONE this session: 150/158 absorbed into tests/snobol4 (corpus a7ece65f),
-# residue is 8 permanently-loud-excluded files (4 library/* need cross-file deps isolated grading can't resolve,
-# 1113_table disagrees on table-iteration order, treebank-prepend crashes both modes, coverage_sno_nodes
-# disagrees with the oracle's own rc, polyglot_tri_main isn't a standalone program) -- see
-# corpus-suites-consolidation.task.md LEDGER for the full receipt. Other languages' residue is still draining.
-# When the last language's absorption lands this line goes STALE (0 live files) and should simply be deleted,
-# not replaced.
-EXCLUDE	tests/scrip_test	EXCLUDED	transient per-language absorption staging (see comment above) -- not primary corpus, drains to zero, never gets its own harness because every real destination already has one
 EXCLUDE	include	EXCLUDED	-INCLUDE library fragments, not programs: every file here is a DEFINE(...) body with NO `END` line, so none of them can run standalone -- they are pulled in by the programs that DO run (corpus/packages/snobol4/gimpel/*). The subtree was invisible to this gate until 2026-09-04, when corpus b7c674a17 (the SNOBOL4 xfail row) added the first four .sno-extension members (FORTPUT/LPAD/PUT/RPAD); the pre-existing .inc members carry an extension the denominator does not count, so a directory that had always been unclassified only became RED when its files were renamed into a counted extension. Classified EXCLUDE by hq_C 2026-09-04 -- it is support material for a graded suite, never a population of its own.
 EXCLUDE	archive	EXCLUDED	archived bisection scratch and retired probes, provenance in corpus/archive/*/README -- not gradeable, not test material; archived rather than deleted so a regressed cure can bisect against them
 EXCLUDE	packages/pascal	EXCLUDED	third-party upstream Pascal, imported never converted: (a) the Pascal-P4 reference compiler (pcom.pas/pint.pas/ppp.pas + grammar), ETH Zurich 1976, Free Pascal/Delphi port by Christophe Staiesse 2013, provenance in packages/pascal/README.md; (b) packages/pascal/pat -- the ISO 7185 validation suite (Pascal-P5 1.4.x, 1713 files, hq_T 2026-09-03), which IS graded, but by its own runner test_pascal_pat_suite.sh against the standard rather than by a corpus harness, and whose .cmp/.ecp files are deliberately NOT a portable oracle (see its README)

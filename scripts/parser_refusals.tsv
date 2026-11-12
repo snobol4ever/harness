@@ -18,7 +18,6 @@ snobol4	packages/snobol4/gimpel/rpoem_driver.sno	EMPTY, no statement: comment li
 snobol4	packages/snobol4/gimpel/rseason_driver.sno	EMPTY, no statement: comment lines and one -INCLUDE control line (the module carries its own END); the parser prints TT_STMT nodes only
 snobol4	packages/snobol4/gimpel/rstory_driver.sno	EMPTY, no statement: comment lines and one -INCLUDE control line (the module carries its own END); the parser prints TT_STMT nodes only
 snobol4	packages/snobol4/gimpel/stone_driver.sno	EMPTY, no statement: comment lines and one -INCLUDE control line (the module carries its own END); the parser prints TT_STMT nodes only
-raku	tests/scrip_test/raku/rk_re37.raku	not Raku: rakudo-m -c says ===SORRY!=== Unsupported use of /g. In Raku please use: :g. (line 17, s/b/X/g is Perl 5)
 raku	tests/raku/parse_census/qto_heredoc.raku	not Raku: rakudo-m -c says ===SORRY!=== Unrecognized adverb: :to'END (a heredoc needs q:to/END/, a quote delimiter, not an adverb argument in quotes)
 pascal	packages/pascal/p5/standard_tests/iso7185prt0001.pas	not a Pascal program by design: ISO 7185 rejection test 1 (missing semicolon after program statement); Pascal-P5 1.4 refuses it, its first error 14 "';' expected" (iso7185prt0001.ecp)
 pascal	packages/pascal/p5/standard_tests/iso7185prt0002.pas	not a Pascal program by design: ISO 7185 rejection test 2 (missing "program" word-symbol); Pascal-P5 1.4 refuses it, its first error 3 "'program' expected" (iso7185prt0002.ecp)

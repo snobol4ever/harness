@@ -61,7 +61,13 @@
 set -u
 ROOT="$(cd "$(dirname "$0")/../../SCRIP" && pwd)"
 FAM="${1:?usage: test_gate_rtx_killswitch_sets.sh <FAMILY> [dir] [N] [m3|m4|both]}"
-DIR="${2:-$ROOT/../corpus/tests/scrip_test/snobol4}"
+DIR="${2:-}"
+if [ -z "$DIR" ]; then   # the default population: two entries of the snobol4 master, extracted (the cfo 2026-11-12, corpus/tests/scrip_test consolidated)
+    DIR="$(mktemp -d)"; RUNGS_LANG=snobol4 . "$ROOT/../harness/scripts/lib_rungs_extract.sh" || exit 2
+    for o in scrip_test_snobol4_coverage_sno_nodes__coverage_sno_nodes scrip_test_snobol4_1113_table__1113_table; do   # the two programs its loose folder held that ran (the library quartet left under s271)
+        rungs_extract_origin "$o" "$DIR/${o#*__}.sno" || { echo "GATE FAIL: $o did not extract"; exit 1; }
+    done
+fi
 N="${3:-4}"
 MODE="${4:-both}"
 # EXT added s223-PL: this gate was hardcoded to *.sno, so it had NO PROLOG OR ICON ARM AT ALL while three

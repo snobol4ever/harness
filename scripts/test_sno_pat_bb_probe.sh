@@ -7,7 +7,7 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
-SRC="$ROOT/../corpus/tests/scrip_test/snobol4/pat_bb"
+SRC="$ROOT/../harness/fixtures/sno_pat_bb_probe"   # moved from corpus/tests/scrip_test/snobol4/pat_bb (the cfo 2026-11-12, corpus/tests/scrip_test consolidated)
 OUT="$ROOT/out"
 . "$HERE/lib_build_flags.sh"; build_flags_load "$ROOT" || { echo "REFUSE(2): lib_build_flags.sh could not read the build's include list"; exit 2; }
 read -r -a INC <<< "$BF_RT_INCS"

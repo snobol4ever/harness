@@ -11,7 +11,7 @@ S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"   # worktree trap: a hardcoded ../
                                                  # -- a false regression, not a real one, for anyone bisecting there.
 SCRIP="${HERE}/../../SCRIP/scrip"
 OUTDIR="${HERE}/../../SCRIP/out"
-TESTD="$S4E/corpus/tests/scrip_test"   # re-pointed: SCRIP/test moved to corpus (repo-boundary ruling)
+TESTD="$HERE/../fixtures/smoke_polyglot"   # the three-file polyglot program and its EXCLUDED.tsv, beside this smoke (the cfo 2026-11-12, corpus/tests/scrip_test consolidated)
 P3=0; F3=0; P4=0; F4=0
 . "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timeout is a TIMEOUT; under overload the smoke refuses
 EXPECTED=$'TRI: mainline alive\nTRI: DOUBLE(21) = 42'

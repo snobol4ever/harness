@@ -20,8 +20,9 @@ LISTF=/tmp/bug_hunt_list.$$
 # total conversion) -- the find below now contributes 0 from library/probe_reference/bb by construction. EXPECTED, not a
 # regression; pass CENSUS_LIST to include the probe_bb* families of THE ONE FLAT RUNGS (tests/snobol4/ALL.sno) (materialize via
 # corpus_suite_harness.py extract first -- suite files are not standalone-runnable .sno programs).
+# the loose corpus/tests/scrip_test/demo/treebank-prepend.sno is the snobol4 entry scrip_test_treebank-prepend, extracted below (the cfo 2026-11-12)
 if [ -n "${CENSUS_LIST:-}" ]; then cp "$CENSUS_LIST" "$LISTF"
-else { find $S4E/corpus/library/probe_reference/bb -name '*.sno' 2>/dev/null; find "$ROOT/demo" "$ROOT/../corpus/tests/scrip_test/demo" -name '*.sno' 2>/dev/null; find $S4E/corpus -path '*demo*' -name '*.sno' 2>/dev/null; } | sort -u > "$LISTF"; fi
+else { find $S4E/corpus/library/probe_reference/bb -name '*.sno' 2>/dev/null; find "$ROOT/demo" -name '*.sno' 2>/dev/null; { BD="$(mktemp -d)"; RUNGS_LANG=snobol4 . "$S4E/harness/scripts/lib_rungs_extract.sh" && rungs_extract_origin scrip_test_snobol4_treebank-prepend__treebank-prepend "$BD/treebank-prepend.sno" && echo "$BD/treebank-prepend.sno"; }; find $S4E/corpus -path '*demo*' -name '*.sno' 2>/dev/null; } | sort -u > "$LISTF"; fi
 CLS=/tmp/bug_hunt_cls.$$
 SWEEP_LIST="$LISTF" SWEEP_JOBS="${SWEEP_JOBS:-4}" bash "$ROOT/../harness/scripts/test_rsp_descent_sweep.sh" "$CLS" >/dev/null 2>&1
 : > "$OUT"

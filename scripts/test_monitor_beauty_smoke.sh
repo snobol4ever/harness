@@ -92,7 +92,8 @@ run_program "control: loop count"      "$TEST/control_new/032_goto_loop_count.sn
 run_program "data: TABLE create/access"  "$TEST/data/093_table_create_access.sno"
 run_program "data: DATA define/access"   "$TEST/data/094_data_define_access.sno"
 run_program "rung11: ARRAY 1-D"          "$TEST/rung11/1110_array_1d.sno"
-run_program "rung11: TABLE"              "$TEST/rung11/1113_table.sno"
+T1113="$(mktemp -d)"; RUNGS_LANG=snobol4 . "$HERE/lib_rungs_extract.sh" && rungs_extract_origin scrip_test_snobol4_1113_table__1113_table "$T1113/1113_table.sno"   # an entry of the snobol4 master (the cfo 2026-11-12, corpus/tests/scrip_test consolidated)
+run_program "rung11: TABLE"              "$T1113/1113_table.sno"
 
 # ── String builtins ───────────────────────────────────────────────────────────
 run_program "string: REPLACE"          "$TEST/strings/067_builtin_replace.sno"

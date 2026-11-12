@@ -21,7 +21,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
 SCRIP_CC="${SCRIP_CC:-$ROOT/scrip}"
 CORPUS="${CORPUS:-$(cd "$ROOT/../corpus" 2>/dev/null && pwd || echo "")}"
-RUNNER="$ROOT/../corpus/tests/scrip_test/wasm/run_wasm.js"
+RUNNER="$ROOT/../harness/scripts/backends/wasm/run_wasm.js"
 WORK="${WORK:-/tmp/wasm_rung_$$}"
 TIMEOUT="${TIMEOUT_WASM:-10}"
 

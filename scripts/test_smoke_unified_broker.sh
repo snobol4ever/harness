@@ -138,7 +138,12 @@ fi
 # ── Prolog ───────────────────────────────────────────────────────────────────
 echo "=== Prolog ==="
 
-file_test "PL: hello" "$ROOT/../corpus/tests/scrip_test/prolog/hello.pl" "Hello, World!"
+# the loose prolog/hello.pl is the prolog master's entry scrip_test_hello, origin scrip_test_prolog_hello__hello (the cfo 2026-11-12, corpus/tests/scrip_test consolidated)
+PL_EXTRACT_DIR="$(mktemp -d)"; trap 'rm -rf "$ICN_EXTRACT_DIR" "$PL_EXTRACT_DIR"' EXIT
+RUNGS_DIR="$ROOT/../corpus/tests/prolog" RUNGS_EXT=.pl source "$HERE/lib_rungs_extract.sh"
+rungs_extract_origin "scrip_test_prolog_hello__hello" "$PL_EXTRACT_DIR/hello.pl" \
+    || { echo "  FAIL PL: hello (could not extract from the prolog master)"; FAIL=$((FAIL+1)); }
+file_test "PL: hello" "$PL_EXTRACT_DIR/hello.pl" "Hello, World!"
 
 pl "PL: fact" "bob" << 'EOF'
 :- initialization(main).
@@ -194,8 +199,8 @@ sub main() {
 EOF
 
 # RK-7: polyglot gather smoke test (ref-file based)
-RAKU_SCRIP="$ROOT/../corpus/tests/scrip_test/raku_gather.md"
-RAKU_REF="$ROOT/../corpus/tests/scrip_test/raku_gather.ref"
+RAKU_SCRIP="$HERE/../fixtures/smoke_unified_broker/raku_gather.md"
+RAKU_REF="$HERE/../fixtures/smoke_unified_broker/raku_gather.ref"
 if [ -f "$RAKU_SCRIP" ] && [ -f "$RAKU_REF" ]; then
     actual=$(timeout -k 5 "$TIMEOUT" "$SCRIP" --run "$RAKU_SCRIP" < /dev/null 2>/dev/null)
     expected=$(cat "$RAKU_REF")
@@ -215,8 +220,8 @@ fi
 # ── Cross-language polyglot (U-19) ───────────────────────────────────────────
 echo "=== Cross-language polyglot (U-19) ==="
 
-CROSS="$ROOT/../corpus/tests/scrip_test/cross_lang.md"
-REF="$ROOT/../corpus/tests/scrip_test/cross_lang.ref"
+CROSS="$HERE/../fixtures/smoke_unified_broker/cross_lang.md"
+REF="$HERE/../fixtures/smoke_unified_broker/cross_lang.ref"
 if [ -f "$CROSS" ] && [ -f "$REF" ]; then
     actual=$(timeout -k 5 "$TIMEOUT" "$SCRIP" --run "$CROSS" < /dev/null 2>/dev/null)
     expected=$(cat "$REF")
@@ -236,8 +241,8 @@ fi
 # ── Shared NV store (U-23) ───────────────────────────────────────────────────
 echo "=== Shared NV store (U-23) ==="
 
-SHARED="$ROOT/../corpus/tests/scrip_test/test_shared_nv.md"
-SREF="$ROOT/../corpus/tests/scrip_test/test_shared_nv.ref"
+SHARED="$HERE/../fixtures/smoke_unified_broker/test_shared_nv.md"
+SREF="$HERE/../fixtures/smoke_unified_broker/test_shared_nv.ref"
 if [ -f "$SHARED" ] && [ -f "$SREF" ]; then
     actual=$(timeout -k 5 "$TIMEOUT" "$SCRIP" --run "$SHARED" < /dev/null 2>/dev/null)
     expected=$(cat "$SREF")
@@ -256,8 +261,8 @@ fi
 
 # ── OE-12: --run polyglot smoke test ──────────────────────────────────────
 echo "=== --run polyglot (OE-12) ==="
-SMRUN_FILE="$ROOT/../corpus/tests/scrip_test/test_shared_nv.md"
-SMRUN_REF="$ROOT/../corpus/tests/scrip_test/test_shared_nv.ref"
+SMRUN_FILE="$HERE/../fixtures/smoke_unified_broker/test_shared_nv.md"
+SMRUN_REF="$HERE/../fixtures/smoke_unified_broker/test_shared_nv.ref"
 if [ -f "$SMRUN_FILE" ] && [ -f "$SMRUN_REF" ]; then
     actual=$(timeout -k 5 8 "$SCRIP" --run "$SMRUN_FILE" 2>/dev/null)
     expected=$(cat "$SMRUN_REF")

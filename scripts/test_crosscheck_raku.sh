@@ -83,7 +83,9 @@ rm -f "$T"
 # ⛔ REPOINTING ALONE WOULD NOT HAVE BEEN ENOUGH, which is why this refuses instead: the 47 .raku files at
 # the new location have ZERO .ref siblings, so the rung arm cannot oracle-diff even when it finds them. A
 # script that "works" after a path fix while grading nothing is the same defect with a fresh path.
-RUNGS=$S4E/corpus/tests/scrip_test/raku
+RUNGS="$(mktemp -d)"   # the raku master's scrip_test_raku_* entries with their refs, extracted (the cfo 2026-11-12, corpus/tests/scrip_test consolidated: the loose .raku had .expected beside them, never .ref, so this arm graded nothing and refused)
+RUNGS_LANG=raku . "$HERE/lib_rungs_extract.sh" || exit 2
+rungs_extract_origin_prefix scrip_test_raku_ "$RUNGS" || { echo "⛔ REFUSES rc=2: the scrip_test_raku_ entries did not extract"; exit 2; }
 _rung_n=0
 if [ -d "$RUNGS" ]; then
     for f in "$RUNGS"/*.raku; do
