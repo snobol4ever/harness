@@ -55,11 +55,13 @@ procedure main();
 end
 EOF
 check "global_write_heavy" /tmp/zk5_global_witness.icn
-# lock 2: palindrome.icn from corpus (global-heavy ZK-0 table entry)
-if [ -f "$CORPUS/tests/icon/palindrome.icn" ]; then
-    check "palindrome" "$CORPUS/tests/icon/palindrome.icn"
+# lock 2: palindrome from the icon master, origin palindrome__palindrome (global-heavy ZK-0 table entry; the loose
+# tests/icon/palindrome.icn, byte for byte that entry, left 2026-11-12); an entry that does not extract is a FAIL, never a skip
+if RUNGS_DIR="$CORPUS/tests/icon" RUNGS_EXT=.icn . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_rungs_extract.sh" && rungs_extract_origin palindrome__palindrome /tmp/zk5_palindrome.icn; then
+    check "palindrome" /tmp/zk5_palindrome.icn
 else
-    echo "SKIP palindrome.icn (corpus not found)"
+    echo "FAIL [palindrome] the entry palindrome__palindrome did not extract from $CORPUS/tests/icon"
+    FAIL=$((FAIL+1))
 fi
 # lock 3: local-only program must still show globals_on_stack=0 (trivially -- no globals)
 cat > /tmp/zk5_local_only.icn << 'EOF'
