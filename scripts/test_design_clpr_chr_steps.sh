@@ -19,8 +19,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/prolog/clpr_chr"
-STEPS="$WD/STEPS.tsv"
+WD=""   # the witnesses are the entries clpr_chr__<name> of the prolog master, staged into $OUT/step<N>/wit by design_witness_stage (the cfo 2026-11-12, row tests-consolidation-finish-cfo)
+STEPS="$HERE/../designs/clpr_chr/STEPS.tsv"   # moved from corpus/tests/prolog/clpr_chr with its witnesses' absorption (CIO-56)
 OUT=""
 RESULTS=/home/resources/progress/results.tsv
 SUITES=/home/resources/progress/SUITES.tsv
@@ -41,7 +41,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default clpr_chr; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: clpr-chr -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/prolog/clpr_chr (refs from swipl 9.0.4)"
+    echo "DESIGN-PLAN: clpr-chr -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/clpr_chr/STEPS.tsv); a witness is the entry clpr_chr__<name> of the prolog master (answers cut from swipl 9.0.4)"
     printf '%-4s %-38s %-12s %-12s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-38s %-12s %-12s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -49,11 +49,7 @@ if [ "$mode" = list ]; then
     exit 0
 fi
 if [ "$mode" = cut ]; then
-    command -v swipl > /dev/null || refuse "no swipl on PATH (ORACLES.md: the SWI oracle)"
-    for w in $(awk -F'\t' '!/^#/ && $1 != "step" && $6 != "-" {print $6}' "$STEPS" | tr ' ' '\n' | sort -u); do
-        ( cd "$WD" && timeout -k 5 120 swipl -q -t halt "$w.pl" < /dev/null > "$WD/$w.ref" 2> /dev/null ); echo "cut $w.ref: $(wc -l < "$WD/$w.ref") lines"
-    done
-    exit 0
+    refuse "the witnesses are entries clpr_chr__<name> of corpus/tests/prolog, their answers cut twice from swipl by util_add_ladder_witness.py; a recut is that tool's, never this harness's"
 fi
 [ -n "$(col "$step" 1)" ] || refuse "no step $step in $STEPS (--list names them)"
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"
@@ -65,6 +61,8 @@ if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
 fi
 m3p=0; m4p=0; n=0; reds=""
 [ "$wits" = "-" ] && wits=""
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+WD="$OUT/step$step/wit"; design_witness_stage clpr_chr "$WD" $wits > /dev/null || refuse "the step's witnesses did not stage (lib_design_witness.sh: the entry clpr_chr__<name> of the prolog master)"
 for w in $wits; do
     ref="$WD/$w.ref"
     [ -f "$WD/$w.pl" ] && [ -f "$ref" ] || refuse "witness $w has no .pl or .ref in $WD"

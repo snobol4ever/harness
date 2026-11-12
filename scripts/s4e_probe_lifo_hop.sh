@@ -25,10 +25,12 @@ refuse() { echo "REFUSE(2) [$me]: $*"; exit 2; }
 arm="${1:-}"
 [ "$arm" = "--list" ] && { sed -n '4,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0; }
 case "$arm" in plan|offsets|run|verify|final|same) ;; *) refuse "usage: $me.sh plan|offsets|run|verify|final [SCRIP] | same PARENT_SCRIP [CHILD_SCRIP] | --list";; esac
-lifo="$root/corpus/tests/prolog/lifo"; [ -d "$lifo" ] || refuse "no $lifo"
-wit="$lifo/lifo_catch_findall.pl"; [ -f "$wit" ] || refuse "no witness $wit"
 seat="${S4E_SEAT:-probe}"; mkdir -p "/tmp/s4e/$seat"; t="$(mktemp -d "/tmp/s4e/$seat/lifo_hop_$arm.XXXXXX")" || refuse "no scratch"
 trap 'rm -rf "$t"' EXIT
+. "$here/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+lifo="$t/lifo"; design_witness_stage_all lifo "$lifo" > /dev/null || refuse "the lifo witnesses did not stage (lib_design_witness.sh: the entries lifo__<name> of the prolog master; the cfo 2026-11-12)"
+cp "$here/../designs/prolog_lifo/STEPS.tsv" "$lifo/STEPS.tsv" || refuse "no step table at harness/designs/prolog_lifo/STEPS.tsv"
+wit="$lifo/lifo_catch_findall.pl"; [ -f "$wit" ] || refuse "no witness $wit"
 tree="$(git -C "$root/SCRIP" rev-parse --short=9 HEAD 2>/dev/null)"
 if [ "$arm" = same ]; then
     parent="${2:-}"; child="${3:-$root/SCRIP/scrip}"

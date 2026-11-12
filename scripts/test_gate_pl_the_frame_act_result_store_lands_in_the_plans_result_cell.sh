@@ -25,14 +25,16 @@ GATE_NAME=test_gate_pl_the_frame_act_result_store_lands_in_the_plans_result_cell
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$HERE/../../SCRIP/scrip"
 RT="${RT_DIR:-$HERE/../../SCRIP/out}"
-W="$HERE/../../corpus/tests/prolog/lifo/lifo_catch_retaining_goal.pl"
 . "$HERE/lib_gate.sh"
+. "$HERE/lib_design_witness.sh" || { echo "⛔ REFUSED(2) [$GATE_NAME]: lib_design_witness.sh unloadable"; exit 2; }
+WS="$(mktemp -d)"; design_witness_stage lifo "$WS" lifo_catch_retaining_goal > /dev/null 2>&1 || { echo "⛔ REFUSED(2) [$GATE_NAME]: the entry lifo__lifo_catch_retaining_goal of the prolog master did not stage"; rm -rf "$WS"; exit 2; }
+W="$WS/lifo_catch_retaining_goal.pl"   # the entry lifo__lifo_catch_retaining_goal, staged (the cfo 2026-11-12, row tests-consolidation-finish-cfo)
 gate_parse_args "$@"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: no scrip binary at $SCRIP -- run make first"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate "$GATE_NAME" "$SCRIP" "$RT/libscrip_rt.so" || exit 2
 [ -f "$W" ] && [ -f "${W%.pl}.ref" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: the witness or its swipl ref is missing at $W"; exit 2; }
 command -v gcc >/dev/null || { echo "⛔ REFUSED(2) [$GATE_NAME]: no gcc -- the mode-4 arm cannot be linked"; exit 2; }
-T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
+T="$(mktemp -d)"; trap 'rm -rf "$T" "$WS"' EXIT
 cp "$W" "$T/w.pl"; cp "${W%.pl}.ref" "$T/w.ref"
 FORCE="SCRIP_PL_SPREC_OFF=1"
 fail=0

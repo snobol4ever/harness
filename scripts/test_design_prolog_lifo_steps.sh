@@ -17,8 +17,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/prolog/lifo"
-STEPS="$WD/STEPS.tsv"
+WD=""   # the witnesses are the entries lifo__<name> of the prolog master, staged into $OUT/step<N>/wit by design_witness_stage (the cfo 2026-11-12, row tests-consolidation-finish-cfo)
+STEPS="$HERE/../designs/prolog_lifo/STEPS.tsv"   # moved from corpus/tests/prolog/lifo with its witnesses' absorption (CIO-56)
 OUT=""
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
@@ -35,7 +35,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default prolog_lifo; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: prolog-lifo -- $(grep -c -v '^#' "$STEPS" | awk '{print $1-1}') steps (STEPS.tsv); witnesses in $WD"
+    echo "DESIGN-PLAN: prolog-lifo -- $(grep -c -v '^#' "$STEPS" | awk '{print $1-1}') steps (harness/designs/prolog_lifo/STEPS.tsv); a witness is the entry lifo__<name> of the prolog master"
     printf '%-4s %-40s %-10s %-14s %s\n' step slug executor probe witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-40s %-10s %-14s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 5)"
@@ -44,6 +44,8 @@ if [ "$mode" = list ]; then
 fi
 [ -n "$(col "$step" 1)" ] || refuse "no step $step in $STEPS (--list names them)"
 slug="$(col "$step" 2)"; probe="$(col "$step" 4)"; wits="$(col "$step" 5)"
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+WD="$OUT/step$step/wit"; design_witness_stage lifo "$WD" $wits > /dev/null || refuse "the step's witnesses did not stage (lib_design_witness.sh: the entry lifo__<name> of the prolog master)"
 [ -x "$SC/scrip" ] || refuse "no $SC/scrip"
 mkdir -p "$OUT/step$step"
 # one box-wide run slot for the step (R-1894)
