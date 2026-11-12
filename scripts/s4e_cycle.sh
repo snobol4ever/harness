@@ -162,10 +162,23 @@ finish_request() {   # name rc secs: the file lands in done/ with its per-entry 
     log "REQUEST lap=$lap $name rc=$rc secs=$secs entries=$n"; }
 record_suite() {   # lang -> the rungs suite row of that language, as the grade worker's record step writes it
     local k; k="$(container_key "$1")"; [ -n "$k" ] || return 0
-    ( cd "$S4E" && timeout -k 30 900 python3 -I harness/scripts/util_score_row.py from-progress --suite "$k" ) >> "$TMPDIR/cycle/record.log" 2>&1 < /dev/null
+    record_row "$k"
 }
 record_pkg() {   # key -> that pkg row of SUITES.tsv, from its progress rows in S4E_MODES (the cycle exports m3), after the row's last cell
-    ( cd "$S4E" && timeout -k 30 900 python3 -I harness/scripts/util_score_row.py from-progress --suite "$1" ) >> "$TMPDIR/cycle/record.log" 2>&1 < /dev/null
+    record_row "$1"
+}
+# A REFUSED RECORD IS SAID, NEVER SWALLOWED (the grader 2026-11-12; Lon, in the grader's window, verbatim: "It was rumored that all test suites ran
+# multiple times last night, but the banner is still screwed. Anybody on the problem?"). MEASURED that day: the cells of logtalk, sno-rungs, pl-rungs,
+# raku-rungs, rosetta-pascal, unitests, stanford-pascal, tply and pas-rungs graded every lap, and from-progress refused each row write (an unstamped
+# denominator move, or 48 unread rows) into record.log alone, so their banner rows stood days old and nothing said so. Each refusal is now a
+# RECORD_REFUSED line in CYCLE.log and a line of CYCLE.refused (key TAB ts TAB the refusal), which the Stop banner shows; a write that lands clears it.
+record_row() {   # key -> from-progress for that suite row; its output to record.log; a nonzero exit is logged and held in CYCLE.refused
+    local o rc r R="$PROG/CYCLE.refused"
+    o="$( cd "$S4E" && timeout -k 30 900 python3 -I harness/scripts/util_score_row.py from-progress --suite "$1" 2>&1 < /dev/null )"; rc=$?
+    printf '%s\n' "$o" >> "$TMPDIR/cycle/record.log"
+    r=""; [ "$rc" -ne 0 ] && { r="$(printf '%s\n' "$o" | grep -m1 -E 'REFUSE' | cut -c1-240)"; [ -n "$r" ] || r="rc=$rc, no refusal line"; log "RECORD_REFUSED lap=${lap:-?} $1 rc=$rc $r"; }
+    ( flock 9; { grep -v -P "^\Q$1\E\t" "$R" 2>/dev/null; [ -n "$r" ] && printf '%s\t%s\t%s\n' "$1" "$(now)" "$r"; } > "$R.tmp"; mv -f "$R.tmp" "$R" ) 9> "$R.lock"
+    return 0
 }
 graded_this_lap() {   # key -> rc 0 when a cell of this lap graded that suite (rc 0 or 1); read from the log, so a restart mid-suite still knows
     grep -qE " CELL lap=$lap [0-9]+/[0-9]+ $(printf '%s' "$1" | sed 's/[.[\*^$]/\\&/g') [^ ]+ rc=[01] " "$LOG" 2>/dev/null

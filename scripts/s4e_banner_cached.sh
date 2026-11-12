@@ -78,6 +78,12 @@ $art
 
 $ic  $word"; [ -n "$grid" ] && out="$out
 $grid"
+# THE ROWS THE CYCLE COULD NOT WRITE ARE NAMED UNDER THE GRID (the grader 2026-11-12, s4e_cycle.sh record_row): a row the score writer refused keeps
+# its old reading, so the grid alone looks current while it is not; one line names each held row and its refusal.
+_held="${S4E_CYCLE_REFUSED:-/home/resources/progress/CYCLE.refused}"
+if [ -n "$grid" ] && [ -s "$_held" ]; then out="$out
+⛔ SUITE ROWS HELD ($(grep -c . "$_held")): the cycle graded them, the score writer refused the row write, so the grid shows their older reading:
+$(awk -F'\t' '{ printf "   %s (%s): %s\n", $1, substr($2, 6, 11), substr($3, 1, 150) }' "$_held")"; fi
 gate="{}"; g="$root/harness/scripts/s4e_stop_gate.sh"
 [ -f "$g" ] && gate="$(printf '%s' "$hookin" | timeout 20 bash "$g" "$root" "$seat" --json 2>/dev/null)"
 printf '%s' "$out" | G="$gate" python3 -c 'import json,os,sys
