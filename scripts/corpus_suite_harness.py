@@ -6295,6 +6295,8 @@ def cmd_extract(args):
             (Path(args.out_sno).parent / _fn).write_text(_body)
         if args.out_xfail and e.xfail_reason:
             Path(args.out_xfail).write_text(e.xfail_reason + "\n")
+        if getattr(args, "out_rc", "") and getattr(e, "want_rc", 0):   # x.rc (Lon 2026-11-12 08:4x CST: "Also you have x.rc and x.args."): the oracle's exit code, written only when nonzero
+            Path(args.out_rc).write_text("%d\n" % e.want_rc)
         _write_extracted_unit_sidecars(args.sno, e.name, args.out_sno)
         return
     refuse(f"no entry named {args.name!r} in {args.sno} (have: {', '.join(sorted(e.name for e in entries))})")
@@ -7797,6 +7799,7 @@ def main():
     e.add_argument("--out-ref", default="", dest="out_ref")
     e.add_argument("--out-in", default="", dest="out_in", help="required if the entry carries stdin -- REFUSES rather than silently materializing a stdin-bearing entry without it")
     e.add_argument("--out-xfail", default="", dest="out_xfail", help="optional: write the entry's xfail reason here if it has one (documentation only, never affects grading)")
+    e.add_argument("--out-rc", default="", dest="out_rc", help="optional: write the entry's exit code here when it is nonzero (the x.rc of a loose pair; absent means 0)")
     e.set_defaults(func=cmd_extract)
 
     ef = sub.add_parser("extract-family", help="materialize one family's entries back into a standalone suite pair (banner-block or one-line, matching the source's own format) -- family membership comes from the source's own CSV, never re-derived from names")

@@ -37,3 +37,37 @@ design_witness_has() {
     ext="$(_dw_ext "$lang")"; dir="$(_dw_dir "$lang")"
     python3 "$_dw_here/corpus_suite_harness.py" list "$dir/ALL.$ext" "$dir/ALL.ref" --lang "$lang" 2>/dev/null | grep -qxF -- "$entry"
 }
+# design_witness_stage PLAN STAGE W...  THE WITNESSES OF A PLAN WHOSE FOLDER LEFT corpus/tests/shared (Lon 2026-11-12 09:2x CST: "It seem
+#   $/corpus/tests/shared is an invalid folder."): each W is the entry PLAN__W of its language's master when one holds it (extracted with its stdin
+#   and its exit code), else the loose pair corpus/tests/<lang>/PLAN/W.* that its language's consolidation has yet to enter, else the instrument
+#   fixture harness/fixtures/PLAN/W.* (a program no oracle answers); STAGE/W.<ext> and W.ref (W.in, W.rc nonzero, every loose sidecar) result, and
+#   STAGE/.where names each one's source (W TAB entry LANG | W TAB loose DIR). REFUSES rc 2 on a witness none holds: never a silent skip.
+design_witness_stage() {
+    local plan="$1" st="$2" w l ext dir found d
+    shift 2; mkdir -p "$st" || return 2; : > "$st/.where"
+    for l in snobol4 icon prolog pascal raku rebus snocone; do
+        ext="$(_dw_ext "$l")"; dir="$(_dw_dir "$l")"
+        _dw_check "$l" 2>/dev/null || { : > "$st/.list.$l"; continue; }
+        python3 "$_dw_here/corpus_suite_harness.py" list "$dir/ALL.$ext" "$dir/ALL.ref" --lang "$l" < /dev/null > "$st/.list.$l" 2>/dev/null \
+            || { echo "REFUSE(2) [lib_design_witness]: the $l master did not list" >&2; return 2; }
+    done
+    for w in "$@"; do
+        found=0
+        for l in snobol4 icon prolog pascal raku rebus snocone; do
+            grep -qxF -- "${plan}__$w" "$st/.list.$l" || continue
+            ext="$(_dw_ext "$l")"; dir="$(_dw_dir "$l")"
+            python3 "$_dw_here/corpus_suite_harness.py" extract "$dir/ALL.$ext" "$dir/ALL.ref" "${plan}__$w" "$st/$w.$ext" --out-ref "$st/$w.ref" \
+                --out-in "$st/$w.in" --out-rc "$st/$w.rc" < /dev/null > /dev/null 2>&1 \
+                || { echo "REFUSE(2) [lib_design_witness]: the entry ${plan}__$w of the $l master did not extract" >&2; return 2; }
+            printf '%s\tentry\t%s\n' "$w" "$l" >> "$st/.where"; found=1; break
+        done
+        [ "$found" = 1 ] && continue
+        for d in "$_dw_root"/corpus/tests/*/"$plan" "$_dw_here/../fixtures/$plan"; do
+            compgen -G "$d/$w.*" > /dev/null || continue
+            cp -r "$d/$w".* "$st/" || return 2
+            printf '%s\tloose\t%s\n' "$w" "$(cd "$d" && pwd)" >> "$st/.where"; found=1; break
+        done
+        [ "$found" = 1 ] || { echo "REFUSE(2) [lib_design_witness]: witness $w of $plan is no entry ${plan}__$w of any master and no loose pair in corpus/tests/*/$plan or harness/fixtures/$plan" >&2; return 2; }
+    done
+    return 0
+}
