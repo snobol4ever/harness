@@ -22,7 +22,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 G=sweep_keeps_a_load_guard_refusal_and_retires_a_cannot_measure_one
-ZB="${ZB_SCRIPT:-$S4E/.github/scripts/util_queue_zero_base.py}"
+ZB="${ZB_SCRIPT:-$S4E/harness/scripts/util_queue_zero_base.py}"
 unproven() { echo "GATE UNPROVEN(2) [$G]: $*"; exit 2; }
 [ -f "$ZB" ] || unproven "no sweep script at $ZB"
 command -v python3 > /dev/null || unproven "no python3"
