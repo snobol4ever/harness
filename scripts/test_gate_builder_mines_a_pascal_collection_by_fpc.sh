@@ -15,6 +15,9 @@
 #   5  the one grader reads the mined package in mode 3 (the dialect cells iso and fpc are admitted): every entry is graded and passes
 #   6  --mine-under FOLDER --mine-add cuts one folder more: the index gains its entry, and every other folder's rows, answers, ALL.omit lines and
 #      census lines stand byte for byte; --mine-add without a folder refuses rc 2
+#   7  --mine-under PROGRAM --mine-add cuts that one program alone (the cfo 2026-11-12: a folder re-cut re-entered trealla's test_sockets on its
+#      pre-socket line, dropped db-stress's goal, and set timeout_s to the cap on 87 entries): its folder's other rows, answers, ALL.omit and
+#      census lines stand, and a row cut again keeps the timeout_s and the compare cell written in ALL.csv
 # EXIT: 0 all arms pass, 1 an arm failed, 2 REFUSED (no binary, no oracle).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -74,6 +77,18 @@ timeout -k 5 60 python3 "$B" "$P" --lang pascal --mine "$T/census9.tsv" --mine-a
   && [ "$(grep -v '^#' "$T/census.tsv" | grep -v '^two/' | sort)" = "$(cat "$T/census.before")" ] && [ "$(grep -c '^two/' "$T/census.tsv")" = 2 ] && [ "$r6b" = 2 ] \
   && ck ok "(6) --mine-add cuts one folder more and keeps every other folder's rows, answers, omit lines and census lines" \
   || ck no "(6) rc=$r6 entries=[$ents] add without a folder rc=$r6b :: $(tail -1 "$T/6.log" | cut -c1-140)"
-echo "BUILDER_MINES_PASCAL_BOARD arms=6 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
-[ "$fail" = 0 ] && [ "$pass" = 6 ] && { echo "GATE OK [$NAME]: a Pascal collection is mined in place by fpc, the dialect found"; exit 0; }
+tcell() { awk -F, -v e="$1" 'NR == 1 {for (i = 1; i <= NF; i++) if ($i == "timeout_s") t = i; next} $2 == e {print $t}' "$P/ALL.csv" 2>/dev/null; }
+awk -F, 'BEGIN {OFS = ","} NR == 1 {for (i = 1; i <= NF; i++) if ($i == "timeout_s") t = i; print $0 ",compare"; next} $2 == "two/w" {$t = 7; print $0 ",ignore-all-space"; next} $2 == "sub/writer" {$t = 9} {print $0 ","}' "$P/ALL.csv" > "$T/csv7" && cp "$T/csv7" "$P/ALL.csv"
+ccell() { awk -F, -v e="$1" 'NR == 1 {for (i = 1; i <= NF; i++) if ($i == "compare") t = i; next} $2 == e {print (t ? $t : "NO-COLUMN")}' "$P/ALL.csv" 2>/dev/null; }
+printf "program v(output);\nbegin\n  writeln('vee')\nend.\n" > "$C/two/v.pas"; cp "$P/ALL.omit" "$T/omit7.before"; grep -v '^#' "$T/census.tsv" | sort > "$T/census7.before"
+timeout -k 5 900 python3 "$B" "$P" --lang pascal --mine "$T/census.tsv" --mine-cap 30 --mine-under two/v.pas --mine-add > "$T/7.log" 2>&1; r7=$?
+ents7="$(awk -F, 'NR > 1 {printf "%s;", $2}' "$P/ALL.csv" 2>/dev/null)"; t7w="$(tcell two/w)"; t7s="$(tcell sub/writer)"
+timeout -k 5 900 python3 "$B" "$P" --lang pascal --mine "$T/census.tsv" --mine-cap 30 --mine-under two/w.pas --mine-add > "$T/7b.log" 2>&1; r7b=$?
+[ "$r7" = 0 ] && [ "$ents7" = "modern;plain;sub/writer;two/v;two/w;" ] && [ "$(cat "$P/two/v.out" 2>/dev/null)" = vee ] && [ "$t7w" = 7 ] && [ "$t7s" = 9 ] \
+  && [ "$(cat "$P/ALL.omit")" = "$(cat "$T/omit7.before")" ] && [ "$(grep -v '^#' "$T/census.tsv" | grep -v '^two/v.pas' | sort)" = "$(cat "$T/census7.before")" ] \
+  && [ "$r7b" = 0 ] && [ "$(tcell two/w)" = 7 ] && [ "$(ccell two/w)" = ignore-all-space ] && [ "$(cat "$P/two/w.out" 2>/dev/null)" = two ] && [ "$(grep -c '^two/' "$T/census.tsv")" = 3 ] \
+  && ck ok "(7) --mine-under PROGRAM --mine-add cuts that one program and keeps its folder's other rows, answers, omit and census lines; a re-cut row keeps its timeout_s and compare" \
+  || ck no "(7) rc=$r7 entries=[$ents7] timeout_s two/w=[$t7w] sub/writer=[$t7s] re-cut rc=$r7b two/w timeout_s=[$(tcell two/w)] compare=[$(ccell two/w)] :: $(tail -1 "$T/7.log" | cut -c1-140)"
+echo "BUILDER_MINES_PASCAL_BOARD arms=7 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
+[ "$fail" = 0 ] && [ "$pass" = 7 ] && { echo "GATE OK [$NAME]: a Pascal collection is mined in place by fpc, the dialect found"; exit 0; }
 echo "GATE FAIL [$NAME]: $fail arm(s) failed"; exit 1

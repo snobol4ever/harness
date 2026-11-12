@@ -1845,10 +1845,16 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
     exts = MINE_DIALECT_EXTS.get((lang, dialects[0]), MINE_EXTS[lang]) if dialects and len(dialects) == 1 else MINE_EXTS[lang]
     rels = sorted(p.relative_to(root).as_posix() for e in exts for p in root.rglob(f"*{e}")
                   if p.is_file() and not any(part.startswith(".") for part in p.relative_to(root).parts))
-    if under:
+    # ONE PROGRAM ALONE (the cfo 2026-11-12, packages-owed-prolog-raku-cfo: a folder re-cut on trealla_more's samples re-entered test_sockets on
+    # its pre-socket line and dropped db-stress's goal, so three rows were spliced from a scratch mine): --mine-under names a folder or one
+    # program of the root, and under --mine-add only what it names is cut again.
+    one = under.strip("/") if under and (root / under.strip("/")).is_file() else None
+    if one:
+        rels = [r for r in rels if r == one]
+    elif under:
         rels = [r for r in rels if r.startswith(under.rstrip("/") + "/")]
     if not rels:
-        h.refuse(f"no {' '.join(exts)} program under {root}")
+        h.refuse(f"no {' '.join(exts)} program {'named ' + one if one else 'under ' + str(root / under) if under else 'under ' + str(root)}")
     held = {}
     if skip:
         for ln in Path(skip).read_text().splitlines():
@@ -1893,13 +1899,22 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
     # ONE FOLDER MORE (--mine-add with --mine-under, the coo 2026-11-11: Free Pascal's tree is cut one folder a landing): the rows, the answers,
     # the ALL.rc and ALL.omit lines and the census lines of every OTHER folder stand as they are; only what is under FOLDER is cut again.
     pre = (under.rstrip("/") + "/") if (add and under) else None
+
+    def cut_again(k):
+        return k in (one, os.path.splitext(one)[0]) if one else k.startswith(pre)
     census = Path(census_path)
     census.parent.mkdir(parents=True, exist_ok=True)
-    kept_census = [ln + "\n" for ln in census.read_text().splitlines() if ln.strip() and not ln.startswith("#") and not ln.startswith(pre)] if (pre and census.is_file()) else []
+    kept_census = [ln + "\n" for ln in census.read_text().splitlines() if ln.strip() and not ln.startswith("#") and not cut_again(ln.split("\t", 1)[0])] if (pre and census.is_file()) else []
+    # WHAT A PERSON WROTE IN ALL.csv STANDS (the cfo 2026-11-12: a folder re-cut set timeout_s to the cap on 87 entries; roast's 1464 compare
+    # cells were one mine away from the same loss): a row cut again keeps its heap_kb, stack_kb, timeout_s, compile_args and every column the
+    # census does not write; the census writes the rest.
+    old_cols, old_rows = h._fmt2_read_csv(pkg_dir) if (pkg_dir / "ALL.csv").is_file() else ([], [])
+    old_by_path = {x.get("path"): x for x in old_rows if x.get("path")}
+    extra = [c for c in old_cols if c not in MINE_HEADER]
     kept_rows = []
-    if pre and (pkg_dir / "ALL.csv").is_file():
-        kept_rows = [x for x in h._fmt2_read_csv(pkg_dir)[1] if not (x.get("path") or "").startswith(pre)]
-        for old in (pkg_dir / pre).rglob("*.out") if (pkg_dir / pre).is_dir() else ():
+    if pre:
+        kept_rows = [x for x in old_rows if not cut_again(x.get("path") or "")]
+        for old in (pkg_dir / pre).rglob("*.out") if (not one and (pkg_dir / pre).is_dir()) else ():
             old.unlink()
     census.write_text(f"# the census of {root} by {'xsb' if (lang == 'prolog' and dialects == ['xsb']) else MINE_ORACLE[lang]} ({source['version']}), {time.strftime('%Y-%m-%d')}: path from the root, verdict, note\n"
                       + "".join(kept_census) + "".join(f"{r}\t{v}\t{note}\n" for r, (v, note, rc, out) in zip(rels, got)))
@@ -1921,6 +1936,8 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
         rows.append({"rank": len(rows) + 1, "entry": name, "path": r, "language": "" if r.endswith(MINE_OWN_EXT[lang]) else lang, "origin": f"{pkg_dir.name}__{name}", "package": pkg_dir.name,
                      "n_lines": len((root / r).read_text(errors="replace").splitlines()), "want_rc": rc, "heap_kb": 131072, "stack_kb": 4096,
                      "timeout_s": cap, "compile_args": ""})
+        was = old_by_path.get(r) or {}
+        rows[-1].update({c: was[c] for c in ("heap_kb", "stack_kb", "timeout_s", "compile_args", *extra) if (was.get(c) or "") != ""})
     if twin:
         with open(census, "a") as f:
             f.write("".join(f"{r}\tSHARES-A-STEM\tits answer would be the NAME.out of {twin[r]}, which is the candidate\n" for r in sorted(twin)))
@@ -1934,10 +1951,11 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
         rows = sorted(kept_rows + rows, key=lambda x: x["path"])
         for i, x in enumerate(rows):
             x["rank"] = i + 1
-            for c in MINE_HEADER:
-                x.setdefault(c, "")
-        rcs = [ln + "\n" for ln in ((pkg_dir / "ALL.rc").read_text().splitlines() if (pkg_dir / "ALL.rc").is_file() else []) if ln.strip() and not ln.startswith(pre)] + rcs
-    cols = [c for c in MINE_HEADER if c not in ("language", "dialect") or any(x[c] for x in rows)]
+        rcs = [ln + "\n" for ln in ((pkg_dir / "ALL.rc").read_text().splitlines() if (pkg_dir / "ALL.rc").is_file() else []) if ln.strip() and not cut_again(ln.split("\t", 1)[0])] + rcs
+    for x in rows:
+        for c in (*MINE_HEADER, *extra):
+            x.setdefault(c, "")
+    cols = [c for c in MINE_HEADER if c not in ("language", "dialect") or any(x[c] for x in rows)] + [c for c in extra if any(x[c] for x in rows)]
     h._fmt2_write_csv(pkg_dir, cols, [{k: x[k] for k in cols} for x in rows])
     if rcs:
         (pkg_dir / "ALL.rc").write_text("".join(rcs))
@@ -1945,7 +1963,7 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
         (pkg_dir / "ALL.rc").unlink(missing_ok=True)
     left = [f"{r}: {v}: {note}\n" for r, (v, note, rc, out) in zip(rels, got) if v != "ENTRY"]
     if pre and (pkg_dir / "ALL.omit").is_file():
-        left = [ln + "\n" for ln in (pkg_dir / "ALL.omit").read_text().splitlines() if ln.strip() and not ln.startswith(pre)] + left
+        left = [ln + "\n" for ln in (pkg_dir / "ALL.omit").read_text().splitlines() if ln.strip() and not cut_again(ln.split(": ", 1)[0])] + left
     if left:
         (pkg_dir / "ALL.omit").write_text("".join(left))
     else:
@@ -1976,9 +1994,9 @@ def main():
                          "at the program's path) is fed it on both runs")
     ap.add_argument("--mine-cap", type=int, default=60, help="seconds the oracle has for one program under --mine (default 60)")
     ap.add_argument("--mine-jobs", type=int, default=4, help="oracle runs side by side under --mine (default 4, a seat's share of the run pool)")
-    ap.add_argument("--mine-under", default="", metavar="FOLDER", help="under --mine, only the programs under this folder of the root")
+    ap.add_argument("--mine-under", default="", metavar="FOLDER|PROGRAM", help="under --mine, only the programs under this folder of the root, or this one program (its path from the root)")
     ap.add_argument("--mine-add", action="store_true",
-                    help="with --mine-under FOLDER: cut that folder alone and keep the rows, answers and census lines of every other folder")
+                    help="with --mine-under FOLDER|PROGRAM: cut what it names alone and keep the rows, answers and census lines of everything else")
     ap.add_argument("--mine-dialects", default="", metavar="NAME[,NAME...]",
                     help="under --mine, the dialect ladder to try in order (Pascal: iso, fpc, objfpc, delphi, tp; default all five, iso first. "
                          "Prolog: swi, the default, reads .pl and .pro by swipl; xsb alone reads .P by xsb)")
