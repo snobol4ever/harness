@@ -232,7 +232,7 @@ probe() {
     racer race5.sh raced5 "probe-race5-$$.txt"
     for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: a fifth commit in $r" || refuse "probe: cannot commit in $r"; done
     log="$T/arm5.log"
-    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --touches 'corpus/tests/shared' \
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --touches 'corpus/tests/probe_race' \
         --gate "bash harness/scripts/util_require_fresh.sh --gate s4e_land_probe && echo g >> $T/gates5 && bash $T/race5.sh" > "$log" 2>&1; rc=$?
     sed 's/^/    arm5| /' "$log" | grep -E 'regate|LAND ok|LAND RED|REFUSE' | tail -4
     [ "$rc" = 0 ] && grep -q '^LAND stage=regate:2 reason=affected files=1' "$log" && [ "$(wc -l < "$T/gates5")" = 2 ] \
@@ -339,7 +339,7 @@ fi
 exit 0
 GATE
     log="$T/serial.log"
-    S4E_LAND_PLANT="bash $T/plant9.sh" S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --tries 3 --touches 'corpus/tests/shared' --gate "bash $T/gate9.sh $SELF" > "$log" 2>&1; rc=$?
+    S4E_LAND_PLANT="bash $T/plant9.sh" S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --tries 3 --touches 'corpus/tests/probe_race' --gate "bash $T/gate9.sh $SELF" > "$log" 2>&1; rc=$?
     sed 's/^/    serial| /' "$log" | grep -E 'regate|LAND ok|LAND RED|REFUSE|lease' | tail -12
     if [ "$rc" = 0 ]; then for i in $(seq 1 3000); do grep -q '^LAND \(ok\|RED\|REFUSE\)' "$T/waiter.log" 2>/dev/null && break; sleep 0.1; done; fi
     sed 's/^/    waiter| /' "$T/waiter.log" 2>/dev/null | tail -4
