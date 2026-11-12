@@ -48,7 +48,6 @@ slug="$(col "$step" 2)"; probe="$(col "$step" 4)"; wits="$(col "$step" 5)"
 [ -n "$wits" ] || refuse "step $step names no witnesses"
 . "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
 WD="$OUT/step$step/wit"; design_witness_stage clause_source_record "$WD" $wits > /dev/null || refuse "the step's witnesses did not stage (lib_design_witness.sh: the entry clause_source_record__<name> of the prolog master)"
-for f in "$ROOT"/corpus/tests/prolog/clause_source_record/*.pl; do [ -f "$f" ] && [ ! -f "${f%.pl}.ref" ] && cp "$f" "$WD/"; done   # a data file a loose consulting witness loads, until the master carries it as a file fence
 mkdir -p "$OUT/step$step"
 if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
     . "$HERE/lib_slots.sh"; s4e_slot_hold run || true   # the one rule (lib_slots.sh): a seat file, then a pool slot; the grader's two slots reserved
