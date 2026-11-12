@@ -20,7 +20,7 @@
 # A list run is bounded by GRID_TIMEOUT (600 s) and a file run alone by GRID_ONE_TIMEOUT (60 s); a file that outlasts either leaves.
 # THE THREE ENGINES, each reading PARSER_FILES=<list> and printing "== <file>" then the file's tree, and one line
 # PARSER-METRICS files= bytes= parse_first_us= parse_us= whose parse_us is the clock:
-#   C      out/parser_<lang> (src/tools/parser_main.c): times only its parser -- no lowering, no I/O; a link or include is resolved
+#   C      out/parser_<lang> (src/parsers/parser_main.c): times only its parser -- no lowering, no I/O; a link or include is resolved
 #          outside the clock (IPATH names the corpus's IPL procs, since the parser looks beside its own binary, which is out/).
 #   SCRIP  the bootstrap chain + bootstrap/parser_<lang>.sc compiled ONCE to a mode-4 binary; the driver times only Init*() +
 #          Src ? Compiland + Pop() -- reading a file and printing its tree are outside the clock.

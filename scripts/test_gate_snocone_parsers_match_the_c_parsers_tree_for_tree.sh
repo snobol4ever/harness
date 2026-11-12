@@ -4,7 +4,7 @@
 # equivalent Snocone function to dump the tree. ... Get the trees to match 100%."; and 2026-09-28: "So change from concat one big
 # file to run each parser seperatly."; R-1340, the row's DONE-WHEN).
 #
-# THE INSTRUMENT: out/parser_<lang> (src/tools/parser_main.c, one frontend per build, printing through ir_dump_tree in
+# THE INSTRUMENT: out/parser_<lang> (src/parsers/parser_main.c, one frontend per build, printing through ir_dump_tree in
 # src/ir/ast_print.c) and the .sc chain + bootstrap/parser_<lang>.sc printing through TreeDump in bootstrap/tdump.sc -- ONE
 # FORMAT, byte for byte: one node per line, two spaces per depth, "(TT_KIND value" then the children then ")"; strings quoted with
 # the CQize escapes, integers decimal, reals as %g; the five bookkeeping attributes :line :lline :file :stno :src are printed by
@@ -24,7 +24,7 @@
 # trees to compare quickly success and delay the details." and "hashing the output tree is what I meant. In memory. Then output
 # the one number per-test for comparison. It shows only how many do not match, not in what ay do they not match."): each side runs
 # under PARSER_TREE_HASH=1 and prints ONE NUMBER per file instead of its tree -- h = (h * 256 + byte) mod (2^55 - 55) over every
-# byte its dump would print (C: ir_dump_tree into a hashing stream, src/tools/parser_main.c; .sc: TreeDumpPut/TreeDumpEnd,
+# byte its dump would print (C: ir_dump_tree into a hashing stream, src/parsers/parser_main.c; .sc: TreeDumpPut/TreeDumpEnd,
 # bootstrap/tdump.sc) -- and the gate compares the numbers. THE CANARY: the first compared file of each language is also dumped in full on
 # both sides and each number is re-derived from its dump here, so a hash that stopped folding cannot read as MATCH (rc 2).
 # GATE_DETAIL=1 dumps the first DIFF file of each language in full and prints its first differing line pair. GATE_REDS=<file> appends one

@@ -29,7 +29,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_gate.sh"
 GATE_NAME=icon_features_and_preprocessor_symbols_agree
 FEATS_SRC="${ICON_FEATS_SRC:-$HERE/../../SCRIP/src/runtime/keywords.c}"
-PRE_SRC="${ICON_PRE_SRC:-$HERE/../../SCRIP/src/tools/ipp.icn}"   # the IPP pre-step, JCON's preprocessor in Icon (Lon 2026-09-30, R-1366); icon_lex.c carries a twin list until its pass is deleted
+PRE_SRC="${ICON_PRE_SRC:-$HERE/../../SCRIP/src/parsers/icon/ipp.icn}"   # the IPP pre-step, JCON's preprocessor in Icon (Lon 2026-09-30, R-1366); icon_lex.c carries a twin list until its pass is deleted
 PRE_SRC2="${ICON_PRE_SRC2:-$HERE/../../SCRIP/src/parsers/icon/icon_lex.c}"
 [ -f "$FEATS_SRC" ] || { echo "GATE REFUSE(2) [$GATE_NAME]: no feature source at $FEATS_SRC -- cannot measure"; exit 2; }
 [ -f "$PRE_SRC" ]   || { echo "GATE REFUSE(2) [$GATE_NAME]: no preprocessor source at $PRE_SRC -- cannot measure"; exit 2; }
@@ -76,7 +76,7 @@ if [ -n "$orphans" ]; then
     bad="$(printf '%s\n' "$orphans" | grep -c .)"
     echo "  ⛔ preprocessor symbol(s) naming NO feature -- \$ifdef would define a symbol &features denies:"
     printf '%s\n' "$orphans" | sed 's/^/      /'
-    echo "  Cure: add the feature to feats[] in src/runtime/keywords.c, or drop the symbol from the table in src/tools/ipp.icn (and its twin pre[] in src/parsers/icon/icon_lex.c while that pass exists)."
+    echo "  Cure: add the feature to feats[] in src/runtime/keywords.c, or drop the symbol from the table in src/parsers/icon/ipp.icn (and its twin pre[] in src/parsers/icon/icon_lex.c while that pass exists)."
     echo "  Icon's own suite cross-checks these (precheck(_JAVA, \"Java\")), so a disagreement surfaces as a corpus red far from its cause."
 fi
 GATE_EXAMINED="$np symbol(s) against $nf feature(s)"

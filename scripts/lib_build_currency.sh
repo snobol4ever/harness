@@ -54,7 +54,7 @@ s4e_bc_assert_current() {   # $1 = artifact path, $2 = human label, $3 = repo ro
     return 0
 }
 # assert_parser_current <lang> [root] -- out/parser_<lang> is at or after every source its object was compiled from: the prerequisites
-# make itself recorded in $(OBJ)/parser_<lang>.d (-MMD), or src/tools/parser_main.c alone when there is no .d -- so the cure the refusal
+# make itself recorded in $(OBJ)/parser_<lang>.d (-MMD), or src/parsers/parser_main.c alone when there is no .d -- so the cure the refusal
 # names, make parsers, is always the one that clears it. ⭐ THE PARSE CODE IS NOT IN THAT BINARY (the coo, measured 2026-10-03 on the
 # cfo's report that make never rebuilds out/parser_<lang>): nm reads prolog_compile_parse and its six siblings U there, and ldd binds
 # them to out/libscrip_rt.so, so a frontend edit reaches the parser through make and the runtime check; what can go stale is the driver
@@ -66,7 +66,7 @@ assert_parser_current() {
     [ -x "$art" ] || { echo "⛔ REFUSED-TO-GRADE (rc=2): out/parser_$lang not built: $art -- cure: cd $root && make parsers" >&2; return 2; }
     d="${OBJ:-/tmp/si_objs$(printf '%s' "$root" | tr / -)}/parser_$lang.d"
     [ -f "$d" ] && deps="$(awk '{ c = /\\$/; sub(/\\$/, ""); print; if (!c) exit }' "$d" | tr ' ' '\n' | grep -v ':$' | grep .)"
-    [ -n "${deps:-}" ] || deps="$root/src/tools/parser_main.c"
+    [ -n "${deps:-}" ] || deps="$root/src/parsers/parser_main.c"
     at="$(stat -Lc %Y "$art" 2>/dev/null || echo 0)"
     for f in $deps; do
         case "$f" in /*) ;; *) f="$root/$f";; esac   # the .d file's paths are relative to the SCRIP root, not to the caller's directory (the cto 2026-11-07 15:5x: a tool run from a scratch directory refused a source that exists)
