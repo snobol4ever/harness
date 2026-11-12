@@ -33,6 +33,7 @@ printf "program writer(output);\nvar f: text;\nbegin\n  assign(f, 'made.txt'); r
 printf 'unit lib;\ninterface\nimplementation\nend.\n' > "$C/lib.pas"
 printf 'program refused;\nbegin\n  writeln(\nend.\n' > "$C/refused.pas"
 printf 'program quiet;\nbegin\nend.\n' > "$C/quiet.pas"
+printf 'program clock;\nbegin\n  randomize;\n  writeln(random(1000))\nend.\n' > "$C/clock.pas"
 printf 'program input1(input, output);\nvar n: integer;\nbegin\n  n := 0; if not eof then read(n); writeln(n)\nend.\n' > "$C/sub/input1.pas"
 printf 'root\t%s\norigin\ta scratch collection of the gate\nversion\tgate\nlicence\tpublic domain\n' "$C" > "$P/ALL.source"
 snap() { (cd "$1" && find . -type f | sort | while read -r f; do printf '%s %s\n' "$(sha256sum < "$f" | cut -c1-16)" "$f"; done); }
@@ -40,7 +41,7 @@ pass=0; fail=0
 ck() { if [ "$1" = ok ]; then pass=$((pass + 1)); echo "  ok   $2"; else fail=$((fail + 1)); echo "  FAIL $2"; fi; }
 snap "$C" > "$T/coll.before"
 timeout -k 5 900 python3 "$B" "$P" --lang pascal --mine "$T/census.tsv" --mine-cap 30 > "$T/1.log" 2>&1; r1=$?
-want="input1.pas NEEDS-INPUT;lib.pas LIBRARY;modern.pas ENTRY;plain.pas ENTRY;quiet.pas NO-OUTPUT;refused.pas ORACLE-REFUSES;writer.pas ENTRY;"
+want="clock.pas CLOCK-SEEDED;input1.pas NEEDS-INPUT;lib.pas LIBRARY;modern.pas ENTRY;plain.pas ENTRY;quiet.pas NO-OUTPUT;refused.pas ORACLE-REFUSES;writer.pas ENTRY;"
 got="$(grep -v '^#' "$T/census.tsv" 2>/dev/null | cut -f1,2 | sed 's|^sub/||' | tr '\t' ' ' | sort | tr '\n' ';')"
 [ "$r1" = 0 ] && [ "$got" = "$want" ] && ck ok "(1) the census names each planted verdict" || ck no "(1) rc=$r1 census=[$got] :: $(tail -1 "$T/1.log" | cut -c1-160)"
 cells="$(awk -F, 'NR == 1 {for (i = 1; i <= NF; i++) if ($i == "dialect") d = i; next} {printf "%s=%s;", $2, $d}' "$P/ALL.csv" 2>/dev/null)"

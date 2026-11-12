@@ -1542,7 +1542,11 @@ MINE_STATIC = {
                ("LIBRARY", r"(?i)\buses\b[^;]*\bfpmkunit\b"),
                ("NEEDS-INPUT", r"(?i)\{\s*%INTERACTIVE"),
                ("NEEDS-NETWORK", r"(?i)\buses\b[^;]*\b(sockets|ssockets|fphttpclient|netdb|httpdefs)\b"),
-               ("NEEDS-DISPLAY", r"(?i)\buses\b[^;]*\b(crt|graph|video|keyboard|mouse|wincrt|ptcgraph|ptccrt|ncurses)\b")),
+               ("NEEDS-DISPLAY", r"(?i)\buses\b[^;]*\b(crt|graph|video|keyboard|mouse|wincrt|ptcgraph|ptccrt|ncurses)\b"),
+               # CLOCK-SEEDED (the senior 2026-11-12, MEASURED on dsa Recursion/Zadanie4: randomize then the max of 50 random(101); fpc printed Max 99, 98, 100, 97, 100 on five runs
+               # a second apart): randomize seeds from the wall clock, so the answer is a function of the clock and no two runs owe each other the same text. Two runs that agree
+               # prove nothing (a narrow draw agrees by chance), so the source names it: a statement-level randomize, a line that opens no comment and no string before it.
+               ("CLOCK-SEEDED", r"(?im)^[^'{/\n]*\brandomize\b")),
     "raku": (("LIBRARY", r"^\s*unit\s+(module|class|role|grammar|package)\b"),
              ("NEEDS-NETWORK", r"\b(IO::Socket|LWP::|HTTP::|Cro::|Net::|WWW|WebService::|DBIish)\b"),
              ("NEEDS-DISPLAY", r"\b(Term::|Terminal::|NCurses|GTK::|SDL2?::|NativeCall|Inline::)")),
@@ -1701,6 +1705,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     for dialect, flag in (ladder or MINE_LADDER.get(lang) or (("", ""),)):
         flags = (flag,) if flag else ()
         rc1, out1, err1 = _mine_run(lang, at, name, cap, fed, flags, launch)
+        t1 = time.time()
         if not (lang == "pascal" and rc1 == 126):
             if dialect:
                 MINE_FOUND[rel] = dialect
@@ -1726,6 +1731,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
         return "ORACLE-REFUSES", f"SPITBOL ends it with an error: {why.strip()[:140]}", None, b""
     if lang == "raku" and rc1 == 2 and first.startswith("Usage:"):
         return "NEEDS-INPUT", "it asks for arguments (rakudo prints its usage, exit 2)", None, b""
+    time.sleep(max(0.0, math.floor(t1) + 1.05 - time.time()))
     rc2, out2, err2 = _mine_run(lang, at, name, cap, fed, flags, launch)
     if (rc2, out2) != (rc1, out1):
         return "DIFFERS-BETWEEN-RUNS", f"exit {rc1} and {rc2}, {len(out1)} and {len(out2)} bytes", None, b""
