@@ -37,7 +37,7 @@
 #   in its own header that it is deliberately out of the recipe. NOT ONE DOES. The 8 below are the officer's
 #   ruling of 2026-09-03, quoted from the Makefile's own test-postoffice header — cited, not invented.
 #   Everything else is TASK because nobody has ruled, which is the honest word for it.
-# TASK-CEILING: 157
+# TASK-CEILING: 155
 # 166 -> 165 (coo 2026-09-25): test_gate_diag_regs_survive.sh retired -- its r10 statement number was removed by design at 2a81a02db, and r11 cannot stand in, because a later box stamp masks a planted clobber; the survival property is test_gate_rtx_entries_keep_the_rtcc_four.sh's.
 test_gate_a_blocking_set_death_names_its_killer.sh	WIRED	-	-	-
 test_gate_a_cgroup_kill_is_a_refusal_not_a_red.sh	WIRED	-	-	-
@@ -496,7 +496,6 @@ test_gate_one_runner_fixture_is_admitted_only_outside_the_shared_corpus.sh	WIRED
 test_gate_one_runner_one_board.sh	WIRED	-	-	-
 test_gate_oracle_args_sidecar_is_declared_and_reaches_the_oracle.sh	WIRED	-	-	-
 test_gate_oracle_env_sidecar_is_declared_and_reaches_the_oracle.sh	WIRED	-	-	-
-test_gate_orphaned_witnesses_do_not_grow.sh	WIRED	-	-	-
 test_gate_our_files_are_lf.sh	WIRED	-	-	-
 test_gate_outside_baseline_rows_name_a_live_measurement.sh	WIRED	-	-	-
 test_gate_package_containers_hold_every_entry_their_sidecars_name.sh	WIRED	-	-	-

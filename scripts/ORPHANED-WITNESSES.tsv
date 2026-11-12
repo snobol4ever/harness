@@ -1,9 +1,0 @@
-# ORPHANED WITNESS PAIRS -- a correct <name><ext> + <name>.ref that NO denominator contains.
-# Regenerate: python3 harness/scripts/util_orphaned_witness_census.py corpus > harness/scripts/ORPHANED-WITNESSES.tsv
-# Gated by harness/scripts/test_gate_orphaned_witnesses_do_not_grow.sh -- the count may FALL, never rise.
-# ⛔ The cure is to ABSORB them into ALL.<ext> once they are green, NOT to delete them.
-#
-lang	name	path
-#
-# TOTALS  icon=0/192  pascal=0/5  prolog=0/40  raku=0/97  rebus=0/3  snobol4=0/100  snocone=0/68
-# TOTAL ORPHANED PAIRS: 0
