@@ -17,7 +17,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # kernel's reps=1 output against .ref before timing anything; this script trusts that provenance (same
 # split of duty the Prolog angle-2 script uses) and gates only on the run completing without crash/DNF.
 #
-# External CPU time via tools/bench_rusage, same instrument angle 3 (disk telemetry) and the SNOBOL4/
+# External CPU time via out/bench_rusage, same instrument angle 3 (disk telemetry) and the SNOBOL4/
 # Prolog triangulators both use -- never engine self-timing.
 #
 # ⭐ SLOPE CURE (row readme-perf-grids-three-angles-all-seven, hq_P FINDING-2026-09-04-hq_P-pascal-angle-
@@ -47,8 +47,8 @@ KERNELS="${KERNELS:-}"   # optional allowlist, space-separated basenames -- same
 FPC="$(fpc_bin)" || exit 2
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1281)"; exit 2; }
 declare -a DECL_SW=(); declare -A DECLW=()
-WRAP="$ROOT/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
+WRAP="$ROOT/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 
 fpc_build() {
@@ -131,7 +131,7 @@ echo "FIXED-ITERATION PASCAL BENCHMARKS -- angle 2: reps fixed per kernel (commi
 echo "as n1, the BASE of a x1/x4/x16 triple -- narrowed to x1/x2/x4 only when quick's crash cap forces it);"
 echo "WORK is the us/rep SLOPE fit across the triple (COST basis, lower=faster; see the SLOPE CURE header"
 echo "note), cross-checked for linearity like angle 1's search()."
-echo "engines: fpc m3 m4   SCALE: $SCALE (base columns shown = n1)   LIN_TOL=$LIN_TOL%   external instrument: tools/bench_rusage (user+sys cpu time)"
+echo "engines: fpc m3 m4   SCALE: $SCALE (base columns shown = n1)   LIN_TOL=$LIN_TOL%   external instrument: out/bench_rusage (user+sys cpu time)"
 echo
 printf "%-10s %10s %10s %14s %14s %14s  %s\n" BENCHMARK base_fpc base_scrip fpc-us/rep m3-us/rep m4-us/rep check
 printf "%-10s %10s %10s %14s %14s %14s  %s\n" "----------" "----------" "----------" "--------------" "--------------" "--------------" "-----"

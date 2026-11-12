@@ -24,7 +24,7 @@ T=$(mktemp -d) || refuse "mktemp"; trap 'rm -rf "$T"' EXIT
 if [ "$KIND" = demo ]; then
   [ "$NAME" = jtran ] || refuse "the only demo this criterion knows is jtran"
   export SCRIP_DIAG=0; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"; PKG="$S4E/corpus/packages/icon/jcon-compiler"; D="$S4E/corpus/demos/icon/jcon"
-  ICONT=/home/resources/icon-master/bin/icont; [ -x "$ICONT" ] || refuse "no icont at $ICONT"; WRAP="$ROOT/tools/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || refuse "bench_rusage did not build"
+  ICONT=/home/resources/icon-master/bin/icont; [ -x "$ICONT" ] || refuse "no icont at $ICONT"; WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || refuse "bench_rusage did not build"
   MODS=$(sed -n 's/^[[:space:]]*link[[:space:]]*"\([^"]*\)".*$/\1/p' "$D/jtran.icn" | sed 's|.*/||' | sed "s|^|$PKG/|; s|$|.icn|" | tr '\n' ' ')
   ( cd "$T" && "$ICONT" -s -o "$T/jtran.oracle" $MODS ) > "$T/icont.log" 2>&1 || refuse "icont did not build the oracle"
   ( cd "$D" && "$ROOT/scrip" --compile --out="$T/jtran.s" jtran.icn < /dev/null ) > "$T/m4c.log" 2>&1 && gcc "$T/jtran.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$T/jtran.m4" 2>> "$T/m4c.log" || refuse "jtran did not build in mode 4"

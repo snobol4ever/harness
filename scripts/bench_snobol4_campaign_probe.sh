@@ -28,7 +28,7 @@ K="$S4E/corpus/benchmarks/snobol4"; D="$S4E/corpus/demos/snobol4/treebank"
 [ -d "$K" ] && [ -f "$D/treebank.sno" ] || { echo "REFUSED(2): corpus kernels or the treebank demo missing"; exit 2; }
 usrep() { grep -o 'BENCH mode=time.*' "$1" | head -1 | awk '{it=0; ns=0; mm=1; for(i=1;i<=NF;i++){split($i,a,"="); if(a[1]=="iters")it=a[2]; if(a[1]=="ns")ns=a[2]; if(a[1]=="mismatched")mm=a[2]} if(it>0 && mm==0) printf "%.3f", ns/it/1000; else print "REFUSE"}'; }
 elapsed_ms() { grep -o 'elapsed_ns=[0-9]*' "$1" | head -1 | cut -d= -f2 | awk '{printf "%.3f", $1/1e6}'; }
-WRAP="$ROOT/tools/bench_rusage"; [ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "REFUSED(2): bench_rusage failed to build"; exit 2; }
+WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "REFUSED(2): bench_rusage failed to build"; exit 2; }
 echo "sizes: each unit's declaration over each engine's defaults (R-1485) -- CRITERION CHANGED 2026-10-03; earlier readings ran typed sbl sizes and a 512 MB SCRIP window"
 printf "%-16s %12s %12s %8s\n" program "sbl" "scrip m4" multiple
 LOGS=""

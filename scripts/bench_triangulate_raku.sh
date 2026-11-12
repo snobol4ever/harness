@@ -11,7 +11,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #                                                           lighter-weight Raku counterpart to Prolog's checked-in
 #                                                           vanroy/<k>.pl wrappers -- see bench_raku_fixed_iter.sh's
 #                                                           own header for why no derived .raku source is committed).
-#   angle 3 (process wrapper: external elapsed via tools/bench_rusage + self-timed WORK from the kernel's own stderr
+#   angle 3 (process wrapper: external elapsed via out/bench_rusage + self-timed WORK from the kernel's own stderr
 #            BENCH line; OVERHEAD = external - work)    -- unchanged, both units, every run byte-verified.
 # Both angle 1 and angle 2 build their N-times-looped derived twin via lib_raku_bench_wrap.sh, which loops exactly
 # the region the kernel's OWN wall_us()/wall_ms() bracket delimits (Raku kernels are top-level scripts, not callable
@@ -71,7 +71,7 @@ dsw_of() { local dw; dw=$(declared_switches_beside "$1") || { echo "⛔ REFUSED:
 [ -f "$RDIR/prelude_rakudo.rakumod" ] || { echo "⛔ REFUSED: $RDIR/prelude_rakudo.rakumod missing -- the Rakudo arm has no wall_us/wall_ms without it." >&2; exit 2; }
 RAKU="$(rakudo_bin)" || exit 2
 RAKU_VER="$("$RAKU" --version 2>/dev/null | sed -n 's/.*Rakudo™ v\([0-9][0-9.]*[0-9]\).*/\1/p' | head -1)"; RAKU_VER="${RAKU_VER:-unknown}"   # anchored on a digit at both ends: the banner reads "v2026.05." and a greedy [0-9.]* kept the sentence's full stop as part of the version
-WRAP="$ROOT/tools/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }
+WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/prelude" && cp "$RDIR/prelude_rakudo.rakumod" "$W/prelude/" || { echo "⛔ REFUSED: cannot stage the prelude." >&2; exit 2; }
 TS="$(date -u +%Y%m%dT%H%M%SZ)"

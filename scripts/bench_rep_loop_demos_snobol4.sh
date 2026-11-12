@@ -59,8 +59,8 @@ SWD=""; OAD=""
 if [ "$STATIC" = 1 ]; then
   RT_A="$(static_rt_archive "$ROOT")" || { echo "⛔ REFUSING: STATIC=1 but out/libscrip_rt.a could not be built (make libscrip_rt_static)" >&2; exit 3; }
 fi
-WRAP="$ROOT/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" 2>/dev/null || { echo "⛔ REFUSING: cannot build $WRAP -- aspect 1 needs microsecond external timing, and /usr/bin/time's 10 ms tick reports these demos as 0.0" >&2; exit 3; }
+WRAP="$ROOT/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" 2>/dev/null || { echo "⛔ REFUSING: cannot build $WRAP -- aspect 1 needs microsecond external timing, and /usr/bin/time's 10 ms tick reports these demos as 0.0" >&2; exit 3; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 RC=0
 # ---- compile+assemble+link a .sno into an m4 binary, honoring STATIC (m4-static-link-arm) ----------
@@ -169,7 +169,7 @@ while IFS=$'\t' read -r fam prog inp; do
   decl_of "$P" || { echo "⛔ REFUSE $fam -- its declared sizes are refused (named above); NAMED, not dropped."; RC=1; continue; }
   declare -A A2 ANS
   for e in $ENGINES; do
-    # ASPECT 1: the ORIGINAL program, whole process, best of 3, via tools/bench_rusage.
+    # ASPECT 1: the ORIGINAL program, whole process, best of 3, via out/bench_rusage.
     # ⛔ NOT /usr/bin/time -f %e -- that clock has 10 ms RESOLUTION and these demos run in single-digit
     # milliseconds, so it reported a flat "0.0" for treebank/claws5/json: a real measurement rendered as
     # a zero, which reads exactly like "too fast to matter" when it means "below my tick". bench_rusage

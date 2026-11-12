@@ -41,7 +41,7 @@ K="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}/corpus/benchmarks/icon/deal.icn"
 [ -f "$K" ] || { echo "⛔ GATE REFUSE(2) [$G]: the deal kernel is missing at $K"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 cp "$K" "$T/deal.icn"
-gcc -O0 -o "$T/ru" "$ROOT/tools/bench_rusage.c" >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: bench_rusage does not build"; exit 2; }
+gcc -O0 -o "$T/ru" "$ROOT/../harness/scripts/bench_rusage.c" >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: bench_rusage does not build"; exit 2; }
 ( cd "$T" && "$ICONT" -s -o deal.x deal.icn ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: icont refuses deal.icn"; exit 2; }
 ( cd "$T" && ./deal.x -h 1000 </dev/null >want 2>/dev/null ); [ -s "$T/want" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing"; exit 2; }
 ( cd "$T" && "$SCRIP" --compile --out=d.s deal.icn </dev/null >/dev/null 2>&1 && gcc -no-pie -o d4 d.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \

@@ -50,8 +50,8 @@ gplc_bin >/dev/null || exit 2
 # plausible SKIP: a rival that cannot load its clock is not a rival that disagreed.
 [ -f "$PRO/prelude_gplc.pl" ] && [ -f "$PRO/prelude_swipl.pl" ] || { echo "⛔ REFUSED-TO-GRADE rival preludes missing under $PRO (prelude_gplc.pl / prelude_swipl.pl)"; exit 2; }
 . "$HERE/lib_prolog_bench.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE (rc=2): cannot source lib_prolog_bench.sh -- the ONE loop-output check"; exit 2; }
-WRAP="$ROOT/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
+WRAP="$ROOT/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 # ⛔⭐ THE GENERATOR IS THE SOLE PRODUCER OF THE WRAPPED FORM (R-567 DONE-WHEN, verbatim: "the harness
 #   is the sole producer of the wrapped self-timing self-counting form").  Until 2026-09-13 THIS SCRIPT
 #   WAS A SECOND PRODUCER: a local mkwrap() that sed'd `main :-` into `bench__main :-` and wrapped it in
@@ -153,7 +153,7 @@ search() {
 }
 
 echo "TIME-BASED PROLOG BENCHMARKS -- angle 1: fixed wall-time budget (${BUDGET_MS}ms), iterations counted via live doubling search"
-echo "engines: gnu gplc swi m3 m4 (gnu = "$(gprolog_bin)" --consult-file, the byte-code WAM; gplc = GNU Prolog compiled native)   corpus: $B   budget: TIME_BUDGET_MS=$BUDGET_MS cap NMAX=$NMAX   external instrument: tools/bench_rusage"
+echo "engines: gnu gplc swi m3 m4 (gnu = "$(gprolog_bin)" --consult-file, the byte-code WAM; gplc = GNU Prolog compiled native)   corpus: $B   budget: TIME_BUDGET_MS=$BUDGET_MS cap NMAX=$NMAX   external instrument: out/bench_rusage"
 echo "wrapper: GENERATED per engine by $(basename "$GEN") --mode=iter (never checked in, R-567 -- this angle no longer writes its own)"
 # ⛔ R-697: A COST WITHOUT THE LOAD IT RAN UNDER IS NOT A COST, and perf_grid_begin welds the load to
 #   the shared-axes line so this harness CANNOT print a rate without it -- two runs of one tree on this
@@ -262,7 +262,7 @@ for k in "${basis_rows[@]}"; do
   printf "%-14s %14s %14s %14s %14s %14s\n" "$k" "${BWORK[$k:gnu]:-DARK}" "${BWORK[$k:gplc]:-DARK}" "${BWORK[$k:swi]:-DARK}" "${BWORK[$k:m3]:-DARK}" "${BWORK[$k:m4]:-DARK}"
 done
 echo
-echo "OVERHEAD (us, PER RUN not per iteration) = external elapsed (tools/bench_rusage, CLOCK_MONOTONIC)"
+echo "OVERHEAD (us, PER RUN not per iteration) = external elapsed (out/bench_rusage, CLOCK_MONOTONIC)"
 echo "  MINUS self-measured work. It is startup+load+teardown, which the kernel never did; it is roughly"
 echo "  N-independent, which is why it is NOT divided by N the way the work column above is."
 echo "  ⛔ wall minus wall, never CPU minus wall -- the rate column above uses CPU and is a DIFFERENT"

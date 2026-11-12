@@ -28,7 +28,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # a kernel whose loop did not loop N times reports LOOP-OUTPUT-MISMATCH and never a rate. The single-shot
 # answer check remains angle 1's job -- one authority, not two copies of the correctness check.
 #
-# External CPU time via tools/bench_rusage (elapsed_ns + user_us + sys_us), same instrument angle 3
+# External CPU time via out/bench_rusage (elapsed_ns + user_us + sys_us), same instrument angle 3
 # (disk telemetry) and the SNOBOL4 triangulator both use -- never self-timing (row
 # bench-external-cpu-and-elapsed-clock's law, applied here too).
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
@@ -70,8 +70,8 @@ gplc_bin >/dev/null || exit 2
 # ⛔ THE SCRIP ARMS RUN UNDER THE KERNEL'S OWN DECLARATION (R-1281, 2026-09-26): the <k>.heap / <k>.stack sidecars as SPITBOL's -d<kb>k -s<kb>k
 #   switches on every m3 and m4 command line (lib_declared_arena.sh, the suite runner's reader; R-1225; tak: -s65536k).
 declare -a DECL_SW=(); declare -A DECLW=()
-WRAP="$ROOT/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
+WRAP="$ROOT/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 # ⛔ timeout -k 5 EVERYWHERE (hq_P 2026-09-02, measured): swipl ignores timeout's SIGTERM -- angle 2 sat 648 s on vanroy/queens.pl
 # under `timeout 60` with the whole triangulation behind it. A bound that the bounded process can decline is not a bound; -k makes
 # the kill unconditional five seconds after the deadline, and the run then reads CRASH(signal 9), never a rate (the exit= gate).
@@ -138,7 +138,7 @@ run1() {
   nivcsw=$(echo "$rl" | grep -oE 'nivcsw=[0-9]+' | cut -d= -f2)
   # ⭐ THE TWO-NUMBER WORK/OVERHEAD BASIS (R-567 DONE-WHEN: "the process wrapper's numbers printed
   #   beside the self-measured ones").  WORK is what the generated bracket measured from INSIDE;
-  #   ELAPSED is what tools/bench_rusage measured from OUTSIDE; OVERHEAD is the difference, and it is
+  #   ELAPSED is what out/bench_rusage measured from OUTSIDE; OVERHEAD is the difference, and it is
   #   the startup + load + teardown the kernel never did.
   # ⛔⛔ THE SUBTRACTION IS WALL MINUS WALL, AND THAT IS NOT A DETAIL -- IT IS THE APPLES-TO-APPLES LAW.
   #   bench_rusage reports BOTH elapsed_ns (CLOCK_MONOTONIC) and user_us+sys_us (CPU), and the rate
@@ -155,7 +155,7 @@ run1() {
 
 echo "FIXED-ITERATION PROLOG BENCHMARKS -- angle 2: N fixed per kernel (committed in $NTSV), external cpu time measured"
 echo "kernels: $B (pristine, verbatim)   wrapper: GENERATED per engine by $(basename "$GEN") --mode=iter (never checked in, R-567)"
-echo "engines: gnu gplc swi m3 m4 (gnu = "$(gprolog_bin)" --consult-file, the byte-code WAM; gplc = GNU Prolog compiled native)   external instrument: tools/bench_rusage (user+sys cpu time)"
+echo "engines: gnu gplc swi m3 m4 (gnu = "$(gprolog_bin)" --consult-file, the byte-code WAM; gplc = GNU Prolog compiled native)   external instrument: out/bench_rusage (user+sys cpu time)"
 # ⛔⭐ THE LOAD STAMP IS THE PRINTER'S JOB AND IT BELONGS ABOVE THE NUMBERS, NOT UNDER THEM (hq_P
 #   2026-09-13).  This harness hand-rolled its own LOAD line and printed it AFTER the last grid, so a
 #   reader who pasted a grid -- which is what anyone pastes -- carried the numbers away and left the
@@ -229,7 +229,7 @@ for k in "${basis_rows[@]}"; do
   printf "%-14s %14s %14s %14s %14s %14s\n" "$k" "${BWORK[$k:gnu]}" "${BWORK[$k:gplc]}" "${BWORK[$k:swi]}" "${BWORK[$k:m3]}" "${BWORK[$k:m4]}"
 done
 echo
-echo "OVERHEAD (us) = external elapsed (tools/bench_rusage, CLOCK_MONOTONIC) MINUS self-measured work"
+echo "OVERHEAD (us) = external elapsed (out/bench_rusage, CLOCK_MONOTONIC) MINUS self-measured work"
 echo "  ⛔ wall minus wall, never CPU minus wall -- the rate columns above use CPU and are a DIFFERENT"
 echo "  instrument; subtracting across the two would publish the difference of two clocks as an overhead."
 echo "  DARK = the engine ran but its bracket reported no work_us; it is named, never left blank (R-676)."

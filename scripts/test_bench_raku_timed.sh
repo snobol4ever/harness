@@ -66,7 +66,7 @@ KERNELS="${KERNELS:-}"   # optional allowlist, same convention as bench_prolog_f
 RAKU="$(rakudo_bin)" || exit 2
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1283)"; exit 2; }
 declare -a DECL_SW=()
-WRAP="$ROOT/tools/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
+WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/prelude" && cp "$RDIR/prelude_rakudo.rakumod" "$W/prelude/" || { echo "⛔ REFUSED: cannot stage the prelude." >&2; exit 2; }
 
@@ -109,7 +109,7 @@ search() {
 }
 
 echo "TIME-BASED RAKU BENCHMARKS -- angle 1: fixed CPU-time budget (${BUDGET_MS}ms), iterations counted via live doubling search"
-echo "engines: m3 m4 rakudo   corpus: $RDIR   budget: TIME_BUDGET_MS=$BUDGET_MS cap NMAX=$NMAX   external instrument: tools/bench_rusage"
+echo "engines: m3 m4 rakudo   corpus: $RDIR   budget: TIME_BUDGET_MS=$BUDGET_MS cap NMAX=$NMAX   external instrument: out/bench_rusage"
 echo
 printf "%-24s %14s %14s %14s  %s\n" BENCHMARK m3/s m4/s rakudo/s check
 printf "%-24s %14s %14s %14s  %s\n" "------------------------" "--------------" "--------------" "--------------" "-----"

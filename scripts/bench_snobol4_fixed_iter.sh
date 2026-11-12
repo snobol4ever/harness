@@ -7,9 +7,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # This is the mirror of test_bench_snobol4_timed.sh (angle 1: fix TIME, count iterations). Angle 2
 # fixes ITERATIONS, measures TIME -- same "rate" metric (iters/s), computed the other way, so the
 # triangulator can diff angle-1's rate against angle-2's rate per kernel per engine and expect them
-# to AGREE. Deliberately mirrors angle 1's plumbing (oracle flags, tools/bench_rusage external-cpu
+# to AGREE. Deliberately mirrors angle 1's plumbing (oracle flags, out/bench_rusage external-cpu
 # wrapping, XFAIL lane, UNGRADED census, correctness gate) rather than inventing a second private
-# copy of any of it -- ONE AUTHORITY per mechanism (lib_oracle_flags.sh, tools/bench_rusage), same
+# copy of any of it -- ONE AUTHORITY per mechanism (lib_oracle_flags.sh, out/bench_rusage), same
 # law this project already applies to flags and formatting.
 #
 # ⛔ N IS NOT COMPUTED HERE. Per-kernel iteration counts live in the COMMITTED data file
@@ -24,7 +24,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # test_bench_snobol4_timed.sh's own header for the full rationale): SCRIP_NOHUGE=1 by default (THP
 # makes allocating rows unmeasurable), HEAP sized past the run's total allocation so gc>0 marks a row
 # untrusted rather than silently averaging a stall in, and every arm is forked through
-# tools/bench_rusage so the reported rate is EXTERNAL cpu(user+sys) time, never engine self-timing.
+# out/bench_rusage so the reported rate is EXTERNAL cpu(user+sys) time, never engine self-timing.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME
 S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root
 set -u
@@ -52,8 +52,8 @@ ENGINES="${ENGINES:-sbl m3 m4}"
 [ -x "$SCRIP" ] || { echo "SKIP scrip not built"; exit 0; }
 [ -d "$B" ]     || { echo "SKIP fixed-iter bench corpus missing ($B)"; exit 0; }
 [ -f "$SCALETSV" ] || { echo "REFUSING: no $SCALETSV -- angle 2 needs a committed per-kernel N; run ../harness/scripts/calibrate_bench_scale.sh once to bake it, then commit it. Not deriving one on the fly (that would be re-deriving from scratch on every run, exactly what this row exists to stop)." >&2; exit 3; }
-WRAP="$ROOT/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
+WRAP="$ROOT/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
 if [ "$STATIC" = 1 ]; then
   RT_A="$(static_rt_archive "$ROOT")" || { echo "REFUSING: STATIC=1 but out/libscrip_rt.a could not be built (make libscrip_rt_static)" >&2; exit 3; }
 fi

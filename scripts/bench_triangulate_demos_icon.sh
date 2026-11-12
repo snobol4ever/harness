@@ -19,7 +19,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # THE THREE ANGLES, on a whole-program unit:
 #   Angle 1 -- TIME-mode : fixed wall-clock budget; count COMPLETED RUNS -> runs/s.
 #   Angle 2 -- ITER-mode : fixed RUN COUNT (REPS_A2); measure total external CPU -> runs/s.
-#   Angle 3 -- TELEMETRY : tools/bench_rusage wraps every arm -- cpu(user+sys), elapsed, inblock/oublock.
+#   Angle 3 -- TELEMETRY : out/bench_rusage wraps every arm -- cpu(user+sys), elapsed, inblock/oublock.
 #   CROSS-PROVE OR VOID: angle 1 and angle 2 must land within TOL_PCT per (demo, engine), else the row
 #   is marked NOT CITABLE. Disagreement does not delete the readings and does not stop the run.
 #
@@ -65,8 +65,8 @@ ICONT="$(icont_bin)" || refuse "the Arizona icont oracle is missing. ⛔ Not a \
 [ -x "$SCRIP" ] || refuse "scrip not built ($SCRIP) -- a table printed without it would be plausible and false."
 [ -d "$D" ] || refuse "Icon demo corpus missing ($D)."
 [ -d "$PKG" ] || refuse "JCON package missing ($PKG)."
-WRAP="$ROOT/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || refuse "bench_rusage failed to build."
+WRAP="$ROOT/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || refuse "bench_rusage failed to build."
 "$WRAP" true 2>&1 | grep -q 'inblock=' || refuse "$WRAP predates the inblock/oublock fields -- angle 3 would report empty. Rebuild it."
 
 W="$(mktemp -d "${TMPDIR:-/tmp}/icondemo3a.XXXXXX")" || refuse "cannot make a work dir."
@@ -150,13 +150,13 @@ echo "⛔ BASIS: one iteration = ONE WHOLE PROGRAM RUN. Every number is a TOTAL 
 echo "   (and, for m3, the compile) -- NOT a kernel slope. Never share a column with bench_icon_rate_3way.sh."
 echo "⛔ OVERHEAD BASIS: EMPTY-PROGRAM SUBTRACTION (the marked interim of RULES.md § THE TWO-NUMBER"
 echo "   BENCHMARK BASIS) -- these are unmodified upstream JCON sources with no wall_ms hook. WORK = total - overhead."
-echo "instrument: tools/bench_rusage external cpu(user+sys); engines: $ENGINES; budget(a1)=${BUDGET_MS}ms; reps(a2)=$REPS_A2; tol=${TOL}%"
+echo "instrument: out/bench_rusage external cpu(user+sys); engines: $ENGINES; budget(a1)=${BUDGET_MS}ms; reps(a2)=$REPS_A2; tol=${TOL}%"
 echo "oracle: $ICONT / iconx (Arizona v9.5.25a); RT_OPT=-O0 (no -O2 build exists)"
 echo "trees: SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)  corpus $(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)"
 for e in $ENGINES; do echo "overhead(empty program, $e): ${OVH[$e]} ms cpu"; done
 # ⛔ THE GRID OPENS HERE so no multiple below can print without the load it ran under, and so a cell that
 # REFUSES is counted in THIS shell (perf_row is called directly, never inside $( ) -- arm G of the dark-cell gate).
-perf_grid_begin "demo vs iconx -- x on the FASTER axis (iconx/ours) · TOTAL basis, whole-program run incl startup · WORK basis = total - empty-program overhead · instrument tools/bench_rusage cpu(user+sys) · RT_OPT=-O0"
+perf_grid_begin "demo vs iconx -- x on the FASTER axis (iconx/ours) · TOTAL basis, whole-program run incl startup · WORK basis = total - empty-program overhead · instrument out/bench_rusage cpu(user+sys) · RT_OPT=-O0"
 echo
 printf "%-14s %-6s %11s %11s %8s %-9s %9s %9s %s\n" DEMO ENGINE "a1 runs/s" "a2 runs/s" ratio VERDICT "total ms" "work ms" answer
 printf '%s\n' "----------------------------------------------------------------------------------------------------"

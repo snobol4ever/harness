@@ -12,7 +12,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # (no committed .ref) are named in corpus/benchmarks/pascal/EXCLUDED.tsv with their reasons -- never
 # silently dropped, per test_gate_bench_rivals_coverage.sh's three-bucket (measured/declared/refuse) law.
 #
-# THE THIRD ANGLE (disk): one direct tools/bench_rusage sample per kernel (m3, reps=1) reads
+# THE THIRD ANGLE (disk): one direct out/bench_rusage sample per kernel (m3, reps=1) reads
 # ru_inblock/ru_oublock. Expected ~0 for these in-memory kernels; nonzero is a finding, not folded into
 # AGREE/DISAGREE (same role as the SNOBOL4/Prolog triangulators' disk angle).
 #
@@ -29,7 +29,7 @@ TOL="${TOL_PCT:-10}"
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared sidecars (R-1281)." >&2; exit 2; }
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED: scrip not built ($SCRIP)." >&2; exit 2; }
 [ -d "$PDIR" ] || { echo "⛔ REFUSED: pascal corpus missing ($PDIR)." >&2; exit 2; }
-WRAP="$ROOT/tools/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }
+WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }
 
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT_TSV="${OUT_TSV:-$PDIR/triangulation-$TS.tsv}"

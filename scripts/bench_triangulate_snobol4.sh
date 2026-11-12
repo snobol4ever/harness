@@ -17,7 +17,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # VOIDS that kernel's numbers for publication -- the run still completes and the raw readings still
 # land in the TSV (the never-redo record), but the verdict says loudly not to cite them.
 #
-# THE THIRD ANGLE (disk): one direct tools/bench_rusage sample per kernel (m3, single rep, the raw
+# THE THIRD ANGLE (disk): one direct out/bench_rusage sample per kernel (m3, single rep, the raw
 # .sno run standalone -- every corpus/benchmarks/snobol4 kernel is directly runnable per its own
 # header) reads ru_inblock/ru_oublock (added to bench_rusage.c by this same row, item 2). Expected
 # ~0 for these in-memory kernels; nonzero is reported as a finding, not folded into AGREE/DISAGREE --
@@ -49,14 +49,14 @@ KERNEL="${CHECK_SHAPE_KERNEL:-array_sum}"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED: scrip not built ($SCRIP) -- a table printed without it would be plausible and false." >&2; exit 2; }
 SBL="$(sbl_clean_bin)" || { echo "⛔ REFUSED: clean SPITBOL benchmark oracle missing or not -bf-capable -- see lib_oracle_flags.sh." >&2; exit 2; }
 [ -d "$B" ] || { echo "⛔ REFUSED: benchmark corpus missing ($B)." >&2; exit 2; }
-WRAP="$ROOT/tools/bench_rusage"
-if [ ! -x "$WRAP" ]; then gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }; fi
+WRAP="$ROOT/out/bench_rusage"
+if [ ! -x "$WRAP" ]; then gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }; fi
 # item 2's disk columns are load-bearing for this script's own telemetry angle -- refuse rather than
 # silently reporting inblock/oublock as empty if a stale pre-item-2 binary is sitting in tools/.
 WRAP_SELFTEST="$(mktemp)"; "$WRAP" true >"$WRAP_SELFTEST" 2>&1
 if ! grep -q 'inblock=' "$WRAP_SELFTEST"; then
   rm -f "$WRAP_SELFTEST"
-  echo "⛔ REFUSED: $WRAP predates the inblock/oublock fields (item 2) -- rebuild: gcc -O2 -o $WRAP $ROOT/tools/bench_rusage.c" >&2
+  echo "⛔ REFUSED: $WRAP predates the inblock/oublock fields (item 2) -- rebuild: gcc -O2 -o $WRAP $ROOT/../harness/scripts/bench_rusage.c" >&2
   exit 2
 fi
 rm -f "$WRAP_SELFTEST"

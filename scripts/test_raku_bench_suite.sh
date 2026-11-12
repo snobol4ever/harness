@@ -10,7 +10,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # program's real output, cut from rakudo (the roast/rakudo oracle, RULES.md section Oracles). No kernel reads input, so no IN.
 # THE CRITERION: a kernel passes a mode when every angle prints exactly its .ref with rc 0, and passes the row in BOTH modes
 # (m3 --run; m4 --compile, assembled and linked against out/libscrip_rt.so the way corpus_suite_harness.py links, run as a process).
-#   (1) PROCESS WRAPPER -- the PRISTINE kernel once under tools/bench_rusage, the external stopwatch (stdout untouched).
+#   (1) PROCESS WRAPPER -- the PRISTINE kernel once under out/bench_rusage, the external stopwatch (stdout untouched).
 #   (2) FIXED ITERATIONS -- the program bench_wrap_raku.py GENERATES from the kernel (--mode iter): the test once (its stdout must
 #       be the .ref), then one warm-up and BENCH_ITER_N quiet repetitions whose output is captured instead of printed; its BENCH
 #       line must read iters=N, mismatched=0, and value= the .ref's own character count (a capture that reads empty is a loss).
@@ -42,8 +42,8 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the one reader of a declared arena"
 . "$HERE/lib_progress.sh" 2>/dev/null || refuse "lib_progress.sh unloadable"
 GEN="$HERE/bench_wrap_raku.py"; [ -f "$GEN" ] || refuse "no wrapper generator at $GEN -- angles 2 and 3 have nothing to run"
-WRAP="$HERE/../../SCRIP/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/../../SCRIP/tools/bench_rusage.c" || refuse "tools/bench_rusage failed to build -- angle 1 has no wrapper"
+WRAP="$HERE/../../SCRIP/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/bench_rusage.c" || refuse "out/bench_rusage failed to build -- angle 1 has no wrapper"
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac
 case "$BUD_MS" in ''|*[!0-9]*|0) refuse "BENCH_BUD_MS must be a positive whole number of milliseconds (got '$BUD_MS')";; esac
 # ⭐ BENCH_ANGLES CHOOSES THE ANGLES GRADED (Lon 2026-10-08, in-chat: "Why does RakBench take so long to run? Are the benchmarks

@@ -12,7 +12,7 @@
 # the suite is the same error in new clothes, so the floor is baked per row.
 #
 # ⛔ row bench-external-cpu-and-elapsed-clock (Lon s200 directive, FINDING-2026-08-22-s253):
-# every rep below is now ALSO measured by tools/bench_rusage -- ONE external instrument, blind to
+# every rep below is now ALSO measured by out/bench_rusage -- ONE external instrument, blind to
 # which engine it times, forked around each rep and read via wait4()'s rusage.  self(ms)/cv_pct/
 # maxmin/min_detectable_pct (columns 1-8) are UNCHANGED -- still each engine's own TIME() self-report,
 # kept for continuity and still what test_bench_snobol4_timed.sh's live board reads for m3/sbl output,
@@ -48,8 +48,8 @@ APPEND="${APPEND:-0}"; NOHUGE="${NOHUGE:-1}"
 # heap and stack declared beside it (<stem>.heap/.stack, lib_declared_arena.sh), the same switches to m3, the m4 binary and sbl.
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "REFUSING: lib_declared_arena.sh unloadable -- the one reader of a unit's declared heap and stack (R-1353)" >&2; exit 3; }
 OUT="${OUT:-$B/NOISE-FLOOR.tsv}"
-WRAP="$ROOT/tools/bench_rusage"   # row bench-external-cpu-and-elapsed-clock: the external stopwatch, built on demand (not tracked -- see .gitignore)
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
+WRAP="$ROOT/out/bench_rusage"   # row bench-external-cpu-and-elapsed-clock: the external stopwatch, built on demand (not tracked -- see .gitignore)
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
 NIVCSW_FLAG="${BENCH_NIVCSW_THRESHOLD:-20}"   # same knob/default as util_bench_snobol4_engines.sh -- one instrument, one threshold
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 if [ "$APPEND" != 1 ]; then
@@ -75,7 +75,7 @@ echo "#   quiet box is -0.3% (+/-2.6%), ZERO.  ⛔ NEVER compare a floor baked u
   echo "#   kept for continuity, still what test_bench_snobol4_timed.sh's live board historically read,"
   echo "#   but per FINDING-2026-08-22-s253 SPITBOL's TIME() is CPU-time-patched and SCRIP's is wall-clock,"
   echo "#   so the two were never the same unit.  self(ms) is NEVER AGAIN the cross-engine authority."
-  echo "# ⛔ COLUMNS 12-17 (elapsed/cpu) are measured by tools/bench_rusage -- ONE external instrument"
+  echo "# ⛔ COLUMNS 12-17 (elapsed/cpu) are measured by out/bench_rusage -- ONE external instrument"
   echo "#   outside both engines, forked around each rep, read via wait4()'s rusage.  A rep whose nivcsw"
   echo "#   exceeds nivcsw_flag (see header line above) is EXCLUDED from every mean, not averaged in --"
   echo "#   the mechanical cure for the 47.9% floor.  cpu(user+sys) is the new cross-engine authority;"

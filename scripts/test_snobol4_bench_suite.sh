@@ -13,7 +13,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # No kernel reads input, so no IN.
 # THE CRITERION: a kernel passes a mode when every angle prints exactly its .ref with rc 0, and passes the row in BOTH modes
 # (m3 --run; m4 --compile, assembled and linked against out/libscrip_rt.so the way corpus_suite_harness.py links, run as a process).
-#   (1) PROCESS WRAPPER -- the PRISTINE kernel once under tools/bench_rusage, the external stopwatch (stdout untouched).
+#   (1) PROCESS WRAPPER -- the PRISTINE kernel once under out/bench_rusage, the external stopwatch (stdout untouched).
 #   (2) FIXED ITERATIONS -- the program bench_wrap_snobol4.py GENERATES from the kernel (--mode iter): the test once (its stdout
 #       must be the .ref), then one warm-up and BENCH_ITER_N quiet repetitions of the kernel function named by the kernel's
 #       *BENCH line (or of its whole main section when it has none); its BENCH line must read iters=N and mismatched=0.
@@ -51,7 +51,7 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 # ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; R-1822; Lon 2026-10-18, in-chat to hq_dotnet,
 # verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face), the port runner's
 # --binaries is the one check, each kernel runs its three angles in m3 alone with its declared heap and stack as switches, angle 1's external
-# stopwatch is /usr/bin/time (SCRIP's tools/bench_rusage lives in SCRIP, which a port root does not hold; stdout untouched either way), the rows
+# stopwatch is /usr/bin/time (SCRIP's out/bench_rusage lives in SCRIP, which a port root does not hold; stdout untouched either way), the rows
 # are keyed snobol4-bench-ref@<engine> by the one writer, and no SCRIP score row is written. Under scrip every line reads as it did.
 PORT=0; one_runner_is_port && PORT=1
 MODES="$(printf "%s" "${S4E_MODES:-m3}" | tr "," " ")"; [ "$PORT" = 1 ] && MODES=m3
@@ -69,10 +69,10 @@ fi
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the one reader of a declared arena"
 . "$HERE/lib_progress.sh" 2>/dev/null || refuse "lib_progress.sh unloadable"
 GEN="$HERE/bench_wrap_snobol4.py"; [ -f "$GEN" ] || refuse "no wrapper generator at $GEN -- angles 2 and 3 have nothing to run"
-WRAP="$HERE/../../SCRIP/tools/bench_rusage"
+WRAP="$HERE/../../SCRIP/out/bench_rusage"
 if [ "$PORT" = 1 ]; then WRAPV=(/usr/bin/time -f 'BENCH_RUSAGE: elapsed_s=%e user_s=%U sys_s=%S maxrss_kb=%M exit=%x'); [ -x /usr/bin/time ] || refuse "no /usr/bin/time -- angle 1 has no external stopwatch under a port"
 else
-[ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/../../SCRIP/tools/bench_rusage.c" || refuse "tools/bench_rusage failed to build -- angle 1 has no wrapper"
+[ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/bench_rusage.c" || refuse "out/bench_rusage failed to build -- angle 1 has no wrapper"
 WRAPV=("$WRAP")
 fi
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac

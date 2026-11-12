@@ -1663,7 +1663,6 @@ test_gate_prolog_dynamic_db_both_modes.sh	TASK	-	-	-
 test_gate_prolog_entrypoint_ruling.sh	TASK	-	-	-
 test_gate_prolog_vanroy_kernels_m3.sh	TASK	-	-	-
 test_gate_raku_zframe.sh	TASK	-	-	-
-test_gate_rakugram_precedence.sh	TASK	-	-	-
 test_gate_rbp_census_ratchet.sh	TASK	-	-	-
 test_gate_rbx_quarantine.sh	TASK	-	-	-
 test_gate_regen_demo_refused_marker.sh	TASK	-	-	-

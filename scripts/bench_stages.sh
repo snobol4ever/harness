@@ -5,7 +5,7 @@ export SCRIP_DIAG=0
 # should be gathered." · "why is not a timing call injected at first source line and last source line sufficient to measure RUNTIME?" · "To report
 # compile-time from SCRIP would be total process exec_time - (END_TIME - START_TIME), where END and START times are those just mentioned."): the
 # language's wrapper generator writes the program VERBATIM with a clock read at its first line and one at its last (--mode once), the SAME copy runs
-# under the rival, SCRIP mode 3 and the mode-4 binary, each run under the external stopwatch tools/bench_rusage; RUNTIME = last - first (the
+# under the rival, SCRIP mode 3 and the mode-4 binary, each run under the external stopwatch out/bench_rusage; RUNTIME = last - first (the
 # program's own BENCH line), START+COMPILE = the stopwatch's elapsed - RUNTIME. For SPITBOL and mode 3 that is process start-up plus the compile
 # (both compile every run); for the mode-4 binary it is start-up alone (its compile ran before, by scrip --compile and the link). No hook in any
 # compiler: the clock reads are lines of the program. Every run's stdout is held to the program's .ref (or, with --prog, to the rival's answer).
@@ -18,9 +18,9 @@ REPS=5; ONLY=""; PROG=""; PIN=""
 while [ $# -gt 0 ]; do case "$1" in --reps) REPS="$2"; shift 2;; --only) ONLY="$2"; shift 2;; --prog) PROG="$2"; shift 2;; --input) PIN="$2"; shift 2;; *) echo "⛔ REFUSED: unknown argument $1" >&2; exit 2;; esac; done
 . "$HERE/lib_oracle_flags.sh" || { echo "⛔ REFUSED: cannot load lib_oracle_flags.sh" >&2; exit 2; }
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSED: cannot load lib_declared_arena.sh" >&2; exit 2; }
-SCRIP="$ROOT/scrip"; RT="$ROOT/out"; WRAP="$ROOT/tools/bench_rusage"
+SCRIP="$ROOT/scrip"; RT="$ROOT/out"; WRAP="$ROOT/out/bench_rusage"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED: scrip not built ($SCRIP)" >&2; exit 2; }
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: tools/bench_rusage did not build" >&2; exit 2; }
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: out/bench_rusage did not build" >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 case "$LANG_" in
   snobol4) GEN=(python3 "$HERE/bench_wrap_snobol4.py" --mode once); EXT=sno; D="$S4E/corpus/benchmarks/snobol4"; RIVAL=sbl; RBIN="$(sbl_clean_bin)"

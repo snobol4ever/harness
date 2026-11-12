@@ -10,7 +10,7 @@
 # SCOPE, AND WHY IT IS NARROWER THAN "any -O2 in ../harness/scripts/". The FACT RULE governs the optimisation level of
 # SCRIP'S RUNTIME, not every compiler invocation a script makes. A bare grep for -O2 over ../harness/scripts/*.sh matches
 # 26 files here, and the great majority are legitimate and MUST stay:
-#   - gcc -O2 -o tools/bench_rusage        the measurement harness itself. Building the stopwatch at -O0 would
+#   - gcc -O2 -o out/bench_rusage        the measurement harness itself. Building the stopwatch at -O0 would
 #                                          add the stopwatch's own cost to every benchmark number.
 #   - fpc -O2 / rival oracles              the rival compiled at ITS released default, which is the whole
 #                                          basis of a fair two-number three-angle comparison.

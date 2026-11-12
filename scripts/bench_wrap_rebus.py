@@ -18,7 +18,7 @@ WHAT THE GENERATED PROGRAM DOES, IN ORDER:
   ⭐ NON-VACUITY, BEYOND THE TEST LINE: every repetition's value is compared with the first repetition's, and `value=` carries it, so
      the runner holds the REPEATED work to the .ref as well -- a kernel whose repeated work was skipped or folded to a different
      value prints `mismatched=` above zero and an extra stdout line, and fails. (Angle 1, the process wrapper, needs no generated
-     program: the runner times the pristine kernel under tools/bench_rusage.)
+     program: the runner times the pristine kernel under out/bench_rusage.)
 
 THE SHAPE A KERNEL MUST HAVE, AND EVERY OTHER SHAPE IS REFUSED BY NAME (no silent fallback):
   exactly one top-level `function main()` with no parameters, closed by an `end` at column 0; exactly one `OUTPUT :=` statement,

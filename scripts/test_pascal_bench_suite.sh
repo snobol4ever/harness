@@ -10,7 +10,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # it lands. Each carries a .ref cut from fpc -Miso that pins a value the kernel COMPUTES, and a .in wherever it reads input.
 # THE CRITERION: a kernel passes a mode when EVERY run under all three angles prints exactly its .ref, and passes the row when it passes
 # in BOTH modes (m3 --run; m4 --compile, linked against out/libscrip_rt.so, run as a process). The three angles, one wrapper each:
-#   (1) PROCESS WRAPPER -- one run under tools/bench_rusage, the external stopwatch (it forks the target with stdout untouched and
+#   (1) PROCESS WRAPPER -- one run under out/bench_rusage, the external stopwatch (it forks the target with stdout untouched and
 #       reports on its own stderr, so the output diffed here is the kernel's own).
 #   (2) FIXED ITERATIONS -- a kernel with a reps knob (its .in is one integer) is fed BENCH_ITER_N as its reps and runs once; a kernel
 #       with a fixed workload (no knob: uplevel2, uplevel3, fbench) is run as a process BENCH_ITER_N times. Every run is diffed.
@@ -41,8 +41,8 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 . "$HERE/lib_progress.sh" 2>/dev/null || refuse "lib_progress.sh unloadable"
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the ONE reader of a program's declared -d/-s sidecars (R-1281)"
 declare -a DECL_SW=()
-WRAP="$HERE/../../SCRIP/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/../../SCRIP/tools/bench_rusage.c" || refuse "tools/bench_rusage failed to build -- angle 1 has no wrapper"
+WRAP="$HERE/../../SCRIP/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/bench_rusage.c" || refuse "out/bench_rusage failed to build -- angle 1 has no wrapper"
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac
 case "$TIME_LIMIT" in ''|*[!0-9]*|0) refuse "BENCH_TIME_LIMIT must be a positive whole number of seconds (got '$TIME_LIMIT')";; esac
 OUTDIR="${BENCH_OUT_DIR:-$(mktemp -d -t pascal_bench_runs.XXXXXX)}"; mkdir -p "$OUTDIR" || refuse "cannot create $OUTDIR"

@@ -9,7 +9,7 @@ that runs it
     BENCH_MODE=time  BENCH_BUDGET_MS=<ms> until the budget is spent, at least once (angle 1, fixed time)
 and writes ONE line to &errout: `BENCH iters=<k> work_ms=<ms>` -- the WORK half of the two-number basis, measured inside the
 process with the compile phase and startup outside it, on stderr so stdout stays byte-comparable to the .ref. The harness runs
-the result under tools/bench_rusage (angle 3) and checks stdout == k copies of the .ref: the loop itself is part of the test.
+the result under out/bench_rusage (angle 3) and checks stdout == k copies of the .ref: the loop itself is part of the test.
 
 Each iteration resets what a whole-program run would have fresh: &random to its value at entry (a kernel that shuffles stays
 deterministic) and &input rewound with seek(&input, 1) (a kernel that reads stdin reads it all again; stdin is a file). What it

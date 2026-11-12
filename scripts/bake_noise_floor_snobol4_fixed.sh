@@ -34,8 +34,8 @@ OUT="${OUT:-$B/NOISE-FLOOR.tsv}"
   echo "#   MACHINE LOAD AT BAKE: nproc=$(nproc) loadavg=$(cut -d' ' -f1-3 /proc/loadavg)"
   echo "#   ORACLE IDENTITY AT BAKE: $(sbl_oracle_fingerprint "${SBL:-}")"
 } >> "$OUT"
-WRAP="$ROOT/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
+WRAP="$ROOT/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
 NIVCSW_FLAG="${BENCH_NIVCSW_THRESHOLD:-20}"
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 

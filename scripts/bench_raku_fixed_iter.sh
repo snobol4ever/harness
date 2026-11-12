@@ -29,7 +29,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # crash/timeout. Re-verifying on every angle-2 invocation would require re-running the ORIGINAL (unlooped)
 # kernel too, which angle 1 already does every time -- one authority, not two copies of the correctness check.
 #
-# External CPU time via tools/bench_rusage (user_us + sys_us), same instrument angle 1 and angle 3 both use.
+# External CPU time via out/bench_rusage (user_us + sys_us), same instrument angle 1 and angle 3 both use.
 #
 # USAGE: bench_raku_fixed_iter.sh                 (read committed N, run angle 2)
 #        bench_raku_fixed_iter.sh --calibrate      (re-derive N for every self-timed kernel, commit the TSV)
@@ -52,7 +52,7 @@ CALIBRATE=0; for a in "$@"; do [ "$a" = --calibrate ] && CALIBRATE=1; done
 RAKU="$(rakudo_bin)" || exit 2
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1283)"; exit 2; }
 declare -a DECL_SW=()
-WRAP="$ROOT/tools/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
+WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/prelude" && cp "$RDIR/prelude_rakudo.rakumod" "$W/prelude/" || { echo "⛔ REFUSED: cannot stage the prelude." >&2; exit 2; }
 WORK_OPEN='$t0 = wall_us(); my $m0 = wall_ms();'
@@ -125,7 +125,7 @@ done < "$NTSV"
 [ "${#NCOMMIT[@]}" -gt 0 ] || { echo "⛔ REFUSED-TO-GRADE: $NTSV carries zero kernel rows" >&2; exit 2; }
 
 echo "FIXED-ITERATION RAKU BENCHMARKS -- angle 2: N fixed per kernel (committed in $NTSV), external cpu time measured"
-echo "engines: m3 m4 rakudo   corpus: $RDIR   external instrument: tools/bench_rusage (user+sys cpu time)"
+echo "engines: m3 m4 rakudo   corpus: $RDIR   external instrument: out/bench_rusage (user+sys cpu time)"
 echo
 printf "%-24s %8s %14s %14s %14s  %s\n" BENCHMARK N m3/s m4/s rakudo/s check
 printf "%-24s %8s %14s %14s %14s  %s\n" "------------------------" "--------" "--------------" "--------------" "--------------" "-----"

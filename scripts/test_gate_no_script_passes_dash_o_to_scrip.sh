@@ -56,7 +56,7 @@ EOB
 bad="$(python3 -I "$LIB" scan "$F/bad" | sed -n 's/^HITS //p')"; good="$(python3 -I "$LIB" scan "$F/good" | sed -n 's/^HITS //p')"
 if [ "$bad" = 6 ] && [ "$good" = 0 ]; then echo "  ok   ARM 2: the instrument reads its bare -o fixture red (HITS $bad of 6 expected) and its look-alike fixture clean (HITS $good)"
 else echo "  RED  ARM 2: the instrument is wrong -- bare -o fixture HITS $bad (expected 6), look-alike fixture HITS $good (expected 0)"; fail=1; fi
-stubs="$(grep -rnE 'case "\$1" in[^;]*(^|[ ;|(])-o\)' "$HERE" "$ROOT/SCRIP/tools" 2>/dev/null | grep -v '/test_gate_no_script_passes_dash_o_to_scrip.sh:' | grep -v 'bench_wrap')"
+stubs="$(grep -rnE 'case "\$1" in[^;]*(^|[ ;|(])-o\)' "$HERE" 2>/dev/null | grep -v '/test_gate_no_script_passes_dash_o_to_scrip.sh:' | grep -v 'bench_wrap')"
 if [ -z "$stubs" ]; then echo "  ok   ARM 3: no stub compiler parses a bare -o"
 else echo "  RED  ARM 3: a script parses a bare -o as an option (a stub scrip must take --out=FILE):"; printf '%s\n' "$stubs" | head -5 | cut -c1-200 | sed 's/^/         /'; fail=1; fi
 [ "$fail" = 0 ] && { echo "GATE OK [test_gate_no_script_passes_dash_o_to_scrip]: no script hands the assembly output to scrip as -o"; exit 0; }

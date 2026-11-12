@@ -16,7 +16,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #              iteration per PROCESS for both angles and the row says PROC. Neither shape is exempt from the ref check.
 #   ANGLE 2    fixed iterations: N from SCALE.tsv beside the kernels (name<TAB>N), else $BENCH_N_DEFAULT.
 #   ANGLE 1    fixed time: iterate until $BUDGET_MS of in-process work time is spent (at least once).
-#   ANGLE 3    every process runs under tools/bench_rusage: CPU (user+sys), elapsed, exit -- independent of the kernel's clock.
+#   ANGLE 3    every process runs under out/bench_rusage: CPU (user+sys), elapsed, exit -- independent of the kernel's clock.
 #   stdout must equal k copies of the .ref on EVERY run of every angle; a mismatch is a FAIL of that row whatever its speed.
 # SIDECARS, the same as test_icon_bench_suite.sh (the correctness row): stdin NAME.in, else NAME.stdin, else NAME.dat; argv
 # NAME.argv; the SCRIP engines run at the heap and stack NAME.heap and NAME.stack declare (declared_switches_beside), iconx at its own default or in the environment NAME.oracle_env declares.
@@ -45,7 +45,7 @@ ICONT="$(icont_bin)" || refuse "the Arizona icont oracle is missing (not a comma
 [ -d "$BD" ] || refuse "no Icon benchmark tree at $BD"
 W="$(mktemp -d "${TMPDIR:-/tmp}/icnbench.XXXXXX")" || refuse "cannot make a work dir"; trap 'rm -rf "$W"' EXIT
 # built fresh into the work dir, plain gcc: never an -O2 build, and never a binary written into the tree
-WRAP="$W/bench_rusage"; gcc -o "$WRAP" "$ROOT/tools/bench_rusage.c" 2>"$W/rusage.err" || refuse "tools/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"
+WRAP="$W/bench_rusage"; gcc -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" 2>"$W/rusage.err" || refuse "harness/scripts/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"
 POP=()
 while IFS= read -r f; do grep -q '^[[:space:]]*procedure[[:space:]]\+main' "$f" || continue
   n="$(basename "$f" .icn)"; [ -n "$WANT" ] && ! grep -qw -- "$n" <<<"$WANT" && continue; POP+=("$f")

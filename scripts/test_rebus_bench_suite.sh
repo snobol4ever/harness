@@ -12,7 +12,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # test_gate_rebus_derived_refs_match_their_rival_oracle.sh) and pins a value the kernel COMPUTES. No kernel reads input, so no IN.
 # THE CRITERION: a program passes a mode when every angle prints exactly its .ref with rc 0, and passes the row in BOTH modes
 # (m3 --run; m4 --compile, linked against out/libscrip_rt.so, run as a process). The three angles:
-#   (1) PROCESS WRAPPER -- the PRISTINE kernel once under tools/bench_rusage, the external stopwatch (stdout untouched).
+#   (1) PROCESS WRAPPER -- the PRISTINE kernel once under out/bench_rusage, the external stopwatch (stdout untouched).
 #   (2) FIXED ITERATIONS -- the program bench_wrap_rebus.py GENERATES from the kernel (--mode iter): the test once, then BENCH_ITER_N
 #       quiet repetitions; its BENCH line must read iters=N, mismatched=0, and value= the .ref.
 #   (3) FIXED TIME LIMIT -- the same generator (--mode time): quiet repetitions until BENCH_BUD_MS is spent; at least one, mismatched=0,
@@ -44,8 +44,8 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the one reader of a declared arena"
 . "$HERE/lib_progress.sh" 2>/dev/null || refuse "lib_progress.sh unloadable"
 GEN="$HERE/bench_wrap_rebus.py"; [ -f "$GEN" ] || refuse "no wrapper generator at $GEN -- angles 2 and 3 have nothing to run"
-WRAP="$HERE/../../SCRIP/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/../../SCRIP/tools/bench_rusage.c" || refuse "tools/bench_rusage failed to build -- angle 1 has no wrapper"
+WRAP="$HERE/../../SCRIP/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/bench_rusage.c" || refuse "out/bench_rusage failed to build -- angle 1 has no wrapper"
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac
 case "$BUD_MS" in ''|*[!0-9]*|0) refuse "BENCH_BUD_MS must be a positive whole number of milliseconds (got '$BUD_MS')";; esac
 IS_BOARD=0; one_runner_suite_is_a_board "$BD" && IS_BOARD=1

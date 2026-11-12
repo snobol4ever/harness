@@ -17,7 +17,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #   declared_switches_beside (the harness's own reader) and passed as -d<kb>k -s<kb>k on THAT kernel's command line (R-1353).
 # THE THREE ANGLES, in m3 (scrip --run) and m4 (--compile, gcc -no-pie, run), every run from the kernel's own directory (a kernel
 #   opens its argv files by relative name), STDOUT compared with the REF on EVERY run:
-#   process  the PRISTINE kernel under tools/bench_rusage (elapsed, CPU, RSS): stdout must be the REF.
+#   process  the PRISTINE kernel under out/bench_rusage (elapsed, CPU, RSS): stdout must be the REF.
 #   iter     the generated wrapper (util_icon_bench_wrap.py), BENCH_MODE=iter BENCH_N=n: stdout must be n copies of the REF.
 #   time     the same wrapper, BENCH_MODE=time BENCH_BUDGET_MS=ms: stdout must be k copies, k read from its own BENCH line.
 #   The wrapper writes its BENCH line to stderr; a wrapped run that prints none is UNMEASURED, never a pass.
@@ -61,7 +61,7 @@ PW="$HERE/util_progress_append.py"; [ -f "$PW" ] || refuse "the one progress-dat
 "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" >/dev/null || refuse "the binary is older than the tree -- run make (util_require_fresh.sh)"
 W="$(mktemp -d "${TMPDIR:-/tmp}/icnbench.XXXXXX")" || refuse "cannot make a work dir"; trap 'rm -rf "$W"' EXIT
 [ -n "$OUTDIR" ] || OUTDIR="$W/out"; mkdir -p "$OUTDIR" || refuse "cannot make $OUTDIR"
-RUSAGE="$W/bench_rusage"; gcc -o "$RUSAGE" "$ROOT/tools/bench_rusage.c" 2>"$W/rusage.err" || refuse "tools/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"
+RUSAGE="$W/bench_rusage"; gcc -o "$RUSAGE" "$ROOT/../harness/scripts/bench_rusage.c" 2>"$W/rusage.err" || refuse "harness/scripts/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"
 POP=()
 while IFS= read -r f; do grep -q '^[[:space:]]*procedure[[:space:]]\+main' "$f" || continue
   n="$(basename "$f" .icn)"; [ -n "$WANT" ] && ! grep -qw -- "$n" <<<"$WANT" && continue; POP+=("$f")

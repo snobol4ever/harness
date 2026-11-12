@@ -19,8 +19,8 @@ DEMO="${DEMO_DIR:-$S4E/corpus/demos/snobol4}"
 . "$HERE/lib_static_link_snobol4.sh" || { echo "⛔ REFUSING: cannot load lib_static_link_snobol4.sh -- the ONE static-link-arm authority." >&2; exit 3; }
 [ -x "$SCRIP" ] || { echo "⛔ REFUSING: scrip not built at $SCRIP" >&2; exit 3; }
 RT_A="$(static_rt_archive "$ROOT")" || { echo "⛔ REFUSING: STATIC arm unavailable -- out/libscrip_rt.a could not be built (make libscrip_rt_static)" >&2; exit 3; }
-WRAP="$ROOT/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" 2>/dev/null || { echo "⛔ REFUSING: cannot build $WRAP" >&2; exit 3; }
+WRAP="$ROOT/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" 2>/dev/null || { echo "⛔ REFUSING: cannot build $WRAP" >&2; exit 3; }
 
 # THE 21 SANCTIONED DEMO NAMES -- byte-identical to util_regen_demo_s_artifacts.sh's DEMOS var (the
 # committed .s-artifact authority). Kept as a literal copy, not sourced from that script, because that
@@ -41,7 +41,7 @@ OUT="$BDIR/perf-attribution-${TS}-seat02-static-link-arm.tsv"
 TREE_SCRIP="$(cd "$ROOT" && git rev-parse --short=8 HEAD 2>/dev/null || echo unknown)"
 {
   echo "# perf-attribution TSV -- $(date -u +%Y-%m-%d) seat02 -- row m4-static-link-arm: STATIC vs shared m4 link, all 21 sanctioned demos"
-  echo "# instrument: tools/bench_rusage (external wait4 rusage, single sample, best-of-1 -- this is a correctness+footprint sweep, not a timing watermark); RT_OPT=-O0"
+  echo "# instrument: out/bench_rusage (external wait4 rusage, single sample, best-of-1 -- this is a correctness+footprint sweep, not a timing watermark); RT_OPT=-O0"
   echo "# static arm = gcc -no-pie -static + out/libscrip_rt.a (row m4-static-link-arm, opt-in); shared arm = gcc -no-pie -lscrip_rt against out/libscrip_rt.so (canonical, UNCHANGED by this row)"
   echo "# check column: byte-diff of the binary's stdout against the demo's committed .ref (BENCHMARK=TEST law) -- MATCH or MISMATCH, never assumed. static rows also verified genuinely static via ldd (control-arm-trap check, FINDING f4f6292c)"
   echo "# SCRIP tree $TREE_SCRIP -- never re-run wholesale, append a new dated file when the tree moves"

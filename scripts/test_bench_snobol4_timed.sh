@@ -16,7 +16,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # used to say ".ref diffed" -- true pre-s265, false since. The .ref itself is minted/graded
 # separately by ../harness/scripts/util_mint_bench_refs.sh (see this file's own :171 note for why).
 # ⛔ row bench-external-cpu-and-elapsed-clock: sbl/s, m3/s, m4/s are the ITERATION COUNT divided by
-# tools/bench_rusage's EXTERNAL cpu(user+sys) time for the winning rep, not the engine's own
+# out/bench_rusage's EXTERNAL cpu(user+sys) time for the winning rep, not the engine's own
 # self-reported "ms:" line -- self-timing is never again the cross-engine authority (FINDING-2026-08-22-s253).
 #
 # ⛔ THE NOISE FLOOR IS NOT GLOBAL.  It is a property of the (KERNEL, ENGINE,
@@ -27,7 +27,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # clothes and it is deleted.  The runner prints each row's min-detectable
 # difference; a delta smaller than that is WEATHER, not a regression.
 # ⛔ row bench-external-cpu-and-elapsed-clock (FINDING-2026-08-22-s253): min-det below reads
-# NOISE-FLOOR.tsv's external-instrument columns (tools/bench_rusage, cpu = user+sys, elapsed =
+# NOISE-FLOOR.tsv's external-instrument columns (out/bench_rusage, cpu = user+sys, elapsed =
 # CLOCK_MONOTONIC, both outside either engine) -- NOT the self-timed TIME() column, which the two
 # engines never measured in the same unit (SPITBOL CPU-time-patched, SCRIP wall-clock).  min-det(cpu)
 # is the cross-engine authority; min-det(elap) prints alongside so the two are readable BY NAME.
@@ -74,10 +74,10 @@ FLOORTSV="${FLOORTSV:-$B/NOISE-FLOOR.tsv}"
 ENGINES="${ENGINES:-sbl m3 m4}"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE scrip not built"; exit 2; }
 [ -d "$B" ]     || { echo "⛔ REFUSED-TO-GRADE timed bench corpus missing ($B)"; exit 2; }
-# row bench-external-cpu-and-elapsed-clock: every run below is forked through tools/bench_rusage --
+# row bench-external-cpu-and-elapsed-clock: every run below is forked through out/bench_rusage --
 # the sbl/s, m3/s, m4/s rates ARE the external cpu(user+sys) instrument now, not self-timed TIME().
-WRAP="$ROOT/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
+WRAP="$ROOT/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
 NIVCSW_FLAG="${BENCH_NIVCSW_THRESHOLD:-20}"   # same knob/default as the other bench_rusage call sites
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 rate() { awk -v i="$1" -v m="$2" 'BEGIN{ if(m+0>0) printf "%.0f", i/m*1000; else printf "NA" }'; }

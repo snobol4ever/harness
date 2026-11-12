@@ -8,7 +8,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #                       directory, so never a board (R-547) and no row is written -- BENCH_ORACLE_ARM=1, BAR_BUD_MS (500) per point, BAR_ITER_N (3)
 #                       iterations, both engines at SPITBOL's own defaults (-d128m -i1m -s4m, R-1261). The multiple is the harness's own two
 #                       time-twin readings, sbl and m4, taken in the same run.
-#   demo D BAR          D's whole program on the README's input scale, best of BAR_REPS (3) elapsed under tools/bench_rusage, each engine at
+#   demo D BAR          D's whole program on the README's input scale, best of BAR_REPS (3) elapsed under out/bench_rusage, each engine at
 #                       its own defaults plus the DEMO's declaration -- its .oracle_args on sbl -bf, its .heap/.stack as the mode-4 binary's
 #                       -d/-s (R-1485, RULES.md clause 8 (g)(4); CRITERION CHANGED 2026-10-03: readings before ran BAR_SW
 #                       "-d512m -i64m -s256m" on both under ulimit -s 262144, the equal-arena arm the law overtook); stdout must be
@@ -24,7 +24,7 @@ refuse() { echo "⛔ bench_snobol4_bar REFUSE(2): $*"; exit 2; }
 KIND=$1; NAME=$2; BAR=$3
 SCRIP="$ROOT/scrip"; [ -x "$SCRIP" ] || refuse "no ./scrip (make first)"
 SBL="$(sbl_clean_bin)"; [ -x "$SBL" ] || refuse "clean SPITBOL oracle missing ($SBL)"
-WRAP="$ROOT/tools/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || refuse "bench_rusage did not build"
+WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || refuse "bench_rusage did not build"
 T=$(mktemp -d) || refuse "mktemp"; trap 'rm -rf "$T"' EXIT
 . "$HERE/lib_perf_fmt.sh"
 refuse_timing() { local g; if g="$(perf_load_guard)"; then echo "⛔ bench_snobol4_bar REFUSE(2) $g: $*"; else echo "⛔ bench_snobol4_bar REFUSE(2): $* ($g)"; fi; exit 2; }

@@ -6,7 +6,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # harness-with-a-row-in-the-suite-grid, R-1221, to the coo's contract COO-164). Lon, verbatim: "The reason to force a benchmark to
 # also be a test is to guarantee it is not vacuous." -- "The source of the benchmark is the apple-core of the test, the wrapper code
 # can be added to do both the test and the measurements."
-# THE THREE ANGLES, per kernel, per mode: (1) PROCESS -- the pristine kernel under tools/bench_rusage, stdout == <k>.ref; (2) ITER --
+# THE THREE ANGLES, per kernel, per mode: (1) PROCESS -- the pristine kernel under out/bench_rusage, stdout == <k>.ref; (2) ITER --
 # bench_prolog_wrap.sh --mode=iter --n=N: stdout == N copies of <k>.ref (lib_prolog_bench.sh's loop_check, the proof the loop looped);
 # (3) TIME -- bench_prolog_wrap.sh --mode=time --bud=MS: the answer once (stdout == <k>.ref), every repetition held == to it or the run
 # throws bench__mismatch, and a BENCH line with iters >= 1 and mismatched=0. A kernel PASSES a mode when all three pass; the row is the
@@ -33,8 +33,8 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 . "$HERE/lib_progress.sh" 2>/dev/null || refuse "lib_progress.sh unloadable"
 . "$HERE/lib_prolog_bench.sh" 2>/dev/null || refuse "lib_prolog_bench.sh unloadable -- loop_check is the iteration angle's proof"
 GEN="$HERE/bench_prolog_wrap.sh"; [ -x "$GEN" ] || refuse "no wrapper generator at $GEN -- angles 2 and 3 have nothing to run"
-WRAP="$HERE/../../SCRIP/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/../../SCRIP/tools/bench_rusage.c" || refuse "tools/bench_rusage failed to build -- angle 1 has no wrapper"
+WRAP="$HERE/../../SCRIP/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/bench_rusage.c" || refuse "out/bench_rusage failed to build -- angle 1 has no wrapper"
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac
 case "$BUD_MS" in ''|*[!0-9]*|0) refuse "BENCH_BUD_MS must be a positive whole number of milliseconds (got '$BUD_MS')";; esac
 IS_BOARD=0; one_runner_suite_is_a_board "$BD" && IS_BOARD=1

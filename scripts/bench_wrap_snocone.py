@@ -13,7 +13,7 @@ WHAT THE GENERATED PROGRAM DOES, IN ORDER:
        BENCH mode=time kernel=<K> iters=<n> ns=<elapsed> budget_ms=<b> (angle 1: fixed time, iterations counted)
      TIME() is integer nanoseconds in SCRIP and in the SPITBOL build under /home/resources (measured 2026-09-23: a 3,000,000-step
      loop read 64,795,259 against 73 ms of wall on SCRIP and 162,158,564 against 169 ms on sbl -bf).
-  (Angle 3, the process wrapper, needs no generated program: the runner times the pristine source under tools/bench_rusage.)
+  (Angle 3, the process wrapper, needs no generated program: the runner times the pristine source under out/bench_rusage.)
 
 TWO SHAPES OF PRISTINE PROGRAM, AND WHAT IS REPEATED IN EACH:
   MARKED -- the program carries exactly one comment line  // *BENCH kernel=<FN> check=<N> bud=<ms> flr=<ms> [batch=<K>]

@@ -71,8 +71,8 @@ FPC="$(fpc_bin)" || exit 2
 # ⛔ THE SCRIP ARMS RUN UNDER THE KERNEL'S OWN DECLARATION (R-1281, 2026-09-26; RULES.md hard-cap rule clause 8 (f)): DECL_SW carries the
 #   <k>.heap / <k>.stack sidecars as SPITBOL's -d<kb>k -s<kb>k switches on every m3 and m4 command line, the reps=1 correctness gate included.
 declare -a DECL_SW=(); declare -A DECLW=()
-WRAP="$ROOT/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
+WRAP="$ROOT/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 
 # fpc needs {$mode objfpc} prepended (default 16-bit `integer` silently corrupts the Hennessy RNG --
@@ -204,7 +204,7 @@ echo "TIME-BASED PASCAL BENCHMARKS -- angle 1: fixed wall-time budget (${BUDGET_
 echo "via live doubling search (unchanged), which becomes n1 of a x1/x4/x16 triple (narrowed to x1/x2/x4 only"
 echo "when quick's crash cap forces it); WORK is the us/rep SLOPE fit across it (COST basis, lower=faster;"
 echo "see the SLOPE CURE header note) -- NONLINEAR means the two segment slopes disagreed by >LIN_TOL%"
-echo "engines: fpc m3 m4   corpus: $B   budget: TIME_BUDGET_MS=$BUDGET_MS cap NMAX=$NMAX LIN_TOL=$LIN_TOL%   external instrument: tools/bench_rusage"
+echo "engines: fpc m3 m4   corpus: $B   budget: TIME_BUDGET_MS=$BUDGET_MS cap NMAX=$NMAX LIN_TOL=$LIN_TOL%   external instrument: out/bench_rusage"
 echo
 printf "%-10s %14s %14s %14s  %s\n" BENCHMARK fpc-us/rep m3-us/rep m4-us/rep check
 printf "%-10s %14s %14s %14s  %s\n" "----------" "--------------" "--------------" "--------------" "-----"

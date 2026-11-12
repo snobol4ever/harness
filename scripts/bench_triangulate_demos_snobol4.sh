@@ -18,7 +18,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # THE THREE ANGLES, mapped onto a whole-program unit:
 #   Angle 1 -- TIME-mode : fixed wall-clock budget; count COMPLETED RUNS -> runs/s.
 #   Angle 2 -- ITER-mode : fixed RUN COUNT (REPS_A2); measure total external CPU -> runs/s.
-#   Angle 3 -- TELEMETRY : tools/bench_rusage wraps EVERY arm of angles 1 and 2 -- cpu(user+sys),
+#   Angle 3 -- TELEMETRY : out/bench_rusage wraps EVERY arm of angles 1 and 2 -- cpu(user+sys),
 #              elapsed(CLOCK_MONOTONIC), maxrss, nivcsw, and ru_inblock/ru_oublock. Disk is a
 #              CONTAMINATION signal, never folded into the verdict (same role it plays in the
 #              kernel script): these demos read stdin from a file, so inblock is NOT expected to be
@@ -67,10 +67,10 @@ SWD=""; OAD=""
 SBL="$(sbl_clean_bin)" || { echo "⛔ REFUSED: clean SPITBOL benchmark oracle missing or not -bf-capable." >&2; exit 2; }
 [ -d "$D" ] || { echo "⛔ REFUSED: demo corpus missing ($D)." >&2; exit 2; }
 [ -f "$SCALETSV" ] || { echo "⛔ REFUSED: $SCALETSV missing -- scales are MEASURED ceilings, never guessed at run time." >&2; exit 2; }
-WRAP="$ROOT/tools/bench_rusage"
-if [ ! -x "$WRAP" ]; then gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }; fi
+WRAP="$ROOT/out/bench_rusage"
+if [ ! -x "$WRAP" ]; then gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }; fi
 if ! "$WRAP" true 2>&1 | grep -q 'inblock='; then
-  echo "⛔ REFUSED: $WRAP predates the inblock/oublock fields -- angle 3 would report empty. Rebuild: gcc -O2 -o $WRAP $ROOT/tools/bench_rusage.c" >&2; exit 2; fi
+  echo "⛔ REFUSED: $WRAP predates the inblock/oublock fields -- angle 3 would report empty. Rebuild: gcc -O2 -o $WRAP $ROOT/../harness/scripts/bench_rusage.c" >&2; exit 2; fi
 
 W="${DEMO_WORK:-${TMPDIR:-/tmp}/demo3a.$$}"; mkdir -p "$W" || exit 2
 RT="$ROOT/out"
@@ -141,13 +141,13 @@ angle2() {                             # echoes: runs_per_s runs cpu_ms_total di
 echo "THREE-ANGLE DEMO TRIANGULATION -- SNOBOL4 demo programs"
 echo "⛔ BASIS: one iteration = ONE WHOLE PROGRAM RUN. Every number is a TOTAL carrying process"
 echo "   startup AND compile -- NOT a kernel slope. Never share a column with benchmarks/snobol4."
-echo "instrument: tools/bench_rusage external cpu(user+sys); engines: $ENGINES; budget(a1)=${BUDGET_MS}ms; reps(a2)=$REPS_A2; tol=${TOL}%"
+echo "instrument: out/bench_rusage external cpu(user+sys); engines: $ENGINES; budget(a1)=${BUDGET_MS}ms; reps(a2)=$REPS_A2; tol=${TOL}%"
 RT_OPT_READ=$(readelf --debug-dump=info "$(dirname "$SCRIP")/out/libscrip_rt.so" 2>/dev/null | grep -m1 -o ' -O[0-3sg]' | tr -d ' '); RT_OPT_READ="${RT_OPT_READ:-?}"
 echo "oracle: $SBL $(sbl_lang_flags); RT_OPT=$RT_OPT_READ (read from libscrip_rt.so's DWARF); sizes: each program's own .oracle_args (sbl) and .heap/.stack (SCRIP -d/-s) over each engine's defaults -- CRITERION CHANGED 2026-10-03 (R-1485): earlier readings ran sbl -d512m -i64m -s256m, ulimit -s 262144 on all three engines and a 4 GB SCRIP window"
 echo "trees: SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)  corpus $(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)"
 # ⛔ THE GRID OPENS HERE so no multiple below can print without the load it ran under, and so a cell that
 # REFUSES is counted in THIS shell (perf_row is called directly, never inside $( ) -- arm G of the dark-cell gate).
-perf_grid_begin "demo vs SPITBOL -- x on the FASTER axis (SPITBOL/ours) · TOTAL basis, whole-program run incl startup+compile · instrument tools/bench_rusage cpu(user+sys) · RT_OPT=$RT_OPT_READ"
+perf_grid_begin "demo vs SPITBOL -- x on the FASTER axis (SPITBOL/ours) · TOTAL basis, whole-program run incl startup+compile · instrument out/bench_rusage cpu(user+sys) · RT_OPT=$RT_OPT_READ"
 echo
 printf "%-11s %-6s %12s %12s %9s %-9s %7s %7s %s\n" DEMO ENGINE "a1 runs/s" "a2 runs/s" "ratio" "VERDICT" "inblk" "oublk" "answer"
 printf '%s\n' "-------------------------------------------------------------------------------------------------------"

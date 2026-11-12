@@ -17,7 +17,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #       beside the self-measured ones".  Angle 1 (test_bench_prolog_timed.sh) and angle 2
 #       (bench_prolog_fixed_iter.sh) have carried these two grids since 2026-09-13; this angle was the
 #       last of the three without them, so the row's own DONE-WHEN could not close.  ELAPSED comes from
-#       tools/bench_rusage OUTSIDE the process, WORK from the generated bracket INSIDE it, and
+#       out/bench_rusage OUTSIDE the process, WORK from the generated bracket INSIDE it, and
 #       OVERHEAD is the difference — the startup + consult/codegen + teardown the kernel never did,
 #       which on a single-shot angle is most of the wall clock and is the whole point of measuring here.
 #
@@ -79,8 +79,8 @@ command -v swipl   >/dev/null 2>&1 || { echo "⛔ REFUSED-TO-GRADE swipl absent"
 . "$HERE/lib_perf_fmt.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_perf_fmt.sh -- the ONE authority for the load stamp and the whole-grid refusal"; exit 2; }
 # ⛔ THE ONE loop_check, shared with angles 1 and 2: a rule with two copies proves the copies agree, never that either is right.
 . "$HERE/lib_prolog_bench.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot source lib_prolog_bench.sh -- the ONE loop-output check"; exit 2; }
-WRAP="$ROOT/tools/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED-TO-GRADE: bench_rusage failed to build -- basis (B) has no external instrument"; exit 2; }
+WRAP="$ROOT/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED-TO-GRADE: bench_rusage failed to build -- basis (B) has no external instrument"; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 now_ms() { echo $(( $(date +%s%N) / 1000000 )); }
 # median_ms <cmd...> : run N times, print median wall ms (captures stdout to $W/last.out)
@@ -219,11 +219,11 @@ echo
 echo "(A) RESULT: timed=$tot_ok skipped=$tot_skip   (SKIP = the 4-way single-shot answers are not consensus-green; timing a wrong answer is meaningless)"
 echo
 echo "(B) THE TWO-NUMBER WORK/OVERHEAD BASIS -- over the GENERATED wrapped form ($(basename "$GEN") --mode=single),"
-echo "    external instrument tools/bench_rusage, median-by-elapsed of $N runs, BOTH cells from that one run."
+echo "    external instrument out/bench_rusage, median-by-elapsed of $N runs, BOTH cells from that one run."
 echo "    ⛔ These rows are NOT (A)'s rows minus anything: (A) runs the pristine kernel, (B) runs the wrapped"
 echo "    form (which on gnu/swi also inlines that engine's prelude). Two programs, two tables, no subtraction."
 echo
-echo "EXTERNAL ELAPSED (us) -- tools/bench_rusage, CLOCK_MONOTONIC, the whole process"
+echo "EXTERNAL ELAPSED (us) -- out/bench_rusage, CLOCK_MONOTONIC, the whole process"
 printf "%-20s %14s %14s %14s %14s\n" BENCHMARK gnu swi m3 m4r
 printf "%-20s %14s %14s %14s %14s\n" "--------------------" "--------------" "--------------" "--------------" "--------------"
 for k in "${basis_rows[@]}"; do
@@ -259,7 +259,7 @@ echo "ENGINES: GNU=$("$(gprolog_bin)" --version </dev/null 2>&1 | head -1)"
 echo "         SWI=$(swipl --version </dev/null 2>&1 | head -1)"
 echo "METHOD: (A) wall-clock median of $N; GNU=consult mode; SWI=script mode; m3=--run end-to-end"
 echo "        (in-process codegen+exec); m4r=precompiled binary exec only; m4c=compile+as+gcc."
-echo "        (B) generated --mode=single wrapper per engine, median-by-elapsed of $N under tools/bench_rusage."
+echo "        (B) generated --mode=single wrapper per engine, median-by-elapsed of $N under out/bench_rusage."
 # ⛔ THE GRID VERDICT IS PRINTED, AND IT IS NOT SWALLOWED.  perf_grid_end says how many cells could not
 #   measure their subject at all -- a run that crashed or did not finish, a bracket that reported
 #   nothing, a wrapped form that would not build, a generator that refused.  TICK-FLOOR is NOT among
