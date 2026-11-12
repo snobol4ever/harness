@@ -12,7 +12,7 @@ One line per row of SUITE_RUNNERS.tsv that is not a port row:
   part    entries the cycle's cells name (PARTITION.tsv, core and chunk:NN)
   gone    cell entries the container lacks: the harness refuses the whole cell rc 2
   nocell  container entries no cell names: the cycle never grades them
-  owed    programs the builder left out by its OWN measurement (ALL.omit) that no package table (EXCLUDED.tsv, CONTAINERS.tsv) declares out
+  owed    programs the builder left out by its OWN measurement (ALL.omit) that no package table (EXCLUDED.tsv, CONTAINERS.tsv, a case package's EXCLUDED_CASES.tsv) declares out
           of the denominator: published, shipped, and graded by nothing since the package runners were deleted (harness cc2783502)
   cells   the cycle cells of the row; lap: the last finished lap's cells by exit code (rc:n); held: cells named in CYCLE.skip
 VERDICT words: BY-ITS-RUNNER (kind small: one cell a lap by the row's runner, COO-516; structurally not ok until it is a package), NOT-IN-CYCLE (kind none, or a small row with no runner), NO-CONTAINER, NO-PARTITION, PARTITION-NAMES-n-ABSENT,
@@ -52,7 +52,8 @@ def owed_of(d):
             if ": " in x:
                 reasons[x.split(": ", 1)[0].strip()] = x.split(": ", 1)[1].strip()
     out = table_names(d, "EXCLUDED.tsv") | table_names(d, "CONTAINERS.tsv")
-    return [(n, reasons[n]) for n in sorted(reasons) if n not in out and os.path.splitext(n)[0] not in out and not DECLARED.search(reasons[n])]
+    cases = table_names(d, "EXCLUDED_CASES.tsv")   # a case-granularity package (logtalk_iso): a row group:case declares that case and each branch group:case#N its guards split it into (the cfo 2026-11-12, row packages-owed-prolog-raku-cfo)
+    return [(n, reasons[n]) for n in sorted(reasons) if n not in out and os.path.splitext(n)[0] not in out and n.split("#", 1)[0] not in cases and not DECLARED.search(reasons[n])]
 
 
 def main():

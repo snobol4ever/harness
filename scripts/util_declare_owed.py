@@ -24,9 +24,12 @@ CLOSED = [
     (r"^the oracle's translator refused it", "NO_ORACLE_ANSWER"),
     (r"^LIBRARY:", "NOT_A_UNIT_TEST"),
     (r"^multi-program file", "NOT_A_UNIT_TEST"),
+    (r"^NEEDS-DISPLAY: the source names NativeCall", "NEEDS_C_LIBRARY"),   # NativeCall is Raku's C foreign-function interface, no display (the cfo 2026-11-12, row packages-owed-prolog-raku-cfo: 33 such programs in rakudo-t and raku-examples)
+    (r"^NEEDS-DISPLAY: the source names Term(inal)?::", "NEEDS_TERMINAL"),   # Term::ANSIColor, Terminal::*: a terminal, Lon's NEEDS_TERMINAL word, not a graphics facility
     (r"^NEEDS-DISPLAY:", "NEEDS_GRAPHICS_FACILITY"),
     (r"^NEEDS-NETWORK:", "NEEDS_NETWORK"),
     (r"^NEEDS-C-COMPILER:", "NEEDS_C_LIBRARY"),
+    (r"^NEEDS-ITS-OWN-SYSTEM:", "NO_ORACLE_ANSWER"),   # its main raises under the oracle for a builtin or library of another system's own (trealla-more: fork/0, Trealla's socket library, put_atts/2): the oracle gives no answer
     (r"(?i)^loads c through \S+\.clib", "NEEDS_LOADFUNC"),
 ]
 
