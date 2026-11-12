@@ -1,0 +1,4 @@
+package pktwo
+procedure probe(x)
+   return "probe " || twice(x) || "!";
+end

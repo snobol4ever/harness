@@ -36,6 +36,7 @@ moved_auto() {
     for o in "rung36_all__$name" "${name}__$name" "${name}__${name#rung36_jcon_}" "$name"; do   # the last but one: an entry staged under the jcon file name (rung36_jcon_io__io)
         if grep -q ",${o}," "$CORPUS/ALL.csv"; then echo "  MOVED $name -> the icon master, origin $o (graded by the IcnRungs board, not counted twice here)"; return; fi
     done
+    if [ -f "$S4E/harness/fixtures/test_gate_icn_rundir_contract/$name.icn" ]; then echo "  MOVED $name -> harness/fixtures/test_gate_icn_rundir_contract (graded by test_gate_icn_rundir_contract.sh in its run directory, not counted twice here)"; return; fi
     # a jcon program the vendored package already carries (rung36_jcon_toby, deleted 2026-09-03 at a4d591ad4, is packages/icon/jcon_tests/toby.icn)
     if grep -q ",jcon_tests__${name#rung36_jcon_}," "$S4E/corpus/packages/icon/jcon_tests/ALL.csv" 2>/dev/null; then echo "  MOVED $name -> the jcon package, origin jcon_tests__${name#rung36_jcon_} (graded by the jcon suite, not counted twice here)"; return; fi
     echo "⛔ REFUSES rc=2: $name is neither loose in $CORPUS nor an origin in $CORPUS/ALL.csv -- the coverage is in neither place; this is not a pass"; exit 2

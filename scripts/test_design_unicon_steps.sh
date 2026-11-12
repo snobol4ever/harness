@@ -20,7 +20,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/icon/unicon"
+WD="$ROOT/harness/fixtures/unicon"   # the six package witnesses left corpus/tests/icon/unicon 2026-11-12; they enter the master once the oracle compiles a package first
 STEPS="$ROOT/harness/designs/unicon/STEPS.tsv"   # moved from corpus/tests/icon/unicon (the coo 2026-11-12, the tests/icon consolidation; CIO-56: a design table lives in harness/designs)
 OUT="/tmp/s4e-design-unicon"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }

@@ -1,0 +1,3 @@
+procedure shout(s)
+   ::write(s, " from a markerless file");
+end

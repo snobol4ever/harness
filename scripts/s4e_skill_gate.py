@@ -26,7 +26,7 @@ RULES = [   # (regex on the path, skills) -- every matching rule applies; the pa
     (r"/SCRIP/src/runtime/rt/gc_|/SCRIP/src/runtime/rtx/rtx_(gc|alloc)\.s$", ["gc-collector"]),
     (r"/SCRIP/src/runtime/rt/rt\.c$|/SCRIP/src/lower/lower_call_forms\.c$|/harness/scripts/builtins\.tsv$", ["runtime-calls"]),
     (r"/SCRIP/Makefile$", ["scrip-build"]),
-    (r"/SCRIP/src/lower/lower_icon_class\.c$|/corpus/tests/icon/unicon/|/corpus/packages/icon/unicon_tests/|/\.github/GOAL-UNICON-100\.md$|/harness/scripts/[^/]*unicon[^/]*$", ["unicon"]),
+    (r"/SCRIP/src/lower/lower_icon_class\.c$|/harness/fixtures/unicon/|/corpus/packages/icon/unicon_tests/|/\.github/GOAL-UNICON-100\.md$|/harness/scripts/[^/]*unicon[^/]*$", ["unicon"]),
     (r"/harness/scripts/test_[^/]*\.sh$|/corpus/(tests|packages|demos|benchmarks)/.*(\.ref|/ALL\.csv|/STEPS\.tsv|/LADDER\.tsv)$|/corpus/tests/.*\.(sno|icn|pl|pas|raku|sc|reb)$", ["gates-and-witnesses"]),
     (r"/harness/scripts/(s4e_[^/]*\.sh|s4e_[^/]*\.py|util_fleet_[^/]*|util_sync_root\.sh|util_queue[^/]*|box_tick\.sh|handoff_status\.sh)$|/resources/postoffice/MODE$", ["fleet-bus"]),
     (r"/harness/scripts/(lib_slots|util_batch|util_run_slot|util_cc_slot|util_mem_scope|util_jobserver|util_seat_census|box_decide)[^/]*$|/s4e-tick\.(service|timer)$|/harness/scripts/SLOTS\.tsv$|/resources/postoffice/BUDGET\.tsv$", ["shared-box"]),

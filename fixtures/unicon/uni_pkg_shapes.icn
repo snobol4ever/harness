@@ -1,0 +1,9 @@
+package shapes
+procedure describe(s)
+   return "shape " || s;
+end
+class Circle(r)
+   method area()
+      return 3 * r * r;
+   end
+end

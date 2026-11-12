@@ -1,0 +1,4 @@
+import uni_pkg_named_like_the_program
+procedure main()
+   write(pkself_f());
+end

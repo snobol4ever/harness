@@ -1,0 +1,8 @@
+package pktwo
+procedure kind(x)
+   if type(x) == "integer" then return "int";
+   return "other";
+end
+procedure twice(x)
+   return kind(x) || "," || kind(x);
+end

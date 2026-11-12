@@ -1,0 +1,7 @@
+import shapes
+procedure main()
+   local c;
+   write(describe("circle"));
+   c := Circle(2); write(c.area());
+   write(shapes::describe("qualified"));
+end

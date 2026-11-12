@@ -1,0 +1,7 @@
+invocable all
+
+package pkinv
+
+procedure pkinv_b()
+   return "b-ok";
+end

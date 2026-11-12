@@ -1,0 +1,7 @@
+import pktwo
+procedure main()
+   write(pktwo::kind(1));
+   write(pktwo::kind("s"));
+   write(pktwo::probe(2));
+   write(pktwo::probe("b"));
+end

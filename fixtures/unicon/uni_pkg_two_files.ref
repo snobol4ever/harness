@@ -1,0 +1,4 @@
+int
+other
+probe int,int!
+probe other,other!

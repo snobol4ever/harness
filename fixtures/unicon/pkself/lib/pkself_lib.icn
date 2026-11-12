@@ -1,0 +1,5 @@
+package uni_pkg_named_like_the_program
+
+procedure pkself_f()
+   return "self-ok";
+end

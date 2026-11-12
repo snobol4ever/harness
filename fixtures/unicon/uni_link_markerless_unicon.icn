@@ -1,0 +1,6 @@
+link uni_link_markerless_helper
+class UniconMarker()
+end
+procedure main()
+   shout("linked");
+end

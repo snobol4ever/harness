@@ -63,7 +63,7 @@ S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 . "$HERE/lib_oracle_flags.sh"
 
 SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-CORPUS="${CORPUS:-$S4E/corpus/tests/icon}"
+CORPUS="${CORPUS:-$S4E/harness/fixtures/test_gate_icn_rundir_contract}"   # the run-directory witness left corpus/tests/icon 2026-11-12 (Lon: "I'm not liking #/corpus/tests/icon/{config,rung36_bullshit,unicon} folders."); it enters the master with an env fence
 ICONT="$(icont_bin)"
 
 # ⛔ ROWS WHOSE CHECKED-IN .ref DISAGREES WITH THE ARIZONA ORACLE AND IS KNOWN TO COME FROM A DIFFERENT
