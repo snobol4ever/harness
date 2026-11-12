@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_raku_core_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: raku-core (the cto, 2026-11-05, CTO-514 rulings 2 and 3, CTO-517;
-# skill raku section 9). The plan is corpus/tests/raku/core/STEPS.tsv; the witnesses are the .raku programs beside it, each
+# skill raku section 9). The plan is harness/designs/raku_core/STEPS.tsv; the witnesses are the entries core__<name> of the raku master, each
 # with a .ref cut from Rakudo (rakudo_bin of lib_oracle_flags.sh: rakudo-local 2026.05).
 #
 #   --list       print the steps and run nothing
@@ -16,7 +16,7 @@
 #                  file=REL           the file REL exists under the root (a landing that must create it)
 #                  arms=N             the names in lower_raku.c's rk_is_str_subform table, at most N (0 when the function is gone)
 #                Red before the step lands, green after.
-#   --cut        re-cut every witness ref from Rakudo (the design seat's road; an HQ that changes a witness re-cuts it the same way)
+#   --cut        retired: a witness is an entry of the raku master, cut by util_add_ladder_witness.py (CIO-37)
 #   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.raku_core.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
@@ -25,8 +25,16 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/raku/core"
-STEPS="$WD/STEPS.tsv"
+STEPS="$HERE/../designs/raku_core/STEPS.tsv"   # moved from corpus/tests/raku/core (the cfo 2026-11-12, the tests/raku consolidation; CIO-24 c, CIO-56: a language folder is its container alone)
+. "$HERE/lib_design_witness.sh" || { echo "REFUSE(2): lib_design_witness.sh unloadable" >&2; exit 2; }
+# ⭐ A WITNESS IS THE ENTRY core__NAME OF THE RAKU MASTER (the cfo 2026-11-12; each ref cut from Rakudo twice by util_add_ladder_witness.py
+# --family core, equal to the loose .ref it replaced): witness NAME DIR extracts it into DIR and sets WP (its .raku) and WR (its ref).
+witness() {
+    mkdir -p "$2"
+    design_witness_has raku "core__$1" || refuse "witness $1: no entry core__$1 in corpus/tests/raku"
+    design_witness_extract raku "core__$1" "$2" > /dev/null 2>&1 || refuse "witness $1: its entry core__$1 did not extract"
+    WP="$2/core__$1.raku"; WR="$2/core__$1.ref"
+}
 OUT=""
 SUITES=/home/resources/progress/SUITES.tsv
 RESULTS=/home/resources/progress/results.tsv
@@ -46,7 +54,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default raku_core; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: raku-core -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/raku/core (refs from Rakudo 2026.05)"
+    echo "DESIGN-PLAN: raku-core -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses are the entries core__<name> of corpus/tests/raku (refs from Rakudo 2026.05)"
     printf '%-4s %-46s %-9s %-10s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-46s %-9s %-10s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -55,12 +63,7 @@ if [ "$mode" = list ]; then
 fi
 RAKU="$(. "$HERE/lib_oracle_flags.sh" && rakudo_bin)" || refuse "no rakudo (lib_oracle_flags.sh rakudo_bin)"
 if [ "$mode" = cut ]; then
-    for w in $(awk -F'\t' '!/^#/ && $1 != "step" && $6 != "-" {print $6}' "$STEPS" | tr ' ' '\n' | sort -u); do
-        T="$(mktemp -d "${TMPDIR:-/tmp}/rkcore_cut.XXXXXX")"; cp "$WD/$w.raku" "$T/"
-        ( cd "$T" && timeout -k 5 300 "$RAKU" "$w.raku" < /dev/null > "$WD/$w.ref" 2> "$T/err" ); echo "cut $w.ref: $(wc -l < "$WD/$w.ref") lines$(grep -q . "$T/err" && echo " (RAKUDO COMPLAINED: $(head -c 100 "$T/err" | tr '\n' ' '))")"
-        rm -rf "$T"
-    done
-    exit 0
+    refuse "--cut retired: the witnesses are entries of corpus/tests/raku, each ref cut from Rakudo twice by util_add_ladder_witness.py --lang raku --family core (CIO-37)"
 fi
 [ -n "$(col "$step" 1)" ] || refuse "no step $step in $STEPS (--list names them)"
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"
@@ -72,11 +75,11 @@ fi
 m3p=0; m4p=0; n=0; reds=""
 [ "$wits" = "-" ] && wits=""
 for w in $wits; do
-    ref="$WD/$w.ref"
-    [ -f "$WD/$w.raku" ] && [ -f "$ref" ] || refuse "witness $w has no .raku or .ref in $WD"
+    witness "$w" "$OUT/step$step/wit"; ref="$WR"
+    [ -f "$WP" ] && [ -f "$ref" ] || refuse "witness $w: its entry core__$w did not extract"
     n=$((n + 1))
     for m in m3 $([ "${S4E_MODE4:-0}" = 1 ] && echo m4); do
-        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WD/$w.raku" "$d/$w.raku"
+        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WP" "$d/$w.raku"
         if [ "$m" = m3 ]; then
             ( cd "$d" && timeout -k 5 120 "$SC/scrip" -d131072k -s4096k "$w.raku" < /dev/null > "$d/out" 2> "$d/err" ); rc=$?
         else

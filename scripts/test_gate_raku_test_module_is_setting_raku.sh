@@ -8,7 +8,7 @@
 # the parser's rename of plan/ok/is/... to __rk_test_* (rk_tree.c), the lowerer's subtest and throws-like cases (lower_raku.c), the __rk_test_ block of
 # by_name_dispatch.c with its TAP state (g_runtime.tap).
 #
-# THE ARMS: (1) corpus/tests/raku/setting/test_module.raku in mode 3 and mode 4 prints rakudo 2026.05's TAP byte for byte (test_module.ref) and exits
+# THE ARMS: (1) the raku master's entry setting__test_module (corpus/tests/raku/setting/test_module.raku until 2026-11-12) in mode 3 and mode 4 prints rakudo 2026.05's TAP byte for byte (test_module.ref) and exits
 # with its code (test_module.rc); (2) no `__rk_test_` name is left in rk_tree.c, lower_raku.c, by_name_dispatch.c or builtins.tsv; (3) raku_setting.inc
 # matches a fresh generation from the setting sources; (4) the Raku smoke (test_smoke_raku.sh) is green.
 # PROVEN RED ONCE: on origin 65dbbc9bd (the C arms) arm 1 reads red in both modes and arm 2 names every C site.
@@ -25,11 +25,15 @@ GATE_NAME="raku_test_module_is_setting_raku"
 gate_parse_args "$@"
 gate_require_fresh "$ROOT" src "$ROOT/scrip" "$ROOT/out/libscrip_rt.so"
 command -v gcc >/dev/null 2>&1 || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: gcc not found -- mode 4 cannot be linked"; exit 2; }
-WIT="$CORPUS/tests/raku/setting/test_module"
-for f in "$WIT.raku" "$WIT.ref" "$WIT.rc"; do [ -f "$f" ] || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: missing $f"; exit 2; }; done
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
+# ⭐ THE WITNESS IS THE ENTRY setting__test_module OF THE RAKU MASTER (the cfo 2026-11-12, the tests/raku consolidation: corpus/tests/raku/setting
+# left, its pair equal to the entry, its .rc the entry's ALL.rc line); extracted here, its exit code read from ALL.rc, a missing one REFUSES.
+WIT="$W/wit"
+python3 "$HERE/corpus_suite_harness.py" extract "$CORPUS/tests/raku/ALL.raku" "$CORPUS/tests/raku/ALL.ref" setting__test_module "$WIT.raku" --out-ref "$WIT.ref" > /dev/null 2>&1 \
+    || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: the entry setting__test_module did not extract from $CORPUS/tests/raku"; exit 2; }
+want_rc="$(awk -F'\t' '$1 == "setting__test_module" {print $2; exit}' "$CORPUS/tests/raku/ALL.rc" 2>/dev/null)"
+[ -n "$want_rc" ] || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: ALL.rc declares no exit code for setting__test_module"; exit 2; }
 red=0
-want_rc="$(cat "$WIT.rc")"
 cp "$WIT.raku" "$W/w.raku"
 ( cd "$W" && timeout -k 5 30 "$ROOT/scrip" w.raku > o3 2> e3 < /dev/null ); rc3=$?
 if cmp -s "$WIT.ref" "$W/o3" && [ "$rc3" = "$want_rc" ]; then echo "  GREEN m3 witness (rc $rc3)"; else echo "  RED   m3 witness: rc $rc3 want $want_rc"; diff "$WIT.ref" "$W/o3" | head -12; red=1; fi
