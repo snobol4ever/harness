@@ -3,7 +3,7 @@
 # xsb-tabling-wfs step 1, ARCH-PROLOG-WFS-TABLING.md section 8 R1). XSB's consult/1, [File], load_dync/1, ensure_dync_loaded/1 and ensure_loaded/1 read a consulted file's directives as the compiler does: a
 # ':- table path/2, unreach/1.' makes those predicates tabled, so the left-recursive path/2 of the sibling terminates and tnot(path(X,X)) answers. SCRIP's plain consult/1 ran the directive as a goal
 # (existence_error(procedure, table/1)) and the untabled left recursion overflowed the stack; the XSB dialect now sends consult/1 down the load_files(_, [dialect(xsb)]) road ensure_loaded already took,
-# and the prelude library xsb_builtins defines load_dync/1 and ensure_dync_loaded/1 on it. The expected text is the first four lines of the vendored XSB-cut ref corpus/tests/prolog/xsb_wfs/xw01_loader_table.ref.
+# and the prelude library xsb_builtins defines load_dync/1 and ensure_dync_loaded/1 on it. The expected text is the first four lines of the vendored XSB-cut ref corpus/packages/prolog/xsb_witnesses/xsb_wfs/xw01_loader_table.ref.
 # ARMS: (1) the five entry points and the list goal each print the four path(1,Y) answers (m3; the call and the list goal also in m4; the program is XSB's own text under the xsb package prelude)
 #       (2) a consult of a missing file raises existence_error(source_sink, F) with context consult/1, as the plain road did; the arm prints it as XSB 5.0.0 writes the indicator, consult / 1 (the writer landing of 2026-10-28 made the old text consult/1 stale)
 #       (3) the default dialect's consult/1 is the plain reader still: a file of facts consulted from a plain program loads and answers (the xsb clause is guarded by the dialect flag)
@@ -16,7 +16,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SCRIP="$HERE/../../SCRIP/scrip"
 RT="${RT_DIR:-$HERE/../../SCRIP/out}"
-WIT="$HERE/../../corpus/tests/prolog/xsb_wfs"
+WIT="$HERE/../../corpus/packages/prolog/xsb_witnesses/xsb_wfs"
 PRELUDE="$HERE/../../corpus/packages/prolog/xsb_tests/ALL.prelude"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"

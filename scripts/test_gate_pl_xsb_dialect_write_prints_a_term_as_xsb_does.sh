@@ -5,7 +5,7 @@
 # a prefix operator is followed by a space (- a, \+ a, - (1 + 2), - 1 for -(1) under write and - (1) under writeq); writeq wraps an operator atom that is a compound's argument
 # (f((-)), f((:-),a)) and quotes '{}' and ';' as atoms; write_canonical writes functional form with lists as lists (+(a,b), [a|b], '{}'(+(a,b)), ';'(a,b)). SCRIP's SWI-style compact
 # writer printed a+b, a:-b, a=b in the XSB dialect, which failed every XSB entry whose ref carries a spaced operator (238 of the 549 refs have one; table_tests_abol_test3 prints (f(1),a)).
-# THE WITNESS corpus/tests/prolog/xsb_writer/xwr01_operators.P writes 95 terms through write, writeln, writeq and write_canonical; its ref is XSB's own temp file (gentest protocol).
+# THE WITNESS corpus/packages/prolog/xsb_witnesses/xsb_writer/xwr01_operators.P writes 95 terms through write, writeln, writeq and write_canonical; its ref is XSB's own temp file (gentest protocol).
 # ARMS: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named)
 #       (4) CAN FAIL: the same comparison against a ref with one line changed reads RED
@@ -16,7 +16,7 @@ GATE_NAME=test_gate_pl_xsb_dialect_write_prints_a_term_as_xsb_does
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$HERE/../../SCRIP/scrip"
 RT="${RT_DIR:-$HERE/../../SCRIP/out}"
-WIT="$HERE/../../corpus/tests/prolog/xsb_writer"
+WIT="$HERE/../../corpus/packages/prolog/xsb_witnesses/xsb_writer"
 PRELUDE="$HERE/../../corpus/packages/prolog/xsb_tests/ALL.prelude"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"

@@ -3,7 +3,7 @@
 # packages/prolog/xsb_tests; the prolog_tests programs test_immutable and test_immutable2). XSB names a module by its file: [xld02_m] loaded again after the file changed replaces a regular module, but a module
 # loaded from a file with :- immutable. stays, a later load of the same module name is ignored whatever the new file holds, and an immutable file loaded over a regular module is ignored. SCRIP's XSB loader
 # ('$lf_install') re-installed every load and raised existence_error(procedure, immutable/0) for the directive; it records the module name (the file's base name) with its immutability now and skips the install.
-# THE WITNESS corpus/tests/prolog/xsb_loader/xld02_immutable.P with five module files xld02_a to xld02_e copied over xld02_m.P / xld02_n.P by shell/1 as XSB's own tests do; xld02_immutable.ref is XSB's temp file.
+# THE WITNESS corpus/packages/prolog/xsb_witnesses/xsb_loader/xld02_immutable.P with five module files xld02_a to xld02_e copied over xld02_m.P / xld02_n.P by shell/1 as XSB's own tests do; xld02_immutable.ref is XSB's temp file.
 # ARMS: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte; (4) CAN FAIL: the same comparison against a ref with one line changed reads RED
 # RED BEFORE (measured 2026-10-29, the one-file change to prolog_parse.c reverted and rebuilt): m3 and m4 both red, the reloads printed second(b), third(b) and sixth(e) lines the ref does not hold, and the
@@ -14,7 +14,7 @@ GATE_NAME=test_gate_pl_xsb_dialect_a_module_file_declaring_immutable_is_never_re
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$HERE/../../SCRIP/scrip"
 RT="${RT_DIR:-$HERE/../../SCRIP/out}"
-WIT="$HERE/../../corpus/tests/prolog/xsb_loader"
+WIT="$HERE/../../corpus/packages/prolog/xsb_witnesses/xsb_loader"
 PRELUDE="$HERE/../../corpus/packages/prolog/xsb_tests/ALL.prelude"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"

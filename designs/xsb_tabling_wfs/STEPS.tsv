@@ -1,0 +1,28 @@
+# STEPS.tsv -- THE DESIGN-PLAN xsb-tabling-wfs STEP TABLE (the cto, 2026-10-28, CEO-1996/1998; .github/ARCH-PROLOG-WFS-TABLING.md section 8).
+# harness/scripts/test_design_xsb_tabling_wfs_steps.sh reads it: --list prints it; --step N runs the step's witnesses (this folder's .P beside .ref cut from XSB 5.0.0 by its gentest protocol) in both modes as the package runs an entry (the package prelude prefixed, the vendored driver appended, every sibling .P staged beside), diff -w against the ref; then the step's package ENTRIES through the harness's own smoke (corpus_suite_harness.py smoke, no progress row), at most eight.
+# witness spec: NAME (gentest kind: tell(temp). test. told. on XSB; the sorted-output driver on SCRIP) or NAME:temp:GOAL (the wfs kind: GOAL on XSB writes temp itself; SCRIP runs initialization((GOAL, told)) and the answer is temp sorted).
+# probe tokens: entries=<e1,e2,...> (every named package entry PASS in both modes through the smoke) | families=<f1,f2> (results.tsv's latest reading per program of the named XsbTests families is PASS in both modes: read, never run) | row=<N> (SUITES.tsv XsbTests today_pass at or above N: read).
+step	slug	executor	depends	probe	witnesses
+1	the-loader-reads-table-directives	hq_packages	-	entries=sub_tests_lrtc1,sub_tests_sg1	xw01_loader_table
+2	the-wfs-driver-as-xsb-runs-it	hq_packages	1	entries=wfs_tests_p06,wfs_tests_p33,wfs_tests_p52,wfs_tests_p77	xw02_wfs_driver:temp:test(xw02_p33)
+3	the-xsb-reading	hq_packages	-	entries=neg_tests_q7,table_tests_abol_test3	xw03_reading
+4	auto-table-and-suppl-table	hq_packages	3	entries=delay_tests_seg1,delay_tests_win,delay_tests_fr1,delay_tests_dynstrat1	xw04_auto_table xw05_suppl_table
+5	the-table-builtin-surface	hq_packages	-	entries=table_tests_get_resid,prolog_tests_std1	xw06_builtins
+6	one-body-one-run	cfo	1	entries=delay_tests_przy1,delay_tests_abol_susp1,delay_tests_abol_susp2	xw07_once_per_body xw12_ball_abolish xw13_nested_resume xw14_three_table_scc xw15_throw_abandons
+7	the-scc-depth-number	cfo	6	entries=delay_tests_tabsimp_seq	xw08_scc_ring
+8	delay-lists-as-xsb-prints-them	hq_packages	6	entries=table_tests_test_wcs_1,table_tests_test_wcs_simpl,delay_tests_dl_dupl,delay_tests_asl_dupl,delay_tests_ac_tests	xw09_delay_print
+9	the-cut-over-an-incomplete-table	hq_packages	6	entries=table_tests_test_cut_over_tables	xw10_cut_over_table
+10	call-subsumption	cfo	1,3	entries=sub_tests_sg1,sub_tests_lrtc1,sub_tests_drtc1	xw11_subsumptive
+11	the-finish	hq_packages	1,2,3,4,5,6,7,8,9,10	families=wfs_tests,delay_tests,neg_tests,sub_tests row=380	xw01_loader_table xw02_wfs_driver:temp:test(xw02_p33) xw03_reading xw04_auto_table xw05_suppl_table xw06_builtins xw07_once_per_body xw08_scc_ring xw09_delay_print xw10_cut_over_table xw11_subsumptive xw13_nested_resume xw14_three_table_scc xw15_throw_abandons
+12	a-tables-record-as-xsb-reads-it	junior	6		xw16_table_record
+13	the-visitors-of-a-completed-incremental-table	junior	12	entries=incremental_tests_test_visitors,incremental_tests_s_test_visitors	xw17_visitors
+14	the-tables-in-progress-as-xsb-shows-them	junior	12		xw18_tables_in_progress
+15	the-dependency-graph-abstracted	junior	14	entries=table_tests_test_sdg_print	xw18_tables_in_progress
+16	table-dump-and-the-answer-order	junior	12		xw19_table_dump
+17	parsort-as-xsb-sorts	junior	6		xw23_parsort
+18	bounded-rationality-as-xsb-cuts-an-answer	junior	6,23		xw21_bounded_rationality
+19	unsafe-negation-is-undefined	junior	6		xw22_unsafe_negation
+20	the-residual-graph-and-why-an-answer-is-undefined	junior	18,19		xw24_residual_sccs
+21	the-dump-an-exception-writes	junior	14,20		xw25_exception_dump
+22	the-negative-pass-wakes-the-oldest-table-first	junior	6		xw26_negative_ring
+23	the-answer-size-flags-are-settable-under-xsb	junior	-		xw27_restraint_flags

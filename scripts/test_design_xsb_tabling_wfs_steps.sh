@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_xsb_tabling_wfs_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: xsb-tabling-wfs (the cto, 2026-10-28, R-1996/1998;
-# .github/ARCH-PROLOG-WFS-TABLING.md section 8). The plan is corpus/tests/prolog/xsb_wfs/STEPS.tsv; the witnesses are the .P programs beside it
+# .github/ARCH-PROLOG-WFS-TABLING.md section 8). The plan is corpus/packages/prolog/xsb_witnesses/xsb_wfs/STEPS.tsv; the witnesses are the .P programs beside it
 # (XSB's syntax, as the package corpus/packages/prolog/xsb_tests vendors XSB's own tests), each with a .ref cut from XSB 5.0.0 (xsb_bin(),
 # ORACLES.md; R-1927) by XSB's gentest protocol: `[w]. tell(temp). test. told.` and the file temp's non-empty lines sorted.
 #
@@ -21,9 +21,9 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/prolog/xsb_wfs"
+WD="$ROOT/corpus/packages/prolog/xsb_witnesses/xsb_wfs"
 PKG="$ROOT/corpus/packages/prolog/xsb_tests"
-STEPS="$WD/STEPS.tsv"
+STEPS="$HERE/../designs/xsb_tabling_wfs/STEPS.tsv"   # moved from the witnesses folder (CIO-56; the cfo 2026-11-12, row tests-consolidation-finish-cfo)
 OUT=""
 RESULTS=/home/resources/progress/results.tsv
 SUITES=/home/resources/progress/SUITES.tsv
@@ -43,7 +43,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default xsb_wfs; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: xsb-tabling-wfs -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/prolog/xsb_wfs (XSB syntax, refs from XSB 5.0.0)"
+    echo "DESIGN-PLAN: xsb-tabling-wfs -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/packages/prolog/xsb_witnesses/xsb_wfs (XSB syntax, refs from XSB 5.0.0)"
     printf '%-4s %-36s %-12s %-22s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-36s %-12s %-22s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"

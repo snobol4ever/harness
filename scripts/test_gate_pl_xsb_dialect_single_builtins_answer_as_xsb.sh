@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_xsb_dialect_single_builtins_answer_as_xsb.sh -- THE XSB DIALECT'S SINGLE BUILTINS ANSWER AS XSB 5.0.0 DOES (hq_packages 2026-10-29, the group 6 programs of the XsbTests non-tabling reds, R-2012).
-# One witness per builtin family in corpus/tests/prolog/xsb_builtins (xbiNN_name.P with its xbiNN_name.ref and, when it needs files beside it, an xbiNN_name.d directory copied into the run directory, the ref XSB's own temp file by the gentest protocol); the gate runs every pair it finds, so a landing
+# One witness per builtin family in corpus/packages/prolog/xsb_witnesses/xsb_builtins (xbiNN_name.P with its xbiNN_name.ref and, when it needs files beside it, an xbiNN_name.d directory copied into the run directory, the ref XSB's own temp file by the gentest protocol); the gate runs every pair it finds, so a landing
 # adds a witness and no gate.
 #   xbi01_arithmetic  round, ceiling, floor and truncate pass an integer through (ISO and GNU raise type_error(float, 5)); round is floor(X + 0.5); the xor evaluable is ><; an expression that is not evaluable
 #                     is type_error(evaluable, Term) with the term itself, not Name/Arity (the culprit of a top-level unary function is its argument, XSB's own quirk); a list is never evaluated, [a] included
@@ -45,7 +45,7 @@ GATE_NAME=test_gate_pl_xsb_dialect_single_builtins_answer_as_xsb
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$HERE/../../SCRIP/scrip"
 RT="${RT_DIR:-$HERE/../../SCRIP/out}"
-WIT="$HERE/../../corpus/tests/prolog/xsb_builtins"
+WIT="$HERE/../../corpus/packages/prolog/xsb_witnesses/xsb_builtins"
 PRELUDE="$HERE/../../corpus/packages/prolog/xsb_tests/ALL.prelude"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"

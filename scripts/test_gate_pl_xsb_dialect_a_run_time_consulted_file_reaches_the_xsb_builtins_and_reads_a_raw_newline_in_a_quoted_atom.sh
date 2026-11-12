@@ -7,7 +7,7 @@
 # (2) XSB reads a raw newline inside a quoted atom as a character (decker_facts.P holds 'Department of Social Science Informatics (S.W.I)<newline> Faculty of Psychology ...'); SCRIP's reader took the
 #     layout as a syntax error (cannot_start_term) unless the text carried the SWI marker, and a data file carries none, so load_dync stopped at line 161 of 1141. Under the XSB dialect at run time the
 #     reader now allows it.
-# THE WITNESS corpus/tests/prolog/xsb_loader: xld01_loaded_file.P (the program: the XSB marker compiler_options/1 and test/0, which consults xld01_loader), xld01_loader.P (names load_dync, term_depth,
+# THE WITNESS corpus/packages/prolog/xsb_witnesses/xsb_loader: xld01_loaded_file.P (the program: the XSB marker compiler_options/1 and test/0, which consults xld01_loader), xld01_loader.P (names load_dync, term_depth,
 #     term_size, import and ord_setproduct, the program text names none of them) and xld01_data.P (three facts, the middle atom spans two lines); xld01_loaded_file.ref is XSB's own temp file (gentest protocol).
 # ARMS: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named)
@@ -20,7 +20,7 @@ GATE_NAME=test_gate_pl_xsb_dialect_a_run_time_consulted_file_reaches_the_xsb_bui
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$HERE/../../SCRIP/scrip"
 RT="${RT_DIR:-$HERE/../../SCRIP/out}"
-WIT="$HERE/../../corpus/tests/prolog/xsb_loader"
+WIT="$HERE/../../corpus/packages/prolog/xsb_witnesses/xsb_loader"
 PRELUDE="$HERE/../../corpus/packages/prolog/xsb_tests/ALL.prelude"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"

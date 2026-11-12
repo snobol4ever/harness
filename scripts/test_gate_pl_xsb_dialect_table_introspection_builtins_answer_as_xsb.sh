@@ -3,7 +3,7 @@
 # ARCH-PROLOG-WFS-TABLING.md section 8 R12; R-1927: XSB 5.0.0 is the oracle of packages/prolog/xsb_tests). SCRIP's tabling library had get_calls/3, get_call/3 and get_returns_and_dls/3 but
 # not XSB syslib/tables.P's table_state/4, truth_value/2, variant_get_residual/2, get_calls_for_table/2, abolish_table_subgoal/1,2, abolish_nonincremental_tables/0,1 and delete_return/2,3: a program
 # naming one raised existence_error and the driver swallowed it (table_tests_get_resid, prolog_tests_std1 printed nothing). library(xsb_tables) now defines them over the table tries.
-# THE WITNESS corpus/tests/prolog/xsb_tables/xtb01_introspection.P asks table_state/4 of an untabled, a tabled-without-table, a variant-table and a non-variant call (XSB: (undefined,undefined,undefined),
+# THE WITNESS corpus/packages/prolog/xsb_witnesses/xsb_tables/xtb01_introspection.P asks table_state/4 of an untabled, a tabled-without-table, a variant-table and a non-variant call (XSB: (undefined,undefined,undefined),
 # (variant,no_entry,undefined), (variant,producer,complete), (variant,no_entry,undefined)), truth_value/2 of tabled, plain and undefined-valued goals, variant_get_residual/2 of an unconditional and a
 # conditional answer, and get_calls_for_table/2 of a tabled and a plain predicate (a permission_error); its ref is XSB's own temp file (gentest protocol).
 # ARMS: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
@@ -17,7 +17,7 @@ GATE_NAME=test_gate_pl_xsb_dialect_table_introspection_builtins_answer_as_xsb
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$HERE/../../SCRIP/scrip"
 RT="${RT_DIR:-$HERE/../../SCRIP/out}"
-WIT="$HERE/../../corpus/tests/prolog/xsb_tables"
+WIT="$HERE/../../corpus/packages/prolog/xsb_witnesses/xsb_tables"
 PRELUDE="$HERE/../../corpus/packages/prolog/xsb_tests/ALL.prelude"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"

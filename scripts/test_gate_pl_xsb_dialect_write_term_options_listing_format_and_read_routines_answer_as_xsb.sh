@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_xsb_dialect_write_term_options_listing_format_and_read_routines_answer_as_xsb.sh -- THE XSB DIALECT'S WRITE_TERM OPTIONS, LISTING, FORMAT AND READ ROUTINES ANSWER AS XSB 5.0.0 DOES (hq_packages 2026-10-29, R-1927: XSB is the oracle of packages/prolog/xsb_tests;
-# the prolog_tests row of the write, read, format and listing programs). Five witnesses in corpus/tests/prolog/xsb_writer, each ref XSB's own temp file (gentest protocol):
+# the prolog_tests row of the write, read, format and listing programs). Five witnesses in corpus/packages/prolog/xsb_witnesses/xsb_writer, each ref XSB's own temp file (gentest protocol):
 #   xwr02_write_term_options  ignore_ops writes lists as .(a,.(b,[])) and braces as {}(,(a,b)); portable(true) keeps lists and braces; integer_base(hex|octal|N), integer_prefix and radix write 0xff, 16'ff,
 #                             8'377, 0o173, -0xff; a list of printable codes is written as a double-quoted string by write_term (not under ignore_ops); max_depth counts list elements and compound arguments as XSB does
 #                             (n([1,2|...],f(g(...)))); with quoted(true) an operator functor is parenthesized ((+)(a,b)) but write_canonical's is not; an invalid option is domain_error(write_option, Option)
@@ -20,7 +20,7 @@ GATE_NAME=test_gate_pl_xsb_dialect_write_term_options_listing_format_and_read_ro
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$HERE/../../SCRIP/scrip"
 RT="${RT_DIR:-$HERE/../../SCRIP/out}"
-WIT="$HERE/../../corpus/tests/prolog/xsb_writer"
+WIT="$HERE/../../corpus/packages/prolog/xsb_witnesses/xsb_writer"
 PRELUDE="$HERE/../../corpus/packages/prolog/xsb_tests/ALL.prelude"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"

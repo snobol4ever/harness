@@ -6,7 +6,7 @@
 # in most loops, then an exported one, then of smaller arity, then the first); suppl_table(N) tables a predicate whose clause has an edb-dependency of N or more (and sums, or takes the maximum, if-then
 # sums; a tabled or edb predicate counts 1). SCRIP's lower now computes the same sets and renames them as a :- table declaration does; before, both directives ran as goals (existence warning) and the
 # untabled left recursion overflowed the stack.
-# THE WITNESSES corpus/tests/prolog/xsb_auto_table/xat01_auto_table.P (the manual's example, a three-cycle, tnot) and xat02_suppl_table.P (ten clause shapes) print predicate_property(Head, tabled) for each
+# THE WITNESSES corpus/packages/prolog/xsb_witnesses/xsb_auto_table/xat01_auto_table.P (the manual's example, a three-cycle, tnot) and xat02_suppl_table.P (ten clause shapes) print predicate_property(Head, tabled) for each
 # predicate; each ref is XSB's own temp file (gentest protocol).
 # ARMS: (1) ORACLE: each stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals each ref byte for byte (the first differing line is named)
@@ -19,7 +19,7 @@ GATE_NAME=test_gate_pl_xsb_dialect_auto_table_and_suppl_table_table_the_predicat
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$HERE/../../SCRIP/scrip"
 RT="${RT_DIR:-$HERE/../../SCRIP/out}"
-WIT="$HERE/../../corpus/tests/prolog/xsb_auto_table"
+WIT="$HERE/../../corpus/packages/prolog/xsb_witnesses/xsb_auto_table"
 PRELUDE="$HERE/../../corpus/packages/prolog/xsb_tests/ALL.prelude"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"
