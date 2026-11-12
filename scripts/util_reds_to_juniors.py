@@ -123,7 +123,7 @@ def read_suite(key):
 
 def feed(order, reader, po, rows, limit, juniors, apply):
     topics, dw = d2d.live_rows(po)
-    n = load(po, juniors); bugs = []; reds_n = rowed_n = read_n = 0
+    n = load(po, juniors); bugs = []; reds_n = rowed_n = read_n = unread_n = 0
     for key, lang in order:
         if len(bugs) >= limit: break
         text = reader(key)
@@ -131,6 +131,11 @@ def feed(order, reader, po, rows, limit, juniors, apply):
             print("SKIP_SUITE suite=%s (the score writer printed no SUITE_ROW board line: %s)" % (key, (text.strip().splitlines() or ["no output"])[-1][:160])); continue
         read_n += 1
         reds = [(m.group(1), m.group(2).strip()) for m in re.finditer(r"^SUITE_ROW_RED (\S+) (.*)$", text, re.M)]
+        # ⛔ AN UNREAD ENTRY IS NO BUG (the coo 2026-11-12, measured: junior_05, junior_09 and junior_10 each found their row's entry passing,
+        # its red the label m3=UNREAD on a tree no reading covers yet -- raku-rungs read 95 UNREAD and 1 FAIL): only a measured red is minted;
+        # an unread entry waits for the cycle's lap
+        unread_n += sum(1 for _e, r in reds if "UNREAD" in r)
+        reds = [(e, r) for e, r in reds if "UNREAD" not in r]
         reds_n += len(reds)
         for e, reading in reds:
             pat = re.compile(r"(^|[^A-Za-z0-9_/])" + re.escape(e) + r"($|[^A-Za-z0-9_/])")
@@ -150,7 +155,7 @@ def feed(order, reader, po, rows, limit, juniors, apply):
                 if l.startswith(("minted ", "WAKE:", "queued ", "⛔", "REFUSE")): print(l)
             if not ok: print("MINT_REFUSED topic=%s rc=%d" % (t, p.returncode))
     tree = subprocess.run(["git", "-C", os.path.join(ROOT, "harness"), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
-    print("FEED_BOARD suites_read=%d reds=%d rowed=%d bugs=%d minted=%d limit=%d (tree %s)" % (read_n, reds_n, rowed_n, len(bugs), minted, limit, tree or "?"))
+    print("FEED_BOARD suites_read=%d reds=%d unread=%d rowed=%d bugs=%d minted=%d limit=%d (tree %s)" % (read_n, reds_n, unread_n, rowed_n, len(bugs), minted, limit, tree or "?"))
     return bugs, rowed_n, minted
 
 
