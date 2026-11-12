@@ -8,6 +8,8 @@
 #   - a static that became a hidden extern: its local or global binding, the numbered suffix of a function-local static (x.1, x.2), the call that was
 #     resolved inside the unit and is now a relocation to the same name, the leading endbr64 a global function gains under -fcf-protection (and the 4-byte
 #     shift of its own branch targets and relocation offsets), a reference to an exported constant string by its symbol where the unit reached its bytes;
+#   - LAMBDA: two lambdas of one function share a name in the reader (it keys a local C++ function by the text before its parameters), so their code
+#     is compared as one sorted list of bodies; ALIGN: an exported static's frame grows by 8 to keep 16-byte alignment (align_only);
 #   - FILELINE: an instruction whose immediate is a __LINE__ and a relocation whose string is __FILE__, where the parent's string names the unit and the
 #     child's names the piece that now holds the function (the gc callback ledger records the piece, which is where the code is).
 # A symbol on one side only, a writable variable (.data, .bss) that the child defines more than once (a static the head would duplicate), or any other
@@ -23,7 +25,7 @@ def _reloc_desc_named(e, roff, rinfo, add, adj=None):
     """lib_elf_noncomdat names a reference into .data.rel.ro by its section alone; a split moves a static table of pointers into a unit of its own, where it is
     reached by its symbol, so the reference is named here by the symbol the section offset falls in, as a reference into any other section is."""
     d = _reloc_desc(e, roff, rinfo, add, adj)
-    if d[1] == 'A':
+    if d[1] in ('A', 'R'):
         sym = rinfo >> 32
         sy = e.syms[sym] if sym < len(e.syms) else None
         if sy is not None and 0 < sy['shndx'] < len(e.sec):
@@ -35,6 +37,9 @@ def _reloc_desc_named(e, roff, rinfo, add, adj=None):
 
 L.reloc_desc = _reloc_desc_named
 PC={2,4}
+RENAMES = {}
+
+
 def norm(name):
     """A symbol's comparable name: no numbered suffix of a function-local static (x.1), no parameter list (a C++ function a split exported is
     demangled with its signature where the unit's local copy was keyed by its bare name), one name for every unit's static-initializer function."""
@@ -44,7 +49,7 @@ def norm(name):
     prev = None
     while prev != name:
         prev, name = name, re.sub(r'\((?:[^()]|\([^()]*\))*\)( const)?(?=$|::|\[)', '', name)
-    return name
+    return RENAMES.get(name, name)
 _DEM = {}
 
 
@@ -132,9 +137,9 @@ def rip_lea_targets(obj, fn):
         nxt = out[i + 1] if i + 1 < len(out) else ''
         r = re.search(r'R_X86_64_\w+\s+([A-Za-z_][\w.]*)([+-]0x[0-9a-f]+)?', nxt)
         if r:
-            t.append(('R', re.sub(r'\.\d+$', '', r.group(1))))
+            t.append(('R', norm(dem(re.sub(r'\.\d+$', '', r.group(1))))))
         else:
-            t.append(('S', re.sub(r'\.\d+(\+|$)', r'\1', m.group(2) or '?')))
+            t.append(('S', norm(re.sub(r'\.\d+(\+|$)', r'\1', (m.group(2) or '?').split('+')[0]))))
     return t
 
 
@@ -149,13 +154,25 @@ def local_addr_only(a, b, fnames, pobj=None, cobj=None, fn=None):
             n += 1
     if not (pobj and cobj and fn):
         return 0
-    tp, tc = rip_lea_targets(pobj, fn), rip_lea_targets(cobj, fn)
+    tp, tc = rip_lea_targets(pobj[0], pobj[1]), rip_lea_targets(cobj[0], cobj[1])
     if len(tp) != len(tc) or [x[1].split('+')[0] for x in tp] != [y[1].split('+')[0] for y in tc]:
         return 0
     ra, rb = set(a[2]), set(b[2])
     if any(not (r[1] == 'sym' and r[2] in fnames) for r in (ra - rb) | (rb - ra)):
         return 0
     return n
+
+
+def align_only(a, b):
+    """ALIGN: a static that calls only functions of its own unit may keep a frame gcc aligns to 8; once it is exported (global, hidden) gcc
+    aligns it to 16, so its frame grows by 8 and nothing else changes: every instruction equal but one 'sub $N,%rsp', which grows by 8."""
+    if a[0] != b[0] or not isinstance(a[1], tuple) or len(a[1]) != len(b[1]) or not reconcile(a[2], b[2]):
+        return False
+    d = [(p, q) for p, q in zip(a[1], b[1]) if p != q]
+    if len(d) != 1:
+        return False
+    m1, m2 = re.match(r'sub \$0x([0-9a-f]+),%rsp$', d[0][0]), re.match(r'sub \$0x([0-9a-f]+),%rsp$', d[0][1])
+    return bool(m1 and m2) and int(m2.group(1), 16) - int(m1.group(1), 16) == 8
 
 
 def fileline_only(a, b, srcs):
@@ -185,7 +202,13 @@ def main():
     ap.add_argument('--child', nargs='+', default=[])
     ap.add_argument('--show', type=int, default=20)
     ap.add_argument('--selftest', action='store_true')
+    ap.add_argument('--renames', action='append', default=[], help='a TSV new<TAB>old the split tool wrote: an exported static it renamed')
     a = ap.parse_args()
+    for f in a.renames:
+        for ln in open(f, encoding='utf-8'):
+            if ln.strip() and not ln.startswith('#'):
+                new_, old_ = ln.rstrip('\n').split('\t')[:2]
+                RENAMES[new_] = old_
     if a.selftest:
         return selftest()
     pa, ch = expand(a.parent), expand(a.child)
@@ -196,7 +219,7 @@ def main():
     except Exception as e:
         print('REFUSE(2): %s' % e); return 2
     srcs = ('.c', '.cpp', '.cc')
-    same = fl = la = 0
+    same = fl = la = lam = aln = 0
     bad = []
     fnames = {k[1] for k in C if k[0].startswith('.text')}
     def where(objs):
@@ -205,7 +228,8 @@ def main():
             for ln in subprocess.run(['nm', '--defined-only', o], capture_output=True, text=True).stdout.split('\n'):
                 q = ln.split()
                 if len(q) == 3 and q[1] in 'Tt':
-                    w.setdefault(q[2], o)
+                    w.setdefault(q[2], (o, q[2]))
+                    w.setdefault(norm(dem(q[2])), (o, q[2]))
         return w
     where_p, where_c = where(pa), where(ch)
     copies = 0
@@ -221,6 +245,10 @@ def main():
             same += 1; continue
         if len(P[k]) == 1 and len(C[k]) == 1 and P[k][0][:2] == C[k][0][:2] and reconcile(P[k][0][2], C[k][0][2]):
             same += 1; continue
+        if k[1].endswith('{lambda') and sorted(x[1] for x in P[k]) == sorted(x[1] for x in C[k]):
+            lam += 1; continue
+        if len(P[k]) == 1 and len(C[k]) == 1 and align_only(P[k][0], C[k][0]):
+            aln += 1; continue
         if len(P[k]) == 1 and len(C[k]) == 1 and fileline_only(P[k][0], C[k][0], srcs):
             fl += 1; continue
         if len(P[k]) == 1 and len(C[k]) == 1:
@@ -228,11 +256,12 @@ def main():
             bp = (C[k][0][0], C[k][0][1], tuple(r for r in C[k][0][2] if not (r[1] == 'R' and isinstance(r[3], bytes) and r[3].decode('latin1').endswith(srcs))))
             ap = (ap[0], tuple(re.sub(r'\$0x[0-9a-f]+', '$I', x) if x.startswith('mov') else x for x in ap[1]) if isinstance(ap[1], tuple) else ap[1], ap[2])
             bp = (bp[0], tuple(re.sub(r'\$0x[0-9a-f]+', '$I', x) if x.startswith('mov') else x for x in bp[1]) if isinstance(bp[1], tuple) else bp[1], bp[2])
-            n = local_addr_only(ap, bp, fnames, where_p.get(k[1]), where_c.get(k[1]), k[1])
+            wp, wc = where_p.get(k[1]) or where_p.get(norm(k[1])), where_c.get(k[1]) or where_c.get(norm(k[1]))
+            n = local_addr_only(ap, bp, fnames, wp, wc, k[1])
             if n:
                 la += n; fl += 1; continue
         bad.append((k, 'code or data differs'))
-    print('FUNC_IDENTITY_BOARD symbols=%d identical=%d fileline=%d local_addr=%d header_copies=%d differing=%d' % (len(P), same, fl, la, copies, len(bad)))
+    print('FUNC_IDENTITY_BOARD symbols=%d identical=%d fileline=%d local_addr=%d lambda=%d align=%d header_copies=%d differing=%d' % (len(P), same, fl, la, lam, aln, copies, len(bad)))
     for k, why in bad[:a.show]:
         print('DIFF %s %s: %s' % (k[0], k[1], why))
     return 1 if bad else 0

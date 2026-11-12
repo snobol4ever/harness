@@ -18,7 +18,7 @@ LANG = {"snobol4": "snobol4", "snocone": "snobol4", "rebus": "snobol4", "icon": 
 GENERATED = ("gc_allocating_table.inc", "box_cell_shapes.inc", "rtx_clobber_table.inc", "rtx_clobbers.inc")
 RULES = [   # (regex on the path, skills) -- every matching rule applies; the path is normalised to forward slashes
     (r"/SCRIP/src/templates/", ["box-templates"]),
-    (r"/SCRIP/src/emitter/emit\.cpp$", ["box-templates"]),
+    (r"/SCRIP/src/emitter/emit\.cpp$|/SCRIP/src/emitter/em/", ["box-templates"]),
     (r"/SCRIP/src/runtime/rtx/", ["rtx-asm-leaves"]),
     (r"/SCRIP/src/lower/", ["lowering"]),
     (r"/SCRIP/src/(planner|emitter)/|/SCRIP/src/runtime/rt/gc_", ["scrip-memory-model"]),

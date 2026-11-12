@@ -22,7 +22,7 @@
 # A top-level #if region that holds a definition travels whole into the piece of its first definition. Functions are found by libclang with expansion
 # locations, so a function a macro makes (PL_CX_LEAF_HEAD ... PL_CX_LEAF_TAIL) spans the lines it was written on, and two on one line are one chunk.
 # rc 0 done; rc 1 the manifest names a function the unit does not define, or a cut no export can satisfy; rc 2 could not read the unit.
-import argparse, collections, os, re, shutil, subprocess, sys, tempfile
+import argparse, collections, glob, os, re, shutil, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -68,6 +68,7 @@ class Unit:
         self.errors = [(d.location.file.name if d.location.file else '', d.location.line, d.spelling) for d in tu.diagnostics if d.severity == 3]
         self.defs, self.protos, self.vars, self.decls = [], collections.defaultdict(list), [], []
         self.incdefs = {}
+        self.others = []
         self.byname = {}
         self.unexportable = set()
         def top(cur, clink=False):
@@ -108,6 +109,8 @@ class Unit:
             elif c.kind == K.VAR_DECL and c.storage_class == ci.StorageClass.EXTERN:
                 self.decls.append({'name': c.spelling, 'b': b, 'e': max(e, self.statement_end(b, c.extent.start.column)), 'col': c.extent.start.column,
                                    'static': False, 'kind': 've', 'clink': clink})
+            elif c.kind in (K.STRUCT_DECL, K.CLASS_DECL, K.UNION_DECL, K.CLASS_TEMPLATE, K.FUNCTION_TEMPLATE, K.TYPEDEF_DECL, K.NAMESPACE):
+                self.others.append((b, c))
             elif c.kind == K.VAR_DECL and c.storage_class != ci.StorageClass.EXTERN:
                 e = max(e, self.statement_end(b, c.extent.start.column))
                 d = {'name': c.spelling, 'b': b, 'e': e, 'static': static, 'cur': c, 'col': c.extent.start.column, 'kind': 'v', 'type': c.type.spelling, 'clink': clink}
@@ -126,6 +129,12 @@ class Unit:
             r.discard(d['name'])
             self.refs[d['name']] = r
             d.pop('cur')
+        self.glue_refs = {}
+        for b, c in self.others:
+            for x in c.walk_preorder():
+                if x.kind == ci.CursorKind.DECL_REF_EXPR and x.referenced is not None and x.referenced.spelling in names:
+                    self.glue_refs.setdefault(x.referenced.spelling, b)
+        self.others = len(self.others)
         for v in self.vars:
             for w in self.vars:
                 if v is not w and v['b'] <= w['e'] and w['b'] <= v['e']:
@@ -213,6 +222,24 @@ class Unit:
                 depth -= 1
                 if depth == 0:
                     regions.append((opened, i))
+        last_def = {}
+        for i in range(1, n + 1):
+            if inside[i]:
+                continue
+            t = self.lines[i - 1].lstrip()
+            m = re.match(r'#\s*define\s+(\w+)', t)
+            if m:
+                last_def[m.group(1)] = i
+            m = re.match(r'#\s*undef\s+(\w+)', t)
+            if m and m.group(1) in last_def:
+                regions.append((last_def.pop(m.group(1)), i))
+        merged = []
+        for rb, re_ in sorted(regions):
+            if merged and rb <= merged[-1][1]:
+                merged[-1] = (merged[-1][0], max(merged[-1][1], re_))
+            else:
+                merged.append((rb, re_))
+        regions = merged
         for (rb, re_) in regions:
             members = [c for c in ch if rb < c['b'] and c['e'] < re_]
             if members:
@@ -491,18 +518,57 @@ def proto_of(u, d):
         decl = re.sub(r'^((?:__attribute__\(\([^)]*\)\)\s*)*)static\s+', r'\1', decl, count=1)
         return 'extern ' + (HIDDEN if d['static'] else '') + decl + ';'
     bl, bc = d['body']
-    O = u.lines
+    O = getattr(u, 'orig_lines', u.lines)
     if bl == d['b']:
         seg = bcut(O[d['b'] - 1], d['col'] - 1, bc - 1)
     else:
         seg = '\n'.join([bcut(O[d['b'] - 1], d['col'] - 1)] + O[d['b']:bl - 1] + [bcut(O[bl - 1], None, bc - 1)])
     seg = ' '.join(seg.split())
-    if not re.search(r'\b%s\s*\(' % re.escape(n), seg):
+    n0 = next((k for k, v in getattr(u, 'rename_rx', (None, {}))[1].items() if v == n), n)
+    if not re.search(r'\b%s\s*\(' % re.escape(n0), seg):
         if '(*' in d['tproto'] or 'unnamed' in d['tproto']:
             raise SystemExit('RED(1): %s is made by a macro and its type %s has no plain prototype' % (n, d['tproto']))
         seg = d['tproto']
     seg = re.sub(r'^((?:__attribute__\(\([^)]*\)\)\s*)*)static\s+(?:inline\s+)?', r'\1', seg, count=1)
+    if getattr(u, 'rename_rx', None):
+        rx, rn = u.rename_rx
+        seg = rename_code(seg, rx, rn)
     return (HIDDEN if d['static'] else '') + seg + ';'
+
+
+LIT = re.compile(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|/\*.*?\*/|//.*$')
+
+
+def rename_code(line, rx, renames):
+    """Rename identifiers in code only: an #include line, a string or character literal and a comment keep their text."""
+    if re.match(r'\s*#\s*include\b', line):
+        return line
+    out, k = [], 0
+    for m in LIT.finditer(line):
+        out.append(rx.sub(lambda q: renames[q.group(1)], line[k:m.start()]))
+        out.append(m.group(0))
+        k = m.end()
+    out.append(rx.sub(lambda q: renames[q.group(1)], line[k:]))
+    return ''.join(out)
+
+
+def other_unit_names(u, prefix=''):
+    """Every symbol name the other objects of the build define (local or global): an exported static that shares one would collide at the link.
+    Read with nm from the objects beside the unit's own in the runtime objdir (out/rt_pic-*), the unit's own object (by basename) left out."""
+    root = os.path.dirname(os.path.dirname(u.src))
+    while root != '/' and not os.path.isdir(os.path.join(root, 'out')):
+        root = os.path.dirname(root)
+    own = os.path.splitext(os.path.basename(u.src))[0] + '.o'
+    names = set()
+    for d in glob.glob(os.path.join(root, 'out', 'rt_pic-*')):
+        objs = [o for o in glob.glob(os.path.join(d, '*.o')) if os.path.basename(o) != own and not (prefix and os.path.basename(o).startswith(prefix))]
+        for i in range(0, len(objs), 64):
+            r = subprocess.run(['nm', '--defined-only'] + objs[i:i + 64], capture_output=True, text=True, errors='replace')
+            for ln in r.stdout.split('\n'):
+                q = ln.split()
+                if len(q) == 3 and q[1] in 'TtDdBbRrVvWw':
+                    names.add(q[2])
+    return names
 
 
 def apply(u, manifest, outdir, prefix, head_name, src_root, cplus):
@@ -519,6 +585,39 @@ def apply(u, manifest, outdir, prefix, head_name, src_root, cplus):
         ps = users_pieces(n) - {piece[n]}
         if ps and piece[n] != INL:
             exports[n] = ps
+    renames = {}
+    others = other_unit_names(u, prefix)
+    for n in sorted(exports):
+        d = u.byname[n]
+        if d['static'] and n in others:
+            renames[n] = prefix + n
+    if renames:
+        rx = re.compile(r'(?<![\w$])(%s)(?![\w$])' % '|'.join(re.escape(n) for n in sorted(renames, key=len, reverse=True)))
+        u.orig_lines = u.lines
+        u.rename_rx = (rx, renames)
+        u.lines = [rename_code(ln, rx, renames) for ln in u.lines]
+        for n, m in renames.items():
+            d = u.byname.pop(n); d['name'] = m; u.byname[m] = d
+            if 'tproto' in d:
+                d['tproto'] = rx.sub(lambda q: renames[q.group(1)], d['tproto'])
+            exports[m] = exports.pop(n); piece[m] = piece.pop(n)
+            u.refs[m] = u.refs.pop(n, set())
+            for dd in u.decls:
+                if dd['name'] == n:
+                    dd['name'] = m
+            if n in u.protos:
+                u.protos[m] = u.protos.pop(n)
+        for a in list(u.refs):
+            u.refs[a] = {renames.get(b, b) for b in u.refs[a]}
+        users.clear()
+        for a, rs in u.refs.items():
+            for b in rs:
+                users[b].add(a)
+        u.glue_refs = {renames.get(k, k): v for k, v in u.glue_refs.items()}
+    apply.renames = renames
+    glue_need = {n: b for n, b in u.glue_refs.items() if n in u.byname and piece[n] != INL}
+    for n in glue_need:
+        exports.setdefault(n, set()).add(INL)
     bad = [n for n in exports if u.byname[n]['pin']]
     if bad:
         raise SystemExit('RED(1): the manifest separates a static a macro defines (or of an unnamed type) from its user: %s' % ', '.join(sorted(bad)[:12]))
@@ -542,6 +641,7 @@ def apply(u, manifest, outdir, prefix, head_name, src_root, cplus):
     piece_decls = collections.defaultdict(list)
     export_text = collections.defaultdict(list)
     head_extra = []
+    head_before = {}
     stays = set()
     for d in u.decls:
         n = d['name']
@@ -579,7 +679,9 @@ def apply(u, manifest, outdir, prefix, head_name, src_root, cplus):
             new = strip_defaults(sig).split('\n')
             new[-1] = new[-1] + bcut(L[bl - 1], bc - 1)
             L[d['b'] - 1:bl] = new
-        if home == INL or INL in exports[n]:
+        if n in glue_need:
+            head_before.setdefault(glue_need[n], []).append(CX(pr, d.get('clink')))
+        elif home == INL or INL in exports[n]:
             head_extra.append(CX(pr, d.get('clink')))
         else:
             export_text[home].append((d['b'], CX(pr, d.get('clink'))))
@@ -610,7 +712,12 @@ def apply(u, manifest, outdir, prefix, head_name, src_root, cplus):
     rel = lambda name: os.path.relpath(os.path.join(outdir, name), src_root)
     guard = lambda name: re.sub(r'\W', '_', rel(name)).upper()
     inl = '\n'.join(R('\n'.join(L[c['b'] - 1:c['e']])) for c in sorted(u.ch, key=lambda c: c['b']) if poc[id(c)] == INL)
-    head_text = '#ifndef %s\n#define %s\n%s\n%s%s#endif\n' % (guard(head_name), guard(head_name), R('\n'.join(L[i - 1] for i in glue)).rstrip('\n'),
+    glue_text = []
+    for i in glue:
+        for b0 in sorted(k for k in head_before if k <= i):
+            glue_text.extend(head_before.pop(b0))
+        glue_text.append(L[i - 1])
+    head_text = '#ifndef %s\n#define %s\n%s\n%s%s#endif\n' % (guard(head_name), guard(head_name), R('\n'.join(glue_text)).rstrip('\n'),
                                                               ''.join(x + '\n' for x in head_extra), (inl + '\n') if inl else '')
     open(os.path.join(outdir, head_name), 'w', encoding='utf-8', errors='surrogateescape').write(head_text)
     ext = os.path.splitext(u.src)[1]
@@ -763,7 +870,14 @@ def main():
     pieces, ex, rel_head, headers = apply(u, a.manifest, a.dir, a.prefix, head, os.path.join(root, 'src'), cplus)
     if not a.keep:
         os.remove(a.src)
-    print('SPLIT %s -> %d pieces, %d export headers, %s; exported %d' % (os.path.relpath(a.src, root), len(pieces), len(headers), rel_head, len(ex)))
+    print('SPLIT %s -> %d pieces, %d export headers, %s; exported %d; renamed %d' % (os.path.relpath(a.src, root), len(pieces), len(headers), rel_head, len(ex), len(apply.renames)))
+    if apply.renames:
+        rp = os.path.splitext(a.manifest)[0] + '.renames.tsv'
+        with open(rp, 'w') as o:
+            o.write('# new\told -- the exported statics util_split_unit.py renamed with the unit prefix, since another unit of the build defines the same name\n')
+            for n, m in sorted(apply.renames.items()):
+                o.write('%s\t%s\n' % (m, n))
+        print('RENAMES %s' % rp)
     for p in pieces + headers:
         print('PIECE %s' % os.path.relpath(p, root))
     return 0

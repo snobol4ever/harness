@@ -4,3 +4,12 @@
 # old (under SCRIP/src)	dir (under SCRIP/src)	prefix	manifest (under harness/designs/cache_tree/manifests)
 runtime/by_name_dispatch.c	runtime/lib	bn_	by_name_dispatch.c.tsv
 emitter/emit.cpp	emitter/em	em_	emit.cpp.tsv
+lower/lower_pascal_tree.c	lower/lower_pascal_tree	lpt_	lower_pascal_tree.c.tsv
+lower/lower_prolog.c	lower/lower_prolog	lpl_	lower_prolog.c.tsv
+lower/lower_raku.c	lower/lower_raku	lrk_	lower_raku.c.tsv
+lower/lower_icon.c	lower/lower_icon	lic_	lower_icon.c.tsv
+lower/lower_snobol4.c	lower/lower_snobol4	lsn_	lower_snobol4.c.tsv
+runtime/unification.c	runtime/unification	un_	unification.c.tsv
+parsers/raku/rk_syntax.c	parsers/raku/rk_syntax	rks_	rk_syntax.c.tsv
+parsers/raku/rk_tree.c	parsers/raku/rk_tree	rkt_	rk_tree.c.tsv
+planner/zeta_plan.cpp	planner/zeta_plan	zp_	zeta_plan.cpp.tsv

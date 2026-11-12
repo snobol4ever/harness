@@ -1,0 +1,11 @@
+# new	old -- the exported statics util_split_unit.py renamed with the unit prefix, since another unit of the build defines the same name
+lic_build	build
+lic_lower	lower
+lic_lower_call	lower_call
+lic_lower_if	lower_if
+lic_lower_repeat	lower_repeat
+lic_lower_seq	lower_seq
+lic_lower_while	lower_while
+lic_stmt_subj	stmt_subj
+lic_γ_to	γ_to
+lic_ω_to	ω_to
