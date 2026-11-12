@@ -111,7 +111,7 @@ scratch_clone() {   # <T>: a bare scratch origin of each repo borrowing this roo
         git -C "$b" update-ref refs/heads/main "$sha" && git -C "$b" symbolic-ref HEAD refs/heads/main || refuse "probe: cannot point the scratch origin of $r at $sha"
         if [ "$r" = corpus ]; then
             git clone -q --shared --no-checkout "$b" "$T/work/$r" || refuse "probe: cannot clone $r"
-            git -C "$T/work/$r" sparse-checkout set --cone tests/shared/box_scheduler && git -C "$T/work/$r" reset -q --hard HEAD || refuse "probe: cannot check out $r sparse"
+            git -C "$T/work/$r" sparse-checkout set --cone tests/probe_race && git -C "$T/work/$r" reset -q --hard HEAD || refuse "probe: cannot check out $r sparse"
         else
             git clone -q --shared "$b" "$T/work/$r" || refuse "probe: cannot clone $r"
         fi
@@ -215,12 +215,12 @@ probe() {
     [ "$rc" = 0 ] && grep -q "LAND stage=lease held seat=$seat" "$log" || { echo "LAND dry-run RED: arm 3 (the lease released) returned rc=$rc without taking the lease"; exit 1; }
     for r in "${ORDER[@]}"; do git -C "$T/origin/$r.git" log --format=%s main | grep -x "probe: a third commit in $r" > /dev/null \
         || { echo "LAND dry-run RED: arm 3 did not land $r once the lease was free"; exit 1; }; done
-    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$T/racer" && git -C "$T/racer" sparse-checkout set --cone tests/shared/box_scheduler && git -C "$T/racer" reset -q --hard HEAD \
+    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$T/racer" && git -C "$T/racer" sparse-checkout set --cone tests/probe_race && git -C "$T/racer" reset -q --hard HEAD \
         || refuse "probe: cannot clone the racer"
     git -C "$T/racer" config user.name LCherryholmes; git -C "$T/racer" config user.email lcherryh@yahoo.com
-    racer() {   # racer <script> <marker> <file>: inside the gate, once, land a file under corpus/tests/shared/box_scheduler on the scratch origin
+    racer() {   # racer <script> <marker> <file>: inside the gate, once, land a file under corpus/tests/probe_race on the scratch origin
         printf '#!/usr/bin/env bash\n[ -e "%s" ] && exit 0\n: > "%s"\ncd "%s" && git pull -q --rebase origin main' "$T/$2" "$T/$2" "$T/racer" > "$T/$1"
-        printf ' && echo race > "tests/shared/box_scheduler/%s" && git add -A && git commit -q -m "probe: a racer lands %s" && git push -q origin HEAD:main\n' "$3" "$3" >> "$T/$1"; }
+        printf ' && mkdir -p tests/probe_race && echo race > "tests/probe_race/%s" && git add -A && git commit -q -m "probe: a racer lands %s" && git push -q origin HEAD:main\n' "$3" "$3" >> "$T/$1"; }
     racer race4.sh raced4 "probe-race4-$$.txt"
     for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: a fourth commit in $r" || refuse "probe: cannot commit in $r"; done
     log="$T/arm4.log"
@@ -279,12 +279,12 @@ probe_push_refusal() {   # the push-refusal proof: a real move and a server refu
     T="$(mktemp -d "/tmp/s4e/$seat/land-push-refusal.XXXXXX")" || refuse "cannot make a scratch directory"
     trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
     scratch_clone "$T"
-    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$T/racer" && git -C "$T/racer" sparse-checkout set --cone tests/shared/box_scheduler && git -C "$T/racer" reset -q --hard HEAD \
+    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$T/racer" && git -C "$T/racer" sparse-checkout set --cone tests/probe_race && git -C "$T/racer" reset -q --hard HEAD \
         || refuse "probe: cannot clone the racer"
     git -C "$T/racer" config user.name LCherryholmes; git -C "$T/racer" config user.email lcherryh@yahoo.com
     printf '#!/usr/bin/env bash\n[ -e "%s" ] || exit 0\nrm -f "%s"\necho "fatal error in commit_refs" >&2\nexit 1\n' "$T/refuse_once" "$T/refuse_once" > "$T/origin/corpus.git/hooks/pre-receive"
     chmod +x "$T/origin/corpus.git/hooks/pre-receive"
-    printf '#!/usr/bin/env bash\n[ -e "%s" ] && exit 0\n: > "%s"\ncd "%s" && git pull -q --rebase origin main && echo race > tests/shared/box_scheduler/probe-refusal-race-%s.txt && git add -A && git commit -q -m "probe: a racer lands before the refusal" && git push -q origin HEAD:main && : > "%s"\n' \
+    printf '#!/usr/bin/env bash\n[ -e "%s" ] && exit 0\n: > "%s"\ncd "%s" && git pull -q --rebase origin main && mkdir -p tests/probe_race && echo race > tests/probe_race/probe-refusal-race-%s.txt && git add -A && git commit -q -m "probe: a racer lands before the refusal" && git push -q origin HEAD:main && : > "%s"\n' \
         "$T/planted" "$T/planted" "$T/racer" "$$" "$T/refuse_once" > "$T/plant.sh"
     for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: the refused landing's commit in $r" || refuse "probe: cannot commit in $r"; done
     log="$T/refusal.log"
@@ -306,12 +306,12 @@ probe_serial() {   # the serial last round's proof (fleet-queue step 20), on scr
     trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
     red9() { echo "LAND serial-probe RED: $*"; echo "    kept: $T"; trap - EXIT; exit 1; }
     scratch_clone "$T"
-    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$T/racer" && git -C "$T/racer" sparse-checkout set --cone tests/shared/box_scheduler tests/probe9 && git -C "$T/racer" reset -q --hard HEAD \
+    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$T/racer" && git -C "$T/racer" sparse-checkout set --cone tests/probe_race tests/probe9 && git -C "$T/racer" reset -q --hard HEAD \
         || refuse "probe: cannot clone the racer"
     git -C "$T/racer" config user.name LCherryholmes; git -C "$T/racer" config user.email lcherryh@yahoo.com
     mkdir -p "$T/waiter"
     for r in "${ORDER[@]}"; do
-        if [ "$r" = corpus ]; then git clone -q --shared --no-checkout "$T/origin/$r.git" "$T/waiter/$r" && git -C "$T/waiter/$r" sparse-checkout set --cone tests/shared/box_scheduler && git -C "$T/waiter/$r" reset -q --hard HEAD
+        if [ "$r" = corpus ]; then git clone -q --shared --no-checkout "$T/origin/$r.git" "$T/waiter/$r" && git -C "$T/waiter/$r" sparse-checkout set --cone tests/probe_race && git -C "$T/waiter/$r" reset -q --hard HEAD
         else git clone -q --shared "$T/origin/$r.git" "$T/waiter/$r"; fi || refuse "probe: cannot clone the waiter's $r"
         git -C "$T/waiter/$r" config user.name LCherryholmes; git -C "$T/waiter/$r" config user.email lcherryh@yahoo.com
     done
@@ -323,7 +323,7 @@ probe_serial() {   # the serial last round's proof (fleet-queue step 20), on scr
 T="$(cd "$(dirname "$0")" && pwd)"
 echo p >> "$T/plants"
 n="$(wc -l < "$T/plants")"
-d=tests/shared/box_scheduler; [ "$n" = 2 ] && d=tests/probe9
+d=tests/probe_race; [ "$n" = 2 ] && d=tests/probe9
 cd "$T/racer" && git pull -q --rebase origin main && mkdir -p "$d" && echo "probe9 run $n" > "$d/probe9-$n.txt" && git add -A && git commit -q -m "probe: a serial racer lands probe9-$n" && git push -q origin HEAD:main
 PLANT
     cat > "$T/gate9.sh" <<'GATE'
