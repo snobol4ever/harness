@@ -9,6 +9,10 @@ BYTES are shared: each clean tracked file whose blob equals the pristine checkou
 pristine's file, which is read-only. MEASURED 2026-11-12 on a scratch pair: git status reads clean; git pull and git checkout replace a
 changed file by a new inode and leave the other link as it was; an in-place write (shell >>, Python open('w')) fails EACCES instead of
 writing through into every seat. A seat's tree still moves only at its own sync.
+SCRIP and its out/ are never linked (the cto 2026-11-12, measured: a file's mtime lives on its inode, so one root's make or fetch would
+move every root's build times and defeat make and gate_require_fresh; objcopy, strip and a redirect write through a link). In the three
+shared repos the mtime is shared too, and nothing reads it but git, which re-hashes and reads clean: no SCRIP Makefile rule has a
+prerequisite in ../corpus or ../harness (census 2026-11-12), and the check, oracle and build caches key by tree hash or bytes.
 
 usage: util_relink_root.py ROOT [--repo corpus|harness|.github ...] [--pristine DIR] [--check] [--verify]
   ROOT        a seat root holding the repos (each a git checkout)
@@ -68,7 +72,7 @@ def relink(seat, pri, check, verify):
         refuse(f"{seat} and {pri} are on two filesystems: a hard link cannot join them")
     si, pi = index(seat), index(pri)
     sd, pd = dirty(seat), dirty(pri)
-    n = {"tracked": len(si), "linked": 0, "already": 0, "dirty": 0, "differ": 0, "absent": 0, "special": 0, "pristine_writable": 0, "freed": 0}
+    n = {"tracked": len(si), "linked": 0, "already": 0, "dirty": 0, "differ": 0, "absent": 0, "special": 0, "pristine_writable": 0, "mtime_forward": 0, "freed": 0}
     todo = []
     for path, ent in si.items():
         if path not in pi:
@@ -100,11 +104,19 @@ def relink(seat, pri, check, verify):
             continue
         todo.append((sp, pp, ss))
     if check:
-        print(f"RELINK_CHECK root={seat} pristine={pri} linkable={len(todo)} " + " ".join(f"{k}={v}" for k, v in n.items() if k not in ("linked", "freed")))
+        print(f"RELINK_CHECK root={seat} pristine={pri} linkable={len(todo)} " + " ".join(f"{k}={v}" for k, v in n.items() if k not in ("linked", "freed", "mtime_forward")))
         return 1 if todo else 0
+    # A RELINK NEVER MOVES A FILE'S MTIME BACKWARDS (the cto 2026-11-12, measured: build_monitor_ipc_bin_libraries.sh and
+    # util_parser_sc_recognition.sh keep a derived file that reads newer than its source; the seat's merge wrote the source at T3, the pristine's
+    # inode carries its own checkout time T1 < T3, so a plain link would make an artifact built from the old bytes between T1 and T3 read fresh).
+    # The shared inode takes the later of the two mtimes before it is linked: a forward move is a rebuild in every root, never a stale keep.
     for sp, pp, ss in todo:
         tmp = os.path.join(os.path.dirname(sp), f".relink.{os.getpid()}.{os.path.basename(sp)}")
         try:
+            ps = os.stat(pp)
+            if ss.st_mtime_ns > ps.st_mtime_ns:
+                os.utime(pp, ns=(ps.st_atime_ns, ss.st_mtime_ns))
+                n["mtime_forward"] += 1
             os.link(pp, tmp)
             os.replace(tmp, sp)
         except OSError as e:
@@ -123,6 +135,7 @@ def relink(seat, pri, check, verify):
     if left - sd:
         refuse(f"{seat}: {len(left - sd)} file(s) read dirty after the relink that were clean before it, the first {sorted(left - sd)[0]!r}")
     git(seat, "config", "s4e.shared", "true")   # the mark util_sync_root.sh reads: this repo shares its files, so its sync links them again
+    git(seat, "config", "core.trustctime", "false")   # a link or unlink in another root moves the shared inode's ctime (the cto, measured)
     print(f"RELINK root={seat} pristine={pri} " + " ".join(f"{k}={v}" for k, v in n.items()) + f" freed_mb={n['freed'] // 1048576}")
     return 0
 

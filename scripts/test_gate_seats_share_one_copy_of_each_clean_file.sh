@@ -15,6 +15,8 @@
 #   6  --check after it exits 0; a root whose repo is no checkout refuses rc 2
 #   7  util_sync_root.sh: origin moves d/c; a marked root's sync brings the pristine to its HEAD and links the new d/c; an unmarked root's sync
 #      takes the new d/c and links nothing
+#   8  a seat file whose mtime is newer than the pristine's is linked keeping that mtime: the shared inode moves forward, never back (the cto
+#      2026-11-12: build_monitor_ipc_bin_libraries.sh and util_parser_sc_recognition.sh keep a derived file newer than its source); trustctime off
 # EXIT: 0 all arms pass, 1 an arm failed, 2 REFUSED (no scratch, no git).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -73,6 +75,12 @@ S4E_HOME="$R8" S4E_SYNC_REPOS=corpus TMPDIR="$T" bash "$HERE/util_sync_root.sh" 
   && [ "$(cat "$R8/corpus/d/c")" = c3 ] && [ "$(ino "$R8/corpus/d/c")" != "$(ino "$P/d/c")" ] && [ "$(ino "$R8/corpus/a")" != "$(ino "$P/a")" ] && [ -z "$(git -C "$R7/corpus" status --porcelain)" ] \
   && ck ok "(7) a marked root's sync brings the pristine to its HEAD and links what the merge rewrote; an unmarked root's sync links nothing" \
   || ck no "(7) sync rc=$r7/$r8 R7 d/c=[$(cat "$R7/corpus/d/c")] pristine d/c=[$(cat "$P/d/c")] :: $(tail -2 "$T/7.log" | tr '\n' '|' | cut -c1-200)"
-echo "SEATS_SHARE_BOARD arms=7 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
-[ "$fail" = 0 ] && [ "$pass" = 7 ] && { echo "GATE OK [$NAME]: a seat's clean files are links to one read-only pristine, and no write reaches another seat"; exit 0; }
+R9="$T/root9"; "${G[@]}" clone -q "$O" "$R9/corpus" && touch -d '+2 hours' "$R9/corpus/x" && m9="$(stat -c %Y "$R9/corpus/x")"
+python3 -I "$HERE/util_relink_root.py" "$R9" --repo corpus > "$T/9.log" 2>&1; r9=$?
+[ "$r9" = 0 ] && [ "$(ino "$R9/corpus/x")" = "$(ino "$P/x")" ] && [ "$(stat -c %Y "$R9/corpus/x")" -ge "$m9" ] && [ "$(stat -c %Y "$P/x")" -ge "$m9" ] \
+  && [ "$(git -C "$R9/corpus" config --get core.trustctime)" = false ] && [ -z "$(git -C "$R9/corpus" status --porcelain)" ] \
+  && ck ok "(8) a seat file newer than the pristine's is linked with its own mtime kept (the shared inode moves forward, never back); trustctime off" \
+  || ck no "(8) rc=$r9 mtime before=$m9 after=$(stat -c %Y "$R9/corpus/x") pristine=$(stat -c %Y "$P/x") :: $(tail -1 "$T/9.log")"
+echo "SEATS_SHARE_BOARD arms=8 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
+[ "$fail" = 0 ] && [ "$pass" = 8 ] && { echo "GATE OK [$NAME]: a seat's clean files are links to one read-only pristine, and no write reaches another seat"; exit 0; }
 echo "GATE FAIL [$NAME]: $fail arm(s) failed"; exit 1
