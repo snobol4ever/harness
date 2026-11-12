@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_box_scheduler_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: box-scheduler (the cto, 2026-11-04, CTO-496; the design text
-# in .github/skills/shared-box/SKILL.md's DESIGN section). The plan is corpus/tests/shared/box_scheduler/STEPS.tsv. A step's measurement is its PROBE,
+# in .github/skills/shared-box/SKILL.md's DESIGN section). The plan is harness/designs/box_scheduler/STEPS.tsv. A step's measurement is its PROBE,
 # one bash command run from S4E_HOME against the live ledgers and instruments, so a step reads RED until its instrument exists and GREEN only while
 # the box meets it (a DONE-WHEN a deletion satisfies is false, R-1386).
 #   --list       print the steps and run nothing
@@ -12,7 +12,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-STEPS="$S4E/corpus/tests/shared/box_scheduler/STEPS.tsv"
+STEPS="$HERE/../designs/box_scheduler/STEPS.tsv"
 refuse() { echo "REFUSE(2) [test_design_box_scheduler_steps]: $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
 mode=""; step=""

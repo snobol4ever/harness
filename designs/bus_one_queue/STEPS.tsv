@@ -1,0 +1,14 @@
+# STEPS.tsv -- THE DESIGN-PLAN bus-one-queue STEP TABLE (CIO-8 phase two, designed by the cio 2026-11-08 10:4x CST on Lon's word, verbatim: "DESIGN FLOWS DOWN, and PROBLEMS FLOW UP."; cut by officer_05 11:0x to 12:3x CST; the eight open choices answered by the cio on q-bus-one-source-of-truth-the-queue-file-under-flock-is-the-one-queue-beanstalkd-goes-cio-8-phase-two-1, with two changes: the claim pid comes from the seat scope's cgroup.procs, and step 8 also rewrites every live claim's RESERVED job= line).
+# THE DESIGN: beanstalkd goes; QUEUE.tsv under one flock (PO/.queue.flock, flock -w 10, held for the read and one write) is the one queue; a row's column is its tube (QUEUED:ask-<tier>, QUEUED:seat-<seat>, QUEUED:tier-<tier>); its claim is the reserve, second line RESERVED file tube=<tube> session=<SESSION> pid=<pid> <ts>, the pid being the process of s4e-seat-<seat>.scope/cgroup.procs whose comm reads claude; next serves ask-<tier>, then seat-<me>, then tier-<tier>, within a tube the lowest rank, then the oldest mint stamp. THE SWITCH: a verb takes the file road when util_queue.py status fails on S4E_QUEUE_PORT (read once per verb); with the daemon up today's road is unchanged, so steps 1 to 6 move nothing live until step 8, when the cio stops pid 1553 by hand.
+# harness/scripts/test_design_bus_one_queue_steps.sh reads it: --list prints it; --step N runs the step's PROBE (column 5) from S4E_HOME with a 600 s budget: rc 0 GREEN, rc 1 RED, rc 2 could not measure. Every probe but step 9 is harness/scripts/s4e_probe_bus_one_queue.sh N on a scratch postoffice with S4E_QUEUE_PORT=1 (the file road forced), never the live queue.
+# Columns: step, slug, executor, depends (steps), probe.
+step	slug	executor	depends	probe
+1	next-serves-a-queued-row-from-the-file-ask-then-seat-then-tier-lowest-rank-then-oldest	haiku	-	bash harness/scripts/s4e_probe_bus_one_queue.sh 1
+2	the-reserve-is-one-flocked-write-of-the-claim-and-the-column-its-pid-from-the-seat-scope	haiku	1	bash harness/scripts/s4e_probe_bus_one_queue.sh 2
+3	queue-escalate-assign-and-mint-move-the-column-and-print-wake-with-no-job	haiku	2	bash harness/scripts/s4e_probe_bus_one_queue.sh 3
+4	ask-and-answer-move-the-column-and-print-wake-with-no-job	haiku	3	bash harness/scripts/s4e_probe_bus_one_queue.sh 4
+5	expire-reads-the-holder-pid-a-dead-holder-goes-back-to-its-tube	haiku	2	bash harness/scripts/s4e_probe_bus_one_queue.sh 5
+6	recut-reopens-superseded-as-it-reopens-retired	haiku	-	bash harness/scripts/s4e_probe_bus_one_queue.sh 6
+7	a-premise-on-a-stale-binary-is-a-refusal-never-red	cio	-	bash harness/scripts/s4e_probe_bus_one_queue.sh 7
+8	the-sweep-retires-every-queue-job-line-and-rewrites-every-live-claim-to-the-file-form	haiku	1,2,3,4,5	bash harness/scripts/s4e_probe_bus_one_queue.sh 8
+9	the-queue-index-gate-admits-the-file-roads-owners-and-next-probe-serve-passes-with-no-daemon	haiku	-	bash harness/scripts/s4e_probe_bus_one_queue.sh 9

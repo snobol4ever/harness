@@ -11,7 +11,7 @@
 #
 # USE (from any root; A and B are SCRIP roots with a built ./scrip; each compile takes a run slot through util_run_slot.sh, no nice: the batch class weights the job):
 #   bash harness/scripts/util_template_ab_identity.sh A_ROOT B_ROOT --population            # every committed benchmark and demo source
-#   bash harness/scripts/util_template_ab_identity.sh A_ROOT B_ROOT --population --step N   # plus step N's witnesses of templates_zero/STEPS.tsv
+#   bash harness/scripts/util_template_ab_identity.sh A_ROOT B_ROOT --population --step N   # plus step N's witnesses of harness/designs/templates_zero/STEPS.tsv
 #   bash harness/scripts/util_template_ab_identity.sh A_ROOT B_ROOT --list FILE             # one source path per line
 #   bash harness/scripts/util_template_ab_identity.sh A_ROOT B_ROOT prog.sno prog2.icn ...  # named programs
 # BOARD: AB_IDENTITY_BOARD text_same=<n> bytes_same=<n> diff=<n> fail=<n> of <total> a=<sha> b=<sha>
@@ -38,7 +38,7 @@ if [ "$POP" = 1 ]; then
   find "$ROOT/corpus/benchmarks" "$ROOT/corpus/demos" -type f \( -name '*.sno' -o -name '*.icn' -o -name '*.pl' -o -name '*.pas' -o -name '*.raku' \) 2>/dev/null | sort >> "$LISTF"
 fi
 if [ -n "$STEP" ]; then
-  STEPS="$ROOT/corpus/tests/shared/templates_zero/STEPS.tsv"
+  STEPS="$HERE/../designs/templates_zero/STEPS.tsv"
   [ -f "$STEPS" ] || { echo "REFUSE(2): no $STEPS"; exit 2; }
   mkdir -p "$W/wit"
   wits="$(awk -F'\t' -v s="$STEP" '!/^#/ && $1 == s {print $6}' "$STEPS")"

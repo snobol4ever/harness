@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # s4e_probe_bus_one_queue.sh -- THE PROBES OF DESIGN-PLAN bus-one-queue (CIO-8 phase two: the queue daemon goes, QUEUE.tsv under one flock is the one queue;
 # designed by the cio, cut by officer_05 2026-11-08, the eight choices answered by the cio on q-bus-one-source-of-truth-...-cio-8-phase-two-1).
-# The table is corpus/tests/shared/bus_one_queue/STEPS.tsv; test_design_bus_one_queue_steps.sh --step N runs "bash harness/scripts/s4e_probe_bus_one_queue.sh N".
+# The table is harness/designs/bus_one_queue/STEPS.tsv; test_design_bus_one_queue_steps.sh --step N runs "bash harness/scripts/s4e_probe_bus_one_queue.sh N".
 # EVERY PROBE RUNS ON A SCRATCH POSTOFFICE (S4E_POST under /tmp/s4e/<seat>/), a scratch TIERS table (junior_97 haiku, senior_97 sonnet, officer_97 opus) and
 # the file road, since 2026-11-10 the only road (the acceptance, CIO-82). The live queue and the live batons
 # are never read or written. A seat's claude process is a copy of sleep named claude in a scratch scope dir (S4E_SEAT_SCOPES), so the claim pid

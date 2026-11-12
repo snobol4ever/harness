@@ -1,0 +1,16 @@
+# BASELINE.tsv -- THE TEST-CYCLE BASELINE (the cto, 2026-11-05 17:1x CST, CTO-522; skill suites-and-grading section 7). Every row is MEASURED, the command beside it; the 10x acceptance (step 8) reads these.
+# key	value	unit	command
+rows_per_hour	913	rows/h	grep -oP '^rows_per_hour=\K[0-9]+' /home/resources/progress/BOX.state  (17:07:17 CST, grader_width=4, lap_tests=18018, lap_fresh=14829, lap_eta_h=7.0)
+launch_instr_one_entry	14950000000	instructions	S4E_HOME=/home/claude_cto S4E_SEAT=cto perf stat -e instructions:u -x, python3 harness/scripts/corpus_suite_harness.py smoke RPOS --tables tests/snobol4 --entries pos_rpos_branch_1 --modes m3,m4  (14.95 G; 36 s wall, 33 s of it util_require_fresh.sh --gate corpus_suite_harness: 694 stat forks, md5sum of the sources, a 5.7 s scrip --compile of the build-behaviour witnesses)
+marginal_instr_per_entry	280000000	instructions	the same smoke over ten RPOS entries 17.46 G, less the one-entry launch, over nine  (both modes: scrip --run, scrip --compile, as, ld, the binary, the harness's own grading)
+hello_sno_m3_run	8000000	instructions	perf stat -e instructions:u SCRIP/scrip --run hello.sno  (SCRIP f8f173ebb)
+hello_sno_compile	14000000	instructions	perf stat -e instructions:u SCRIP/scrip --compile hello.sno  (1,066 lines of asm)
+hello_sno_as	8000000	instructions	perf stat -e instructions:u gcc -c hello.sno.s
+hello_sno_ld_bfd	80000000	instructions	perf stat -e instructions:u gcc hello.sno.o -L SCRIP/out -lscrip_rt -lm -Wl,-rpath,SCRIP/out  (45,000,000 under -fuse-ld=gold; mold and lld are not installed)
+hello_pl_m3_run	4394000000	instructions	perf stat -e instructions:u SCRIP/scrip --run hello.pl  (an EMPTY .pl 4.373 G: the prelude)
+hello_pl_compile	11313000000	instructions	perf stat -e instructions:u SCRIP/scrip --compile hello.pl  (429,563 lines; an empty .pl 428,237)
+hello_pl_as	4868000000	instructions	perf stat -e instructions:u gcc -c hello.pl.s
+python_import_harness	515000000	instructions	perf stat -e instructions:u python3 -c 'import corpus_suite_harness'  (python3 -c pass: 58,000,000)
+readings_2026_11_05	34700	rows	awk on /home/resources/progress/results.tsv by day (coo package 22250, coo rungs 11836, coo benchmark 582)
+mean_secs_logtalk_m4	20.79	s	awk over results.tsv 2026-11-05 (n=2735); puzzles m4 74.15 (n=268); xsb m4 34.23 (n=550); snobol4-rungs m4 0.27 (n=2208), m3 0.05
+request_wait_median_min	59	min	box-scheduler's measurement 2026-11-04 (22 requests waiting, the oldest 166 min)

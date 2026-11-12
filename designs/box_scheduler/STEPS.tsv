@@ -1,0 +1,45 @@
+# STEPS.tsv -- THE DESIGN-PLAN box-scheduler STEP TABLE (the cto, 2026-11-04, CTO-496; the design text in the shared-box skill's DESIGN section 8; Lon 2026-11-04, verbatim: "It appears COO needs help re-designing the ENTIRE FLEET system. It is a failure." / "There has been talk, and only talk, about using industry recognized ways of doing make and build load balancing and management." / "So get to it.").
+# harness/scripts/test_design_box_scheduler_steps.sh reads it: --list prints it; --step N runs the step's probe (column 5, one bash command run from S4E_HOME with a 600 s budget): rc 0 GREEN, rc 1 RED, rc 2 could not measure.
+# Every probe reads a live mechanism, a ledger or a plant the step builds, so a step reads RED until its mechanism exists and GREEN only while the box meets it; no probe is satisfied by a deletion (a deleted script is proven dead by the plant that shows the one law moving, never by its absence).
+# The industry mechanisms each step adopts: the GNU make jobserver (one box-wide compile budget), cgroup v2 weights and quotas under one controller (sensors to actuators, floors and ceilings in BUDGET.tsv), admission by a slot of a class, a service level (SLO) the grader width answers to, change-impact test selection, and a queue whose rows close, retire and escalate by their own criterion.
+step	slug	executor	depends	probe
+1	one-box-wide-make-jobserver-held-open-with-a-declared-token-budget	cto	-	bash harness/scripts/util_jobserver.sh status && bash harness/scripts/util_jobserver.sh prove
+2	every-root-build-joins-the-jobserver-through-the-makefile	cto	1	grep -q 'util_jobserver.sh) make' SCRIP/Makefile && bash harness/scripts/util_jobserver.sh status | grep -q 'unit=active' && bash harness/scripts/util_jobserver.sh prove
+3	the-controller-moves-the-token-budget-as-an-actuator	coo	1	bash /home/claude_coo/.scratch/verifier/box_controller.sh --decide | grep -E '^ACTUATOR jobserver tokens=[0-9]+ floor=[0-9]+ ceiling=[0-9]+ '
+4	one-controller-one-law-every-actuator-moves-under-a-planted-pressure	coo	3	bash /home/claude_coo/.scratch/verifier/box_controller.sh --plant | grep -E '^PLANT actuators=[7-9]|^PLANT actuators=[1-9][0-9]' | grep -q ' every actuator moved'
+5	the-grader-width-answers-to-the-request-slo	coo	4	python3 harness/scripts/util_seat_census.py --grader-rate | grep -E '^GRADER .*requests_median_min=([0-9]|[12][0-9])( |$)'
+6	maintenance-is-admitted-beside-the-lane-never-in-front-of-grading	coo	4	grep -E '^END regen .*class=batch beside=1' /home/claude_coo/.scratch/verifier/summary.txt | tail -1 | grep -q . && grep -E '^END zsm .*class=batch beside=1' /home/claude_coo/.scratch/verifier/summary.txt | tail -1 | grep -q .
+7	the-grader-outranks-the-sessions-at-the-top-of-the-tree	cqo	-	python3 harness/scripts/util_seat_census.py --budget-check && awk -F'\t' '$1=="loops-top" && $3+0>=200' /home/resources/postoffice/BUDGET.tsv | grep -q .
+8	a-row-green-by-its-done-when-closes-itself-in-the-sweep	cqo	-	bash harness/scripts/s4e_msg.sh sweep --plant-green | grep -q '^SWEEP closed plant '
+9	a-refusing-row-retires-and-a-stale-assigned-row-escalates-by-itself	cqo	8	bash harness/scripts/s4e_msg.sh sweep --plant-rc2 --plant-stale | grep -E '^SWEEP retired plant .* escalated plant '
+10	the-wake-reaches-the-idle-session-by-hook-not-by-a-person	coo	-	bash harness/scripts/util_wake.sh --probe cto | grep -q '^WAKE by=hook delivered'
+11	every-lane-with-rows-has-a-running-seat	coo	-	python3 harness/scripts/util_seat_census.py --lanes | grep -q '^LANES unseated_rows=0 '
+12	one-write-per-ruling-goal-telegram-and-baton-by-one-verb	cqo	-	bash harness/scripts/s4e_msg.sh rule --probe | grep -q '^RULE wrote goal telegram baton'
+13	the-landing-proof-is-sized-by-the-change-impact-set	coo	-	python3 harness/scripts/util_impact_set.py --root SCRIP --commit HEAD --proof | grep -E '^PROOF arms=[0-9]+ smokes=[0-9]+ gates=[0-9]+ '
+14	mode-capped-to-the-current-header-with-the-history-archived	cqo	-	test "$(head -2 /home/resources/postoffice/MODE | wc -c)" -le 8192 && test -s /home/resources/postoffice/MODE.archive
+15	every-baton-next-under-a-cap-with-superseded-blocks-archived	cqo	-	python3 harness/scripts/util_baton_check.py --all | grep -E '^BATONS over_cap=0 superseded_inline=0 '
+16	the-resume-verb-prints-one-line-first-tree-command-state-log	cqo	-	bash harness/scripts/s4e_msg.sh resume --probe | grep -E '^RESUME tree=\S+ command=.* state=\S+ log=\S+'
+17	a-one-page-rules-index-and-a-redirect-map-for-every-retired-page-and-ruling	cqo	-	test -s .github/RULES-INDEX.md && test "$(wc -c < .github/RULES-INDEX.md)" -le 16384 && python3 harness/scripts/util_redirects.py --sweep | grep -E '^REDIRECTS stale_citations=0 '
+18	one-landing-command-fetch-rebase-regenerate-build-gate-push-verify	cao	-	bash harness/scripts/s4e_land.sh --probe | grep -E '^LAND dry-run ok stages=[89]|^LAND dry-run ok stages=1[0-9]'
+19	generated-tables-merge-by-regeneration-never-by-hand	cao	18	bash harness/scripts/s4e_land.sh --merge-probe | grep -E '^MERGE regenerated=[1-9][0-9]* conflicts=0'
+20	the-red-set-per-origin-hash-is-recorded-and-read-in-one-command	coo	-	bash harness/scripts/util_red_set.sh --at origin/main | grep -E '^RED-SET scrip=[0-9a-f]+ arms=[0-9]+ '
+21	a-claim-notice-only-on-a-touched-path-overlap	cqo	-	bash harness/scripts/s4e_msg.sh claim --probe-overlap | grep -E '^OVERLAP by=paths notices_suppressed=[0-9]+'
+22	a-background-run-has-a-handle-and-a-seat-kills-only-its-own	cqo	-	bash harness/scripts/util_run_slot.sh --bg --probe | grep -q '^BG handle=' && bash harness/scripts/s4e_kill_mine.sh --probe | grep -q '^KILL-MINE '
+23	runners-default-their-outputs-under-tmp-and-delete-them-at-the-verdict	cqo	-	python3 harness/scripts/util_runner_outputs.py --check | grep -E '^RUNNERS under_root=0 kept_after_verdict=0 '
+24	verdicts-readable-by-the-filer-and-a-blast-radius-query-names-the-eight	coo	13	bash harness/scripts/s4e_test_request.sh --read --probe | grep -q '^VERDICTS ' && python3 harness/scripts/util_impact_set.py --root SCRIP --commit HEAD --eight | grep -E '^EIGHT [a-z]'
+25	a-toolchain-preflight-and-a-two-tree-corpus-a-b	hq_snobol4	-	bash harness/scripts/util_toolchain_preflight.sh | grep -q '^TOOLCHAIN OK' && bash harness/scripts/util_ab_trees.sh --probe | grep -q '^AB '
+26	a-controller-moved-knob-reads-its-declared-value-as-a-ceiling-in-the-budget-check	coo	4	python3 harness/scripts/util_seat_census.py --budget-check
+27	a-done-when-is-re-cut-by-a-verb-that-leaves-a-done-when-was-receipt	cqo	-	bash harness/scripts/s4e_msg.sh recut --probe | grep -q '^RECUT wrote DONE-WHEN-WAS'
+28	a-done-holds-the-bus-identity-only-for-its-write-never-for-the-done-when-run	cqo	-	bash harness/scripts/s4e_msg.sh done --probe-lock | grep -E '^DONE lock_held_s=[0-4]( |$)'
+29	the-seat-shell-greps-as-gnu-grep-the-same-as-bash-c	cqo	-	bash -ic 'printf "aa\n" | grep -E "(a)\1"' 2>/dev/null | grep -q aa
+30	a-ruling-is-found-by-its-number-after-compaction	cqo	17	bash harness/scripts/s4e_ruling.sh CTO-486 | grep -q 'R6 EXTENDED IS AN INLINE DESCR KIND'
+31	park-parked-awaiting-takes-a-test-request-id-and-clears-on-its-verdict	cio	8	bash harness/scripts/s4e_msg.sh park --probe-awaiting | grep -q '^PARK awaiting=request cleared_by=verdict'
+32	next-writes-nothing-serves-assigned-rows-in-assign-order-and-counts-only-claimed-rows	cio	-	bash harness/scripts/s4e_msg.sh next --probe-serve | grep -E '^NEXT writes=0 order=assign-time counted_live=0'
+33	mint-writes-goal-once-and-a-next-from-the-goal-never-a-template	cio	-	bash harness/scripts/s4e_msg.sh mint --probe-baton | grep -E '^MINT goal_once=1 next_from_goal=1 template_lines=0'
+34	a-premise-runs-under-the-rows-own-budget-line	cio	-	bash harness/scripts/s4e_msg.sh premise --probe-budget | grep -E '^PREMISE budget=row default_s=120 max_s=600 '
+35	a-done-restores-and-telegrams-every-row-blocked-on-the-row-it-closed	cio	28	bash harness/scripts/s4e_msg.sh done --probe-unblock | grep -E '^DONE unblocked=[1-9][0-9]* restored_state=1 telegrams=[1-9]'
+36	one-whole-root-worktree-helper-four-repos-the-build-fetched-under-the-cap	cio	18	bash harness/scripts/s4e_worktree.sh --probe | grep -E '^WORKTREE repos=4 build=fetched size_mb=[0-9]+ '
+37	the-unread-banner-prints-a-heading-once-per-arrival	cio	-	bash harness/scripts/s4e_msg.sh banner --probe-once | grep -E '^BANNER headings_reprinted=0 '
+38	the-sweep-selects-rows-whose-inputs-moved-since-their-last-reading-under-a-per-row-budget	cio	8,28	bash harness/scripts/s4e_msg.sh sweep --plant-selection | grep -E '^SWEEP selected=[0-9]+ skipped_unchanged=[1-9][0-9]* budget_s=60 lock_held_s=[0-4]( |$)'
+39	the-fleet-outcome-ledger-is-written-every-tick-and-its-bars-hold-over-a-day	cio	10,28	bash harness/scripts/test_gate_fleet_outcomes.sh | grep -E '^FLEET window_h=24 ticks=[1-9][0-9]* idle_with_work_min=0 hand_wakes=0 lock_refusals=0 unanswered_wake_min=0 '
+40	the-controller-fast-forwards-every-roots-harness-and-runs-every-landed-step-probe-each-lap	cio	39	bash harness/scripts/test_gate_fleet_lap.sh | grep -E '^LAP age_min=([0-9]|[1-5][0-9]) roots_behind=0 steps_landed=[1-9][0-9]* steps_red=0 '

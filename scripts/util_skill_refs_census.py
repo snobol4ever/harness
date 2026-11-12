@@ -7,7 +7,7 @@ The skills under .github/skills/<name>/{SKILL.md,reference.md} are the one knowl
 skill names that the live tree does not have misleads every seat (the 2026-11-07 audit: 254 missing references, GOAL-CEO.md cited as a file in
 eleven skills, box_controller.sh named as the live controller, a status column reading "open" for steps already green). This census reads every
 skill against the tree the way the fleet-needs reports asked (knowledge drift, class 10 of the three-month history) and is the probe of steps 0, 1,
-3 and 8 of the plan (corpus/tests/shared/skills_complete/STEPS.tsv).
+3 and 8 of the plan (harness/designs/skills_complete/STEPS.tsv).
 
   --check [--only SKILL]   one line `SKILL_REFS files=F refs=N missing=M unknown_verb=V missing_flag=G allowed=A` then one `MISSING <skill>:<line> <kind> <token>`
                            line per gap; rc 0 when M, V and G are all 0; rc 1 otherwise; rc 2 when the skills dir or the bus script is absent

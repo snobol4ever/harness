@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_design_package_run_attrs_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: package-run-attrs (CIO-132, the cio's design 2026-11-11, cut by officer_05
-# 2026-11-11; the design text is the header of the step table). The plan is corpus/tests/shared/package_run_attrs/STEPS.tsv. A step's measurement is its PROBE,
+# 2026-11-11; the design text is the header of the step table). The plan is harness/designs/package_run_attrs/STEPS.tsv. A step's measurement is its PROBE,
 # one bash command run from S4E_HOME, harness/scripts/s4e_probe_package_run_attrs.sh N, which works on a scratch copy of corpus/packages/icon/ipl, so a step
 # reads RED until its reader, applier, cut, census or util does what CIO-132 says and GREEN only while it does (a DONE-WHEN a deletion satisfies is false, R-1386).
 #   --list       print the steps and run nothing
@@ -11,7 +11,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-STEPS="$S4E/corpus/tests/shared/package_run_attrs/STEPS.tsv"
+STEPS="$HERE/../designs/package_run_attrs/STEPS.tsv"
 refuse() { echo "REFUSE(2) [test_design_package_run_attrs_steps]: $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
 mode=""; step=""

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_templates_zero_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: templates-zero (the cto, 2026-11-01, R-2095;
-# .github/ARCH-CALL-FORMS.md section 9). The plan is corpus/tests/shared/templates_zero/STEPS.tsv. A step's measurement is its PROBE over the
+# .github/ARCH-CALL-FORMS.md section 9). The plan is harness/designs/templates_zero/STEPS.tsv. A step's measurement is its PROBE over the
 # SCRIP tree (the per-file template audit, a symbol census, a kind's dispatch, the pipeline order, the whole-set census) and its WITNESSES:
 # master entries named <lang>:<entry>, each graded in both modes by corpus_suite_harness.py run --partition entry:<entry> (a handful of named
 # entries is any seat's own test, never a board, R-1893).
@@ -19,7 +19,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/shared/templates_zero"
+WD="$HERE/../designs/templates_zero"
 STEPS="$WD/STEPS.tsv"
 OUT="/tmp/s4e-templates_zero-$(id -u)"
 AUDIT="$HERE/audit_bb_fixup_file.sh"

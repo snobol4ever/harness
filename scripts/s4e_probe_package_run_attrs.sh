@@ -37,7 +37,7 @@ PYEOF
 }
 case "$N" in
 1)
-    [ -f "$ROOT/corpus/tests/shared/package_run_attrs/STEPS.tsv" ] || red "no step table"
+    [ -f "$ROOT/harness/designs/package_run_attrs/STEPS.tsv" ] || red "no step table"
     out="$(bash "$H/test_design_package_run_attrs_steps.sh" --list 2>&1)" || red "the harness --list failed: $(printf '%s' "$out" | tail -1)"
     printf '%s' "$out" | grep -q '^DESIGN-PLAN: package-run-attrs -- 7 steps' || red "the harness does not list the seven steps"
     green "the step table, the harness and this probe stand" ;;

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_design_test_cycle_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: test-cycle (the cto, 2026-11-05, CTO-522; Lon: "We must speed up the test
 # suite runs by 10x." / "CTO is to complete redesign the test suite CYCLE loops."; the design text in .github/skills/suites-and-grading/SKILL.md section 7).
-# The plan is corpus/tests/shared/test_cycle/STEPS.tsv; BASELINE.tsv beside it is the measured baseline the acceptance reads. A step's measurement is its PROBE,
+# The plan is harness/designs/test_cycle/STEPS.tsv; BASELINE.tsv beside it is the measured baseline the acceptance reads. A step's measurement is its PROBE,
 # one bash command run from S4E_HOME, so a step reads RED until its instrument exists and GREEN only while the ledgers say so. This plan has no oracle witnesses:
 # its probes read instruments, ledgers and instruction counts; --cut therefore cuts nothing and says so.
 #   --list       print the steps and run nothing
@@ -11,7 +11,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-WD="$S4E/corpus/tests/shared/test_cycle"; STEPS="$WD/STEPS.tsv"
+WD="$HERE/../designs/test_cycle"; STEPS="$WD/STEPS.tsv"
 refuse() { echo "REFUSE(2) [test_design_test_cycle_steps]: $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
 mode=""; step=""
