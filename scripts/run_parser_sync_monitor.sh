@@ -125,7 +125,7 @@ fi
 
 # STEP 2 -- the oracle first. SPITBOL exits 0 even on an ERROR, so its TEXT is read, never its rc.
 SBL="${SBL:-/home/resources/x64/bin/sbl}"
-# The oracle runs at the sizes bootstrap/parser_<lang>.oracle_args declares (R-1353, RULES.md clause 8 (g)(3)), never typed here.
+# The oracle runs at the sizes corpus/tests/shared/parser_sc/parser_<lang>.oracle_args declares (R-1353, RULES.md clause 8 (g)(3)), never typed here.
 . "$HERE/lib_declared_arena.sh" || { echo "run_parser_sync_monitor: cannot load lib_declared_arena.sh" >&2; exit 2; }
 OARGS="$(declared_oracle_args_beside "$PARSER_SC")" || exit 2
 ORACLE_OUT="$(timeout -k 5 60 "$SBL" -bf $OARGS "$SNO_OUT" < "$SAMPLE" 2>&1)"

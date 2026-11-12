@@ -53,25 +53,25 @@ SPITBOL_ERR = re.compile(r"\bERROR \d+ --")
 # SPITBOL's default stack (-s4m) is too small for a recursive grammar on a 1000-line source (ERROR 246 on beauty.sc and
 # beauty_modules.sc, both clean at -s16m). HUGE HEAP AND HUGE STACK, ALWAYS (Lon 2026-09-26, in-chat to hq_snocone, verbatim: "You
 # should run with huge heap and huge stack always to avoid limits."). Both engines' sizes are the CHAIN's declaration, never typed
-# here (R-1353, RULES.md clause 8 (g)(3)-(4)): bootstrap/parser_<lang>.heap and .stack for scrip, bootstrap/parser_<lang>.oracle_args
+# here (R-1353, RULES.md clause 8 (g)(3)-(4)): corpus/tests/shared/parser_sc/parser_<lang>.heap and .stack for scrip, corpus/tests/shared/parser_sc/parser_<lang>.oracle_args
 # for sbl, read through corpus_suite_harness -- the one reader -- and printed on the board line.
 sys.path.insert(0, str(HERE))
 import corpus_suite_harness as _harness
 
 
 def scrip_arena(lang):
-    """scrip's -d/-s switches for the chain of `lang`, from bootstrap/parser_<lang>.heap and .stack; refuses an undeclared chain."""
+    """scrip's -d/-s switches for the chain of `lang`, from corpus/tests/shared/parser_sc/parser_<lang>.heap and .stack; refuses an undeclared chain."""
     drv = BOOT / f"parser_{lang}.sc"
     heap, _ = _harness.heap_declarations(str(drv))
     stack, _ = _harness.stack_declarations(str(drv))
     sw = _harness._size_switches(heap.get(drv.stem), stack.get(drv.stem))
     if not sw:
-        refuse(f"{drv} declares no heap or stack (bootstrap/parser_{lang}.heap, .stack) -- the chain's sizes are its declaration")
+        refuse(f"{drv} declares no heap or stack (corpus/tests/shared/parser_sc/parser_{lang}.heap, .stack) -- the chain's sizes are its declaration")
     return sw
 
 
 def sbl_args(lang):
-    """sbl's size switches for the chain of `lang`, from bootstrap/parser_<lang>.oracle_args; [] runs the oracle at its defaults."""
+    """sbl's size switches for the chain of `lang`, from corpus/tests/shared/parser_sc/parser_<lang>.oracle_args; [] runs the oracle at its defaults."""
     return _harness.oracle_args_declarations(str(BOOT / f"parser_{lang}.sc"))
 SCRIP_ERR = re.compile(r"^(?:\S+:\d+: )?(?:Error \d+|error:|FATAL|scrip: )", re.M)
 

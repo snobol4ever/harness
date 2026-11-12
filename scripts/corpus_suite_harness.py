@@ -6322,6 +6322,16 @@ GC_STACK_KB_MIN = 64           # the least stack a declaration may name
 GC_STACK_KB_MAX = GC_HEAP_KB_MAX  # a declared stack past this box's memory is refused as a typo, never honoured
 
 
+def sidecar_stem(src_path):
+    """The path whose stem names a unit's sidecars: the unit itself, except a bootstrap parser (SCRIP/bootstrap/parser_<lang>.sc), whose
+    .heap, .stack and .oracle_args live in the sibling corpus/tests/shared/parser_sc (Lon 2026-11-12 08:0x CST: "do move thos crazy heap,
+    oracle_args, and stack files from the bootstrap folder."). lib_declared_arena.sh's _lda_sidecar is its twin."""
+    p = Path(os.path.abspath(src_path))
+    if p.parent.name == "bootstrap" and p.name.startswith("parser_") and p.suffix == ".sc":
+        return p.parent.parent.parent / "corpus" / "tests" / "shared" / "parser_sc" / p.name
+    return Path(src_path)
+
+
 def heap_sidecar_path(sno_path):
     """The WRITE target for an extracted suite's arena declaration: <stem>.heap beside the pair, named the
     same way .in/.xfail are. ⛔⭐ THE SIDECAR IS NOT OPTIONAL POLISH. R-1127's evidence bar has every
@@ -6329,7 +6339,7 @@ def heap_sidecar_path(sno_path):
     declaration that lived only in the csv would be silently dropped by exactly the workflow the fleet uses
     to cure, and a program that needs 16384 KB would abort in its own cure loop while passing on the board.
     Declaration travels with the entry or it is not a declaration."""
-    return str(Path(sno_path).with_suffix(".heap"))
+    return str(sidecar_stem(sno_path).with_suffix(".heap"))
 
 
 def validate_heap_kb(raw, where):
@@ -6481,7 +6491,7 @@ def timeout_declarations(sno_path):
 def stack_sidecar_path(sno_path):
     """<stem>.stack beside an extracted pair, the stack's twin of heap_sidecar_path (R-1225): the declaration travels with the
     entry, one line NAME<TAB>KB, or it is not a declaration."""
-    return str(Path(sno_path).with_suffix(".stack"))
+    return str(sidecar_stem(sno_path).with_suffix(".stack"))
 
 
 def validate_stack_kb(raw, where):
@@ -6603,7 +6613,7 @@ ORACLE_FLAGS_ADMITTED = (("--traditional", "swipl SWI-7 extensions off, R-1540")
 
 def oracle_args_sidecar_path(src_path):
     """<stem>.oracle_args beside a standalone unit: one line NAME<TAB>SWITCH[ SWITCH] -- the oracle's command-line sizes (and any ruled flag) for that unit."""
-    return str(Path(src_path).with_suffix(".oracle_args"))
+    return str(sidecar_stem(src_path).with_suffix(".oracle_args"))
 
 
 def oracle_args_declarations(src_path):

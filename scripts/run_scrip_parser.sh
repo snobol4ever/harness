@@ -60,11 +60,11 @@ fi
 # hq_snocone 2026-09-27: scrip takes the FIRST positional as the program and the rest as ITS argv, so the chain must be
 # ONE file -- passed separately, every source printed nothing and exited 0 (the census and the five-arm runner already
 # concatenate; this instrument did not). A missing binary or driver is COULD-NOT-MEASURE, rc=2, never a SKIP that exits 0.
-# The chain runs at the heap and stack bootstrap/parser_<lang>.heap and .stack declare (R-1353, RULES.md clause 8 (g)(4): a
+# The chain runs at the heap and stack corpus/tests/shared/parser_sc/parser_<lang>.heap and .stack declare (R-1353, RULES.md clause 8 (g)(4): a
 # runner passes the unit's declaration and types no size of its own), read by lib_declared_arena.sh -- an undeclared chain is refused.
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE cannot load lib_declared_arena.sh" >&2; exit 2; }
 SW="$(declared_switches_beside "$DRIVER")" || exit 2
-[ -n "$SW" ] || { echo "REFUSE $DRIVER declares no heap or stack (bootstrap/parser_${LANG}.heap, .stack)" >&2; exit 2; }
+[ -n "$SW" ] || { echo "REFUSE $DRIVER declares no heap or stack (corpus/tests/shared/parser_sc/parser_${LANG}.heap, .stack)" >&2; exit 2; }
 ONE="$(mktemp "${TMPDIR:-/tmp}/run_scrip_parser.${LANG}.XXXXXX.sc")"
 trap 'rm -f "$ONE"' EXIT
 cat "${RUNTIME[@]}" "${LOWER[@]}" "${HELPERS[@]}" "$DRIVER" > "$ONE"

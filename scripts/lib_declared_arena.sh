@@ -51,6 +51,16 @@ DECLARED_BOX_MAX_KB="$(awk '/^MemTotal:/{k=$2; if (k > 33554432) k = 33554432; p
 [ -n "$DECLARED_BOX_MAX_KB" ] && [ "$DECLARED_BOX_MAX_KB" -gt 0 ] 2>/dev/null || DECLARED_BOX_MAX_KB=33554432
 DECLARED_ARENA_MAX_KB=$DECLARED_BOX_MAX_KB
 _LDA_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# _lda_sidecar <program> <ext> -- the path of a unit's <ext> sidecar: beside it, except a bootstrap parser's (bootstrap/parser_<lang>.sc),
+#   which lives in the sibling corpus/tests/shared/parser_sc (Lon 2026-11-12); the twin of corpus_suite_harness.sidecar_stem.
+_lda_sidecar() {
+  local p="$1" d
+  case "$p" in *bootstrap/parser_*.sc)
+    d="$(cd "$(dirname "$p")" 2>/dev/null && pwd)"
+    case "$d" in */bootstrap) echo "$(dirname "$(dirname "$d")")/corpus/tests/shared/parser_sc/$(basename "${p%.*}").$2"; return 0;; esac;;
+  esac
+  echo "${p%.*}.$2"
+}
 
 # declared_arena_kb <all_csv> <entry>
 #   Echoes the declared KB for <entry>, or NOTHING when the file, the column or the cell is absent --
@@ -115,7 +125,7 @@ PY
 #   rc 2 with nothing echoed on any unusable sidecar, so a caller testing the exit code gets the refusal.
 declared_arena_kb_beside() {
   local prog="$1"
-  [ -n "$prog" ] && [ -f "${prog%.*}.heap" ] || return 0
+  [ -n "$prog" ] && [ -f "$(_lda_sidecar "$prog" heap)" ] || return 0
   python3 - "$prog" "$_LDA_HERE" <<'PY'
 import os, sys
 prog, here = sys.argv[1], sys.argv[2]
@@ -198,7 +208,7 @@ PY
 # declares nothing for the program beside it.
 declared_stack_kb_beside() {
   local prog="$1"
-  [ -n "$prog" ] && [ -f "${prog%.*}.stack" ] || return 0
+  [ -n "$prog" ] && [ -f "$(_lda_sidecar "$prog" stack)" ] || return 0
   python3 - "$prog" "$_LDA_HERE" <<'PY'
 import os, sys
 prog, here = sys.argv[1], sys.argv[2]
@@ -237,7 +247,7 @@ PY
 #   rc 2 with nothing echoed on another unit's name, a switch outside ORACLE_ARGS_ADMITTED, a malformed size or a switch named twice.
 declared_oracle_args_beside() {
   local prog="$1"
-  [ -n "$prog" ] && [ -f "${prog%.*}.oracle_args" ] || return 0
+  [ -n "$prog" ] && [ -f "$(_lda_sidecar "$prog" oracle_args)" ] || return 0
   python3 - "$prog" "$_LDA_HERE" <<'PY'
 import sys
 prog, here = sys.argv[1], sys.argv[2]
@@ -539,7 +549,7 @@ declared_switches_beside() {
 #   taken"; R-1353, the coo's ask to hq_raku 2026-09-28: "an undeclared unit is NAMED in the run's own output").
 undeclared_beside_named() {
   local prog="$1"
-  [ -f "${prog%.*}.heap" ] || [ -f "${prog%.*}.stack" ] && return 0
+  [ -f "$(_lda_sidecar "$prog" heap)" ] || [ -f "$(_lda_sidecar "$prog" stack)" ] && return 0
   echo "⛔ UNDECLARED (RULES.md 8 (f)): $(basename "$prog") has no .heap or .stack sidecar beside it -- run at the runtime's defaults, a gap named here, never a default taken silently"
   return 1
 }

@@ -19,7 +19,7 @@ without --timeout every program that times out is re-run alone at 300 s before i
 It prints its denominator per language as each language finishes and names the first REFUSED and first CRASH; --list TSV
 also writes EVERY member as a row (lang, corpus-relative source or rungs key, class, first line) so a class can be read whole
 (hq_snocone 2026-09-27: 66 Icon CRASHes on the SCRIP arm were one name on the board line and no list). A REFUSED
-source listed in --declared (default SCRIP/bootstrap/tests/parser_refusals.tsv: lang, corpus-relative path, the measurement
+source listed in --declared (default corpus/tests/shared/parser_sc/parser_refusals.tsv: lang, corpus-relative path, the measurement
 that the source is not a legal program of its language, or for an EMPTY source that it holds no statement) is DECLARED, never red;
 an undeclared refusal or EMPTY is red, because a parser that declines a legal program, or prints nothing for one, is not working. rc 0 GREEN (every language: population > 0, CRASH 0, undeclared REFUSED 0),
 1 RED, 2 REFUSE (no ./scrip, no rungs, a population that could not be materialized).
@@ -54,18 +54,18 @@ SEQ = re.compile(r"^SEQ[0-9]")
 TMIN, TMAX, TBOOT = 10, 300, 120
 # HUGE HEAP AND HUGE STACK, ALWAYS (Lon 2026-09-26, in-chat to hq_snocone, verbatim: "You should run with huge heap and huge stack
 # always to avoid limits."), committed lazily (RSS 45 MB either way) -- and the size is the CHAIN's declaration, never typed here (the officer
-# R-1353, RULES.md clause 8 (g)(4)): bootstrap/parser_<lang>.heap and .stack, read through corpus_suite_harness, the one reader.
+# R-1353, RULES.md clause 8 (g)(4)): corpus/tests/shared/parser_sc/parser_<lang>.heap and .stack, read through corpus_suite_harness, the one reader.
 import corpus_suite_harness as _harness
 
 
 def arena(lang):
-    """scrip's -d/-s switches for the chain of `lang`, from bootstrap/parser_<lang>.heap and .stack; refuses an undeclared chain."""
+    """scrip's -d/-s switches for the chain of `lang`, from corpus/tests/shared/parser_sc/parser_<lang>.heap and .stack; refuses an undeclared chain."""
     drv = os.path.join(SCRIP, "bootstrap", "parser_%s.sc" % lang)
     heap, _ = _harness.heap_declarations(drv)
     stack, _ = _harness.stack_declarations(drv)
     sw = _harness._size_switches(heap.get("parser_" + lang), stack.get("parser_" + lang))
     if not sw:
-        refuse("%s declares no heap or stack (bootstrap/parser_%s.heap, .stack) -- the chain's sizes are its declaration" % (drv, lang))
+        refuse("%s declares no heap or stack (corpus/tests/shared/parser_sc/parser_%s.heap, .stack) -- the chain's sizes are its declaration" % (drv, lang))
     return sw
 
 
@@ -154,7 +154,7 @@ def main(argv):
             refuse("argument %r is not one this instrument implements, or has no value; the arguments are %s, each followed by its value (--help prints the usage)" % (argv[i], ", ".join(KNOWN)))
         i += 2
     pop = opt(argv, "--population", "corpus")
-    decl_path = opt(argv, "--declared", os.path.join(SCRIP, "bootstrap", "tests", "parser_refusals.tsv"))
+    decl_path = opt(argv, "--declared", os.path.join(CORPUS, "tests", "shared", "parser_sc", "parser_refusals.tsv"))
     declared = set()
     if os.path.isfile(decl_path):
         for line in open(decl_path, encoding="utf-8"):

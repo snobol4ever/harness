@@ -10,7 +10,7 @@
 #          --traditional): the flag echoes whole; another spelling of it and a flag named twice REFUSE rc 2.
 #   B      the declaration is the oracle's NEED, read behaviourally: a 100000-deep SNOBOL4 recursion dies ERROR 246 under sbl -bf at its
 #          default stack and prints its depth under the switches the reader echoes for its sidecar.
-#   C      the bootstrap parser chain declares: every bootstrap/parser_<lang>.sc carries .heap and .stack the one reader turns into scrip's
+#   C      the bootstrap parser chain declares: every bootstrap/parser_<lang>.sc has .heap and .stack in corpus/tests/shared/parser_sc the one reader turns into scrip's
 #          -d/-s switches and an .oracle_args it accepts (the coo 2026-10-03: the chain dies ERROR 246 under sbl at its default stack on
 #          the snocone, icon and pascal workhorse inputs).
 #   W      the ten tools that run the chain (the parse grid and its phase profile since R-1485) read the chain's declaration -- each calls the reader on the chain -- and a doctored copy
@@ -72,7 +72,7 @@ cdecl=""; nl=0
 for L in snobol4 snocone icon prolog rebus raku pascal; do
   p="$ROOT/bootstrap/parser_$L.sc"; [ -f "$p" ] || { echo "⛔ GATE REFUSE(2) [$G]: no $p"; exit 2; }
   nl=$((nl+1)); sw="$(declared_switches_beside "$p" 2>/dev/null)"; r1=$?; oa="$(declared_oracle_args_beside "$p" 2>/dev/null)"; r2=$?
-  { [ "$r1" = 0 ] && [ -n "$sw" ] && [ "$r2" = 0 ] && [ -f "${p%.sc}.oracle_args" ]; } || cdecl="$cdecl parser_$L(scrip '$sw' rc $r1, sbl '$oa' rc $r2)"
+  { [ "$r1" = 0 ] && [ -n "$sw" ] && [ "$r2" = 0 ] && [ -f "$(_lda_sidecar "$p" oracle_args)" ]; } || cdecl="$cdecl parser_$L(scrip '$sw' rc $r1, sbl '$oa' rc $r2)"
 done
 [ -z "$cdecl" ] && ok "C  all $nl bootstrap parser chains declare scrip's heap and stack and sbl's switches, and the one reader accepts each" \
   || bad "C  a chain's declaration is missing or refused:$cdecl"
