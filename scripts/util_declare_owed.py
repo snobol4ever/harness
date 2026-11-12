@@ -9,16 +9,15 @@ program to the package's EXCLUDED.tsv, name TAB CLASS TAB evidence, the CLASS a 
 evidence the builder's reason verbatim. A class an attribute can cure (NEEDS-INPUT a NAME.in, MISSING-INCLUDE the include path, a missing
 dependency) is never declared: it is listed as LEFT, for its absorption. A reason the map does not know is LEFT too, never guessed.
 
-usage: util_declare_owed.py KEY [--root S4E_HOME] [--skip CLASS[,CLASS...]] [--row TOPIC] [--write]
+usage: util_declare_owed.py KEY [--root S4E_HOME] [--skip CLASS[,CLASS...]] [--row TOPIC] [--declare-empty] [--write]
   without --write it prints what it would declare and changes nothing; --skip leaves a mapped class owed (the grader's FPC NO-OUTPUT, graded by
-  exit code). One line per program, DECLARE or LEFT, then OWED-DECLARE key=K declared=N left=M (rc 0), or REFUSE(2) when it cannot read the row.
+  exit code); --declare-empty declares NO-OUTPUT and EMPTY too, only after their arguments, stdin and goal are ruled out. One line per program, DECLARE or LEFT, then OWED-DECLARE key=K declared=N left=M (rc 0), or REFUSE(2) when it cannot read the row.
 """
 import os, re, subprocess, sys
 
 # the builder's class word (the reason's first word, or a phrase of the older builder's prose) -> the vocabulary of lib_excluded.sh
 CLOSED = [
-    (r"^(ORACLE-REFUSES|ORACLE-DIES|ORACLE-HANGS|DIFFERS-BETWEEN-RUNS|NONDETERMINISTIC|NO-OUTPUT|DOES-NOT-END|CLOCK-SEEDED|READS-THE-ENVIRONMENT):", "NO_ORACLE_ANSWER"),
-    (r"^oracle produced EMPTY output", "NO_ORACLE_ANSWER"),
+    (r"^(ORACLE-REFUSES|ORACLE-DIES|ORACLE-HANGS|DIFFERS-BETWEEN-RUNS|NONDETERMINISTIC|DOES-NOT-END|CLOCK-SEEDED|READS-THE-ENVIRONMENT):", "NO_ORACLE_ANSWER"),
     (r"^the oracle answers differently on two runs", "NO_ORACLE_ANSWER"),
     (r"^oracle died", "NO_ORACLE_ANSWER"),
     (r"^oracle (hung|timed out|crashed)", "NO_ORACLE_ANSWER"),
@@ -30,6 +29,13 @@ CLOSED = [
     (r"^NEEDS-C-COMPILER:", "NEEDS_C_LIBRARY"),
     (r"(?i)^loads c through \S+\.clib", "NEEDS_LOADFUNC"),
 ]
+
+
+# AN EMPTY ANSWER IS NO CLOSED FACT UNTIL IT IS RE-MEASURED (the cio 2026-11-12 13:4x, measured on snoflake: 34 programs the builder read EMPTY or
+# DIED carried their stdin in an @input header the builder never fed; with it every one answered, and the package's denominator went 79 -> 122;
+# unicon-uni's NO-OUTPUT programs print a usage line or read &input): a program that printed nothing is LEFT unless --declare-empty is given,
+# after its arguments, stdin and goal are ruled out by hand.
+EMPTY = [(r"^NO-OUTPUT:", "NO_ORACLE_ANSWER"), (r"^oracle produced EMPTY output", "NO_ORACLE_ANSWER")]
 
 
 def word(reason):
@@ -65,7 +71,7 @@ def main():
     rows, left = [], 0
     for l in lines[:-1]:
         name, _, reason = l.partition("\t")
-        cls = next((v for p, v in CLOSED if re.search(p, reason)), None)
+        cls = next((v for p, v in CLOSED + (EMPTY if "--declare-empty" in a else []) if re.search(p, reason)), None)
         if cls is None or word(reason) in skip:
             left += 1
             print("LEFT     %s  [%s]" % (name, reason[:120]))
