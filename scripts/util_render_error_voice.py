@@ -36,7 +36,8 @@ THE CODE RANGES THE VOICE RESERVES (src/runtime/core/core.c icn_errmsg_known is 
   700-799  compile-time semantic refusals of ANY language: a program refused before it runs (the cto's ruling on hq_raku's
            ask, 2026-10-11 04:xx CDT). The voice's located form, then exit 1: mode 3 before execution, mode 4's compile writes
            no .s. Taken: 701 a call that can never succeed against its callee's declared signature (Raku, lower_raku_refuse).
-           The next language's compile-time refusal takes 702 and up.
+           702 is kept for the SNOBOL4 draft. 703 is Icon's compile refusal (the parser's oracle line): under icon and unicon it
+           renders as the one line "File <basename>; Line <n> # <text>", with no blank line, no Run-time error line and no Traceback.
 """
 import re, sys, os
 
@@ -60,7 +61,9 @@ def render(lines, oracle):
             elif l.startswith('  in '): frames.append(l[5:])
             else: break
             j += 1
-        if oracle in ('icon', 'unicon'):
+        if oracle in ('icon', 'unicon') and code == 703 and not startup and at:
+            out.append('File %s; Line %s # %s' % (os.path.basename(at.group(1)), at.group(2), text))
+        elif oracle in ('icon', 'unicon'):
             if startup:
                 out += ['', 'Run-time error %d in startup code' % code, text]
             else:
