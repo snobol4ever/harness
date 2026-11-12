@@ -290,6 +290,8 @@ def read_contract(pkg_dir):
             out["units"] = "ref-beside"
         elif f[0] == "units" and f[1] == "plunit":
             out["units"] = "plunit"
+        elif f[0] == "units" and f[1] == "tap":
+            out["units"] = "tap"
         elif f[0] == "units" and f[1] == "iso-rejection":
             out["units"] = "iso-rejection"
         elif f[0] == "units" and f[1] == "generated":
@@ -330,7 +332,7 @@ def read_contract(pkg_dir):
             if not (pkg_dir / f[1]).is_file(): h.refuse(f"{cf}:{n}: stdin {f[1]!r} names no file beside the package (every entry with no stem-named stdin of its own would read it)")
             out["stdin"] = f[1].strip()
         else:
-            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, units=ref-beside,units=plunit, units=iso-rejection, dialect=any-fpc-mode, fatal=gradable, bom=as-shipped, units=generated, generator=MODULE, "
+            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, units=ref-beside,units=plunit,units=tap, units=iso-rejection, dialect=any-fpc-mode, fatal=gradable, bom=as-shipped, units=generated, generator=MODULE, "
                      f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space, ipath=DIR, lpath=DIR and unmarked_compile_args=--dialect=NAME only")
     if (out["units"] == "generated") != bool(out["generator"]):
         h.refuse(f"{cf}: units=generated and generator=<module> go together (got units={out['units']!r}, generator={out['generator']!r})")
@@ -559,6 +561,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
     ref_beside = contract["units"] == "ref-beside"
     plunit = contract["units"] == "plunit"
     iso_rej = contract["units"] == "iso-rejection"
+    tap = contract["units"] == "tap"
     if lang == "icon" and contract["ipath"] and contract["oracle"] != "unicon":
         os.environ["IPATH"] = os.pathsep.join(x for x in (contract["ipath"], os.environ.get("IPATH", "")) if x)
     xsb = contract["oracle"] == "xsb-gentest"
@@ -1095,7 +1098,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
         return "+".join(toks)
     _cm_col = ["compare"] if any(_cm_val(e) for e in entries) else []   # derived from CONTRACT.tsv and the refs, every build (R-1927)
     _sg_col = ["stage", "answer"] if staged else []   # derived from STAGED.tsv, every build (R-1927)
-    _gr_col = ["grader", "cwd"] if plunit else []   # CIO-15 (c): swi-cases for every entry; cwd is the entry directory (. at the top)
+    _gr_col = ["grader", "cwd"] if plunit else (["grader"] if tap else [])   # CIO-15 (c): swi-cases for every entry; cwd is the entry directory (. at the top)
     # ⛔⭐ A ROW THE BOARD LOOKS UP IS NOT THE BUILDER'S TO DROP (the coo 2026-10-01, measured on jcon_tests): this table is ALSO the
     # settings table the package's own runner reads each unit's heap_kb/stack_kb/compile_args from (RULES.md 8 (f); f8282e09c added
     # 657 such rows), and a unit this build does not absorb -- a library graded through its driver, a program whose oracle output
@@ -1135,7 +1138,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
             joined = "\n".join(e.sno_lines)
             flags_row = m.attrs_for_text(joined, table_lang)
             w.writerow([e.seq, e.name, f"{pkg_dir.name}__{e.name}", pkg_dir.name, len(e.sno_lines),
-                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_decl.get(e.name, {}).get("timeout_s", "") for c in _tmo_col] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + [("merged" if getattr(e, "decl_stderr", merged) else "") for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + ((["swi-cases", e.name.rsplit("/", 1)[0] if "/" in e.name else "."]) if _gr_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [flags_row[c] for c, _fn in cols])
+                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_decl.get(e.name, {}).get("timeout_s", "") for c in _tmo_col] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + [("merged" if getattr(e, "decl_stderr", merged) else "") for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + ((["swi-cases", e.name.rsplit("/", 1)[0] if "/" in e.name else "."] if plunit else ["tap-cases"]) if _gr_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [flags_row[c] for c, _fn in cols])
         _rank = max([e.seq for e in entries] or [0])
         for _row in sorted(_carried, key=lambda r: r.get("entry") or ""):
             _rank += 1

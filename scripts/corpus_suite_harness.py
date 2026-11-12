@@ -1527,6 +1527,81 @@ def tap_compare_probe():
     return 0 if all(want[n] == v for n, v in got) else 1
 
 
+TAP_NOTES = {}
+
+
+def tap_parse_cases(text):
+    plan, cases, nxt = None, {}, 1
+    for ln in (text or "").split("\n"):
+        m = TAP_PLAN_RX.match(ln)
+        if m and plan is None:
+            plan = int(m.group(1))
+            continue
+        m = TAP_TEST_RX.match(ln)
+        if not m:
+            continue
+        k = int(m.group(2)) if m.group(2) else nxt
+        nxt = k + 1
+        d = TAP_DIRECTIVE_RX.search(m.group(3))
+        if k not in cases:
+            cases[k] = (m.group(1), d.group(1).upper() if d else "", m.group(3).strip())
+    return plan, cases
+
+
+def tap_cases_judge(ref_text, act_text):
+    rplan, rcases = tap_parse_cases(ref_text)
+    aplan, acases = tap_parse_cases(act_text)
+    rows = []
+    for k in sorted(rcases):
+        rv, rd, rdesc = rcases[k]
+        a = acases.get(k)
+        rows.append((k, rdesc, a is not None and a[0] == rv and a[1] == rd, a is not None))
+    return rows, rplan, aplan
+
+
+def tap_cases_note(rows, rplan, aplan, stderr, rc, hung):
+    first = next((r for r in rows if not r[2]), None)
+    toks = []
+    if first is not None:
+        toks.append("first-red=test#%d:%s%s" % (first[0], (first[1] or "-").replace(" ", "_")[:60], "" if first[3] else ":not-reached"))
+    elif rplan != aplan:
+        toks.append("plan=%s-ran-plan=%s" % (rplan, aplan))
+    last = [l for l in (stderr or b"").decode("utf-8", "replace").splitlines() if l.strip()]
+    if first is not None or rplan != aplan:
+        toks.append("stderr=" + (last[-1].strip().replace(" ", "_")[:100] if last else "-"))
+        toks.append("exit=timeout" if hung else "exit=%s" % ("-" if rc is None else rc))
+    return " ".join(toks)
+
+
+def tap_cases_probe():
+    """--probe-tap: a planted ref of three tests against a run whose test 1 agrees, whose test 2 has the other verdict and whose test 3 was
+    never reached -> TAP_PROBE cases=3 green=1 red=2 first=2, rc 0; anything else rc 1."""
+    ref = "1..3\nok 1 - a\nok 2 - b\nok 3 - c\n"
+    act = "1..3\nok 1 - a\nnot ok 2 - b\n"
+    rows, rplan, aplan = tap_cases_judge(ref, act)
+    green = sum(1 for r in rows if r[2])
+    first = next((r[0] for r in rows if not r[2]), 0)
+    line = "TAP_PROBE cases=%d green=%d red=%d first=%d" % (len(rows), green, len(rows) - green, first)
+    print(line)
+    return 0 if line == "TAP_PROBE cases=3 green=1 red=2 first=2" else 1
+
+
+def _tap_cases_grade(e, m, v, container_dir):
+    """THE TAP CASES ROAD (the grader cell tap-cases): a file's run is expanded into its numbered tests. A case FILE:test#K is green when the
+    run's test K has the oracle's verdict and directive; a test the oracle ran and the run did not reach is red; the file is green only
+    when every case is green and the plans agree. A red file's note names the first red test, the last standard-error line and the exit."""
+    rows, rplan, aplan = tap_cases_judge("\n".join(e.ref), (v.stdout or b"").decode("utf-8", "replace"))
+    out = [("%s:test#%d" % (e.name, r[0]), m, "PASS" if r[2] else "FAIL", 0, "case of %s" % e.name) for r in rows]
+    bad = sum(1 for r in rows if not r[2])
+    ok = bad == 0 and rplan == aplan
+    note = "" if ok else tap_cases_note(rows, rplan, aplan, v.stderr, v.returncode, v.kind == "HANG")
+    print("TAP_CASES %s cases=%d green=%d red=%d mode=%s" % (e.name, len(rows), len(rows) - bad, bad, m))
+    nv = Verdict("PASS" if ok else "FAIL", v.stdout, v.stderr, v.returncode, detail="tap-cases: %d of %d tests agree%s" % (len(rows) - bad, len(rows), (" " + note) if note else ""))
+    nv.secs = getattr(v, "secs", 0.0) or 0.0
+    TAP_NOTES[(e.name, m)] = note
+    return nv, out
+
+
 def stdbuf_wrap(paths, argv):
     if paths["stdbuf_bin"]:
         return [paths["stdbuf_bin"], "-o0", "-e0"] + argv
@@ -5518,14 +5593,18 @@ def cmd_run(args):
                         Verdict("FAIL", _v.stdout, _v.stderr, _v.returncode, detail="expected-refusal-not-refused-with-the-standard-diagnostic")
                     verdicts[m].secs = _v.secs
             _cases_entry = getattr(e, "grader", None) == "swi-cases"
+            _tap_entry = getattr(e, "grader", None) == "tap-cases"
             for m in modes:
+                if _tap_entry:
+                    verdicts[m], _crows = _tap_cases_grade(e, m, verdicts[m], Path(args.sno).parent)
+                    _progress_rows.extend(_crows)
                 if _cases_entry:
                     verdicts[m], _crows = _swi_cases_grade(e, m, verdicts[m], Path(args.sno).parent)
                     _progress_rows.extend(_crows)
                 kind = verdicts[m].kind
                 # ⭐ secs: the program's own wall in this mode (R-1676 row (c)) -- util_suite_partition.py build --secs sizes chunks by it
                 if not _cases_entry:
-                    _progress_rows.append((e.name, m, kind, getattr(verdicts[m], "secs", 0) or 0, _entry_note(e.xfail, verdicts[m], shard_tag)))
+                    _progress_rows.append((e.name, m, kind, getattr(verdicts[m], "secs", 0) or 0, (_entry_note(e.xfail, verdicts[m], shard_tag) + " " + TAP_NOTES.get((e.name, m), "")).strip()))
                 if kind == _OOMK:
                     oom_named.append((e.name, m, verdicts[m], e.xfail))
                 ck = "FAIL" if kind == _OOMK else ("CRASH" if kind == "ABORT" else kind)   # the board line's fail keeps an OOM (see _OOMK above); its crash column keeps an ABORT (SIGABRT), whose progress row says ABORT
@@ -6840,8 +6919,8 @@ def read_command_line_columns(src_path, entries, modes=None):
             e.answer_file = "temp"
         _gr = (row.get("grader") or "").strip()
         if _gr:
-            if _gr not in ("swi-cases", "logtalk-cases", "text"):
-                refuse(f"{where}: grader {_gr!r} is not swi-cases, logtalk-cases or text (or empty)")
+            if _gr not in ("swi-cases", "logtalk-cases", "text", "tap-cases"):
+                refuse(f"{where}: grader {_gr!r} is not swi-cases, logtalk-cases, tap-cases or text (or empty)")
             e.grader = _gr
         _sn = (row.get("stage_name") or "").strip()
         if _sn:
@@ -7629,6 +7708,8 @@ def cmd_list(args):
 def main():
     if sys.argv[1:] == ["--probe-tap-compare"]:
         sys.exit(tap_compare_probe())
+    if sys.argv[1:] == ["--probe-tap"]:
+        sys.exit(tap_cases_probe())
     if sys.argv[1:] == ["--probe-source"]:
         return source_probe()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
