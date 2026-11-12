@@ -35,10 +35,10 @@ parser="$SCRIP_ROOT/bootstrap/parser_$lang.sc"
 SBL="${SBL:-$(type -t sbl_correctness_bin >/dev/null 2>&1 && sbl_correctness_bin || echo /home/resources/x64/bin/sbl)}"
 if [ "$engine" = sbl ]; then [ -x "$SBL" ] || { echo "REFUSE no SPITBOL oracle at $SBL" >&2; exit 2; }; fi
 # Both engines run the twin at the CHAIN's declared sizes (R-1353, RULES.md clause 8 (g)(3)-(4)), never typed here: scrip at
-# corpus/tests/shared/parser_sc/parser_<lang>.heap and .stack, sbl at corpus/tests/shared/parser_sc/parser_<lang>.oracle_args, read by lib_declared_arena.sh.
+# corpus/demos/snocone/parser_<lang>/parser_<lang>.heap and .stack, sbl at corpus/demos/snocone/parser_<lang>/parser_<lang>.oracle_args, read by lib_declared_arena.sh.
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE cannot load lib_declared_arena.sh" >&2; exit 2; }
 SW="$(declared_switches_beside "$parser")" || exit 2
-[ -n "$SW" ] || { echo "REFUSE $parser declares no heap or stack (corpus/tests/shared/parser_sc/parser_$lang.heap, .stack)" >&2; exit 2; }
+[ -n "$SW" ] || { echo "REFUSE $parser declares no heap or stack (corpus/demos/snocone/parser_$lang/parser_$lang.heap, .stack)" >&2; exit 2; }
 OARGS="$(declared_oracle_args_beside "$parser")" || exit 2
 SCRATCH="${SCRATCH:-/tmp/parser_furthest_cursor.$(id -u)}"; mkdir -p "$SCRATCH"
 twin="$SCRATCH/parser_${lang}_furthest.sno"

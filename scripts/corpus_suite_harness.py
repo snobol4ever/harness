@@ -6326,11 +6326,12 @@ GC_STACK_KB_MAX = GC_HEAP_KB_MAX  # a declared stack past this box's memory is r
 
 def sidecar_stem(src_path):
     """The path whose stem names a unit's sidecars: the unit itself, except a bootstrap parser (SCRIP/bootstrap/parser_<lang>.sc), whose
-    .heap, .stack and .oracle_args live in the sibling corpus/tests/shared/parser_sc (Lon 2026-11-12 08:0x CST: "do move thos crazy heap,
-    oracle_args, and stack files from the bootstrap folder."). lib_declared_arena.sh's _lda_sidecar is its twin."""
+    .heap, .stack and .oracle_args are its demo twin's, corpus/demos/snocone/parser_<lang>/parser_<lang>.* (Lon 2026-11-12 08:0x CST: "do
+    move thos crazy heap, oracle_args, and stack files from the bootstrap folder."; 09:2x: "It seem $/corpus/tests/shared is an invalid
+    folder."; the demo is the same chain concatenated and carried the same sizes). lib_declared_arena.sh's _lda_sidecar is its twin."""
     p = Path(os.path.abspath(src_path))
     if p.parent.name == "bootstrap" and p.name.startswith("parser_") and p.suffix == ".sc":
-        return p.parent.parent.parent / "corpus" / "tests" / "shared" / "parser_sc" / p.name
+        return p.parent.parent.parent / "corpus" / "demos" / "snocone" / p.stem / p.name
     return Path(src_path)
 
 

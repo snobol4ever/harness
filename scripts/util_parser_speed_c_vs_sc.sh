@@ -17,7 +17,7 @@ B="$ROOT/bootstrap"; CHAIN="$B/global.sc $B/case.sc $B/assign.sc $B/match.sc $B/
 declare -A EXT=([snobol4]=sno [snocone]=sc [icon]=icn [prolog]=pl [rebus]=reb [raku]=raku [pascal]=pas)
 TMO="${SPEED_TIMEOUT:-300}"
 # The sc-m4 binary runs at the CHAIN's declared heap and stack (R-1353, RULES.md clause 8 (g)(4)), never typed here:
-# corpus/tests/shared/parser_sc/parser_<lang>.heap and .stack, read by lib_declared_arena.sh, leading the binary's own command line.
+# corpus/demos/snocone/parser_<lang>/parser_<lang>.heap and .stack, read by lib_declared_arena.sh, leading the binary's own command line.
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 now() { date +%s.%N; }

@@ -12,7 +12,7 @@
 set -u
 here=$(cd "$(dirname "$0")" && pwd); W=$(cd "$here/../../SCRIP" && pwd); ROOT=$(cd "$W/.." && pwd); B="$W/bootstrap"; D="$ROOT/corpus/demos/snocone"
 SBL="${SBL:-/home/resources/x64/bin/sbl}"; CUT=0; [ "${1:-}" = --cut-refs ] && CUT=1
-# The oracle cuts each ref at the sizes the chain declares for it, corpus/tests/shared/parser_sc/parser_<lang>.oracle_args (R-1353, RULES.md
+# The oracle cuts each ref at the sizes the chain declares for it, corpus/demos/snocone/parser_<lang>/parser_<lang>.oracle_args (R-1353, RULES.md
 # clause 8 (g)(3): the one reader passes the oracle's declaration whenever a ref is cut), never a size typed here.
 . "$here/lib_declared_arena.sh" || { echo "REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }
 CHAIN="global case assign match counter stack tree ShiftReduce tdump gen qize semantic omega trace"
@@ -26,7 +26,7 @@ for L in snobol4 snocone icon prolog rebus raku pascal; do
         [ -s "$d/parser_$L.in" ] || { echo "REFUSE(2): $d/parser_$L.in (the sample input) is missing"; exit 2; }
         [ -x "$SBL" ] || { echo "REFUSE(2): no oracle at $SBL"; exit 2; }
         "$W/scrip" --transpile "$d/parser_$L.sc" > "$T/$L.sno" 2> "$T/$L.err" && [ -s "$T/$L.sno" ] || { echo "REFUSE(2): transpile of parser_$L failed: $(head -2 "$T/$L.err")"; exit 2; }
-        OARGS="$(declared_oracle_args_beside "$B/parser_$L.sc")" || { echo "REFUSE(2): corpus/tests/shared/parser_sc/parser_$L.oracle_args is refused"; exit 2; }
+        OARGS="$(declared_oracle_args_beside "$B/parser_$L.sc")" || { echo "REFUSE(2): corpus/demos/snocone/parser_$L/parser_$L.oracle_args is refused"; exit 2; }
         ( cd "$d" && timeout -k 5 300 "$SBL" -bf $OARGS "$T/$L.sno" < "parser_$L.in" > "$T/$L.ref" 2> "$T/$L.sbl.err" ); rc=$?
         [ $rc -eq 0 ] && [ -s "$T/$L.ref" ] && ! grep -q '^Parse Error' "$T/$L.ref" || { echo "REFUSE(2): sbl -bf did not print a tree for parser_$L on its sample (rc=$rc): $(head -2 "$T/$L.sbl.err" "$T/$L.ref" | tr '\n' ' ' | cut -c1-200)"; exit 2; }
         cp "$T/$L.ref" "$d/parser_$L.ref"

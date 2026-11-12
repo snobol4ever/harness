@@ -52,12 +52,12 @@ DECLARED_BOX_MAX_KB="$(awk '/^MemTotal:/{k=$2; if (k > 33554432) k = 33554432; p
 DECLARED_ARENA_MAX_KB=$DECLARED_BOX_MAX_KB
 _LDA_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # _lda_sidecar <program> <ext> -- the path of a unit's <ext> sidecar: beside it, except a bootstrap parser's (bootstrap/parser_<lang>.sc),
-#   which lives in the sibling corpus/tests/shared/parser_sc (Lon 2026-11-12); the twin of corpus_suite_harness.sidecar_stem.
+#   which is its demo twin's, corpus/demos/snocone/parser_<lang>/parser_<lang>.<ext> (Lon 2026-11-12); the twin of corpus_suite_harness.sidecar_stem.
 _lda_sidecar() {
   local p="$1" d
   case "$p" in *bootstrap/parser_*.sc)
     d="$(cd "$(dirname "$p")" 2>/dev/null && pwd)"
-    case "$d" in */bootstrap) echo "$(dirname "$(dirname "$d")")/corpus/tests/shared/parser_sc/$(basename "${p%.*}").$2"; return 0;; esac;;
+    case "$d" in */bootstrap) echo "$(dirname "$(dirname "$d")")/corpus/demos/snocone/$(basename "${p%.*}")/$(basename "${p%.*}").$2"; return 0;; esac;;
   esac
   echo "${p%.*}.$2"
 }

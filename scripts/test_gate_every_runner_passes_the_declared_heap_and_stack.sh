@@ -29,7 +29,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # named on its line. bench_pascal_bar.sh and bench_raku_bar.sh grade one kernel THROUGH an angle graded here and are read there. Every
 # runner this set had to cure fail-once reds on its pre-cure text (measured 2026-10-03; the commit names each). THE EIGHT BOOTSTRAP PARSER
 # TOOLS grade no test unit -- each runs one fixed program per language, the chain -- so they are not a family here: their chain declares its
-# sizes in corpus/tests/shared/parser_sc/parser_<lang>.heap, .stack and .oracle_args and test_gate_oracle_args_sidecar_is_declared_and_reaches_the_oracle.sh holds every tool to it
+# sizes in corpus/demos/snocone/parser_<lang>/parser_<lang>.heap, .stack and .oracle_args and test_gate_oracle_args_sidecar_is_declared_and_reaches_the_oracle.sh holds every tool to it
 # (arms C and W, the coo 2026-10-03).
 # FAIL_ONCE=1: the harness family runs from a scratch copy of ../harness/scripts/ whose _size_switches returns nothing (the reader removed) -- H reds;
 # the ladder family runs from a scratch copy whose lib_declared_arena.sh declared_switches_beside prints nothing -- L reds.

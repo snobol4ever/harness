@@ -9,7 +9,7 @@
 #
 # THE CHAIN AND THE LIST ARE THE GRID'S: bootstrap/<chain> + parser_<lang>.sc compiled once to a mode-4 binary (a language named
 # in PHASE_VIA_TRANSPILE, default raku, compiles the transpiled chain as the grid does), run over every corpus program of the
-# language less each file that ends SCRIP's own run (the grid's scan, SCRIP's arm only), at the chain's declared heap and stack (corpus/tests/shared/parser_sc/parser_<lang>.heap, .stack -- the grid's own since R-1485; CRITERION CHANGED 2026-10-03, earlier profiles ran -s2000m -d8000m -i64m), SCRIP_DIAG=0,
+# language less each file that ends SCRIP's own run (the grid's scan, SCRIP's arm only), at the chain's declared heap and stack (corpus/demos/snocone/parser_<lang>/parser_<lang>.heap, .stack -- the grid's own since R-1485; CRITERION CHANGED 2026-10-03, earlier profiles ran -s2000m -d8000m -i64m), SCRIP_DIAG=0,
 # PARSER_TREE_HASH=1. PHASE_FILES=<n> keeps the first n files of the list (default all).
 # ⛔ THE BOX IS SHARED: CALLGRIND RUNS WITH --pop-on-jump=* AND UNDER A WATCHDOG. Measured 2026-09-30 (the coo's own mistake): a
 # box's jump to a function's first instruction is a CALL to callgrind, and box-to-box jumps run at one rsp, so its call stack never

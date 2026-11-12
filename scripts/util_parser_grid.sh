@@ -26,8 +26,8 @@
 #          Src ? Compiland + Pop() -- reading a file and printing its tree are outside the clock.
 #   SBL    sbl_clean_bin -bf (the clean benchmark oracle, never the monitor-hooked x64 fork: GOAL-SNOCONE-100 cursor 29k) running
 #          scrip --transpile of the same chain; the same driver, the same clock. TIME() reads nanoseconds in both, measured.
-#   SCRIP runs at the chain's declared heap and stack (corpus/tests/shared/parser_sc/parser_<lang>.heap, .stack) and SBL at its declared switches
-#   (corpus/tests/shared/parser_sc/parser_<lang>.oracle_args), each over its own shipped defaults, read by lib_declared_arena.sh (R-1485, RULES.md
+#   SCRIP runs at the chain's declared heap and stack (corpus/demos/snocone/parser_<lang>/parser_<lang>.heap, .stack) and SBL at its declared switches
+#   (corpus/demos/snocone/parser_<lang>/parser_<lang>.oracle_args), each over its own shipped defaults, read by lib_declared_arena.sh (R-1485, RULES.md
 #   clause 8 (g)(4): the window is never typed). CRITERION CHANGED 2026-10-03: every reading before ran BOTH at -s2000m -d8000m -i64m,
 #   one equal arena with a 64 MB initial window; the header line says so beside every reading from here on. SCRIP_DIAG=0 for the
 #   compile and every run. The median of GRID_RUNS (3) runs.

@@ -22,7 +22,7 @@ if [ ! -x "$BIN" ] || [ "$B/parser_$L.sc" -nt "$BIN" ] || [ "$W/scrip" -nt "$BIN
     gcc -m64 -no-pie -rdynamic "$OUT/$L.s" -Wl,-rpath,"$W/out" -L"$W/out" -lscrip_rt -lm -lpthread -o "$BIN" 2>> "$OUT/$L.cc.err" || { echo "PARSER-SC ⛔ REFUSE(2): link failed: $(tail -3 "$OUT/$L.cc.err" | cut -c1-300)"; exit 2; }
 fi
 # The binary runs at the CHAIN's declared heap and stack (R-1353, RULES.md clause 8 (g)(4)), never typed here:
-# corpus/tests/shared/parser_sc/parser_<lang>.heap and .stack, read by lib_declared_arena.sh and leading the binary's own command line.
+# corpus/demos/snocone/parser_<lang>/parser_<lang>.heap and .stack, read by lib_declared_arena.sh and leading the binary's own command line.
 . "$here/lib_declared_arena.sh" || { echo "PARSER-SC ⛔ REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }
 SW="$(declared_switches_beside "$B/parser_$L.sc")" || { echo "PARSER-SC ⛔ REFUSE(2): bootstrap/parser_$L's declaration is refused"; exit 2; }
 [ -n "$SW" ] || { echo "PARSER-SC ⛔ REFUSE(2): bootstrap/parser_$L.sc declares no heap or stack (parser_$L.heap, .stack)"; exit 2; }

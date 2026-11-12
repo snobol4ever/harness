@@ -10,7 +10,7 @@
 #          --traditional): the flag echoes whole; another spelling of it and a flag named twice REFUSE rc 2.
 #   B      the declaration is the oracle's NEED, read behaviourally: a 100000-deep SNOBOL4 recursion dies ERROR 246 under sbl -bf at its
 #          default stack and prints its depth under the switches the reader echoes for its sidecar.
-#   C      the bootstrap parser chain declares: every bootstrap/parser_<lang>.sc has .heap and .stack in corpus/tests/shared/parser_sc the one reader turns into scrip's
+#   C      the bootstrap parser chain declares: every bootstrap/parser_<lang>.sc has .heap and .stack in corpus/demos/snocone/parser_<lang>/ (the demo twin) the one reader turns into scrip's
 #          -d/-s switches and an .oracle_args it accepts (the coo 2026-10-03: the chain dies ERROR 246 under sbl at its default stack on
 #          the snocone, icon and pascal workhorse inputs).
 #   W      the ten tools that run the chain (the parse grid and its phase profile since R-1485) read the chain's declaration -- each calls the reader on the chain -- and a doctored copy
