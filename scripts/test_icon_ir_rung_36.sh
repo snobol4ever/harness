@@ -33,7 +33,7 @@ if [ ! -d "$CORPUS" ]; then echo "⛔ REFUSES rc=2: corpus not found at $CORPUS 
 # a name in neither place REFUSES rc=2 (the old SKIP returned success for every name absorbed and deleted since 2026-08-29).
 moved_auto() {
     local name="$1" o
-    for o in "rung36_all__$name" "${name}__$name" "$name"; do
+    for o in "rung36_all__$name" "${name}__$name" "${name}__${name#rung36_jcon_}" "$name"; do   # the last but one: an entry staged under the jcon file name (rung36_jcon_io__io)
         if grep -q ",${o}," "$CORPUS/ALL.csv"; then echo "  MOVED $name -> the icon master, origin $o (graded by the IcnRungs board, not counted twice here)"; return; fi
     done
     # a jcon program the vendored package already carries (rung36_jcon_toby, deleted 2026-09-03 at a4d591ad4, is packages/icon/jcon_tests/toby.icn)
