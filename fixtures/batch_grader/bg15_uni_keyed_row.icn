@@ -1,0 +1,12 @@
+procedure main(args)
+   local L, f, line;
+   L := [10, 20, 30];
+   write("env ", getenv("BG15"));
+   every write("arg ", !args);
+   write("name ", name(L[1]));
+   f := open("bg15_companion.txt") | stop("no companion in the working directory");
+   while line := read(f) do write("companion ", line);
+   close(f);
+   flush(&output);
+   write(&errout, "errout merged last");
+end

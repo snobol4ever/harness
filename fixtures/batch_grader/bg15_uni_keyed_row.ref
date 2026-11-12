@@ -1,0 +1,7 @@
+env hello
+arg alpha
+arg beta
+name list_2[1]
+companion first line
+companion second line
+errout merged last
