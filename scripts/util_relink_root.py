@@ -122,6 +122,7 @@ def relink(seat, pri, check, verify):
     left = dirty(seat)
     if left - sd:
         refuse(f"{seat}: {len(left - sd)} file(s) read dirty after the relink that were clean before it, the first {sorted(left - sd)[0]!r}")
+    git(seat, "config", "s4e.shared", "true")   # the mark util_sync_root.sh reads: this repo shares its files, so its sync links them again
     print(f"RELINK root={seat} pristine={pri} " + " ".join(f"{k}={v}" for k, v in n.items()) + f" freed_mb={n['freed'] // 1048576}")
     return 0
 

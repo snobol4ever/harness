@@ -8,11 +8,13 @@
 #      the symlink untouched, status clean
 #   2  --check on the seat reads linkable > 0 and exits 1
 #   3  the relink links a, x and d/c to the pristine's inodes; b (dirty in the seat) is not linked; s (a symlink) is not linked; a file whose
-#      pristine copy is writable (w) is never a link source; the seat's git status lists only b
+#      pristine copy is writable (w) is never a link source; the seat's git status lists only b; the repo is marked s4e.shared
 #   4  an in-place write to the seat's a fails and the pristine's a is unchanged
 #   5  origin moves a: the seat's pull gives the seat the new a on a new inode while the pristine keeps the old one; update moves the pristine,
 #      leaves it clean and read-only; a second relink links a again
 #   6  --check after it exits 0; a root whose repo is no checkout refuses rc 2
+#   7  util_sync_root.sh: origin moves d/c; a marked root's sync brings the pristine to its HEAD and links the new d/c; an unmarked root's sync
+#      takes the new d/c and links nothing
 # EXIT: 0 all arms pass, 1 an arm failed, 2 REFUSED (no scratch, no git).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -42,7 +44,7 @@ python3 -I "$HERE/util_relink_root.py" "$S" --repo corpus --check > "$T/2.log" 2
 python3 -I "$HERE/util_relink_root.py" "$S" --repo corpus > "$T/3.log" 2>&1; r3=$?
 [ "$r3" = 0 ] && [ "$(ino "$S/corpus/a")" = "$(ino "$P/a")" ] && [ "$(ino "$S/corpus/x")" = "$(ino "$P/x")" ] && [ "$(ino "$S/corpus/d/c")" = "$(ino "$P/d/c")" ] \
   && [ "$(ino "$S/corpus/b")" != "$(ino "$P/b")" ] && [ "$(ino "$S/corpus/w")" != "$(ino "$P/w")" ] && [ -L "$S/corpus/s" ] && grep -q 'linked=3 ' "$T/3.log" \
-  && [ "$(git -C "$S/corpus" status --porcelain)" = " M b" ] \
+  && [ "$(git -C "$S/corpus" status --porcelain)" = " M b" ] && [ "$(git -C "$S/corpus" config --get s4e.shared)" = true ] \
   && ck ok "(3) the relink links a, x and d/c; not the dirty b, the symlink s, or w whose pristine copy is writable; status lists only b" \
   || ck no "(3) rc=$r3 status=[$(git -C "$S/corpus" status --porcelain | tr '\n' ';')] :: $(tail -1 "$T/3.log")"
 chmod a-w "$P/w"
@@ -61,6 +63,16 @@ python3 -I "$HERE/util_relink_root.py" "$S" --repo corpus > "$T/5c.log" 2>&1; r5
 python3 -I "$HERE/util_relink_root.py" "$S" --repo corpus --check > "$T/6.log" 2>&1; r6=$?
 mkdir -p "$T/bad/corpus"; python3 -I "$HERE/util_relink_root.py" "$T/bad" --repo corpus > "$T/6b.log" 2>&1; r6b=$?
 [ "$r6" = 0 ] && [ "$r6b" = 2 ] && ck ok "(6) --check after the relink exits 0; a root whose repo is no checkout refuses rc 2" || ck no "(6) check rc=$r6 bad root rc=$r6b :: $(tail -1 "$T/6.log")"
-echo "SEATS_SHARE_BOARD arms=6 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
-[ "$fail" = 0 ] && [ "$pass" = 6 ] && { echo "GATE OK [$NAME]: a seat's clean files are links to one read-only pristine, and no write reaches another seat"; exit 0; }
+R7="$T/root7"; R8="$T/root8"
+for R in "$R7" "$R8"; do mkdir -p "$R/harness/scripts" && cp "$HERE/util_relink_root.py" "$HERE/util_shared_pristine.sh" "$R/harness/scripts/" && "${G[@]}" clone -q "$O" "$R/corpus"; done
+python3 -I "$HERE/util_relink_root.py" "$R7" --repo corpus > /dev/null 2>&1
+( cd "$T/work" && printf 'c3\n' > d/c && "${G[@]}" commit -qam three && "${G[@]}" push -q origin main ) || ck no "(7) the third commit"
+S4E_HOME="$R7" S4E_SYNC_REPOS=corpus TMPDIR="$T" bash "$HERE/util_sync_root.sh" > "$T/7.log" 2>&1; r7=$?
+S4E_HOME="$R8" S4E_SYNC_REPOS=corpus TMPDIR="$T" bash "$HERE/util_sync_root.sh" > "$T/8.log" 2>&1; r8=$?
+[ "$r7" = 0 ] && [ "$r8" = 0 ] && [ "$(cat "$R7/corpus/d/c")" = c3 ] && [ "$(cat "$P/d/c")" = c3 ] && [ "$(ino "$R7/corpus/d/c")" = "$(ino "$P/d/c")" ] \
+  && [ "$(cat "$R8/corpus/d/c")" = c3 ] && [ "$(ino "$R8/corpus/d/c")" != "$(ino "$P/d/c")" ] && [ "$(ino "$R8/corpus/a")" != "$(ino "$P/a")" ] && [ -z "$(git -C "$R7/corpus" status --porcelain)" ] \
+  && ck ok "(7) a marked root's sync brings the pristine to its HEAD and links what the merge rewrote; an unmarked root's sync links nothing" \
+  || ck no "(7) sync rc=$r7/$r8 R7 d/c=[$(cat "$R7/corpus/d/c")] pristine d/c=[$(cat "$P/d/c")] :: $(tail -2 "$T/7.log" | tr '\n' '|' | cut -c1-200)"
+echo "SEATS_SHARE_BOARD arms=7 pass=$pass fail=$fail (tree $(git -C "$HERE" rev-parse --short HEAD 2>/dev/null))"
+[ "$fail" = 0 ] && [ "$pass" = 7 ] && { echo "GATE OK [$NAME]: a seat's clean files are links to one read-only pristine, and no write reaches another seat"; exit 0; }
 echo "GATE FAIL [$NAME]: $fail arm(s) failed"; exit 1

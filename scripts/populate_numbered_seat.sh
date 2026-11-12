@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # populate_numbered_seat.sh NN [--from ROOT] -- ONE NUMBERED HAIKU SEAT IN ONE COMMAND (the cio, 2026-11-05; Lon 15:1x CST: "rename them all 01, 02,
 # ..., 20. Because there are no longer any specialties seats. We have skills now instead use by ANY ASSIGNED seat. Make it so."). Lon creates the folder
-# /home/claude_worker_NN (/home is root's); this fills it: the four repos cloned from a populated root (local clone: the objects are hardlinked, origin set
-# to github), a SPARSE corpus (tests packages programs library reference editor_configs; `git -C corpus sparse-checkout add benchmarks` widens it for a
+# /home/claude_worker_NN (/home is root's); this fills it: the four repos cloned --shared from the coo root (its objects borrowed, origin set
+# to github; corpus, harness and .github then linked to the shared pristine), a SPARSE corpus (tests packages programs library reference editor_configs; `git -C corpus sparse-checkout add benchmarks` widens it for a
 # row that needs them), the Stop banner and inbox hooks and the skill gate named for the seat (from the source root's .claude, seat and root substituted),
 # banner_compact.py, /tmp/s4e/worker_NN, the postoffice mailbox (inbox archive, HQ file naming cio), and the worker digest (propagate_seat_digests_cto_484.py).
 # It does NOT touch ROSTER, FLEET or the old seat's rows: the cio adds the seat to ROSTER and reowns the retired HQ's rows in the same sitting, by hand, measured.
@@ -25,12 +25,17 @@ root="/home/claude_$seat"; PO=/home/resources/postoffice
 for r in SCRIP corpus harness .github; do [ -d "$FROM/$r/.git" ] || { echo "REFUSE(1): $FROM/$r is not a repo"; exit 1; }; done
 [ -f "$FROM/.claude/settings.json" ] && [ -f "$FROM/.claude/settings.local.json" ] || { echo "REFUSE(1): $FROM/.claude has no settings to template"; exit 1; }
 src_seat="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["env"]["S4E_SEAT"])' "$FROM/.claude/settings.local.json")"
-for r in SCRIP harness .github; do git clone -q "$FROM/$r" "$root/$r" && git -C "$root/$r" remote set-url origin "$(git -C "$FROM/$r" remote get-url origin)" || exit 1; done
-git clone -q --no-checkout "$FROM/corpus" "$root/corpus" && git -C "$root/corpus" remote set-url origin "$(git -C "$FROM/corpus" remote get-url origin)" || exit 1
+# THE SHARED FORM (the cio 2026-11-12, row fleet-32-16-8-4-shared-repos; /home read 67G free): each repo is cloned --shared from the coo root, so its
+# objects are borrowed and none copied, and once checked out every clean file of corpus, harness and .github becomes a hard link to the read-only
+# pristine (util_relink_root.py, util_shared_pristine.sh); the root keeps its own directories, so every relative path works unchanged.
+COO=/home/claude_coo
+for r in SCRIP harness .github; do git clone -q --shared "$COO/$r" "$root/$r" && git -C "$root/$r" remote set-url origin "$(git -C "$COO/$r" remote get-url origin)" || exit 1; done
+git clone -q --shared --no-checkout "$COO/corpus" "$root/corpus" && git -C "$root/corpus" remote set-url origin "$(git -C "$COO/corpus" remote get-url origin)" || exit 1
 git -C "$root/corpus" sparse-checkout set --no-cone tests packages programs library include reference editor_configs README.md >/dev/null 2>&1 || git -C "$root/corpus" sparse-checkout set tests packages programs library include reference editor_configs
 git -C "$root/corpus" checkout -q main || exit 1
 for r in SCRIP corpus harness .github; do point_at_coo "$root" "$r" || exit 1; done
 for r in SCRIP corpus harness .github; do git -C "$root/$r" fetch -q origin && git -C "$root/$r" merge -q --ff-only origin/main || exit 1; done
+[ -d "${S4E_SHARED:-/home/resources/shared}/corpus/.git" ] && { bash "$root/harness/scripts/util_shared_pristine.sh" update > /dev/null; python3 -I "$root/harness/scripts/util_relink_root.py" "$root" | sed 's/^/  /'; }
 mkdir -p "$root/.claude" "$root/.scratch" "/tmp/s4e/$seat" "$PO/$seat/inbox" "$PO/$seat/archive"
 [ -d "$PO/$seat/HQ" ] && rmdir "$PO/$seat/HQ"; echo cio > "$PO/$seat/HQ"
 sed "s#$FROM#$root#g; s#\b$src_seat\b#$seat#g" "$FROM/.claude/settings.json" > "$root/.claude/settings.json"

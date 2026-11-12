@@ -44,17 +44,38 @@ sync_all() {
         fetch_slot "$ROOT/$r"; frc=$?
         [ "$frc" = 0 ] || { echo "REFUSE(2): fetch of $r failed (sem/git rc $frc) -- nothing merged"; return 2; }
     done
+    local moved=""
     for r in $REPOS; do
         dir="$ROOT/$r"
         before="$(git -C "$dir" rev-parse --short HEAD)"
         if git -C "$dir" merge -q --ff-only origin/main; then
             after="$(git -C "$dir" rev-parse --short HEAD)"
             echo "SYNC $r $before..$after"
+            [ "$before" = "$after" ] || moved="$moved $r"
         else
             echo "SYNC $r $before..$before MERGE REFUSED (not a fast-forward of origin/main)"; rc=1
         fi
     done
+    relink_shared $moved
     return $rc
+}
+
+# A ROOT THAT SHARES ITS FILES KEEPS SHARING THEM (the cio 2026-11-12, row fleet-32-16-8-4-shared-repos): a repo util_relink_root.py has linked
+# carries git config s4e.shared=true; when its merge moved, the pristine is brought to this root's HEAD (util_shared_pristine.sh update, only
+# when it lags) and the files the merge rewrote are linked again. A root never converted (no mark) is left as it is.
+relink_shared() {
+    local r todo="" ph sh
+    for r in "$@"; do
+        case "$r" in corpus|harness|.github) ;; *) continue ;; esac
+        [ "$(git -C "$ROOT/$r" config --get s4e.shared 2>/dev/null)" = true ] || continue
+        ph="$(git -C "${S4E_SHARED:-/home/resources/shared}/$r" rev-parse HEAD 2>/dev/null)"; sh="$(git -C "$ROOT/$r" rev-parse HEAD)"
+        if [ "$ph" != "$sh" ] && ! git -C "$ROOT/$r" merge-base --is-ancestor "$sh" "$ph" 2>/dev/null; then
+            bash "$ROOT/harness/scripts/util_shared_pristine.sh" update "$r" | sed 's/^/  /'
+        fi
+        todo="$todo --repo $r"
+    done
+    [ -n "$todo" ] && python3 -I "$ROOT/harness/scripts/util_relink_root.py" "$ROOT" $todo | sed 's/^/  /'
+    return 0
 }
 
 probe() {
