@@ -352,11 +352,16 @@ def _tsv_rows(path):
     return [ln.split("\t") for ln in path.read_text().splitlines() if ln.strip() and not ln.startswith("#")]
 
 
+ISO_REFUSALS_HEADER = "# ISO_EXPECTED_REFUSALS.tsv -- written by util_build_package_suite.py under units iso-rejection (CIO-16): entry<TAB>what the refusal must name"
+
+
 def iso_rejection_want(src):
     """What an ISO rejection test's refusal must name (CIO-16, officer_04 2026-11-09), read as the deleted test_pascal_pat_suite.sh prt_want read
     it: "line N1 N2 ..." -- the marked lines of the .ecp beside the source (the first field of each line that opens with a number then ****),
-    sorted and unique; else "clause X1 X2 ..." -- every clause number after "ISO 7185 reference:" on the source's lines, in order; else "" (nothing a
-    refusal can be checked against). A missing .ecp counts as no marked lines."""
+    sorted and unique; else "clause X1 X2 ..." -- every clause number after "ISO 7185 reference:" on the source's lines, in order, or, with no such
+    line, on a line that is "ISO 7185" and clause numbers alone (officer_04 2026-11-12, row pat-red-iso7185prt1758b: iso7185prt1839 and 1840 head
+    their comment "ISO 7185 6.9.3" with no "reference:" and a .ecp that marks nothing); else "" (nothing a refusal can be checked against). A
+    missing .ecp counts as no marked lines."""
     src = Path(src)
     ecp = src.with_suffix(".ecp")
     marked = []
@@ -371,6 +376,11 @@ def iso_rejection_want(src):
     for ln in read_text_tolerant(src)[0].splitlines():
         if "ISO 7185 reference:" in ln:
             clauses += re.findall(r"[0-9]+(?:\.[0-9]+)+", ln.rsplit("ISO 7185 reference:", 1)[1])
+    if not clauses:
+        for ln in read_text_tolerant(src)[0].splitlines():
+            m = re.fullmatch(r"[ \t]*ISO 7185((?:[ \t,]+[0-9]+(?:\.[0-9]+)+)+)[ \t]*", ln)
+            if m:
+                clauses += re.findall(r"[0-9]+(?:\.[0-9]+)+", m.group(1))
     if clauses:
         return "clause " + " ".join(clauses)
     return ""
@@ -1031,7 +1041,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
     if len(entries) + len(excluded) != tot:
         h.refuse(f"population arithmetic broken: {len(entries)} absorbed + {len(excluded)} excluded != {tot} shipped")
     if only is not None:
-        return splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract, merged, staged, all_srcs)
+        return splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract, merged, staged, all_srcs,
+                      iso_rej_names=iso_rej_names if iso_rej else None)
 
     out_sno = pkg_dir / f"{out_prefix}{ext}"
     out_ref = pkg_dir / f"{out_prefix}.ref"
@@ -1069,8 +1080,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
     elif out_dialect.exists():
         out_dialect.unlink()
     if iso_rej and iso_rej_names:
-        (pkg_dir / "ISO_EXPECTED_REFUSALS.tsv").write_text("# ISO_EXPECTED_REFUSALS.tsv -- written by util_build_package_suite.py under units iso-rejection (CIO-16): entry<TAB>what the refusal must name\n"
-                                                           + "".join(f"{n}\t{w}\n" for n, w in iso_rej_names))
+        (pkg_dir / "ISO_EXPECTED_REFUSALS.tsv").write_text(ISO_REFUSALS_HEADER + "\n" + "".join(f"{n}\t{w}\n" for n, w in iso_rej_names))
     wr_lines = [f"{e.name}\t{e.want_rc}" for e in entries if e.want_rc]
     if wr_lines:
         out_wantrc.write_text("\n".join(wr_lines) + "\n")
@@ -1254,7 +1264,7 @@ def _keyed_text(old, header, rows, names, sep):
     return "\n".join(out) + "\n"
 
 
-def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract, merged, staged, all_srcs):
+def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract, merged, staged, all_srcs, iso_rej_names=None):
     sno = lang in ("", "snobol4")
     lc = None if sno else h.LANG_CONFIGS.get(lang)
     if lc is None and not sno:
@@ -1364,6 +1374,11 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
     _keyed(f"{out_prefix}.dialect", ["# the fpc mode that cut each entry's ref (CONTRACT.tsv dialect=any-fpc-mode): name<TAB>mode"], [f"{n}\t{d}" for n, d in dialects], names)
     _keyed(f"{out_prefix}.rc", [], [f"{e.name}\t{e.want_rc}" for e in entries if e.want_rc], names)
     _keyed(f"{out_prefix}.argv", [], [e.name + "\t" + "\t".join(e.argv) for e in entries if getattr(e, "argv", None)], names)
+    if iso_rej_names is not None:
+        # A RE-CUT PAT REJECTION TEST CARRIES ITS REFUSAL'S WANT (officer_04 2026-11-12, row pat-red-iso7185prt1758b; MEASURED: --only of four
+        # programs out of ISO_ACCEPTS.tsv re-cut them with empty refs and left ISO_EXPECTED_REFUSALS.tsv without them, so each graded rc 1 against
+        # want 0): the named entries' lines of the refusal file are rewritten from this census, as a whole build writes the file.
+        _keyed("ISO_EXPECTED_REFUSALS.tsv", [ISO_REFUSALS_HEADER], [f"{n}\t{w}" for n, w in iso_rej_names], names)
     _src_of = {f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem: s for s in all_srcs}
     _mask_rows = []
     for e in entries:

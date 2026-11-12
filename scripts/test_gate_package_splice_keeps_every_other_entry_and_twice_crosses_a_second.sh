@@ -17,6 +17,10 @@
 #   5  --only B after B is changed to print 'b2' re-cuts B in place: banner number 2 kept, ref b2, A and C unchanged
 #   6  a container whose ALL.csv carries test-cycle step 6's timeout_s column (A 300, B 120, C none) re-splices --only B: rc 0, the
 #      header and A's and C's lines unchanged, B's 120 carried (the splice refused rc 2 on all 25 such containers, the cfo 2026-11-07)
+#   7  a scratch Pascal package under units iso-rejection (CONTRACT.tsv, no oracle asked): prtA names "ISO 7185 reference: 6.9.3.1", prtB
+#      no clause, so B is excluded; B's header then gains the bare line "ISO 7185 6.9.3" and --only iso7185prtB re-cuts it: rc 0, B absorbed,
+#      ISO_EXPECTED_REFUSALS.tsv carries "iso7185prtB<TAB>clause 6.9.3" and A's line unchanged (officer_04 2026-11-12, row
+#      pat-red-iso7185prt1758b: the splice never wrote the refusal file, and the bare clause form read as no clause; red on harness@88b7dc80d)
 # EXIT: 0 all arms pass · 1 an arm failed · 2 REFUSED (no binary, no oracle).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -62,5 +66,12 @@ python3 -c 'import csv,sys; f=sys.argv[1]; r=list(csv.reader(open(f))); i=r[0].i
 src B "'b3'"
 bld --only B; rc=$?
 arm "a container with a timeout_s column re-splices --only B: header, A and C unchanged, B's timeout_s 120 carried" "$([ "$rc" = 0 ] && [ "$(eref "$P" B)" = b3 ] && [ "$(head -1 "$P/ALL.csv")" = "$(head -1 "$T/v2/ALL.csv")" ] && [ "$(csvline "$P" A)" = "$(csvline "$T/v2" A)" ] && [ "$(csvline "$P" C)" = "$(csvline "$T/v2" C)" ] && [ "$(python3 -c 'import csv,sys; r=list(csv.DictReader(open(sys.argv[1]))); print([x["timeout_s"] for x in r if x["entry"]=="B"][0])' "$P/ALL.csv")" = 120 ] && echo ok || echo "rc=$rc ref=$(eref "$P" B) $(tail -1 "$T/build.log")")"
+Q="$T/pat"; mkdir -p "$Q"; printf 'units\tiso-rejection\tthe gate: rejection tests graded as expected refusals\n' > "$Q/CONTRACT.tsv"
+prt() { printf '{\n  PRT test %s.\n%s\n}\nprogram iso7185prt%s(output);\nbegin\n  writeln(1:0)\nend.\n' "$1" "$2" "$1" > "$Q/iso7185prt$1.pas"; printf 'Errors in program: 0\n' > "$Q/iso7185prt$1.ecp"; }
+prt A '  ISO 7185 reference: 6.9.3.1'; prt B ''
+( cd "$ROOT" && python3 ../harness/scripts/util_build_package_suite.py "$Q" --lang pascal > "$T/pat.log" 2>&1 ); rc0=$?
+prt B '  ISO 7185 6.9.3'
+( cd "$ROOT" && python3 ../harness/scripts/util_build_package_suite.py "$Q" --lang pascal --only iso7185prtB > "$T/pat.log" 2>&1 ); rc=$?
+arm "--only re-cuts a rejection test whose header is the bare 'ISO 7185 6.9.3': ISO_EXPECTED_REFUSALS.tsv gains B's clause, A's line kept" "$([ "$rc0" = 0 ] && [ "$rc" = 0 ] && grep -qxP 'iso7185prtB\tclause 6\.9\.3' "$Q/ISO_EXPECTED_REFUSALS.tsv" && grep -qxP 'iso7185prtA\tclause 6\.9\.3\.1' "$Q/ISO_EXPECTED_REFUSALS.tsv" && echo ok || echo "rc0=$rc0 rc=$rc refusals=[$(grep -v '^#' "$Q/ISO_EXPECTED_REFUSALS.tsv" 2>/dev/null | tr '\t\n' ' |')] $(tail -1 "$T/pat.log")")"
 [ "$fail" = 0 ] && { echo "GATE OK [$NAME]: $n arms"; exit 0; }
 echo "GATE FAIL [$NAME]: $(( n )) arms, at least one red"; exit 1
