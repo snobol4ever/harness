@@ -3,3 +3,4 @@
 # then the head and the export headers, so a reader taking a function's first match meets its definition before its prototype.
 # old (under SCRIP/src)	dir (under SCRIP/src)	prefix	manifest (under harness/designs/cache_tree/manifests)
 runtime/by_name_dispatch.c	runtime/lib	bn_	by_name_dispatch.c.tsv
+emitter/emit.cpp	emitter/em	em_	emit.cpp.tsv

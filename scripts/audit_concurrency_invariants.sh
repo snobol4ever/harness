@@ -24,7 +24,7 @@
 # reported "not found" instead of enforcing anything.
 set -u
 ROOT="$(cd "$(dirname "$0")/../../SCRIP" && pwd)"
-EMIT="$ROOT/src/emitter/emit.cpp"
+EMIT="$(mktemp)"; trap 'rm -f "$EMIT"' EXIT; cat $(bash "$(dirname "$0")/util_unit_files.sh" "$ROOT/src" emitter/emit.cpp) > "$EMIT" 2>/dev/null || { echo "emit.cpp and its cut not found"; exit 2; }
 fail=0
 say(){ printf '%s\n' "$*"; }
 bad(){ printf 'VIOLATION: %s\n' "$*"; fail=1; }

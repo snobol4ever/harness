@@ -39,6 +39,7 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 SC = os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP'))
 TPL_DIR = os.path.join(SC, 'src', 'templates', 'bb')
 X86_DIR = os.path.join(SC, 'src', 'templates', 'x86')
@@ -291,7 +292,7 @@ class World(object):
         self.macros, self.funcs, self.files, self.local_macros, self.cfuncs = {}, {}, {}, {}, {}
         hdrs = sorted(glob.glob(os.path.join(X86_DIR, '*.h'))) + sorted(glob.glob(os.path.join(X86_DIR, 'x86_*.cpp'))) + sorted(glob.glob(os.path.join(TPL_DIR, '*.h')))
         cpps = sorted(glob.glob(os.path.join(TPL_DIR, '*.cpp')))
-        if not cpps or not os.path.isfile(os.path.join(X86_DIR, 'x86_asm.cpp')) or not os.path.isfile(EMIT):
+        if not cpps or not os.path.isfile(os.path.join(X86_DIR, 'x86_asm.cpp')) or not __import__('lib_split_units').unit_files(os.path.join(SC, 'src'), 'emitter/emit.cpp'):
             raise Refuse('no templates under %s, or no x86_asm.cpp or emit.cpp' % TPL_DIR)
         for p in hdrs + cpps:
             rel = os.path.relpath(p, SC)
@@ -960,7 +961,7 @@ def value_producers():
 
 def dispatch(world):
     """kind -> (templates it reaches, the integer constants its arm sets, whose word op_off names); an arm ends at the next case or column-0 line."""
-    code, _ = split_preprocessor(open(EMIT, encoding='utf-8', errors='replace').read(), 'src/emitter/emit.cpp')
+    code, _ = split_preprocessor(__import__('lib_split_units').unit_text(os.path.join(SC, 'src'), 'emitter/emit.cpp'), 'src/emitter/emit.cpp')
     labels = [(m.start(), m.end(), m.group(1)) for m in re.finditer(r'\bcase (IR_[A-Z0-9_]+)\s*:', code)]
     tset = set(world.templates)
     out, pending = {}, []

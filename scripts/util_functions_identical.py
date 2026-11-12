@@ -35,15 +35,51 @@ def _reloc_desc_named(e, roff, rinfo, add, adj=None):
 
 L.reloc_desc = _reloc_desc_named
 PC={2,4}
-def norm(name): return re.sub(r'\.\d+$','',name)
+def norm(name):
+    """A symbol's comparable name: no numbered suffix of a function-local static (x.1), no parameter list (a C++ function a split exported is
+    demangled with its signature where the unit's local copy was keyed by its bare name), one name for every unit's static-initializer function."""
+    name = re.sub(r'\.\d+$', '', name)
+    if name.startswith('_GLOBAL__sub_I_'):
+        return '_GLOBAL__sub_I_'
+    prev = None
+    while prev != name:
+        prev, name = name, re.sub(r'\((?:[^()]|\([^()]*\))*\)( const)?(?=$|::|\[)', '', name)
+    return name
+_DEM = {}
+
+
+def dem(name):
+    if not name.startswith('_Z'):
+        return name
+    if name not in _DEM:
+        _DEM[name] = subprocess.run(['c++filt', name], capture_output=True, text=True).stdout.strip() or name
+    return _DEM[name]
+
+
 def nrel(r):
     roff,typ,cls,a,b=r
     if cls=='V' and isinstance(b,tuple): return (roff,'sym',norm(b[0]),b[1])
-    if cls=='N': return (roff,'sym',norm(a),b+4 if typ in PC else b)
+    if cls=='N' and typ in PC: return (roff,'sym',norm(dem(a)),b+4,'pc')
+    if cls=='N': return (roff,'sym',norm(dem(a)),b)
     return (roff,cls,a,b)
+
+
+def reconcile(ra, rb):
+    """A pc-relative relocation against a named symbol (the child's, an exported static) and the parent's resolved reference to the same symbol at
+    the same offset are one reference when they differ by the bytes of an immediate that follows the displacement (0, 1, 2 or 4): the assembler
+    knew the instruction's length for the parent, lib_elf_noncomdat assumes 4 for a named relocation."""
+    ra, rb = set(ra), set(rb)
+    for x in [r for r in ra - rb if len(r) == 5]:
+        for y in [r for r in rb - ra if len(r) == 4 and r[0] == x[0] and r[2] == x[2] and isinstance(r[3], int) and r[3] - x[3] in (0, 1, 2, 4)]:
+            ra.discard(x); rb.discard(y); break
+    for x in [r for r in rb - ra if len(r) == 5]:
+        for y in [r for r in ra - rb if len(r) == 4 and r[0] == x[0] and r[2] == x[2] and isinstance(r[3], int) and r[3] - x[3] in (0, 1, 2, 4)]:
+            rb.discard(x); ra.discard(y); break
+    return ra == rb
 def ninsn(t):
+    t=re.sub(r'<([^>]*?)(\+0x[0-9a-f]+)?>', lambda m: '<%s%s>' % (norm(m.group(1)), m.group(2) or ''), t)
     t=re.sub(r'^(call|jmp)q?\s+<([^>+]+)>$',r'\1 \2',t)
-    t=re.sub(r'^(call|jmp)q?\s+(\S+)$',r'\1 \2',t)
+    t=re.sub(r'^(call|jmp)q?\s+(.+)$',lambda m: '%s %s' % (m.group(1), norm(m.group(2))),t)
     t=re.sub(r' @\S+$','',t)
     return re.sub(r'\.\d+\b','',t)
 def nval(v, name):
@@ -55,8 +91,8 @@ def nval(v, name):
             body=body[1:]; shift=4
             def fix(m):
                 return '<%s+0x%x>' % (m.group(1), int(m.group(2),16)-4)
-            body=[re.sub(r'<(%s)\+0x([0-9a-f]+)>' % re.escape(name), fix, x) for x in body]
-        called={m.group(2) for x in body for m in [re.match(r'^(call|jmp) (\S+)$',x)] if m}
+            body=[re.sub(r'<(%s)\+0x([0-9a-f]+)>' % re.escape(norm(name)), fix, x) for x in body]
+        called={m.group(2) for x in body for m in [re.match(r'^(call|jmp) (.+)$',x)] if m}
         body=tuple(body)
     else:
         called=set()
@@ -128,11 +164,12 @@ def fileline_only(a, b, srcs):
     for p, q in zip(a[1], b[1]):
         if p != q and not (re.sub(r'\$0x[0-9a-f]+', '$I', p) == re.sub(r'\$0x[0-9a-f]+', '$I', q) and p.startswith('mov')):
             return False
+    isfile = lambda r: r[1] == 'R' and isinstance(r[3], bytes) and r[3].decode('latin1').endswith(srcs)
     ra, rb = set(a[2]), set(b[2])
-    for r in ra ^ rb:
-        if not (r[1] == 'R' and isinstance(r[3], bytes) and r[3].decode('latin1').endswith(srcs)):
-            return False
-    return len(ra - rb) == len(rb - ra)
+    fa, fb = {r for r in ra - rb if isfile(r)}, {r for r in rb - ra if isfile(r)}
+    if len(fa) != len(fb):
+        return False
+    return reconcile(ra - fa, rb - fb)
 
 
 def expand(xs):
@@ -182,6 +219,8 @@ def main():
         sp, sc = set(map(repr, P[k])), set(map(repr, C[k]))
         if sp == sc:
             same += 1; continue
+        if len(P[k]) == 1 and len(C[k]) == 1 and P[k][0][:2] == C[k][0][:2] and reconcile(P[k][0][2], C[k][0][2]):
+            same += 1; continue
         if len(P[k]) == 1 and len(C[k]) == 1 and fileline_only(P[k][0], C[k][0], srcs):
             fl += 1; continue
         if len(P[k]) == 1 and len(C[k]) == 1:
@@ -216,7 +255,8 @@ def selftest():
         ok = sys.modules[__name__]
         def verdict(child):
             C = load(child)
-            return all(k in C and set(map(repr, P[k])) == set(map(repr, C[k])) for k in P) and set(P) == set(C)
+            return all(k in C and (set(map(repr, P[k])) == set(map(repr, C[k])) or (len(P[k]) == 1 and len(C[k]) == 1 and P[k][0][:2] == C[k][0][:2]
+                       and reconcile(P[k][0][2], C[k][0][2]))) for k in P) and set(P) == set(C)
         r1, r2 = verdict([c1, c2]), verdict([c1, c3])
         if not r1:
             C = load([c1, c2])

@@ -21,7 +21,7 @@
 import re, sys, os
 ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP")
 ZS   = open(os.path.join(ROOT, 'src/planner/frame_layout.c')).read()
-EM   = open(os.path.join(ROOT, 'src/emitter/emit.cpp')).read()
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import lib_split_units; EM = lib_split_units.unit_text(os.path.join(ROOT, 'src'), 'emitter/emit.cpp')
 def body(src, start, end):
     i = src.index(start); j = src.index(end, i); return src[i:j]
 def strip_comments(s): return re.sub(r'/\*.*?\*/', '', s, flags=re.S)

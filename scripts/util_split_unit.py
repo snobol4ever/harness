@@ -65,22 +65,24 @@ class Unit:
         fatal = [d for d in tu.diagnostics if d.severity >= 4]
         if fatal:
             raise SystemExit('REFUSE(2): libclang could not read %s: %s' % (self.src, fatal[0].spelling))
-        self.errors = [d for d in tu.diagnostics if d.severity == 3]
+        self.errors = [(d.location.file.name if d.location.file else '', d.location.line, d.spelling) for d in tu.diagnostics if d.severity == 3]
         self.defs, self.protos, self.vars, self.decls = [], collections.defaultdict(list), [], []
         self.incdefs = {}
         self.byname = {}
         self.unexportable = set()
-        def top(cur):
+        def top(cur, clink=False):
             for c in cur.get_children():
                 f = c.location.file
                 if c.kind == ci.CursorKind.LINKAGE_SPEC:
-                    top(c); continue
+                    st = c.extent.start
+                    lt = bcut(self.lines[st.line - 1], st.column - 1) if f and os.path.abspath(f.name) == self.src and st.line <= len(self.lines) else 'extern "C"'
+                    top(c, not lt.lstrip().startswith('extern "C++"')); continue
                 if f and f.name.endswith('.inc') and c.kind in (ci.CursorKind.VAR_DECL, ci.CursorKind.FUNCTION_DECL) and self.direct_inc(f.name):
                     self.incdefs[c.spelling] = os.path.abspath(f.name)
                 if not f or os.path.abspath(f.name) != self.src:
                     continue
-                yield_one(c)
-        def yield_one(c):
+                yield_one(c, clink)
+        def yield_one(c, clink=False):
             K = ci.CursorKind
             b, e = c.extent.start.line, c.extent.end.line
             static = c.storage_class == ci.StorageClass.STATIC
@@ -90,18 +92,25 @@ class Unit:
                 tproto = '%s %s(%s%s)' % (c.result_type.spelling, c.spelling, ', '.join(args_) or ('' if c.type.is_function_variadic() else 'void'),
                                           ', ...' if c.type.is_function_variadic() and args_ else '')
                 d = {'name': c.spelling, 'b': b, 'e': e, 'static': static, 'cur': c, 'col': c.extent.start.column, 'tproto': tproto,
-                     'body': (body.extent.start.line, body.extent.start.column) if body else None, 'kind': 'f'}
+                     'body': (body.extent.start.line, body.extent.start.column) if body else None, 'kind': 'f', 'clink': clink}
                 d['macro'] = not self.literal_static(d) if static else False
+                if cplus:
+                    try:
+                        mn = c.mangled_name
+                    except Exception:
+                        mn = None
+                    if mn and not static:
+                        d['clink'] = mn == c.spelling
                 self.defs.append(d); self.byname[c.spelling] = d
             elif c.kind == K.FUNCTION_DECL:
                 self.protos[c.spelling].append({'b': b, 'e': e, 'col': c.extent.start.column, 'static': static})
-                self.decls.append({'name': c.spelling, 'b': b, 'e': e, 'col': c.extent.start.column, 'static': static, 'kind': 'fp'})
+                self.decls.append({'name': c.spelling, 'b': b, 'e': e, 'col': c.extent.start.column, 'static': static, 'kind': 'fp', 'clink': clink})
             elif c.kind == K.VAR_DECL and c.storage_class == ci.StorageClass.EXTERN:
                 self.decls.append({'name': c.spelling, 'b': b, 'e': max(e, self.statement_end(b, c.extent.start.column)), 'col': c.extent.start.column,
-                                   'static': False, 'kind': 've'})
+                                   'static': False, 'kind': 've', 'clink': clink})
             elif c.kind == K.VAR_DECL and c.storage_class != ci.StorageClass.EXTERN:
                 e = max(e, self.statement_end(b, c.extent.start.column))
-                d = {'name': c.spelling, 'b': b, 'e': e, 'static': static, 'cur': c, 'col': c.extent.start.column, 'kind': 'v', 'type': c.type.spelling}
+                d = {'name': c.spelling, 'b': b, 'e': e, 'static': static, 'cur': c, 'col': c.extent.start.column, 'kind': 'v', 'type': c.type.spelling, 'clink': clink}
                 d['macro'] = not self.literal_static(d) if static else False
                 self.vars.append(d); self.byname[c.spelling] = d
         top(tu.cursor)
@@ -172,7 +181,7 @@ class Unit:
         return line
 
     def literal_static(self, d):
-        t = self.lines[d['b'] - 1][d['col'] - 1:]
+        t = bcut(self.lines[d['b'] - 1], d['col'] - 1)
         m = re.match(r'(?:__attribute__\(\([^)]*\)\)\s*)*static\b', t)
         return bool(m) and d['name'] in ' '.join(self.lines[d['b'] - 1:d['e']])
 
@@ -266,7 +275,7 @@ def movable_decls(u):
         txt = '\n'.join(lines)
         if any(occupied[i] != 1 for i in range(d['b'], d['e'] + 1)) or any(rb <= d['b'] <= re_ for rb, re_ in regions):
             continue
-        if u.lines[d['b'] - 1][:d['col'] - 1].strip() or not txt.rstrip().endswith(';') or '#' in txt.lstrip()[:1]:
+        if bcut(u.lines[d['b'] - 1], None, d['col'] - 1).strip() or not txt.rstrip().endswith(';') or '#' in txt.lstrip()[:1]:
             continue
         if not re.search(r'\b%s\b' % re.escape(d['name']), txt) or any(o is not d and o['b'] == d['b'] for o in u.decls):
             continue
@@ -440,11 +449,41 @@ def assign(u, manifest_rows):
 INL = '<head>'
 
 
+def bcut(line, lo=None, hi=None):
+    """line[lo:hi] by BYTE columns (libclang's columns count UTF-8 bytes; a γ or an ω is two), lo and hi 0-based byte offsets."""
+    b = line.encode('utf-8', 'surrogateescape')
+    return b[lo:hi].decode('utf-8', 'surrogateescape')
+
+
+def strip_defaults(line):
+    """A C++ definition whose declaration now carries its default arguments: drop each '= value' inside the parameter list (a default may be given once)."""
+    out, depth, i = [], 0, 0
+    while i < len(line):
+        ch = line[i]
+        if ch == '(':
+            depth += 1
+        elif ch == ')':
+            depth -= 1
+        if ch == '=' and depth == 1 and line[i + 1:i + 2] != '=' and line[i - 1:i] not in '=!<>':
+            j, d2 = i + 1, 0
+            while j < len(line) and not (d2 == 0 and line[j] in ',)'):
+                d2 += line[j] in '([{'
+                d2 -= line[j] in ')]}'
+                j += 1
+            while out and out[-1] == ' ':
+                out.pop()
+            i = j
+            continue
+        out.append(ch)
+        i += 1
+    return ''.join(out)
+
+
 def proto_of(u, d):
     """A definition's own text up to its body, or for a function a macro makes, the prototype its type spells; "static" (and "inline") dropped."""
     n = d['name']
     if d['kind'] == 'v':
-        decl = ' '.join(' '.join(u.lines[d['b'] - 1:d['e']])[d['col'] - 1:].split('=')[0].split())
+        decl = ' '.join(bcut(' '.join(u.lines[d['b'] - 1:d['e']]), d['col'] - 1).split('=')[0].split())
         decl = re.sub(r'\s*;\s*$', '', decl)
         m = re.search(r'\[(\d+)\]', d['type'])
         if '[]' in decl and m:
@@ -454,9 +493,9 @@ def proto_of(u, d):
     bl, bc = d['body']
     O = u.lines
     if bl == d['b']:
-        seg = O[d['b'] - 1][d['col'] - 1:bc - 1]
+        seg = bcut(O[d['b'] - 1], d['col'] - 1, bc - 1)
     else:
-        seg = '\n'.join([O[d['b'] - 1][d['col'] - 1:]] + O[d['b']:bl - 1] + [O[bl - 1][:bc - 1]])
+        seg = '\n'.join([bcut(O[d['b'] - 1], d['col'] - 1)] + O[d['b']:bl - 1] + [bcut(O[bl - 1], None, bc - 1)])
     seg = ' '.join(seg.split())
     if not re.search(r'\b%s\s*\(' % re.escape(n), seg):
         if '(*' in d['tproto'] or 'unnamed' in d['tproto']:
@@ -486,7 +525,7 @@ def apply(u, manifest, outdir, prefix, head_name, src_root, cplus):
     L = list(u.lines)
     def strip_static(line_no, col, hidden):
         t = L[line_no - 1]
-        head, tail = t[:col - 1], t[col - 1:]
+        head, tail = bcut(t, None, col - 1), bcut(t, col - 1)
         tail2 = re.sub(r'^((?:__attribute__\(\([^)]*\)\)\s*)*)static\s+(?:inline\s+)?', r'\1' + (HIDDEN.replace('\\', '\\\\') if hidden else ''), tail, count=1)
         L[line_no - 1] = head + tail2
         return tail2 != tail
@@ -509,6 +548,9 @@ def apply(u, manifest, outdir, prefix, head_name, src_root, cplus):
         if id(d) not in movable:
             stays.add(id(d)); continue
         txt = '\n'.join(L[d['b'] - 1:d['e']])
+        dl = u.byname[n]['clink'] if (n in u.byname and u.byname[n]['kind'] == 'f') else d.get('clink')
+        if cplus and dl and not txt.lstrip().startswith('extern "C"'):
+            txt = 'extern "C" { ' + txt + ' }' if '\n' not in txt else 'extern "C" {\n' + txt + '\n}'
         if n in u.byname:
             home = piece[n]
             if home == INL or INL in users_pieces(n):
@@ -524,15 +566,23 @@ def apply(u, manifest, outdir, prefix, head_name, src_root, cplus):
             for p in ps:
                 piece_decls[p].append((d['b'], txt))
     has_decl = {d['name'] for d in u.decls if id(d) in movable or id(d) in stays}
+    CX = lambda t, cl: ('extern "C" { ' + t + ' }') if (cplus and cl and not t.lstrip().startswith('extern "C"')) else t
     for n in sorted(exports):
         d = u.byname[n]
         if n in has_decl:
             continue
         home = piece[n]
+        pr = proto_of(u, d)
+        if cplus and d['kind'] == 'f' and re.search(r'=', pr.split('(', 1)[-1]):
+            bl, bc = d['body'] if d['body'] else (d['b'], len(L[d['b'] - 1].encode('utf-8', 'surrogateescape')) + 1)
+            sig = '\n'.join(L[d['b'] - 1:bl - 1] + [bcut(L[bl - 1], None, bc - 1)])
+            new = strip_defaults(sig).split('\n')
+            new[-1] = new[-1] + bcut(L[bl - 1], bc - 1)
+            L[d['b'] - 1:bl] = new
         if home == INL or INL in exports[n]:
-            head_extra.append(proto_of(u, d))
+            head_extra.append(CX(pr, d.get('clink')))
         else:
-            export_text[home].append((d['b'], proto_of(u, d)))
+            export_text[home].append((d['b'], CX(pr, d.get('clink'))))
     inl_needs = {b for a, rs in u.refs.items() if a in piece and piece[a] == INL for b in rs}
     for n in sorted(inl_needs):
         if n in u.byname and n not in has_decl and n not in exports and piece[n] != INL:
@@ -586,7 +636,16 @@ def apply(u, manifest, outdir, prefix, head_name, src_root, cplus):
         for i in sorted(k for k, v in moved_inc_lines.items() if v == p):
             incs.append(R(u.lines[i - 1]))
         decls = [t for _, t in sorted(set(piece_decls[p]))]
-        body = [R('\n'.join(L[c['b'] - 1:c['e']])) for c in sorted(u.ch, key=lambda c: c['b']) if poc[id(c)] == p]
+        body, open_c = [], False
+        for c in sorted(u.ch, key=lambda c: c['b']):
+            if poc[id(c)] != p:
+                continue
+            cl = cplus and all(d.get('clink') for d in c['items'])
+            if cl != open_c:
+                body.append('extern "C" {' if cl else '}'); open_c = cl
+            body.append(R('\n'.join(L[c['b'] - 1:c['e']])))
+        if open_c:
+            body.append('}')
         name = '%s%s%s' % (prefix, p, ext)
         open(os.path.join(outdir, name), 'w', encoding='utf-8', errors='surrogateescape').write('\n'.join(incs + decls + body) + '\n')
         written.append(os.path.join(outdir, name))

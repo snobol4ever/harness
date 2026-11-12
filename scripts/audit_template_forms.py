@@ -319,10 +319,12 @@ def twins():
 
 
 def dispatch(root):
-    p = os.path.join(root, "src/emitter/emit.cpp")
-    if not os.path.isfile(p):
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import lib_split_units
+    raw = lib_split_units.unit_text(os.path.join(root, "src"), "emitter/emit.cpp")
+    if raw is None:
         return None, None, None, None
-    t = strip(open(p, encoding="utf-8", errors="replace").read())
+    t = strip(raw)
     sites = {}
     for m in re.finditer(r"bb_emit_x86\s*\(", t):
         e = close_of(t, m.end() - 1)
