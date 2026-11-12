@@ -29,14 +29,14 @@ sed 's/^mk(N) :- loop(N, _-_)\.$/mk(N) :- L = _-[], loop(N, L)./' "$WIT" > "$T/c
 grep -q '^mk(N) :- L = _-\[\], loop(N, L)\.$' "$T/control.pl" || { echo "⛔ REFUSE(2) [$G]: the control rewrite found no mk/1 line to close the tail of"; exit 2; }
 SW="-d131072k -s4096k -i2048k"
 grew_of() { sed -n 's/.*\[GC-EXERCISE\].* grew=\([0-9][0-9]*\).*/\1/p' "$1" | tail -1; }
-run_m3() { ( cd "$ROOT" && env $DG SCRIP_GC_EXERCISE=1 timeout 60 ./scrip $SW "$1" < /dev/null > "$2.out" 2> "$2.err" ); echo $?; }
+run_m3() { ( cd "$ROOT" && env $DG SCRIP_GC_EXERCISE=1 timeout -k 5 60 ./scrip $SW "$1" < /dev/null > "$2.out" 2> "$2.err" ); echo $?; }
 run_m4() {
     local b="$T/$(basename "$1" .pl).bin"
     if [ ! -x "$b" ]; then
-        ( cd "$ROOT" && timeout 60 ./scrip --compile --out="$b.s" "$1" < /dev/null > /dev/null 2> "$b.cerr" ) || { echo 2; return; }
+        ( cd "$ROOT" && timeout -k 5 60 ./scrip --compile --out="$b.s" "$1" < /dev/null > /dev/null 2> "$b.cerr" ) || { echo 2; return; }
         gcc "$b.s" -o "$b" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2> "$b.lerr" || { echo 2; return; }
     fi
-    ( env $DG SCRIP_GC_EXERCISE=1 timeout 60 "$b" $SW < /dev/null > "$2.out" 2> "$2.err" ); echo $?; }
+    ( env $DG SCRIP_GC_EXERCISE=1 timeout -k 5 60 "$b" $SW < /dev/null > "$2.out" 2> "$2.err" ); echo $?; }
 red=0
 for drv in diag fast; do
 DG=""; [ "$drv" = fast ] && DG="SCRIP_DIAG=0"
