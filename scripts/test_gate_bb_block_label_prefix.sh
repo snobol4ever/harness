@@ -94,7 +94,10 @@ rungs_extract_origin probe_indirect__indirect_pattern_operand "$WITDIR/indirect.
 # disabling that optimization for gate purposes -- out of scope for this pass. Keep this witness list to
 # programs whose bracketing has been manually spot-checked clean; a bigger/newer witness needs the same
 # spot-check before joining this list, not just "it compiles".
-WITNESSES="$CORPUS/benchmarks/snobol4/pattern_bt.sno $CORPUS/tests/icon/generators.icn $WITDIR/indirect.sno"
+# generators.icn is the icon master's entry generators__generators since 2026-11-12, extracted under its old name.
+( RUNGS_DIR="$CORPUS/tests/icon" RUNGS_EXT=.icn . "$S4E/harness/scripts/lib_rungs_extract.sh" && rungs_extract_origin generators__generators "$WITDIR/generators.icn" ) \
+  || { echo "REFUSE (rc=2): the entry generators__generators did not extract from $CORPUS/tests/icon"; exit 2; }
+WITNESSES="$CORPUS/benchmarks/snobol4/pattern_bt.sno $WITDIR/generators.icn $WITDIR/indirect.sno"
 fail=0
 total_defs=0
 for f in $WITNESSES; do
@@ -105,7 +108,7 @@ for f in $WITNESSES; do
         echo "SKIP (pre-existing compile failure, not this gate's concern): $f"
         continue
     fi
-    n=$(python3 "$(dirname "$0")/lib_bb_block_label_prefix_check.py" "$out")
+    n=$(python3 "$S4E/harness/scripts/lib_bb_block_label_prefix_check.py" "$out")
     rc=$?
     total_defs=$((total_defs + ${n:-0}))
     if [ $rc -ne 0 ]; then fail=1; fi

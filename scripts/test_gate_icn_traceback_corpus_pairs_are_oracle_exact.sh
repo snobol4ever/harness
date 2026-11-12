@@ -38,11 +38,16 @@ ORD=an_ordinary_call_chain_prints_every_frame_in_the_traceback
 refuse(){ echo "⛔ REFUSE(2): $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip at $SCRIP"
 command -v gcc >/dev/null || refuse "no gcc, so mode 4 cannot be graded"
-for n in "$GEN" "$ORD"; do
-    [ -f "$CORPUS/$n.icn" ] || refuse "witness missing: $CORPUS/$n.icn"
-    [ -f "$CORPUS/$n.ref" ] || refuse "ref missing: $CORPUS/$n.ref"
-done
 T=$(mktemp -d) || refuse "mktemp failed"; trap 'rm -rf "$T"' EXIT
+# The two pairs are entries of the icon master since 2026-11-12 (origin <name>__<name>, staged under their own file names,
+# stderr merged), extracted here under those names so every arm below reads them as it read the loose pairs.
+RUNGS_DIR="$CORPUS" RUNGS_EXT=.icn . "$HERE/lib_rungs_extract.sh" || refuse "cannot load lib_rungs_extract.sh"
+mkdir -p "$T/pairs" || refuse "mkdir $T/pairs failed"
+for n in "$GEN" "$ORD"; do
+    rungs_extract_origin "${n}__${n}" "$T/pairs/$n.icn" "$T/pairs/$n.ref" || refuse "witness missing: the entry ${n}__${n} did not extract from $CORPUS"
+    [ -s "$T/pairs/$n.ref" ] || refuse "ref missing: the entry ${n}__${n} extracted with an empty ref"
+done
+CORPUS="$T/pairs"
 fails=0; checks=0
 ck(){ checks=$((checks+1)); if [ "$1" = ok ]; then printf '  ok    %s\n' "$2"; else printf '  FAIL  %s\n' "$2"; fails=$((fails+1)); fi; }
 # Run one witness in BOTH modes from a scratch dir holding only its own source. ⛔ The program's own file
