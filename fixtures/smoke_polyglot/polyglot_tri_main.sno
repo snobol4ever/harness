@@ -1,0 +1,3 @@
+        OUTPUT = "TRI: mainline alive"
+        OUTPUT = "TRI: DOUBLE(21) = " DOUBLE(21)
+END

@@ -1,0 +1,2 @@
+# path	class	measurement (CEO-1696; hq_icon 2026-10-17, Arizona icont/iconx 9.5.25a)
+polyglot_tri_lib.icn	NO_ORACLE_ANSWER	the Icon block of the three-file polyglot program polyglot_tri_main.sno + polyglot_tri_lib.icn + polyglot_tri_rules.pl, which SCRIP/scripts/test_smoke_polyglot.sh grades as one program in m3 and m4; alone icont links it and iconx stops with run-time error 117 missing main procedure (rc 1), and no oracle runs the polyglot whole
