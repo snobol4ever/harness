@@ -23,6 +23,7 @@ EXIT: 0 done (or nothing to link under --check), 1 --check found files to link, 
 that is not read-only is never a link source).
 """
 import argparse
+import fcntl
 import filecmp
 import os
 import stat
@@ -71,7 +72,14 @@ def relink(seat, pri, check, verify):
     if os.stat(seat).st_dev != os.stat(pri).st_dev:
         refuse(f"{seat} and {pri} are on two filesystems: a hard link cannot join them")
     si, pi = index(seat), index(pri)
-    sd, pd = dirty(seat), dirty(pri)
+    sd = dirty(seat)
+    # THE PRISTINE IS READ UNDER THE UPDATER'S LOCK (the cio 2026-11-12, measured: a relink beside another reported 1134 pristine files dirty,
+    # since two refreshes of one index race for index.lock and the loser's diff-files reads every stat-moved file as modified; the pristine
+    # read clean a minute later): the refresh and the dirty read take the flock util_shared_pristine.sh update holds, so a relink never reads
+    # a pristine mid-merge and two relinks never refresh it at once.
+    with open(os.path.join(os.path.dirname(os.path.abspath(pri)), ".update.flock"), "a") as lk:
+        fcntl.flock(lk, fcntl.LOCK_EX)
+        pd = dirty(pri)
     n = {"tracked": len(si), "linked": 0, "already": 0, "dirty": 0, "differ": 0, "absent": 0, "special": 0, "pristine_writable": 0, "mtime_forward": 0, "freed": 0}
     todo = []
     for path, ent in si.items():
