@@ -40,7 +40,8 @@ def harness():
 def master_entries(csh, lang, outdir):
     src = os.path.join(CORPUS, 'tests', lang, MASTER[lang])
     ref = os.path.join(CORPUS, 'tests', lang, 'ALL.ref')
-    if not (os.path.isfile(src) and os.path.isfile(ref)):
+    fmt2 = csh.fmt2_dir_of(src)   # format 2 (MULTI.md, ONE.EXT) under the old ALL.EXT name (CIO-24 f; the cfo 2026-11-12)
+    if not fmt2 and not (os.path.isfile(src) and os.path.isfile(ref)):
         return []
     ext = os.path.splitext(src)[1]
     copen, cclose = '*', ''
@@ -48,10 +49,13 @@ def master_entries(csh, lang, outdir):
         if lc.get('ext') == ext:
             copen, cclose = lc.get('comment_open', '*'), lc.get('comment_close', '')
             break
-    try:
-        entries = csh.read_block_suite(src, ref, csh.banner_re_for(copen, cclose), in_path=None, x_path=None)
-    except Exception:
-        entries = csh.read_suite(src, ref, in_path=None, x_path=None)
+    if fmt2:
+        entries = csh.read_container_dir(fmt2, ext)
+    else:
+        try:
+            entries = csh.read_block_suite(src, ref, csh.banner_re_for(copen, cclose), in_path=None, x_path=None)
+        except Exception:
+            entries = csh.read_suite(src, ref, in_path=None, x_path=None)
     d = os.path.join(outdir, 'master', lang)
     os.makedirs(d, exist_ok=True)
     out = []

@@ -23,13 +23,13 @@ SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/pascal/front_end"
 STEPS="$HERE/../designs/front_end/STEPS.tsv"   # moved from corpus/tests/pascal/front_end (the coo 2026-11-10, CIO-24 c, CIO-56)
 . "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
-# ⭐ A WITNESS IS THE ENTRY front_end__NAME OF THE PASCAL MASTER WHERE IT HAS ONE (CIO-24 c, the coo 2026-11-10), else the loose pair in
-# corpus/tests/pascal/front_end that its row has not admitted (pf20d and pf20e wait on the dialect column, pf30 on its unit's file fence):
-# witness NAME DIR sets WP (the program) and WR (its ref), the entry extracted to DIR; a loose pair's units (NAME_*.pas) travel with it.
+# ⭐ A WITNESS IS THE ENTRY front_end__NAME OF THE PASCAL MASTER (CIO-24 c, the coo 2026-11-10; the last three, pf20d and pf20e by the dialect
+# column and pf30 with its unit as a file fence, the cfo 2026-11-12, so corpus/tests/pascal/front_end is gone and a witness with no entry REFUSES):
+# witness NAME DIR sets WP (the program) and WR (its ref), the entry extracted to DIR with its units (file fences NAME_*.pas) beside it.
 witness() {
     if design_witness_has pascal "front_end__$1"; then
         mkdir -p "$2"; design_witness_extract pascal "front_end__$1" "$2" > /dev/null 2>&1 || refuse "witness $1: its entry front_end__$1 did not extract"
-        WP="$2/front_end__$1.pas"; WR="$2/front_end__$1.ref"; WU=""
+        WP="$2/front_end__$1.pas"; WR="$2/front_end__$1.ref"; WU="$2/$1"   # an entry's units (its file fences NAME_*.pas) are extracted beside it
     else
         WP="$WD/$1.pas"; WR="$WD/$1.ref"; WU="$WD/$1"
     fi

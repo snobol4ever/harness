@@ -6,7 +6,7 @@ many suites do not have their "container", i.e. all the TSV/CSV files for the un
 usage: util_cycle_inventory.py [--root S4E_HOME] [--log CYCLE.log] [--only KEY[,KEY...]] [--owed KEY] [--check] [--check-lap]
 
 One line per row of SUITE_RUNNERS.tsv that is not a port row:
-  SRCP    the container files present beside the table: S ALL.<ext>, R ALL.ref, C ALL.csv, P PARTITION.tsv (a dot for an absent one)
+  SRCP    the container files present beside the table: S ALL.<ext>, R ALL.ref, C ALL.csv, P PARTITION.tsv (a dot for an absent one); 2 in the S place: format 2 (MULTI.md or ONE.<ext>)
   csv     rows of ALL.csv (absorbed entries and carried settings rows)
   cont    entries the container holds (corpus_suite_harness.py list)
   part    entries the cycle's cells name (PARTITION.tsv, core and chunk:NN)
@@ -119,7 +119,10 @@ def main():
         if os.path.isfile(cs):
             with open(cs, encoding="utf-8", errors="replace", newline="") as fh:
                 ncsv = sum(1 for _ in csv.DictReader(fh))
-        if os.path.isfile(src) and os.path.isfile(ref):
+        fmt2 = os.path.isfile(os.path.join(d, "MULTI.md")) or os.path.isfile(os.path.join(d, "ONE." + e))   # format 2, read by the harness under the ALL.<ext> ALL.ref line (CIO-24 f; the cfo 2026-11-12: sno-rungs read NO-CONTAINER since its regroup)
+        if fmt2:
+            flags = "2" + flags[1:]
+        if (os.path.isfile(src) and os.path.isfile(ref)) or fmt2:
             r = subprocess.run([sys.executable, os.path.join(root, "harness/scripts/corpus_suite_harness.py"), "list", src, ref, "--lang", lang],
                                capture_output=True, text=True, errors="replace")
             cont = set(x for x in r.stdout.split("\n") if x.strip()) if r.returncode == 0 else None
