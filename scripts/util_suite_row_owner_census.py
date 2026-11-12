@@ -23,7 +23,6 @@ not read the table or the queue, or the table holds no SCRIP row.
 import os, re, sys
 RULED = {
     "roast": "R-2070: Raku climbs the cto's rung ladder, not the suites, until half the rungs are green",
-    "raku-demos": "R-2070: Raku climbs the cto's rung ladder, not the suites, until half the rungs are green",
 }
 CLOSED = ("DONE", "RETIRED", "SUPERSEDED")
 def arg(name, default):

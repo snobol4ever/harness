@@ -44,7 +44,6 @@ puzzles	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/puzzles
 trealla	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/trealla_tests
 xsb	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/xsb_tests
 pascal-demos	small	pascal	test_demos_suite.sh pascal	-
-raku-demos	small	raku	test_demos_suite.sh raku	-
 raku-bench-ref	small	raku	test_raku_bench_suite.sh	-
 sno-rungs@dotnet	port	snobol4	corpus_suite_harness.py	corpus/tests/snobol4
 sno-rungs@jvm	port	snobol4	corpus_suite_harness.py	corpus/tests/snobol4
@@ -70,7 +69,6 @@ gimpel@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gimpel
 snoflake@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snoflake_suite
 unitests	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/unicon_tests
 vanilla	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/vanilla
-icon-packs	none	icon	-	-
 icn-pack-tcll1	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/pack_tcll1
 icn-pack-skeem	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/pack_skeem
 icn-pack-ibpag2	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/pack_ibpag2

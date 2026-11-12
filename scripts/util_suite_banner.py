@@ -741,7 +741,6 @@ README_RUNNER = {
     # inserted"): the rows were opened UNGRADED the day their packages reached origin, with their runners named here the same day, so the README render
     # never refuses on them (the X32T lesson of CEO-1315).
     'puzzles': 'test_prolog_puzzles_suite.sh', 'pascal-demos': 'test_demos_suite.sh pascal',
-    'raku-demos': 'test_demos_suite.sh raku',
     # trealla (the coo opened TreallaTests at SCRIP da42f411d without naming its runner here; the ceo added it 2026-10-10, CEO-1616 -- the X32T lesson a third time: THE RENDERER'S MAP IS PART OF OPENING A ROW).
     'trealla': 'test_prolog_trealla_suite.sh', 'xsb': 'test_prolog_xsb_suite.sh', 'fpc': 'test_pascal_fpc_suite.sh', 'wirth76': 'test_pascal_wirth76_suite.sh', 'pat': 'test_pascal_pat_suite.sh', 'rosetta-pascal': 'test_pascal_rosetta_suite.sh', 'rosetta-prolog': 'test_prolog_rosetta_suite.sh',
     'unitests': 'test_icon_unicon_suite.sh',
@@ -750,7 +749,8 @@ README_RUNNER = {
     # pascal-sets (PasSets) became six rows 2026-11-11 on Lon's word in the coo's window: "So since they are six things, make them six items on the banner." (COO-514)
     # hakank-more (HakankMore) and other-prologs (OtherProlog) left the banner 2026-11-11 on Lon's word in the coo's window: "Get rid of the bogus test suites added." (COO-512; the grader's census: neither has entries of its own)
     # snobol4-more (SnoMore) left the banner 2026-11-11 on Lon's word in the grader's window: "It seems your SnoMore is invalid. That is not one thing, that is a mess." / "So then you remove the bogus SnoMore row in the banner."
-    'vanilla': 'corpus_suite_harness.py', 'icon-packs': 'corpus_suite_harness.py', 'unicon-uni': 'corpus_suite_harness.py',
+    # icon-packs (IcnPacks) and raku-demos (RakDemo) left the banner 2026-11-12 on Lon's word in the grader's window ("Yes!!!" to retiring them): IcnPacks is graded as its four pack rows icn-pack-tcll1, -skeem, -ibpag2, -loadfuncpp, and corpus/demos/raku ships no program.
+    'vanilla': 'corpus_suite_harness.py', 'unicon-uni': 'corpus_suite_harness.py',
     'chat80': 'corpus_suite_harness.py', 'press': 'corpus_suite_harness.py', 'trealla-more': 'corpus_suite_harness.py',
     'xsb-examples': 'corpus_suite_harness.py', 'prolog-sets': 'corpus_suite_harness.py', 'fpc-source': 'corpus_suite_harness.py',
     'stanford-pascal': 'corpus_suite_harness.py', 'advpas350': 'corpus_suite_harness.py', 'tply': 'corpus_suite_harness.py', 'cocor-pascal': 'corpus_suite_harness.py', 'dsa': 'corpus_suite_harness.py', 'pascal-lisp': 'corpus_suite_harness.py', 'tex': 'corpus_suite_harness.py', 'rakudo-t': 'corpus_suite_harness.py', 'raku-examples': 'corpus_suite_harness.py',
