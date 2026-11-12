@@ -8,6 +8,8 @@
 #   - a static that became a hidden extern: its local or global binding, the numbered suffix of a function-local static (x.1, x.2), the call that was
 #     resolved inside the unit and is now a relocation to the same name, the leading endbr64 a global function gains under -fcf-protection (and the 4-byte
 #     shift of its own branch targets and relocation offsets), a reference to an exported constant string by its symbol where the unit reached its bytes;
+#   - DROPPED: a constant of a header (a .rodata object with no relocation) the parent compiled in and no child unit includes any more (a diced
+#     piece includes only what it uses, and an unused static const of a header it no longer includes is no longer emitted);
 #   - LAMBDA: two lambdas of one function share a name in the reader (it keys a local C++ function by the text before its parameters), so their code
 #     is compared as one sorted list of bodies; ALIGN: an exported static's frame grows by 8 to keep 16-byte alignment (align_only);
 #   - FILELINE: an instruction whose immediate is a __LINE__ and a relocation whose string is __FILE__, where the parent's string names the unit and the
@@ -219,7 +221,7 @@ def main():
     except Exception as e:
         print('REFUSE(2): %s' % e); return 2
     srcs = ('.c', '.cpp', '.cc')
-    same = fl = la = lam = aln = 0
+    same = fl = la = lam = aln = dropped = 0
     bad = []
     fnames = {k[1] for k in C if k[0].startswith('.text')}
     def where(objs):
@@ -234,6 +236,8 @@ def main():
     where_p, where_c = where(pa), where(ch)
     copies = 0
     for k in sorted(set(P) | set(C)):
+        if k in P and k not in C and k[0].startswith('.rodata') and all(not r for v in P[k] for r in [v[2]]):
+            dropped += 1; continue
         if k not in C or k not in P:
             bad.append((k, 'only in the %s' % ('parent' if k in P else 'child'))); continue
         if len(C[k]) > len(P[k]):
@@ -261,7 +265,7 @@ def main():
             if n:
                 la += n; fl += 1; continue
         bad.append((k, 'code or data differs'))
-    print('FUNC_IDENTITY_BOARD symbols=%d identical=%d fileline=%d local_addr=%d lambda=%d align=%d header_copies=%d differing=%d' % (len(P), same, fl, la, lam, aln, copies, len(bad)))
+    print('FUNC_IDENTITY_BOARD symbols=%d identical=%d fileline=%d local_addr=%d lambda=%d align=%d header_copies=%d dropped_copies=%d differing=%d' % (len(P), same, fl, la, lam, aln, copies, dropped, len(bad)))
     for k, why in bad[:a.show]:
         print('DIFF %s %s: %s' % (k[0], k[1], why))
     return 1 if bad else 0

@@ -782,6 +782,125 @@ def measure(u, groups, root, since):
             'pieces_per_commit': round(sum(touched) / max(1, len(touched)), 2)}
 
 
+
+def dice(root, rel, cplus):
+    """THE DICE PASS (C4, R2: include what you use): after a cut, each piece includes only the original include lines that reach a header it
+    references (libclang, every cursor of the piece's own text whose referenced declaration or macro lives in a header), and the head keeps
+    only the lines its own text needs (its declarations' types, the macros its macro bodies name). An export header gets the lines its
+    prototypes need. A line inside a top-level #if region of the head is never moved. Returns {file: kept include lines}; writes the files."""
+    import clang.cindex as ci
+    splits = {}
+    for ln in open(os.path.join(HERE, '..', 'designs', 'cache_tree', 'SPLITS.tsv'), encoding='utf-8'):
+        if ln.strip() and not ln.startswith('#'):
+            q = ln.rstrip('\n').split('\t'); splits[q[0]] = (q[1], q[2])
+    if rel not in splits:
+        raise SystemExit('REFUSE(2): SPLITS.tsv names no cut of %s' % rel)
+    src = os.path.join(root, 'src')
+    d, pre = os.path.join(src, splits[rel][0]), splits[rel][1]
+    head = os.path.join(d, pre + 'head.h')
+    ext = os.path.splitext(rel)[1]
+    pieces = sorted(glob.glob(os.path.join(d, pre + '*' + ext)))
+    xhs = sorted(x for x in glob.glob(os.path.join(d, pre + '*.h')) if x != head)
+    own = set(map(os.path.abspath, [head] + pieces + xhs))
+    H = open(head, encoding='utf-8', errors='surrogateescape').read().split('\n')
+    depth, inc_lines, cblk, in_c = 0, [], set(), 0
+    for i, t in enumerate(H):
+        st = t.lstrip()
+        if cplus and re.match(r'extern "C" \{\s*$', st):
+            in_c += 1
+        elif cplus and in_c and st.strip() == '}':
+            in_c -= 1
+        if in_c and re.match(r'#\s*include\b', st):
+            cblk.add(i)
+        if re.match(r'#\s*if', st):
+            depth += 1
+        elif re.match(r'#\s*endif', st):
+            depth -= 1
+        elif depth == 1 and re.match(r'#\s*include\b', st) and i > 1 and not re.search(r'\.inc"', st):
+            inc_lines.append(i)
+    cc, flags = flags_for(root, pieces[0])
+    if flags is None:
+        raise SystemExit('REFUSE(2): no compile line for %s' % pieces[0])
+    reach = {}
+    for i in inc_lines:
+        r = subprocess.run([('g++' if cplus else 'gcc'), '-M', '-MG'] + (['-x', 'c++', '-std=c++17'] if cplus else ['-x', 'c']) + [f for f in flags if f.startswith(('-I', '-D'))] + ['-'],
+                           input=H[i] + '\n', capture_output=True, text=True)
+        deps = r.stdout.replace('\\\n', ' ').split(':', 1)[-1].split()
+        reach[i] = {os.path.abspath(x if os.path.isabs(x) else os.path.join(root, x)) for x in deps if x != '-'}
+    rd = subprocess.run(['clang', '-print-resource-dir'], capture_output=True, text=True).stdout.strip()
+    args = [a for a in flags if a.startswith(('-I', '-D', '-U', '-std='))] + ['-w', '-Wno-implicit-function-declaration', '-isystem', os.path.join(rd, 'include')]
+    if cplus:
+        args = ['-x', 'c++'] + args
+    refs = collections.defaultdict(set)
+    macro_file = {}
+    for pc in pieces:
+        tu = ci.Index.create().parse(pc, args=args, options=ci.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
+        for c in tu.cursor.walk_preorder():
+            f = c.location.file
+            if not f:
+                continue
+            fa = os.path.abspath(f.name)
+            if c.kind == ci.CursorKind.MACRO_DEFINITION:
+                macro_file.setdefault(c.spelling, fa)
+            if fa not in own:
+                if not fa.endswith('.inc'):
+                    continue
+                fa = os.path.abspath(pc)
+            r = c.referenced
+            if r is not None and r.location.file:
+                ra = os.path.abspath(r.location.file.name)
+                if ra not in own and not ra.endswith('.inc'):
+                    refs[fa].add(ra)
+            if c.kind in (ci.CursorKind.FUNCTION_DECL, ci.CursorKind.VAR_DECL):
+                k = c.canonical
+                if k is not None and k.location.file:
+                    ka = os.path.abspath(k.location.file.name)
+                    if ka not in own:
+                        refs[fa].add(ka)
+    for t in H:
+        m = re.match(r'\s*#\s*define\s+\w+(?:\([^)]*\))?\s*(.*)', t)
+        if m:
+            for w in re.findall(r'[A-Za-z_]\w*', m.group(1)):
+                if w in macro_file and macro_file[w] not in own:
+                    refs[os.path.abspath(head)].add(macro_file[w])
+    rdi = os.path.abspath(os.path.join(rd, 'include'))
+    def cover(need):
+        keep = set()
+        for F in need:
+            for i in inc_lines:
+                if F in reach[i] or (F.startswith(rdi + os.sep) and any(os.path.basename(x) == os.path.basename(F) for x in reach[i])):
+                    keep.add(i); break
+        return keep
+    hk = cover(refs[os.path.abspath(head)])
+    if cplus:
+        hk |= {i for i in inc_lines if re.match(r'\s*#\s*include\s*<', H[i])}
+    plan = {}
+    for f in xhs + pieces:
+        plan[f] = sorted(cover(refs[os.path.abspath(f)]) - hk)
+    newH = [t for i, t in enumerate(H) if i not in inc_lines or i in hk]
+    open(head, 'w', encoding='utf-8', errors='surrogateescape').write('\n'.join(newH))
+    rel_head = os.path.relpath(head, src)
+    for f, ks in plan.items():
+        if not ks:
+            continue
+        T = open(f, encoding='utf-8', errors='surrogateescape').read().split('\n')
+        k = next(j for j, t in enumerate(T) if t.strip() == '#include "%s"' % rel_head)
+        T[k + 1:k + 1] = [('extern "C" {\n%s\n}' % H[i]) if i in cblk else H[i] for i in ks]
+        open(f, 'w', encoding='utf-8', errors='surrogateescape').write('\n'.join(T))
+    return {'head_kept': len(hk), 'head_had': len(inc_lines), 'pieces': {os.path.basename(f): len(v) for f, v in plan.items()}, 'plan': plan,
+            'H': H, 'inc_lines': inc_lines, 'hk': hk, 'head': head, 'rel_head': rel_head}
+
+
+def undice_piece(info, f):
+    """A piece that does not compile diced takes back every original include line the head no longer carries (after its head include)."""
+    T = open(f, encoding='utf-8', errors='surrogateescape').read().split('\n')
+    have = set(T)
+    k = next(j for j, t in enumerate(T) if t.strip() == '#include "%s"' % info['rel_head'])
+    add = [info['H'][i] for i in info['inc_lines'] if i not in info['hk'] and info['H'][i] not in have]
+    T[k + 1:k + 1] = add
+    open(f, 'w', encoding='utf-8', errors='surrogateescape').write('\n'.join(T))
+    return len(add)
+
 def selftest():
     w = tempfile.mkdtemp(prefix='split_selftest.')
     try:
@@ -833,7 +952,7 @@ def main():
     if '--selftest' in sys.argv:
         return selftest()
     ap = argparse.ArgumentParser()
-    ap.add_argument('verb', choices=['plan', 'apply', 'measure'])
+    ap.add_argument('verb', choices=['plan', 'apply', 'measure', 'dice'])
     ap.add_argument('src')
     ap.add_argument('--root', default=os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP')))
     ap.add_argument('--target', type=int, default=700)
@@ -845,6 +964,14 @@ def main():
     ap.add_argument('--keep', action='store_true')
     a = ap.parse_args()
     root = os.path.abspath(a.root)
+    if a.verb == 'dice':
+        rel = os.path.relpath(os.path.abspath(a.src), os.path.join(root, 'src'))
+        info = dice(root, rel, rel.endswith(('.cpp', '.cc')))
+        print('DICE %s head kept %d of %d include lines; per file: %s' % (rel, info['head_kept'], info['head_had'], ' '.join('%s=%d' % kv for kv in sorted(info['pieces'].items()))))
+        import json
+        json.dump({'H': info['H'], 'inc_lines': info['inc_lines'], 'hk': sorted(info['hk']), 'rel_head': info['rel_head']},
+                  open(os.path.join(tempfile.gettempdir(), 'dice_' + os.path.basename(info['head']) + '.json'), 'w'))
+        return 0
     cc, flags = flags_for(root, a.src)
     if flags is None:
         print('REFUSE(2): %s has no compile line in %s' % (a.src, root)); return 2
