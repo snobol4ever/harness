@@ -2798,7 +2798,7 @@ def fmt2_dir_of(src_path):
     if not p.name.startswith("ALL.") or p.suffix not in FMT2_TAG or p.name != "ALL" + p.suffix:
         return None
     d = p.parent
-    return d if ((d / "MULTI-LINERS.md").is_file() or (d / f"ONE{p.suffix}").is_file()) else None
+    return d if ((d / "MULTI-LINERS.md").is_file() or (d / f"ONE-LINERS{p.suffix}").is_file()) else None
 
 
 def fmt2_out_name(name):
@@ -3162,7 +3162,7 @@ def pkg_dir_of(src_path):
         return None
     d = p.parent
     c = d / "ALL.csv"
-    if not c.is_file() or (d / "MULTI-LINERS.md").is_file() or (d / f"ONE{p.suffix}").is_file():
+    if not c.is_file() or (d / "MULTI-LINERS.md").is_file() or (d / f"ONE-LINERS{p.suffix}").is_file():
         return None
     import csv as _csvm
     with open(c, newline="", encoding="utf-8") as f:
