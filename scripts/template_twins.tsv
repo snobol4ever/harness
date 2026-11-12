@@ -1,2 +1,0 @@
-kind	box	twin	why
-IR_DEFINE_BIND	bb_define_bind	bb_define_shim_inline	the text medium emits the inline SIG stub after the first real-stub bind of a name (emit.cpp, the one g_is_text term); a declared twin emitted beside the kind's own box, never a box chosen instead of it (templates-zero step 6b, the cto 2026-11-01)

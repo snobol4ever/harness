@@ -1,9 +1,0 @@
-# GRADED SCOPE for test_gate_no_implicit_declarations.sh -- one path prefix per line, '#' comments ignored.
-# A directory listed here must read ZERO implicit declarations, ZERO int<->pointer conversions and ZERO
-# incompatible pointer assignments. Directories NOT listed are still MEASURED and PRINTED with their owner,
-# but cannot fail the gate -- so a seat adds its directory here the sitting it cures it, and never before.
-# ⛔ THE POINT OF THE SCOPE FILE is that a ratchet on COUNTS goes stale silently while a ratchet on SCOPE
-# cannot: a cured directory is one line, and an uncured one is named out loud in every run.
-src/runtime/
-src/parsers/
-src/driver/

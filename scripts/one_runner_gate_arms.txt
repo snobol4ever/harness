@@ -1,4 +1,0 @@
-# one_runner_gate_arms.txt -- the gates that drive a runner as an INSTRUMENT FIXTURE (a slice inside the blocking set, never a
-# seat's board run). Each declares S4E_ONE_RUNNER_FIXTURE="why" on its line 2 and is admitted for every seat; the seat-level
-# S4E_ONE_RUNNER_OVERRIDE is not a road to another language's board (RULES.md SHARED-NODE VERDICT SCOPE, R-1232 clause 6;
-# enforced by lib_one_runner.sh and corpus_suite_harness.py, hq_prolog 2026-09-24).
