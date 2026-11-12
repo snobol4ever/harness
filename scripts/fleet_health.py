@@ -86,7 +86,7 @@ def box():
     except OSError: load = (None, None, None)
     n = os.cpu_count() or 16; busy = num(st.get("busy")); width = rd(T + "/box.width").strip() or st.get("grader_width", "?")
     dec = rd(T + "/decide.last"); q = re.search(r"ACTUATOR sessions quota=(\d+)", dec); jt = re.search(r"ACTUATOR jobserver tokens=(\d+)", dec)
-    mem = num(st.get("memavail_mb")); tmo = st.get("timeouts10", st.get("timeouts30", "?"))
+    mi = re.search(r"MemAvailable:\s+(\d+)", rd("/proc/meminfo")); mem = num(st.get("memavail_mb")) if st.get("memavail_mb") else (int(mi.group(1)) // 1024 if mi else None); tmo = st.get("timeouts10", st.get("timeouts30", "?"))
     verdict = "RED" if (a60 or 0) >= 50 or (load[0] or 0) >= 2 * n else "WARN" if (a60 or 0) >= 30 or (load[0] or 0) >= n else "OK"
     return "THE BOX", verdict, [
         "load1 %s load5 %s on %d cores, busy %s" % (fmt(load[0]), fmt(load[1]), n, fmt(busy)),
