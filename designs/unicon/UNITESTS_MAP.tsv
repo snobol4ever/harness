@@ -1,0 +1,56 @@
+# UNITESTS_MAP.tsv -- every UniTests entry not PASS in mode 3, mapped to its design section (skill unicon reference section 7, CTO-513), its steps and its row (officer_01, owner of the UniTests design under CIO-7 and CIO-10).
+# MEASURED 2026-11-08 14:3x CST: m3 and tree are the latest mode-3 reading per entry in /home/resources/progress/results.tsv (the coo's board: 116 PASS of 168, 42 FAIL, 2 CRASH, 1 ABORT, 2 HANG, 5 UNGRADED). steps_today is test_design_unicon_steps.sh --step N on origin SCRIP 9f80c8201 by officer_01 where read this sitting, else '-'. Officers: officer_03 thread posix trap, officer_04 the converter chain U3 to U8, officer_07 general/*, officer_08 the D13 socket chain; officer_01 the rest and the map.
+# order: 2 verdicts, 3 the converter and import rows, 4 the exclusions, 5 threads patterns set ops, 6 sockets and trap, 7 the collector, 8 the ungraded. A row of this file names a design; it is no grade. The coo grades; the map is re-read on every board.
+entry	m3	tree	design	steps	steps_today	rows	order	note
+coexpr/stressCo	CRASH	8f05ed934	D16c	41	RED	icon-unicon-step-41-r3-...-cto-553 (seat-junior_02, re-minted 14:1x: r2 was falsely SUPERSEDED)	7	
+coexpr/stressCollectCo	CRASH	8f05ed934	D16c	41	RED	icon-unicon-step-41-r3-...-cto-553 (seat-junior_02)	7	
+general/cfuncs	FAIL	8f05ed934	EXCL	-	-	icon-unitests-the-exclusions-and-the-gc-line-mask-cfuncs-mt-pty-ssh-ls-cto-513 (senior_02)	4	named exclusion
+general/coexpr	ABORT	8f05ed934	D16c	41	RED	icon-unicon-step-41-r3-...-cto-553 (seat-junior_02)	7	
+general/errors	FAIL	8f05ed934	D9e	34	RED	icon-unicon-step-34b-r2-...-cto-546 (seat-junior_11, re-minted 14:1x)	5	only the three errortext lines differ (officer_07)
+general/ilib	HANG	8f05ed934	IMPORT IPL; values	46 47	-	icon-unicon-step-46-max-and-min-are-function-values-in-a-unicon-program (tier-sonnet); icon-unicon-step-47-a-unicon-program-links-unicons-own-ipl-numbers-before-arizonas (senior_01)	8	officer_07 cut; needs both
+general/numeric	FAIL	8f05ed934	D8a D9	17 35	-	icon-unitests-cut-u3-the-unconverted-sources-are-converted-with-the-dialect-and-the-container-respliced-cto-544 (PARKED-AWAITING senior_02 request)	3	re-measure after U3 (CTO-549)
+general/prepro	FAIL	8f05ed934	D8 converter	-	-	icon-unitests-cut-u3-the-unconverted-sources-are-converted-with-the-dialect-and-the-container-respliced-cto-544 (PARKED-AWAITING senior_02 request)	3	officer_04: converts with one ; in data/prepro.dat
+general/scan	FAIL	8f05ed934	D9c	48 49	48 LANDED 8fbd6c727	step 48 landed (junior_12); step 49 (=x, the MATCH_* boxes over a resumed scan) owes officer_01's ZD walk	2	CTO-560: one cause, not two; awaits the coo reading
+general/utf8	FAIL	8f05ed934	D8 IMPORT	53 54	-	icon-unitests-cut-u3-the-unconverted-sources-are-converted-with-the-dialect-and-the-container-respliced-cto-544 (PARKED-AWAITING senior_02 request); u6 (officer_04, BLOCKED-ON step 54) then u5	3	utf8 needs x$C.m() (step 53) and the linked-file state (54)
+general/utf8_ovld	FAIL	8f05ed934	D8 IMPORT	53 54	-	icon-unitests-cut-u3-the-unconverted-sources-are-converted-with-the-dialect-and-the-container-respliced-cto-544 (PARKED-AWAITING senior_02 request); u6 (officer_04, BLOCKED-ON step 54) then u5	3	
+lib/class_static	FAIL	8f05ed934	IMPORT LANG	-	-	u6 (officer_04, BLOCKED-ON step 54) then u5	3	45-file closure measured by officer_01 13:4x
+lib/jsontests	FAIL	8f05ed934	D8b converter	18	GREEN	icon-unitests-cut-u3-the-unconverted-sources-are-converted-with-the-dialect-and-the-container-respliced-cto-544 (PARKED-AWAITING senior_02 request)	3	step 18 GREEN; the entry is raw text (officer_06): U3
+lib/objecttests	FAIL	8f05ed934	IMPORT LANG	-	-	u6 (officer_04, BLOCKED-ON step 54) then u5	3	
+lib/property_demo	FAIL	8f05ed934	IMPORT LANG	-	-	u6 (officer_04, BLOCKED-ON step 54) then u5	3	
+lib/singleton	FAIL	8f05ed934	IMPORT LANG	-	-	u6 (officer_04, BLOCKED-ON step 54) then u5	3	u6 DONE-WHEN entry
+lib/unittest	FAIL	8f05ed934	IMPORT LANG	52	-	u6 (officer_04, BLOCKED-ON step 54) then u5	3	unittest.icn needs step 52 (record in a class body, landed 48e313500)
+mt/level	FAIL	8f05ed934	EXCL	-	-	icon-unitests-the-exclusions-and-the-gc-line-mask-cfuncs-mt-pty-ssh-ls-cto-513 (senior_02)	4	
+mt/load	FAIL	8f05ed934	EXCL	-	-	icon-unitests-the-exclusions-and-the-gc-line-mask-cfuncs-mt-pty-ssh-ls-cto-513 (senior_02)	4	
+mt/loaderr	FAIL	8f05ed934	EXCL	-	-	icon-unitests-the-exclusions-and-the-gc-line-mask-cfuncs-mt-pty-ssh-ls-cto-513 (senior_02)	4	
+pattern/pimgtest	FAIL	8f05ed934	D11	31	GREEN	icon-unicon-step-31-the-pattern-image-and-type-cto-533 (FREE: senior_01 measured seven causes; officer_02 cuts, umbrella unicon-step-11)	5	step 31 witness GREEN, entry red on the other six causes
+pattern/ppos	HANG	8f05ed934	D11	55	RED	icon-unicon-step-55-a-pattern-constructor-call-is-not-a-generator (seat-junior_10)	5	NOT a regression: b628cb0c4 hangs on the same text (officer_01 bisect); the 16:43Z PASS does not reproduce
+pattern/ralternate	FAIL	8f05ed934	D11 converter	30	-	icon-unitests-cut-u7b-the-four-regex-entries-are-converted-and-respliced-cto-544 (PARKED-AWAITING)	5	
+pattern/rasterisk	FAIL	8f05ed934	D11 converter	30	-	icon-unitests-cut-u3-the-unconverted-sources-are-converted-with-the-dialect-and-the-container-respliced-cto-544 (PARKED-AWAITING senior_02 request)	5	not in u7b; U3 converts it
+pattern/rbasic	FAIL	8f05ed934	D11 converter	30	-	u7b (PARKED-AWAITING)	5	
+pattern/rcurly	FAIL	8f05ed934	D11 converter	30	-	u7b (PARKED-AWAITING)	5	
+pattern/rplus	FAIL	8f05ed934	D11 converter	30	-	icon-unitests-cut-u3-the-unconverted-sources-are-converted-with-the-dialect-and-the-container-respliced-cto-544 (PARKED-AWAITING senior_02 request)	5	not in u7b; U3 converts it
+pattern/rquestion	FAIL	8f05ed934	D11 converter	30	-	u7b (PARKED-AWAITING)	5	
+posix/kill	FAIL	8f05ed934	D14	14a 14b	-	icon-unicon-step-14a-... (junior_04) then 14b	6	officer_03
+posix/ls	FAIL	8f05ed934	EXCL	-	-	icon-unitests-the-exclusions-and-the-gc-line-mask-cfuncs-mt-pty-ssh-ls-cto-513 (senior_02)	4	
+posix/mcast	FAIL	8f05ed934	D13	13f..13j	-	13f (junior_06) then 13g 13h 13i 13j (officer_08 chain)	6	closes at 13j
+posix/pty_uni	FAIL	8f05ed934	EXCL	-	-	icon-unitests-the-exclusions-and-the-gc-line-mask-cfuncs-mt-pty-ssh-ls-cto-513 (senior_02)	4	
+posix/sockpeek	FAIL	8f05ed934	D13	13f..13k	-	13f then 13g..13k (officer_08 chain)	6	closes at 13k
+posix/ssh	FAIL	8f05ed934	EXCL	-	-	icon-unitests-the-exclusions-and-the-gc-line-mask-cfuncs-mt-pty-ssh-ls-cto-513 (senior_02)	4	
+posix/system	FAIL	8f05ed934	D15 EXCL	15	-	icon-unitests-the-exclusions-and-the-gc-line-mask-cfuncs-mt-pty-ssh-ls-cto-513 (senior_02)	4	racy stderr against stdout; PASS earlier today (officer_04), now FAIL: the exclusions row names it
+thread/channel	FAIL	bb2205cc1	D12 IMPORT	27c 28 29	-	u6c (threads package), U3, u5 (officer_03)	5	
+thread/critter	FAIL	16e79e6f4-dirty	D12 typed params	44 28	44 LANDED	28 (officer_03) after 44	5	
+thread/error	FAIL	bb2205cc1	D12	29	RED	icon-unicon-step-29-... (PARKED-PREMISE-RED, officer_03 re-reads)	5	
+thread/gc	FAIL	8f05ed934	D12 EXCL	27c	-	27c plus the exclusions mask	5	
+thread/queue	FAIL	8f05ed934	D12	27c 28	-	28 (seat queue, officer_03)	5	
+thread/rantest	FAIL	8f05ed934	D12	27c 29	-	29, u8	5	
+thread/sharelist	FAIL	16e79e6f4-dirty	D12	28	-	28	5	
+thread/stress	FAIL	16e79e6f4-dirty	D12	28	-	28	5	
+thread/sum	FAIL	8f05ed934	D12	27c 28	-	28	5	
+thread/talloc	FAIL	bb2205cc1	D12	27c 29	-	29 (officer_03)	5	
+thread/tcom	FAIL	bb2205cc1	D12	27c 29	-	29 (officer_03), U3, u8	5	
+udb/prime	UNGRADED	92a2647b2	UNGRADED	-	-	NONE: cut after u5 (officer_04 order 8)	8	shipped outside the container
+udb/scopes	UNGRADED	92a2647b2	UNGRADED	-	-	NONE: cut after u5	8	
+unicon/FxPtTest	UNGRADED	92a2647b2	UNGRADED	-	-	NONE: cut after u5	8	
+unicon/FxPtTest_OVLD	UNGRADED	92a2647b2	UNGRADED	-	-	NONE: cut after u5	8	
+unicon/list_test	UNGRADED	92a2647b2	UNGRADED D8b	18	GREEN	NONE: cut after u5	8	
+unicon/triple_strings	FAIL	8f05ed934	D8e	42	RED	icon-unicon-step-42-r2-... (seat-junior_07, re-minted 14:1x: the first row was falsely SUPERSEDED)	2	

@@ -1,0 +1,32 @@
+# AREAS.tsv -- the UniTests area table (COO-488 item 1, read by harness/scripts/util_reds_to_designers.py): an unrowed red entry becomes a design job in its officer's seat tube.
+# Kept by officer_01, the design's owner, in step with UNITESTS_MAP.tsv (its 14:4x split). Columns: entry_prefix TAB officer TAB note. FIRST MATCH WINS; the * line is the fallback.
+thread/	officer_03	threads
+posix/kill	officer_03	signals, processes
+posix/wait	officer_03	signals, processes
+posix/udp	officer_03	sockets
+posix/tcp	officer_03	sockets
+posix/uxsocket	officer_03	sockets
+posix/raw_sock	officer_03	sockets
+posix/mcast	officer_03	the D13 attribute chain; was officer_08 until COO-493 (4:8:16), the section is handed to a senior to cut
+posix/sockpeek	officer_03	the D13 attribute chain; was officer_08 until COO-493 (4:8:16), the section is handed to a senior to cut
+posix/ls	officer_03	an exclusion: passed to the exclusions row holder
+posix/pty_uni	officer_03	an exclusion
+posix/ssh	officer_03	an exclusion
+posix/system	officer_03	an exclusion
+posix/	officer_03	the rest of the system interface
+mt/	officer_03	an exclusion
+general/cfuncs	officer_03	an exclusion
+pattern/	officer_02	patterns
+lib/	officer_02	the converter and import chain U3 to U8; was officer_04 until COO-493 (4:8:16), the section is handed to a senior to cut
+udb/	officer_02	the converter and import chain; was officer_04 until COO-493 (4:8:16), the section is handed to a senior to cut
+general/prepro	officer_02	the converter chain; was officer_04 until COO-493 (4:8:16), the section is handed to a senior to cut
+general/utf8_ovld	officer_02	the converter chain; was officer_04 until COO-493 (4:8:16), the section is handed to a senior to cut
+general/utf8	officer_02	the converter chain; was officer_04 until COO-493 (4:8:16), the section is handed to a senior to cut
+general/numeric	officer_02	the converter chain; was officer_04 until COO-493 (4:8:16), the section is handed to a senior to cut
+ipl/	officer_02	whole programs; was officer_07 until COO-493 (4:8:16), the section is handed to a senior to cut
+samples/	officer_02	whole programs; was officer_07 until COO-493 (4:8:16), the section is handed to a senior to cut
+special/	officer_02	whole programs; was officer_07 until COO-493 (4:8:16), the section is handed to a senior to cut
+general/	officer_02	every other general entry; was officer_07 until COO-493 (4:8:16), the section is handed to a senior to cut
+coexpr/	officer_02	co-expressions; was officer_07 until COO-493 (4:8:16), the section is handed to a senior to cut
+unicon/	officer_01	the design owner
+*	officer_01	unmatched: officer_01 re-routes it and amends this table

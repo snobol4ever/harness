@@ -19,8 +19,9 @@ G=test_gate_design_unicon_steps_grades_s4e_modes_and_refuses_stale
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../.." && pwd)"; H="$HERE/test_design_unicon_steps.sh"
 WD="$ROOT/corpus/tests/icon/unicon"
 [ -f "$H" ] || { echo "⛔ REFUSE(2) [$G]: no test_design_unicon_steps.sh beside the gate"; exit 2; }
-[ -f "$WD/STEPS.tsv" ] || { echo "⛔ REFUSE(2) [$G]: no $WD/STEPS.tsv"; exit 2; }
-N="$(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1 {print $1; exit}' "$WD/STEPS.tsv")"
+ST="$ROOT/harness/designs/unicon/STEPS.tsv"
+[ -f "$ST" ] || { echo "⛔ REFUSE(2) [$G]: no $ST"; exit 2; }
+N="$(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1 {print $1; exit}' "$ST")"
 [ -n "$N" ] || { echo "⛔ REFUSE(2) [$G]: STEPS.tsv names no step"; exit 2; }
 T="$(mktemp -d "${TMPDIR:-/tmp}/$G.XXXXXX")"
 cleanup() { [ -d "$T/root/SCRIP" ] && git -C "$ROOT/SCRIP" worktree remove --force "$T/root/SCRIP" > /dev/null 2>&1; rm -rf "${T:?}"; }
@@ -45,7 +46,7 @@ git -C "$ROOT/SCRIP" worktree add -q --detach "$T/root/SCRIP" HEAD > /dev/null 2
 mkdir -p "$T/root/SCRIP/out"
 cp -p "$ROOT/SCRIP/scrip" "$T/root/SCRIP/scrip" && cp -p "$ROOT/SCRIP/out/libscrip_rt.so" "$T/root/SCRIP/out/libscrip_rt.so" \
     && touch -d 2000-01-01 "$T/root/SCRIP/scrip" "$T/root/SCRIP/out/libscrip_rt.so" \
-    && cp -r "$HERE" "$T/root/harness/scripts" && cp -r "$WD" "$T/root/corpus/tests/icon/unicon" \
+    && cp -r "$HERE" "$T/root/harness/scripts" && cp -r "$ROOT/harness/designs" "$T/root/harness/designs" && cp -r "$WD" "$T/root/corpus/tests/icon/unicon" \
     || { echo "⛔ REFUSE(2) [$G]: cannot build the stale fixture"; exit 2; }
 run stale "$T/root/harness/scripts/test_design_unicon_steps.sh" -
 [ "$RC" = 2 ] && grep -q 'GATE UNPROVEN(2) \[test_design_unicon_steps\]' "$T/stale.log" || red "stale:rc$RC"

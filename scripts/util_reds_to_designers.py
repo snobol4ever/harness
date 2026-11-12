@@ -5,7 +5,7 @@ automatic? if not it needs be." / "the former goes down and the ladder goe up.";
 After a grading of the ONE THING suite, every red entry that no live row reads becomes one design job in its area officer's seat tube.
   INPUTS   the reds:  util_score_row.py from-progress --suite SUITE --reds --dry-run (it writes nothing; only the coo writes the score) (S4E_MODES=m3), its SUITE_ROW board line first, then SUITE_ROW_RED lines;
            the areas: AREAS.tsv (entry_prefix TAB officer TAB note; first match wins; the line whose prefix is * is the fallback), kept by the
-                      design's owner (officer_01 for UniTests, corpus/tests/icon/unicon/AREAS.tsv);
+                      design's owner (officer_01 for UniTests, harness/designs/unicon/AREAS.tsv);
            the rows:  QUEUE.tsv and the batons: an entry is ROWED when a row whose state is not DONE has a DONE-WHEN: line naming the entry.
   OUTPUT   one line per unrowed red:  DESIGN_JOB entry=<e> officer=<o> topic=<t> reading=<mode>=<outcome>@<tree>
            then DOWN_BOARD suite=<s> reds=N rowed=N jobs=N (tree <harness hash>).
@@ -141,7 +141,7 @@ def probe():
 if __name__ == "__main__":
     if "--probe" in sys.argv[1:]: sys.exit(0 if probe() else 1)
     suite = arg("--suite", "unitests")
-    areas = arg("--areas", os.path.join(ROOT, "corpus", "tests", "icon", "unicon", "AREAS.tsv"))
+    areas = arg("--areas", os.path.join(ROOT, "harness", "designs", "unicon", "AREAS.tsv"))
     env = dict(os.environ, S4E_MODES="m3")
     p = subprocess.run([sys.executable, "-I", os.path.join(HERE, "util_score_row.py"), "from-progress", "--suite", suite, "--reds", "--dry-run"],
                        capture_output=True, text=True, env=env, timeout=900)

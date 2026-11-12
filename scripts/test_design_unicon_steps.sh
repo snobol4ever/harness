@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate test_design_unicon_steps || exit 2
 # test_design_unicon_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: unicon (the cto, 2026-10-31, R-2072; .github/ARCH-UNICON.md). The plan is
-# corpus/tests/icon/unicon/STEPS.tsv; the witnesses are the uni_*.icn beside it, each with a .ref cut from unicon 13.3 (/home/resources/unicon/bin/unicon,
+# harness/designs/unicon/STEPS.tsv (moved from corpus/tests/icon/unicon 2026-11-12); the witnesses are entries unicon__NAME of the icon master, or the package witnesses still loose in corpus/tests/icon/unicon, each with a .ref cut from unicon 13.3 (/home/resources/unicon/bin/unicon,
 # the Unicon oracle through unicon_bin()), except the plain-Icon fallback witness whose ref Arizona icont/iconx cut because unicon refuses that program;
 # uni_pkg_shapes.icn is the package file the import witness loads from the folder, not a witness of its own.
 #
@@ -21,7 +21,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/icon/unicon"
-STEPS="$WD/STEPS.tsv"
+STEPS="$ROOT/harness/designs/unicon/STEPS.tsv"   # moved from corpus/tests/icon/unicon (the coo 2026-11-12, the tests/icon consolidation; CIO-56: a design table lives in harness/designs)
 OUT="/tmp/s4e-design-unicon"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 . "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
@@ -60,7 +60,7 @@ done
 nm=$((do3 + do4)); [ "$nm" -gt 0 ] || refuse "S4E_MODES=${S4E_MODES:-} names no mode"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: unicon -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1' "$STEPS" | wc -l) steps (STEPS.tsv in $WD); a witness is the entry unicon__<name> of the icon master, or a loose pair in the folder"
+    echo "DESIGN-PLAN: unicon -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1' "$STEPS" | wc -l) steps (harness/designs/unicon/STEPS.tsv); a witness is the entry unicon__<name> of the icon master, or a loose pair in the folder"
     printf '%-4s %-24s %-8s %-10s %s\n' step slug executor probe witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1 {print $1}' "$STEPS"); do
         printf '%-4s %-24s %-8s %-10s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 5)"
