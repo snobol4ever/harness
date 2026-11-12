@@ -1,0 +1,17 @@
+# CACHE_TEST_pass2_ccache_on.tsv -- the cache-tree experiment of 2026-11-12 16:xx CST (the cto, CTO-636): the same edit in the old layout (SCRIP 1a78b0c0d) and the new (78634ce35),
+# each rebuilt with make -j8 under perf stat -e instructions:u (compile and link). ccache ON: only new text misses; new2 is a second seat at the same commit given the same edit.
+scenario	tree	compiles	ccache_misses	Ginstr_total
+S1_prolog_builtin_body	old	3	3	37.6
+S1_prolog_builtin_body	new	3	3	12.4
+S1_prolog_builtin_body	new2	3	0	11.5
+S2_emitter_body	old	3	3	24.8
+S2_emitter_body	new	3	3	16.2
+S5_runtime_misc_field	old	83	246	261.3
+S5_runtime_misc_field	new	44	129	97.5
+S5_runtime_misc_field	new2	44	0	11.9
+S6_pascal_lowering_field	old	23	66	54.5
+S6_pascal_lowering_field	new	17	45	26.9
+S7_prolog_stage2_field	old	57	168	242.1
+S7_prolog_stage2_field	new	23	66	94.7
+S12_emit_state_field	old	172	513	411.9
+S12_emit_state_field	new	178	378	355.0

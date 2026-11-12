@@ -1,0 +1,27 @@
+# CACHE_TEST_pass1_ccache_off.tsv -- the cache-tree experiment of 2026-11-12 16:xx CST (the cto, CTO-636): the same edit in the old layout (SCRIP 1a78b0c0d) and the new (78634ce35),
+# each rebuilt with make -j8 under perf stat -e instructions:u (compile and link). ccache OFF: the full price of the edit. new2 is a second seat at the same commit given the same edit.
+scenario	tree	units_compiled	Ginstr_total	seconds
+S1_prolog_builtin_body	old	3	41.9	7
+S1_prolog_builtin_body	new	3	16.7	3
+S2_emitter_body	old	3	29.0	5
+S2_emitter_body	new	3	20.0	4
+S3_prolog_lowerer_body	old	3	20.2	4
+S3_prolog_lowerer_body	new	3	16.8	3
+S4_pascal_lowerer_body	old	3	21.6	4
+S4_pascal_lowerer_body	new	3	16.6	3
+S5_runtime_misc_field	old	83	239.6	43
+S5_runtime_misc_field	new	44	86.8	18
+S6_pascal_lowering_field	old	23	51.1	9
+S6_pascal_lowering_field	new	17	29.2	6
+S7_prolog_stage2_field	old	57	223.1	47
+S7_prolog_stage2_field	new	23	89.8	25
+S8_new_builtin_row	old	7	63.6	19
+S8_new_builtin_row	new	4	16.2	6
+S9_gc_alloc_table_row	old	3	16.3	5
+S9_gc_alloc_table_row	new	3	15.9	5
+S10_stage2_shared_field	old	57	223.1	47
+S10_stage2_shared_field	new	139	262.6	55
+S11_descr_macro	old	192	397.2	107
+S11_descr_macro	new	296	447.4	116
+S12_emit_state_field	old	2	11.1	3
+S12_emit_state_field	new	2	13.4	3
