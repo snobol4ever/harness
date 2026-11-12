@@ -128,7 +128,6 @@ class Unit:
                     r.add(x.referenced.spelling)
             r.discard(d['name'])
             self.refs[d['name']] = r
-            d.pop('cur')
         self.glue_refs = {}
         for b, c in self.others:
             for x in c.walk_preorder():
@@ -145,6 +144,37 @@ class Unit:
         for d in self.defs + self.vars:
             d['pin'] = bool(d['macro'] or d.get('multi') or ('(unnamed' in d.get('type', '') or '(anonymous' in d.get('type', '')) and d['static'])
         self.chunks()
+        for d in self.defs:
+            if d['inline_head'] and d['chunk'].get('region'):
+                d['inline_head'] = False
+                d['pin'] = True
+        regs = [c for c in self.ch if c.get('region')]
+        for c in regs:
+            c['pseudo'] = '<region@%d>' % c['b']
+            self.byname[c['pseudo']] = {'name': c['pseudo'], 'b': c['b'], 'e': c['e'], 'static': False, 'kind': 'r', 'pin': True, 'macro': False, 'chunk': c}
+        if regs:
+            for d in self.defs + self.vars:
+                for x in d['cur'].walk_preorder():
+                    if x.kind in (ci.CursorKind.TYPE_REF, ci.CursorKind.DECL_REF_EXPR) and x.referenced is not None and x.referenced.location.file \
+                            and os.path.abspath(x.referenced.location.file.name) == self.src:
+                        ln = x.referenced.location.line
+                        for c in regs:
+                            if c['b'] <= ln <= c['e'] and d['chunk'] is not c:
+                                self.refs[d['name']].add(c['pseudo'])
+            rmac = {}
+            for c in regs:
+                for ln in self.lines[c['b'] - 1:c['e']]:
+                    m = re.match(r'\s*#\s*define\s+(\w+)', ln)
+                    if m:
+                        rmac[m.group(1)] = c
+            if rmac:
+                for d in self.defs + self.vars:
+                    words = set(re.findall(r'[A-Za-z_]\w*', '\n'.join(self.lines[d['b'] - 1:d['e']])))
+                    for w in words & set(rmac):
+                        if d['chunk'] is not rmac[w]:
+                            self.refs[d['name']].add(rmac[w]['pseudo'])
+        for d in self.defs + self.vars:
+            d.pop('cur', None)
 
     def direct_inc(self, path):
         if not hasattr(self, '_incs'):
@@ -298,6 +328,8 @@ def movable_decls(u):
                 regions.append((opened, i))
     out = []
     for d in u.decls:
+        if any(c['b'] <= d['b'] <= c['e'] for c in u.ch):
+            continue
         lines = u.lines[d['b'] - 1:d['e']]
         txt = '\n'.join(lines)
         if any(occupied[i] != 1 for i in range(d['b'], d['e'] + 1)) or any(rb <= d['b'] <= re_ for rb, re_ in regions):
@@ -336,6 +368,8 @@ def plan(u, target, root=None, since='60 days ago'):
     for c in ch:
         for d in c['items']:
             of_name[d['name']] = idx[id(c)]
+        if c.get('pseudo'):
+            of_name[c['pseudo']] = idx[id(c)]
     parent = list(range(len(ch)))
     def find(x):
         while parent[x] != x:
@@ -350,9 +384,16 @@ def plan(u, target, root=None, since='60 days ago'):
         if a in of_name:
             for b in rs:
                 users[b].add(of_name[a])
-    for d in u.defs + u.vars:
+    def fn_users(n, seen=None):
+        seen = seen or set()
+        out = set(users.get(n, ()))
+        for a, rs in u.refs.items():
+            if n in rs and a not in of_name and a in u.byname and a not in seen:
+                seen.add(a); out |= fn_users(a, seen)
+        return out
+    for d in u.defs + u.vars + [x for x in u.byname.values() if x.get('kind') == 'r']:
         if d['pin']:
-            ks = set(users.get(d['name'], ())) | ({of_name[d['name']]} if d['name'] in of_name else set())
+            ks = fn_users(d['name']) | ({of_name[d['name']]} if d['name'] in of_name else set())
             ks = sorted(ks)
             for k in ks[1:]:
                 union(ks[0], k)
@@ -458,12 +499,17 @@ def assign(u, manifest_rows):
     for a, rs in u.refs.items():
         for b in rs:
             users[b].add(a)
-    for c in u.ch:
-        if c['fns'] or c.get('region'):
-            continue
-        ps = {poc[id(u.byname[a]['chunk'])] for d in c['items'] for a in users[d['name']] if a in u.byname and u.byname[a]['chunk'] is not c}
-        if len(ps) == 1:
-            poc[id(c)] = ps.pop()
+    changed = True
+    while changed:
+        changed = False
+        for c in u.ch:
+            if c['fns'] or c.get('region'):
+                continue
+            ps = {poc[id(u.byname[a]['chunk'])] for d in c['items'] for a in users[d['name']] if a in u.byname and u.byname[a]['chunk'] is not c}
+            if len(ps) == 1:
+                p1 = ps.pop()
+                if poc[id(c)] != p1:
+                    poc[id(c)] = p1; changed = True
     for c in u.ch:
         ih = [d for d in c['fns'] if d['inline_head']]
         if ih:
@@ -577,7 +623,7 @@ def apply(u, manifest, outdir, prefix, head_name, src_root, cplus):
     external declarations it uses and the producer headers it calls into."""
     rows = [tuple(l.rstrip('\n').split('\t')[:2]) for l in open(manifest) if l.strip() and not l.startswith('#')]
     pieces, poc, users = assign(u, rows)
-    piece = {d['name']: poc[id(d['chunk'])] for d in u.defs + u.vars}
+    piece = {d['name']: poc[id(d['chunk'])] for d in list(u.defs) + list(u.vars) + [x for x in u.byname.values() if x.get('kind') == 'r']}
     def users_pieces(n):
         return {piece[a] for a in users.get(n, ()) if a in piece}
     exports = {}
