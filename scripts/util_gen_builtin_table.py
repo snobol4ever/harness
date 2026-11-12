@@ -3,7 +3,9 @@
 # (DESIGN-PLAN builtin-table step 1; ARCH-BUILTIN-TABLE.md section 3; R-2016).
 #
 # builtins.tsv is the ONE table of builtins: one row per builtin per vocabulary. This writes the two generated files the runtime and the compiler include:
-#   builtin_table.h    bt_row_t, the enums, BT_ROWS, BT_BID_MAX, BT_LEGACY_LAST, and bt_bid_legacy(s, len): the vocabulary-blind hash of the 186 names that carried an id before the
+#   builtin_table_n.h  BT_ROWS and BT_BID_MAX alone, the two lines a new row changes, so a regeneration recompiles the two data units and
+#                      kernel.c, never every includer of builtin_table.h (cache-tree, CTO-636; 39 of 40 regenerations changed only these)
+#   builtin_table.h    bt_row_t, the enums, BT_LEGACY_LAST, and bt_bid_legacy(s, len): the vocabulary-blind hash of the 186 names that carried an id before the
 #                      table existed (builtin_ids.h). bid_of in builtin_ids.h IS bt_bid_legacy, so every name resolves to exactly the id it resolved to before the table: step 1
 #                      changes no resolution. A row with a bid above BT_LEGACY_LAST is a name no code resolves yet; its language step lifts it.
 #   builtin_table.c    (a data unit of its own since DESIGN-PLAN cache-tree C1, CTO-636; it was builtin_table.inc, spliced into by_name_dispatch.c) g_builtins[BT_ROWS] (the rows in bid order), bt_row_of(vocab, s, len) (the row index of a name, -1 for none) and bt_bid_of(vocab, s, len): the open-addressed
@@ -163,8 +165,6 @@ def gen(rows):
     h.append('#ifndef BUILTIN_TABLE_H')
     h.append('#define BUILTIN_TABLE_H')
     h.append('#include <string.h>')
-    h.append('#define BT_ROWS %d' % n)
-    h.append('#define BT_BID_MAX %d' % bmax)
     h.append('#define BT_LEGACY_LAST %d' % legmax)
     h.append('#define BT_LEGACY_TABSZ %d' % lsz)
     h.append('#define BT_HASHSZ %d' % hsz)
@@ -176,7 +176,7 @@ def gen(rows):
     h.append('enum { ' + ', '.join('BT_CONV_%s = %d' % (c.upper(), i) for i, c in enumerate(CONVS)) + ' };')
     h.append('enum { ' + ', '.join('BT_FLAG_%s = %d' % (f.upper(), b) for f, b in FLAGS.items()) + ' };')
     h.append('typedef struct { char name[BT_NAME_W]; char entry[BT_ENTRY_W]; unsigned short bid; unsigned char vocab; unsigned char conv; unsigned char flags; unsigned char recv; signed char min; signed char max; short op; } bt_row_t;')
-    h.append('extern const bt_row_t g_builtins[BT_ROWS];')
+    h.append('extern const bt_row_t g_builtins[];')
     h.append('int bt_row_of(int vocab, const char * s, unsigned len);')
     h.append('int bt_bid_of(int vocab, const char * s, unsigned len);')
     h.append('static const struct { char nm[BT_LEGACY_W]; unsigned short len; unsigned short id; } bt_legacy_tab[BT_LEGACY_TABSZ] = {')
@@ -194,6 +194,9 @@ def gen(rows):
     h.append('#endif')
     c = []
     c.append('#include "runtime/builtin_table.h"')
+    c.append('#include "runtime/builtin_table_n.h"')
+    c.append('#include "runtime/builtin_ids.h"')
+    c.append('_Static_assert(BT_BID_MAX < BID_TABSZ, "a builtin id at or past BID_TABSZ reads outside g_bn_direct: grow BID_TABSZ, a power of two, past BT_BID_MAX");')
     c.append('const bt_row_t g_builtins[BT_ROWS] = {')
     for r in rows:
         c.append('    { %s, %s, %d, BT_VOC_%s, BT_CONV_%s, %d, %d, %d, %d, %d },' % (cstr(r['name']), cstr(r['entry']) if r['entry'] != '-' else '""', r['bid'], r['vocab'].upper(), r['conv'].upper(),
@@ -222,12 +225,13 @@ def gen(rows):
     l.append('#include "runtime/builtin_table.h"')
     l.append('typedef DESCR_t (*bt_leaf_t)(DESCR_t * args, int nargs);')
     ld.append('#include "runtime/builtin_leaf.h"')
+    ld.append('#include "runtime/builtin_table_n.h"')
     seen = []
     for r in rows:
         if is_leaf_row(r) and slot_sym(r) not in seen:
             seen.append(slot_sym(r))
             l.append('extern DESCR_t %s(DESCR_t * args, int nargs) __attribute__((weak, visibility("hidden")));' % slot_sym(r))
-    l.append('extern __attribute__((visibility("hidden"))) const bt_leaf_t g_bt_leaf[BT_ROWS];')
+    l.append('extern __attribute__((visibility("hidden"))) const bt_leaf_t g_bt_leaf[];')
     ld.append('__attribute__((visibility("hidden"))) const bt_leaf_t g_bt_leaf[BT_ROWS] = {')
     for i in range(0, n, 8):
         ld.append('    ' + ' '.join(('%s,' % slot_sym(r)) if is_leaf_row(r) else '0,' for r in rows[i:i + 8]))
@@ -237,16 +241,17 @@ def gen(rows):
         if is_open_row(r) and slot_sym(r) not in seen:
             seen.append(slot_sym(r))
             l.append('extern int %s(DESCR_t * args, int nargs, DESCR_t * out, long * rq) __attribute__((weak, visibility("hidden")));' % slot_sym(r))
-    l.append('extern __attribute__((visibility("hidden"))) const bt_open_t g_bt_open[BT_ROWS];')
+    l.append('extern __attribute__((visibility("hidden"))) const bt_open_t g_bt_open[];')
     l.append('#endif')
     ld.append('__attribute__((visibility("hidden"))) const bt_open_t g_bt_open[BT_ROWS] = {')
     for i in range(0, n, 8):
         ld.append('    ' + ' '.join(('%s,' % slot_sym(r)) if is_open_row(r) else '0,' for r in rows[i:i + 8]))
     ld.append('};')
-    return '\n'.join(h) + '\n', '\n'.join(c) + '\n', '\n'.join(l) + '\n', '\n'.join(ld) + '\n'
+    nh = ['#ifndef BUILTIN_TABLE_N_H', '#define BUILTIN_TABLE_N_H', '#define BT_ROWS %d' % n, '#define BT_BID_MAX %d' % bmax, '#endif']
+    return '\n'.join(h) + '\n', '\n'.join(c) + '\n', '\n'.join(l) + '\n', '\n'.join(ld) + '\n', '\n'.join(nh) + '\n'
 
 
-OUTS = ('builtin_table.h', 'builtin_table.c', 'builtin_leaf.h', 'builtin_leaf.c')
+OUTS = ('builtin_table.h', 'builtin_table.c', 'builtin_leaf.h', 'builtin_leaf.c', 'builtin_table_n.h')
 
 
 def styled(*texts):
