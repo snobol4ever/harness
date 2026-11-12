@@ -229,6 +229,8 @@ one_runner_seat_admitted() {
   # board the coo is, and writes the coo's record; corpus_suite_harness.py:_one_runner_guard and util_score_row.py mirror this line.
   [ "$seat" = grader ] && [ "${S4E_CLASS:-}" = grader ] && [ "$(one_runner_engine)" = scrip ] && return 0
   for w in ${who//,/ }; do [ "$seat" = "$w" ] && return 0; done
+  # EVERY ROSTER SEAT RUNS WHAT IT NEEDS (Lon 2026-11-12 10:4x CST: "We do not need ONLY ONE test runner."); an identity off the roster is still refused
+  case " $(grep -m1 '^ROSTER:' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | sed 's/^ROSTER://') " in *" $seat "*) [ -n "$seat" ] && return 0;; esac
   return 1
 }
 # ⛔⭐ THE BINARY IS STAMPED WHERE EVERY BOARD STARTS (coo 2026-09-16; hq_raku's report against themselves, R-802; row instruments-

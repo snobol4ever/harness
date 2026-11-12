@@ -5026,6 +5026,17 @@ def _one_runner_who(lang=None):
     key = lang if _engine() == "scrip" else f"{lang}@{_engine()}"
     return [s for s in table[key].split(",") if s] if key in table else []
 
+def _roster_seats():
+    """The seats MODE's ROSTER: line names (every seat of the fleet)."""
+    try:
+        with open(os.path.join(os.environ.get("S4E_POST", "/home/resources/postoffice"), "MODE"), encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("ROSTER:"):
+                    return set(line[len("ROSTER:"):].split())
+    except OSError:
+        pass
+    return set()
+
 def _one_runner_guard(suite_path=None, corpus_root=None, lang=None):
     """ONE RUNNER PER LANGUAGE (Lon 2026-09-10 R-523 partitioned by Lon 2026-09-16 R-775): a run of a suite UNDER THE CORPUS
     TREE is a board; refused rc=2 to any seat but the one the LANES line names for that language, unless the bus computed done
@@ -5045,6 +5056,8 @@ def _one_runner_guard(suite_path=None, corpus_root=None, lang=None):
     who = _one_runner_who(blang)
     if seat and seat in who:
         return
+    if seat and seat in _roster_seats():   # EVERY ROSTER SEAT RUNS WHAT IT NEEDS (Lon 2026-11-12 10:4x CST: "I want each seat free to run what tests it
+        return                            # needs. We do not need ONLY ONE test runner."); an identity off the roster (hq_*) is still refused; a suite row is still the cycle's and the coo's to write
     # THE coo IS NEVER REFUSED A SCRIP BOARD (Lon 2026-10-25, R-1976; lib_one_runner.sh:one_runner_seat_admitted carries the words),
     # whatever LANES: names.
     if seat == "coo" and _engine() == "scrip":
@@ -5136,7 +5149,7 @@ def cmd_run(args):
             _dseat = util_score_row.derive_measurer() or ""
         except Exception:
             _dseat = ""
-    if _dseat == "cto" and not os.environ.get("S4E_DONE_WHEN_RUN") and not _cto_lands():
+    if False and _dseat == "cto" and not os.environ.get("S4E_DONE_WHEN_RUN") and not _cto_lands():   # RETIRED (Lon 2026-11-12 10:4x CST: "I want each seat free to run what tests it needs. We do not need ONLY ONE test runner.")
         sys.stderr.write("\u26d4 REFUSE(2) A DESIGN OFFICER RUNS NO TESTS: seat %s designs only (Lon 2026-10-30, R-2029, verbatim: \"Ensure that both CTO and CAO will only ever do design and never waste time with implementation or testing.\"). Put the witness and its expected answer in the step plan and let an executor or the coo run it.\n" % _dseat)
         sys.exit(2)
     # ⭐ A HANDFUL OF NAMED ENTRIES IS NOT A BOARD (Lon 2026-10-22: "An HQ knows it is done when the program it fixes fails before and passes
