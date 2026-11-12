@@ -23,7 +23,7 @@ set -u
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$SELF_DIR/../.." && pwd)}"
 MODEF="${S4E_POSTOFFICE:-/home/resources/postoffice}/MODE"
-GATE="$S4E/harness/scripts/test_gate_picker_lane_table_agrees_with_mode.sh"
+GATE="$S4E/harness/scripts/lib_mode_lane_check.sh"
 MSG="$S4E/harness/scripts/s4e_msg.sh"
 fail() { printf '⛔ REFUSED: %s\n' "$*" >&2; exit 2; }
 [ -r "$MODEF" ] || fail "cannot read MODE at $MODEF"

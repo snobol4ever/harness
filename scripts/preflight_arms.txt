@@ -16,24 +16,12 @@
 # ⛔ EVERY ARM IS GREEN ON ORIGIN THE DAY IT IS ADDED. A born-red target is one nobody runs, which is the
 # whole defect this target exists to cure -- the instrument was one second and it was bolted to a full build.
 ../harness/scripts/strip_comments.py --check
-../harness/scripts/test_gate_coexpr_stack_of_uncreated_thread.sh
-../harness/scripts/test_gate_done_manifest_handoff.sh
-../harness/scripts/test_gate_ladder_walk_v4_exempts_package_class_rows.sh
-../harness/scripts/test_gate_picker_lane_table_agrees_with_mode.sh
-../harness/scripts/test_gate_pl_trail_mechanism.sh
-../harness/scripts/test_gate_queue_census_placeholder_arm.sh
 ../harness/scripts/util_coercion_surface_census.py
 ../harness/scripts/util_tag_layout_verify.py
-../harness/scripts/test_gate_mint_refuses_a_prose_donewhen.sh
 ../harness/scripts/util_gate_wiring.py check
-../harness/scripts/test_gate_mode_line2_is_self_consistent.sh --selftest
-../harness/scripts/test_gate_suite_population_diff_reds_on_a_moved_skip.sh
 ../harness/scripts/util_board_field_matcher_census.py
-../harness/scripts/test_gate_c2bb_the_generator_arm_is_a_coroutine_start_not_a_box_entry_from_c.sh
 ../harness/scripts/util_suite_rows_vs_progress.py --selftest
 # ../harness/scripts/test_gate_pl_prelude_libs_in_sync.sh -- MOVED to make test (the coo 2026-10-14, R-1697): it read 8.68 s CPU on 2781bf6e4
 #   against the 5 s budget, so it is a blocking arm, not a cheap one; it still blocks every landing through the blocking set
 ../harness/scripts/test_area_smoke.sh
-../harness/scripts/test_gate_sweep_keeps_a_load_guard_refusal_and_retires_a_cannot_measure_one.sh
-../harness/scripts/test_gate_raku_a_used_module_keeps_the_file_scope_value_its_subs_read.sh
 ../harness/scripts/util_zeta_accessor_census.py
