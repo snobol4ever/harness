@@ -52,7 +52,8 @@ cd "$ROOT"
 PL_SRC="src/runtime/unification.c src/runtime/arithmetic.c src/runtime/rt/rt_pl_trail.c src/runtime/rt/rt_pl_trail.h src/runtime/rt/prolog_atom.c src/runtime/rt/prolog_atom.h src/runtime/rt/pl_rational.h"
 PL_OBJ="unification arithmetic rt_pl_trail prolog_atom rtx_plunify"
 for f in $PL_SRC; do [ -f "$f" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: $f is gone -- re-cut the runtime set"; exit 2; }; done
-for o in $PL_OBJ by_name_dispatch; do [ -f "$OBJ/$o.o" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: $OBJ/$o.o is gone -- re-cut the runtime set"; exit 2; }; done
+ls "$OBJ"/bn_*.o > /dev/null 2>&1 || { echo "⛔ REFUSED(2) [$GATE_NAME]: no bn_*.o (the cut of by_name_dispatch.c) under $OBJ -- re-cut the runtime set"; exit 2; }
+for o in $PL_OBJ; do [ -f "$OBJ/$o.o" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: $OBJ/$o.o is gone -- re-cut the runtime set"; exit 2; }; done
 # every other runtime file, source and object (an object's source is the first prerequisite in its .d sidecar), is
 # policed on the Prolog prefixes only: the lowerer, the parser, the driver and the templates are other stages
 SHARED_SRC="$(find src/runtime -type f \( -name '*.c' -o -name '*.h' -o -name '*.inc' \) | sort | grep -vxF -f <(tr ' ' '\n' <<< "$PL_SRC"))"
@@ -62,7 +63,7 @@ for d in "$OBJ"/*.d; do
     o="$(basename "$d" .d)"
     case "${src#$ROOT/}" in src/runtime/*) case " $PL_OBJ " in *" $o "*) ;; *) SHARED_OBJ="$SHARED_OBJ $OBJ/$o.o";; esac;; esac
 done
-case "$SHARED_OBJ" in *"/by_name_dispatch.o"*) ;; *) echo "⛔ REFUSED(2) [$GATE_NAME]: the .d sidecars under $OBJ name no src/runtime object -- the runtime set is unreadable"; exit 2;; esac
+case "$SHARED_OBJ" in *"/bn_"*) ;; *) echo "⛔ REFUSED(2) [$GATE_NAME]: the .d sidecars under $OBJ name no src/runtime object -- the runtime set is unreadable"; exit 2;; esac
 # ---- the frozen survivors: a name is added only with its reason, never for a section-10 structure -------------------
 # The atom table (prolog_atom.c; RULES.md rebuild gate clause 2, "the atom table stays"): the interned names, their
 # lengths and hash, the functor table and its hash, the operator columns, the five well-known atoms and './2'.

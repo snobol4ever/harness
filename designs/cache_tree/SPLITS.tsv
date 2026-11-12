@@ -1,0 +1,5 @@
+# SPLITS.tsv -- EVERY UNIT DESIGN-PLAN cache-tree HAS CUT (CTO-636; skill scrip-build reference section 4, law C8). A harness reader that read the old
+# unit reads its pieces through lib_split_units.py (python: unit_files, unit_text) or util_unit_files.sh (shell), in this order: the pieces (by name),
+# then the head and the export headers, so a reader taking a function's first match meets its definition before its prototype.
+# old (under SCRIP/src)	dir (under SCRIP/src)	prefix	manifest (under harness/designs/cache_tree/manifests)
+runtime/by_name_dispatch.c	runtime/lib	bn_	by_name_dispatch.c.tsv

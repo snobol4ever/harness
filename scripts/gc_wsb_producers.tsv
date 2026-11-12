@@ -21,15 +21,15 @@ parsers/prolog/prolog_parse.c	tree_t **args = (tree_t **)rt_wsb_alloc	BYTES	poin
 parsers/prolog/prolog_parse.c	tree_t **tmp = (tree_t **)rt_wsb_alloc	BYTES	pointers to tree_t nodes of the compile-time arena (ct_zalloc), never the collected heap
 runtime/bignum.c	BIG_t *b = (BIG_t *) rt_wsb_alloc	BYTES	a sign, a count and 32-bit limbs; DT_BIG's block must stay HB_WSB (gc_visit_one and rtx_gc.s test for it)
 runtime/bignum.c	ICNX_BIG_t *x = (ICNX_BIG_t *) rt_wsb_alloc	BYTES	four words, a sign and 32-bit digits
-runtime/by_name_dispatch.c	gm->blk = rt_wsb_alloc(ints * sizeof(int) + nb)	BYTES	an int vector followed by a byte buffer
-runtime/by_name_dispatch.c	g_match.blk = rt_wsb_alloc(ints * sizeof(int) + nb)	BYTES	an int vector followed by a byte buffer
-runtime/by_name_dispatch.c	ln = rt_wsb_alloc(kl + vl + 4)	BYTES	a text line
-runtime/by_name_dispatch.c	ln = rt_wsb_alloc(ql + vl + 5)	BYTES	a text line
-runtime/by_name_dispatch.c	char *self = rt_wsb_alloc(4096), *path = rt_wsb_alloc(4200)	BYTES	path text buffers
-runtime/by_name_dispatch.c	if (!f) return rt_wsb_alloc(1)	BYTES	a one-byte string
-runtime/by_name_dispatch.c	IS_INT_fn(args[0]) ? STRVAL(rt_wsb_alloc(1))	BYTES	a one-byte empty string, the text of a non-pointer PChar argument (pascal rung 13, aa2bbb034)
-runtime/by_name_dispatch.c	char *b = rt_wsb_alloc(cap), *o = rt_wsb_alloc(cap)	BYTES	byte buffers
-runtime/by_name_dispatch.c	buf=rt_wsb_realloc(buf,cap)	BYTES	the growing char buffer of the tab and column expansion
+runtime/lib/bn_13_rk.c	gm->blk = rt_wsb_alloc(ints * sizeof(int) + nb)	BYTES	an int vector followed by a byte buffer
+runtime/lib/bn_13_rk.c	g_match.blk = rt_wsb_alloc(ints * sizeof(int) + nb)	BYTES	an int vector followed by a byte buffer
+runtime/lib/bn_16_rk.c	ln = rt_wsb_alloc(kl + vl + 4)	BYTES	a text line
+runtime/lib/bn_16_rk.c	ln = rt_wsb_alloc(ql + vl + 5)	BYTES	a text line
+runtime/lib/bn_18_rk.c	char *self = rt_wsb_alloc(4096), *path = rt_wsb_alloc(4200)	BYTES	path text buffers
+runtime/lib/bn_18_rk.c	if (!f) return rt_wsb_alloc(1)	BYTES	a one-byte string
+runtime/lib/bn_17_pas.c	IS_INT_fn(args[0]) ? STRVAL(rt_wsb_alloc(1))	BYTES	a one-byte empty string, the text of a non-pointer PChar argument (pascal rung 13, aa2bbb034)
+runtime/lib/bn_38_pas.c	char *b = rt_wsb_alloc(cap), *o = rt_wsb_alloc(cap)	BYTES	byte buffers
+runtime/lib/bn_41_sh.c	buf=rt_wsb_realloc(buf,cap)	BYTES	the growing char buffer of the tab and column expansion
 runtime/unification.c	pl_ix_t *x = (pl_ix_t *)rt_heap_alloc_c(pl_ix_bytes(cap, hcap))	BYTES	the first-argument index: int64 keys, int heads and int chains
 runtime/unification.c	ix = (pl_db_rcix_t *)rt_heap_alloc_c	BYTES	the assertz reclaim index, one per reclaim pass: pairs of a fragment base address in the run-time code pool (bb_pool_base plus a page offset, never the collected heap) and an int slot
 runtime/pattern_match.c	int *ord = rt_wsb_alloc((size_t)n * sizeof(int)), *tmp = rt_wsb_alloc((size_t)n * sizeof(int))	BYTES	two int vectors

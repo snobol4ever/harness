@@ -84,22 +84,21 @@ def load(files):
     return M
 
 
-def rip_lea_targets(obj, fn, resolved):
-    """The target of every rip-relative lea of function fn in obj, in order: the symbol objdump names for a displacement the assembler resolved
-    (resolved=True: the parent, where a function of the same unit is reached without a relocation), or the relocation's symbol (the child)."""
+def rip_lea_targets(obj, fn):
+    """The target of every rip-relative lea of function fn in obj, in order, by name: the relocation's symbol where the assembler left one, else the
+    symbol objdump names for the displacement it resolved (a function of the same object reached without a relocation)."""
     out = subprocess.run(['objdump', '-dr', '--no-show-raw-insn', '--disassemble=' + fn, obj], capture_output=True, text=True).stdout.split('\n')
     t = []
     for i, ln in enumerate(out):
-        m = re.search(r'\slea\s+(-?0x[0-9a-f]+)\(%rip\),%\w+(?:\s+# [0-9a-f]+ <([^>+]+))?', ln)
+        m = re.search(r'\slea\s+(-?0x[0-9a-f]+)\(%rip\),%\w+(?:\s+# [0-9a-f]+ <([^>]+)>)?', ln)
         if not m:
             continue
-        if resolved:
-            nxt = out[i + 1] if i + 1 < len(out) else ''
-            t.append(m.group(2) if ('R_X86_64' not in nxt and m.group(1) != '0x0') else None)
+        nxt = out[i + 1] if i + 1 < len(out) else ''
+        r = re.search(r'R_X86_64_\w+\s+([A-Za-z_][\w.]*)([+-]0x[0-9a-f]+)?', nxt)
+        if r:
+            t.append(('R', re.sub(r'\.\d+$', '', r.group(1))))
         else:
-            nxt = out[i + 1] if i + 1 < len(out) else ''
-            r = re.search(r'R_X86_64_\w+\s+([A-Za-z_][\w.]*)', nxt)
-            t.append(re.sub(r'\.\d+$', '', r.group(1)) if r else None)
+            t.append(('S', re.sub(r'\.\d+(\+|$)', r'\1', m.group(2) or '?')))
     return t
 
 
@@ -114,19 +113,13 @@ def local_addr_only(a, b, fnames, pobj=None, cobj=None, fn=None):
             n += 1
     if not (pobj and cobj and fn):
         return 0
-    tp, tc = rip_lea_targets(pobj, fn, True), rip_lea_targets(cobj, fn, False)
-    if len(tp) != len(tc):
+    tp, tc = rip_lea_targets(pobj, fn), rip_lea_targets(cobj, fn)
+    if len(tp) != len(tc) or [x[1].split('+')[0] for x in tp] != [y[1].split('+')[0] for y in tc]:
         return 0
-    k = 0
-    for x, y in zip(tp, tc):
-        if x is not None:
-            if x != y:
-                return 0
-            k += 1
     ra, rb = set(a[2]), set(b[2])
-    if ra - rb or any(not (r[1] == 'sym' and r[2] in fnames) for r in rb - ra):
+    if any(not (r[1] == 'sym' and r[2] in fnames) for r in (ra - rb) | (rb - ra)):
         return 0
-    return k or 0
+    return n
 
 
 def fileline_only(a, b, srcs):

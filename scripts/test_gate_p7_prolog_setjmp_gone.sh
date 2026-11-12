@@ -43,10 +43,11 @@ done
 # reaches it. Both are SHARED NODES; deleting either is a shared-node change graded on the SNOBOL4 board and the Icon watermark for no Prolog gain. So this gate demands setjmp gone from
 # dop_call's BODY, never from the whole file -- a whole-file count would order the deletion of two other languages' error trapping under a Prolog row.
 # ⭐ And dop_call's barrier is DEAD for Prolog by construction: core_runtime_error longjmps only when g_error != 0, and g_error has zero references on the Prolog path (it exit(1)s instead).
-j=$(awk '/^static DESCR_t dop_call\(/{f=1} f&&/^}/{exit} f' src/runtime/by_name_dispatch.c 2>/dev/null | grep -cE '^[^*/]*\bsetjmp[[:space:]]*\(')
-d=$(grep -cE '^static DESCR_t dop_call\(' src/runtime/by_name_dispatch.c 2>/dev/null)
+bnf=$(bash "$(dirname "${BASH_SOURCE[0]}")/util_unit_files.sh" "src" runtime/by_name_dispatch.c) || { echo "GATE REFUSE(2) [p7_prolog_setjmp_gone]: no by_name_dispatch.c and no cut of it"; exit 2; }
+j=$(cat $bnf | awk '/^(static |__attribute__\(\(visibility\("hidden"\)\)\) )DESCR_t dop_call\(/{f=1} f&&/^}/{exit} f' 2>/dev/null | grep -cE '^[^*/]*\bsetjmp[[:space:]]*\(')
+d=$(cat $bnf | grep -cE '^(static |__attribute__\(\(visibility\("hidden"\)\)\) )DESCR_t dop_call\(')
 if [ "$d" -gt 0 ] && [ "$j" -ne 0 ]; then echo "⛔ dop_call still carries a setjmp barrier ($j) -- Prolog failure must be β, a wired jump, not C-stack unwinding (dop_call may also simply be gone: it exists only to wrap the barrier)"; F=1; fi
-u=$(grep -cF '"$unwind_nothrow"' src/runtime/by_name_dispatch.c 2>/dev/null)
+u=$(cat $bnf | grep -cF '"$unwind_nothrow"')
 [ "$u" -eq 0 ] || { echo "⛔ the \$unwind_nothrow by-name arm is still dispatched ($u site(s)) -- the nothrow body it reaches is a P7 deletion"; F=1; }
 [ $F -eq 0 ] || { echo "GATE FAIL(1) [p7_prolog_setjmp_gone]: the P7 symbols are not gone"; exit 1; }
 echo "P7 symbols gone from src/ and from $SO. Now the safety half -- deleting a barrier must not convert a caught corruption into a crash:"

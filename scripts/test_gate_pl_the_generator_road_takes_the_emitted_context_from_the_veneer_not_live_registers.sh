@@ -23,7 +23,7 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -n "${SCRIP_BIN:-}" ] || "$HERE/util_require_fresh.sh" --gate "$GATE_NAME" "$SCRIP" "$RT/libscrip_rt.so" || exit 2
 TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT
 red=0
-BND="$HERE/../../SCRIP/src/runtime/by_name_dispatch.c"; [ -f "$BND" ] || refuse "no $BND"
+bnf=$(bash "$HERE/util_unit_files.sh" "$HERE/../../SCRIP/src" runtime/by_name_dispatch.c) || refuse "no by_name_dispatch.c and no cut of it"; BND="$(mktemp)"; trap 'rm -f "$BND"' EXIT; cat $bnf > "$BND"
 c=$(awk '/^DESCR_t rt_pl_goal_gen_h_c\(/{p=1} p && /rt_proc_call_gen_h\(key, ar \+ n, hslot, [a-z_]+\)/{n++} p && /^}/{exit} END{print n+0}' "$BND")
 h=$(grep -cE 'rt_proc_call_gen_h\(const char \*, int, void \*\*, const uint64_t \*\)' "$HERE/../../SCRIP/src/runtime/rt/rt.h")
 if [ "$c" = 1 ] && [ "$h" = 1 ]; then echo "  ok  arm 1: the Prolog gen road (rt_pl_goal_gen_h_c) hands the generator the five context words from the veneer's frame"

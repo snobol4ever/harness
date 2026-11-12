@@ -30,8 +30,9 @@ def unesc(s):
 
 
 def read(root, rel):
-    p = os.path.join(root, 'src', rel)
-    return open(p, encoding='utf-8', errors='replace').read() if os.path.exists(p) else None
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import lib_split_units
+    return lib_split_units.unit_text(os.path.join(root, 'src'), rel)
 
 
 def func_body(text, head_re):

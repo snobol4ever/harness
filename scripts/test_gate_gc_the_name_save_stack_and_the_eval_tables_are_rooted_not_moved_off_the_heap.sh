@@ -44,8 +44,9 @@ python3 "$HERE/corpus_suite_harness.py" extract "$M/ALL.sno" "$M/ALL.ref" --orig
 [ -f "$W" ] || { echo "⛔ GATE REFUSE(2) [$G]: the witness (master origin code_call_runtime_define_pending_entry) could not be extracted from $M/ALL.{sno,ref,csv}, so nothing was measured"; exit 2; }
 RC=0
 cp "$W" "$T/w.sno"
-n="$(python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$ROOT/src/runtime/by_name_dispatch.c" bnd_gc_roots | grep -cF 'for (rk_cbh_t *h = g_rk_cbh_cur; h; h = h->prev)') $(grep -oF 'g_rk_cbh_cur = &H;' "$ROOT/src/runtime/by_name_dispatch.c" | wc -l) $(grep -oF 'g_rk_cbh_cur = H.prev;' "$ROOT/src/runtime/by_name_dispatch.c" | wc -l)"
-seq=$(grep -oE 'g_rk_cbh_cur = (&H|H\.prev);' "$ROOT/src/runtime/by_name_dispatch.c" | sed -e 's/.*&H;/L/' -e 's/.*H\.prev;/U/' | tr -d '\n')
+bnf=$(bash "$(dirname "${BASH_SOURCE[0]}")/util_unit_files.sh" "$ROOT/src" runtime/by_name_dispatch.c) || { echo "⛔ GATE REFUSE(2) [$G]: no by_name_dispatch.c and no cut of it"; exit 2; }; BNT="$T/bnd.c"; cat $bnf > "$BNT"
+n="$(python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$BNT" bnd_gc_roots | grep -cF 'for (rk_cbh_t *h = g_rk_cbh_cur; h; h = h->prev)') $(grep -oF 'g_rk_cbh_cur = &H;' "$BNT" | wc -l) $(grep -oF 'g_rk_cbh_cur = H.prev;' "$ROOT/src/runtime/by_name_dispatch.c" | wc -l)"
+seq=$(grep -oE 'g_rk_cbh_cur = (&H|H\.prev);' "$BNT" | sed -e 's/.*&H;/L/' -e 's/.*H\.prev;/U/' | tr -d '\n')
 paired=$(printf '%s' "$seq" | awk '{ok = ($0 ~ /^(LU+)+$/) ? 1 : 0; print ok}')
 nl=$(printf '%s' "$seq" | tr -cd L | wc -c)
 if [ "${n%% *}" = 1 ] && [ "${paired:-0}" = 1 ] && [ "$nl" -ge 4 ]; then echo "  structural holds PASS (bnd_gc_roots walks the rk_cbh_t chain from g_rk_cbh_cur, every Raku block-callback builtin links its frame record and unlinks it before the next link in source order ($nl links, order $seq) -- the holder g_rk_cb_hold is gone, R-1560; visiting a descriptor inside a block does not mark the block)"

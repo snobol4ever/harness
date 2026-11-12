@@ -14,12 +14,13 @@
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
-BND="$ROOT/src/runtime/by_name_dispatch.c"; PY="$ROOT/src/parsers/pascal/pascal.y"; LC="$ROOT/src/lower/lower_common.c"; LT="$ROOT/src/lower/lower_pascal_tree.c"
+bnf=$(bash "$(dirname "${BASH_SOURCE[0]}")/util_unit_files.sh" "$ROOT/src" runtime/by_name_dispatch.c) || { echo "⛔ GATE REFUSE(2) [$G]: no by_name_dispatch.c and no cut of it under $ROOT/src"; exit 2; }
+BND="$(mktemp)"; trap 'rm -f "$BND"' EXIT; cat $bnf > "$BND"; PY="$ROOT/src/parsers/pascal/pascal.y"; LC="$ROOT/src/lower/lower_common.c"; LT="$ROOT/src/lower/lower_pascal_tree.c"
 for f in "$BND" "$PY" "$LC" "$LT"; do [ -f "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: $f is not on disk"; exit 2; }; done
 PAT='SOH|\\\\x01|\\\\x05|\\\\001'
 sites=$(
-  awk -v pat="$PAT" -v F="src/runtime/by_name_dispatch.c" '
-    /^[a-zA-Z].*\(.*\) *\{/ { c=$0; sub(/\(.*/,"",c); n=split(c,a," "); cur=a[n]; sub(/^\*/,"",cur) }
+  awk -v pat="$PAT" -v F="src/runtime/lib/bn_*.c (joined)" '
+    /^[a-zA-Z_].*\(.*\) *\{/ { c=$0; sub(/\(.*/,"",c); n=split(c,a," "); cur=a[n]; sub(/^\*/,"",cur) }
     /strcmp\(fn, "[^"]+"\)/ { x=$0; sub(/.*strcmp\(fn, "/,"",x); sub(/".*/,"",x); cur=x }
     $0 ~ pat && (cur ~ /^__pas_/ || cur ~ /^pas_/ || cur == "arr_get" || cur == "arr_set_pure") { print F ":" NR " [" cur "]" }' "$BND"
   awk -v pat="$PAT" -v F="src/parsers/pascal/pascal.y" '$0 ~ pat { print F ":" NR " [parser]" }' "$PY"

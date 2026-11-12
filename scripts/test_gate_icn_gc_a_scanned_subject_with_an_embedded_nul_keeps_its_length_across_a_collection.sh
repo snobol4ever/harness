@@ -33,8 +33,8 @@ RC=0
 WIT="$HERE/gc_witnesses/hb_scan_subject_embedded_nul_across_a_collection.icn"; REF="${WIT%.icn}.ref"
 for f in "$WIT" "$REF"; do [ -f "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: missing $f"; exit 2; }; done
 echo "  HOLDS: a scan subject with an embedded NUL keeps its carried length across a collection that moves it, and a callee's tab/move/pos/&subject read that length"
-BN="$ROOT/src/runtime/by_name_dispatch.c"
-wbody="$(sed -n '/^static bn_win_t bn_win(void) {/,/^}/p' "$BN")"
+bnf=$(bash "$(dirname "${BASH_SOURCE[0]}")/util_unit_files.sh" "$ROOT/src" runtime/by_name_dispatch.c) || exit 2; BN="$T/bnd.c"; cat $bnf > "$BN"
+wbody="$(sed -nE '/^(static |__attribute__\(\(visibility\("hidden"\)\)\) )bn_win_t bn_win\(void\) \{/,/^}/p' "$BN")"
 ws=$(printf '%s\n' "$wbody" | grep -c 'strlen')
 wl=$(printf '%s\n' "$wbody" | grep -c '(uint32_t)w.env\[2\]')
 cc=$(grep -rn -e 'rt_scan_subj_len' -e 'scan_subj_ptr' -e 'abi\.scan_subj' "$ROOT/src" --include=*.c --include=*.h --include=*.cpp --include=*.s --include=*.inc | wc -l)

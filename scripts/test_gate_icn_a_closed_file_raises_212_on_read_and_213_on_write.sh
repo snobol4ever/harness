@@ -24,7 +24,7 @@ SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2)
 ICONT="$(icont_bin)" || { echo "⛔ GATE REFUSE(2) [$G]: the Icon oracle is missing"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0
-DP="$ROOT/src/driver/driver_globals.h"; DG="$ROOT/src/driver/driver_globals.c"; BN="$ROOT/src/runtime/by_name_dispatch.c"; IO="$ROOT/src/runtime/io_format.c"
+DP="$ROOT/src/driver/driver_globals.h"; DG="$ROOT/src/driver/driver_globals.c"; bnf=$(bash "$(dirname "${BASH_SOURCE[0]}")/util_unit_files.sh" "$ROOT/src" runtime/by_name_dispatch.c) || exit 2; BN="$T/bnd.c"; cat $bnf > "$BN"; IO="$ROOT/src/runtime/io_format.c"
 for f in "$DP" "$DG" "$BN" "$IO"; do [ -f "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: missing $f"; exit 2; }; done
 echo "  HOLDS: a closed file raises 212 on read and 213 on write, &input/&output/&errout included, in both media, as iconx does"
 fl=$(tr '\n' ' ' < "$DP" | grep -oE 'char closed;[^}]*\} fh_slot_t;' | wc -l); cl=$(( $(grep -c 's->closed=0' "$DG") == 1 && $(grep -c 'fh_slot_init(&g_fh\[i\], fp)' "$DG") == 2 ? 1 : 0 )); st=$(grep -c 'g_fh\[idx\].closed = 1;' "$BN"); fp=$(grep -c 'fh_is_closed(1)' "$IO")

@@ -116,7 +116,7 @@ done
 [ "$cf" -eq 0 ] && echo "  ok   w1..w5 chain-checked: missing=0 mapdiff=0"
 echo "arm 4: the census -- rk_sequence and its caps are gone from by_name_dispatch.c, every Raku take lowers to a suspend or a dynamic take, the parser's __rk_seq is desugared in the lowerer"
 GATE_EXAMINED=$((GATE_EXAMINED + 1))
-n=$(grep -c 'infinite ? 1000\|static DESCR_t rk_sequence(' "$ROOT/src/runtime/by_name_dispatch.c")
+bnf=$(bash "$(dirname "${BASH_SOURCE[0]}")/util_unit_files.sh" "$ROOT/src" runtime/by_name_dispatch.c) || exit 2; n=$(cat $bnf | grep -c 'infinite ? 1000\|static DESCR_t rk_sequence(\|DESCR_t rk_sequence(')
 if [ "$n" -ne 0 ]; then printf '  FAIL census: %s line(s) of the C sequence loop or its caps survive in by_name_dispatch.c\n' "$n"; fails=$((fails + 1)); else echo "  ok   census: rk_sequence and its caps are gone"; fi
 GATE_EXAMINED=$((GATE_EXAMINED + 1))
 if grep -q 'rk_seq_to_gather' "$ROOT/src/lower/lower_raku.c" && grep -q '"__rk_take_dyn"' "$ROOT/src/lower/lower_raku.c"; then echo "  ok   census: the lowerer desugars __rk_seq and lowers a dynamic take"

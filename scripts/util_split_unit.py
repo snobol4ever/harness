@@ -15,8 +15,9 @@
 #   util_split_unit.py --selftest                                 splits a fixture three ways and proves the pieces compile, link and run like the unit
 #
 # THE TRANSFORM (the grant of Lon's go, 2026-11-12: the statics a cut exports become hidden-visibility externs, so an access compiles to the code a static's
-# access compiled to): a static function or variable referenced from another piece loses its "static" and gains __attribute__((visibility("hidden")));
-# its prototypes in the head lose "static" too, and when it has none, one is generated from its definition's own text up to its body. A static that a macro
+# access compiled to): a static function or variable referenced from another piece loses its "static"; its declaration in its piece's export header (its own
+# prototype moved there, or one generated from its definition's text up to its body) carries __attribute__((visibility("hidden"))), and the piece includes
+# that header first, so the definition is hidden while its line still reads as a plain definition to every text reader of the tree. A static that a macro
 # defines (its "static" is in the macro's text) cannot be exported: plan never cuts between it and its users, and apply refuses rc 2 when the manifest does.
 # A top-level #if region that holds a definition travels whole into the piece of its first definition. Functions are found by libclang with expansion
 # locations, so a function a macro makes (PL_CX_LEAF_HEAD ... PL_CX_LEAF_TAIL) spans the lines it was written on, and two on one line are one chunk.
@@ -477,25 +478,25 @@ def apply(u, manifest, outdir, prefix, head_name, src_root, cplus):
     exports = {}
     for n, d in u.byname.items():
         ps = users_pieces(n) - {piece[n]}
-        if ps:
+        if ps and piece[n] != INL:
             exports[n] = ps
     bad = [n for n in exports if u.byname[n]['pin']]
     if bad:
         raise SystemExit('RED(1): the manifest separates a static a macro defines (or of an unnamed type) from its user: %s' % ', '.join(sorted(bad)[:12]))
     L = list(u.lines)
-    def strip_static(line_no, col):
+    def strip_static(line_no, col, hidden):
         t = L[line_no - 1]
         head, tail = t[:col - 1], t[col - 1:]
-        tail2 = re.sub(r'^((?:__attribute__\(\([^)]*\)\)\s*)*)static\s+(?:inline\s+)?', r'\1' + HIDDEN.replace('\\', '\\\\'), tail, count=1)
+        tail2 = re.sub(r'^((?:__attribute__\(\([^)]*\)\)\s*)*)static\s+(?:inline\s+)?', r'\1' + (HIDDEN.replace('\\', '\\\\') if hidden else ''), tail, count=1)
         L[line_no - 1] = head + tail2
         return tail2 != tail
     for n in sorted(exports):
         d = u.byname[n]
         if d['static']:
-            if not strip_static(d['b'], d['col']):
+            if not strip_static(d['b'], d['col'], False):
                 raise SystemExit('RED(1): cannot find the static of %s at line %d' % (n, d['b']))
             for p in u.protos.get(n, []):
-                if p['static'] and not strip_static(p['b'], p['col']):
+                if p['static'] and not strip_static(p['b'], p['col'], True):
                     raise SystemExit('RED(1): cannot find the static of %s\'s prototype at line %d' % (n, p['b']))
     movable = {id(d): d for d in movable_decls(u)}
     decl_home = {}

@@ -41,7 +41,7 @@ set -u
 cd "$(dirname "$0")/../../SCRIP" || exit 2
 R="$PWD"
 [ -x "$R/scrip" ] || { echo "GATE UNPROVEN(2) [icn_list_reads_size_gate]: scrip not built -- measured nothing."; exit 2; }
-[ "$R/scrip" -nt "$R/src/runtime/by_name_dispatch.c" ] || { echo "GATE UNPROVEN(2) [icn_list_reads_size_gate]: ./scrip is older than src/runtime/by_name_dispatch.c -- a stale binary measures the previous tree. Run make."; exit 2; }
+[ -z "$(find $(bash "$(dirname "${BASH_SOURCE[0]}")/util_unit_files.sh" "$R/src" runtime/by_name_dispatch.c) -newer "$R/scrip" 2>/dev/null)" ] || { echo "GATE UNPROVEN(2) [icn_list_reads_size_gate]: ./scrip is older than src/runtime/by_name_dispatch.c -- a stale binary measures the previous tree. Run make."; exit 2; }
 ICONT=/home/resources/icon-master/bin/icont
 ICONX=/home/resources/icon-master/bin/iconx
 [ -x "$ICONT" ] && [ -x "$ICONX" ] || { echo "GATE UNPROVEN(2) [icn_list_reads_size_gate]: no Arizona oracle at $ICONT / $ICONX -- measured nothing."; exit 2; }

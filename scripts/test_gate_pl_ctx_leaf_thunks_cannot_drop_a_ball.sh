@@ -54,7 +54,7 @@ WAIVERS="$HERE/pl_ctx_leaf_ball_waivers.txt"
 command -v gcc >/dev/null 2>&1 || { echo "⛔ GATE REFUSED (rc=2): no gcc, so no preprocessor -- nothing was checked" >&2; exit 2; }
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 INC="-I$SRC -I$SRC/ir -I$SRC/lower -I$SRC/emitter -I$SRC/runtime/core -I$SRC/runtime/builtins -I$SRC/runtime -I$SRC/runtime/rt -I$SRC/parsers/snobol4 -I$SRC/parsers/raku -I$SRC/optimizer -I$SRC/templates/bb -I$SRC/templates/xa -I$SRC/templates/x86"
-UNITS="$SRC/runtime/by_name_dispatch.c $SRC/runtime/unification.c"
+UNITS="$(bash "$HERE/util_unit_files.sh" "$SRC" runtime/by_name_dispatch.c | grep -E '\.c$') $SRC/runtime/unification.c"
 : > "$TMP/all.i"
 for f in $UNITS; do
     [ -r "$f" ] || { echo "⛔ GATE REFUSED (rc=2): cannot read $f -- nothing was checked" >&2; exit 2; }

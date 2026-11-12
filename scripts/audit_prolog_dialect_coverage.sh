@@ -124,7 +124,7 @@ for b in re.split(r'\\subsubsection', tex):
 iso = iso_swi | iso_gp
 iso_infer -= iso_expl
 # ================ side B: SCRIP admitted set (SAME four sites as the ISO audit) =================
-bnd = rd(os.path.join(ROOT, 'src/runtime/by_name_dispatch.c'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(ROOT)), 'harness', 'scripts')); import lib_split_units; bnd = lib_split_units.unit_text(os.path.join(ROOT, 'src'), 'runtime/by_name_dispatch.c') or ''
 low = rd(os.path.join(ROOT, 'src/lower/lower_prolog.c'))
 pbl = rd(os.path.join(ROOT, 'src/parsers/prolog/prolog_lower.c'))
 i, det = bnd.find('rt_pl_det_builtin_target'), set()

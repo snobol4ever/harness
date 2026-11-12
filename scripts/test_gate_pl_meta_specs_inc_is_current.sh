@@ -9,12 +9,13 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$HERE/../../SCRIP/src"
-for f in "$SRC/runtime/by_name_dispatch.c" "$SRC/lower/lower_prolog.c"; do [ -r "$f" ] || { echo "REFUSE(2): cannot read $f"; exit 2; }; done
+bnf=$(bash "$(dirname "${BASH_SOURCE[0]}")/util_unit_files.sh" "$SRC" runtime/by_name_dispatch.c) || { echo "REFUSE(2): no by_name_dispatch.c and no cut of it under $SRC"; exit 2; }
+for f in $bnf "$SRC/lower/lower_prolog.c"; do [ -r "$f" ] || { echo "REFUSE(2): cannot read $f"; exit 2; }; done
 python3 "$HERE/util_gen_pl_meta_specs.py" --check; rc=$?
 [ "$rc" = 2 ] && exit 2
-if ! grep -q '#include "pl_meta_specs.inc"' "$SRC/runtime/by_name_dispatch.c"; then echo "RED: by_name_dispatch.c does not include pl_meta_specs.inc"; rc=1; fi
+if ! cat $bnf | grep -q '#include "[a-z/]*pl_meta_specs.inc"'; then echo "RED: by_name_dispatch.c does not include pl_meta_specs.inc"; rc=1; fi
 for nm in pl_meta_template pl_gnu_meta_spec pl_gnu_meta_term; do
-    if grep -q "\b$nm\b" "$SRC/runtime/by_name_dispatch.c" "$SRC/lower/lower_prolog.c"; then echo "RED: $nm is back -- a hand-typed list of meta specs beside the table"; rc=1; fi
+    if cat $bnf "$SRC/lower/lower_prolog.c" | grep -q "\b$nm\b"; then echo "RED: $nm is back -- a hand-typed list of meta specs beside the table"; rc=1; fi
 done
 if ! grep -q 'rt_pl_meta_builtin' "$SRC/lower/lower_prolog.c"; then echo "RED: the lowerer's compile-time fold does not read rt_pl_meta_builtin"; rc=1; fi
 [ "$rc" = 0 ] && echo "GATE OK [pl_meta_specs_inc_is_current]: the builtins' meta specs come from the oracle-cut table, one per dialect" && exit 0

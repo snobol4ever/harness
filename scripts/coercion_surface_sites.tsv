@@ -33,11 +33,11 @@ src/runtime/core/core.c	trace_spell_value	DT_BOOL@VARVAL_fn	the tracer spells a 
 src/runtime/core/core.c	_VDIFFER_	DT_BOOL	DIFFER compares by value; a Bool differs from a value exactly as its 1/0 does
 src/runtime/pattern_match.c	rt_concat_parts_d	DT_BOOL	concatenation renders True/False (R-662)
 src/runtime/pattern_match.c	_sort_type_rank	DT_BOOL	sort orders by type rank first; an unranked tag sorts arbitrarily against every other
-src/runtime/by_name_dispatch.c	to_cstring	DT_BOOL	method-dispatch string coercion; renders True/False (R-656)
-src/runtime/by_name_dispatch.c	rt_mc_type_name	DT_BOOL	the name method dispatch reports for a receiver; answers Bool
-src/runtime/by_name_dispatch.c	rk_raku_scalar	DT_BOOL	the .raku rendering of one scalar for a typed Hash, Pair, List or Array element: Nil, Bool::True and Bool::False, a number as itself, anything else a quoted Str (hq_raku 2026-10-03)
-src/runtime/by_name_dispatch.c	rk_qh_w	DT_BOOL	a Set / Bag / Mix weight read as a double: an Int, a Num or a Bool (True is 1, False is 0), anything else weighs nothing (hq_raku 2026-10-07)
-src/runtime/by_name_dispatch.c	pas_elem_ref	-	a Pascal array or record element reference: it tests the base for an array block and answers a name-reference to the element cell, else hands the base to pas_arr_get's string element and parks the value in the caller's temporary; DT_BOOL is minted by the Raku lowering alone and a Pascal base is never a Bool, so it owes no arm of its own (hq_pascal 2026-10-09)
+src/runtime/lib/bn_08_sh.c	to_cstring	DT_BOOL	method-dispatch string coercion; renders True/False (R-656)
+src/runtime/lib/bn_18_rk.c	rt_mc_type_name	DT_BOOL	the name method dispatch reports for a receiver; answers Bool
+src/runtime/lib/bn_16_rk.c	rk_raku_scalar	DT_BOOL	the .raku rendering of one scalar for a typed Hash, Pair, List or Array element: Nil, Bool::True and Bool::False, a number as itself, anything else a quoted Str (hq_raku 2026-10-03)
+src/runtime/lib/bn_19_rk.c	rk_qh_w	DT_BOOL	a Set / Bag / Mix weight read as a double: an Int, a Num or a Bool (True is 1, False is 0), anything else weighs nothing (hq_raku 2026-10-07)
+src/runtime/lib/bn_17_pas.c	pas_elem_ref	-	a Pascal array or record element reference: it tests the base for an array block and answers a name-reference to the element cell, else hands the base to pas_arr_get's string element and parks the value in the caller's temporary; DT_BOOL is minted by the Raku lowering alone and a Pascal base is never a Bool, so it owes no arm of its own (hq_pascal 2026-10-09)
 src/runtime/string_builtins.c	ident	DT_BOOL	IDENT compares by value; a Bool is identical exactly as its 1/0 is
 src/runtime/aggregates.c	_tbl_hval	-	OPEN-ASK: the hash half of the same question; it must hash whatever tbl_key_str keys on, so it is ruled with it, never separately
 src/runtime/aggregates.c	_tbl_eq_d	-	OPEN-ASK: the equality half of the same question; same ruling, same reason
@@ -63,11 +63,11 @@ src/runtime/pattern_match.c	rt_swap_var	-	the :=: swap; its one-character fast p
 src/runtime/pattern_match.c	rt_list_bang_var_body	-	list-bang over a container; a Bool is not one
 src/runtime/pattern_match.c	rt_random_var_body	-	random selection from a container; a Bool is not one
 src/runtime/pattern_match.c	EVAL_fn	-	EVAL of a string or expression value; a Bool is neither
-src/runtime/by_name_dispatch.c	rt_call_value	-	calls a value as a function; a Bool is not callable
-src/runtime/by_name_dispatch.c	rt_call_value_gen_h	-	generator half of rt_call_value; same reason
-src/runtime/by_name_dispatch.c	rt_pl_is_cold_c	-	Prolog is/2 arithmetic, the cold evaluator behind the R7 inline arm (rt_pl_dop_is_v_c until 2026-09-26); Prolog cannot hold a DT_BOOL
-src/runtime/by_name_dispatch.c	pl_anum_is_num	-	Prolog's ISO number test behind number_codes/number_chars (DT_I, DT_R, DT_BIG); Prolog cannot hold a DT_BOOL (hq_prolog 2026-09-24)
-src/runtime/by_name_dispatch.c	dop_cmp_fast	-	Prolog term comparison fast path; same reason
+src/runtime/lib/bn_26_sh.c	rt_call_value	-	calls a value as a function; a Bool is not callable
+src/runtime/lib/bn_26_sh.c	rt_call_value_gen_h	-	generator half of rt_call_value; same reason
+src/runtime/lib/bn_29_pl.c	rt_pl_is_cold_c	-	Prolog is/2 arithmetic, the cold evaluator behind the R7 inline arm (rt_pl_dop_is_v_c until 2026-09-26); Prolog cannot hold a DT_BOOL
+src/runtime/lib/bn_30_pl.c	pl_anum_is_num	-	Prolog's ISO number test behind number_codes/number_chars (DT_I, DT_R, DT_BIG); Prolog cannot hold a DT_BOOL (hq_prolog 2026-09-24)
+src/runtime/lib/bn_29_pl.c	dop_cmp_fast	-	Prolog term comparison fast path; same reason
 src/runtime/builtins/gen_runtime.c	rt_keyword_random_set	-	SNOBOL4 &RANDOM setter; unreachable from Raku
 src/runtime/builtins/gen_runtime.c	rt_keyword_error_set	-	SNOBOL4 &ERROR setter; unreachable from Raku
 src/runtime/builtins/gen_runtime.c	rt_keyword_trace_set	-	SNOBOL4 &TRACE setter; unreachable from Raku
@@ -75,36 +75,36 @@ src/runtime/builtins/gen_runtime.c	rt_keyword_dump_set	-	SNOBOL4 &DUMP setter; u
 src/runtime/string_ops.c	core_icn_str_ok	DT_BOOL	⭐ THE SITE THAT PROVES THE NAMING IS NOT A GUIDE: an `icn_`-prefixed gate that Raku's `eq`/`ne`/`lt` REACH. Without the tag, `$bool eq "True"` dies with error 103 "string expected" -- a live defect shipped in the previous landing, which this census found and the switch-only discovery could not (it returns a 0/1 verdict, not FAILDESCR)
 src/runtime/core/core.c	core_icn_chars_ok	DT_BOOL	the chars-family twin of core_icn_str_ok, carried for the same reason: a Bool has a string value, and the previous site is standing proof that an icn_ name does not mean Icon-only
 src/runtime/arithmetic.c	icn_cset_operand_ok	-	cset operands only; Rakudo has no cset and a Bool is correctly rejected
-src/runtime/by_name_dispatch.c	icn_cvt_chars_ok	-	Icon's explicit conversion gate; unreachable from the one frontend that mints DT_BOOL
-src/runtime/by_name_dispatch.c	pl_val_unbound	-	Prolog unbound-variable test; Prolog cannot hold a DT_BOOL
-src/runtime/by_name_dispatch.c	plw_unbound_tag	-	Prolog unbound tag test; same reason
-src/runtime/by_name_dispatch.c	pl_iso_unbound	-	Prolog ISO unbound-variable test; Prolog cannot hold a DT_BOOL
-src/runtime/by_name_dispatch.c	pl_text_is_unbalanced	-	Prolog text balance check; same reason
-src/runtime/by_name_dispatch.c	rt_pl_dop_atomic_list_concat_c	-	Prolog atomic_list_concat/2,3; same reason
-src/runtime/by_name_dispatch.c	rt_pl_dop_concat_atom_c	-	Prolog atom_concat/3; same reason
+src/runtime/lib/bn_01_sh.c	icn_cvt_chars_ok	-	Icon's explicit conversion gate; unreachable from the one frontend that mints DT_BOOL
+src/runtime/lib/bn_05_pl.c	pl_val_unbound	-	Prolog unbound-variable test; Prolog cannot hold a DT_BOOL
+src/runtime/lib/bn_head.h	plw_unbound_tag	-	Prolog unbound tag test; same reason
+src/runtime/lib/bn_30_pl.c	pl_iso_unbound	-	Prolog ISO unbound-variable test; Prolog cannot hold a DT_BOOL
+src/runtime/lib/bn_06_pl.c	pl_text_is_unbalanced	-	Prolog text balance check; same reason
+src/runtime/lib/bn_30_pl.c	rt_pl_dop_atomic_list_concat_c	-	Prolog atomic_list_concat/2,3; same reason
+src/runtime/lib/bn_05_pl.c	rt_pl_dop_concat_atom_c	-	Prolog atom_concat/3; same reason
 src/runtime/rt/gc_heap.c	gc_type_says_ref	-	SCRIP_GC_MAPS reporter only, never a coercion: it asks whether a tag REFERENCES THE HEAP, not what a value coerces to, and it is read-only beside the conservative scan. A new tag owes a row here only if the tag can hold a heap pointer; a new non-referencing tag correctly falls to default and is counted as not-a-slot (F6 step 3, R-867)
 src/runtime/rt/gc_heap.c	gc_tag_known	-	SCRIP_GC_MAPS frame walker-reporter only, never a coercion (cto 2026-09-19, CTO-88): it asks whether a byte in a DESCR-kinded frame slot is a known tag at all, so residue in an unzeroed slot is counted (i_badtag) instead of guessed at; a new tag owes a row here because the walker must know it exists.
 src/runtime/rt/gc_heap.c	gc_tag_bears_ptr	-	SCRIP_GC_MAPS frame walker-reporter only, never a coercion (cto 2026-09-19, CTO-88): the pointer-bearing tags gc_visit_one visits, used to tell a tagged spine cell from a raw word beside it; a new tag owes a row here only if the tag can hold a heap pointer, exactly as gc_type_says_ref above.
 src/runtime/pattern_match.c	sort_impl	-	SORT/RSORT arguments: the first must be an array or table (256), a vector's second must convert to a field name (257) -- a Bool is not a name, so 257 is its right answer; the column goes through rt_sno_cnv_num (258)
 src/runtime/icn_extfn.c	icn_extfn_marshal_out	-	Icon loadfunc only: it reads the iconx descriptor word a loaded C function returned (ICNX_D_Integer/Real/Lrgint/External or a string length) and mints the SCRIP value; it switches on no SCRIP tag, so a new SCRIP tag owes no arm here (hq_icon 2026-09-28, external values)
-src/runtime/by_name_dispatch.c	bt___rk_smartmatch	DT_BOOL	Raku ~~: the range arm answers a DT_BOOL itself and the subject is stringified by to_cstring, which owes and has its own DT_BOOL arm (declared above); classified by vice_president 2026-11-06, fleet-preflight coercion census
-src/runtime/by_name_dispatch.c	bt_m_ord	DT_BOOL@to_cstring	Raku .ord: an array subject is joined, a Num is rendered by rk_real_str and every other receiver, a Bool included, is stringified by to_cstring (True/False), so True.ord is the code point of T by DELEGATION and the site owes no arm of its own
-src/runtime/by_name_dispatch.c	bt_subst	DT_BOOL	Raku .subst: the :g adverb arrives as a DT_BOOL argument and is read by an arm of its own, and the subject is stringified by to_cstring (DT_BOOL arm declared above)
-src/runtime/by_name_dispatch.c	bta___rk_intdiv	DT_BOOL	DEFECT, NOT A CLASSIFICATION (fleet-preflight coercion census, vice_president 2026-11-06, MEASURED on SCRIP 88686b571 built fresh): div and mod coerce an operand that is not an Int or a Num by to_cstring then strtod, so a Bool becomes the text True and reads as 0.0; `7 div True` and `7 mod True` and `9 % True` print Failure where Rakudo prints 7, 0 and 0 (a Bool is its 1/0 integer, R-656; `2 + True` and `True * 5` are right because to_real has the arm). It owes a DT_BOOL arm (1/0) exactly as to_real; the arm stays RED here until the Raku designer's row lands it
-src/runtime/by_name_dispatch.c	bta_display	-	Icon display(depth, file): the depth is coerced by to_int (which owes and has its DT_BOOL arm) after a null test (DT_SNUL means the default depth), the file by a handle or integer test, and DT_S only guards the image text it prints; Icon only, and DT_BOOL is minted by the Raku builtins alone
-src/runtime/by_name_dispatch.c	bta_push_pure	-	Raku push/append/prepend/unshift: the Int/Num test chooses Rakudo's Cannot resolve caller diagnostic for an immutable number receiver and every other receiver is listified by rk_av, so the tag test converts no value
-src/runtime/by_name_dispatch.c	pl_gp_term	-	the Prolog read_term parser: its if-chains test LEXER TOKEN kinds (GT_VAR, GT_INT, GT_FLOAT, GT_STR, GT_NAME, GT_BQ, GT_IOPEN, GT_PUNCT), never a descriptor tag; there is no descriptor to coerce
-src/runtime/by_name_dispatch.c	pl_sa_isnum	-	Prolog: the number test (integer, big integer, float) of the standard-order sort; a Prolog term never carries a DT_BOOL (minted by the Raku builtins alone, as pas_elem_ref records)
-src/runtime/by_name_dispatch.c	rt_pl_dop_db_abolish_t_c	-	Prolog abolish/1: the predicate indicator is read from a DT_PLREF functor or a DT_PLATOM / DT_S atom and anything else FAILs; the tag test selects the predicate, it coerces no value; Prolog only
-src/runtime/by_name_dispatch.c	rt_sno_chknm_d	-	SNOBOL4 by-name call check: DT_N (a returned name) and DT_S (the called function's name) are read, no value is coerced; a value returned to a by-name call other than EVAL and ITEM is error 21, and DT_BOOL is not a SNOBOL4 value
-src/runtime/by_name_dispatch.c	rt_sno_patck_d	-	SNOBOL4 container check: DT_A, DT_T and DATA instances are the containers that take the error code; any other value is returned unchanged (`return r`), so a Bool passes through as itself
-src/runtime/by_name_dispatch.c	sno_array_d	-	SNOBOL4 ARRAY(dimensions, init): a numeric first argument by rt_num_arg_d, else a DT_S prototype string (rt_cstr_d), else error 64; the init value is stored as given; SNOBOL4 only
+src/runtime/lib/bn_19_rk.c	bt___rk_smartmatch	DT_BOOL	Raku ~~: the range arm answers a DT_BOOL itself and the subject is stringified by to_cstring, which owes and has its own DT_BOOL arm (declared above); classified by vice_president 2026-11-06, fleet-preflight coercion census
+src/runtime/lib/bn_08_sh.c	bt_m_ord	DT_BOOL@to_cstring	Raku .ord: an array subject is joined, a Num is rendered by rk_real_str and every other receiver, a Bool included, is stringified by to_cstring (True/False), so True.ord is the code point of T by DELEGATION and the site owes no arm of its own
+src/runtime/lib/bn_08_sh.c	bt_subst	DT_BOOL	Raku .subst: the :g adverb arrives as a DT_BOOL argument and is read by an arm of its own, and the subject is stringified by to_cstring (DT_BOOL arm declared above)
+src/runtime/lib/bn_02_sh.c	bta___rk_intdiv	DT_BOOL	DEFECT, NOT A CLASSIFICATION (fleet-preflight coercion census, vice_president 2026-11-06, MEASURED on SCRIP 88686b571 built fresh): div and mod coerce an operand that is not an Int or a Num by to_cstring then strtod, so a Bool becomes the text True and reads as 0.0; `7 div True` and `7 mod True` and `9 % True` print Failure where Rakudo prints 7, 0 and 0 (a Bool is its 1/0 integer, R-656; `2 + True` and `True * 5` are right because to_real has the arm). It owes a DT_BOOL arm (1/0) exactly as to_real; the arm stays RED here until the Raku designer's row lands it
+src/runtime/lib/bn_40_sh.c	bta_display	-	Icon display(depth, file): the depth is coerced by to_int (which owes and has its DT_BOOL arm) after a null test (DT_SNUL means the default depth), the file by a handle or integer test, and DT_S only guards the image text it prints; Icon only, and DT_BOOL is minted by the Raku builtins alone
+src/runtime/lib/bn_02_sh.c	bta_push_pure	-	Raku push/append/prepend/unshift: the Int/Num test chooses Rakudo's Cannot resolve caller diagnostic for an immutable number receiver and every other receiver is listified by rk_av, so the tag test converts no value
+src/runtime/lib/bn_34_pl.c	pl_gp_term	-	the Prolog read_term parser: its if-chains test LEXER TOKEN kinds (GT_VAR, GT_INT, GT_FLOAT, GT_STR, GT_NAME, GT_BQ, GT_IOPEN, GT_PUNCT), never a descriptor tag; there is no descriptor to coerce
+src/runtime/lib/bn_04_pl.c	pl_sa_isnum	-	Prolog: the number test (integer, big integer, float) of the standard-order sort; a Prolog term never carries a DT_BOOL (minted by the Raku builtins alone, as pas_elem_ref records)
+src/runtime/lib/bn_27_pl.c	rt_pl_dop_db_abolish_t_c	-	Prolog abolish/1: the predicate indicator is read from a DT_PLREF functor or a DT_PLATOM / DT_S atom and anything else FAILs; the tag test selects the predicate, it coerces no value; Prolog only
+src/runtime/lib/bn_20_pl.c	rt_sno_chknm_d	-	SNOBOL4 by-name call check: DT_N (a returned name) and DT_S (the called function's name) are read, no value is coerced; a value returned to a by-name call other than EVAL and ITEM is error 21, and DT_BOOL is not a SNOBOL4 value
+src/runtime/lib/bn_20_pl.c	rt_sno_patck_d	-	SNOBOL4 container check: DT_A, DT_T and DATA instances are the containers that take the error code; any other value is returned unchanged (`return r`), so a Bool passes through as itself
+src/runtime/lib/bn_11_pl.h	sno_array_d	-	SNOBOL4 ARRAY(dimensions, init): a numeric first argument by rt_num_arg_d, else a DT_S prototype string (rt_cstr_d), else error 64; the init value is stored as given; SNOBOL4 only
 src/runtime/core/core.c	_COPY_	-	SNOBOL4 COPY: arrays, data instances, tables, patterns (DT_P), expressions (DT_X) and code (DT_C) are copied; every other value ends at `return v`, so a Bool copies to the same Bool
 src/runtime/posix_info.c	bt_ICNx24UGETPW	-	Icon getpw(): a null or absent argument reads the next entry, a DT_I is a uid, a DT_S a user name, any other tag FAILs; no value is coerced; Icon only
 src/runtime/posix_info.c	bt_ICNx24UGETGR	-	Icon getgr(): a null or absent argument reads the next entry, a DT_I is a gid, a DT_S a group name, any other tag FAILs; no value is coerced; Icon only
 src/runtime/posix_info.c	bt_ICNx24UGETSERV	-	Icon getserv(): a name (DT_S) or a port (DT_I) selects the service entry, a null argument reads the next, any other tag FAILs; no value is coerced; Icon only
 src/runtime/posix_proc.c	pp_arg	-	Icon process-argument formatter: a string (not a cset) is its text, an integer its decimal form, anything else NULL and the caller refuses it; Icon only
 src/runtime/rt/rt.c	rt_nret_name	-	SNOBOL4 NRETURN: a DT_N stays a name; a DT_S, DT_I or DT_R is turned into a name by c_rt_sno_name_dl; anything else is error 243 function result in nreturn is not name; SNOBOL4 only
-src/runtime/by_name_dispatch.c	bt_ICNx24ULIST	-	Unicon list(x): a set (DT_T with is_set) or a list (DT_DATA) argument makes a new list of its members; the tag selects the container to copy, the members are copied as they are; no value is coerced; Icon and Unicon only
+src/runtime/lib/bn_25_sh.c	bt_ICNx24ULIST	-	Unicon list(x): a set (DT_T with is_set) or a list (DT_DATA) argument makes a new list of its members; the tag selects the container to copy, the members are copied as they are; no value is coerced; Icon and Unicon only
 src/runtime/posix_leaves.c	px_sock_peek	-	Unicon socket subscripted by an attribute name: the name is a DT_S or null, any other tag FAILs; the answer is the attribute or a table of them; no value is coerced; Icon and Unicon only
 src/runtime/rt/rt_coexpr.c	bt_ICNx24RECV	-	Unicon receive: a co-expression (DT_CO) or null names the sender, a list is the queue to take from, any other tag FAILs; the message is returned as it was sent; no value is coerced; Icon and Unicon only

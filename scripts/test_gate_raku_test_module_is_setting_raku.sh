@@ -42,7 +42,8 @@ if [ -x "$W/w4" ]; then
     ( cd "$W" && timeout -k 5 30 ./w4 > o4 2> e4 < /dev/null ); rc4=$?
     if cmp -s "$WIT.ref" "$W/o4" && [ "$rc4" = "$want_rc" ]; then echo "  GREEN m4 witness (rc $rc4)"; else echo "  RED   m4 witness: rc $rc4 want $want_rc"; diff "$WIT.ref" "$W/o4" | head -12; red=1; fi
 fi
-left="$(grep -n '__rk_test_' src/parsers/raku/rk_tree.c src/lower/lower_raku.c src/runtime/by_name_dispatch.c "$HERE/builtins.tsv" 2>/dev/null)"
+bnf=$(bash "$(dirname "${BASH_SOURCE[0]}")/util_unit_files.sh" "src" runtime/by_name_dispatch.c) || exit 2
+left="$(grep -n '__rk_test_' src/parsers/raku/rk_tree.c src/lower/lower_raku.c $bnf "$HERE/builtins.tsv" 2>/dev/null)"
 if [ -z "$left" ]; then echo "  GREEN no __rk_test_ C site is left"; else echo "  RED   C Test sites remain:"; echo "$left" | cut -c1-160 | head -10; red=1; fi
 if python3 "$HERE/util_gen_raku_setting.py" --check > "$W/gen" 2>&1; then echo "  $(cat "$W/gen")"; else echo "  RED   $(cat "$W/gen")"; red=1; fi
 bash "$HERE/test_smoke_raku.sh" > "$W/smoke" 2>&1; src=$?
