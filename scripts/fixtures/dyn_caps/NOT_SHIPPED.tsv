@@ -14,9 +14,6 @@ src/parsers/prolog/pl_cell_test.c	a unit test with its own main(); no Makefile r
 src/parsers/prolog/prolog_parse_test.c	a unit test with its own main(); no Makefile rule or script compiles it
 src/parsers/snobol4/test_lex.c	a unit test with its own main(); no Makefile rule or script compiles it
 src/runtime/rtx/rtx_str_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
-src/tools/demo_template_productions.c	a demo with its own main(); no Makefile rule or script compiles it
-src/tools/emit_per_kind_audit.c	a tool; its entry emit_per_kind_audit_run is called from no shipped unit and nm finds it in neither libscrip_rt.so nor scrip (2026-09-24, cb1bc6d1b)
-src/tools/test_template_byte_identity.c	a test tool with its own main(); its driver script ../harness/scripts/build_and_run_test_template_byte_identity.sh names src/runtime/x86/test_template_byte_identity.c, a path the tree no longer has, so nothing compiles this copy
 src/runtime/rtx/rtx_tins_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
 src/runtime/rtx/rtx_sval_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
 src/runtime/rtx/rtx_relop_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh

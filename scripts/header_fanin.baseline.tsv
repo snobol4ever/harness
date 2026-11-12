@@ -210,7 +210,6 @@ hdr	templates/x86/x86_rtcc.h	7	7	0	0
 hdr	templates/x86/x86_zeta.h	62	62	0	0
 hdr	templates/x86/x86_zverify.h	12	12	0	0
 hdr	templates/xa/xa_templates.h	1	14	0	0
-hdr	tools/emit_per_kind_audit.h	1	0	0	0
 umbrella	runtime/builtins/gen_value.h	1	0	0	0
 unused	driver/driver_data.c	1	0	0	0
 unused	driver/polyglot.c	2	0	0	0

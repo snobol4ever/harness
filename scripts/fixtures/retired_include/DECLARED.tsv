@@ -6,7 +6,6 @@
 # a sweep ruling, asked of the officer.  A row whose (script, directory) no longer reads dead is STALE and reds the gate: remove it
 # in the landing that cured or deleted the script, so this list only shrinks.
 # script<TAB>dead directory<TAB>reason
-build_and_run_test_template_byte_identity.sh	src/runtime/x86	DEAD HARNESS: named only by ../harness/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv; last touched 2026-07-17
 build_scrip_rs23_diag.sh	src/runtime/x86	DEAD HARNESS: run only by test_rs23_diag_capture.sh, itself unwired; last touched 2026-08-19
 build_scrip_rs23_diag.sh	src/parser/snobol4	DEAD HARNESS: src/parser became src/parsers in the srcreorg; same script as above
 test_crosscheck_x86_backend.sh	src/runtime/asm	DEAD HARNESS: referenced by nothing; last touched 2026-05-31
