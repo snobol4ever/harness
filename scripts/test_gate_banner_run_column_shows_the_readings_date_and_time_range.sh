@@ -30,7 +30,7 @@ g="$(run)"
 printf '%s\n' "$g" | grep -q "XxSuite .* 11-11 08:27-08:31 " && ck ok "(2a) one day reads 11-11 08:27-08:31 in the box's clock" || ck no "(2a) the row: $(printf '%s\n' "$g" | grep XxSuite | cut -c1-120)"
 run --set-run xx 2026-11-08T22:26:00 2026-11-11T15:12:00 > /dev/null; g2="$(run)"
 printf '%s\n' "$g2" | grep -q "XxSuite .* 11-08>11-11 09:12 " && ! printf '%s\n' "$g2" | grep "YySuite" | sed 's/.*│//' | grep -qE "[0-9]{2}-[0-9]{2}[ >]" && ck ok "(2b) more than one day reads 11-08>11-11 09:12; a row with no stamps has a blank Run" || ck no "(2b) rows: $(printf '%s\n' "$g2" | grep -E 'XxSuite|YySuite' | cut -c1-170)"
-printf '%s\n' "$g2" | head -1 | grep -qE '^Lang +Suite +Pass/Tot +Excl +M3 +M4 +Pct +Min +Run +Δ +│ +Lang +Suite +Pass/Tot +Excl +M3 +M4 +Pct +Min +Run +Δ *$' && ck ok "(3) the header is Lang Suite Pass/Tot Excl M3 M4 Pct Min Run Δ on both sides, Δ last" || ck no "(3) header: $(printf '%s\n' "$g2" | head -1)"
+printf '%s\n' "$g2" | head -1 | grep -qE '^Lang +Suite +Pass/Tot +Excl +M3 +Min +Run +Pct +Δ +│ +Lang +Suite +Pass/Tot +Excl +M3 +Min +Run +Pct +Δ *$' && ck ok "(3) the header is Lang Suite Pass/Tot Excl M3 Min Run Pct Δ on both sides, Δ last" || ck no "(3) header: $(printf '%s\n' "$g2" | head -1)"
 run --set-run xx none none > /dev/null; e1="$(cell xx today_run_first)$(cell xx today_run_last)"; run --set-run xx 2026-11-11T14:27:10 2026-11-11T14:31:55 > /dev/null
 o4="$(run --set-run xx yesterday noon)"; r4=$?
 [ -z "$e1" ] && [ "$r4" = 2 ] && [ "$(cell xx today_run_first)" = 2026-11-11T14:27:10 ] && printf '%s' "$o4" | grep -q "REFUSE(rc=2)" && ck ok "(4) none none blanks the cell; a malformed stamp refuses rc 2 and leaves the row" || ck no "(4) blank=[$e1] rc=$r4 [$o4]"
