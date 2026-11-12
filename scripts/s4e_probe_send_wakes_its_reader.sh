@@ -23,6 +23,15 @@ o="$(printf 'a plant body that asks px for work\n' | env -u S4E_PID_LOCK S4E_POS
 s=0; printf '%s\n' "$o" | grep -qxF "sent -> px/$t" && s=1
 [ "$s" = 1 ] || { echo "REFUSE(2): send did not deliver on the scratch postoffice: $(printf '%s' "$o" | tail -3 | tr '\n' '|' | cut -c1-200)"; exit 2; }
 k=0; printf '%s\n' "$o" | grep -q '^WAKE: SendMessage to PX-PLANT' && k=1
-ok=0; [ "$s" = 1 ] && [ "$k" = 1 ] && ok=1
-echo "SEND_WAKE sent=$s wake=$k ok=$ok"
+# ARM 2 (the cio, 2026-11-12 13:0x CST, on the cfo's find of 12:4x): under FLEET: IDLE every seat reads asleep, so CIO-106's override named the operating
+# boss for a fable seat's tube, and send to the cio printed "SendMessage to COO (seat coo; tube seat-cio)"; a telegram is read only by its addressee.
+# A scratch MODE with FLEET: IDLE and BOSSES fx ox (ox the tier-2 operating boss), no seat scopes: send fx must name FX-PLANT, never OX-PLANT.
+mkdir -p "$w/po/fx/inbox" "$w/po/ox/inbox" "$w/scopes"
+{ head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; echo "ROSTER: $ME px fx ox"; echo "BOSSES: fx ox"; echo "FLEET: IDLE (probe)"; } > "$w/po/MODE"
+printf 'fx\tFX-PLANT\t/tmp\tclaude-fable-5-2\thigh\tred\t1\tdesigner\nox\tOX-PLANT\t/tmp\tclaude-opus-5-5\thigh\tblue\t2\tofficer\n' >> "$w/TIERS.tsv"
+o2="$(printf 'a plant telegram to a sleeping boss\n' | env -u S4E_PID_LOCK S4E_POST="$w/po" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_TIERS="$w/TIERS.tsv" S4E_SEAT_SCOPES="$w/scopes" S4E_NO_BANNER=1 timeout -k 5 60 bash "$MSG" send fx "$t-2" --stdin 2>&1)"
+printf '%s\n' "$o2" | grep -qxF "sent -> fx/$t-2" || { echo "REFUSE(2): arm 2 send did not deliver: $(printf '%s' "$o2" | tail -3 | tr '\n' '|' | cut -c1-200)"; exit 2; }
+a=0; printf '%s\n' "$o2" | grep -q '^WAKE: SendMessage to FX-PLANT now (seat fx; tube seat-fx' && a=1
+ok=0; [ "$s" = 1 ] && [ "$k" = 1 ] && [ "$a" = 1 ] && ok=1
+echo "SEND_WAKE sent=$s wake=$k addressee_when_idle=$a ok=$ok"
 [ "$ok" = 1 ]
