@@ -60,7 +60,9 @@ printf 'fx_ptr.c\tno such line\tBYTES\tmatches nothing\n' > "$T/stale.tsv"
 out="$(python3 -I "$AUD" --check "$T/src" "$T/stale.tsv" 2>&1)"; rc=$?
 if [ "$rc" = 1 ] && printf '%s' "$out" | grep -q '^STALE '; then echo "  ok   (2c) a table row that matches no site reads STALE and rc 1"
 else echo "  RED  (2c) the stale row was not refused: rc=$rc: $(printf '%s' "$out" | head -2 | tr '\n' ' ' | cut -c1-300)"; bad=1; fi
-W="$ROOT/../corpus/tests/shared/zeta_layout/zl01_sno_captures_eval.sno"
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+design_witness_stage zeta_layout "$T/wit" zl01_sno_captures_eval > /dev/null || refuse "the row's witness zl01_sno_captures_eval did not stage (lib_design_witness.sh: the entry zeta_layout__zl01_sno_captures_eval of the snobol4 master)"
+W="$T/wit/zl01_sno_captures_eval.sno"
 [ -f "$W" ] || refuse "the row's witness $W is missing"
 bash "$HERE/util_require_fresh.sh" --gate "$G" "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" || exit 2
 last="$( cd "$ROOT" && SCRIP_GC_VALIDATE=1 SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=128 timeout 60s bash "$HERE/util_run_slot.sh" ./scrip "$W" 2>&1 > /dev/null < /dev/null | grep 'ZGC-VALIDATE-HEAP' | tail -1 )"

@@ -31,7 +31,7 @@
 set -u
 cd "$(dirname "$0")/../../SCRIP" || exit 2
 CORPUS="${CORPUS:-$(cd .. && pwd)/corpus}"
-CENSUS="$CORPUS/tests/ORPHANED-WITNESSES.tsv"
+CENSUS="$(cd ../harness/scripts && pwd)/ORPHANED-WITNESSES.tsv"   # beside this gate, its one reader (it left corpus/tests, Lon 2026-11-12 09:2x CST: corpus/tests holds the language folders only)
 [ -d "$CORPUS/tests" ] || { echo "⛔ GATE REFUSES(2): no corpus tests tree at $CORPUS/tests"; exit 2; }
 [ -f ../harness/scripts/util_orphaned_witness_census.py ] || { echo "⛔ GATE REFUSES(2): census generator missing"; exit 2; }
 # ---- the floor, per language.  Lower a number ONLY in the commit that absorbs the witnesses.
@@ -140,7 +140,7 @@ else
   fresh="$(python3 ../harness/scripts/util_orphaned_witness_census.py "$CORPUS")"
   if ! printf '%s\n' "$fresh" | diff -q - "$CENSUS" >/dev/null 2>&1; then
     echo "  ⛔ $CENSUS is STALE — it does not match the tree; regenerate:"
-    echo "       python3 harness/scripts/util_orphaned_witness_census.py corpus > corpus/tests/ORPHANED-WITNESSES.tsv"; rc=1; fi
+    echo "       python3 harness/scripts/util_orphaned_witness_census.py corpus > harness/scripts/ORPHANED-WITNESSES.tsv"; rc=1; fi
 fi
 echo "------------------------------------------------------------"
 [ $rc -eq 0 ] && echo "✅ GATE PASS [orphaned_witnesses_do_not_grow]: $tot orphaned witness pair(s), none above its floor" \

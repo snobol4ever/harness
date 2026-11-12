@@ -45,7 +45,7 @@ if __name__ == '__main__':
         for lang in sorted(c): print("%s\t%d" % (lang, len(c[lang]['orphans'])))
         sys.exit(0)
     print("# ORPHANED WITNESS PAIRS -- a correct <name><ext> + <name>.ref that NO denominator contains.")
-    print("# Regenerate: python3 harness/scripts/util_orphaned_witness_census.py corpus > corpus/tests/ORPHANED-WITNESSES.tsv")
+    print("# Regenerate: python3 harness/scripts/util_orphaned_witness_census.py corpus > harness/scripts/ORPHANED-WITNESSES.tsv")
     print("# Gated by harness/scripts/test_gate_orphaned_witnesses_do_not_grow.sh -- the count may FALL, never rise.")
     print("# ⛔ The cure is to ABSORB them into ALL.<ext> once they are green, NOT to delete them.")
     print("#")

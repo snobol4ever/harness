@@ -12,12 +12,13 @@ S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 ME="${S4E_SEAT:-probe}"
 N="${1:-}"
 SCRIP="$S4E/SCRIP/scrip"
-BG="$S4E/corpus/tests/shared/batch_grader"
+BG=""   # the batch-grader witnesses, staged into $T/bg by design_witness_stage_all below (they left the shared tests folder, Lon 2026-11-12)
 refuse() { echo "REFUSE(2) [run-switches probe]: $*"; exit 2; }
 [ -n "$N" ] || refuse "usage: $0 <step 1..19>"
 mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 T="$(mktemp -d "/tmp/s4e/$ME/runsw_probe.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$T"' EXIT
+bg_stage() { [ -n "$BG" ] && return 0; . "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"; BG="$T/bg"; design_witness_stage_all batch_grader "$BG" || refuse "the batch-grader witnesses did not stage"; }
 why=""
 red() { why="$why $1;"; }
 verdict() { if [ -z "$why" ]; then echo "RUNSW step=$N ok=1 $1"; exit 0; fi; echo "RUNSW step=$N ok=0 RED:$why"; exit 1; }
@@ -212,7 +213,7 @@ step7() {   # batch-grader 8c: the child of a warm parent compiles only its own 
 }
 
 pl_container() {   # <dir> <dialect cell of the last test> <witness stems...>: a format-2 Prolog container cut from the batch-grader witnesses
-    local C="$1" dl="$2" w last; shift 2
+    local C="$1" dl="$2" w last; shift 2; bg_stage
     mkdir -p "$C"; printf '%s\n' "$HDR" > "$C/ALL.csv"; : > "$C/MULTI.md"
     for w in "$@"; do last="$w"; done
     for w in "$@"; do
@@ -235,7 +236,7 @@ step8() {   # the two switches warm a Prolog selection and say so; a selection t
     [ "$(grep -c 'warm' "$T/errg.txt")" = 0 ] || red "a selection that names a dialect was warmed"
     want "$T/repg.tsv" bg10_pl_hello EXIT 0
     command -v perf > /dev/null 2>&1 || refuse "no perf for the instruction count"
-    pl_container "$T/c1" '' bg10_pl_hello
+    pl_container "$T/c1" '' bg10_pl_hello; bg_stage
     printf '%s\n' "$HDR" > "$T/c21.csv"; mkdir -p "$T/c21"; : > "$T/c21/MULTI.md"
     for w in $(seq -w 1 21); do printf 'h%s,multi,direct,,60,131072,4096,,,,\n' "$w" >> "$T/c21.csv"; { printf '## h%s\n\n' "$w"; fence Prolog "$(cat "$BG/bg10_pl_hello.pl")"; } >> "$T/c21/MULTI.md"; done
     mv "$T/c21.csv" "$T/c21/ALL.csv"

@@ -1,10 +1,10 @@
 # gc_rule12_mask_coverage_floor.tsv -- THE FLOOR OF THE RULE-1 AND RULE-2 MASK COVERAGE (hq_zetas, zeta-layout step 4a-3; read by test_gate_gc_rule_1_and_rule_2_mask_coverage_stays_at_or_over_its_floor.sh).
-# witness = a path relative to harness/scripts (gc_witnesses/... or ../../corpus/...); floor_bits = the set bits the planner declares over every rule-1 and rule-2 site mask of that program in mode 4
+# witness = a path relative to harness/scripts (gc_witnesses/... or ../../corpus/...), or design:PLAN/FILE for a design plan's witness (its master entry or its loose pair, staged); floor_bits = the set bits the planner declares over every rule-1 and rule-2 site mask of that program in mode 4
 # (the sum over the sites of the set bits inside each site extent NW), deterministic at compile time. A floor may only RISE: a cure that declares more live cells raises the numbers in the same landing.
 witness	floor_bits
 gc_witnesses/hb_wsb_rk_iter_grep.raku	11609
 gc_witnesses/hb_wsb_rk_iter_map.raku	8533
 gc_witnesses/rk_list_array_marker.raku	39199
-../../corpus/tests/shared/zeta_layout/zl08_rk_lists_hashes.raku	63858
-../../corpus/tests/shared/zeta_layout/zl05_pl_assert_findall.pl	7791
-../../corpus/tests/shared/zeta_layout/zl03_icn_generators_coexpr.icn	835
+design:zeta_layout/zl08_rk_lists_hashes.raku	63858
+design:zeta_layout/zl05_pl_assert_findall.pl	7791
+design:zeta_layout/zl03_icn_generators_coexpr.icn	835

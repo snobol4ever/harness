@@ -2,7 +2,8 @@
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_exceptions_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: exceptions, ONE ERROR PROTOCOL FOR EVERY LANGUAGE: A RAISE RETURNS, THE BOX UNWINDS (the cto, 2026-10-29;
 # R-1996; Lon in-chat to the cto, verbatim: "Do address the second flaw, i.e. skipping omega and standardizing the exception processes."; .github/ARCH-EXCEPTIONS-ONE-PROTOCOL.md).
-# The plan is corpus/tests/shared/exceptions/STEPS.tsv; the witnesses are the .sno, .icn, .pl, .pas and .raku programs beside it, each with a .ref cut from its
+# The plan is harness/designs/exceptions/STEPS.tsv; the witnesses are the .sno, .icn, .pl, .pas and .raku programs, each the entry exceptions__<name> of its language's master
+# (else, until its language's consolidation enters it, the loose pair corpus/tests/<lang>/exceptions/<name>), each answer cut from its
 # oracle (SPITBOL sbl -bf with its listing sent to a file, so a fatal's report never lands in the ref; Arizona Icon icont -s then the binary; swipl -q -t halt; fpc -Miso then the binary; Rakudo), stdout compared exactly AND THE EXIT CODE
 # compared with the oracle's (a .rc file beside the .ref when the oracle exited nonzero; absent means 0): an error witness proves what was written before the error is
 # flushed and that the process exits with the language's code.
@@ -29,7 +30,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/shared/exceptions"
+WD="$HERE/../designs/exceptions"   # the step table and ROWS0.tsv (CIO-56); the witnesses are staged into $ST by design_witness_stage
+ST=""
 GCW="$HERE/gc_witnesses"
 STEPS="$WD/STEPS.tsv"
 ROWS0="$WD/ROWS0.tsv"
@@ -40,6 +42,8 @@ SMOKES="snobol4 snocone rebus icon prolog raku pascal polyglot"
 STRESS_ENV="SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=128 SCRIP_HEAP_MAX_MB=512"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+allwits() { awk -F'\t' '!/^#/ && $1 != "step" && $6 != "-" {print $6}' "$STEPS" | tr ' ' '\n' | sort -u; }
 mode=""; step=""
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -54,9 +58,9 @@ done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --cut | --rows0"
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default exceptions; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
-wext() { local w="$1"; for e in sno icn pl pas raku; do [ -f "$WD/$w.$e" ] && { echo "$e"; return 0; }; done; return 1; }
+wext() { local w="$1"; for e in sno icn pl pas raku; do [ -f "$ST/$w.$e" ] && { echo "$e"; return 0; }; done; return 1; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: exceptions -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/shared/exceptions (refs from SPITBOL, Arizona Icon, swipl, fpc -Miso, Rakudo)"
+    echo "DESIGN-PLAN: exceptions -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses the entries exceptions__<name> of their masters, else loose in corpus/tests/<lang>/exceptions (refs from SPITBOL, Arizona Icon, swipl, fpc -Miso, Rakudo)"
     printf '%-4s %-78s %-12s %-7s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-78s %-12s %-7s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -76,17 +80,20 @@ if [ "$mode" = cut ]; then
     RAKU="$(rakudo_bin)" || refuse "no rakudo (lib_oracle_flags.sh rakudo_bin)"
     command -v fpc > /dev/null || refuse "no fpc (the Pascal oracle, fpc -Miso)"
     T="$(mktemp -d "${TMPDIR:-/tmp}/ex_cut.XXXXXX")"
+    ST="$T/wit"; design_witness_stage exceptions "$ST" $(allwits) || refuse "the witnesses did not stage (lib_design_witness.sh)"
     for w in $(awk -F'\t' '!/^#/ && $1 != "step" && $6 != "-" {print $6}' "$STEPS" | tr ' ' '\n' | sort -u); do
-        e="$(wext "$w")" || refuse "witness $w has no .sno, .icn, .pl, .pas or .raku in $WD"
+        e="$(wext "$w")" || refuse "witness $w has no .sno, .icn, .pl, .pas or .raku in $ST"
+        D="$(awk -F'\t' -v w="$w" '$1 == w && $2 == "loose" {print $3; exit}' "$ST/.where")"
+        [ -n "$D" ] || { echo "keep $w: it is the entry exceptions__$w, its answer its master's (re-cut by util_add_ladder_witness.py)"; continue; }
         case "$e" in
-            sno) ( cd "$T" && timeout -k 5 120 "$SBL" -bf "-o=$T/spitbol_listing" "$WD/$w.sno" < /dev/null > "$WD/$w.ref" 2> "$T/$w.err" ) ;;
-            icn) ( cd "$T" && "$ICONT" -s -o "$T/$w.ix" "$WD/$w.icn" > "$T/$w.err" 2>&1 && timeout -k 5 120 "$T/$w.ix" < /dev/null > "$WD/$w.ref" 2>> "$T/$w.err" ) ;;
-            pl) ( cd "$T" && timeout -k 5 120 "$SWIPL" -q -t halt "$WD/$w.pl" < /dev/null > "$WD/$w.ref" 2> "$T/$w.err" ) ;;
-            pas) ( cd "$T" && fpc -Miso -o"$T/$w.bin" "$WD/$w.pas" > "$T/$w.err" 2>&1 && timeout -k 5 120 "$T/$w.bin" < /dev/null > "$WD/$w.ref" 2>> "$T/$w.err" ) ;;
-            raku) ( cd "$T" && timeout -k 5 300 "$RAKU" "$WD/$w.raku" < /dev/null > "$WD/$w.ref" 2> "$T/$w.err" ) ;;
+            sno) ( cd "$T" && timeout -k 5 120 "$SBL" -bf "-o=$T/spitbol_listing" "$D/$w.sno" < /dev/null > "$D/$w.ref" 2> "$T/$w.err" ) ;;
+            icn) ( cd "$T" && "$ICONT" -s -o "$T/$w.ix" "$D/$w.icn" > "$T/$w.err" 2>&1 && timeout -k 5 120 "$T/$w.ix" < /dev/null > "$D/$w.ref" 2>> "$T/$w.err" ) ;;
+            pl) ( cd "$T" && timeout -k 5 120 "$SWIPL" -q -t halt "$D/$w.pl" < /dev/null > "$D/$w.ref" 2> "$T/$w.err" ) ;;
+            pas) ( cd "$T" && fpc -Miso -o"$T/$w.bin" "$D/$w.pas" > "$T/$w.err" 2>&1 && timeout -k 5 120 "$T/$w.bin" < /dev/null > "$D/$w.ref" 2>> "$T/$w.err" ) ;;
+            raku) ( cd "$T" && timeout -k 5 300 "$RAKU" "$D/$w.raku" < /dev/null > "$D/$w.ref" 2> "$T/$w.err" ) ;;
         esac
-        orc=$?; rm -f "$WD/$w.rc"; [ "$orc" = 0 ] || echo "$orc" > "$WD/$w.rc"
-        echo "cut $w.ref (oracle rc $orc): $(wc -l < "$WD/$w.ref") lines$(grep -qi 'error\|fatal\|warning' "$T/$w.err" && echo " (THE ORACLE COMPLAINED: $(grep -i 'error\|fatal\|warning' "$T/$w.err" | head -c 160 | tr '\n' ' '))")"
+        orc=$?; rm -f "$D/$w.rc"; [ "$orc" = 0 ] || echo "$orc" > "$D/$w.rc"
+        echo "cut $w.ref (oracle rc $orc): $(wc -l < "$D/$w.ref") lines$(grep -qi 'error\|fatal\|warning' "$T/$w.err" && echo " (THE ORACLE COMPLAINED: $(grep -i 'error\|fatal\|warning' "$T/$w.err" | head -c 160 | tr '\n' ' '))")"
     done
     rm -rf "$T"; exit 0
 fi
@@ -100,6 +107,7 @@ fi
 declare -A pass=([m3]=0 [m4]=0 [m3s]=0 [m4s]=0)
 n=0; reds=""
 [ "$wits" = "-" ] && wits=""
+ST="$OUT/step$step/wit"; design_witness_stage exceptions "$ST" $(allwits) || refuse "the plan's witnesses did not stage (lib_design_witness.sh: the entry exceptions__<name> of a master, or a loose pair in corpus/tests/<lang>/exceptions)"
 run_one() { # $1 dir $2 binary-or-scrip $3 witness-file-or-empty $4 stress(0|1) -> writes $1/out, returns rc
     local d="$1" bin="$2" f="$3" s="$4" rc
     if [ "$s" = 1 ]; then ( cd "$d" && env -u SCRIP_HEAP_MB $STRESS_ENV timeout -k 5 300 "$bin" -d131072k -s4096k $f < /dev/null > "$d/out" 2> "$d/err" ); rc=$?
@@ -107,20 +115,26 @@ run_one() { # $1 dir $2 binary-or-scrip $3 witness-file-or-empty $4 stress(0|1) 
     return $rc
 }
 for w in $wits; do
-    e="$(wext "$w")" || refuse "witness $w has no .sno, .icn, .pl, .pas or .raku in $WD"
-    ref="$WD/$w.ref"; [ -f "$ref" ] || refuse "witness $w has no .ref in $WD (--cut)"
+    e="$(wext "$w")" || refuse "witness $w has no .sno, .icn, .pl, .pas or .raku in $ST"
+    ref="$ST/$w.ref"; [ -f "$ref" ] || refuse "witness $w has no .ref in $ST (--cut)"
     n=$((n + 1))
     b="$OUT/step$step/$w"; rm -rf "$b.m4bin"; mkdir -p "$b.m4bin"
-    if ( cd "$b.m4bin" && timeout -k 5 300 "$SC/scrip" --compile --out="$b.m4bin/run.s" "$WD/$w.$e" < /dev/null > /dev/null 2> "$b.m4bin/cerr" ) \
+    if ( cd "$b.m4bin" && timeout -k 5 300 "$SC/scrip" --compile --out="$b.m4bin/run.s" "$ST/$w.$e" < /dev/null > /dev/null 2> "$b.m4bin/cerr" ) \
        && gcc -c "$b.m4bin/run.s" -o "$b.m4bin/run.o" 2> /dev/null && gcc "$b.m4bin/run.o" -L"$SC/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$SC/out" -o "$b.m4bin/run.bin" 2> /dev/null; then have4=1; else have4=0; fi
+    src="$(awk -F'\t' -v w="$w" '$1 == w {print $2 " " $3; exit}' "$ST/.where")"
     for m in m3 m3s $([ "${S4E_MODE4:-0}" = 1 ] && echo m4 m4s); do
-        d="$b.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WD/$w.$e" "$d/$w.$e"
+        if [ "${src%% *}" = entry ]; then   # the entry is graded by its master's one reader, which renders SCRIP's fatal block into stdout as its answer holds it (R-1344)
+            case "$m" in *s) ( unset SCRIP_HEAP_MB; export $STRESS_ENV; design_witness_grade "${src#* }" "exceptions__$w" "${m%s}" ) > "$b.$m.grade" 2>&1; rc=$? ;;
+                *) ( unset SCRIP_HEAP_MB SCRIP_GC_STRESS SCRIP_HEAP_KB; design_witness_grade "${src#* }" "exceptions__$w" "$m" ) > "$b.$m.grade" 2>&1; rc=$? ;; esac
+            if [ "$rc" = 0 ]; then pass[$m]=$(( ${pass[$m]} + 1 )); else reds="$reds $m:$w(entry rc$rc)"; fi; continue
+        fi
+        d="$b.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$ST/$w.$e" "$d/$w.$e"
         s=0; case "$m" in *s) s=1 ;; esac
         case "$m" in
             m3*) run_one "$d" "$SC/scrip" "$w.$e" "$s"; rc=$? ;;
             m4*) if [ "$have4" = 1 ]; then run_one "$d" "$b.m4bin/run.bin" "" "$s"; rc=$?; else rc=no-binary; fi ;;
         esac
-        want=0; [ -f "$WD/$w.rc" ] && want="$(cat "$WD/$w.rc")"
+        want=0; [ -f "$ST/$w.rc" ] && want="$(cat "$ST/$w.rc")"
         if [ "$rc" = "$want" ] && diff -q "$d/out" "$ref" > /dev/null 2>&1; then pass[$m]=$(( ${pass[$m]} + 1 )); else reds="$reds $m:$w(rc$rc,want$want)"; fi
     done
 done
@@ -131,7 +145,7 @@ rule5_census() { # the gc_witnesses population plus this step's witnesses, mode-
         ( cd "$d" && SCRIP_GC_SITES_REPORT=1 timeout -k 2 120 "$SC/scrip" --compile --out="$d/x.s" "$f" < /dev/null 2> "$d/rep" > /dev/null ) || { echo "REFUSED($(basename "$f"))"; return; }
         t="$(grep -c 'rule=5 ' "$d/rep")"; c=$((c + t)); [ "$t" -gt 0 ] && echo "$(basename "$f") $t" >> "$d/rules.txt"
     done
-    for w in $wits; do f="$WD/$w.$(wext "$w")"
+    for w in $wits; do f="$ST/$w.$(wext "$w")"
         ( cd "$d" && SCRIP_GC_SITES_REPORT=1 timeout -k 2 120 "$SC/scrip" --compile --out="$d/x.s" "$f" < /dev/null 2> "$d/rep" > /dev/null ) || { echo "REFUSED($w)"; return; }
         t="$(grep -c 'rule=5 ' "$d/rep")"; c=$((c + t)); [ "$t" -gt 0 ] && echo "$w $t" >> "$d/rules.txt"
     done
@@ -142,7 +156,7 @@ layoutcheck() { # the harness checker over this step's witnesses' mode-4 asm aga
     local chk="$HERE/util_zeta_layout_check.py" c=0 t w b
     [ -f "$chk" ] || { echo REFUSED; return; }
     for w in $wits; do b="$OUT/step$step/$w"; [ -f "$b.m4bin/run.s" ] || { echo REFUSED; return; }
-        ( cd "$b.m4bin" && timeout -k 5 300 "$SC/scrip" --dump-plan "$WD/$w.$(wext "$w")" < /dev/null > "$b.m4bin/plan.txt" 2> /dev/null ) || { echo REFUSED; return; }
+        ( cd "$b.m4bin" && timeout -k 5 300 "$SC/scrip" --dump-plan "$ST/$w.$(wext "$w")" < /dev/null > "$b.m4bin/plan.txt" 2> /dev/null ) || { echo REFUSED; return; }
         t="$(python3 -I "$chk" --asm "$b.m4bin/run.s" --plan "$b.m4bin/plan.txt" 2> "$b.m4bin/check.err" | tail -1 | sed -n 's/.*mismatches=\([0-9]*\).*/\1/p')"
         [ -n "$t" ] || { echo REFUSED; return; }; c=$((c + t))
     done

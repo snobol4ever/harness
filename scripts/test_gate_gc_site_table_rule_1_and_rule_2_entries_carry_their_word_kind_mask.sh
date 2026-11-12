@@ -28,7 +28,8 @@ CORPUS="$(cd "$HERE/../../corpus" 2>/dev/null && pwd)" || { echo "REFUSE(2): no 
 MODE=0; case "${1:-}" in --corrupt) MODE=1 ;; --corrupt-over) MODE=2 ;; --flip) MODE=3 ;; "") ;; *) echo "REFUSE(2): usage: $0 [--corrupt | --corrupt-over | --flip]"; exit 2 ;; esac
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_gcsite12.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
 trap 'rm -rf "$W"' EXIT
-D="$CORPUS/tests/shared/zeta_layout"
+. "$HERE/lib_design_witness.sh" || { echo "REFUSE(2): lib_design_witness.sh unloadable"; exit 2; }
+D="$W/zl_wit"; design_witness_stage zeta_layout "$D" zl03_icn_generators_coexpr zl05_pl_assert_findall zl08_rk_lists_hashes || { echo "REFUSE(2): the zeta_layout witnesses did not stage (lib_design_witness.sh)"; exit 2; }
 rc=0
 for wit in zl03_icn_generators_coexpr.icn zl05_pl_assert_findall.pl zl08_rk_lists_hashes.raku; do
     n="${wit%.*}"; src="$D/$wit"

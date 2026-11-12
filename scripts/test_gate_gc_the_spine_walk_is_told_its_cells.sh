@@ -23,14 +23,15 @@ refuse() { echo "GATE REFUSE(2) [$G]: $*"; exit 2; }
 [ -x "$ROOT/scrip" ] || refuse "no $ROOT/scrip -- run make"
 "$HERE/util_require_fresh.sh" --gate "$G" "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" || exit 2
 RUN="$HERE/util_run_slot.sh"; [ -x "$RUN" ] || [ -f "$RUN" ] || refuse "no $RUN"
-Z="$CORPUS/tests/shared/zeta_layout"; [ -d "$Z" ] || refuse "no zeta_layout witnesses at $Z"
 ST="${GATE_TOLD_STRESS:-3}"
 ONE=""; [ "${1:-}" = "--one" ] && ONE="${2:-}"
 T="$(mktemp -d)" || refuse "no scratch dir"; trap 'rm -rf "$T"' EXIT
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+Z="$T/wit"; design_witness_stage_all zeta_layout "$Z" > /dev/null || refuse "the zeta_layout witnesses did not stage (lib_design_witness.sh)"
 bad=0; reach_sno=0; reach_pas=0
 tot_so=0; tot_mo=0; tot_un=0; tot_ns=0; tot_hd=0; tot_bl=0; tot_tl=0
-for w in "$Z"/zl0[1-8]_*; do
-    case "$w" in *.ref) continue;; esac
+for w in "$Z"/zl0[1-8]_*.{sno,icn,pl,pas,raku}; do
+    [ -f "$w" ] || continue
     b="$(basename "${w%.*}")"
     [ -n "$ONE" ] && [ "$b" != "$ONE" ] && continue
     ref="${w%.*}.ref"; [ -s "$ref" ] || refuse "no ref for $b"

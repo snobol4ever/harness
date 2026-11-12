@@ -19,7 +19,10 @@ trap 'rm -rf "$W"' EXIT
 n=0; red=""
 while IFS=$'\t' read -r wit floor; do
     case "$wit" in ''|'#'*|witness) continue ;; esac
-    src="$HERE/$wit"
+    case "$wit" in design:*/*) _pl="${wit#design:}"; _pl="${_pl%%/*}"; _f="${wit##*/}"   # a design witness (it left the shared tests folder): its master entry or its loose pair, staged
+        . "$HERE/lib_design_witness.sh" || { echo "REFUSE(2): lib_design_witness.sh unloadable"; exit 2; }
+        _sd="$W/cov12_${_f%.*}"; design_witness_stage "$_pl" "$_sd" "${_f%.*}" || { echo "REFUSE(2): the witness $wit did not stage"; exit 2; }; src="$_sd/$_f" ;;
+    *) src="$HERE/$wit" ;; esac
     [ -f "$src" ] || { echo "REFUSE(2): no witness $src"; exit 2; }
     base="$(basename "${wit%.*}")"
     ( cd "$ROOT/SCRIP" && timeout -k 2 300 ./scrip --compile --out="$W/$base.s" "$src" < /dev/null > /dev/null 2>&1 ) || { echo "REFUSE(2): $wit does not compile in mode 4"; exit 2; }

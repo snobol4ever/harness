@@ -26,18 +26,20 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="$ROOT/scrip"
-WD="$HERE/../../corpus/tests/shared/zeta_layout"
+WD=""   # the witnesses, staged below into a scratch dir by design_witness_stage (they left the shared tests folder, Lon 2026-11-12)
 CHK="$HERE/util_zeta_layout_check.py"
 NAME=zeta_layout_check_negative_controls_red
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- cannot measure"
 [ -r "$CHK" ] || refuse "no checker at $CHK"
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+WD="$(mktemp -d "${TMPDIR:-/tmp}/zl_neg.XXXXXX")"; design_witness_stage zeta_layout "$WD" zl01_sno_captures_eval zl02_sno_setexit_code zl07_pas_records_lists zl08_rk_lists_hashes || refuse "the zeta_layout witnesses did not stage (lib_design_witness.sh)"
 for w in zl01_sno_captures_eval zl02_sno_setexit_code; do [ -r "$WD/$w.sno" ] || refuse "no witness $WD/$w.sno"; done
 [ -r "$WD/zl07_pas_records_lists.pas" ] || refuse "no witness $WD/zl07_pas_records_lists.pas"
 [ -r "$WD/zl08_rk_lists_hashes.raku" ] || refuse "no witness $WD/zl08_rk_lists_hashes.raku"
 . "$HERE/lib_gate.sh"
 gate_require_fresh "$ROOT" src "$ROOT/scrip" "$ROOT/out/libscrip_rt.so"
-TD="$(mktemp -d)"; trap 'rm -rf "$TD"' EXIT
+TD="$(mktemp -d)"; trap 'rm -rf "$TD" "$WD"' EXIT
 for w in zl01_sno_captures_eval zl02_sno_setexit_code; do
     mkdir -p "$TD/$w"
     ( cd "$TD/$w" && timeout -k 5 120 "$SCRIP" --compile --out="$TD/$w/run.s" "$WD/$w.sno" < /dev/null > /dev/null 2> compile.err ) || refuse "$w did not compile in mode 4: $(head -c 200 "$TD/$w/compile.err")"

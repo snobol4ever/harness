@@ -71,3 +71,19 @@ design_witness_stage() {
     done
     return 0
 }
+# design_witness_stage_all PLAN STAGE  every witness of PLAN by design_witness_stage: each entry PLAN__* of a master, each program of a loose folder
+#   corpus/tests/<lang>/PLAN, each program of harness/fixtures/PLAN (a plan whose table names its witnesses by a short tag, batch_grader's bg01).
+design_witness_stage_all() {
+    local plan="$1" st="$2" l ext dir f stems=""
+    for l in snobol4 icon prolog pascal raku rebus snocone; do
+        ext="$(_dw_ext "$l")"; dir="$(_dw_dir "$l")"
+        _dw_check "$l" 2>/dev/null || continue
+        stems="$stems $(python3 "$_dw_here/corpus_suite_harness.py" list "$dir/ALL.$ext" "$dir/ALL.ref" --lang "$l" < /dev/null 2>/dev/null | sed -n "s/^${plan}__//p" | tr '\n' ' ')"
+    done
+    for f in "$_dw_root"/corpus/tests/*/"$plan"/*.{sno,icn,pl,pas,raku,reb,sc} "$_dw_here/../fixtures/$plan"/*.{sno,icn,pl,pas,raku,reb,sc}; do
+        [ -f "$f" ] || continue; f="$(basename "$f")"; stems="$stems ${f%.*}"
+    done
+    stems="$(printf '%s\n' $stems | sort -u | tr '\n' ' ')"
+    [ -n "${stems// /}" ] || { echo "REFUSE(2) [lib_design_witness]: $plan has no witness: no entry ${plan}__* and no loose folder" >&2; return 2; }
+    design_witness_stage "$plan" "$st" $stems
+}

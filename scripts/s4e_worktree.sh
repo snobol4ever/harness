@@ -9,7 +9,7 @@
 # new makes /tmp/s4e/<seat>/wt-<name>/{SCRIP,harness,corpus,.github}: detached git worktrees of this root's four checkouts at the base (default
 # origin/main, as the root last fetched it; new fetches nothing, so a seat syncs first). THE CORPUS IS SPARSE BY DEFAULT (the coo, 2026-11-05 17:5x: the
 # whole corpus is 2.3 G a worktree; the president measured 3.0 G down to 756 M): every path but /benchmarks/ and /demos/. --full keeps the whole corpus
-# for the rare row that reads them; --lang names languages (tests/<lang>/, tests/shared/ and the root files) and refuses with --full. The build is FETCHED
+# for the rare row that reads them; --lang names languages (tests/<lang>/ and the root files) and refuses with --full. The build is FETCHED
 # from the build cache for the worktree's own HEAD tree and RT_TAG
 # (util_build_cache.sh fetch); a worktree never builds. The size (du -sm of the whole worktree, the fetched build included) must be at or under the
 # cap (4096 MB by default; --cap-mb names another): over the cap new rolls back and refuses. A build that does not fetch keeps the worktree, so a
@@ -204,7 +204,7 @@ new_wt() {
             pats+=("/tests/$l/")
             [ -n "$(git -C "$ROOT/corpus" ls-tree -d "$base" -- "packages/$l")" ] && pats+=("/packages/$l/")   # the language's vendored packages (the coo 2026-11-08 10:57 on officer_05's measurement: a Unicon program that calls a posix builtin links posix.icn from packages/icon/unicon_ipl, so an icon worktree without packages/icon read step 13b RED after its cure)
         done
-        pats+=(/tests/shared/ /include/ /library/ /README.md /LICENSE /NOTICE /.gitignore)
+        pats+=(/include/ /library/ /README.md /LICENSE /NOTICE /.gitignore)
     elif [ "$full" = 0 ]; then
         sparse=1; corpus_mode="sparse:default"
         pats+=('/*' '!/benchmarks/' '!/demos/')

@@ -178,7 +178,7 @@ def work():
     verdict = "OK" if below <= 10 and fails == 0 else "REDS" if fails else "OK"
     return "THE WORK (COO-481)", verdict, [
         "suites at 100: %d of %d; ports %d of %d; worst %s" % (at100, at100 + below, p100, p100 + pbelow, ", ".join(w for _, w in worst[:2]) or "-"),
-        "test-cycle %s; batch-grader %s" % (steps(S4E + "/harness/designs/test_cycle/STEPS.tsv", "test-cycle-step-"), steps(S4E + "/corpus/tests/shared/batch_grader/STEPS.tsv", "batch-grader-step-")),
+        "test-cycle %s; batch-grader %s" % (steps(S4E + "/harness/designs/test_cycle/STEPS.tsv", "test-cycle-step-"), steps(S4E + "/harness/designs/batch_grader/STEPS.tsv", "batch-grader-step-")),
         "fleet-queue %s; fleet rows in the haiku tube %d" % (steps(S4E + "/harness/designs/fleet_queue/STEPS.tsv", "fleet-queue-step-"), sum(1 for r in queue_rows() if r[2] == "@haiku" and re.match(r"(bus|tick|census|fleet|test-cycle|sitting|law|spawn)", r[1]))),
         "last hour: %d landings, %d readings, %d FAIL" % (landings, len(recent), fails),
     ]

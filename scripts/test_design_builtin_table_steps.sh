@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_builtin_table_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: builtin-table (the cto, 2026-10-29, R-1996; .github/ARCH-BUILTIN-TABLE.md).
-# The plan is corpus/tests/shared/builtin_table/STEPS.tsv; the witnesses are the .sno, .icn and .raku programs beside it, each with a .ref cut from its
+# The plan is harness/designs/builtin_table/STEPS.tsv; the witnesses are the .sno, .icn and .raku programs, each the entry builtin_table__<name> of its language's master
+# (else, until its language's consolidation enters it, the loose pair corpus/tests/<lang>/builtin_table/<name>), each answer cut from its
 # oracle (SPITBOL sbl -bf; Arizona Icon icont -s then the binary; Rakudo), stdout compared exactly.
 #
 #   --list       print the steps and run nothing
@@ -23,7 +24,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/shared/builtin_table"
+WD="$HERE/../designs/builtin_table"   # the step table and ROWS0.tsv (CIO-56); the witnesses are staged into $ST by design_witness_stage
+ST=""
 BENCH="$ROOT/corpus/benchmarks"
 STEPS="$WD/STEPS.tsv"
 ROWS0="$WD/ROWS0.tsv"
@@ -37,6 +39,8 @@ SMOKES="snobol4 snocone rebus icon prolog raku pascal polyglot"
 CALLS=200000
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+allwits() { awk -F'\t' '!/^#/ && $1 != "step" && $6 != "-" {print $6}' "$STEPS" | tr ' ' '\n' | sort -u; }
 mode=""; step=""
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -51,9 +55,9 @@ done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --cut | --rows0"
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default builtin_table; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
-wext() { local w="$1"; for e in sno icn raku; do [ -f "$WD/$w.$e" ] && { echo "$e"; return 0; }; done; return 1; }
+wext() { local w="$1"; for e in sno icn raku; do [ -f "$ST/$w.$e" ] && { echo "$e"; return 0; }; done; return 1; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: builtin-table -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/shared/builtin_table (refs from SPITBOL, Arizona Icon, Rakudo)"
+    echo "DESIGN-PLAN: builtin-table -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses the entries builtin_table__<name> of their masters, else loose in corpus/tests/<lang>/builtin_table (refs from SPITBOL, Arizona Icon, Rakudo)"
     printf '%-4s %-74s %-10s %-7s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-74s %-10s %-7s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -70,14 +74,17 @@ if [ "$mode" = cut ]; then
     [ -x "$ICONT" ] || refuse "no icont at $ICONT (ORACLES.md: the Icon oracle)"
     RAKU="$(. "$HERE/lib_oracle_flags.sh" && rakudo_bin)" || refuse "no rakudo (lib_oracle_flags.sh rakudo_bin)"
     T="$(mktemp -d "${TMPDIR:-/tmp}/bt_cut.XXXXXX")"
+    ST="$T/wit"; design_witness_stage builtin_table "$ST" $(allwits) || refuse "the witnesses did not stage (lib_design_witness.sh)"
     for w in $(awk -F'\t' '!/^#/ && $1 != "step" && $6 != "-" {print $6}' "$STEPS" | tr ' ' '\n' | sort -u); do
-        e="$(wext "$w")" || refuse "witness $w has no .sno, .icn or .raku in $WD"
+        e="$(wext "$w")" || refuse "witness $w has no .sno, .icn or .raku in $ST"
+        D="$(awk -F'\t' -v w="$w" '$1 == w && $2 == "loose" {print $3; exit}' "$ST/.where")"
+        [ -n "$D" ] || { echo "keep $w: it is the entry builtin_table__$w, its answer its master's (re-cut by util_add_ladder_witness.py)"; continue; }
         case "$e" in
-            sno) ( cd "$T" && timeout -k 5 120 "$SBL" -bf "$WD/$w.sno" < /dev/null > "$WD/$w.ref" 2> "$T/$w.err" ) ;;
-            icn) ( cd "$T" && "$ICONT" -s -o "$T/$w.ix" "$WD/$w.icn" > "$T/$w.err" 2>&1 && timeout -k 5 120 "$T/$w.ix" < /dev/null > "$WD/$w.ref" 2>> "$T/$w.err" ) ;;
-            raku) ( cd "$T" && timeout -k 5 300 "$RAKU" "$WD/$w.raku" < /dev/null > "$WD/$w.ref" 2> "$T/$w.err" ) ;;
+            sno) ( cd "$T" && timeout -k 5 120 "$SBL" -bf "$D/$w.sno" < /dev/null > "$D/$w.ref" 2> "$T/$w.err" ) ;;
+            icn) ( cd "$T" && "$ICONT" -s -o "$T/$w.ix" "$D/$w.icn" > "$T/$w.err" 2>&1 && timeout -k 5 120 "$T/$w.ix" < /dev/null > "$D/$w.ref" 2>> "$T/$w.err" ) ;;
+            raku) ( cd "$T" && timeout -k 5 300 "$RAKU" "$D/$w.raku" < /dev/null > "$D/$w.ref" 2> "$T/$w.err" ) ;;
         esac
-        echo "cut $w.ref: $(wc -l < "$WD/$w.ref") lines$(grep -q . "$T/$w.err" && echo " (THE ORACLE COMPLAINED: $(head -c 120 "$T/$w.err" | tr '\n' ' '))")"
+        echo "cut $w.ref: $(wc -l < "$D/$w.ref") lines$(grep -q . "$T/$w.err" && echo " (THE ORACLE COMPLAINED: $(head -c 120 "$T/$w.err" | tr '\n' ' '))")"
     done
     rm -rf "$T"; exit 0
 fi
@@ -90,12 +97,13 @@ if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
 fi
 m3p=0; m4p=0; n=0; reds=""
 [ "$wits" = "-" ] && wits=""
+ST="$OUT/step$step/wit"; design_witness_stage builtin_table "$ST" $(allwits) || refuse "the plan's witnesses did not stage (lib_design_witness.sh: the entry builtin_table__<name> of a master, or a loose pair in corpus/tests/<lang>/builtin_table)"
 for w in $wits; do
-    e="$(wext "$w")" || refuse "witness $w has no .sno, .icn or .raku in $WD"
-    ref="$WD/$w.ref"; [ -f "$ref" ] || refuse "witness $w has no .ref in $WD (--cut)"
+    e="$(wext "$w")" || refuse "witness $w has no .sno, .icn or .raku in $ST"
+    ref="$ST/$w.ref"; [ -f "$ref" ] || refuse "witness $w has no .ref in $ST (--cut)"
     n=$((n + 1))
     for m in m3 $([ "${S4E_MODE4:-0}" = 1 ] && echo m4); do
-        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WD/$w.$e" "$d/$w.$e"
+        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$ST/$w.$e" "$d/$w.$e"
         if [ "$m" = m3 ]; then
             ( cd "$d" && timeout -k 5 300 "$SC/scrip" -d131072k -s4096k "$w.$e" < /dev/null > "$d/out" 2> "$d/err" ); rc=$?
         else
@@ -122,7 +130,7 @@ m4bin() { # $1 witness: its mode-4 binary, built here when the witness loop did 
     local w="$1" d="$OUT/step$step/$1.m4" e
     [ -x "$d/run.bin" ] && return 0
     e="$(wext "$w")" || return 1
-    mkdir -p "$d" && cp "$WD/$w.$e" "$d/$w.$e" || return 1
+    mkdir -p "$d" && cp "$ST/$w.$e" "$d/$w.$e" || return 1
     ( cd "$d" && timeout -k 5 300 "$SC/scrip" --compile --out="$d/run.s" "$w.$e" < /dev/null > /dev/null 2> "$d/cerr" ) \
         && gcc -c "$d/run.s" -o "$d/run.o" 2> /dev/null && gcc "$d/run.o" -L"$SC/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$SC/out" -o "$d/run.bin" 2> /dev/null
 }
