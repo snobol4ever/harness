@@ -91,3 +91,9 @@ pascal-lisp	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascal-lis
 tex	none	pascal	-	-
 rakudo-t	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/rakudo_tests
 raku-examples	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/raku_examples
+gate-cases-snobol4	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gate_cases
+gate-cases-icon	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/gate_cases
+gate-cases-prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/gate_cases
+gate-cases-pascal	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/gate_cases
+gate-cases-raku	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/gate_cases
+gate-cases-snocone	pkg	snocone	corpus_suite_harness.py	corpus/packages/snocone/gate_cases
