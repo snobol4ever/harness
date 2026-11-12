@@ -51,10 +51,14 @@ def refuse(msg):
 def rungs_units(workdir):
     sys.path.insert(0, str(HERE))
     import corpus_suite_harness as h
-    try:
-        entries = h.read_block_suite(str(RUNGS), str(RUNGS_REF), h.banner_re_for("#", ""))
-    except Exception:
-        entries = h.read_suite(str(RUNGS), str(RUNGS_REF))
+    _d = h.fmt2_dir_of(str(RUNGS))   # format 2 (MULTI.md, ONE.raku) under the ALL.raku name (CIO-24 f; the cfo 2026-11-12)
+    if _d:
+        entries = h.read_container_dir(_d, ".raku")
+    else:
+        try:
+            entries = h.read_block_suite(str(RUNGS), str(RUNGS_REF), h.banner_re_for("#", ""))
+        except Exception:
+            entries = h.read_suite(str(RUNGS), str(RUNGS_REF))
     out = []
     for e in entries:
         text = (e.sno_lines[0] if e.kind == "line" else "\n".join(e.sno_lines)) + "\n"
@@ -139,7 +143,8 @@ def main():
     a = ap.parse_args()
     if not Path(RAKU).is_file():
         refuse(f"the oracle {RAKU} is not on the box")
-    for need in (RUNGS, RUNGS_REF, BENCH, ROAST):
+    sys.path.insert(0, str(HERE)); import corpus_suite_harness as _h
+    for need in ((BENCH, ROAST) if _h.fmt2_dir_of(str(RUNGS)) else (RUNGS, RUNGS_REF, BENCH, ROAST)):   # a format-2 master has no ALL.raku (CIO-24 f)
         if not need.exists():
             refuse(f"population part missing: {need}")
     with tempfile.TemporaryDirectory(prefix="rk_syntax_") as td:

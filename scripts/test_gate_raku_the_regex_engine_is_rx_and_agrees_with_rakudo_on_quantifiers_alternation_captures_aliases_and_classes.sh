@@ -26,24 +26,19 @@ gate_parse_args "$@"
 gate_require_fresh "$ROOT" src "$ROOT/scrip" "$ROOT/out/libscrip_rt.so"
 command -v gcc >/dev/null 2>&1 || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: gcc not found -- mode 4 cannot be linked, so half the population is unmeasured"; exit 2; }
 MASTER="$ROOT/../corpus/tests/raku/ALL.raku"; REFS="$ROOT/../corpus/tests/raku/ALL.ref"
-[ -f "$MASTER" ] && [ -f "$REFS" ] || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: no master at $MASTER"; exit 2; }
+{ [ -f "$MASTER" ] && [ -f "$REFS" ]; } || [ -f "$(dirname "$MASTER")/MULTI.md" ] || [ -f "$(dirname "$MASTER")/ONE.raku" ] || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: no master at $MASTER"; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 fails=0; GATE_EXAMINED=0
 [ ! -e "$ROOT/src/runtime/re.c" ] && grep -q 'runtime/rx.c' "$ROOT/Makefile" || { echo "  FAIL the old engine re.c is still in the tree or rx.c is not in the Makefile"; fails=$((fails + 1)); }
 GATE_EXAMINED=$((GATE_EXAMINED + 1))
-python3 - "$MASTER" "$REFS" "$W" <<'PY' || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: cannot extract the master entries"; exit 2; }
+python3 - "$MASTER" "$REFS" "$W" "$HERE" <<'PY' || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: cannot extract the master entries"; exit 2; }
 import re, sys
-def split(path):
-    d = {}; cur = None; buf = []
-    for line in open(path, encoding='utf-8', errors='surrogateescape'):
-        m = re.match(r'^#-+ \d+ (\S+)(?: .*)?$', line)
-        if m:
-            if cur: d[cur] = ''.join(buf)
-            cur = m.group(1); buf = []
-        else: buf.append(line)
-    if cur: d[cur] = ''.join(buf)
-    return d
-src, ref = split(sys.argv[1]), split(sys.argv[2])
+sys.path.insert(0, sys.argv[4])
+import corpus_suite_harness as h   # the one reader of either format (ALL.raku and ALL.ref, or format 2 MULTI.md and ONE.raku; the cfo 2026-11-12)
+_d = h.fmt2_dir_of(sys.argv[1])
+_es = h.read_container_dir(_d, ".raku") if _d else h.read_block_suite(sys.argv[1], sys.argv[2], h.banner_re_for("#", ""))
+src = {e.name: (e.sno_lines[0] if e.kind == "line" else "\n".join(e.sno_lines)) + "\n" for e in _es}
+ref = {e.name: ((e.ref + "\n") if e.kind == "line" else ("\n".join(e.ref) + "\n" if e.ref else "")) for e in _es}
 for g in ('basics_1', 'basics_2', 'basics_3', 'quantifiers_1', 'captures_1', 'classes_1'):
     n = 'ladder__rung09_regex_engine_%s_agree_with_rakudo' % g
     open('%s/%s.raku' % (sys.argv[3], g), 'w', encoding='utf-8', errors='surrogateescape').write(src[n])

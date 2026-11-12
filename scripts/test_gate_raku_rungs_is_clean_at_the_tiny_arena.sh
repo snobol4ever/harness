@@ -63,7 +63,7 @@ STRESS_TIMEOUT="${STRESS_TIMEOUT:-600}"; SHARD_TIMEOUT="${SHARD_TIMEOUT:-5400}"
 ARMS="control arena"; for _n in $STRESS_BAND; do ARMS="$ARMS stress:$_n"; done; ARMS="${ARMS_OVERRIDE:-$ARMS}"
 refuse(){ GATE_VERDICT=2; echo "⛔ REFUSED-TO-GRADE(2): $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "scrip not built at $SCRIP"
-[ -f "$P/ALL.raku" ] && [ -f "$P/ALL.ref" ] || refuse "rungs suite not found at $P (want ALL.raku + ALL.ref)"
+{ [ -f "$P/ALL.raku" ] && [ -f "$P/ALL.ref" ]; } || [ -f "$P/MULTI.md" ] || [ -f "$P/ONE.raku" ] || refuse "rungs suite not found at $P (want ALL.raku + ALL.ref)"
 W="$(mktemp -d)" || refuse "mktemp failed"
 # ⛔⭐⭐ A REFUSAL MUST NOT DESTROY THE EVIDENCE NEEDED TO DIAGNOSE THE REFUSAL (ported lesson, hq_prolog).
 GATE_VERDICT=2
