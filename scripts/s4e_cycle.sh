@@ -67,7 +67,7 @@ order_cells() {   # stdin: the cells in the table's order; stdout: the lap's ord
         { line[NR] = $0; su[NR] = $1; k = $1 "\t" $5; if (k in s) { tot[$1] += s[k]; seen[$1] = 1 } }
         END { for (i = 1; i <= NR; i++) printf "%d\t%d\t%s\n", (!have ? 0 : (su[i] in seen) ? tot[su[i]] + 1 : 0), i, line[i] }' | sort -t "$(printf '\t')" -k1,1n -k2,2n | cut -f3-
 }
-budget() { python3 -I "$S4E/harness/scripts/util_grade_job.py" budget --suite "$1" --cell "$2" 2>/dev/null | sed -n 's/.* ttr_s=\([0-9]*\).*/\1/p' | head -1; }
+budget() { S4E_HOME="${3:-$S4E}" python3 -I "${3:-$S4E}/harness/scripts/util_grade_job.py" budget --suite "$1" --cell "$2" 2>/dev/null | sed -n 's/.* ttr_s=\([0-9]*\).*/\1/p' | head -1; }
 container_key() { case "$1" in snobol4) echo sno-rungs;; icon) echo icn-rungs;; prolog) echo pl-rungs;; pascal) echo pas-rungs;; raku) echo raku-rungs;; snocone) echo snc-rungs;; rebus) echo reb-rungs;; esac; }
 ext_of() { case "$1" in snobol4) echo sno;; icon) echo icn;; prolog) echo pl;; pascal) echo pas;; raku) echo raku;; rebus) echo reb;; snocone) echo sc;; scriptix) echo md;; esac; }
 # A SUITE IS ON DISK IN ONE OF THREE FORMS, AND THE ONE LAUNCH READS ALL THREE UNDER THE SAME ALL.<ext> ALL.ref COMMAND LINE (the coo 2026-11-10, row
@@ -165,9 +165,11 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     [ -n "$row" ] && [ -n "$ents" ] || { echo "REFUSE(2): suite $key has no master or pkg row of SUITE_RUNNERS.tsv, or the request names no entries" > "$out"; echo "2 0"; return; }
     IFS=$'\t' read -r kind lang dir <<< "$row"; [ "$kind" = master ] && dir="$S4E/corpus/tests/$lang" || dir="$S4E/$dir"
     alls="$dir/ALL.$(ext_of "$lang")"
-    ttr="$(budget "$key" "entry:$ents")"; [ -n "$ttr" ] || ttr=1800
     local bb sb rd; exec 7> "$TMPDIR/cycle/reqbase.lock"; flock -x 7; bb="$(request_base 2>> "$out")" || { flock -u 7; echo "2 $(( $(date +%s) - t0 ))"; return; }; flock -s 7
     read -r sb rd <<< "$bb"; dir="${dir/#$S4E/$REQBASE}"; alls="${alls/#$S4E/$REQBASE}"; echo "REQUEST_BASE SCRIP=$(git -C "$REQBASE/SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$REQBASE/corpus" rev-parse --short=10 HEAD) binary=$sb" >> "$out"
+    # THE BOUND IS READ FROM THE BASE THE REQUEST RUNS ON (senior_01 2026-11-13, MEASURED: it was read from the grader root's ALL.csv before the forward, so
+    # puzzles hakank_swi_euler14, whose timeout_s origin had raised to 3600 at corpus dd98b6587, was killed at ttr 420 s though it answers in 299 s)
+    ttr="$(budget "$key" "entry:$ents" "$REQBASE")"; [ -n "$ttr" ] || ttr=1800
     ( cd "$REQBASE" && S4E_HOME="$REQBASE" SCRIP="$sb" RT_DIR="$rd" SUITE_LIST_ALL=1 bash harness/scripts/util_run_slot.sh timeout -k 30 "$ttr" python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?
     [ "$kind" = master ] && record_suite "$lang"; [ "$kind" = pkg ] && record_pkg "$key"
     echo "$rc $(( $(date +%s) - t0 ))"; }

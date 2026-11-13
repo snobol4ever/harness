@@ -1625,6 +1625,23 @@ for _l in ("icon", "prolog", "snobol4", "snocone", "scriptix", "pascal", "raku",
     FROM_PROGRESS_RUNNER_POP["%s-demos" % _l] = ("demos/%s" % _l, ["test_demos_suite.sh", _l])
 
 
+def _demos_container(corpus, key):
+    """corpus/demos/<lang> when the key is <lang>-demos and that folder is a files-form container (its ALL.csv has a path column), else None (the
+    grader 2026-11-13; MEASURED by the coo 12:3x: corpus_suite_harness.py files the demos' readings under the container's entry names, porter/porter,
+    while the old runner's enumeration still named demos/snocone/porter/porter.sc, so the row counted that name's last reading, a CRASH, after the cure
+    read PASS). Such a key is read as a package: its population is ALL.csv's entries. A port key (@dotnet, @jvm) still runs the old runner and keeps it."""
+    lang, sep, tail = key.partition("-")
+    d = os.path.join(corpus, "demos", lang)
+    if not (sep and tail == "demos" and lang):
+        return None
+    try:
+        with open(os.path.join(d, "ALL.csv"), encoding="utf-8", newline="") as f:
+            head = f.readline().strip().split(",")
+    except OSError:
+        return None
+    return d if "path" in head else None
+
+
 def _runner_population(key):
     """(members, excluded) as the key's runner enumerates them under S4E_LIST=1, or a REFUSE string (the runner refused or printed no member)."""
     here = os.path.dirname(os.path.abspath(__file__))
@@ -1766,6 +1783,8 @@ def from_progress_table(corpus, key):
         return os.path.join(corpus, FROM_PROGRESS_MASTERS[key]), _aud.dbname(full)
     if "@" in full and key in FROM_PROGRESS_CENSUS and os.path.isdir(os.path.join(corpus, FROM_PROGRESS_CENSUS[key])):
         return os.path.join(corpus, FROM_PROGRESS_CENSUS[key]), _aud.dbname(full)
+    if "@" not in full and _demos_container(corpus, key):
+        return _demos_container(corpus, key), _aud.dbname(full)   # a demos folder in the files form is a package (its ALL.csv entries)
     if "@" not in full and key in FROM_PROGRESS_RUNNER_POP and os.path.isdir(os.path.join(corpus, FROM_PROGRESS_RUNNER_POP[key][0])):
         return os.path.join(corpus, FROM_PROGRESS_RUNNER_POP[key][0]), _aud.dbname(full)
     if key in FROM_PROGRESS_PACKAGES and os.path.exists(os.path.join(corpus, FROM_PROGRESS_PACKAGES[key], "ALL.csv")):
@@ -1852,7 +1871,7 @@ def cmd_from_progress(a):
         print("REFUSE(2): from-progress: no suite table for key %r under %s (the seven masters and the packages with an ALL.csv)" % (full_key, corpus))
         return 2
     rr_excl = None
-    if key in FROM_PROGRESS_RUNNER_POP and not port:
+    if key in FROM_PROGRESS_RUNNER_POP and not port and not _demos_container(corpus, key):
         _rp = _runner_population(key)
         if isinstance(_rp, str):
             print(_rp)
