@@ -309,9 +309,9 @@ rt_pl_ball_take	asm	-	0	none	-	clob,asm
 rt_pl_cap_raise	asm	VOID	1	none	-	call,alloc,clob,asm
 rt_pl_catch_handle	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_cmp_cold	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
-rt_pl_db_cand_first	leaf	-	0	-	0	call
-rt_pl_db_cand_last	leaf	-	0	-	0	call
-rt_pl_db_cand_next	leaf	-	0	-	0	call
+rt_pl_db_cand_first	leaf	OTHER	1	-	0	call,alloc
+rt_pl_db_cand_last	leaf	OTHER	1	-	0	call,alloc
+rt_pl_db_cand_next	leaf	OTHER	1	-	0	call,alloc
 rt_pl_db_decls_install	leaf	VOID	1	-	0	call,alloc
 rt_pl_db_reclaimed_entry	asm	-	0	none	-	clob,asm
 rt_pl_db_reg_find_na	asm	-	0	r8|r10|r11	-	clob,asm
