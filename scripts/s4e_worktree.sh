@@ -33,7 +33,14 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 REPOS="SCRIP harness corpus .github"
 CAP_MB=4096
-WT_MAX="${WT_MAX:-40}"
+# THE CAP IS ONE SHARED NUMBER WITH A DISK FLOOR (row the-worktree-cap-is-one-shared-number-with-a-disk-floor, the cio 2026-11-13, MEASURED 11:58 CST: 40 worktrees stood, the
+# cap of 2026-11-09 for twenty juniors, held by 25 of 37 seats; 12 seats held none and could make none; /tmp had 18G free, a worktree about 0.8G). What the cap protects is the
+# disk, and a count below the seats is a wall. /home/resources/postoffice/WORKTREES.conf (S4E_WT_CONF names another, the probe's seam), key=value a line: max=N the worktrees
+# that may stand (WT_MAX in the environment wins; 40 with no file), free_gb=F the floor: new refuses rc 2, making nothing, when the worktrees' filesystem has under F GB free
+# (no floor with no file). --show-conf prints what is read; --probe-conf proves it on a scratch file.
+WT_CONF="${S4E_WT_CONF:-/home/resources/postoffice/WORKTREES.conf}"
+wt_conf() { awk -F= -v k="$1" '!/^#/ && $1 == k { v = $2 } END { if (v ~ /^[0-9]+$/) print v }' "$WT_CONF" 2>/dev/null; }
+WT_MAX="${WT_MAX:-$(wt_conf max)}"; WT_MAX="${WT_MAX:-40}"; WT_FREE_GB="$(wt_conf free_gb)"; WT_FREE_GB="${WT_FREE_GB:-0}"
 TIERS_TSV="$ROOT/.github/TIERS.tsv"
 TOP="${S4E_WT_TOP:-/tmp/s4e}"
 PO="${S4E_POSTOFFICE:-/home/resources/postoffice}"
@@ -181,6 +188,22 @@ wt_cap_check() {
     sweep_dead
     wt_cap_scan "$TOP"
     [ "$CAP_COUNTED" -lt "$WT_MAX" ] || die "REFUSE(2): $CAP_COUNTED worktrees of the cap already stand under $TOP/<seat>/ (WT_MAX=$WT_MAX):$CAP_COUNTED_LIST; not counted (unmarked or unknown seat):${CAP_IGNORED:- none} -- rm one first" 2
+    if [ "$WT_FREE_GB" -gt 0 ]; then   # the floor, after the sweep has reclaimed what it can
+        local free; mkdir -p "$TOP" 2>/dev/null; free="$(df -BG --output=avail "$TOP" 2>/dev/null | tail -1 | tr -dc 0-9)"
+        [ -z "$free" ] || [ "$free" -ge "$WT_FREE_GB" ] || die "REFUSE(2): $TOP has $free GB free, under the floor of $WT_FREE_GB GB (WORKTREES.conf free_gb, $WT_CONF): nothing made -- remove a landed worktree (s4e_worktree.sh rm <name>) or wait for the sweep" 2
+    fi
+}
+conf_probe() {   # --probe-conf: four arms on a scratch file and a scratch top, nothing live touched: the cap and the floor are read from the file; with no file the cap is 40 and there is no floor; WT_MAX in the environment wins; a floor above the free space refuses new rc 2 before anything is made
+    local T o rc why="" me="${BASH_SOURCE[0]}"
+    T="$(mktemp -d "/tmp/s4e/${SEAT:-seat}/wt-conf-probe.XXXXXX" 2>/dev/null || mktemp -d)"; printf 'max=5\nfree_gb=3\n' > "$T/c"
+    o="$(env -u WT_MAX S4E_WT_CONF="$T/c" bash "$me" --show-conf 2>&1)"; [ "$o" = "WT conf max=5 free_gb=3 file=$T/c" ] || why="$why arm 1: the file's numbers were not read ($o);"
+    o="$(env -u WT_MAX S4E_WT_CONF="$T/absent" bash "$me" --show-conf 2>&1)"; [ "$o" = "WT conf max=40 free_gb=0 file=$T/absent" ] || why="$why arm 2: with no file the cap is not 40 with no floor ($o);"
+    o="$(WT_MAX=7 S4E_WT_CONF="$T/c" bash "$me" --show-conf 2>&1)"; [ "$o" = "WT conf max=7 free_gb=3 file=$T/c" ] || why="$why arm 3: WT_MAX in the environment did not win ($o);"
+    printf 'max=5\nfree_gb=99999999\n' > "$T/c"
+    o="$(env -u WT_MAX S4E_WT_CONF="$T/c" S4E_WT_TOP="$T/top" bash "$me" new probe-floor 2>&1)"; rc=$?
+    [ "$rc" = 2 ] && printf '%s\n' "$o" | grep 'under the floor of 99999999 GB' > /dev/null && [ -z "$(find "$T/top" -maxdepth 2 -name 'wt-*' 2>/dev/null)" ] || why="$why arm 4: a floor above the free space did not refuse new with nothing made (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
+    if [ -z "$why" ]; then rm -rf "$T"; echo "WT conf-probe ok arms=4 (the cap and the floor read from one file; 40 and no floor with no file; WT_MAX wins; a floor above the free space refused new with nothing made)"; return 0; fi
+    echo "WT conf-probe RED:$why"; echo "    kept: $T"; return 1
 }
 
 baton_add() {
@@ -349,6 +372,8 @@ verb="${1:-}"; [ $# -gt 0 ] && shift
 base=origin/main; langs=""; cap=$CAP_MB; name=""; row=""; full=0; discard=0; save=0
 case "$verb" in
     --probe) probe ;;
+    --probe-conf) conf_probe; exit $? ;;
+    --show-conf) echo "WT conf max=$WT_MAX free_gb=$WT_FREE_GB file=$WT_CONF"; exit 0 ;;
     --probe-sweep-land) sweep_land_probe; exit $? ;;
     list) list_wts ;;
     sweep) sweep_dead; exit 0 ;;
