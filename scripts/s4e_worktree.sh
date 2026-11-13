@@ -5,6 +5,7 @@
 #   s4e_worktree.sh rm <name>                                                                    (alias remove)
 #   s4e_worktree.sh list
 #   s4e_worktree.sh --probe
+#   s4e_worktree.sh --probe-sweep-land                                                           (the sweep keeps a worktree a lander holds)
 #
 # new makes /tmp/s4e/<seat>/wt-<name>/{SCRIP,harness,corpus,.github}: detached git worktrees of this root's four checkouts at the base (default
 # origin/main, as the root last fetched it; new fetches nothing, so a seat syncs first). THE CORPUS IS SPARSE BY DEFAULT (the coo, 2026-11-05 17:5x: the
@@ -120,10 +121,25 @@ wt_cap_scan() {
 }
 
 # sweep_dead -- every marker worktree under $TOP/<seat>/ that a baton names (WORKTREE: <path>) whose row reads DONE, SUPERSEDED or RETIRED (QUEUE.tsv or QUEUE.retired.tsv; a row in neither is DONE),
-# idle 30 minutes or more by its directory mtime, with no process whose cwd lies inside it, is removed AS ITS OWNER by this script's own rm
-# (so the guard of wt_unlanded applies); a worktree no baton names is never swept. Prints one line, SWEPT <n>.
+# idle 30 minutes or more by its directory mtime (a row left by its owner 60, a worktree no baton names 120), with no process whose cwd lies inside it and no
+# lander holding its land lock, is removed AS ITS OWNER by this script's own rm (so the guard of wt_unlanded applies) while the sweep holds the owner's land
+# lock for it, so a landing that starts in that moment refuses instead of losing its home. Prints one line, SWEPT <n>.
+# THE LAND LOCK (officer_04 2026-11-12 21:3x CST, MEASURED: the sweep removed /tmp/s4e/officer_04/wt-fusc at 03:13:21Z while s4e_land.sh --home ran its gate
+# in it; the lander read LAND RED stage=gate rc=1 with an empty gate.log): s4e_land.sh --home <wt> holds <LAND_TOP>/<its seat>/land.<sha1 of the path, 12>.lock
+# on fd 9 for the whole landing, and its children hold no cwd inside the worktree between steps, so a held lock is the one proof that a landing is using it.
+LAND_TOP="${S4E_LAND_LOCK_TOP:-/tmp/s4e}"
+wt_land_lock() { printf '%s/%s/land.%s.lock' "$LAND_TOP" "$2" "$(printf '%s' "$1" | sha1sum | cut -c1-12)"; }
+wt_landing() {
+    local lf h
+    h="$(printf '%s' "$1" | sha1sum | cut -c1-12)"
+    for lf in "$LAND_TOP"/*/land."$h".lock; do
+        [ -f "$lf" ] || continue
+        flock -n "$lf" true 2>/dev/null || return 0
+    done
+    return 1
+}
 sweep_dead() {
-    local d b row st owner name n=0 nd=0 nl=0 nu=0 now p t busy cls floor lost pf flag
+    local d b row st owner name n=0 nd=0 nl=0 nu=0 now p t busy cls floor lost pf flag lf
     now="$(date +%s)"
     for d in "$TOP"/*/wt-*; do
         [ -f "$d/.s4e-worktree" ] || continue
@@ -145,9 +161,14 @@ sweep_dead() {
         [ $((now - $(stat -c %Y "$d"))) -ge "$floor" ] || continue
         busy=0; for p in /proc/[0-9]*/cwd; do t="$(readlink "$p" 2>/dev/null)"; case "$t" in "$d"|"$d"/*) busy=1; break ;; esac; done
         [ "$busy" = 0 ] || continue
+        ! wt_landing "$d" || continue
+        lf="$(wt_land_lock "$d" "$owner")"
+        exec 7> "$lf" || continue
+        flock -n 7 || { exec 7>&-; continue; }
         if lost="$(wt_unlanded "$d")"; then pf=""; flag=""
-        else pf="$(wt_save_patch "$d" "$owner" "$name")" || continue; flag=--discard; fi
-        S4E_SEAT="$owner" bash "${BASH_SOURCE[0]}" rm "$name" ${flag:+$flag} > /dev/null 2>&1 || continue
+        else pf="$(wt_save_patch "$d" "$owner" "$name")" || { exec 7>&-; continue; }; flag=--discard; fi
+        S4E_SEAT="$owner" bash "${BASH_SOURCE[0]}" rm "$name" ${flag:+$flag} > /dev/null 2>&1 7>&- || { exec 7>&-; continue; }
+        rm -f "$lf"; exec 7>&-
         n=$((n + 1))
         case "$cls" in done) nd=$((nd + 1)) ;; left) nl=$((nl + 1)) ;; unnamed) nu=$((nu + 1)) ;; esac
         if [ -n "$pf" ] && [ -n "$b" ]; then printf -- '- [sweep] worktree %s removed %s; patch %s\n' "$d" "$cls" "$pf" >> "$b"; fi
@@ -263,6 +284,27 @@ cap_probe() {
     [ "$full1" = no ] && [ "$full2" = yes ] && [ "$i1" -ge 1 ]
 }
 
+# sweep_land_probe -- the land lock's proof (officer_04's find, 2026-11-12), on a scratch TOP, land-lock top and postoffice under the seat's directory: two marked
+# worktrees no baton names, idle three hours by mtime; another seat's lander holds the land lock of one. The sweep keeps the held one and removes the free one;
+# once the holder is killed by its pid the next sweep removes the first. Prints the SWEEP-LAND line; rc 0 only when all three hold.
+sweep_land_probe() {
+    local pt="$SEATDIR/sweepprobe-$(date -u +%H%M%S)-$$" w lf holder i kept=no freed=no later=no out1 out2
+    mkdir -p "$pt/$SEAT" "$pt/lander" "$pt/po/tasks" || die "REFUSE(2): cannot make $pt" 2
+    for w in held free; do mkdir -p "$pt/$SEAT/wt-$w" && printf 'name=%s\nseat=%s\n' "$w" "$SEAT" > "$pt/$SEAT/wt-$w/.s4e-worktree" && touch -d '3 hours ago' "$pt/$SEAT/wt-$w" || die "REFUSE(2): cannot plant $pt/$SEAT/wt-$w" 2; done
+    lf="$(LAND_TOP="$pt" wt_land_lock "$pt/$SEAT/wt-held" lander)"
+    ( exec 9> "$lf"; flock 9; exec sleep 300 ) 8>&- & holder=$!
+    for i in $(seq 1 100); do flock -n "$lf" true 2>/dev/null || break; sleep 0.1; done
+    out1="$(S4E_WT_TOP="$pt" S4E_LAND_LOCK_TOP="$pt" S4E_POSTOFFICE="$pt/po" bash "${BASH_SOURCE[0]}" sweep 2>&1)"
+    [ -d "$pt/$SEAT/wt-held" ] && kept=yes
+    [ -e "$pt/$SEAT/wt-free" ] || freed=yes
+    kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
+    out2="$(S4E_WT_TOP="$pt" S4E_LAND_LOCK_TOP="$pt" S4E_POSTOFFICE="$pt/po" bash "${BASH_SOURCE[0]}" sweep 2>&1)"
+    [ -e "$pt/$SEAT/wt-held" ] || later=yes
+    rm -rf "$pt"
+    echo "SWEEP-LAND held_kept=$kept free_swept=$freed released_swept=$later first='$out1' second='$out2'"
+    [ "$kept" = yes ] && [ "$freed" = yes ] && [ "$later" = yes ]
+}
+
 probe() {
     cap_probe || { echo "PROBE REFUSED: the cap does not count what the design says -- the step does not read green"; exit 1; }
     local stamp="$(date -u +%H%M%S)-$$" name wt out rc lname lwt lout lrc inc=no lib=no
@@ -307,6 +349,7 @@ verb="${1:-}"; [ $# -gt 0 ] && shift
 base=origin/main; langs=""; cap=$CAP_MB; name=""; row=""; full=0; discard=0; save=0
 case "$verb" in
     --probe) probe ;;
+    --probe-sweep-land) sweep_land_probe; exit $? ;;
     list) list_wts ;;
     sweep) sweep_dead; exit 0 ;;
     new|add|rm|remove)
