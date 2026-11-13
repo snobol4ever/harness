@@ -10,6 +10,7 @@
 #   box_tick.py --probe-width    the law on planted sensors: quiet raises one step, hot lowers one step, a hold holds; one WIDTH_PSI line, rc 0/1
 #   box_tick.py --decide         print the decision for the live sensors without acting
 #   box_tick.py --probe-roots-sync  every clean seat root's .github and harness fast-forwarded every fifth tick, a dirty root named and left; ROOTS_SYNC line, rc 0/1
+# Every fifth tick (S4E_TICK_SWEEP_EVERY) the tick runs the LIVE s4e_msg.sh sweep and queues its WAKE lines in TICK_DIR/wake.pending (live_sweep, the coo 2026-11-12).
 # S4E_TICK_DRY=1: no 2 s sample, no systemctl, no expire, no MODE write, a scratch tick dir; the TICK line still prints with its cpu_s.
 # THE LAW OF THE TWO KNOBS (one step a tick at most, a step every S4E_STEP_EVERY ticks, default 2):
 #   quiet: cpu PSI avg60 < 25 and avg10 < 25 and no grader memory event  -> W and A go up one (to WMAX, AMAX)
@@ -579,6 +580,30 @@ def probe_roots_sync():
 
 
 TICKS_LOG_MAX = 8 << 20
+SWEEP_EVERY = int(os.environ.get("S4E_TICK_SWEEP_EVERY", "5"))
+def live_sweep(n):
+    """THE LIVE SWEEP ON THE CLOCK (the coo 2026-11-12 22:18 CST, MEASURED: nothing ran s4e_msg.sh sweep on the live postoffice, box_tick.sh's plant sweep
+    being a self-test on a scratch one, so 15 rows sat PARKED-AWAITING, 12 for hours after their verdicts were served). Every SWEEP_EVERY-th tick and never on
+    a dry or probing tick: s4e_msg.sh sweep under timeout 240, its output kept in TICK_DIR/sweep_live.last, and each WAKE line it prints (a row restored to a
+    seat's tube on its verdict) appended to TICK_DIR/wake.pending with its stamp, for the loop that sends SendMessage (a tick is no Claude session and wakes
+    nobody itself). Returns the TICK line's sweep= text."""
+    if DRY or PROBING or n % SWEEP_EVERY:
+        return "sweep=skipped"
+    try:
+        r = subprocess.run(["timeout", "-k", "5", "240", "bash", os.path.join(ROOT, "harness/scripts/s4e_msg.sh"), "sweep"], capture_output=True, text=True,
+                           errors="replace", stdin=subprocess.DEVNULL, env=dict(os.environ, S4E_NO_BANNER="1"))
+    except Exception as e:
+        return "sweep=failed:%s" % type(e).__name__
+    out = r.stdout + r.stderr
+    with open(TICK_DIR + "/sweep_live.last", "w", encoding="utf-8") as f:
+        f.write(out[-20000:])
+    wakes = [l for l in out.splitlines() if l.startswith("WAKE: SendMessage")]
+    for w in wakes:
+        _append(TICK_DIR + "/wake.pending", "%s %s" % (_utc(), w))
+    m = re.search(r"sweep: (\d+) row\(s\) PARKED-AWAITING", out)
+    return "sweep=rc%d:restored=%s:wakes=%d" % (r.returncode, m.group(1) if m else "0", len(wakes))
+
+
 def log_tick(n, gq):
     """TICK_DIR/ticks.log: ONE JSON line a tick (DESIGN-PLAN test-cycle step 8, the acceptance instrument util_seat_census.py --test-cycle-acceptance reads it):
     ts, tick, grader_queue (0 since the grade tube retired, CIO-82), want and running (the grade worker
@@ -628,6 +653,7 @@ def tick():
     fed = "retired (CIO-82: the cycle serves test requests)"
     st = {"alarm": 0, "line": "stall=retired"}   # the grade tube's stall watch retired with the tube (CIO-82); the BOX.state and TICK line keys keep their shape
     view = regenerate_view()
+    sweep = live_sweep(n)
     with open(TICK_DIR + "/decide.last", "w") as f:
         f.write(json.dumps(dict(tick=n, sensors=s, decision=d, grader=grader, awake=awake, liveset=liveset, expired=expired, fed=fed, view=view)) + "\n")
     # BOX.state: the controller is its writer (the coo 2026-11-07 15:29: the retired box_controller's file had no writer and its readers, the coo's OPS line, opswatch and
@@ -647,9 +673,9 @@ def tick():
         print("BOX.state not written: %s" % e)
     ru = resource.getrusage(resource.RUSAGE_SELF); rc = resource.getrusage(resource.RUSAGE_CHILDREN)
     cpu_s = ru.ru_utime + ru.ru_stime + rc.ru_utime + rc.ru_stime
-    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s %s expired=%d %s %s %s secs=%d cpu_s=%.2f%s"
+    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s %s expired=%d %s %s %s %s secs=%d cpu_s=%.2f%s"
           % (n, s["cpu10"], s["cpu60"], s["cpu300"], s["load1"], s.get("mem_rise", 0), d["step"], d["why"], d["W"], d["WMAX"], d["A"], d["AMAX"],
-             sy["disp"], grader, awake, liveset, expired, fed, view, st["line"], int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
+             sy["disp"], grader, awake, liveset, expired, fed, view, st["line"], sweep, int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
     return 0
 
 

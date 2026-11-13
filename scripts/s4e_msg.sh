@@ -569,6 +569,7 @@ s4e_request_seat() { sed -n 's/^seat=//p' "$S4E_REQ_DIR/done/$1.req" "$S4E_REQ_D
 s4e_blocker_done() {
     local b="$1"; [ -n "$b" ] || return 1
     s4e_request_verdict_in "$b" && return 0   # box-scheduler step 31: PARKED-AWAITING:<request-id> clears on the coo's verdict
+    s4e_request_pending "$b" && return 1   # ...and never before it (the cio 2026-11-12 22:4x CST, MEASURED by park --probe-awaiting on harness 3757f7e29: a request id is no QUEUE.tsv row, so the last line below read every pending request done and its park cleared to FREE at the first sweep)
     [ -f "$PO/claims/$b.claim" ] && grep -q '^DONE$' "$PO/claims/$b.claim" && return 0
     [ -f "$PO/QUEUE.tsv" ] && ! grep -qP "^[0-9]+\t\Q$b\E\t" "$PO/QUEUE.tsv"
 }
@@ -1552,25 +1553,33 @@ s4e_banner_probe_verdict() {   # banner --probe-verdict: the readings on a scrat
     [ "$(rd red)" = FAILURE ] && [ "$(rd unpushed)" = FAILURE ] && [ "$(rd redafter)" = FAILURE ] && f=1 || why="$why FAILURE rows read [red=$(rd red) unpushed=$(rd unpushed) redafter=$(rd redafter)];"
     [ "$s$n$f" = 111 ] && ok=1
     echo "BANNER_VERDICT success=$s nothing=$n failure=$f ok=$ok"; [ "$ok" = 1 ] || { echo "BANNER PROBE RED:$why"; exit 1; }; exit 0; }
-s4e_sweep_verdicts() {   # step 31: for every row PARKED-AWAITING a test request whose done/<id>.req exists, state -> ASSIGNED:<the request's seat>, one telegram
-    local _l _t _st _b _seat _n=0 _v _to _stale _o
+s4e_sweep_verdicts() {   # step 31: for every row PARKED-AWAITING a test request whose done/<id>.req exists, state -> QUEUED:seat-<the request's seat>, one telegram and one WAKE line
+    # ⭐ THE ROW GOES BACK INTO ITS SEAT'S TUBE (the coo 2026-11-12 22:18 CST, MEASURED: restored as ASSIGNED:<seat> through park, which writes no claim, all 13 rows
+    # of a hand sweep were reset to FREE by the same sweep's s4e_sweep_repair_columns, and no worker takes a FREE row): a row whose claim file names the seat keeps
+    # ASSIGNED:<seat> (the claim backs it); every other row reads QUEUED:seat-<seat>, which that seat's next serves and claims. The WAKE line is printed for the mover.
+    local _l _t _st _b _seat _n=0 _v _to _stale _o _wk=""
     while IFS= read -r _l; do
         _t="$(printf '%s' "$_l" | cut -f2)"; _st="$(printf '%s' "$_l" | cut -f4)"
         case "$_st" in PARKED-AWAITING:*|BLOCKED-ON:*) ;; *) continue;; esac
         _b="$(s4e_first_resolved_blocker "${_st#*:}")" || continue; s4e_is_request_id "$_b" || continue
         _seat="$(s4e_request_seat "$_b")"; [ -n "$_seat" ] || continue
-        _to="ASSIGNED:$_seat"; _stale=""
+        _stale=""
         if ! s4e_restore_seat_ok "$_seat"; then   # fleet-done-restores-a-blocked-row-only-to-a-seat-that-exists: the request's seat is not a seat here; the owner takes the row, else FREE
             _stale="$_seat"; _o="$(s4e_row_owner_named "$_t")"
-            if s4e_restore_seat_ok "$_o"; then _seat="$_o"; _to="ASSIGNED:$_o"; else _seat=""; _to=FREE; fi
+            if s4e_restore_seat_ok "$_o"; then _seat="$_o"; else _seat=""; fi
         fi
+        if [ -z "$_seat" ]; then _to=FREE
+        elif [ "$(head -1 "$PO/claims/$_t.claim" 2>/dev/null)" = "$_seat" ]; then _to="ASSIGNED:$_seat"
+        else _to="QUEUED:seat-$_seat"; fi
         _v="$(sed -n 's/^served=//p' "$S4E_REQ_DIR/done/$_b.req" | head -1 | cut -c1-80)"
-        S4E_PARK_FORCE=1 "$0" park "$_t" "$_to" > /dev/null 2>&1 || continue
+        s4e_set_row_state "$_t" "$_to" > /dev/null 2>&1 || continue
+        case "$_to" in QUEUED:*) _wk="$_wk$(s4e_wake_hint "${_to#QUEUED:}" "$_t" verdict | head -1)
+";; esac
         _n=$((_n+1)); printf -- '- [%s %s] VERDICT IN for request %s (%s): row restored to %s by the sweep (box-scheduler step 31)\n' "$ME" "$(date -u +%FT%TZ)" "$_b" "$_v" "$_to" >> "$PO/tasks/$_t.task.md"
         [ -n "$_stale" ] && printf -- '- [%s %s] RESTORE: stale seat %s refused on the verdict of %s; restored as %s (fleet-done-restores-a-blocked-row-only-to-a-seat-that-exists)\n' "$ME" "$(date -u +%FT%TZ)" "$_stale" "$_b" "$_to" >> "$PO/tasks/$_t.task.md"
         [ -n "$_seat" ] && s4e_telegram "$_seat" "$_t" "sweep: the coo's verdict on test request $_b is in ($_v); your row $_t is back as $_to -- s4e_msg.sh next serves it first (box-scheduler step 31)." 2>/dev/null < /dev/null
     done <<< "$(cat "$PO/QUEUE.tsv")"
-    [ "$_n" -gt 0 ] && echo "sweep: $_n row(s) PARKED-AWAITING a test request restored on its verdict"; return 0; }
+    [ "$_n" -gt 0 ] && echo "sweep: $_n row(s) PARKED-AWAITING a test request restored on its verdict"; [ -n "$_wk" ] && printf '%s' "$_wk"; return 0; }
 s4e_sweep_plant_awaiting() {   # step 31's probe: a scratch postoffice, a pending request, a park on it, no clear before the verdict, a restore on it, a bogus id refused
     local t po bat id o why="" st
     [ -n "$ME" ] || { echo "REFUSE(2) [park --probe-awaiting]: S4E_SEAT unset"; exit 2; }
@@ -1591,10 +1600,13 @@ s4e_sweep_plant_awaiting() {   # step 31's probe: a scratch postoffice, a pendin
     [ "$st" = "PARKED-AWAITING:$id" ] || why="$why the sweep cleared the park before any verdict [$st];"
     { cat "$t/req/$id.req"; echo "served=2026-11-04 18:00:00 CST tree=abc1234 rc=0 rows=2"; } > "$t/req/done/$id.req" && rm -f "$t/req/$id.req"
     o="$(run sweep)"; st="$(grep -P '^2\tawaiting-plant\t' "$po/QUEUE.tsv" | cut -f4)"
-    [ "$st" = "ASSIGNED:$ME" ] || why="$why the verdict did not restore the row to its lander [$st] [$(printf '%s' "$o" | tail -1 | cut -c1-120)];"
+    [ "$st" = "QUEUED:seat-$ME" ] || why="$why the verdict did not restore the row to its lander's tube [$st] [$(printf '%s' "$o" | tail -1 | cut -c1-120)];"
+    printf '%s\n' "$o" | grep -q "^WAKE: .* awaiting-plant: run bash" || why="$why no WAKE line for the restored row;"
+    o="$(run sweep)"; st="$(grep -P '^2\tawaiting-plant\t' "$po/QUEUE.tsv" | cut -f4)"
+    [ "$st" = "QUEUED:seat-$ME" ] || why="$why a second sweep moved the restored row [$st] (the column repair must leave a tube row alone);"
     grep -q 'VERDICT IN for request' "$po/tasks/awaiting-plant.task.md" || why="$why no ledger line on the baton;"
     ls "$po/$ME/inbox" 2>/dev/null | grep -q . || why="$why no telegram to the lander;"
-    [ -z "$why" ] && { echo "PARK awaiting=request cleared_by=verdict restored=ASSIGNED:plant-lander telegram=1 (probe: a pending request id parks, a nameless id refuses rc 2, no clear before the verdict, the sweep restores the row to the request's seat with a ledger line and a telegram)"; exit 0; }
+    [ -z "$why" ] && { echo "PARK awaiting=request cleared_by=verdict restored=QUEUED:seat-$ME telegram=1 wake=1 second_sweep=kept (probe: a pending request id parks, a nameless id refuses rc 2, no clear before the verdict, the sweep restores the row to the request's seat's tube with a ledger line, a telegram and a WAKE line, and the next sweep leaves it there)"; exit 0; }
     echo "PARK PROBE RED:$why"; exit 1; }
 s4e_released_state() {   # <topic> -> the QUEUE.tsv state a row reads once its claim is released (row 618, the cio 2026-11-07; the file road, CIO-82): QUEUED:<tube> when its claim holds a RESERVED file tube=<tube> line (a served row goes back to its tube), else FREE
   local _tube; _tube="$(sed -n 's/^RESERVED file tube=\([^ ]*\).*/\1/p' "$PO/claims/$1.claim" 2>/dev/null | tail -1)"
