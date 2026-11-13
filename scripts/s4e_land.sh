@@ -43,6 +43,19 @@
 #   --probe-orphan-lock  the stopped lander's proof on scratch origins: a landing is sent TERM mid-gate (its gate a 120 s child); once it has exited no
 #                process of it remains, its gate held neither lock descriptor, and a second landing from the same home lands; prints LAND probe-orphan-lock second=landed orphans=0.
 #   --tables     print the generated-table registry (generated_tables.tsv) and run nothing
+#   --probe-rerun  the proof of LAND.conf's switches on scratch origins (four arms); prints LAND rerun-probe ok
+# LAND.conf (the cio 2026-11-13, row the-lander-reruns-a-landing-only-for-what-touches-it; Lon: "how are we going to fix the fleet infra-structure?" /
+#   "I am willing to try anything and everything and monitor your experiments on the live fleet."): ONE FILE IN THE POSTOFFICE EVERY LANDER READS AT ITS START,
+#   key=value a line, so a switch is turned on the live fleet without a landing; an option on the command line wins, then the file, then the default, and
+#   WITH NO FILE THE LANDER IS THE LANDER OF 2026-11-12. MEASURED before it: 0 of 859 land commands passed --touches and 12 of 184 live batons carried a
+#   TOUCHES line, so 811 of 859 regates read affected; 133 landings took 2.53 attempts each, 76 ended in the serial round; 26 landers ran at once at load 87.
+#     tries=N          rounds before the one serial gate under the lease (default 3; 1 = an overtaken landing goes to the serial gate at once)
+#     touches=derived  with no --touches and no TOUCHES line, the landing's own diff names its population: the directory of each file it changes
+#                      (default declared: nothing named means every moved file is a hit)
+#     tables=affected  a landing that changes nothing under SCRIP and no generator skips the regenerate and derive checks (default all)
+#     width=N          at most N landings run their rounds at once; the rest wait in the line having run nothing (default 0: no line)
+#     line_wait=S      seconds a landing waits in the line before it refuses rc 2 (default 10800)
+#   Every landing writes one line to LANDINGS.tsv (the progress store): outcome, attempts, seconds a stage, the switches it ran under.
 # OUTPUT: one line per stage, LAND stage=<name> ...; the verdict LAND ok stages=N rejected=R pushed=..., or LAND RED stage=<name> ...
 # (rc 1), or LAND REFUSE(2) ... (rc 2). Logs under /tmp/s4e/<seat>/land.<pid>, deleted on a green verdict and kept on any other.
 set -uo pipefail
@@ -58,9 +71,9 @@ if [ -z "${S4E_LAND_SELF:-}" ]; then
 fi
 SELF="$S4E_LAND_SELF"; HERE="$(cd "$(dirname "$SELF")" && pwd)"; RUNNING_COPY="${BASH_SOURCE[0]}"
 ORDER=(SCRIP harness corpus .github)
-home=""; gate=""; row=""; gt=1800; tries=3; mode=land; names=(); touches=""; proved=""
-refuse() { echo "LAND REFUSE(2) $*"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 2; }
-red() { echo "LAND RED stage=$1 $2"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 1; }
+home=""; gate=""; row=""; gt=1800; tries=""; mode=land; names=(); touches=""; proved=""
+refuse() { declare -F ledger > /dev/null && ledger refuse; echo "LAND REFUSE(2) $*"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 2; }
+red() { declare -F ledger > /dev/null && ledger "red:$1"; echo "LAND RED stage=$1 $2"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 1; }
 ORIG_ARGS=("$@")   # fleet-control step 3: the landing re-runs itself under the land class admission below
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -76,6 +89,7 @@ while [ $# -gt 0 ]; do
         --probe-mail) mode=probe_mail; shift ;;
         --probe-orphan-lock) mode=probe_orphan_lock; shift ;;
         --probe-land-class) mode=probe_land_class; shift ;;
+        --probe-rerun) mode=probe_rerun; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
         --proved) proved="${2:-}"; shift 2 ;;
@@ -87,6 +101,12 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$home" ] || home="$(cd "$HERE/../.." && pwd)"
 PROBE_GREEN="${S4E_LAND_PROBE_GREEN:-/home/resources/progress/LAND_PROBE_GREEN.tsv}"   # hash, utc, seat, stages: one green probe per lander hash, box-wide
+PO_LAND="${S4E_POSTOFFICE:-/home/resources/postoffice}"; CONF="$PO_LAND/LAND.conf"   # the switches of the header's LAND.conf block; a scratch postoffice has its own file, so a probe never reads the live one
+conf() { local v; v="$(awk -F= -v k="$1" '!/^#/ && $1 == k { v = $2 } END { print v }' "$CONF" 2>/dev/null)"; printf '%s' "${v:-$2}"; }
+tries="${tries:-$(conf tries 3)}"; touches_mode="$(conf touches declared)"; tables_mode="$(conf tables all)"; width="$(conf width 0)"; line_wait="$(conf line_wait 10800)"
+for _v in "$tries" "$width" "$line_wait"; do case "$_v" in ''|*[!0-9]*) refuse "LAND.conf or --tries carries a value that is no count ($_v): tries, width and line_wait are whole numbers ($CONF)" ;; esac; done
+[ "$tries" -ge 1 ] || refuse "tries is $tries: a landing has one round at least"
+if [ "$PO_LAND" = /home/resources/postoffice ]; then LEDGER="${S4E_LAND_LEDGER:-/home/resources/progress/LANDINGS.tsv}"; else LEDGER="${S4E_LAND_LEDGER:-$PO_LAND/LANDINGS.tsv}"; fi
 [ -n "$home" ] || refuse "--home is empty: name the root that holds SCRIP harness corpus and .github (worker_02 2026-11-07 16:0x: a backgrounded shell passed an unset variable)"
 home="$(cd "$home" 2>/dev/null && pwd)" || refuse "no root at $home"
 TSV="$home/harness/scripts/generated_tables.tsv"
@@ -332,7 +352,7 @@ T="$(cd "$(dirname "$0")" && pwd)"
 echo g >> "$T/gates9"
 n="$(wc -l < "$T/gates9")"
 if [ "$n" = 3 ]; then
-    env -u S4E_LAND_PLANT S4E_SEAT=probe-waiter bash "$1" --push --proved 'probe: the waiter lands behind the serial round' --home "$T/waiter" corpus > "$T/waiter.log" 2>&1 8>&- 9>&- &
+    env -u S4E_LAND_PLANT S4E_SEAT=probe-waiter bash "$1" --push --proved 'probe: the waiter lands behind the serial round' --home "$T/waiter" corpus > "$T/waiter.log" 2>&1 7>&- 8>&- 9>&- &
     for i in $(seq 1 600); do grep -q '^LAND stage=lease waiting' "$T/waiter.log" 2>/dev/null && break; sleep 0.1; done
     grep -q '^LAND stage=lease waiting' "$T/waiter.log" 2>/dev/null || { echo "probe: the waiter never queued behind the serial gate" >&2; exit 1; }
 fi
@@ -428,12 +448,64 @@ probe_mail() {   # the mail guard's proof on scratch (row bus-the-unread-banner-
     rm -rf "$sc"
     printf 'LAND_MAIL unread_newer_refuses=%s read_passes=%s banner_names_new_only=%s\n' "$rf" "$rp" "$rb"
     [ "$rf$rp$rb" = 111 ]; }
+probe_rerun() {   # THE PROOF OF LAND.conf's SWITCHES (row the-lander-reruns-a-landing-only-for-what-touches-it), four arms on scratch origins, each a real landing by this lander reading a scratch LAND.conf: (1) touches=derived, tables=affected: a racer lands outside the landing's own directory, the gate stands and runs once, the table stages are skipped, the ledger holds the line; (2) tries=1: a racer lands in the landing's own directory, the one serial gate runs under the lease and no second unleased round; (3) touches=declared: the same race as arm 1 reads affected, the switch off is the lander of before; (4) width=1: with the one place held the landing refuses rc 2 having fetched nothing, and lands once the place is free. Every arm reads an order of events, never a clock.
+    local T log rc h
+    T="$(mktemp -d "/tmp/s4e/$seat/land-rerun.XXXXXX")" || refuse "cannot make a scratch directory"
+    trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+    rr() { echo "LAND rerun-probe RED: $*"; echo "    kept: $T"; trap - EXIT; exit 1; }
+    scratch_clone "$T"
+    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$T/racer" && git -C "$T/racer" sparse-checkout set --cone tests/probe_race && git -C "$T/racer" reset -q --hard HEAD || refuse "probe: cannot clone the racer"
+    git -C "$T/racer" config user.name LCherryholmes; git -C "$T/racer" config user.email lcherryh@yahoo.com
+    racer() {   # racer <script> <marker> <file>: inside the gate, once, land a file under corpus/tests/probe_race on the scratch origin
+        printf '#!/usr/bin/env bash\n[ -e "%s" ] && exit 0\n: > "%s"\ncd "%s" && git pull -q --rebase origin main' "$T/$2" "$T/$2" "$T/racer" > "$T/$1"
+        printf ' && mkdir -p tests/probe_race && echo race > "tests/probe_race/%s" && git add -A && git commit -q -m "probe: a racer lands %s" && git push -q origin HEAD:main\n' "$3" "$3" >> "$T/$1"; }
+    own_change() {   # own_change <repo> <path>: the landing's own commit changes one file
+        mkdir -p "$(dirname "$T/work/$1/$2")" && echo own > "$T/work/$1/$2" && git -C "$T/work/$1" add -A && git -C "$T/work/$1" commit -q -m "probe: the landing changes $1/$2" || refuse "probe: cannot commit $1/$2"; }
+    lander() { S4E_LAND_UNADMITTED=1 S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" "$@"; }   # the scratch landing's build takes no place of the live land class
+    printf 'tries=1\ntouches=derived\ntables=affected\nwidth=2\n' > "$T/po/LAND.conf"
+    racer race1.sh raced1 "probe-rerun1-$$.txt"; own_change harness "probe_own/a-$$.txt"; log="$T/arm1.log"
+    lander --gate "echo g >> $T/gates1 && bash $T/race1.sh" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm1| /' "$log" | grep -E 'touches|regenerate|regate|line|LAND ok|LAND RED|REFUSE' | cut -c1-220 | tail -7
+    [ "$rc" = 0 ] && grep "^LAND touches derived from the landing's own diff: harness/probe_own\$" "$log" > /dev/null && grep '^LAND stage=regenerate skipped' "$log" > /dev/null \
+        && grep '^LAND stage=regate:lease reason=unaffected files=1' "$log" > /dev/null && grep '^LAND stage=line place=' "$log" > /dev/null && [ "$(wc -l < "$T/gates1")" = 1 ] \
+        || rr "arm 1 (a race outside the landing's own directory) rc=$rc: expected derived touches, the table stages skipped, regate:lease unaffected and one gate run, got $(wc -l < "$T/gates1" 2>/dev/null) run(s)"
+    grep -c "	ok	1	" "$T/po/LANDINGS.tsv" > "$T/led1" 2>/dev/null; [ "$(cat "$T/led1")" = 1 ] || rr "arm 1 left no ok line of one attempt in the ledger $T/po/LANDINGS.tsv"
+    racer race2.sh raced2 "probe-rerun2-$$.txt"; own_change corpus "tests/probe_race/own2-$$.txt"; log="$T/arm2.log"
+    lander --gate "echo g >> $T/gates2 && bash $T/race2.sh" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm2| /' "$log" | grep -E 'touches|regate|LAND ok|LAND RED|REFUSE' | cut -c1-220 | tail -5
+    [ "$rc" = 0 ] && grep '^LAND stage=regate:lease:serial reason=affected files=1' "$log" > /dev/null && grep '^LAND ok .* attempts=1 .* serial_round=1 ' "$log" > /dev/null \
+        && ! grep '^LAND stage=regate:2' "$log" > /dev/null && [ "$(wc -l < "$T/gates2")" = 2 ] \
+        || rr "arm 2 (a race in the landing's own directory, tries=1) rc=$rc: expected the one serial gate under the lease, attempts=1 and two gate runs, got $(wc -l < "$T/gates2" 2>/dev/null) run(s)"
+    printf 'touches=declared\ntables=affected\n' > "$T/po/LAND.conf"
+    racer race3.sh raced3 "probe-rerun3-$$.txt"; own_change harness "probe_own/c-$$.txt"; log="$T/arm3.log"
+    lander --gate "echo g >> $T/gates3 && bash $T/race3.sh" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm3| /' "$log" | grep -E 'touches|regate|LAND ok|LAND RED|REFUSE' | cut -c1-220 | tail -5
+    [ "$rc" = 0 ] && grep '^LAND stage=regate:2 reason=affected files=1' "$log" > /dev/null && ! grep '^LAND touches derived' "$log" > /dev/null && [ "$(wc -l < "$T/gates3")" = 2 ] \
+        || rr "arm 3 (touches=declared, the switch off) rc=$rc: expected regate:2 affected, nothing derived and two gate runs, got $(wc -l < "$T/gates3" 2>/dev/null) run(s)"
+    printf 'tries=1\ntouches=derived\ntables=affected\nwidth=1\nline_wait=2\n' > "$T/po/LAND.conf"
+    ( exec 7>> "$T/po/.land.line.1"; flock 7; : > "$T/held"; sleep 600 ) & h=$!
+    while [ ! -e "$T/held" ]; do sleep 0.2; done
+    own_change harness "probe_own/d-$$.txt"; log="$T/arm4.log"; was="$(git -C "$T/origin/harness.git" rev-parse main)"
+    lander --gate "echo g >> $T/gates4" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm4| /' "$log" | grep -E 'line|LAND ok|LAND RED|REFUSE' | cut -c1-220 | tail -4
+    kill "$h" 2>/dev/null; wait "$h" 2>/dev/null
+    [ "$rc" = 2 ] && grep '^LAND stage=line waiting' "$log" > /dev/null && grep '^LAND REFUSE(2) the landing line is still full' "$log" > /dev/null && ! grep '^LAND stage=fetch' "$log" > /dev/null \
+        && [ ! -e "$T/gates4" ] && [ "$(git -C "$T/origin/harness.git" rev-parse main)" = "$was" ] \
+        || rr "arm 4 (the one place held) rc=$rc: expected the wait, then the refusal rc 2 with nothing fetched, no gate run and nothing pushed"
+    log="$T/arm4b.log"
+    lander --gate "echo g >> $T/gates4" > "$log" 2>&1; rc=$?
+    [ "$rc" = 0 ] && grep '^LAND stage=line place=1 of 1' "$log" > /dev/null && [ "$(wc -l < "$T/gates4")" = 1 ] && [ "$(git -C "$T/origin/harness.git" rev-parse main)" != "$was" ] \
+        || rr "arm 4 (the place free) rc=$rc: expected the place taken and the landing on origin"
+    echo "LAND rerun-probe ok arms=4 ledger_lines=$(grep -vc '^#' "$T/po/LANDINGS.tsv") (derived touches kept a gate standing over a race outside the landing's directory and skipped the table stages; tries=1 ran the one serial gate under the lease over a race inside it; touches=declared read the same race affected; width=1 held a landing out with nothing fetched and admitted it once the place was free)"
+    exit 0
+}
 [ "$mode" = probe ] && probe
 [ "$mode" = probe_mail ] && { probe_mail; exit $?; }
 [ "$mode" = probe_push_refusal ] && probe_push_refusal
 [ "$mode" = probe_serial ] && probe_serial
 [ "$mode" = probe_orphan_lock ] && probe_orphan_lock
 [ "$mode" = probe_land_class ] && probe_land_class
+[ "$mode" = probe_rerun ] && probe_rerun
 [ "$mode" = merge_probe ] && merge_probe
 # THE LEASE IS HELD ONLY AROUND THE PUSH (the cio 2026-11-04 20:1x CST, on hq_pascal's 14-minute wait behind hq_unicon's gate and seven landings queued behind
 # hq_templates' 35-minute gate): the gate runs UNLEASED on the rebased tree; the lease is taken after it, origin is fetched again under the lease, and if it moved
@@ -454,18 +526,60 @@ drop_lease() { printf 'free: released by seat=%s pid=%s at %s\n' "$seat" "$$" "$
 LOG="/tmp/s4e/$seat/land.$$"
 mkdir -p "$LOG" || refuse "cannot make $LOG"
 declare -A stage_done
-mark() { stage_done[$1]=1; echo "LAND stage=$1 $2"; }
+land_t0="$(date +%s)"; last_mark="$land_t0"; line_waited=0; touches_from=declared; tables_need=1; declare -A stage_secs
+mark() { local n b="${1%%:*}"; n="$(date +%s)"; stage_done[$1]=1; stage_secs[$b]=$(( ${stage_secs[$b]:-0} + n - last_mark )); last_mark="$n"; echo "LAND stage=$1 $2"; }   # the seconds since the mark before are this stage's, summed over the rounds
+ledger() {   # <outcome>: ONE LINE A LANDING IN THE PROGRESS STORE (the box kept no record of a landing: its rounds were read from the seats' transcripts on 2026-11-13). Written at every end, green, red, refused or stopped; never a reason to fail.
+    [ -n "${land_t0:-}" ] || return 0
+    local s="" k
+    for k in $(printf '%s\n' "${!stage_secs[@]}" | sort); do s="$s$k=${stage_secs[$k]} "; done
+    { [ -s "$LEDGER" ] || printf '# at_utc\tseat\trow\toutcome\tattempts\torigin_moved\tserial_round\tseconds\tline_wait_s\tswitches\tstage_seconds  -- one line a landing, written by s4e_land.sh at its end (LAND.conf names the switches)\n'
+      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "$seat" "${row:-gate}" "$1" "${attempt:-1}" "${moved_rounds:-0}" "${serial_round:-0}" "$(( $(date +%s) - land_t0 ))" "${line_waited:-0}" "tries=$tries,touches=$touches_from,tables=$tables_mode,width=$width" "${s% }"; } >> "$LEDGER" 2>/dev/null || true
+}
 present=()
 for r in "${ORDER[@]}"; do [ -e "$home/$r/.git" ] && present+=("$r"); done
 for r in SCRIP harness corpus; do [ -e "$home/$r/.git" ] || refuse "no $home/$r: a landing builds SCRIP beside harness and corpus"; done
+own_files() {   # the files the landing's own commits change, "repo/path" a line, read against the merge base so a stale origin/main reads the same
+    local r f
+    for r in "${present[@]}"; do
+        while IFS= read -r f; do [ -n "$f" ] && printf '%s/%s\n' "$r" "$f"; done < <(command git -C "$home/$r" diff --name-only origin/main...HEAD 2>/dev/null)
+    done
+}
+own="$(own_files)"
+if [ -z "$touches" ] && [ "$touches_mode" = derived ]; then   # THE LANDING'S OWN DIFF NAMES ITS POPULATION (LAND.conf touches=derived): the directory of each file it changes, a file at a repo's top being its own prefix; a path with a blank derives nothing, and with nothing derived every moved file is a hit, as before. The shared layers stay a hit in affected_since whatever is derived.
+    touches="$(printf '%s\n' "$own" | awk 'NF == 0 { next } /[[:space:]]/ { bad = 1 } { n = split($0, a, "/"); if (n > 2) sub(/\/[^\/]*$/, ""); d[$0] = 1 } END { if (bad) exit; for (k in d) printf "%s ", k }')"
+    touches="${touches% }"
+    [ -n "$touches" ] && { touches_from=derived; echo "LAND touches derived from the landing's own diff: $touches"; }
+fi
+if [ "$tables_mode" = affected ]; then   # A TABLE IS REGENERATED BY THE LANDING THAT CHANGES WHAT IT IS MADE FROM (LAND.conf tables=affected): every generator reads SCRIP's sources or its own script and registry, each SCRIP landing checks them all, so a landing with none of those in its own diff finds origin's tables as origin's last SCRIP landing left them
+    tables_need=0
+    printf '%s\n' "$own" | grep -E '^(SCRIP/|harness/scripts/(util_gen_[^/]*|generated_tables\.tsv|rt_entries\.tsv|lib_parser_generated_in_sync\.sh|regenerate_parser_and_lexer_from_sources\.sh)$)' > /dev/null && tables_need=1
+fi
+take_line() {   # THE LANDING LINE (LAND.conf width=N; Lon's go 2026-11-13 on the coo's proposal: "Waiting landers run nothing."): N places, each a lock file in the postoffice held on fd 7 for the life of this process, taken before the first fetch; a landing that finds every place taken has run nothing and waits, and refuses rc 2 after line_wait s. A killed lander's place frees with its process; no child holds fd 7.
+    [ "$width" -gt 0 ] || return 0
+    [ "$mode" = push ] && return 0
+    local i t0 said=0; t0="$(date +%s)"
+    while :; do
+        for i in $(seq 1 "$width"); do
+            { exec 7>> "$PO_LAND/.land.line.$i"; } 2>/dev/null || refuse "cannot open the landing line $PO_LAND/.land.line.$i"
+            if flock -n 7; then
+                printf 'seat=%s pid=%s row=%s since=%s\n' "$seat" "$$" "${row:-gate}" "$(date -u +%FT%TZ)" > "$PO_LAND/.land.line.$i"
+                line_waited=$(( $(date +%s) - t0 )); mark line "place=$i of $width waited_s=$line_waited"; return 0
+            fi
+            exec 7>&-
+        done
+        [ "$said" = 0 ] && { said=1; echo "LAND stage=line waiting: $width landing(s) run at once and every place is taken ($(cat "$PO_LAND"/.land.line.* 2>/dev/null | cut -d' ' -f1,3 | tr '\n' ';' | cut -c1-200)); this landing has run nothing and waits up to $line_wait s (LAND.conf width, line_wait)"; }
+        [ $(( $(date +%s) - t0 )) -ge "$line_wait" ] && refuse "the landing line is still full after $line_wait s: nothing ran, nothing pushed; run the landing again"
+        sleep "$(( 2 + RANDOM % 4 ))"
+    done
+}
 [ -f "$TSV" ] || refuse "no registry at $TSV"
 exec 9> "/tmp/s4e/$seat/land.$(printf '%s' "$home" | sha1sum | cut -c1-12).lock"
 flock -n 9 || refuse "another landing holds $home"
-git() { command git "$@" 8>&- 9>&-; }   # NO CHILD HOLDS A LOCK (row fleet-land-a-lander-stopped-mid-build-leaves-its-make-holding-the-landing-lock): every child runs with the lease (fd 8) and the per-root lock (fd 9) closed, so both locks close with this process; --probe-orphan-lock proves it
+git() { command git "$@" 7>&- 8>&- 9>&-; }   # NO CHILD HOLDS A LOCK (row fleet-land-a-lander-stopped-mid-build-leaves-its-make-holding-the-landing-lock): every child runs with the lease (fd 8) and the per-root lock (fd 9) closed, so both locks close with this process; --probe-orphan-lock proves it
 kid=0
 spawn() {   # <log> <dir> <cmd...>: a long child (the build, a gate) in its own session, waited on so a stop's trap runs at once; it holds neither lock
     local log="$1" dir="$2" rc; shift 2
-    ( cd "$dir" && exec setsid --wait "$@" ) > "$log" 2>&1 < /dev/null 8>&- 9>&- & kid=$!
+    ( cd "$dir" && exec setsid --wait "$@" ) > "$log" 2>&1 < /dev/null 7>&- 8>&- 9>&- & kid=$!
     wait "$kid"; rc=$?; kid=0; return "$rc"
 }
 mine_live() {   # the live processes this lander started: its process tree (this enumeration pruned) and the session of a spawned child
@@ -483,12 +597,12 @@ stop_lander() {   # <signal>: a stopped lander takes its children with it (TERM,
     if [ -n "$left" ]; then how="TERM, then KILL"; kill -KILL $left 2>/dev/null; i=0
         while left="$(mine_live)"; [ -n "$left" ] && [ "$i" -lt 10 ]; do sleep 0.2; i=$((i + 1)); done; fi
     [ "$kid" -gt 0 ] && wait "$kid" 2>/dev/null
-    echo "LAND REFUSE(2) stopped by $1: its children were stopped with it ($how; left: ${left:-none}); pushed so far: ${pushed[*]:-none}"
+    ledger stopped; echo "LAND REFUSE(2) stopped by $1: its children were stopped with it ($how; left: ${left:-none}); pushed so far: ${pushed[*]:-none}"
     [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"
     exit 2
 }
 trap 'stop_lander TERM' TERM; trap 'stop_lander INT' INT; trap 'stop_lander HUP' HUP
-g() { local r="$1"; shift; timeout -k 5 180 git -C "$home/$r" "$@" 8>&- 9>&-; }
+g() { local r="$1"; shift; timeout -k 5 180 git -C "$home/$r" "$@" 7>&- 8>&- 9>&-; }
 git_state() { local p; p="$(git -C "$home/$1" rev-parse --git-path "$2")"; case "$p" in /*) printf '%s' "$p" ;; *) printf '%s/%s/%s' "$home" "$1" "$p" ;; esac; }   # --git-path answers relative to the repo, and this script runs elsewhere
 if [ -n "$row" ]; then
     tf="${S4E_POSTOFFICE:-/home/resources/postoffice}/tasks/$row.task.md"
@@ -563,7 +677,7 @@ regen() {
     [ "${#ks[@]}" -gt 0 ] || { summary="0 checked, 0 stale (skipped ${skipped[*]})"; return 0; }
     for k in "${ks[@]}"; do
         c="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $4; exit}' "$TSV")"
-        ( cd "$home" && S4E_HOME="$home" S4E_RUN_SLOT_HELD=1 timeout -k 5 900 bash "$home/harness/scripts/util_check_cache.sh" "land-$k" -- bash -c "$c" > "$LOG/check.$k" 2>&1; echo $? > "$LOG/check.$k.rc" ) 8>&- 9>&- &   # the table checks run on the landing's own admission (class land), no run slot each: 236 run-slot waits of 4413 s by the checks on 2026-11-08 by 10:35 (SLOT_WAITS.tsv), 14 checks three at a time behind a pool of 8 (the cio 10:4x)
+        ( cd "$home" && S4E_HOME="$home" S4E_RUN_SLOT_HELD=1 timeout -k 5 900 bash "$home/harness/scripts/util_check_cache.sh" "land-$k" -- bash -c "$c" > "$LOG/check.$k" 2>&1; echo $? > "$LOG/check.$k.rc" ) 7>&- 8>&- 9>&- &   # the table checks run on the landing's own admission (class land), no run slot each: 236 run-slot waits of 4413 s by the checks on 2026-11-08 by 10:35 (SLOT_WAITS.tsv), 14 checks three at a time behind a pool of 8 (the cio 10:4x)
         pids+=($!)
     done
     wait "${pids[@]}"
@@ -579,10 +693,10 @@ regen() {
     for k in "${stale[@]}"; do
         w="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $5; exit}' "$TSV")"
         c="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $4; exit}' "$TSV")"
-        ( cd "$home" && timeout -k 5 900 bash -c "$w" ) > "$LOG/write.$k" 2>&1 8>&- 9>&- || red "$2" "table=$k write failed: $(tail -1 "$LOG/write.$k")"
+        ( cd "$home" && timeout -k 5 900 bash -c "$w" ) > "$LOG/write.$k" 2>&1 7>&- 8>&- 9>&- || red "$2" "table=$k write failed: $(tail -1 "$LOG/write.$k")"
         ph="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $2; exit}' "$TSV")"
         if [ "$ph" = built ] && [ -n "$(git -C "$home/SCRIP" status --porcelain --untracked-files=no -- src 2>/dev/null)" ]; then build derive-recheck; fi
-        ( cd "$home" && timeout -k 5 900 bash -c "$c" ) > "$LOG/recheck.$k" 2>&1 8>&- 9>&-; rc=$?
+        ( cd "$home" && timeout -k 5 900 bash -c "$c" ) > "$LOG/recheck.$k" 2>&1 7>&- 8>&- 9>&-; rc=$?
         [ "$rc" = 0 ] || { [ "$rc" = 2 ] && red "$2" "the re-check of table $k refused (rc 2): $(head -1 "$LOG/recheck.$k")"; red "$2" "table=$k is still stale after its own write: $(tail -1 "$LOG/recheck.$k")"; }
         written+=("$k")
     done
@@ -669,7 +783,7 @@ push_one() {
         echo "LAND stage=push:$r REFUSED by the server, origin unmoved at ${seen:0:9} ($(grep -m1 -iE "$SERVER_REFUSAL" "$LOG/push.$r" | cut -c1-100)): the push alone is retried in ${w}s, no rebase, no regate (retry $k of $push_retries)"
         retried_push=$((retried_push + 1)); sleep "$w"
     done
-    bash "$home/harness/scripts/s4e_push_rejected.sh" "$home/$r" > "$LOG/rejected.$r" 2>&1 8>&- 9>&-
+    bash "$home/harness/scripts/s4e_push_rejected.sh" "$home/$r" > "$LOG/rejected.$r" 2>&1 7>&- 8>&- 9>&-
     if [ "$theirs" = "$seen" ]; then
         rebased_unmoved=$((rebased_unmoved + 1))
         echo "LAND stage=push:$r REJECTED with origin unmoved at ${seen:0:9}, an unrecognised refusal ($(tail -1 "$LOG/push.$r" | cut -c1-120)); recorded, going round again"
@@ -712,7 +826,10 @@ pushes() {   # the pushes in ORDER; rc 3 when one is refused (land_round decides
 land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the gate unleased, then the lease only around a fetch, a rebase and the pushes; rc 3 = go round again
     local r a moved=0 rc
     fetch; rebase
-    if [ "$mode" != push ]; then
+    if [ "$mode" != push ] && [ "$tables_need" = 0 ]; then
+        mark regenerate "skipped (LAND.conf tables=affected: the landing changes nothing under SCRIP and no generator, so origin's tables stand)"
+        build build; mark build "${binfo:-built}"
+    elif [ "$mode" != push ]; then
         regen source regenerate; commit_regen regenerate; mark regenerate "$summary"
         build build; mark build "${binfo:-built}"
         regen 'binary|built' derive; d="$summary"; dw=("${written[@]}")
@@ -743,7 +860,7 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
             note_origins
         fi
     fi
-    [ -n "${S4E_LAND_PLANT:-}" ] && { bash -c "$S4E_LAND_PLANT" > "$LOG/plant" 2>&1 8>&- 9>&- || true; }   # the probe's plant: a hand push that lands between the lease's fetch and the push
+    [ -n "${S4E_LAND_PLANT:-}" ] && { bash -c "$S4E_LAND_PLANT" > "$LOG/plant" 2>&1 7>&- 8>&- 9>&- || true; }   # the probe's plant: a hand push that lands between the lease's fetch and the push
     pushes; rc=$?
     if [ "$rc" = 3 ] && [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then
         fetch; rebase; [ "$mode" = push ] || { build serial; mark build:serial "${binfo:-built}"; }; gate_run_serial "rebased after a push the origin refused on the last attempt"; note_origins
@@ -761,6 +878,8 @@ if [ "$mode" = land ]; then   # a stop order lands before the landing: unread ma
         [ -n "$row" ] && printf -- '- %s LAND over unread mail: %s\n' "$(date -u +%FT%TZ)" "$S4E_LAND_IGNORE_MAIL" >> "$tf"
     else mail_guard "$mpo" "$seat" "$claim" || exit 2; fi
 fi
+[ "$width" -gt 0 ] && echo "LAND conf tries=$tries touches=$touches_mode tables=$tables_mode width=$width (from $CONF)"
+take_line
 while :; do
     if land_round; then break; fi
     rejected=$((rejected + 1)); attempt=$((attempt + 1))
@@ -768,8 +887,8 @@ while :; do
 done
 if [ "$mode" = push ]; then
     for x in "${pushed[@]}"; do record_hand_push "${x%@*}" "${x#*@}"; done
-    rm -rf "$LOG"; echo "LAND ok mode=push stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt hand_push=leased push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds serial_round=$serial_round ($(date -u +%Y-%m-%dT%H:%M:%SZ))"; exit 0
+    ledger ok; rm -rf "$LOG"; echo "LAND ok mode=push stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt hand_push=leased push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds serial_round=$serial_round ($(date -u +%Y-%m-%dT%H:%M:%SZ))"; exit 0
 fi
-rm -rf "$LOG"
+ledger ok; rm -rf "$LOG"
 echo "LAND ok stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt lease=push-only push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds serial_round=$serial_round ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
 exit 0
