@@ -1043,7 +1043,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
         # exclusion of 2026-10-09): the ref keeps it byte for byte -- the container is read back split on LF only (_read_lf_lines), so a CR
         # stays inside its line, and a container whose ref then carries a CR at end of line is declared in lf_gate_crlf_is_the_subject.tsv.
         want_rc = ora_rc if ora_rc else 0
-        _exp = read_text_tolerant(src.with_suffix(".ref"))[0] if _drv else ora_text
+        _exp = src.with_suffix(".ref").read_bytes().decode("utf-8", "replace") if _drv else ora_text   # the beside ref is the oracle's bytes, decoded as the harness decodes a program's output before the comparison (utf-8, replace; corpus_suite_harness._read_stream_lines), never latin-1: a latin-1 decode re-encoded every byte 0x80-0xFF as two UTF-8 bytes and read the ipl drivers abkform_driver and pbkform_driver, whose answers are binary records, red against a correct SCRIP (officer_07 2026-11-13, row ipl-red-procs-abkform)
         e = h.Entry("block", len(entries) + 1, name, text.splitlines(), _exp.split("\n"),
                      stdin=stdin_text, want_rc=want_rc)
         entries.append(e)
