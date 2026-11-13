@@ -2157,10 +2157,15 @@ def cmd_from_progress(a):
     if a.dry_run:
         print("from-progress --dry-run: nothing written (would set %s -> %d/%d%s stamped %s, the oldest reading's tree)" % (full_key, cnt["PASS"], total, "" if excluded is None else " excluded=%d" % excluded, oldest[1]))
         return 0
-    if unread or halfread:
+    if (unread or halfread) and not getattr(a, "partial", False):
         print("REFUSE(2): from-progress: %d entr(y/ies) have no reading and %d only one mode's -- the row is current when every chunk has a "
-              "reading (R-1676); nothing written" % (len(unread), len(halfread)))
+              "reading (R-1676); nothing written (--partial writes it with them counted as not passing)" % (len(unread), len(halfread)))
         return 2
+    if unread or halfread:
+        # ⛔ EVERY CHUNK REPORTS AS IT COMES (Lon 2026-11-12 19:0x CST: "you report each chunk at it comes"; 2026-11-13: "You need to fix the REFUSALS"):
+        # under --partial the row is written with its unread and half-read entries inside the total and outside the pass, so it never reads
+        # higher than the full row will; the Earliest and Latest stamps say how old its readings are.
+        print("SUITE_ROW_PARTIAL %s unread=%d half_read=%d: written, each counted as not passing" % (full_key, len(unread), len(halfread)))
     env = dict(os.environ); env["S4E_SUITES_TSV"] = SUITES_TSV; env["S4E_SCORE_MD"] = SCORE_MD
     # ⛔⭐ A PORT ENGINE'S ROW IS OPENED BY ITS FIRST PUBLISH, HERE (R-1822): --set refuses a key with no row, so the engine's first
     # from-progress opens <key>@<engine> through the table's own writer (util_suite_banner.py --open: the bare row's nick, emoji and lang,
@@ -5591,6 +5596,7 @@ def main():
     fp.add_argument("--dry-run", action="store_true", help="print the row and the population it read; write nothing")
     fp.add_argument("--reds", action="store_true", help="also print SUITE_ROW_RED <entry> <mode>=<outcome>@<tree>... for every member not PASS in every mode (with --dry-run, writes nothing); refuses rc 2 when the list's length is not total - pass")
     fp.add_argument("--criterion-changed", default="", metavar="'YYYY-MM-DD:reason'", help="stamp a criterion change on the row (passed to util_suite_banner.py --set; S4E_CRITERION_CHANGED fills it)")
+    fp.add_argument("--partial", action="store_true", help="write the row while entries are unread or read in one mode only, counting them as not passing (the total is the whole population, so a partial row never reads higher than a full one); the cycle passes it so every chunk reports as it comes (Lon 2026-11-12)")
     fp.add_argument("--wall-only", action="store_true", help="set ONLY the row's Wall (the sum of each member's minimum time) and nothing else: no pass, total, date or tree; needs the minimum-seconds ledger")
     fp.set_defaults(fn=cmd_from_progress)
     n = sub.add_parser("seat-name", help="print THE ONE seat identity derived from the root path; runs no suite")

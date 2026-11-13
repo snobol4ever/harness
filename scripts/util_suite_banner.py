@@ -947,7 +947,7 @@ def _suite_table_lock():
     os.environ['S4E_SUITE_TABLE_LOCKED']=str(os.getpid())
     return fd
 def main(a):
-    if '--set' in a or '--render' in a or '--open' in a or '--set-wall' in a or '--set-run' in a: _suite_table_lock()
+    if '--set' in a or '--render' in a or '--open' in a or '--open-row' in a or '--set-wall' in a or '--set-run' in a: _suite_table_lock()
     if '--open' in a:
         # ⛔⭐ A PORT ENGINE'S ROW IS OPENED BY ITS FIRST PUBLISH (ceo CEO-1822, to hq_dotnet: "A port engine's SUITES.tsv row is created by
         # that engine's FIRST PUBLISH through util_score_row.py, the table's one writer, under its lock and history writer, never by hand").
@@ -967,6 +967,25 @@ def main(a):
         before=open(TSV,encoding='utf-8').read()
         rows.append(new); save(head,rows); history(head,before,rows)
         print(f"⭐ --open {key}: the {eng} engine's row is open in SUITES.tsv ({base['nick']}, {base['lang']}), readings empty until its --set")
+        return
+    if '--open-row' in a:
+        # ⛔⭐ THE CYCLE OPENS THE ROW OF A SUITE IT GRADES (the grader 2026-11-13; Lon, in the grader's window, verbatim: "You need to fix the REFUSALS
+        # instead of just appending errors at the end of the banner."; MEASURED that hour: six gate_cases_<lang> rows of SUITE_RUNNERS.tsv were graded
+        # every lap and every row write refused "no suite key", because no row was ever opened; rows were opened by hand before, CIO-113). --open-row
+        # KEY NICK EMOJI LANG appends a row with its identity cells only, for a KEY that is a master or pkg row of SUITE_RUNNERS.tsv; the first --set
+        # fills every reading and first_*. Refuses any other key, a nick over 12 characters, and an open key (nothing written).
+        i=a.index('--open-row'); key,nick,emoji,lang=(a[i+1:i+5]+['','','',''])[:4]
+        _rn=os.path.join(os.path.dirname(os.path.abspath(__file__)),'SUITE_RUNNERS.tsv')
+        _graded={f[0]:f[1] for f in (l.rstrip('\n').split('\t') for l in open(_rn,encoding='utf-8') if not l.startswith('#')) if len(f)>=5 and f[1] in ('master','pkg')}
+        if key not in _graded or not nick or len(nick)>12 or not emoji or not lang:
+            sys.stderr.write(f"REFUSE(rc=2): --open-row {key!r} {nick!r} {emoji!r} {lang!r}: KEY must be a master or pkg row of {_rn}, NICK 1 to 12 characters, EMOJI and LANG given. NOTHING WAS WRITTEN.\n"); sys.exit(2)
+        head,rows=load()
+        if any(r['key']==key for r in rows):
+            print(f"--open-row {key}: the row is already open; nothing written"); return
+        new={h:'' for h in head}; new.update(key=key, nick=nick, emoji=emoji, lang=lang, criterion_changed=f"{box_clock_day()}:ROW-OPENED by the cycle, {key} is a {_graded[key]} row of SUITE_RUNNERS.tsv graded every lap")
+        before=open(TSV,encoding='utf-8').read()
+        rows.append(new); save(head,rows); history(head,before,rows)
+        print(f"⭐ --open-row {key}: the row is open in SUITES.tsv ({nick}, {lang}), readings empty until its --set")
         return
     if '--set-run' in a:
         # THE RUN'S DATE AND TIME RANGE (Lon 2026-11-11, verbatim: "The stop turn banner should display the date/time-range of the run that created the

@@ -191,12 +191,41 @@ record_pkg() {   # key -> that pkg row of SUITES.tsv, from its progress rows in 
 # raku-rungs, rosetta-pascal, unitests, stanford-pascal, tply and pas-rungs graded every lap, and from-progress refused each row write (an unstamped
 # denominator move, or 48 unread rows) into record.log alone, so their banner rows stood days old and nothing said so. Each refusal is now a
 # RECORD_REFUSED line in CYCLE.log and a line of CYCLE.refused (key TAB ts TAB the refusal), which the Stop banner shows; a write that lands clears it.
-record_row() {   # key -> from-progress for that suite row; its output to record.log; a nonzero exit is logged and held in CYCLE.refused
-    local o rc r R="$PROG/CYCLE.refused"
-    o="$( cd "$S4E" && timeout -k 30 900 python3 -I harness/scripts/util_score_row.py from-progress --suite "$1" 2>&1 < /dev/null )"; rc=$?
+# THE CYCLE CURES ITS OWN REFUSALS (the grader 2026-11-13; Lon, in the grader's window, verbatim: "You need to fix the REFUSALS instead of just
+# appending errors at the end of the banner."; MEASURED that hour: 24 rows held in CYCLE.refused, 11 a denominator move with no stamp, 11 a key with
+# no SUITES.tsv row, 2 unread entries). A suite's row is written from the progress store with --partial (an unread entry counts as not passing, the
+# total is the whole population); a key of SUITE_RUNNERS.tsv with no row gets one (util_suite_banner.py --open-row); a denominator move is stamped
+# with the corpus commit that last changed the suite's table (the honest-denominator rule, CEO-546, asks a move to name why; in the moving sandbox,
+# skill suites-and-grading section 9, the why is that commit). CYCLE.refused keeps only what is still refused, for keys the cycle still runs.
+record_once() {   # key stamp -> from-progress output; rc its exit
+    ( cd "$S4E" && S4E_CRITERION_CHANGED="$2" timeout -k 30 900 python3 -I harness/scripts/util_score_row.py from-progress --suite "$1" --partial 2>&1 < /dev/null )
+}
+runner_row() {   # key -> "kind lang dir" of its SUITE_RUNNERS.tsv row, dir from the corpus root
+    awk -F'\t' -v k="$1" '!/^#/ && $1 == k { d = ($2 == "master") ? "tests/" $3 : $5; sub(/^corpus\//, "", d); print $2 "\t" $3 "\t" d; exit }' "$RUNNERS"
+}
+cycle_nick() {   # key lang -> a banner nick of at most 12 characters for a row the cycle opens
+    local ab; case "$2" in snobol4) ab=Sno;; icon) ab=Icn;; prolog) ab=Pro;; pascal) ab=Pas;; raku) ab=Rak;; snocone) ab=Snc;; rebus) ab=Reb;; *) ab=X;; esac
+    case "$1" in gate_cases_*) echo "${ab}Cases";; *) printf '%s' "$1" | awk -F'[-_]' '{ s = ""; for (i = 1; i <= NF; i++) s = s toupper(substr($i, 1, 1)) substr($i, 2); print substr(s, 1, 12) }';; esac
+}
+record_row() {   # key -> the suite's row from the progress store; a refusal the cycle cannot cure is logged and held in CYCLE.refused
+    local o rc r R="$PROG/CYCLE.refused" kind lang dir mv st c
+    o="$(record_once "$1" "")"; rc=$?
+    IFS=$'\t' read -r kind lang dir <<< "$(runner_row "$1")"
+    if [ "$rc" -ne 0 ] && printf '%s\n' "$o" | grep -q "no suite key $1 in" && [ -n "$kind" ]; then
+        o="$o
+$( cd "$S4E" && python3 -I harness/scripts/util_suite_banner.py --open-row "$1" "$(cycle_nick "$1" "$lang")" "🧪" "$lang" 2>&1 )"
+        o="$o
+$(record_once "$1" "")"; rc=$?
+    fi
+    if [ "$rc" -ne 0 ] && mv="$(printf '%s\n' "$o" | grep -oE 'denominator moves [0-9]+ -> [0-9]+' | tail -1)" && [ -n "$mv" ] && [ -n "$dir" ]; then
+        c="$(git -C "$S4E/corpus" log -1 --format='%h %s' -- "$dir" 2>/dev/null | tr '\t|' '  ' | cut -c1-140)"
+        st="$(date +%F):${mv#denominator moves }, the table ${dir} last moved at corpus ${c:-unknown} (stamped by the cycle)"
+        o="$o
+$(record_once "$1" "$st")"; rc=$?
+    fi
     printf '%s\n' "$o" >> "$TMPDIR/cycle/record.log"
-    r=""; [ "$rc" -ne 0 ] && { r="$(printf '%s\n' "$o" | grep -m1 -E 'REFUSE' | cut -c1-240)"; [ -n "$r" ] || r="rc=$rc, no refusal line"; log "RECORD_REFUSED lap=${lap:-?} $1 rc=$rc $r"; }
-    ( flock 9; { grep -v -P "^\Q$1\E\t" "$R" 2>/dev/null; [ -n "$r" ] && printf '%s\t%s\t%s\n' "$1" "$(now)" "$r"; } > "$R.tmp"; mv -f "$R.tmp" "$R" ) 9> "$R.lock"
+    r=""; [ "$rc" -ne 0 ] && { r="$(printf '%s\n' "$o" | grep -E 'REFUSE' | tail -1 | cut -c1-240)"; [ -n "$r" ] || r="rc=$rc, no refusal line"; log "RECORD_REFUSED lap=${lap:-?} $1 rc=$rc $r"; }
+    ( flock 9; { awk -F'\t' -v k="$1" 'NR == FNR { if (!/^#/) run[$1] = 1; next } $1 != k && ($1 in run)' "$RUNNERS" "$R" 2>/dev/null; [ -n "$r" ] && printf '%s\t%s\t%s\n' "$1" "$(now)" "$r"; } > "$R.tmp"; mv -f "$R.tmp" "$R" ) 9> "$R.lock"
     return 0
 }
 graded_this_lap() {   # key -> rc 0 when a cell of this lap graded that suite (rc 0 or 1); read from the log, so a restart mid-suite still knows
@@ -225,6 +254,7 @@ lap_start() {
         exec bash "$SELF" ${MODE_ARG:+"$MODE_ARG"}
     fi
 }
+if [ "$MODE_ARG" = --record ]; then k="${2:?usage: s4e_cycle.sh --record KEY}"; record_row "$k"; grep -P "^\Q$k\E\t" "$PROG/CYCLE.refused" 2>/dev/null && exit 1; echo "RECORDED $k"; exit 0; fi   # one row written as the cycle writes it (the grader 2026-11-13)
 if [ "$MODE_ARG" = --list ]; then cells | order_cells; echo "CELLS $(cells | wc -l)"; exit 0; fi
 { [ "${BASH_VERSINFO[0]}" -gt 5 ] || { [ "${BASH_VERSINFO[0]}" -eq 5 ] && [ "${BASH_VERSINFO[1]}" -ge 1 ]; }; } || { echo "REFUSE(2) [cycle]: bash ${BASH_VERSION} has no wait -n -p (5.1 or newer; the rolling pool needs it)"; exit 2; }
 if [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF" 2>/dev/null)" 2>/dev/null && [ "$(cat "$PIDF")" != "$$" ]; then echo "REFUSE(2) [cycle]: already running as pid $(cat "$PIDF")"; exit 2; fi
