@@ -155,6 +155,7 @@ LANG_CONFIGS = {
     "prolog": {"ext": ".pl", "comment_open": "%", "comment_close": "", "modes": "m3,m4"},
     "icon": {"ext": ".icn", "comment_open": "#", "comment_close": "", "modes": "m3,m4"},
     "snocone": {"ext": ".sc", "comment_open": "/*", "comment_close": " */", "modes": "m3,m4"},
+    "scriptix": {"ext": ".md", "comment_open": "<!--", "comment_close": " -->", "modes": "m3,m4"},   # SCRIPtix polyglot MD files (the scriptix demos, the grader 2026-11-13); a files-form .sno beside them is staged under its own name
 }
 
 # ⛔⭐ A SUITE IS GRADED IN m3 AND m4 AND NOTHING ELSE, AND ANY OTHER --modes REFUSES BEFORE A ROW IS WRITTEN (coo 2026-09-25,
@@ -3195,8 +3196,8 @@ def pkg_dir_of(src_path):
     2026-11-10: a package keeps the layout of its distribution, NAME.in, NAME.out and NAME.err beside each program): the directory's ALL.csv
     has a path column. Every caller keeps its ALL.EXT ALL.ref command line through the move, as fmt2_dir_of gives a test folder."""
     p = Path(src_path)
-    if p.suffix not in FMT2_TAG or p.name != "ALL" + p.suffix:
-        return None
+    if (p.suffix not in FMT2_TAG and p.suffix not in {c["ext"] for c in LANG_CONFIGS.values()}) or p.name != "ALL" + p.suffix:
+        return None   # any language's ALL.EXT, scriptix's ALL.md among them (no fence tag of format 2, so FMT2_TAG does not carry it)
     d = p.parent
     c = d / "ALL.csv"
     if not c.is_file() or (d / "MULTI-LINERS.md").is_file() or (d / f"ONE-LINERS{p.suffix}").is_file():
@@ -3331,6 +3332,33 @@ def pkg_runs_by_the_switch_alone(d):
     return (d / "ALL.source").is_file() or (d / "ALL.launch").is_file()
 
 
+def chain_units_beside(prog, corpus):
+    """THE UNITS A DEMO IS BUILT FROM, READ (the grader 2026-11-13; lib_declared_arena.sh declared_chain_beside is its twin, hq_snocone and the coo
+    2026-09-27, beauty.sc, COO-212): <stem>.chain beside a program lists the source units the program is concatenated AFTER, one path a line,
+    relative to the corpus root, in order; its ref was cut from the same concatenation, as the deleted demos runner staged it. -> the units' lines,
+    in order, to stand before the program's own; [] when there is no sidecar. Refuses a blank or comment line, whitespace in a line, an absolute
+    path, a .. component, a repeated unit, a sidecar naming no unit, a unit that is not a file, or a unit whose last byte is not LF (cat would join
+    its last line to the next unit's first, which a list of lines cannot say): a missing unit is a refusal, never a skip."""
+    side = Path(prog).with_suffix(".chain")
+    if not side.is_file():
+        return []
+    out, seen = [], set()
+    for n, ln in enumerate(side.read_text(encoding="utf-8").splitlines(), 1):
+        if not ln or ln.startswith("#") or re.search(r"\s", ln) or ln.startswith("/") or ".." in Path(ln).parts or ln in seen:
+            refuse(f"{side}:{n}: {ln!r} is no unit: one path a line, relative to corpus/, no comment, blank, whitespace, .. or repeat")
+        seen.add(ln)
+        u = Path(corpus) / ln
+        if not u.is_file():
+            refuse(f"{side}:{n}: names {ln}, not a file under {corpus} -- a missing unit is a refusal, never a skip")
+        b = u.read_bytes()
+        if b and not b.endswith(b"\n"):
+            refuse(f"{side}:{n}: {ln} does not end in LF, so its concatenation is no list of lines")
+        out.extend(_read_lf_lines(u))
+    if not out:
+        refuse(f"{side} names no unit -- delete the sidecar or list the units")
+    return out
+
+
 def read_package_dir(d, ext, modes=None):
     """THE FILES FORM OF A PACKAGE, READ (CIO-59, CIO-60): one Entry a row of ALL.csv, in the index's order; the program is the file the
     path column names, from the package root; DIR/STEM.out is its stdout answer, DIR/STEM.in its stdin, DIR/STEM.err its stderr answer,
@@ -3365,7 +3393,8 @@ def read_package_dir(d, ext, modes=None):
             raise ValueError(f"{d}: {name} and {seen[stem]} share the stem {stem.relative_to(d)}; their NAME.in, NAME.out and NAME.err would be one file")
         seen[stem] = name
         out = Path(str(stem) + ".out")
-        e = Entry("block", seq, name, _read_stream_lines(prog) if in_place else _read_lf_lines(prog), _read_stream_lines(out) if out.is_file() else [])
+        units = [] if in_place else chain_units_beside(prog, resolve_paths()["corpus"])   # a chained demo is its units, then itself (beauty)
+        e = Entry("block", seq, name, _read_stream_lines(prog) if in_place else units + _read_lf_lines(prog), _read_stream_lines(out) if out.is_file() else [])
         if in_place:
             e.in_place = str(prog)   # the collection's own file: never written back, never staged here; the switch runs it from a copy of its folder
         inp, err = Path(str(stem) + ".in"), Path(str(stem) + ".err")
@@ -3998,6 +4027,33 @@ def stage_fixtures(src_dir, stem, dest):
     return True
 
 
+def stage_folder(src_dir, stem, dest):
+    """ALL.csv fixtures=folder: THE ENTRY'S OWN FOLDER IS STAGED BESIDE IT (the grader 2026-11-13; the deleted test_demos_suite.sh ran every demo in a
+    copy of its folder): for a program that reads a sibling no name in its text gives away (MEASURED: demos/scriptix infinite_snobol4.md builds the
+    command '!*sbl -bf inf_eval.sno < batch' as a string, and alone it stops at "Can't open inf_eval.sno" rc 1, where in its folder it reaches the
+    collector's chain bomb rc 134 the old runner read as CRASH). Every regular file and directory of SRC_DIR is copied into DEST; what is already in
+    DEST (the program and its staged companions) is kept; the entry's own answers STEM.out, STEM.err and STEM.rc are never staged, so no program
+    can read its ref; a symlink or a special file anywhere is refused. -> the number of files staged."""
+    import shutil
+    src, dest, n = Path(src_dir), Path(dest), 0
+    if (src / "ALL.csv").is_file():
+        refuse(f"fixtures=folder on {stem}, which sits at the package root {src}: the root is the container, no entry's own folder")
+    for q in sorted(src.rglob("*")):
+        if q.is_symlink() or not (q.is_file() or q.is_dir()):
+            refuse(f"{q} is not a plain regular file or directory: a staged folder never carries a symlink or a special file")
+        rel = q.relative_to(src)
+        if q.parent == src and q.stem == stem and q.suffix in (".out", ".err", ".rc"):
+            continue
+        t = dest / rel
+        if q.is_dir():
+            t.mkdir(parents=True, exist_ok=True)
+        elif not t.exists():
+            t.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(q, t)
+            n += 1
+    return n
+
+
 def stage_entry(entry, td, ext=".sno", companion_dir=None):
     """THE ONE WRITER OF AN ENTRY'S PROGRAM (split out of run_suite_entry 2026-11-05 for the expect census, so the oracle and SCRIP read
     the same bytes): the program file in td (its prelude, its companions, its argv files beside it); returns (path, expected text)."""
@@ -4044,14 +4100,25 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
     if _cdir != companion_dir:
         _copy_companions(text, companion_dir, cand.parent)   # the suite directory first, as before, so nothing a nested entry found there is lost
     _copy_companions(text, _cdir, cand.parent)               # then the entry's own directory, which wins where both hold the name
-    if _cdir and getattr(entry, "fixtures", False):
+    if _cdir and getattr(entry, "fixtures", False) == "folder":
+        stage_folder(_cdir, Path(entry.name).name, cand.parent)     # ALL.csv fixtures=folder: the entry's own folder beside it, as the deleted demos runner staged it
+    elif _cdir and getattr(entry, "fixtures", False):
         stage_fixtures(_cdir, Path(entry.name).name, cand.parent)   # ALL.csv fixtures=staged: NAME.fixtures/ beside the entry's source, as the builder's cut staged it
     for _fn, _body in (getattr(entry, "files", None) or {}).items():   # THE FILE FENCES (CIO-55): the entry's own companions, beside the program
         (cand.parent / _fn).write_bytes(_body.encode("utf-8"))
     # PROGRAM ARGUMENTS THAT NAME A COMPANION (AIS HSORT: its input file name arrives in HOST(0)): an argv token
-    # that is a file beside the suite travels with the entry the same way a named include does.
+    # that is a file beside the suite travels with the entry the same way a named include does. A relative token with a folder in it
+    # (the grader 2026-11-13: the JCON demo jtran reads inputs/hello.icn) lands at the same path under the run directory, never above it:
+    # no absolute token, no .. part.
     for _tok in (getattr(entry, 'argv', None) or []):
-        if _cdir and _tok and '/' not in _tok and (Path(_cdir) / _tok).is_file() and not (cand.parent / _tok).exists():
+        if not (_cdir and _tok) or _tok.startswith("/") or ".." in Path(_tok).parts or '\0' in _tok:
+            continue
+        try:
+            _hit = (Path(_cdir) / _tok).is_file() and not (cand.parent / _tok).exists()
+        except (OSError, ValueError):
+            _hit = False
+        if _hit:
+            (cand.parent / _tok).parent.mkdir(parents=True, exist_ok=True)
             (cand.parent / _tok).write_bytes((Path(_cdir) / _tok).read_bytes())
     # STDIN LINES THAT NAME A COMPANION (the coo 2026-11-09, measured on spitbol_x64_tests arcput: it reads file names from INPUT and opens
     # each, and the builder cut its ref with every package file beside sbl; staged without them, sbl -bf and SCRIP alike loop on an
@@ -4263,12 +4330,32 @@ def run_files_switch(paths, args, run_entries, n_all, modes, tmp_root):
         only.write_text("".join(e.name + "\n" for e in run_entries), encoding="utf-8")
         argv += ["--only", str(only)]
     bound = sum(((None if "TIMEOUT" in os.environ else getattr(e, "timeout_s", None)) or paths["timeout"]) for e in run_entries) + 60
-    rc, so, se, why = _bounded_run(argv, bound, str(tmp_root), dict(os.environ, SNO_LIB=str(paths["inc"])), None, False)
+    rc, so, se, why = _bounded_run(argv, bound, str(tmp_root), dict(os.environ, SNO_LIB=str(paths["inc"]), **_pkg_env(pd, paths)), None, False)
     if why or rc != 0:
         refuse(f"--run-files: scrip --run-files {pd} ended rc {rc}{' ' + why if why else ''}: {(se or b'').decode('utf-8', 'replace').strip()[-300:]}")
     rep.write_bytes(so or b"")
     print("RUN_FILES_BOARD dir=%s entries=%d of %d report_lines=%d merged_stderr_left_per_process=%d" % (pd, len(run_entries), n_all, len([l for l in (so or b"").split(b"\n") if l]), n_asked - len(run_entries)))
     return [[str(out_dir), str(rep)]]
+
+
+def _pkg_env(pd, paths):
+    """A PACKAGE'S DECLARED ENVIRONMENT, ALL.env (the grader 2026-11-13; Lon 2026-11-12: "in addition to RC and ARGS we have ENV."): KEY=VALUE lines,
+    # comments, exported to that package's scrip --run-files launch. A ':'-separated part of a VALUE that names a path under the corpus root is made
+    absolute, because the launch runs each entry in a work copy where a relative path from the package no longer resolves (MEASURED: the JCON demos'
+    link "../../../packages/icon/jcon-compiler/dump" failed "cannot open" in the copy; with IPATH=demos/icon/jcon, the real folder, Icon's linker
+    finds it from there). Refuses a line that is not KEY=VALUE."""
+    f = Path(pd) / "ALL.env"
+    if not f.is_file():
+        return {}
+    corpus, env = Path(paths["corpus"]), {}
+    for n, ln in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+        if not ln.strip() or ln.lstrip().startswith("#"):
+            continue
+        k, eq, v = ln.partition("=")
+        if not eq or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", k.strip()):
+            refuse(f"{f}:{n}: not KEY=VALUE: {ln!r}")
+        env[k.strip()] = ":".join(str(corpus / x) if x and (corpus / x).exists() else x for x in v.strip().split(":"))
+    return env
 
 
 def run_files_leftovers(paths, args, run_entries, graded, tmp_root):
@@ -4284,7 +4371,7 @@ def run_files_leftovers(paths, args, run_entries, graded, tmp_root):
         only.write_text(e.name + "\n", encoding="utf-8")
         lim = ((None if "TIMEOUT" in os.environ else getattr(e, "timeout_s", None)) or paths["timeout"])
         argv = [str(paths["scrip_bin"]), "--run-files", str(pd), "--out", str(od), "--only", str(only)]
-        rc, so, se, why = _bounded_run(argv, 2 * lim + 60, str(tmp_root), dict(os.environ, SNO_LIB=str(paths["inc"]), TIMEOUT=str(2 * lim)), None, False)
+        rc, so, se, why = _bounded_run(argv, 2 * lim + 60, str(tmp_root), dict(os.environ, SNO_LIB=str(paths["inc"]), TIMEOUT=str(2 * lim), **_pkg_env(pd, paths)), None, False)
         word = "NO-REPORT"
         if not why and rc == 0:
             rep.write_bytes(so or b"")
@@ -5314,6 +5401,8 @@ def cmd_run(args):
         entries = read_block_suite(args.sno, args.ref, banner_re, in_path=sidecar_in_path(args.sno),
                                    x_path=sidecar_xfail_path(args.sno), w_path=sidecar_wantrc_path(args.sno),
                                    a_path=sidecar_argv_path(args.sno), modes=modes)
+        if pkg_dir_of(args.sno) is not None:
+            os.environ.update(_pkg_env(pkg_dir_of(args.sno), resolve_paths()))   # ALL.env reaches every launch of this package, per-process or the switch
     else:
         require_lang_for_suite("run", args.sno, args)
         ext = ".sno"
@@ -5837,6 +5926,10 @@ def progress_suite_for(sno_path, paths):
     # corpus/demos/pascal/tex, key tex (the coo 2026-11-12, on Lon's 18:0x "I would just love to see IcnPacks, TeX, and RakDemo with a Run stamp")
     if len(parts) >= 4 and parts[-4] == "demos" and (p.parent / "ALL.csv").is_file():
         return ("package", PROGRESS_PACKAGE_KEYS.get(parts[-2], parts[-2]) + at, parts[-3])
+    # A LANGUAGE'S DEMOS FOLDER IS ONE CONTAINER (corpus/demos/<lang>/ALL.csv, the files form; the grader 2026-11-13, on Lon's "go ahead, convert the demos
+    # and delete the old"): it records as the package <lang>-demos, the key its row always had, so test_demos_suite.sh can go.
+    if len(parts) >= 3 and parts[-3] == "demos" and (p.parent / "ALL.csv").is_file():
+        return ("package", f"{parts[-2]}-demos{at}", parts[-2])
     return None
 
 
@@ -7003,10 +7096,11 @@ def read_command_line_columns(src_path, entries, modes=None):
         if of:
             e.out_files = of
         _fx = (row.get("fixtures") or "").strip()
-        if _fx not in ("", "staged"):
-            refuse(f"{where}: fixtures {_fx!r} must be staged or empty (staged: the entry's NAME.fixtures/ tree is staged where it runs, as its ref was cut)")
+        if _fx not in ("", "staged", "folder"):
+            refuse(f"{where}: fixtures {_fx!r} must be staged, folder or empty (staged: the entry's NAME.fixtures/ tree is staged where it runs, as its ref was cut;"
+                   f" folder: the files of the entry's own folder are staged beside it, its own answer files aside)")
         if _fx:
-            e.fixtures = True
+            e.fixtures = "folder" if _fx == "folder" else True
         if validate_stderr_cell(row.get("stderr"), where):
             e.merge_stderr = True
         _cmp = validate_compare_cell(row.get("compare"), where)

@@ -5,7 +5,7 @@
 # For each language L the demo corpus/demos/snocone/parser_L/parser_L.sc is REGENERATED from SCRIP/bootstrap: the 14-file runtime
 # chain in run_scrip_parser.sh's order plus bootstrap/parser_L.sc, concatenated (a Snocone program cannot include a library; no
 # .chain sidecar -- that name is the demo runner's own library declaration, corpus-relative -- the list lives here and in the gate). The demo's sample input parser_L.in and its workhorse
-# input parser_L.work are corpus data (a small and a large program of L) and are NOT touched here; --cut-refs writes parser_L.ref
+# input parser_L.work are corpus data (a small and a large program of L) and are NOT touched here; --cut-refs writes parser_L.out (the stdout answer of the demos container, the grader 2026-11-13)
 # from the Snocone oracle: sbl -bf running the transpiled twin of the demo (scrip --transpile) on parser_L.in -- the same program on
 # the reference SNOBOL4, never this compiler's own output. A stale copy is what test_gate_parser_demos_match_bootstrap.sh reds.
 # rc 0 written; 2 a chain file, a parser, the transpile or the oracle missing.
@@ -29,7 +29,7 @@ for L in snobol4 snocone icon prolog rebus raku pascal; do
         OARGS="$(declared_oracle_args_beside "$B/parser_$L.sc")" || { echo "REFUSE(2): corpus/demos/snocone/parser_$L/parser_$L.oracle_args is refused"; exit 2; }
         ( cd "$d" && timeout -k 5 300 "$SBL" -bf $OARGS "$T/$L.sno" < "parser_$L.in" > "$T/$L.ref" 2> "$T/$L.sbl.err" ); rc=$?
         [ $rc -eq 0 ] && [ -s "$T/$L.ref" ] && ! grep -q '^Parse Error' "$T/$L.ref" || { echo "REFUSE(2): sbl -bf did not print a tree for parser_$L on its sample (rc=$rc): $(head -2 "$T/$L.sbl.err" "$T/$L.ref" | tr '\n' ' ' | cut -c1-200)"; exit 2; }
-        cp "$T/$L.ref" "$d/parser_$L.ref"
+        cp "$T/$L.ref" "$d/parser_$L.out"
     fi
-    echo "parser_$L: $(wc -l < "$d/parser_$L.sc") lines$( [ $CUT = 1 ] && echo ", ref $(wc -l < "$d/parser_$L.ref") lines from sbl -bf")"
+    echo "parser_$L: $(wc -l < "$d/parser_$L.sc") lines$( [ $CUT = 1 ] && echo ", ref $(wc -l < "$d/parser_$L.out") lines from sbl -bf")"
 done

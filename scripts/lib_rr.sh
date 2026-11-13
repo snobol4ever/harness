@@ -64,7 +64,7 @@ rr_entries() { [ -n "${S4E_CHUNK:-}" ] && printf '%s\n' $RR_SEL; }
 rr_admits() {
   [ -n "${S4E_CHUNK:-}" ] || return 0
   local n="${1##*/}"; n="${n%.*}"
-  case "$RR_SET " in *" $n "*|*" $1 "*) return 0;; esac; return 1
+  case "$RR_SET " in *" $n "*|*" $1 "*|*" ${1%.*} "*) return 0;; esac; return 1   # ${1%.*}: a files-form container names an entry by its path without the extension (hello/hello)
 }
 rr_flush() {
   local f="${1:?rr_flush <rows-tsv>}"

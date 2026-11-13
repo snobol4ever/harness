@@ -33,18 +33,18 @@ icon-bench-ref	small	icon	test_icon_bench_suite.sh	-
 prolog-bench-ref	small	prolog	test_prolog_bench_suite.sh	-
 pascal-bench-ref	small	pascal	test_pascal_bench_suite.sh	-
 rebus-bench-ref	small	rebus	test_rebus_bench_suite.sh	-
-snobol4-demos	small	snobol4	test_demos_suite.sh snobol4	-
-snocone-demos	small	snocone	test_demos_suite.sh snocone	-
-icon-demos	small	icon	test_demos_suite.sh icon	-
-prolog-demos	small	prolog	test_demos_suite.sh prolog	-
-scriptix-demos	small	scriptix	test_demos_suite.sh scriptix	-
+snobol4-demos	pkg	snobol4	corpus_suite_harness.py	corpus/demos/snobol4
+snocone-demos	pkg	snocone	corpus_suite_harness.py	corpus/demos/snocone
+icon-demos	pkg	icon	corpus_suite_harness.py	corpus/demos/icon
+prolog-demos	pkg	prolog	corpus_suite_harness.py	corpus/demos/prolog
+scriptix-demos	pkg	scriptix	corpus_suite_harness.py	corpus/demos/scriptix
 rosetta-pascal	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/rosetta-pascal
 rosetta-prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/rosetta-prolog
 puzzles	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/puzzles
 trealla	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/trealla_tests
 xsb	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/xsb_tests
-pascal-demos	small	pascal	test_demos_suite.sh pascal	-
-raku-demos	small	raku	test_demos_suite.sh raku	-
+pascal-demos	pkg	pascal	corpus_suite_harness.py	corpus/demos/pascal
+raku-demos	pkg	raku	corpus_suite_harness.py	corpus/demos/raku
 raku-bench-ref	small	raku	test_raku_bench_suite.sh	-
 sno-rungs@dotnet	port	snobol4	corpus_suite_harness.py	corpus/tests/snobol4
 sno-rungs@jvm	port	snobol4	corpus_suite_harness.py	corpus/tests/snobol4

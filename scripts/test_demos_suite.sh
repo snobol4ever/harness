@@ -68,7 +68,7 @@ TOTAL=0; CONTN=0; BOTH=0; M3P=0; M4P=0; WH=0; CH=0; NAMED=""
 printf '%-40s %-6s %-6s %s\n' program m3 m4 note
 for r in "${PROGS[@]}"; do
     if [ -f "$CONT" ] && awk -F'\t' -v n="$r" '$1 == n { f = 1 } END { exit !f }' "$CONT"; then CONTN=$((CONTN+1)); continue; fi
-    TOTAL=$((TOTAL+1)); f="$DD/$r"; stem="${f%.*}"; ref="$stem.ref"; d="$(dirname "$f")"; b="$(basename "$f")"
+    TOTAL=$((TOTAL+1)); f="$DD/$r"; stem="${f%.*}"; ref="$stem.out"; [ -s "$ref" ] || ref="$stem.ref"; d="$(dirname "$f")"; b="$(basename "$f")"   # .out first: the demos containers renamed each .ref to .out (the grader 2026-11-13); the port rows still run this script
     export S4E_TIMEOUT_KEY="demos/$L/$r"   # the unit a retried timeout's stamp names (R-1335)
     if [ -s "$stem.workhorse" ]; then declared_workhorse_beside "$f" > /dev/null || refuse "$r: its .workhorse sidecar is refused (the reader said why above)"; WH=$((WH+1)); fi
     if [ ! -s "$ref" ]; then
