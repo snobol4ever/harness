@@ -1605,7 +1605,7 @@ def db_crosscheck(key, p, t):
 # the numerator, the table's entries the denominator. The row is CURRENT at a tree when every entry has a reading at or after it -- so it names
 # the OLDEST reading's tree beside the newest, per chunk too, and a write stamps the oldest (the tree every reading is at or after).
 # the packages whose suite key is not their directory's progress key (the coo's measurement of 2026-10-15: from-progress could not reach them)
-FROM_PROGRESS_PACKAGES = {"x64tests": "packages/snobol4/spitbol_x64_tests", "x32tests": "packages/snobol4/spitbol_x32_tests", "logtalk": "packages/prolog/logtalk_iso"}
+FROM_PROGRESS_PACKAGES = {"x64tests": "packages/snobol4/spitbol_x64_tests", "x32tests": "packages/snobol4/spitbol_x32_tests", "logtalk": "packages/prolog/logtalk_iso", "tex": "demos/pascal/tex"}
 FROM_PROGRESS_MASTERS = {"sno-rungs": "tests/snobol4", "icn-rungs": "tests/icon", "pl-rungs": "tests/prolog", "pas-rungs": "tests/pascal",
                          "raku-rungs": "tests/raku", "snc-rungs": "tests/snocone", "reb-rungs": "tests/rebus"}
 # ⭐ THE BENCH AND DEMO TREES CARRY NO ALL.csv, so their population is the CENSUS their runner grades (R-1822; Lon 2026-10-18, in-chat to

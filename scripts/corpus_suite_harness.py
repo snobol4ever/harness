@@ -5796,6 +5796,10 @@ def progress_suite_for(sno_path, paths):
         return ("rungs", f"{parts[-2]}-rungs{at}", parts[-2])
     if len(parts) >= 4 and parts[-4] == "packages":
         return ("package", PROGRESS_PACKAGE_KEYS.get(parts[-2], parts[-2]) + at, parts[-3])
+    # A DEMO THAT IS A CONTAINER (corpus/demos/<lang>/<name>/ALL.csv, the files form) records as a package keyed by its folder: TeX is
+    # corpus/demos/pascal/tex, key tex (the coo 2026-11-12, on Lon's 18:0x "I would just love to see IcnPacks, TeX, and RakDemo with a Run stamp")
+    if len(parts) >= 4 and parts[-4] == "demos" and (p.parent / "ALL.csv").is_file():
+        return ("package", PROGRESS_PACKAGE_KEYS.get(parts[-2], parts[-2]) + at, parts[-3])
     return None
 
 
