@@ -37,10 +37,12 @@ check "--run"           "hello" "$(timeout -k 5 8 "$SCRIP" --run "$SNO" < /dev/n
 
 # ── x86 emit mode ─────────────────────────────────────────────────────────────
 # SM/BB-based x64 emit not yet implemented — new emitter comes box-by-box from SM/BB path.
-echo "SKIP x86 emit (not yet implemented)"
+echo "SKIP x86 emit (not yet implemented; skipped unless S4E_MODE4=1, mode 3 ONLY)"
 
 # ── JVM emit mode ─────────────────────────────────────────────────────────────
-if have java && [ -f "$JASMIN" ]; then
+if [ "${S4E_MODE4:-0}" != 1 ]; then
+    echo "SKIP JVM emit (skipped unless S4E_MODE4=1, mode 3 ONLY)"
+elif have java && [ -f "$JASMIN" ]; then
     TMP=$(mktemp -d)
     timeout -k 5 8 "$SCRIP" --compile --jvm "$SNO" > "$TMP/prog.j" < /dev/null 2>/dev/null
     if grep -q "^\.class\|^\.source" "$TMP/prog.j" 2>/dev/null; then
@@ -56,7 +58,9 @@ else
 fi
 
 # ── NET emit mode ─────────────────────────────────────────────────────────────
-if have ilasm && have mono; then
+if [ "${S4E_MODE4:-0}" != 1 ]; then
+    echo "SKIP NET emit (skipped unless S4E_MODE4=1, mode 3 ONLY)"
+elif have ilasm && have mono; then
     TMP=$(mktemp -d)
     timeout -k 5 8 "$SCRIP" --compile --net "$SNO" > "$TMP/prog.il" < /dev/null 2>/dev/null &&
     ilasm "$TMP/prog.il" /output:"$TMP/prog.exe" 2>/dev/null &&

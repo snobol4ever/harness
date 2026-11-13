@@ -2,7 +2,7 @@
 # test_smoke_polyglot.sh — POLYGLOT smoke: SNOBOL4 + Icon + Prolog loaded and run TOGETHER, modes 3 + 4.
 # Covers BOTH polyglot forms: (a) three separate files fed at once, (b) one SCRIPtix .md file with three fences.
 # Proves: per-file/per-fence first dispatch, init-all-unconditional, shared g_stage2, cross-language sno→icon call.
-# Gate: both modes HARD (this capability is a Lon directive, 2026-07-04).
+# Gate: mode 3 HARD; mode 4 HARD only under S4E_MODE4=1 (this capability is a Lon directive, 2026-07-04; mode 3 ONLY, Lon 2026-11-13).
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude Fable 5  DATE: 2026-07-04
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"   # worktree trap: a hardcoded ../../corpus ignored S4E_HOME, so a scratch
@@ -29,6 +29,7 @@ run_m3() {
 }
 
 run_m4() {
+    [ "${S4E_MODE4:-0}" = 1 ] || return 0   # mode 3 ONLY (Lon 2026-11-13): a mode-4 step is neither PASS nor FAIL unless S4E_MODE4=1
     local label="$1"; shift
     local s o bin actual rc to=0
     s=$(mktemp "${TMPDIR:-/tmp}/poly_XXXXXX.s"); o="${s%.s}.o"; bin="${s%.s}.bin"
@@ -52,7 +53,7 @@ run_m4() {
     fi
 }
 
-echo "=== POLYGLOT smoke (modes 3+4) — both HARD ==="
+if [ "${S4E_MODE4:-0}" = 1 ]; then echo "=== POLYGLOT smoke (modes 3+4) — both HARD ==="; else echo "=== POLYGLOT smoke (mode 3; mode 4 skipped unless S4E_MODE4=1) ==="; fi
 run_m3 "tri-file  (sno+icn+pl)" "$TESTD/polyglot_tri_main.sno" "$TESTD/polyglot_tri_lib.icn" "$TESTD/polyglot_tri_rules.pl"
 run_m4 "tri-file  (sno+icn+pl)" "$TESTD/polyglot_tri_main.sno" "$TESTD/polyglot_tri_lib.icn" "$TESTD/polyglot_tri_rules.pl"
 run_m3 "tri-fence (.md)"        "$TESTD/polyglot_tri.md"
@@ -60,5 +61,5 @@ run_m4 "tri-fence (.md)"        "$TESTD/polyglot_tri.md"
 
 echo ""
 echo "mode-3 (--run):     PASS=$P3 FAIL=$F3   (HARD GATE)"
-echo "mode-4 (--compile): PASS=$P4 FAIL=$F4   (HARD GATE)"
+echo "mode-4 (--compile): PASS=$P4 FAIL=$F4   (HARD GATE; skipped unless S4E_MODE4=1, mode 3 ONLY)"
 smoke_finish $((F3+F4))
