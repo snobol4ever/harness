@@ -196,6 +196,11 @@ choose_base() {   # sets BASE, SBIN and RTD, and holds BASE shared on fd 8 until
     [ "$(readlink -f "/proc/$BASHPID/fd/8" 2>/dev/null)" = "$(readlink -f "$cur/.s4e-hold")" ] || { exec 8< "$cur/.s4e-hold"; flock -s 8; }
     BASE="$cur"; read -r SBIN RTD < "$cur/.s4e-bin"; flock -u 6; exec 6>&-; return 0
 }
+base_holds() {   # base "SCRIP harness corpus .github heads" -> 0 when every one of those heads is an ancestor of (or is) the base's own head in that repo
+    local b="$1" r h i=0; local -a hs=($2)
+    for r in SCRIP harness corpus .github; do h="${hs[$i]:--}"; i=$((i+1)); [ "$h" = - ] && continue; git -C "$b/$r" merge-base --is-ancestor "$h" HEAD 2>/dev/null || return 1; done
+    return 0
+}
 on_base() {   # the same, falling back to the root and its own build when no base can be had, so a chunk never refuses for want of a base
     choose_base 2>> "$TMPDIR/cycle/base.log" && return 0
     BASE="$S4E"; SBIN="$S4E/SCRIP/scrip"; RTD="$S4E/SCRIP/out"; log "BASE none: the chunk runs on the root (base.log)"
@@ -208,7 +213,19 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     [ -n "$row" ] && [ -n "$ents" ] || { echo "REFUSE(2): suite $key has no master or pkg row of SUITE_RUNNERS.tsv, or the request names no entries" > "$out"; echo "2 0"; return; }
     IFS=$'\t' read -r kind lang dir <<< "$row"; [ "$kind" = master ] && dir="$S4E/corpus/tests/$lang" || dir="$S4E/$dir"
     alls="$dir/ALL.$(ext_of "$lang")"
+    # A REQUEST READS THE TREE THAT HOLDS ITS LANDING (junior_09 2026-11-13, MEASURED: request 20261113T223938-junior_09-gate_cases_snobol4-493276 was
+    # graded at 22:40:46Z on corpus bc7da5229 although origin held the cure b30cac7ee since 22:38:47Z, the root fetched it at 22:39:53Z, and base 1 was
+    # forwarded to it at 22:40:35Z: base 1 was held when the request chose, so it took base 2 a turn behind and read a false FAIL). A request fetches
+    # origin at once, whatever the rate, and waits until its base holds every head origin had then (each an ancestor of the base's head), trying every
+    # 15 s for S4E_REQ_FRESH_WAIT seconds (900); only past that does it grade a turn behind, and the log says REQUEST_BASE_STALE.
+    rm -f "$TMPDIR/cycle/base.fetched"
+    local want0 tq; tq=$(( $(date +%s) + ${S4E_REQ_FRESH_WAIT:-900} ))
     choose_base 2>> "$out" || { echo "2 $(( $(date +%s) - t0 ))"; return; }   # a request runs on origin's newest heads, never the root's (no fallback)
+    want0="$(heads_of "$S4E" origin/main)"
+    until base_holds "$BASE" "$want0"; do
+        [ "$(date +%s)" -ge "$tq" ] && { echo "REQUEST_BASE_STALE $BASE: no base reached origin's heads of the request ($want0) in ${S4E_REQ_FRESH_WAIT:-900} s; graded a turn behind" >> "$out"; break; }
+        exec 8<&-; sleep 15; choose_base 2>> "$out" || { echo "2 $(( $(date +%s) - t0 ))"; return; }
+    done
     dir="${dir/#$S4E/$BASE}"; alls="${alls/#$S4E/$BASE}"; echo "REQUEST_BASE $BASE SCRIP=$(git -C "$BASE/SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$BASE/corpus" rev-parse --short=10 HEAD) binary=$SBIN" >> "$out"
     # THE BOUND IS READ FROM THE BASE THE REQUEST RUNS ON (senior_01 2026-11-13, MEASURED: it was read from the grader root's ALL.csv before the forward, so
     # puzzles hakank_swi_euler14, whose timeout_s origin had raised to 3600 at corpus dd98b6587, was killed at ttr 420 s though it answers in 299 s)
