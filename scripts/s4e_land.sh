@@ -513,7 +513,20 @@ probe_rerun() {   # THE PROOF OF LAND.conf's SWITCHES (row the-lander-reruns-a-l
 # gate standing (the merge-queue shape: optimistic gating, serialized pushing). A lease is held for the seconds a fetch, a rebase and four pushes take, never a gate.
 lease="${S4E_POSTOFFICE:-/home/resources/postoffice}/.land.lease"; lw="${S4E_LAND_LEASE_WAIT:-1800}"; lease_since=0
 { exec 8>> "$lease"; } 2>/dev/null || refuse "cannot open the landing lease $lease"   # the 2>/dev/null is scoped to the group: a bare `exec 8>>f 2>/dev/null` silenced the lander's stderr for the rest of the run (every REFUSE after it, the mail guard's first) -- the "silent rc 2 after preflight" of 2026-11-07, found 15:2x
+# BOSSES DO NOT WAIT FOR PUSH LEASES (Lon 2026-11-13 16:3x CST, in the coo's window, verbatim: "Excuse me, BOSSES do not wait for PUSH LEASES."; MEASURED in
+# LANDINGS.tsv the same hour: the cto's landing waited about 1650 s of its 2158 behind about fifteen worker landers, and the cio's 22 minutes). A boss is a seat MODE's
+# BOSSES: line names, and a boss lander never takes the lease: it fetches, rebases and pushes at once. A worker's push it overtakes is rejected like any push
+# outside the lease and goes round again from fetch, re-gating only for what the boss's commits touch (the affected set below), so the boss costs a worker a round,
+# never a wrong push. A first cut that queued the boss first behind the flock could not beat landers already blocked in flock -w (MEASURED 17:0x: both coo landers
+# waited 25 minutes behind cio, senior_05 and officer_02).
+lease_boss() { local b; b="$(sed -n 's/^BOSSES: *//p' "${S4E_POSTOFFICE:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1)"; case " $b " in *" $seat "*) return 0 ;; esac; return 1; }
+lease_skipped=0
 take_lease() {
+    if lease_boss; then
+        lease_since="$(date +%s)"; lease_skipped=1
+        echo "LAND stage=lease skipped: seat $seat is a boss and never waits for the push lease (Lon 2026-11-13); a worker's push it overtakes is rejected and goes round"
+        return 0
+    fi
     if ! flock -n 8; then
         echo "LAND stage=lease waiting: held by $(tail -1 "$lease" 2>/dev/null | cut -c1-120); the lease serializes the pushes box-wide, never a gate (box-scheduler step 18; up to $lw s)"
         flock -w "$lw" 8 || refuse "the landing lease is still held after $lw s by $(tail -1 "$lease" 2>/dev/null | cut -c1-120): the gate ran, nothing pushed; run the landing again"
@@ -522,7 +535,7 @@ take_lease() {
     printf 'seat=%s pid=%s row=%s since=%s\n' "$seat" "$$" "${row:-gate}" "$(date -u +%FT%TZ)" > "$lease"
     echo "LAND stage=lease held seat=$seat pid=$$ after_gate=1 (released after the push)"
 }
-drop_lease() { printf 'free: released by seat=%s pid=%s at %s\n' "$seat" "$$" "$(date -u +%FT%TZ)" > "$lease"; flock -u 8; echo "LAND stage=lease released held_s=$(( $(date +%s) - lease_since )) $1"; }   # the file names the last holder until the next takes it; a waiter reads free:
+drop_lease() { if [ "$lease_skipped" = 1 ]; then lease_skipped=0; echo "LAND stage=lease released held_s=0 (a boss holds no lease) $1"; return 0; fi; printf 'free: released by seat=%s pid=%s at %s\n' "$seat" "$$" "$(date -u +%FT%TZ)" > "$lease"; flock -u 8; echo "LAND stage=lease released held_s=$(( $(date +%s) - lease_since )) $1"; }   # the file names the last holder until the next takes it; a waiter reads free:
 LOG="/tmp/s4e/$seat/land.$$"
 mkdir -p "$LOG" || refuse "cannot make $LOG"
 declare -A stage_done
