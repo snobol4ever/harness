@@ -163,6 +163,26 @@ gate_require_fresh() {
             _stale=1; _why="$_bin is older than tracked source $_newest_f"; break
         fi
     done
+    # ⛔ A CACHED BUILD IS FRESH BY ITS KEY, NOT BY ITS MTIME (the grader 2026-11-12; Lon, in the grader's window: "We are meant be to sharing via
+    # CACHE, objects."). A build-cache entry (/home/resources/builds/scrip/<key>, S4E_BUILD_CACHE_DIR) is immutable and named by the key of the SCRIP
+    # tree and RT_TAG it was built from, so a binary run IN PLACE from it (SCRIP= and RT_DIR= into the entry) is that tree's build whatever the
+    # checkout's mtimes say. MEASURED: copying an entry into a worktree (util_build_cache.sh fetch) took 69 s for 908 files, across two filesystems
+    # (/tmp and /home), where pointing at it takes none; the checkout of a new base took 1 s. Every binary named must sit in ONE entry whose key equals
+    # the key of _root at its RT_TAG; anything else keeps the mtime verdict.
+    if [ "$_stale" = 1 ]; then
+        local _cd="" _cb _cok=1 _crt _ck _cache="${S4E_BUILD_CACHE_DIR:-/home/resources/builds/scrip}"
+        for _bin in "$@"; do
+            [ -e "$_bin" ] || continue
+            _cb="$(cd "$(dirname "$_bin")" 2>/dev/null && pwd -P)" || { _cok=0; break; }; _cb="${_cb%/out}"
+            case "$_cb" in "$_cache"/*) ;; *) _cok=0; break;; esac
+            [ -z "$_cd" ] && _cd="$_cb"; [ "$_cd" = "$_cb" ] || { _cok=0; break; }
+        done
+        if [ "$_cok" = 1 ] && [ -n "$_cd" ]; then
+            _crt="$(cd "$_root" && env -u MAKEFLAGS -u MFLAGS -u MAKELEVEL make -s --no-print-directory --eval='s4e-print-rt-tag: ; @echo $(RT_TAG)' s4e-print-rt-tag 2>/dev/null)"
+            _ck="$(bash "$(dirname "${BASH_SOURCE[0]}")/util_build_cache.sh" key --root "$_root" --tag "$_crt" 2>/dev/null)"
+            [ -n "$_ck" ] && [ "$_ck" = "${_cd##*/}" ] && _stale=0
+        fi
+    fi
     if [ "$_stale" = 1 ] && [ "${SCRIP_ALLOW_STALE:-}" = 1 ]; then
         # ⛔⭐ THE DELIBERATE STALE RUN -- LOUD AND RECORDED, NEVER SILENT (the officer's brief, same row). LOUD: the banner goes to
         # BOTH streams, so it lands in whatever a reader captured. RECORDED: gate_score_row refuses to write THE ONE
