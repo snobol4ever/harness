@@ -16,10 +16,10 @@
 # leaf that starts nothing. The census reads the holders from /proc/*/fd (a held file is open for the holder's life: kernel truth, no sidecar). The seat is S4E_SEAT (every root's settings env sets it),
 # else the first path component under /home of the working directory. A wait of a second or more is one line in SLOT_WAITS.tsv (R-2078).
 S4E_CC_POOL_DEFAULT=6
-S4E_RUN_POOL_DEFAULT=12
+S4E_RUN_POOL_DEFAULT=18
 S4E_CC_SEAT_CAP_DEFAULT=3
 S4E_RUN_SEAT_CAP_DEFAULT=4
-S4E_RUN_GRADER_RESERVED_DEFAULT=4
+S4E_RUN_GRADER_RESERVED_DEFAULT=10
 s4e_slot_seat() { if [ -n "${S4E_SEAT:-}" ]; then printf '%s' "$S4E_SEAT"; else pwd -P | sed -n 's|^/home/\([^/]*\).*|\1|p' | grep . || printf 'seat'; fi; }
 s4e_slot_note() {   # <kind> <t0> <cmd>... -- one line per wait of a second or more
     local f w k="$1" t0="$2"; shift 2
