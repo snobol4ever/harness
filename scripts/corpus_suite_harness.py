@@ -1227,7 +1227,7 @@ def apply_line_mask(text, patterns, side="both"):
 # the suite's ALL.mask beside the data. The voice is set by the suite reader from the suite's language (the SNOBOL4 family:
 # snobol4, snocone -- rebus has no oracle); S4E_FATAL_RENDER=0 is the gate's fail-once seam and nothing else's.
 FATAL_RENDER = {"voice": None}
-FATAL_REF_LINE = re.compile(r"^.*\(\d+\) : ERROR \d{3} -- ", re.M)   # the oracle's fatal line as sbl -bf prints it
+FATAL_REF_LINE = re.compile(r"^.*\(\d+\) : ERROR \d{3} -(?:- |$)", re.M)   # the oracle's fatal line as sbl -bf prints it; a long file name wraps it to `ERROR nnn -` and a next line `- <text>` (MEASURED: test_gate_sno_a_deferred_cset_..._error__f, row gate_cases_snobol4-red-...-error-f)
 
 
 def _fatal_render_voice_for(lang):
