@@ -13,7 +13,7 @@ as a design job; this road sends it to a junior as a bug, with the steps a junio
            names the entry (util_reds_to_designers.live_rows and plan).
   DEALING  each new row goes to the junior holding the fewest live rows in QUEUE.tsv (owner, ASSIGNED:, CLAIMED: or QUEUED:seat-), ties by number:
            round robin over the juniors of TIERS.tsv (role junior, the roster the seat folders make) with no state of its own, so one call or many never fill one tube (the stagger rule).
-  OUTPUT   one line per bug: JUNIOR_BUG suite=K entry=E junior=J topic=T reading=R; then FEED_BOARD suites_read=N reds=N rowed=N closed=N alike=N bugs=N limit=N (closed: an entry whose topic already has a baton, a DONE row waiting for the cycle; alike: a red whose output hash matches one already rowed or dealt in its suite).
+  OUTPUT   one line per bug: JUNIOR_BUG suite=K entry=E junior=J topic=T reading=R; then FEED_BOARD suites_read=N reds=N rowed=N closed=N alike=N bugs=N limit=N (closed: an entry whose topic already has a baton, a DONE row waiting for the cycle; alike: a red listed in a shared cause's members file of the newest cause census, /home/resources/progress/causes-<date>/<cause>.members.tsv or S4E_CAUSES_DIR, held by that cause's row, one CAUSE_HELD line per cause).
   --apply  mints each bug: s4e_msg.sh mint TOPIC 1 --to JUNIOR --stdin. The mint's WAKE line is PRINTED, never sent (the coo wakes in waves).
   --limit N  at most N bugs in one call (default 20).   --suites K1,K2  only these suite keys.   --juniors J1,J2  another seat list.
   --probe  plants a scratch postoffice (S4E_POST) with two suites' reds, a live row and a DONE row, runs --apply there with real mints, and prints
@@ -126,15 +126,19 @@ def read_suite(key):
     return p.stdout + p.stderr
 
 
-def fingerprints(path=os.environ.get("S4E_RESULTS_TSV", "/home/resources/progress/results.tsv")):
-    # (suite, entry) -> (verdict, output hash) of the entry's last mode 3 reading (results.tsv columns 6, 8, 9, 10 and 13)
-    fp = {}
-    try:
-        for l in open(path, encoding="utf-8", errors="replace"):
-            c = l.rstrip("\n").split("\t")
-            if len(c) >= 13 and c[8] == "m3" and c[12]: fp[(c[5], c[7])] = (c[9], c[12])
-    except OSError: pass
-    return fp
+def cause_holds(d=None):
+    # (suite, entry) -> the shared cause whose row holds it: every <cause>.members.tsv (columns suite, cause, entry) of the newest cause census,
+    # /home/resources/progress/causes-<date>/ (S4E_CAUSES_DIR names another); no census, no hold
+    if d is None:
+        d = os.environ.get("S4E_CAUSES_DIR") or (sorted(glob.glob("/home/resources/progress/causes-*/")) or [""])[-1]
+    h = {}
+    for p in sorted(glob.glob(os.path.join(d, "*.members.tsv"))):
+        try:
+            for l in open(p, encoding="utf-8", errors="replace"):
+                c = l.rstrip("\n").split("\t")
+                if len(c) >= 3 and c[0] != "suite": h.setdefault((c[0], c[2]), os.path.basename(p)[:-len(".members.tsv")])
+        except OSError: pass
+    return h
 
 
 def design_witnesses(root=os.path.join(HERE, "..", "designs")):
@@ -156,7 +160,7 @@ def design_witnesses(root=os.path.join(HERE, "..", "designs")):
 def feed(order, reader, po, rows, limit, juniors, apply):
     topics, dw = d2d.live_rows(po)
     n = load(po, juniors); bugs = []; reds_n = rowed_n = read_n = unread_n = closed_n = alike_n = design_n = 0
-    fps = fingerprints(); dws = design_witnesses(); dred = {}
+    holds = cause_holds(); dws = design_witnesses(); dred = {}; cheld = {}
     for key, lang in order:
         if len(bugs) >= limit: break
         text = reader(key)
@@ -170,18 +174,15 @@ def feed(order, reader, po, rows, limit, juniors, apply):
         unread_n += sum(1 for _e, r in reds if "UNREAD" in r)
         reds = [(e, r) for e, r in reds if "UNREAD" not in r]
         reds_n += len(reds)
-        # ⛔ REDS THAT FAIL ALIKE ARE ONE BUG (skill fleet-bus 1; the coo 2026-11-12 22:4x, measured: nine raku-rungs array rungs read FAIL with one output
-        # hash 972f6d10 and were dealt to seven seats, two seniors among them, on one cause): a red whose (verdict, output hash) matches an entry of the
-        # same suite already rowed or dealt waits, counted alike=N, and is dealt only after the cycle reads the lead entry green
-        held = set()
-        for e, _r in reds:
-            t = d2d.topic_of(key, e)
-            if (t in topics or os.path.exists(os.path.join(po, "tasks", t + ".task.md"))) and fps.get((key, e)): held.add(fps[(key, e)])
+        # ⛔ REDS OF ONE SHARED CAUSE ARE ONE BUG (skill fleet-bus 1; the coo 2026-11-13 09:1x, on the cto's census of 08:5x, measured: the key of
+        # 11-12 was results.tsv column 13, the BINARY's identity at the board's start, never an output hash, so every red graded on one build read
+        # alike and waited behind one row): a red listed in a shared cause's members file is held by that cause's row, counted alike=N; every
+        # other red is its own bug
         for e, reading in reds:
             pat = re.compile(r"(^|[^A-Za-z0-9_/])" + re.escape(e) + r"($|[^A-Za-z0-9_/])")
             t = d2d.topic_of(key, e)
             if t in topics or any(pat.search(l) for l in dw.values()): rowed_n += 1; continue
-            if fps.get((key, e)) in held: alike_n += 1; continue
+            if (key, e) in holds: alike_n += 1; cheld[holds[(key, e)]] = cheld.get(holds[(key, e)], 0) + 1; continue
             # ⛔ A DESIGN STEP'S WITNESS IS HELD BY ITS STEP (the coo 2026-11-13 00:3x, on officer_04's reading: tabling-one-engine step 2 had no live row,
             # so its witnesses oe1 to oe10 were dealt to eight seats one by one): such a red is never a junior's bug; its step row holds it, design=N
             if e in dws: design_n += 1; dred.setdefault(dws[e], []).append(e); continue
@@ -191,9 +192,9 @@ def feed(order, reader, po, rows, limit, juniors, apply):
             if os.path.exists(os.path.join(po, "tasks", t + ".task.md")): rowed_n += 1; closed_n += 1; continue
             if len(bugs) >= limit: break
             j = min(juniors, key=lambda s: (n[s], juniors.index(s))); n[j] += 1; topics.add(t)
-            if fps.get((key, e)): held.add(fps[(key, e)])
             bugs.append((key, lang, e, j, t, reading))
             print("JUNIOR_BUG suite=%s entry=%s junior=%s topic=%s reading=%s" % (key, e, j, t, reading))
+    for c in sorted(cheld): print("CAUSE_HELD cause=%s reds=%d (held by the shared cause's row of the cause census)" % (c, cheld[c]))
     for d in sorted(dred): print("DESIGN_RED step=%s reds=%d first=%s (held by its step row; a closed step's red is a regression)" % (d, len(dred[d]), dred[d][0]))
     minted = 0
     if apply:
@@ -222,13 +223,15 @@ def probe():
                    "big": "SUITE_ROW suite=big pass=1 total=5\nSUITE_ROW_RED b/x1 m3=FAIL@a\nSUITE_ROW_RED b/x2 m3=CRASH@a\nSUITE_ROW_RED b/x3 m3=FAIL@a\nSUITE_ROW_RED b/x4 m3=FAIL@a\n",
                    "mute": "REFUSE(2): planted refusal\n"}
         rows = {"tiny": ["tiny", "pkg", "icon", "corpus_suite_harness.py", "corpus/packages/icon/tiny"]}
+        os.makedirs(os.path.join(w, "causes")); os.environ["S4E_CAUSES_DIR"] = os.path.join(w, "causes")
+        open(os.path.join(w, "causes", "shared.members.tsv"), "w").write("suite\tcause\tentry\nbig\tshared\tb/x1\n")
         bugs, rowed, minted = feed([("mute", "icon"), ("tiny", "icon"), ("big", "prolog")], lambda k: planted[k], w, rows, 3, JUNIORS[:3], True)
         q = open(os.path.join(w, "QUEUE.tsv"), encoding="utf-8").read()
         got = [(b[2], b[3]) for b in bugs]
-        want = [("progs/a1", "junior_02"), ("b/x1", "junior_03"), ("b/x2", "junior_01")]
+        want = [("progs/a1", "junior_02"), ("b/x2", "junior_03"), ("b/x3", "junior_01")]
         baton = open(os.path.join(w, "tasks", "tiny-red-progs-a1.task.md"), encoding="utf-8", errors="replace").read() if os.path.isfile(os.path.join(w, "tasks", "tiny-red-progs-a1.task.md")) else ""
         steps = all(s in baton for s in ("## NEXT", "--partition 'entry:progs/a1'", "monitor_run.sh", "s4e_worktree.sh new", "s4e_land.sh", "escalate tiny-red-progs-a1", "SKILLS: fleet-bus"))
-        ok = got == want and rowed == 1 and minted == 3 and "tiny-red-progs-a1" in q and "b/x3" not in str(bugs) and steps
+        ok = got == want and rowed == 1 and minted == 3 and "tiny-red-progs-a1" in q and "b/x1" not in str(bugs) and "b/x4" not in str(bugs) and steps
         print("FEED_PROBE bugs=%d minted=%d rowed=%d limit_held=%d dealt=%s baton_steps=%d ok=%d" % (len(bugs), minted, rowed, int(len(bugs) == 3),
               ",".join(j for _, j in got), int(steps), int(ok)))
         return ok
