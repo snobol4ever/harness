@@ -87,7 +87,9 @@ def load(po, juniors):
     q = os.path.join(po, "QUEUE.tsv"); n = {j: 0 for j in juniors}
     for l in open(q, encoding="utf-8", errors="replace"):
         c = l.rstrip("\n").split("\t")
-        if l.startswith("#") or len(c) < 4 or c[3].startswith("DONE"): continue
+        # ⛔ A PARKED ROW IS NO LOAD (the coo 2026-11-12 21:4x, measured: junior_01 and junior_15 sat idle with two and three PARKED-AWAITING rows each
+        # while junior_04 and junior_14 were dealt two new rows apiece): a row waiting on a verdict, a block or a hold keeps no seat busy
+        if l.startswith("#") or len(c) < 4 or re.match(r"^(DONE|RETIRED|PARKED|BLOCKED)", c[3]): continue
         for j in juniors:
             if c[2] == j or c[3] in ("ASSIGNED:" + j, "CLAIMED:" + j, "QUEUED:seat-" + j): n[j] += 1; break
     return n
