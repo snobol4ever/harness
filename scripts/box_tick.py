@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
-# box_tick.py -- THE FLEET CONTROLLER, ONE PROCESS A MINUTE (DESIGN-PLAN fleet-control steps 4 and 5; the cio, 2026-11-07, on Lon's word:
-# "gain control of the CPU problem" / "queue and limit as necessary. use modern industry proven tools"). It replaces box_tick.sh, a shell
-# script that forked about 9,000 processes a tick (7 CPU-s quiet, 18 under load, MEASURED 2026-11-07 11:4x). THE LAW: one signal, PSI
-# (/proc/pressure/cpu, the kernel's own pressure accounting); one decision a tick for two knobs, the grader width W and the workers awake A;
-# the controller alone writes them (W to box.width, read by the cycle, the one grader since CIO-82; A to MODE's WORKERS-AWAKE line and the controller-owned
-# FLEET: IDLE EXCEPT list the Stop gate enforces). No seat chooses. A hand-written FLEET line (no "(controller" marker) freezes A: Lon's hand
-# outranks the controller, and the controller says so on its TICK line.
-#   box_tick.py --tick           one tick: sense, decide, act, print one TICK line; under flock on $TICK_DIR/tick.lock; rc 0
-#   box_tick.py --probe-width    the law on planted sensors: quiet raises one step, hot lowers one step, a hold holds; one WIDTH_PSI line, rc 0/1
-#   box_tick.py --decide         print the decision for the live sensors without acting
+# box_tick.py -- THE FLEET TICK, ONE PROCESS A MINUTE (DESIGN-PLAN fleet-control step 4; the cio, 2026-11-07). SINCE 2026-11-13 IT DECIDES NOTHING ABOUT WHO RUNS
+# (row one-limit-universally-respected-every-seat-runs-at-will; Lon 13:5x CST, in the cio's window, verbatim: "I wan tall descisions on when and when not to run a junior,
+# senior, officer, or your GRANDMOTHER to STOP NOW! I want all seats to RUN at WILL." / "We do not want two or three limiters, we want ONE UNIVERSALALLY resepcted LIMIT.").
+# THE ONE LIMIT: cores=N of /home/resources/postoffice/CORES.conf (S4E_CORES_CONF the seam). Every tick sets s4e.slice, the one slice that holds every process of the fleet, to
+# CPUQuota=N*100% and clears every quota below it (and below app.slice/app-s4e.slice, where the graded runs lived until this row), so the kernel enforces the same number the
+# door's tokens count (lib_slots.sh). The grader width W, the workers awake A and the controller's FLEET live set are gone: nothing else limits and nothing chooses a seat.
+# With no CORES.conf, or no cores line, the tick sets no quota and clears none (the box of before).
+#   box_tick.py --tick              one tick: sense, enforce the one limit, sync, sweep, print one TICK line; under flock on $TICK_DIR/tick.lock; rc 0
+#   box_tick.py --probe-one-limit   the one limit on the live box and on planted trees; one ONE_LIMIT line, rc 0 ok / 1 red / 2 no number to read
+#   box_tick.py --probe-one-limit --scratch   the planted arms only (the law of the code, no live reading): the landing's gate
 #   box_tick.py --probe-roots-sync  every clean seat root's .github and harness fast-forwarded every fifth tick, a dirty root named and left; ROOTS_SYNC line, rc 0/1
 # Every fifth tick (S4E_TICK_SWEEP_EVERY) the tick runs the LIVE s4e_msg.sh sweep and queues its WAKE lines in TICK_DIR/wake.pending (live_sweep, the coo 2026-11-12).
-# S4E_TICK_DRY=1: no 2 s sample, no systemctl, no expire, no MODE write, a scratch tick dir; the TICK line still prints with its cpu_s.
-# THE LAW OF THE TWO KNOBS (one step a tick at most, a step every S4E_STEP_EVERY ticks, default 2):
-#   quiet: cpu PSI avg60 < 25 and avg10 < 25 and no grader memory event  -> W and A go up one (to WMAX, AMAX)
-#   hot:   cpu PSI avg60 > 40, or avg10 > 60, or a grader memory event   -> W and A go down one at once (to WMIN, AMIN)
-#   else hold. Night (22:00-05:59) or FLEET: IDLE raises WMAX to BOX_WMAX_NIGHT (8); day WMAX is BOX_WMAX_DAY (4). AMAX is S4E_WORKERS_MAX (20).
+# S4E_TICK_DRY=1: no 2 s sample, no systemctl, no expire, a scratch tick dir; the TICK line still prints with its cpu_s.
 import os, sys, re, time, json, fcntl, resource, subprocess, glob, shutil, datetime, calendar
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib_grade_locks as GL
@@ -24,14 +20,13 @@ ROOT = os.environ.get("S4E_HOME") or os.path.dirname(os.path.dirname(os.path.abs
 PO = os.environ.get("S4E_POSTOFFICE") or os.environ.get("S4E_POST") or "/home/resources/postoffice"
 PROG = "/home/resources/progress"
 U = "/sys/fs/cgroup/user.slice/user-%d.slice/user@%d.service" % (os.getuid(), os.getuid())
-GRADER = next((p for p in (U + "/app.slice/app-s4e.slice/app-s4e-grader.slice", U + "/s4e.slice/s4e-grader.slice") if os.path.isfile(p + "/cpu.pressure")), U + "/s4e.slice/s4e-grader.slice")   # the grader seat's runs enter app-s4e-grader.slice (util_mem_scope seat_slice); the class slice stood empty and read 0.0, so W rose on a hot box (cio 2026-11-11)
+GRADER = next((p for p in (U + "/s4e.slice/s4e-runs.slice/s4e-runs-grader.slice", U + "/app.slice/app-s4e.slice/app-s4e-grader.slice", U + "/s4e.slice/s4e-grader.slice") if os.path.isfile(p + "/cpu.pressure")), U + "/s4e.slice/s4e-grader.slice")   # the grader seat's runs enter app-s4e-grader.slice (util_mem_scope seat_slice); the class slice stood empty and read 0.0, so W rose on a hot box (cio 2026-11-11)
 SEATS_SLICE = U + "/s4e.slice/s4e-seats.slice"
 DRY = os.environ.get("S4E_TICK_DRY") == "1"
 TICK_DIR = os.environ.get("S4E_TICK_DIR") or ("/tmp/s4e/%s/tick" % os.environ.get("S4E_SEAT", "cio"))
-STEP_EVERY = int(os.environ.get("S4E_STEP_EVERY", "2"))
-WMIN, AMIN = 1, 0
-AMAX = int(os.environ.get("S4E_WORKERS_MAX", "20"))
-QUIET, HOT60, HOT10 = 25.0, 40.0, 60.0
+CORES_CONF = os.environ.get("S4E_CORES_CONF") or (PO + "/CORES.conf")
+FLEET_SLICE = "s4e.slice"   # the one slice: every seat scope, the grader, batch and (since this row) the graded runs, util_mem_scope.seat_slice
+FLEET_TREES = ("s4e.slice", "app.slice/app-s4e.slice")   # every quota below these is a second limiter and is cleared; app-s4e.slice is where the graded runs lived before
 GRADE_LOG = os.environ.get("S4E_GRADE_LOG") or PROG + "/GRADE_WORKERS.log"
 POST = os.environ.get("S4E_POST") or PO
 GRADER_HOME = os.environ.get("S4E_GRADER_HOME") or "/home/claude_grader"
@@ -79,24 +74,6 @@ def mode_text():
         return ""
 
 
-def fleet_idle(mode):
-    """Lon's hand idles the fleet: a FLEET: IDLE line without the controller's marker. The controller's own line (FLEET: IDLE EXCEPT <live set> (controller ...)) is the live set, not an idle."""
-    m = re.search(r"^FLEET: IDLE.*$", mode, re.M)
-    return m is not None and "(controller" not in m.group(0)
-
-
-def hand_fleet_line(mode):
-    m = re.search(r"^FLEET: .*$", mode, re.M)
-    return m is not None and "(controller" not in m.group(0)
-
-
-def wmax(mode):
-    hh = time.localtime().tm_hour
-    if hh >= 22 or hh < 6 or fleet_idle(mode):
-        return int(os.environ.get("BOX_WMAX_NIGHT", "8"))
-    return int(os.environ.get("BOX_WMAX_DAY", "4"))
-
-
 def sense(planted=None):
     s = {}
     if planted:
@@ -120,42 +97,63 @@ def sense(planted=None):
     return s
 
 
-def current_width():
-    w = read_int(TICK_DIR + "/box.width", 0)
-    return w if w >= 1 else 2
+def cores_conf(path=None):
+    """THE ONE NUMBER: the last cores=N line of CORES.conf (lib_slots.sh s4e_cores_conf reads it the same way); None when the file, the line or a number is absent"""
+    v = None
+    try:
+        for line in open(path or CORES_CONF):
+            m = re.match(r"^cores=(\d+)\s*$", line)
+            if m: v = int(m.group(1))
+    except OSError:
+        return None
+    return v if v and v >= 1 else None
 
 
-def current_awake(mode):
-    m = re.search(r"^WORKERS-AWAKE: (\d+)", mode, re.M)
-    return int(m.group(1)) if m else 0
+def _quota(cg):
+    """the cgroup's cpu.max quota in percent of one core, None for max (no quota), '?' when unreadable"""
+    try:
+        q, per = open(os.path.join(cg, "cpu.max")).read().split()[:2]
+    except (OSError, ValueError):
+        return "?"
+    return None if q == "max" else int(round(int(q) * 100.0 / int(per)))
 
 
-def one_step(hot, quiet, may_rise):
-    if hot: return -1, "hot"
-    if quiet and may_rise: return +1, "quiet"
-    if quiet: return 0, "quiet-hold"
-    return 0, "hold"
+def one_limit_actions(top, n):
+    """what the tick must change so that ONE number limits the fleet: [(unit, 'N%')] for the fleet slice when it is not N*100 percent, then [(unit, '')] (a cleared CPUQuota)
+    for every slice or scope below FLEET_TREES that carries a quota of its own. top is the user manager's cgroup (U), or a planted tree; n None asks nothing."""
+    acts = []
+    if not n:
+        return acts
+    if _quota(os.path.join(top, FLEET_SLICE)) != n * 100:
+        acts.append((FLEET_SLICE, "%d%%" % (n * 100)))
+    for tree in FLEET_TREES:
+        root = os.path.join(top, tree)
+        for d, subs, _ in os.walk(root):
+            subs[:] = sorted(x for x in subs if x.endswith((".slice", ".scope")))
+            if d == os.path.join(top, FLEET_SLICE):
+                continue
+            if os.path.basename(d).endswith((".slice", ".scope")) and _quota(d) not in (None, "?"):
+                acts.append((os.path.basename(d), ""))
+    return acts
 
 
-def decide(s, w, a, mode, tick_no):
-    """one step a tick at most, a step every STEP_EVERY ticks for a rise, at once for a fall.
-    EACH ACTUATOR READS ITS OWN SLICE (the coo 2026-11-07 16:05, measured: s4e-seats.slice at its 1200 percent quota read cpu PSI 60 while
-    s4e-grader.slice read 0.0, and the box PSI, which counts the seats' throttled tasks, made the tick narrow the grader 8 to 5 for a pressure
-    that was not the grader's): W, the grader width, follows s4e-grader.slice's cpu.pressure and the grader memory event; A, the workers awake,
-    follows s4e-seats.slice's cpu.pressure. The box PSI stays in the TICK line as a reading. Planted sensors that name only cpu10/cpu60 (the
-    older probes) drive both, so the law on them is unchanged."""
-    g10 = s.get("gcpu10", s["cpu10"]); g60 = s.get("gcpu60", s["cpu60"])
-    s10 = s.get("scpu10", s["cpu10"]); s60 = s.get("scpu60", s["cpu60"])
-    mem = s.get("mem_rise", 0) == 1
-    WMAX = wmax(mode)
-    may_rise = tick_no % STEP_EVERY == 0
-    step, why = one_step(g60 > HOT60 or g10 > HOT10 or mem, g60 < QUIET and g10 < QUIET and not mem, may_rise)
-    step_a, why_a = one_step(s60 > HOT60 or s10 > HOT10, s60 < QUIET and s10 < QUIET, may_rise)
-    nw = min(WMAX, max(WMIN, w + step))
-    na = min(AMAX, max(AMIN, a + step_a))
-    if fleet_idle(mode):
-        na = 0
-    return dict(step=step, why="%s/seats:%s" % (why, why_a) if why_a != why else why, W=nw, A=na, WMAX=WMAX, AMAX=AMAX, step_a=step_a, why_a=why_a, gcpu60=g60, scpu60=s60)
+def enforce_one_limit():
+    """the tick's one act on the box: the fleet slice to cores=N, every other fleet quota cleared (systemctl --user set-property --runtime, the runtime drop-in outranking
+    every persistent one); returns the TICK line's word"""
+    n = cores_conf()
+    if not n:
+        return "one_limit=none(no cores line in %s)" % CORES_CONF
+    acts = one_limit_actions(U, n)
+    if DRY:
+        return "one_limit=%d dry_acts=%d" % (n, len(acts))
+    bad = 0
+    for unit, q in acts:
+        try:
+            r = subprocess.run(["systemctl", "--user", "set-property", "--runtime", unit, "CPUQuota=" + q], capture_output=True, text=True, timeout=30)
+            bad += int(r.returncode != 0)
+        except (OSError, subprocess.TimeoutExpired):
+            bad += 1
+    return "one_limit=%d acts=%d%s" % (n, len(acts), " failed=%d" % bad if bad else "")
 
 
 def systemctl(*args):
@@ -280,61 +278,6 @@ def probe_impact():
     ok = int(len(cells) > 0 and empty == 0 and dropped > 0)
     print("IMPACT_PROBE masters=%d cells=%d empty=%d dropped=%d ok=%d" % (len(masters), len(cells), empty, dropped, ok))
     return 0 if ok else 1
-def alive_seats():
-    """the seats whose claude session is alive, read from the sessions' working directories (no seat pattern: the root names the seat)"""
-    seats = set()
-    for pid in os.listdir("/proc"):
-        if not pid.isdigit():
-            continue
-        try:
-            if open("/proc/%s/comm" % pid).read().strip() != "claude":
-                continue
-            cwd = os.readlink("/proc/%s/cwd" % pid)
-        except OSError:
-            continue
-        m = re.match(r"/home/claude_([a-z0-9_]+)", cwd)
-        if m: seats.add(m.group(1))
-    return seats
-
-
-def write_live_set(A, mode):
-    """fleet-control step 5: a FLEET line the controller owns (it carries "(controller") lists cio and the first A workers alive, by number;
-    a worker beyond A is dropped from the list and stops at its Stop; a hand-written FLEET line is never touched"""
-    m = re.search(r"^FLEET: IDLE EXCEPT (.*?) \((controller.*)\)$", mode, re.M)
-    if DRY or not m:
-        return "liveset=hand" if not m else "liveset=dry"
-    keep = [x for x in m.group(1).split() if not x.startswith(("worker_", "junior_"))]
-    alive = alive_seats()
-    workers = sorted((x for x in alive if x.startswith(("worker_", "junior_"))), key=lambda x: int(x.split("_")[1]))[:A]
-    seniors = sorted(x for x in alive if not x.startswith(("worker_", "junior_")) and x not in keep)   # Lon 2026-11-07 13:5x ("fire any combination of Haiku, Sonnet, and Opus"):
-    live = keep + seniors + workers   # every alive company man or officer is in the live set too; only the workers are counted against A
-    line = "FLEET: IDLE EXCEPT %s (controller %s: cio and the first %d workers alive by the law of fleet-control step 5; a worker beyond the count stops at its Stop; Lon's hand replaces this line at will)" % (" ".join(live), time.strftime("%Y-%m-%d %H:%M"), A)
-    if line.split(" (controller")[0] == m.group(0).split(" (controller")[0]:
-        return "liveset=%d" % len(workers)
-    new = mode.replace(m.group(0), line, 1)
-    tmp = PO + "/MODE.tmp.%d" % os.getpid()
-    open(tmp, "w").write(new); os.replace(tmp, PO + "/MODE")
-    return "liveset=%d(written)" % len(workers)
-
-
-def write_awake(A, why, s, mode):
-    """the controller alone writes WORKERS-AWAKE; a hand-written FLEET line freezes it (Lon's hand outranks the controller)"""
-    if DRY or hand_fleet_line(mode) or not os.path.isfile(PO + "/MODE"):
-        return "awake=frozen-by-hand" if hand_fleet_line(mode) else "awake=dry"
-    cur = current_awake(mode)
-    if cur == A:
-        return "awake=%d" % A
-    stamp = time.strftime("%Y-%m-%d %H:%M")
-    line = "WORKERS-AWAKE: %d (controller %s: %s, cpu PSI avg60 %.1f avg10 %.1f, was %d; fleet-control step 5)" % (A, stamp, why, s["cpu60"], s["cpu10"], cur)
-    new = re.sub(r"^WORKERS-AWAKE: .*$", line, mode, count=1, flags=re.M) if re.search(r"^WORKERS-AWAKE:", mode, re.M) else mode.rstrip("\n") + "\n" + line + "\n"
-    bak = PO + "/MODE.bak-%s-controller" % time.strftime("%Y-%m-%d")
-    if not os.path.exists(bak):
-        shutil.copy(PO + "/MODE", bak)
-    tmp = PO + "/MODE.tmp.%d" % os.getpid()
-    open(tmp, "w").write(new); os.replace(tmp, PO + "/MODE")
-    return "awake=%d(was %d)" % (A, cur)
-
-
 def expire_leases():
     """fleet-queue step 5 kept: a RESERVED claim whose job is back in its tube is expired by the bus verb; every fifth tick"""
     n = 0
@@ -643,19 +586,15 @@ def tick():
     open(TICK_DIR + "/tick.count", "w").write("%d\n" % n)
     mode = mode_text()
     s = sense(dict(cpu10=4.0, cpu60=4.0, cpu300=4.0, gcpu10=1.0, mem_rise=0) if DRY else None)
-    w, a = current_width(), current_awake(mode)
-    d = decide(s, w, a, mode, n)
-    open(TICK_DIR + "/box.width", "w").write("%d\n" % d["W"])
+    one = enforce_one_limit()
     grader = "retired (CIO-82: the cycle is the one grading road)"
-    awake = write_awake(d["A"], d["why"], s, mode)
-    liveset = write_live_set(d["A"], mode_text())
     expired = expire_leases() if n % 5 == 0 else 0
     fed = "retired (CIO-82: the cycle serves test requests)"
     st = {"alarm": 0, "line": "stall=retired"}   # the grade tube's stall watch retired with the tube (CIO-82); the BOX.state and TICK line keys keep their shape
     view = regenerate_view()
     sweep = live_sweep(n)
     with open(TICK_DIR + "/decide.last", "w") as f:
-        f.write(json.dumps(dict(tick=n, sensors=s, decision=d, grader=grader, awake=awake, liveset=liveset, expired=expired, fed=fed, view=view)) + "\n")
+        f.write(json.dumps(dict(tick=n, sensors=s, one_limit=one, grader=grader, expired=expired, fed=fed, view=view)) + "\n")
     # BOX.state: the controller is its writer (the coo 2026-11-07 15:29: the retired box_controller's file had no writer and its readers, the coo's OPS line, opswatch and
     # fleet_health.py, read a 520 s old width of 2). The old keys that still mean something keep their names (ts busy cores cpu_psi10 cpu_psi60 grader_width action); the rest are the tick's.
     try:
@@ -665,38 +604,120 @@ def tick():
         log_tick(n, gq_read)
         rph, lap = rows_recent(3600), rows_recent(86400)
         with open(PROG + "/BOX.state.tmp", "w") as f:
-            f.write("ts=%s\nbusy=%.1f\ncores=%d\ncpu_psi10=%.1f\ncpu_psi60=%.1f\ncpu_psi300=%.1f\ngrader_width=%d\ngrader_wmax=%d\nworkers_awake=%d\nworkers_max=%d\naction=%s\ngrader_queue=%d\ngrader_stall=%d\ncontroller=box_tick.py\ntick=%d\ncontroller_sync=%s\nrows_per_hour=%d\nlap_rows_24h=%d\n%s\n%s\n"
-                    % (time.strftime("%Y-%m-%dT%H:%M:%S%z"), s["load1"], os.cpu_count() or 16, s["cpu10"], s["cpu60"], s["cpu300"], d["W"], d["WMAX"], d["A"], d["AMAX"], d["why"], gq, st["alarm"], n, sy["kind"], rph, lap,
-                       grader.replace(" ", "\n").replace("grader\n", "grader_"), liveset if liveset.startswith("liveset=") else "liveset=" + liveset))
+            f.write("ts=%s\nbusy=%.1f\ncores=%d\ncpu_psi10=%.1f\ncpu_psi60=%.1f\ncpu_psi300=%.1f\none_limit_cores=%s\naction=%s\ngrader_queue=%d\ngrader_stall=%d\ncontroller=box_tick.py\ntick=%d\ncontroller_sync=%s\nrows_per_hour=%d\nlap_rows_24h=%d\n%s\n"
+                    % (time.strftime("%Y-%m-%dT%H:%M:%S%z"), s["load1"], os.cpu_count() or 16, s["cpu10"], s["cpu60"], s["cpu300"], cores_conf() or "none", one.replace(" ", ","), gq, st["alarm"], n, sy["kind"], rph, lap,
+                       grader.replace(" ", "\n").replace("grader\n", "grader_")))
         os.replace(PROG + "/BOX.state.tmp", PROG + "/BOX.state")
     except Exception as e:
         print("BOX.state not written: %s" % e)
     ru = resource.getrusage(resource.RUSAGE_SELF); rc = resource.getrusage(resource.RUSAGE_CHILDREN)
     cpu_s = ru.ru_utime + ru.ru_stime + rc.ru_utime + rc.ru_stime
-    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s %s expired=%d %s %s %s %s secs=%d cpu_s=%.2f%s"
-          % (n, s["cpu10"], s["cpu60"], s["cpu300"], s["load1"], s.get("mem_rise", 0), d["step"], d["why"], d["W"], d["WMAX"], d["A"], d["AMAX"],
-             sy["disp"], grader, awake, liveset, expired, fed, view, st["line"], sweep, int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
+    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d %s %s %s expired=%d %s %s %s %s secs=%d cpu_s=%.2f%s"
+          % (n, s["cpu10"], s["cpu60"], s["cpu300"], s["load1"], s.get("mem_rise", 0), one,
+             sy["disp"], grader, expired, fed, view, st["line"], sweep, int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
     return 0
 
 
-def probe_width():
-    """the law on planted sensors: quiet raises one step on a rise tick, hot lowers one at once, a middling reading holds"""
-    mode = "TENET\n"
-    q = decide(dict(cpu10=5.0, cpu60=5.0, mem_rise=0), 2, 4, mode, 2)
-    h = decide(dict(cpu10=70.0, cpu60=45.0, mem_rise=0), 2, 4, mode, 2)
-    m = decide(dict(cpu10=30.0, cpu60=30.0, mem_rise=0), 2, 4, mode, 2)
-    r = decide(dict(cpu10=5.0, cpu60=5.0, mem_rise=1), 2, 4, mode, 2)
-    hold_odd = decide(dict(cpu10=5.0, cpu60=5.0, mem_rise=0), 2, 4, mode, 1)
-    ok = int(q["step"] == 1 and q["W"] == 3 and q["A"] == 5 and h["step"] == -1 and h["W"] == 1 and h["A"] == 3
-             and m["step"] == 0 and r["step"] == -1 and hold_odd["step"] == 0 and q["W"] <= q["WMAX"])
-    # the slices are read apart (the coo 2026-11-07 16:05): a hot seats slice beside a quiet grader slice lowers A and raises W; the reverse lowers W and raises A
-    sp = decide(dict(cpu10=70.0, cpu60=60.0, gcpu10=1.0, gcpu60=0.0, scpu10=70.0, scpu60=60.0, mem_rise=0), 2, 4, mode, 2)
-    gp = decide(dict(cpu10=30.0, cpu60=30.0, gcpu10=70.0, gcpu60=60.0, scpu10=5.0, scpu60=5.0, mem_rise=0), 2, 4, mode, 2)
-    split_ok = int(sp["step"] == 1 and sp["W"] == 3 and sp["A"] == 3 and gp["step"] == -1 and gp["W"] == 1 and gp["A"] == 5)
-    ok = ok and split_ok
-    print("WIDTH_PSI quiet=%+d hot=%+d middling=%+d mem_rise=%+d odd_tick=%+d W=%d->%d/%d A=%d->%d seats_hot_grader_quiet=W%+d/A%+d grader_hot_seats_quiet=W%+d/A%+d split_ok=%d ok=%d"
-          % (q["step"], h["step"], m["step"], r["step"], hold_odd["step"], 2, q["W"], q["WMAX"], 4, q["A"], sp["step"], sp["step_a"], gp["step"], gp["step_a"], split_ok, ok))
-    return 0 if ok else 1
+def probe_one_limit(scratch=False):
+    """THE ONE LIMIT, PROVED (row one-limit-universally-respected-every-seat-runs-at-will). The planted arms read the law of the code on scratch trees and a scratch
+    CORES.conf; the live arms (all but --scratch) read the box: the number, the kernel's quota on the one slice, no quota anywhere below it, no fleet process outside it,
+    no FLEET or WORKERS-AWAKE line in MODE, BUDGET.tsv declaring no other CPUQuota, spawn_fleet.sh giving a seat scope none. One ONE_LIMIT line: rc 0 ok, 1 red, 2 no number."""
+    import tempfile
+    here = os.path.dirname(os.path.abspath(__file__))
+    arms, red = [], []
+    def arm(name, ok, why=""):
+        arms.append("%s=%s" % (name, "ok" if ok else "red"))
+        if not ok: red.append("%s(%s)" % (name, why))
+    with tempfile.TemporaryDirectory(prefix="one_limit.", dir=os.environ.get("TMPDIR") or "/tmp") as T:
+        def plant(rel, q):
+            os.makedirs(os.path.join(T, "u", rel), exist_ok=True)
+            open(os.path.join(T, "u", rel, "cpu.max"), "w").write(("max" if q is None else str(q * 1000)) + " 100000\n")
+        plant("s4e.slice", 800); plant("s4e.slice/s4e-seats.slice", 1200); plant("s4e.slice/s4e-seats.slice/s4e-seat-x.scope", 400)
+        plant("s4e.slice/s4e-grader.slice", None); plant("s4e.slice/s4e-runs.slice/s4e-runs-grader.slice", None); plant("app.slice/app-s4e.slice", 1000)
+        plant("app.slice/app-gnome.slice", 300)   # outside the fleet: never touched
+        got = sorted(one_limit_actions(os.path.join(T, "u"), 14))
+        want = sorted([("s4e.slice", "1400%"), ("s4e-seats.slice", ""), ("s4e-seat-x.scope", ""), ("app-s4e.slice", "")])
+        arm("law", got == want, "actions %s, want %s" % (got, want))
+        plant("s4e.slice", 1400)
+        for r in ("s4e.slice/s4e-seats.slice", "s4e.slice/s4e-seats.slice/s4e-seat-x.scope", "app.slice/app-s4e.slice"): plant(r, None)
+        arm("settled", one_limit_actions(os.path.join(T, "u"), 14) == [], "a tree already at the one limit still asks for acts")
+        arm("noconf", one_limit_actions(os.path.join(T, "u"), None) == [], "no number must change nothing")
+        conf = os.path.join(T, "CORES.conf")
+        open(conf, "w").write("# planted\ncores=4\ngrader=1\nseat=2\n")
+        arm("number", cores_conf(conf) == 4 and cores_conf(os.path.join(T, "absent")) is None, "cores_conf misread the planted file")
+        gone = [x for x in ("decide", "write_awake", "write_live_set", "current_width", "current_awake", "wmax") if x in globals()]
+        arm("chooses_nothing", not gone, "the tick still defines " + ",".join(gone))
+        try:
+            import util_mem_scope
+            sl = util_mem_scope.seat_slice()
+        except Exception as e:
+            sl = "error:%s" % e
+        arm("runs_inside", sl.startswith("s4e-runs-"), "seat_slice() is %s, outside s4e.slice" % sl)
+        noc = os.path.join(T, "NOCORES.conf"); open(noc, "w").write("grader=1\n")
+        def sh(script, conf_path, extra=None):
+            env = dict(os.environ, S4E_CORES_CONF=conf_path, S4E_SEM=os.path.join(T, "no-sem"), S4E_SEM_HOME=os.path.join(T, "sem"), S4E_SLOT_WAITS=os.path.join(T, "waits.tsv"), **(extra or {}))
+            env.pop("S4E_ADMITTED", None); env.pop("S4E_CORE_HELD", None); env.pop("S4E_RUN_SLOT_HELD", None)
+            r = subprocess.run(["bash", "-c", script, "x", here], env=env, capture_output=True, text=True, timeout=120)
+            return r.returncode, r.stdout.strip()
+        a1, _ = sh('. "$1/lib_slots.sh"; s4e_sem_admit run', conf)
+        a2, _ = sh('. "$1/lib_slots.sh"; s4e_sem_admit run', noc)
+        arm("admit_one_count", a1 == 0 and a2 == 2, "with cores= the sem admission must pass with no sem (rc %d), without it the sem rule stands (rc %d, want 2)" % (a1, a2))
+        la = os.path.join(T, "loadavg"); open(la, "w").write("10.00 10.00 10.00 1/1 1\n")
+        sm = '. "$1/lib_smoke_honest.sh"; smoke_note 124; echo "$SMOKE_TIMEOUTS_LOADED"'
+        _, s4 = sh(sm, conf, {"SMOKE_LOADAVG": la})
+        c8 = os.path.join(T, "C8.conf"); open(c8, "w").write("cores=8\n")
+        _, s8 = sh(sm, c8, {"SMOKE_LOADAVG": la})
+        arm("smoke_one_count", s4 == "1" and s8 == "0", "load 10 must count loaded against cores=4 (%s) and not against cores=8 (%s)" % (s4, s8))
+        if not scratch:
+            n = cores_conf()
+            if not n:
+                print("ONE_LIMIT REFUSE(2): no cores=N line in %s -- there is no one number to read (%s)" % (CORES_CONF, " ".join(arms)))
+                return 2
+            q = _quota(os.path.join(U, FLEET_SLICE))
+            arm("kernel", q == n * 100, "%s cpu.max is %s percent, cores=%d" % (FLEET_SLICE, q, n))
+            acts = [u for u, v in one_limit_actions(U, n) if u != FLEET_SLICE]
+            arm("nested", not acts, "%d other quota(s): %s" % (len(acts), ",".join(acts[:6])))
+            outside = 0
+            for d, _, fs in os.walk(os.path.join(U, "app.slice/app-s4e.slice")):
+                if "cgroup.procs" in fs:
+                    try: outside += sum(1 for _ in open(os.path.join(d, "cgroup.procs")))
+                    except OSError: pass
+            stray = []
+            for pid in os.listdir("/proc"):
+                if not pid.isdigit(): continue
+                try:
+                    if open("/proc/%s/comm" % pid).read().strip() != "claude": continue
+                    if not os.readlink("/proc/%s/cwd" % pid).startswith("/home/claude_"): continue
+                    if "/s4e.slice/" not in open("/proc/%s/cgroup" % pid).read(): stray.append(pid)
+                except OSError:
+                    continue
+            arm("one_slice", outside == 0 and not stray, "%d process(es) in app-s4e.slice, %d seat session(s) outside %s" % (outside, len(stray), FLEET_SLICE))
+            mode = mode_text()
+            keyed = re.findall(r"^(FLEET|WORKERS-AWAKE):", mode, re.M)
+            arm("mode", not keyed, "MODE still keys " + ",".join(keyed))
+            bud = os.environ.get("S4E_BUDGET") or (PO + "/BUDGET.tsv")
+            extra = []
+            try:
+                rows = [l.rstrip("\n").split("\t") for l in open(bud) if l.strip() and not l.startswith("#")]
+                hdr = rows[0]; iu, iq = hdr.index("unit"), hdr.index("CPUQuota")
+                for r in rows[1:]:
+                    if len(r) <= iq: continue
+                    if r[iu] == FLEET_SLICE:
+                        if r[iq] != "%d%%" % (n * 100): extra.append("%s=%s" % (r[iu], r[iq]))
+                    elif r[iq] not in ("-", ""):
+                        extra.append("%s=%s" % (r[iu], r[iq]))
+            except (OSError, ValueError, IndexError) as e:
+                extra.append("unread:%s" % e)
+            arm("budget", not extra, "BUDGET.tsv declares " + ",".join(extra))
+            sp = os.environ.get("S4E_SPAWN_FLEET") or "/usr/local/bin/spawn_fleet.sh"
+            try:
+                o = subprocess.run(["bash", sp, "--probe-scope"], capture_output=True, text=True, timeout=60).stdout
+            except (OSError, subprocess.TimeoutExpired) as e:
+                o = str(e)
+            arm("spawn", re.search(r"^SCOPE .* cpu=none ", o, re.M) is not None, "%s --probe-scope gives a seat scope a quota: %s" % (sp, o.strip()[:120]))
+    n = cores_conf()
+    print("ONE_LIMIT %s cores=%s %s%s" % ("red" if red else "ok", n if n else "none", " ".join(arms), " RED: " + "; ".join(red) if red else ""))
+    return 1 if red else 0
 
 
 def probe_rows():
@@ -714,8 +735,8 @@ if __name__ == "__main__":
     arg = sys.argv[1] if len(sys.argv) > 1 else "--tick"
     if arg == "--tick":
         sys.exit(tick())
-    if arg == "--probe-width":
-        sys.exit(probe_width())
+    if arg == "--probe-one-limit":
+        sys.exit(probe_one_limit(scratch="--scratch" in sys.argv[2:]))
     if arg == "--probe-rows":
         sys.exit(probe_rows())
     if arg == "--probe-sync":
@@ -726,6 +747,4 @@ if __name__ == "__main__":
         sys.exit(probe_impact())
     if arg == "--probe-area-refusal":
         sys.exit(probe_area_refusal())
-    if arg == "--decide":
-        mode = mode_text(); s = sense(); print(json.dumps(decide(s, current_width(), current_awake(mode), mode, read_int(TICK_DIR + "/tick.count", 0) + 1))); sys.exit(0)
-    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-sync | --probe-roots-sync | --probe-impact | --probe-area-refusal | --decide"); sys.exit(2)
+    print("usage: box_tick.py --tick | --probe-one-limit [--scratch] | --probe-rows | --probe-sync | --probe-roots-sync | --probe-impact | --probe-area-refusal"); sys.exit(2)

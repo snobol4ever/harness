@@ -175,6 +175,7 @@ s4e_sem_admit() {
     local class="$1" grader=0 seat chain bound t0 home sem cp d line rc item attempt
     local -a argv=()
     [ "$class" = run ] && [ "${S4E_CLASS:-}" = grader ] && grader=1
+    if [ -n "$(s4e_cores_conf cores)" ]; then export S4E_ADMITTED="$class"; S4E_SLOT_T0=$(date +%s.%N); return 0; fi   # THE ONE LIMIT (row one-limit-universally-respected-every-seat-runs-at-will): with cores= no class pool admits; the work's own compiles and runs take tokens of the one count
     sem="${S4E_SEM:-sem}"
     command -v "$sem" > /dev/null 2>&1 || { printf 'REFUSE(2) [util_run_slot --admit]: no GNU sem on PATH (apt: parallel); nothing ran\n' >&2; return 2; }
     home="${S4E_SEM_HOME:-/tmp/s4e-sem}"; mkdir -p "$home" 2> /dev/null || return 1

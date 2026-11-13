@@ -84,14 +84,14 @@ def box():
     st = kv(rd(P + "/BOX.state")); a10, a60, a300 = psi()
     try: load = os.getloadavg()
     except OSError: load = (None, None, None)
-    n = os.cpu_count() or 16; busy = num(st.get("busy")); width = rd(T + "/box.width").strip() or st.get("grader_width", "?")
+    n = os.cpu_count() or 16; busy = num(st.get("busy")); width = st.get("one_limit_cores", "?")
     dec = rd(T + "/decide.last"); q = re.search(r"ACTUATOR sessions quota=(\d+)", dec); jt = re.search(r"ACTUATOR jobserver tokens=(\d+)", dec)
     mi = re.search(r"MemAvailable:\s+(\d+)", rd("/proc/meminfo")); mem = num(st.get("memavail_mb")) if st.get("memavail_mb") else (int(mi.group(1)) // 1024 if mi else None); tmo = st.get("timeouts10", st.get("timeouts30", "?"))
     verdict = "RED" if (a60 or 0) >= 50 or (load[0] or 0) >= 2 * n else "WARN" if (a60 or 0) >= 30 or (load[0] or 0) >= n else "OK"
     return "THE BOX", verdict, [
         "load1 %s load5 %s on %d cores, busy %s" % (fmt(load[0]), fmt(load[1]), n, fmt(busy)),
         "cpu pressure some avg10 %s avg60 %s avg300 %s" % (fmt(a10), fmt(a60), fmt(a300)),
-        "law: grader width %s, caps: seats %s, runs %s, s4e %s" % (width, cap("/s4e.slice/s4e-seats.slice"), cap("/app.slice/app-s4e.slice"), cap("/s4e.slice")),
+        "law: the one limit cores=%s, the fleet slice s4e %s (every other quota cleared by the tick)" % (width, cap("/s4e.slice")),
         "memory free %s MB, timeouts %s, BOX.state age %ss" % (fmt(mem, 0), tmo, fmt(time.time() - os.path.getmtime(P + "/BOX.state"), 0) if os.path.exists(P + "/BOX.state") else "?"),
         "controller %s, tick timer %s" % ("alive" if subprocess.run(["systemctl", "--user", "is-active", "-q", "s4e-tick.timer"], capture_output=True).returncode == 0 else "DOWN",
                                             subprocess.run(["systemctl", "--user", "is-active", "-q", "s4e-tick.timer"], capture_output=True).returncode == 0 and "active" or "inactive"),

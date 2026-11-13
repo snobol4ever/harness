@@ -188,12 +188,13 @@ def _systemd_run_usable():
 
 
 def seat_slice():
-    """The seat's own run slice, app-s4e-<seat>.slice (under app.slice/app-s4e.slice, systemd nesting by the dashes): a run of this seat that names no class goes there, never straight under
-    app.slice. A scope that ends between the census's two samples takes its CPU with it; a slice keeps the total of every child it ever held, so
+    """The seat's own run slice, s4e-runs-<seat>.slice (under s4e.slice/s4e-runs.slice, systemd nesting by the dashes): a run of this seat that names no class goes there, inside the
+    one slice whose quota is the fleet's one limit (row one-limit-universally-respected-every-seat-runs-at-will, 2026-11-13: under app.slice/app-s4e.slice the graded runs sat outside
+    s4e.slice with a 10-core quota of their own). A scope that ends between the census's two samples takes its CPU with it; a slice keeps the total of every child it ever held, so
     the ledger attributes the seat's short runs (a graded entry lives seconds) to the seat (the fleet test, 2026-11-01: app.slice read 5.9 cores
     of which 2.1 had a line)."""
     who = re.sub(r"[^a-z0-9_]", "_", (os.environ.get("S4E_SEAT", "").strip() or HERE.parent.parent.name).lower())
-    return "app-s4e-%s.slice" % who
+    return "s4e-runs-%s.slice" % who
 
 
 def _unit_name(argv):

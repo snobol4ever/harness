@@ -7,7 +7,9 @@
 #   the runner prints "TIMEOUT" in place of the wrong answer it would have shown.
 # At the end the runner calls smoke_finish <fail-count>: when any step timed out while load1 was over SMOKE_LOAD_FACTOR (2) x cores the runner
 # REFUSES rc 2 (R-1680: a test that cannot measure refuses, never reds); otherwise rc 1 on a failure (a timeout on a quiet box is a red), rc 0 green.
-# SMOKE_LOADAVG (default /proc/loadavg) and SMOKE_CORES (default nproc) are the fixture's seams.
+# SMOKE_LOADAVG (default /proc/loadavg) and SMOKE_CORES (default the one number, cores=N of CORES.conf, S4E_CORES_CONF the seam; nproc with no cores line; row one-limit-universally-respected-every-seat-runs-at-will) are the fixture's seams.
+SMOKE_CORES="${SMOKE_CORES:-$(awk -F= '!/^#/ && $1 == "cores" { v = $2 } END { if (v ~ /^[0-9]+$/ && v > 0) print v }' "${S4E_CORES_CONF:-/home/resources/postoffice/CORES.conf}" 2>/dev/null)}"
+[ -n "$SMOKE_CORES" ] || unset SMOKE_CORES
 SMOKE_TIMEOUTS=0; SMOKE_TIMEOUTS_LOADED=0; SMOKE_TIMEOUT_LOADS=""
 smoke_note() {
   case "$1" in 124|137) ;; *) return 1;; esac
