@@ -157,12 +157,20 @@ next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && request_ready 
 BASE_TOP="${S4E_WT_TOP:-$(S4E_SEAT=grader bash "$S4E/harness/scripts/s4e_worktree.sh" --show-top 2>/dev/null | sed -n 's/^WT top=\([^ ]*\) .*/\1/p')}"; BASE_TOP="${BASE_TOP:-/tmp/s4e}/grader"; NBASES="${S4E_CYCLE_BASES:-2}"; FETCH_SECS="${S4E_CYCLE_FETCH_SECS:-20}"
 case "$NBASES" in ''|*[!0-9]*|0) NBASES=2;; esac; case "$FETCH_SECS" in ''|*[!0-9]*) FETCH_SECS=20;; esac
 heads_of() { local r; for r in SCRIP harness corpus .github; do git -C "$1/$r" rev-parse "${2:-HEAD}" 2>/dev/null || echo -; done | tr '\n' ' '; }
-base_bin() {   # base -> "SCRIP_BIN RT_DIR" of its SCRIP tree: the build cache's entry, else a build in the base; rc 2 (a line on stderr) when neither
+base_bin() {   # base -> "SCRIP_BIN RT_DIR": the base's OWN SCRIP/scrip and SCRIP/out, one build of its SCRIP tree; rc 2 (a line on stderr) when it cannot be had
+    # THE BASE RUNS ITS OWN BINARY, NEVER THE CACHE'S FILES IN PLACE (the coo and officer_08 2026-11-13 17:4x CST, MEASURED: scrip resolves a linked
+    # library relative to its own binary, so the cache's scrip tried /home/resources/builds/scrip/<key>/../corpus/... and every program that links one
+    # printed nothing, false FAILs from 23:20Z: rosetta-icon 62, rakudo-t 54, gate_cases_pascal 32, unicon-uni 11; and a base's own out/ was left from
+    # the build it was made with, a runtime of another tree). make in the base fetches the cache's entry for the tree (FETCHED, the files copied in) or
+    # builds it; the pair is then checked to be one build: out/buildinfo names the tree's key and scrip is the entry's byte for byte.
     local rt k c
+    ( cd "$1/SCRIP" && make -j8 ) > "$TMPDIR/cycle/base.make.log" 2>&1 < /dev/null || { echo "REFUSE(2): make failed in $1 for SCRIP $(git -C "$1/SCRIP" rev-parse --short=10 HEAD) (base.make.log)" >&2; return 2; }
     rt="$(cd "$1/SCRIP" && env -u MAKEFLAGS -u MFLAGS -u MAKELEVEL make -s --no-print-directory --eval='s4e-print-rt-tag: ; @echo $(RT_TAG)' s4e-print-rt-tag 2>/dev/null)"
     k="$(bash "$1/harness/scripts/util_build_cache.sh" key --root "$1/SCRIP" --tag "$rt" 2>/dev/null)"; c="${S4E_BUILD_CACHE_DIR:-/home/resources/builds/scrip}/$k"
-    if [ -n "$k" ] && [ -x "$c/scrip" ] && [ -e "$c/out/libscrip_rt.so" ]; then echo "$c/scrip $c/out"; return 0; fi
-    ( cd "$1/SCRIP" && make -j8 ) > "$TMPDIR/cycle/base.make.log" 2>&1 < /dev/null || { echo "REFUSE(2): SCRIP $(git -C "$1/SCRIP" rev-parse --short=10 HEAD) has no cache entry and make failed in $1 (base.make.log)" >&2; return 2; }
+    [ -x "$1/SCRIP/scrip" ] && [ -e "$1/SCRIP/out/libscrip_rt.so" ] || { echo "REFUSE(2): $1 has no scrip and out/libscrip_rt.so after make" >&2; return 2; }
+    if [ -n "$k" ] && [ -x "$c/scrip" ]; then
+        grep -qx "key $k" "$1/SCRIP/out/buildinfo" 2>/dev/null && cmp -s "$1/SCRIP/scrip" "$c/scrip" || { echo "REFUSE(2): $1's scrip and out/ are not one build of key $k (buildinfo or the binary differ)" >&2; return 2; }
+    fi
     echo "$1/SCRIP/scrip $1/SCRIP/out"
 }
 base_new() {   # N -> wt-base<N> made at origin's heads; rc 2 when it cannot be made
@@ -174,25 +182,26 @@ base_new() {   # N -> wt-base<N> made at origin's heads; rc 2 when it cannot be 
     : > "$b/.s4e-hold"; log "BASE $b made $(du -sm "$b" 2>/dev/null | cut -f1) MB"; return 0
 }
 choose_base() {   # sets BASE, SBIN and RTD, and holds BASE shared on fd 8 until this shell exits; rc 2 (a line on stderr) when no base holds a build
-    local now last want cur n b r
+    local now last want cur n b r bb
     exec 6> "$TMPDIR/cycle/base.lock"; flock -x 6
     now=$(date +%s); last=$(stat -c %Y "$TMPDIR/cycle/base.fetched" 2>/dev/null || echo 0)
     if [ $(( now - last )) -ge "$FETCH_SECS" ]; then for r in SCRIP harness corpus .github; do timeout -k 5 120 git -C "$S4E/$r" fetch -q origin main 2>/dev/null; done; : > "$TMPDIR/cycle/base.fetched"; fi
     want="$(heads_of "$S4E" origin/main)"; cur="$(cat "$TMPDIR/cycle/base.current" 2>/dev/null)"
-    if [ -z "$cur" ] || [ ! -f "$cur/.s4e-bin" ] || [ "$(heads_of "$cur")" != "$want" ]; then
+    if [ -z "$cur" ] || [ ! -f "$cur/.s4e-bin" ] || ! grep -q "^$cur/SCRIP/scrip " "$cur/.s4e-bin" || [ "$(heads_of "$cur")" != "$want" ]; then   # a .s4e-bin that names another tree's files (the build cache's, before 2026-11-13 17:5x) is stale
         for (( n = 1; n <= NBASES; n++ )); do
             b="$BASE_TOP/wt-base$n"; [ "$b" = "$cur" ] && continue
             base_new "$n" 2>> "$TMPDIR/cycle/base.log" || continue
             exec 8< "$b/.s4e-hold"; flock -n -x 8 || { exec 8<&-; continue; }
             for r in SCRIP harness corpus .github; do git -C "$b/$r" checkout -q --detach origin/main 2>> "$TMPDIR/cycle/base.log" || break; done
-            if [ "$(heads_of "$b")" = "$want" ] && base_bin "$b" > "$b/.s4e-bin.tmp" 2>> "$TMPDIR/cycle/base.log"; then
+            bb=1; [ "$(heads_of "$b")" = "$want" ] && { flock -u 6; base_bin "$b" > "$b/.s4e-bin.tmp" 2>> "$TMPDIR/cycle/base.log" && bb=0; flock -x 6; }   # the make (a fetch, about a minute) runs with the base held exclusive and the lock open, so other chunks launch meanwhile
+            if [ "$bb" = 0 ]; then
                 mv -f "$b/.s4e-bin.tmp" "$b/.s4e-bin"; printf '%s\n' "$b" > "$TMPDIR/cycle/base.current"; cur="$b"; flock -s 8
                 log "BASE $b forward SCRIP=$(git -C "$b/SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$b/corpus" rev-parse --short=10 HEAD) harness=$(git -C "$b/harness" rev-parse --short=10 HEAD)"; break
             fi
             rm -f "$b/.s4e-bin" "$b/.s4e-bin.tmp"; exec 8<&-
         done
     fi
-    [ -n "$cur" ] && [ -f "$cur/.s4e-bin" ] || { flock -u 6; exec 6>&-; echo "REFUSE(2): no base holds a build (base.log)" >&2; return 2; }
+    [ -n "$cur" ] && [ -f "$cur/.s4e-bin" ] && grep -q "^$cur/SCRIP/scrip " "$cur/.s4e-bin" || { flock -u 6; exec 6>&-; echo "REFUSE(2): no base holds a build of its own (base.log)" >&2; return 2; }   # a lap cell then runs on the root (on_base), a request waits
     [ "$(readlink -f "/proc/$BASHPID/fd/8" 2>/dev/null)" = "$(readlink -f "$cur/.s4e-hold")" ] || { exec 8< "$cur/.s4e-hold"; flock -s 8; }
     BASE="$cur"; read -r SBIN RTD < "$cur/.s4e-bin"; flock -u 6; exec 6>&-; return 0
 }
