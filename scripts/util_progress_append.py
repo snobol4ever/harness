@@ -763,6 +763,49 @@ def rows_from_triangulation(path, lang):
     return out
 
 
+def selftest():
+    """THE PIN READS THE COMMIT, NOT ITS ABBREVIATION (the grader 2026-11-12; Lon 13:1x: no gate scripts, so the check lives in the writer it
+    guards). On two scratch repositories: ARM 1 pins, lengthens core.abbrev in both and the append-time check must stand (MEASURED lap 23: git
+    went from 9 to 10 characters, "scrip ea374ea10 -> ea374ea103" read as a move and three graded cells appended nothing); ARM 2 commits after
+    the pin and the check must refuse. -> rc 0 both hold, 1 an arm failed (named), 2 cannot measure."""
+    import tempfile, shutil
+    global S4E
+    t = tempfile.mkdtemp(prefix="s4e_pin_selftest.")
+    old_s4e, git = S4E, lambda r, *a: subprocess.run(["git", "-C", os.path.join(t, r)] + list(a), capture_output=True, text=True, check=True)
+    try:
+        for r in ("SCRIP", "corpus"):
+            subprocess.run(["git", "-c", "init.defaultBranch=main", "init", "-q", os.path.join(t, r)], check=True, capture_output=True)
+            for k, v in (("user.email", "selftest@example.invalid"), ("user.name", "selftest"), ("core.abbrev", "7")): git(r, "config", k, v)
+            with open(os.path.join(t, r, ".gitignore"), "w") as f: f.write("scrip\nout/\n")
+            git(r, "add", ".gitignore"); git(r, "commit", "-q", "-m", r)
+        os.makedirs(os.path.join(t, "SCRIP", "out"))
+        for f, s in (("scrip", "driver\n"), ("out/libscrip_rt.so", "runtime\n")):
+            with open(os.path.join(t, "SCRIP", f), "w") as h: h.write(s)
+        S4E = t
+        pin_context(os.path.join(t, "SCRIP", "scrip"), os.path.join(t, "SCRIP", "out"))
+        s0 = _PINNED.get("scrip")
+        for r in ("SCRIP", "corpus"): git(r, "config", "core.abbrev", "12")
+        s1 = _git_short(os.path.join(t, "SCRIP"))
+        if s0 == s1 or not s1.startswith(s0):
+            print(f"REFUSE(2): the abbreviation did not lengthen ({s0} then {s1}): the arm measures nothing"); return 2
+        a1 = True
+        try: assert_ground_unmoved()
+        except ProgressGroundMoved: a1 = False
+        print(("ARM 1 OK: the abbreviation grew %s -> %s on the same commit and the check stood" if a1 else
+               "ARM 1 FAIL: the same commit read as a move after the abbreviation grew (%s -> %s)") % (s0, s1))
+        git("SCRIP", "commit", "-q", "--allow-empty", "-m", "a move")
+        a2 = False
+        try: assert_ground_unmoved()
+        except ProgressGroundMoved: a2 = True
+        print("ARM 2 OK: a new commit after the pin is refused" if a2 else "ARM 2 FAIL: a new commit after the pin was not refused")
+        print(f"PROGRESS_PIN_SELFTEST arms=2 {'OK' if a1 and a2 else 'FAIL'}")
+        return 0 if a1 and a2 else 1
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(f"REFUSE(2): the scratch repositories could not be made: {e}"); return 2
+    finally:
+        S4E = old_s4e; _PINNED.clear(); _PINNED_BIN.clear(); _CTX.clear(); shutil.rmtree(t, ignore_errors=True)
+
+
 def _main(argv):
     import argparse
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -777,8 +820,11 @@ def _main(argv):
     d = sub.add_parser("triangulation"); d.add_argument("--lang", required=True); d.add_argument("file")
     ctxp = sub.add_parser("context")
     mnp = sub.add_parser("min-backfill"); mnp.add_argument("--db", default=None)
+    sub.add_parser("selftest")
     args = ap.parse_args(argv)
     try:
+        if args.cmd == "selftest":
+            return selftest()
         if args.cmd == "context":
             print("\t".join(f"{k}={v}" for k, v in context().items()) + f"\tdb={db_path()}\toff={recording_off()}"); return 0
         if args.cmd == "min-backfill":
