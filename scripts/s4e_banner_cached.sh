@@ -79,11 +79,11 @@ $art
 $ic  $word"; [ -n "$grid" ] && out="$out
 $grid"
 # THE ROWS THE CYCLE COULD NOT WRITE ARE NAMED UNDER THE GRID (the grader 2026-11-12, s4e_cycle.sh record_row): a row the score writer refused keeps
-# its old reading, so the grid alone looks current while it is not; one line names each held row and its refusal.
+# its old reading, so the grid alone looks current while it is not; one line a refusal class names its held rows (the grader 2026-11-13, Lon: "You banner ends with </persisted-output> and isUSELESS!" MEASURED: the Stop message was 10,146 characters, over Claude Code's 10,000 for a hook message, and 24 held rows at one 180-character line each were 4,300 of them; CYCLE.refused keeps each refusal in full).
 _held="${S4E_CYCLE_REFUSED:-/home/resources/progress/CYCLE.refused}"
 if [ -n "$grid" ] && [ -s "$_held" ]; then out="$out
-⛔ SUITE ROWS HELD ($(grep -c . "$_held")): the cycle graded them, the score writer refused the row write, so the grid shows their older reading:
-$(awk -F'\t' '{ printf "   %s (%s): %s\n", $1, substr($2, 6, 11), substr($3, 1, 150) }' "$_held")"; fi
+⛔ SUITE ROWS HELD ($(grep -c . "$_held")): the grid shows their older reading; each refusal in full is $_held
+$(awk -F'\t' '{ r = $3; c = (r ~ /denominator moves/) ? "denominator moved, no stamp" : (r ~ /no suite (table|key)/) ? "no banner row" : (r ~ /have no reading/) ? "entries unread" : "other"; n[c]++; k[c] = k[c] " " $1 } END { for (c in n) printf "   %s (%d):%s\n", c, n[c], k[c] }' "$_held" | sort)"; fi
 gate="{}"; g="$root/harness/scripts/s4e_stop_gate.sh"
 [ -f "$g" ] && gate="$(printf '%s' "$hookin" | timeout 20 bash "$g" "$root" "$seat" --json 2>/dev/null)"
 printf '%s' "$out" | G="$gate" python3 -c 'import json,os,sys
