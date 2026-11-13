@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # s4e_worktree.sh -- ONE WHOLE-ROOT WORKTREE IN ONE COMMAND (box-scheduler step 36, CTO-503; the design text is the shared-box skill's DESIGN section 8).
 #
-#   s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--full] [--cap-mb <n>] [--row <topic>]   (alias add)
+#   s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--full] [--link] [--cap-mb <n>] [--row <topic>]   (alias add)
 #   s4e_worktree.sh rm <name>                                                                    (alias remove)
 #   s4e_worktree.sh list
 #   s4e_worktree.sh --probe
@@ -42,7 +42,24 @@ WT_CONF="${S4E_WT_CONF:-/home/resources/postoffice/WORKTREES.conf}"
 wt_conf() { awk -F= -v k="$1" '!/^#/ && $1 == k { v = $2 } END { if (v ~ /^[0-9]+$/) print v }' "$WT_CONF" 2>/dev/null; }
 WT_MAX="${WT_MAX:-$(wt_conf max)}"; WT_MAX="${WT_MAX:-40}"; WT_FREE_GB="$(wt_conf free_gb)"; WT_FREE_GB="${WT_FREE_GB:-0}"
 TIERS_TSV="$ROOT/.github/TIERS.tsv"
-TOP="${S4E_WT_TOP:-/tmp/s4e}"
+# THE WORKTREES LIVE ON /home (officer_02 2026-11-13, row worktrees-live-on-home-and-hard-link-their-build; MEASURED by the coo 14:3x CST: /tmp, its own 63 GB
+# filesystem, read 87 to 90% full, 48 GB of it worktrees, and new refused box-wide under the free_gb floor). A worktree under /tmp could share no byte with the
+# pristine of /home/resources/shared, since a hard link cannot join two filesystems (util_relink_root.py refuses). TOP is WORKTREES.conf's top= line, else
+# /home/resources/worktrees; S4E_WT_TOP in the environment wins (the probes' seam). The old top, /tmp/s4e, stays LEGACY while it holds worktrees: the cap counts
+# it, the sweep sweeps it and rm finds a worktree there, so nothing made before the move is stranded. With S4E_WT_TOP set there is no legacy top, so a probe's
+# sweep never reaches a live worktree. THE LINKS ARE ASKED FOR: new --link runs util_relink_root.py on the worktree's corpus, harness and .github when the
+# worktree and the pristine share a filesystem, so each clean file equal to the pristine's is a read-only hard link to it; MEASURED on a scratch pair that day: the
+# Edit tool and sed -i write a new inode (the link breaks, the pristine is untouched), and an in-place write (Python open a or w, shell >>) fails EACCES, never
+# writing through. So a worktree a seat edits is made WITHOUT links: util_build_package_suite.py and util_suite_partition.py write ALL.csv and PARTITION.tsv in
+# place, and a seat's own Python edit of a harness script failed EACCES in a linked worktree (MEASURED, officer_02, same day). --link is for a tree that only
+# checks out and reads: the cycle's bases (s4e_cycle.sh base_new), whose full corpus is 2.6 GB.
+# SCRIP and its out/ stay copies (the cto 2026-11-12, skill shared-box section 4: a fetch touches every output, and a shared inode would move another tree's
+# build times). size_mb is the worktree's own blocks (files with one link, and every directory); linked_mb what it shares with the pristine.
+WT_TOP_CONF="$(awk -F= '!/^#/ && $1 == "top" { v = $2 } END { if (v ~ /^\//) print v }' "$WT_CONF" 2>/dev/null)"
+TOP="${S4E_WT_TOP:-${WT_TOP_CONF:-/home/resources/worktrees}}"
+LEGACY_TOP=""; [ -n "${S4E_WT_TOP:-}" ] || [ "$TOP" = /tmp/s4e ] || LEGACY_TOP=/tmp/s4e
+TOPS="$TOP${LEGACY_TOP:+ $LEGACY_TOP}"
+SHARED="${S4E_SHARED:-/home/resources/shared}"
 PO="${S4E_POSTOFFICE:-/home/resources/postoffice}"
 BATONS="$PO/tasks"
 SEAT="${S4E_SEAT:-}"
@@ -51,10 +68,11 @@ die() { echo "$1" >&2; exit "${2:-2}"; }
 valid_name() { case "$1" in ""|.*|*[!A-Za-z0-9._-]*) return 1 ;; esac; return 0; }
 [ -n "$SEAT" ] || die "REFUSE(2): S4E_SEAT unset -- the worktrees live under $TOP/<seat>/" 2
 SEATDIR="$TOP/$SEAT"
+LEGACY_SEATDIR="${LEGACY_TOP:+$LEGACY_TOP/$SEAT}"
 
 drop() {
     local wt="$1" marker="$1/.s4e-worktree" r
-    case "$wt" in "$SEATDIR"/wt-?*) ;; *) die "REFUSE(2): $wt is not under $SEATDIR/wt-<name>" 2 ;; esac
+    case "$wt" in "$SEATDIR"/wt-?*) ;; "${LEGACY_SEATDIR:-/nonexistent}"/wt-?*) ;; *) die "REFUSE(2): $wt is not under $SEATDIR/wt-<name>" 2 ;; esac
     [ -f "$marker" ] || die "REFUSE(1): $wt has no $marker -- new did not make it, so rm leaves it alone" 1
     for r in $REPOS; do
         grep -qx "repo=$r" "$marker" || continue
@@ -113,9 +131,9 @@ wt_save_patch() {
 # wt_cap_scan TOP -- the cap's census of TOP/<seat>/wt-*. COUNTED: a directory whose .s4e-worktree marker names a seat of TIERS.tsv.
 # IGNORED: every other wt-* directory, listed in CAP_IGNORED and never counted (a hand-made or dead directory holds no slot).
 wt_cap_scan() {
-    local top="$1" d seat
+    local top d seat
     CAP_COUNTED=0; CAP_COUNTED_LIST=""; CAP_IGNORED_N=0; CAP_IGNORED=""
-    for d in "$top"/*/wt-*; do
+    for top in "$@"; do for d in "$top"/*/wt-*; do
         [ -d "$d" ] || continue
         seat=""
         [ -f "$d/.s4e-worktree" ] && seat="$(sed -n 's/^seat=//p' "$d/.s4e-worktree" | head -1)"
@@ -124,9 +142,11 @@ wt_cap_scan() {
         else
             CAP_IGNORED_N=$((CAP_IGNORED_N + 1)); CAP_IGNORED="$CAP_IGNORED $(basename "$(dirname "$d")")/$(basename "$d")"
         fi
-    done
+    done; done
 }
 
+# THE LANDED SWEEP (officer_02 2026-11-13, the same row: the coo MEASURED 17 worktrees landed, clean and idle 45 minutes or more while new refused): a worktree
+# with nothing wt_unlanded would lose is removed once idle 30 minutes, whatever its class below; only a worktree of a row its owner holds is never swept.
 # sweep_dead -- every marker worktree under $TOP/<seat>/ that a baton names (WORKTREE: <path>) whose row reads DONE, SUPERSEDED or RETIRED (QUEUE.tsv or QUEUE.retired.tsv; a row in neither is DONE),
 # idle 30 minutes or more by its directory mtime (a row left by its owner 60, a worktree no baton names 120), with no process whose cwd lies inside it and no
 # lander holding its land lock, is removed AS ITS OWNER by this script's own rm (so the guard of wt_unlanded applies) while the sweep holds the owner's land
@@ -146,9 +166,9 @@ wt_landing() {
     return 1
 }
 sweep_dead() {
-    local d b row st owner name n=0 nd=0 nl=0 nu=0 now p t busy cls floor lost pf flag lf
+    local top age d b row st owner name n=0 nd=0 nl=0 nu=0 now p t busy cls floor lost pf flag lf
     now="$(date +%s)"
-    for d in "$TOP"/*/wt-*; do
+    for top in $TOPS; do for d in "$top"/*/wt-*; do
         [ -f "$d/.s4e-worktree" ] || continue
         row=""; st=""
         owner="$(basename "$(dirname "$d")")"; name="${d##*/wt-}"
@@ -165,7 +185,8 @@ sweep_dead() {
                 *) cls=left; floor=3600 ;;
             esac
         fi
-        [ $((now - $(stat -c %Y "$d"))) -ge "$floor" ] || continue
+        age=$((now - $(stat -c %Y "$d"))); [ "$age" -ge 1800 ] || continue
+        [ "$age" -ge "$floor" ] || wt_unlanded "$d" > /dev/null || continue
         busy=0; for p in /proc/[0-9]*/cwd; do t="$(readlink "$p" 2>/dev/null)"; case "$t" in "$d"|"$d"/*) busy=1; break ;; esac; done
         [ "$busy" = 0 ] || continue
         ! wt_landing "$d" || continue
@@ -174,20 +195,20 @@ sweep_dead() {
         flock -n 7 || { exec 7>&-; continue; }
         if lost="$(wt_unlanded "$d")"; then pf=""; flag=""
         else pf="$(wt_save_patch "$d" "$owner" "$name")" || { exec 7>&-; continue; }; flag=--discard; fi
-        S4E_SEAT="$owner" bash "${BASH_SOURCE[0]}" rm "$name" ${flag:+$flag} > /dev/null 2>&1 7>&- || { exec 7>&-; continue; }
+        S4E_SEAT="$owner" S4E_WT_TOP="$top" bash "${BASH_SOURCE[0]}" rm "$name" ${flag:+$flag} > /dev/null 2>&1 7>&- || { exec 7>&-; continue; }
         rm -f "$lf"; exec 7>&-
         n=$((n + 1))
         case "$cls" in done) nd=$((nd + 1)) ;; left) nl=$((nl + 1)) ;; unnamed) nu=$((nu + 1)) ;; esac
         if [ -n "$pf" ] && [ -n "$b" ]; then printf -- '- [sweep] worktree %s removed %s; patch %s\n' "$d" "$cls" "$pf" >> "$b"; fi
-    done
+    done; done
     echo "SWEPT $n done=$nd left=$nl unnamed=$nu"
 }
 wt_cap_check() {
     case "$WT_MAX" in ""|*[!0-9]*) die "REFUSE(2): WT_MAX must be a whole number, got '$WT_MAX'" 2 ;; esac
-    wt_cap_scan "$TOP"
+    wt_cap_scan $TOPS
     sweep_dead
-    wt_cap_scan "$TOP"
-    [ "$CAP_COUNTED" -lt "$WT_MAX" ] || die "REFUSE(2): $CAP_COUNTED worktrees of the cap already stand under $TOP/<seat>/ (WT_MAX=$WT_MAX):$CAP_COUNTED_LIST; not counted (unmarked or unknown seat):${CAP_IGNORED:- none} -- rm one first" 2
+    wt_cap_scan $TOPS
+    [ "$CAP_COUNTED" -lt "$WT_MAX" ] || die "REFUSE(2): $CAP_COUNTED worktrees of the cap already stand under $TOPS (each <top>/<seat>/) (WT_MAX=$WT_MAX):$CAP_COUNTED_LIST; not counted (unmarked or unknown seat):${CAP_IGNORED:- none} -- rm one first" 2
     if [ "$WT_FREE_GB" -gt 0 ]; then   # the floor, after the sweep has reclaimed what it can
         local free; mkdir -p "$TOP" 2>/dev/null; free="$(df -BG --output=avail "$TOP" 2>/dev/null | tail -1 | tr -dc 0-9)"
         [ -z "$free" ] || [ "$free" -ge "$WT_FREE_GB" ] || die "REFUSE(2): $TOP has $free GB free, under the floor of $WT_FREE_GB GB (WORKTREES.conf free_gb, $WT_CONF): nothing made -- remove a landed worktree (s4e_worktree.sh rm <name>) or wait for the sweep" 2
@@ -204,6 +225,10 @@ conf_probe() {   # --probe-conf: four arms on a scratch file and a scratch top, 
     [ "$rc" = 2 ] && printf '%s\n' "$o" | grep 'under the floor of 99999999 GB' > /dev/null && [ -z "$(find "$T/top" -maxdepth 2 -name 'wt-*' 2>/dev/null)" ] || why="$why arm 4: a floor above the free space did not refuse new with nothing made (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
     if [ -z "$why" ]; then rm -rf "$T"; echo "WT conf-probe ok arms=4 (the cap and the floor read from one file; 40 and no floor with no file; WT_MAX wins; a floor above the free space refused new with nothing made)"; return 0; fi
     echo "WT conf-probe RED:$why"; echo "    kept: $T"; return 1
+}
+
+wt_own_mb() {   # <dir>: the MB only this directory holds: every file with one link, and every directory (a file linked to the pristine costs nothing here)
+    find "$1" \( -type f -links 1 -o ! -type f \) -printf '%k\n' 2>/dev/null | awk '{ s += $1 } END { print int(s / 1024) }'
 }
 
 baton_add() {
@@ -223,7 +248,7 @@ baton_strip() {
 }
 
 new_wt() {
-    local name="$1" base="$2" langs="$3" cap="$4" wt corpus_mode=full r l sha made rt fo b size sparse=0
+    local name="$1" base="$2" langs="$3" cap="$4" wt corpus_mode=full r l sha made rt fo b size sparse=0 lk lo linked
     local -a pats=()
     wt="$SEATDIR/wt-$name"
     valid_name "$name" || die "REFUSE(2): name '$name' must be [A-Za-z0-9._-], not dot-led" 2
@@ -276,14 +301,22 @@ new_wt() {
     fo="$(bash "$ROOT/harness/scripts/util_build_cache.sh" fetch --root "$wt/SCRIP" --tag "$rt" 2>&1)"
     b=not-fetched
     if grep -q '^FETCHED ' <<<"$fo" && [ -x "$wt/SCRIP/scrip" ] && [ -f "$wt/SCRIP/out/libscrip_rt.so" ]; then b=fetched; fi
-    size="$(du -sm "$wt" | cut -f1)"
+    lk=copy
+    if [ "$link" = 0 ]; then :
+    elif [ "$(stat -c %d "$wt" 2>/dev/null)" != "$(stat -c %d "$SHARED" 2>/dev/null)" ]; then lk=copy:other-filesystem
+    else
+        if lo="$(python3 -I "$ROOT/harness/scripts/util_relink_root.py" "$wt" --repo corpus --repo harness --repo .github --pristine "$SHARED" 2>&1)"; then
+            lk="hard-link:$(printf '%s\n' "$lo" | awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^linked=/) { sub(/^linked=/, "", $i); s += $i } } END { print s + 0 }')"
+        else lk=copy:relink-refused; echo "WARN: util_relink_root.py refused on $wt, so its files stay copies: $(printf '%s' "$lo" | tail -1 | cut -c1-200)" >&2; fi
+    fi
+    size="$(wt_own_mb "$wt")"; linked="$(( $(du -sm "$wt" | cut -f1) - size ))"; [ "$linked" -ge 0 ] || linked=0
     if [ "$size" -gt "$cap" ]; then
         drop "$wt"
         echo "WORKTREE repos=4 build=$b OVER-CAP size_mb=$size cap_mb=$cap corpus=$corpus_mode path=$wt (rolled back)"
         die "REFUSE(1): the worktree is ${size} MB, over the ${cap} MB cap -- name --lang to sparse the corpus" 1
     fi
     if [ -n "$row" ]; then baton_add "$row" "$wt" || echo "WARN: could not write WORKTREE: $wt into the $row baton" >&2; fi
-    echo "WORKTREE repos=4 build=$b size_mb=$size cap_mb=$cap corpus=$corpus_mode path=$wt"
+    echo "WORKTREE repos=4 build=$b size_mb=$size linked_mb=$linked link=$lk cap_mb=$cap corpus=$corpus_mode path=$wt"
     [ "$b" = fetched ] && exit 0
     echo "$fo" >&2
     echo "NOT FETCHED: the worktree stays, so a seat can run make in $wt/SCRIP under a run slot; the reason is above" >&2
@@ -311,49 +344,52 @@ cap_probe() {
 # worktrees no baton names, idle three hours by mtime; another seat's lander holds the land lock of one. The sweep keeps the held one and removes the free one;
 # once the holder is killed by its pid the next sweep removes the first. Prints the SWEEP-LAND line; rc 0 only when all three hold.
 sweep_land_probe() {
-    local pt="$SEATDIR/sweepprobe-$(date -u +%H%M%S)-$$" w lf holder i kept=no freed=no later=no out1 out2
+    local pt="$SEATDIR/sweepprobe-$(date -u +%H%M%S)-$$" w lf holder i kept=no freed=no later=no landed=no out1 out2
     mkdir -p "$pt/$SEAT" "$pt/lander" "$pt/po/tasks" || die "REFUSE(2): cannot make $pt" 2
     for w in held free; do mkdir -p "$pt/$SEAT/wt-$w" && printf 'name=%s\nseat=%s\n' "$w" "$SEAT" > "$pt/$SEAT/wt-$w/.s4e-worktree" && touch -d '3 hours ago' "$pt/$SEAT/wt-$w" || die "REFUSE(2): cannot plant $pt/$SEAT/wt-$w" 2; done
+    mkdir -p "$pt/$SEAT/wt-landed" && printf 'name=landed\nseat=%s\n' "$SEAT" > "$pt/$SEAT/wt-landed/.s4e-worktree" && touch -d '45 minutes ago' "$pt/$SEAT/wt-landed" || die "REFUSE(2): cannot plant $pt/$SEAT/wt-landed" 2
     lf="$(LAND_TOP="$pt" wt_land_lock "$pt/$SEAT/wt-held" lander)"
     ( exec 9> "$lf"; flock 9; exec sleep 300 ) 8>&- & holder=$!
     for i in $(seq 1 100); do flock -n "$lf" true 2>/dev/null || break; sleep 0.1; done
     out1="$(S4E_WT_TOP="$pt" S4E_LAND_LOCK_TOP="$pt" S4E_POSTOFFICE="$pt/po" bash "${BASH_SOURCE[0]}" sweep 2>&1)"
     [ -d "$pt/$SEAT/wt-held" ] && kept=yes
     [ -e "$pt/$SEAT/wt-free" ] || freed=yes
+    [ -e "$pt/$SEAT/wt-landed" ] || landed=yes
     kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
     out2="$(S4E_WT_TOP="$pt" S4E_LAND_LOCK_TOP="$pt" S4E_POSTOFFICE="$pt/po" bash "${BASH_SOURCE[0]}" sweep 2>&1)"
     [ -e "$pt/$SEAT/wt-held" ] || later=yes
     rm -rf "$pt"
-    echo "SWEEP-LAND held_kept=$kept free_swept=$freed released_swept=$later first='$out1' second='$out2'"
-    [ "$kept" = yes ] && [ "$freed" = yes ] && [ "$later" = yes ]
+    echo "SWEEP-LAND held_kept=$kept free_swept=$freed released_swept=$later landed_idle_45m_swept=$landed first='$out1' second='$out2'"
+    [ "$kept" = yes ] && [ "$freed" = yes ] && [ "$later" = yes ] && [ "$landed" = yes ]
 }
 
 probe() {
     cap_probe || { echo "PROBE REFUSED: the cap does not count what the design says -- the step does not read green"; exit 1; }
-    local stamp="$(date -u +%H%M%S)-$$" name wt out rc lname lwt lout lrc inc=no lib=no
+    local stamp="$(date -u +%H%M%S)-$$" name wt out rc lname lwt lout lrc inc=no lib=no wr=no
     name="probe-$stamp"; wt="$SEATDIR/wt-$name"
-    out="$(new_wt "$name" origin/main "" "$CAP_MB" 2>&1)"; rc=$?
+    out="$(link=1 new_wt "$name" origin/main "" "$CAP_MB" 2>&1)"; rc=$?
     [ -e "$wt" ] && drop "$wt"
     [ -e "$wt" ] && { echo "PROBE removed=no path=$wt"; exit 1; }
     lname="probe-lang-$stamp"; lwt="$SEATDIR/wt-$lname"
-    lout="$(new_wt "$lname" origin/main snobol4 "$CAP_MB" 2>&1)"; lrc=$?
+    lout="$(link=0 new_wt "$lname" origin/main snobol4 "$CAP_MB" 2>&1)"; lrc=$?
+    [ -w "$lwt/harness/scripts/s4e_worktree.sh" ] && [ -w "$lwt/corpus/include/global.inc" ] && wr=yes
     [ -f "$lwt/corpus/include/global.inc" ] && inc=yes
     [ -d "$lwt/corpus/library" ] && lib=yes
     [ -e "$lwt" ] && drop "$lwt"
     [ -e "$lwt" ] && { echo "PROBE removed=no path=$lwt"; exit 1; }
     echo "PROBE removed=yes"
-    if [ "$rc" = 0 ] && [ "$lrc" = 0 ] && [ "$inc" = yes ] && [ "$lib" = yes ]; then
+    if [ "$rc" = 0 ] && [ "$lrc" = 0 ] && [ "$inc" = yes ] && [ "$lib" = yes ] && [ "$wr" = yes ]; then
         printf '%s\n' "$out"
-        echo "PROBE-LANG lang=snobol4 include_global_inc=$inc library=$lib"
+        echo "PROBE-LANG lang=snobol4 include_global_inc=$inc library=$lib writable_without_link=$wr"
         exit 0
     fi
-    echo "PROBE REFUSED: default rc=$rc lang rc=$lrc include_global_inc=$inc library=$lib -- the step does not read green"
+    echo "PROBE REFUSED: default rc=$rc lang rc=$lrc include_global_inc=$inc library=$lib writable_without_link=$wr -- the step does not read green"
     exit 1
 }
 
 list_wts() {
     local m wt n b made c reg r found=0
-    for m in "$SEATDIR"/wt-*/.s4e-worktree; do
+    for m in "$SEATDIR"/wt-*/.s4e-worktree ${LEGACY_SEATDIR:+"$LEGACY_SEATDIR"/wt-*/.s4e-worktree}; do
         [ -f "$m" ] || continue
         found=1
         wt="${m%/.s4e-worktree}"
@@ -369,11 +405,12 @@ list_wts() {
 }
 
 verb="${1:-}"; [ $# -gt 0 ] && shift
-base=origin/main; langs=""; cap=$CAP_MB; name=""; row=""; full=0; discard=0; save=0
+base=origin/main; langs=""; cap=$CAP_MB; name=""; row=""; full=0; link=0; discard=0; save=0
 case "$verb" in
     --probe) probe ;;
     --probe-conf) conf_probe; exit $? ;;
     --show-conf) echo "WT conf max=$WT_MAX free_gb=$WT_FREE_GB file=$WT_CONF"; exit 0 ;;
+    --show-top) echo "WT top=$TOP legacy=${LEGACY_TOP:-none} shared=$SHARED"; exit 0 ;;
     --probe-sweep-land) sweep_land_probe; exit $? ;;
     list) list_wts ;;
     sweep) sweep_dead; exit 0 ;;
@@ -386,20 +423,22 @@ case "$verb" in
                 --cap-mb) [ $# -ge 2 ] || die "usage: --cap-mb <n>" 2; cap="$2"; shift 2 ;;
                 --row) [ $# -ge 2 ] || die "usage: --row <topic>" 2; row="$2"; shift 2 ;;
                 --full) full=1; shift ;;
+                --link) link=1; shift ;;
                 --discard) discard=1; shift ;;
                 --save) save=1; shift ;;
-                *) die "usage: s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--cap-mb <n>] [--row <topic>] | rm <name> [--save | --discard] | list | --probe" 2 ;;
+                *) die "usage: s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--full] [--link] [--cap-mb <n>] [--row <topic>] | rm <name> [--save | --discard] | list | --probe" 2 ;;
             esac
         done
         valid_name "$name" || die "REFUSE(2): a name is required, [A-Za-z0-9._-], not dot-led" 2
         [ -z "$row" ] || case "$verb" in new|add) ;; *) die "REFUSE(2): --row is for new" 2 ;; esac
         [ "$full" = 0 ] || case "$verb" in new|add) ;; *) die "REFUSE(2): --full is for new" 2 ;; esac
+        [ "$link" = 0 ] || case "$verb" in new|add) ;; *) die "REFUSE(2): --link is for new" 2 ;; esac
         [ "$full" = 0 ] || [ -z "$langs" ] || die "REFUSE(2): --full and --lang both name the corpus" 2
         [ "$discard" = 0 ] || case "$verb" in rm|remove) ;; *) die "REFUSE(2): --discard is for rm" 2 ;; esac
         [ "$save" = 0 ] || case "$verb" in rm|remove) ;; *) die "REFUSE(2): --save is for rm" 2 ;; esac
         [ "$save" = 0 ] || [ "$discard" = 0 ] || die "REFUSE(2): --save and --discard are two different answers; give one" 2
         ;;
-    *) die "usage: s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--cap-mb <n>] [--row <topic>] | rm <name> [--save | --discard] | list | --probe" 2 ;;
+    *) die "usage: s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--full] [--link] [--cap-mb <n>] [--row <topic>] | rm <name> [--save | --discard] | list | --probe" 2 ;;
 esac
 case "$verb" in
     new|add)
@@ -407,6 +446,7 @@ case "$verb" in
         new_wt "$name" "$base" "$langs" "$cap" ;;
     rm|remove)
         wt="$SEATDIR/wt-$name"
+        [ -d "$wt" ] || [ -z "$LEGACY_SEATDIR" ] || [ ! -d "$LEGACY_SEATDIR/wt-$name" ] || wt="$LEGACY_SEATDIR/wt-$name"
         [ -d "$wt" ] || die "REFUSE(1): no worktree $name under $SEATDIR" 1
         if [ "$discard" = 1 ]; then [ "$(sed -n 's/^seat=//p' "$wt/.s4e-worktree" 2>/dev/null | head -1)" = "$SEAT" ] || die "REFUSE(1): only the owner may --discard $wt" 1
         elif lost="$(wt_unlanded "$wt")"; then :

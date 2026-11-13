@@ -149,7 +149,12 @@ next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && request_ready 
 # found in the build cache by its SCRIP tree's key (else built once there, make -j8), and made current; with none free the chunk takes the current one,
 # a turn behind. A chunk holds its base shared on fd 8 for its life and a forward takes a base exclusive, so a base never moves under a chunk. The binary
 # runs in place from the cache entry (SCRIP=, RT_DIR=; MEASURED: copying an entry out took 69 s). With no base to be had a chunk runs on the root, as before.
-BASE_TOP="${S4E_WT_TOP:-/tmp/s4e}/grader"; NBASES="${S4E_CYCLE_BASES:-2}"; FETCH_SECS="${S4E_CYCLE_FETCH_SECS:-20}"
+# THE BASES LIVE WHERE s4e_worktree.sh MAKES THEM, LINKED (officer_02 2026-11-13, row worktrees-live-on-home-and-hard-link-their-build, on the coo's ask: wt-base1
+# and wt-base2 held 3.0 GB each of a /tmp under its floor): base_new makes a base by s4e_worktree.sh new --link, now on /home with its corpus, harness and .github
+# hard-linked to the pristine (a base only checks out and reads), so the base top is that script's own top (--show-top), else /tmp/s4e. A forward's checkout writes
+# each changed file as a new inode, a copy, so a base drifts from its links only by what origin changed since the base was made. A base on /tmp keeps serving until
+# it is removed (S4E_WT_TOP=/tmp/s4e S4E_SEAT=grader s4e_worktree.sh rm base<N>), and base_new then makes it anew on /home.
+BASE_TOP="${S4E_WT_TOP:-$(S4E_SEAT=grader bash "$S4E/harness/scripts/s4e_worktree.sh" --show-top 2>/dev/null | sed -n 's/^WT top=\([^ ]*\) .*/\1/p')}"; BASE_TOP="${BASE_TOP:-/tmp/s4e}/grader"; NBASES="${S4E_CYCLE_BASES:-2}"; FETCH_SECS="${S4E_CYCLE_FETCH_SECS:-20}"
 case "$NBASES" in ''|*[!0-9]*|0) NBASES=2;; esac; case "$FETCH_SECS" in ''|*[!0-9]*) FETCH_SECS=20;; esac
 heads_of() { local r; for r in SCRIP harness corpus .github; do git -C "$1/$r" rev-parse "${2:-HEAD}" 2>/dev/null || echo -; done | tr '\n' ' '; }
 base_bin() {   # base -> "SCRIP_BIN RT_DIR" of its SCRIP tree: the build cache's entry, else a build in the base; rc 2 (a line on stderr) when neither
@@ -163,7 +168,7 @@ base_bin() {   # base -> "SCRIP_BIN RT_DIR" of its SCRIP tree: the build cache's
 base_new() {   # N -> wt-base<N> made at origin's heads; rc 2 when it cannot be made
     local b="$BASE_TOP/wt-base$1"
     [ -d "$b/SCRIP" ] && { [ -f "$b/.s4e-hold" ] || : > "$b/.s4e-hold"; return 0; }
-    ( cd "$S4E" && S4E_SEAT=grader bash harness/scripts/s4e_worktree.sh new "base$1" --row cycle-greased-lightning-grader ) > "$TMPDIR/cycle/base$1.new.log" 2>&1 < /dev/null
+    ( cd "$S4E" && S4E_SEAT=grader bash harness/scripts/s4e_worktree.sh new "base$1" --link --row cycle-greased-lightning-grader ) > "$TMPDIR/cycle/base$1.new.log" 2>&1 < /dev/null
     [ -d "$b/SCRIP" ] || { echo "REFUSE(2): the base $b could not be made (base$1.new.log)" >&2; return 2; }
     git -C "$b/corpus" sparse-checkout add /demos/ >> "$TMPDIR/cycle/base$1.new.log" 2>&1   # sparse, demos in (pkg rows); benchmarks out (small rows run on the root). MEASURED 2026-11-13: --full made a 3014 MB base from the full root, sparse plus demos 1542 MB
     : > "$b/.s4e-hold"; log "BASE $b made $(du -sm "$b" 2>/dev/null | cut -f1) MB"; return 0
