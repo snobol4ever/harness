@@ -845,6 +845,18 @@ def _slot_knobs():
     except OSError:
         pass
     return k
+def _cores_conf():
+    """THE ONE CORE BUDGET (lib_slots.sh, its block of the same name; the cio 2026-11-13): the whole numbers of CORES.conf (S4E_CORES_CONF names another
+    file, the probe's seam), read at every take; None when the file or its cores line is absent, and then the two pools of lib_slots.sh's defaults stand."""
+    c = {}
+    try:
+        for line in open(os.environ.get("S4E_CORES_CONF") or "/home/resources/postoffice/CORES.conf"):
+            m = re.match(r"^(cores|grader|seat|wait)=(\d+)\s*$", line)
+            if m:
+                c[m.group(1)] = int(m.group(2))
+    except OSError:
+        return None
+    return c if c.get("cores", 0) >= 1 else None
 def _slot_seat():
     s = os.environ.get("S4E_SEAT")
     if s:
@@ -863,15 +875,18 @@ class _SlotHold:
                 except OSError:
                     pass
 def _run_slot():
-    if os.environ.get("S4E_RUN_SLOT_HELD"):
+    if os.environ.get("S4E_RUN_SLOT_HELD") or os.environ.get("S4E_CORE_HELD"):
         return None
     import fcntl, random, time
-    k = _slot_knobs()
+    k = _slot_knobs(); one = _cores_conf()
     try:
         n = max(1, int(os.environ.get("S4E_RUN_SLOTS", str(k["S4E_RUN_POOL_DEFAULT"]))))
         cap = max(1, int(os.environ.get("S4E_RUN_SEAT_CAP", str(k["S4E_RUN_SEAT_CAP_DEFAULT"]))))
+        res = int(os.environ.get("S4E_RUN_GRADER_RESERVED", str(k["S4E_RUN_GRADER_RESERVED_DEFAULT"])))
+        if one:   # one count for compiles and runs: the file's numbers, the same token files
+            n = one["cores"]; cap = max(1, one.get("seat", n)); res = min(one.get("grader", 0), n - 1)
         grader = os.environ.get("S4E_CLASS") == "grader"
-        hi = n - 1 if grader else max(0, n - 1 - int(os.environ.get("S4E_RUN_GRADER_RESERVED", str(k["S4E_RUN_GRADER_RESERVED_DEFAULT"]))))
+        hi = n - 1 if grader else max(0, n - 1 - res)
         d = os.environ.get("S4E_RUN_SLOT_DIR") or "/tmp/s4e-run-slots"
         seat = _slot_seat(); sd = os.path.join(d, "seat", seat); os.makedirs(sd, exist_ok=True)
         def take(paths):
@@ -884,7 +899,7 @@ def _run_slot():
                         f.close()
                 time.sleep(0.25 + random.random() * 0.25)
         seat_f = None if grader else take([os.path.join(sd, "%d" % i) for i in range(cap)])
-        _res_lo = max(0, n - int(os.environ.get("S4E_RUN_GRADER_RESERVED", str(k["S4E_RUN_GRADER_RESERVED_DEFAULT"]))))
+        _res_lo = max(0, n - res)
         _order = (list(range(_res_lo, hi + 1)) + list(range(0, _res_lo))) if grader else list(range(hi + 1))   # the grader takes its reserved slots first (CIO-120)
         pool_f = take([os.path.join(d, "slot%d" % i) for i in _order])
         return _SlotHold(seat_f, pool_f)

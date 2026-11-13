@@ -36,6 +36,8 @@ fi
 # --admit <compile|run> <command> (fleet-queue step 18, the cio 2026-11-05): ADMISSION to a class by GNU sem, for a take that is rare and long (a batch job, a build, a whole suite run, a landing); the seat's share, then the
 # class pool (SLOTS.tsv; lib_slots.sh s4e_sem_admit). A run is then taken as any other (its flock slot below); a compile class runs the command on the admission alone. Skipped, silently, inside a held run slot or an
 # admission already taken (S4E_ADMITTED): a nested take would wait on its own parent. The per-entry and per-compile slots stay flock (327 M instructions a sem take against 12-19 M; the coo and the cio ruled).
+# --probe-cores (row one-core-budget-every-compile-and-run-takes-a-token-from-one-count): the proof of the one core budget on a scratch pool and a scratch CORES.conf (lib_slots.sh s4e_cores_probe); prints CORES probe ok
+if [ "${1:-}" = --probe-cores ]; then . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_slots.sh"; s4e_cores_probe; exit $?; fi
 if [ "$1" = --admit ]; then
     _class="${2:-}"; shift 2
     case "$_class" in compile|run|land) ;; *) echo "usage: util_run_slot.sh --admit <compile|run|land> <command> <args>..." >&2; exit 2;; esac

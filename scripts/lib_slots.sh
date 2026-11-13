@@ -20,6 +20,20 @@ S4E_RUN_POOL_DEFAULT=18
 S4E_CC_SEAT_CAP_DEFAULT=3
 S4E_RUN_SEAT_CAP_DEFAULT=4
 S4E_RUN_GRADER_RESERVED_DEFAULT=10
+# ---- THE ONE CORE BUDGET (row one-core-budget-every-compile-and-run-takes-a-token-from-one-count; the cio 2026-11-13; Lon: "how are we going to fix the fleet infra-structure?" /
+# "does it not require a hard wired solution, not a soft brained solution?"; the coo's proposal he read: one budget counted in cores, taken at the door, grading's share first,
+# the rest waiting without running). MEASURED before it (/home/resources/fleet-ops-research, files 01 and 08): 16 cores, 36 admissions at once by class (compile 6, run 18, land 12),
+# each pool counting alone; load 43 to 87; the test runs fully stalled 47 per cent of the time. THE RULE WITH THE FILE: /home/resources/postoffice/CORES.conf (S4E_CORES_CONF names
+# another, the probe's seam), key=value a line, read at every take so a number is changed on the live fleet by editing one line: cores=N the tokens in all, grader=G the top G tokens
+# that only S4E_CLASS=grader may take and takes first, seat=K a seat's tokens in all, wait=S the seconds a taker waits before it refuses rc 2 (default 1800). A COMPILE AND A RUN TAKE
+# FROM THE SAME COUNT: the token files are the run pool's own (<run slot dir>/slot0..N-1, the seat files <run slot dir>/seat/<seat>/0..K-1), so a taker still on the library of
+# before contends on the same files for its runs. NO NESTED TAKE: a taker started under a held token (S4E_CORE_HELD, or S4E_RUN_SLOT_HELD as before) takes none and runs on its
+# parent's; with one pool a holder that waited for a second token is the pool-locking deadlock, and this makes a worker hold one token at most. WITH NO FILE, or no cores line,
+# the two pools above are the rule, unchanged. corpus_suite_harness.py follows the same rule by reading the same file (_cores_conf).
+S4E_CORES_CONF_DEFAULT=/home/resources/postoffice/CORES.conf
+s4e_cores_conf() {   # <key> -- the key's whole number in CORES.conf; nothing when the file, the key or a number is absent
+    awk -F= -v k="$1" '!/^#/ && $1 == k { v = $2 } END { if (v ~ /^[0-9]+$/) print v }' "${S4E_CORES_CONF:-$S4E_CORES_CONF_DEFAULT}" 2>/dev/null
+}
 s4e_slot_seat() { if [ -n "${S4E_SEAT:-}" ]; then printf '%s' "$S4E_SEAT"; else pwd -P | sed -n 's|^/home/\([^/]*\).*|\1|p' | grep . || printf 'seat'; fi; }
 s4e_slot_note() {   # <kind> <t0> <cmd>... -- one line per wait of a second or more
     local f w k="$1" t0="$2"; shift 2
@@ -39,9 +53,17 @@ s4e_slot_hold() {
              if [ "${S4E_CLASS:-}" = grader ]; then grader=1; hi=$((n - 1)); else hi=$((n - 1 - ${S4E_RUN_GRADER_RESERVED:-$S4E_RUN_GRADER_RESERVED_DEFAULT})); [ "$hi" -ge 0 ] || hi=0; fi ;;
         *) return 2 ;;
     esac
+    local one=0 res="${S4E_RUN_GRADER_RESERVED:-$S4E_RUN_GRADER_RESERVED_DEFAULT}" cores; cores="$(s4e_cores_conf cores)"
+    if [ -n "$cores" ] && [ "$cores" -ge 1 ]; then   # THE ONE CORE BUDGET: the file is there, so this take is one token of the one count, compile or run
+        [ -n "${S4E_CORE_HELD:-}${S4E_RUN_SLOT_HELD:-}" ] && return 1   # NO NESTED TAKE: the caller runs its command on its parent's token (rc 1, not the refusal's 2)
+        one=1; dir="${S4E_RUN_SLOT_DIR:-/tmp/s4e-run-slots}"; n="$cores"; cap="$(s4e_cores_conf seat)"; cap="${cap:-$n}"; [ "$cap" -ge 1 ] || cap=1
+        res="$(s4e_cores_conf grader)"; res="${res:-0}"; [ "$res" -lt "$n" ] || res=$((n - 1))
+        if [ "${S4E_CLASS:-}" = grader ]; then grader=1; hi=$((n - 1)); else grader=0; hi=$((n - 1 - res)); fi
+    fi
     sfd=7; seat="$(s4e_slot_seat)"
     mkdir -p "$dir/seat/$seat" 2>/dev/null || return 1
     t0=$(date +%s.%N); local bound; bound="${S4E_SLOT_WAIT_MAX:-}"
+    if [ -z "$bound" ] && [ "$one" = 1 ]; then bound="$(s4e_cores_conf wait)"; bound="${bound:-1800}"; fi   # with one count the rest wait: the bound is the file's, long, the same for a compile and a run
     if [ -z "$bound" ]; then if [ "$grader" = 1 ]; then bound=900; else case "$(date +%H)" in 0[6-9]|1[0-9]|2[01]) bound=600;; *) bound=900;; esac; fi; fi
     s4e_slot_bound() { awk -v a="$t0" -v b="$(date +%s.%N)" -v m="$bound" 'BEGIN {exit !(b - a >= m)}' || return 0
         s4e_slot_note "$kind-refused" "$t0" "bound=${bound}s"
@@ -63,7 +85,7 @@ s4e_slot_hold() {
     # THE GRADER TAKES ITS RESERVED SLOTS FIRST (the coo's measurement of 2026-11-11 01:25, CIO-120: it sat in two of the seats' four slots while three of
     # its own four stood empty, because every taker tried slot 0 first): the reserved range, the top of the pool, then the shared slots.
     local order res_lo
-    if [ "$grader" = 1 ]; then res_lo=$((n - ${S4E_RUN_GRADER_RESERVED:-$S4E_RUN_GRADER_RESERVED_DEFAULT})); [ "$res_lo" -ge 0 ] || res_lo=0; order="$(seq "$res_lo" "$hi") $([ "$res_lo" -gt 0 ] && seq 0 $((res_lo - 1)))"
+    if [ "$grader" = 1 ]; then res_lo=$((n - res)); [ "$res_lo" -ge 0 ] || res_lo=0; order="$(seq "$res_lo" "$hi") $([ "$res_lo" -gt 0 ] && seq 0 $((res_lo - 1)))"
     else order="$(seq 0 "$hi")"; fi
     while :; do
         for i in $order; do
@@ -75,8 +97,45 @@ s4e_slot_hold() {
         sleep 0.5
     done
     [ "$kind" = run ] && export S4E_RUN_SLOT_HELD=1
+    [ "$one" = 1 ] && export S4E_CORE_HELD=1
     S4E_SLOT_T0="$t0"
     return 0
+}
+
+s4e_cores_probe() {   # util_run_slot.sh --probe-cores: SIX ARMS ON A SCRATCH POOL AND A SCRATCH FILE (cores=3 grader=1 seat=2), each an order of events, never a clock: (1) a compile and a run, two seats, hold the two shared tokens; (2) a third compile and a third run are kept out and refuse rc 2 at their bound having run nothing; (3) the grader takes the reserved token while the shared ones are held; (4) a compile started under a held token runs at once; (5) the harness's own taker holds a shared token for a seat and the reserved one for the grader, by the same file; (6) with no file a compile takes a slot of the compile pool of before and no token file is made.
+    local here T a b rc why="" i n
+    here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; T="$(mktemp -d "/tmp/s4e/$(s4e_slot_seat)/cores-probe.XXXXXX" 2>/dev/null || mktemp -d)"
+    printf 'cores=3\ngrader=1\nseat=2\n' > "$T/CORES.conf"
+    local -a E=(env -u S4E_CORE_HELD -u S4E_RUN_SLOT_HELD -u S4E_ADMITTED -u S4E_CLASS S4E_CORES_CONF="$T/CORES.conf" S4E_RUN_SLOT_DIR="$T/run" S4E_CC_SLOT_DIR="$T/cc" S4E_SLOT_WAITS=/dev/null)
+    "${E[@]}" S4E_SEAT=probe_a bash "$here/util_cc_slot.sh" sleep 300 > /dev/null 2>&1 & a=$!
+    "${E[@]}" S4E_SEAT=probe_b bash "$here/util_run_slot.sh" sleep 300 > /dev/null 2>&1 & b=$!
+    held() { n=0; for i in 0 1 2; do [ -e "$T/run/slot$i" ] && ! flock -n "$T/run/slot$i" true 2>/dev/null && n=$((n + 1)); done; printf '%s' "$n"; }
+    i=0; while [ "$(held)" != 2 ] && [ "$i" -lt 200 ]; do sleep 0.1; i=$((i + 1)); done
+    [ "$(held)" = 2 ] || why="$why arm 1: a compile and a run did not hold two tokens of the one pool (held $(held));"
+    [ -e "$T/cc/slot0" ] && why="$why arm 1: the compile took a slot of the old compile pool;"
+    "${E[@]}" S4E_SEAT=probe_c S4E_SLOT_WAIT_MAX=1 bash "$here/util_cc_slot.sh" sh -c ": > '$T/third_cc'" > /dev/null 2>&1; rc=$?
+    [ "$rc" = 2 ] && [ ! -e "$T/third_cc" ] || why="$why arm 2: a third compile was not kept out (rc $rc);"
+    "${E[@]}" S4E_SEAT=probe_c S4E_SLOT_WAIT_MAX=1 bash "$here/util_run_slot.sh" sh -c ": > '$T/third_run'" > /dev/null 2>&1; rc=$?
+    [ "$rc" = 2 ] && [ ! -e "$T/third_run" ] || why="$why arm 2: a third run was not kept out (rc $rc);"
+    "${E[@]}" S4E_SEAT=probe_g S4E_CLASS=grader S4E_SLOT_WAIT_MAX=20 bash "$here/util_run_slot.sh" sh -c ": > '$T/grader'" > /dev/null 2>&1; rc=$?
+    [ "$rc" = 0 ] && [ -e "$T/grader" ] || why="$why arm 3: the grader did not take its reserved token (rc $rc);"
+    "${E[@]}" S4E_SEAT=probe_c S4E_CORE_HELD=1 S4E_SLOT_WAIT_MAX=1 bash "$here/util_cc_slot.sh" sh -c ": > '$T/nested'" > /dev/null 2>&1; rc=$?
+    [ "$rc" = 0 ] && [ -e "$T/nested" ] || why="$why arm 4: a compile under a held token did not run at once (rc $rc);"
+    kill "$a" "$b" 2>/dev/null; wait "$a" "$b" 2>/dev/null
+    i=0; while [ "$(held)" != 0 ] && [ "$i" -lt 200 ]; do sleep 0.1; i=$((i + 1)); done
+    "${E[@]}" S4E_SEAT=probe_h python3 -c "
+import sys, os
+sys.path.insert(0, '$here')
+import corpus_suite_harness as h
+s = h._run_slot(); print('seat', os.path.basename(s.pool_f.name), os.path.relpath(s.seat_f.name, '$T/run')); s.close()
+os.environ['S4E_CLASS'] = 'grader'
+g = h._run_slot(); print('grader', os.path.basename(g.pool_f.name), g.seat_f is None); g.close()
+" > "$T/py.out" 2>&1
+    grep -qx 'seat slot[01] seat/probe_h/[01]' "$T/py.out" && grep -qx 'grader slot2 True' "$T/py.out" || why="$why arm 5: the harness's taker did not follow the file ($(tr '\n' ';' < "$T/py.out" | cut -c1-160));"
+    env -u S4E_CORE_HELD -u S4E_RUN_SLOT_HELD -u S4E_CLASS S4E_CORES_CONF="$T/absent" S4E_RUN_SLOT_DIR="$T/run2" S4E_CC_SLOT_DIR="$T/cc2" S4E_SLOT_WAITS=/dev/null S4E_SEAT=probe_a bash "$here/util_cc_slot.sh" true > /dev/null 2>&1; rc=$?
+    [ "$rc" = 0 ] && [ -e "$T/cc2/slot0" ] && [ ! -e "$T/run2/slot0" ] || why="$why arm 6: with no file a compile did not take the compile pool of before (rc $rc);"
+    if [ -z "$why" ]; then rm -rf "$T"; echo "CORES probe ok arms=6 (one count for compiles and runs: two shared tokens held by a compile and a run kept a third of each kind out, refused rc 2 with nothing run; the grader took its reserved token; a compile under a held token ran at once; the harness's taker followed the same file; with no file the compile pool of before)"; return 0; fi
+    echo "CORES probe RED:$why"; echo "    kept: $T"; return 1
 }
 
 # ---- ADMISSION BY GNU sem (DESIGN-PLAN fleet-queue step 18; the cio 2026-11-05; the coo and the cio ruled 17:4x: sem only where a take is rare and long, never on the per-entry or per-compile path above) ----
