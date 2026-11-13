@@ -102,3 +102,4 @@ power_of_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/power_
 aleph	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/aleph
 metalevel_contests	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/metalevel_contests
 rosetta-snobol4	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/rosetta-snobol4
+rosetta-icon	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/rosetta-icon
