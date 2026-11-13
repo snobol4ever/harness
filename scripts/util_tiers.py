@@ -27,6 +27,7 @@ DISPATCHER = os.environ.get("S4E_DISPATCHER") or (TICK if os.path.isfile(TICK) e
 STOP_GATE = os.path.join(ROOT, "harness", "scripts", "s4e_stop_gate.sh")
 HEADER = ["seat", "name", "root", "model", "effort", "color", "tier", "role"]
 TIER_MODEL = {"1": "claude-opus-5-5","2": "claude-opus-5-5", "3": "claude-sonnet-5-5", "4": "claude-haiku-5-5"}
+SEAT_MODEL = {"cto": "claude-fable-5-2", "cio": "claude-fable-5-2", "cfo": "claude-fable-5-2"}
 EFFORTS = {"xhigh", "high", "medium"}
 COLORS = {"red", "green", "yellow", "purple", "cyan"}
 CLASS_GLOBS = ["hq_*", "worker_[0-9]"]
@@ -65,8 +66,8 @@ def load():
         seen_name.add(r["name"])
         if r["tier"] not in TIER_MODEL:
             problems.append("seat %s: tier %r is not 1-4 (line %d)" % (r["seat"], r["tier"], r["line"]))
-        elif r["model"] != TIER_MODEL[r["tier"]]:
-            problems.append("seat %s: model %s is not tier %s's %s" % (r["seat"], r["model"], r["tier"], TIER_MODEL[r["tier"]]))
+        elif r["model"] != SEAT_MODEL.get(r["seat"], TIER_MODEL[r["tier"]]):
+            problems.append("seat %s: model %s is not tier %s's %s" % (r["seat"], r["model"], r["tier"], SEAT_MODEL.get(r["seat"], TIER_MODEL[r["tier"]])))
         if r["effort"] not in EFFORTS:
             problems.append("seat %s: effort %r not in %s" % (r["seat"], r["effort"], sorted(EFFORTS)))
         if r["color"] not in COLORS:
