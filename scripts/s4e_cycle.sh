@@ -141,7 +141,7 @@ next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && request_ready 
 # updating the code continuously every turn."; skill suites-and-grading section 9). MEASURED that noon by the coo: the lap cells graded on the grader root,
 # which syncs only at a lap start, and lap 28 ran 1083 cells over about 11 hours, so 3273 of 3277 grader readings since 17:00Z were on SCRIP 530c2543b5,
 # 34 commits behind origin, and no cure landed that day showed in a lap reading. THE BASES are up to S4E_CYCLE_BASES (2) worktrees wt-base<N> of the four
-# repositories (s4e_worktree.sh --full, named for the row so no sweep takes them). MEASURED 2026-11-13 by the probe: a base is 1542 MB (SCRIP and its
+# repositories (s4e_worktree.sh, sparse with demos/ added, named for the row so no sweep takes them). MEASURED 2026-11-13 by the probe: a base is 1542 MB (SCRIP and its
 # fetched build 374, the corpus 1148), and it cannot share the pristine's files (util_relink_root.py refuses: /tmp and /home/resources are two
 # filesystems, and a hard link cannot join them), so two fit the seat's 4 GB of /tmp. Every cell, request and row write picks one at its start,
 # under one lock (choose_base): the root fetches origin (refs and objects, its working tree untouched; at most every S4E_CYCLE_FETCH_SECS, 20); the
@@ -163,8 +163,9 @@ base_bin() {   # base -> "SCRIP_BIN RT_DIR" of its SCRIP tree: the build cache's
 base_new() {   # N -> wt-base<N> made at origin's heads; rc 2 when it cannot be made
     local b="$BASE_TOP/wt-base$1"
     [ -d "$b/SCRIP" ] && { [ -f "$b/.s4e-hold" ] || : > "$b/.s4e-hold"; return 0; }
-    ( cd "$S4E" && S4E_SEAT=grader bash harness/scripts/s4e_worktree.sh new "base$1" --full --row cycle-greased-lightning-grader ) > "$TMPDIR/cycle/base$1.new.log" 2>&1 < /dev/null
+    ( cd "$S4E" && S4E_SEAT=grader bash harness/scripts/s4e_worktree.sh new "base$1" --row cycle-greased-lightning-grader ) > "$TMPDIR/cycle/base$1.new.log" 2>&1 < /dev/null
     [ -d "$b/SCRIP" ] || { echo "REFUSE(2): the base $b could not be made (base$1.new.log)" >&2; return 2; }
+    git -C "$b/corpus" sparse-checkout add /demos/ >> "$TMPDIR/cycle/base$1.new.log" 2>&1   # sparse, demos in (pkg rows); benchmarks out (small rows run on the root). MEASURED 2026-11-13: --full made a 3014 MB base from the full root, sparse plus demos 1542 MB
     : > "$b/.s4e-hold"; log "BASE $b made $(du -sm "$b" 2>/dev/null | cut -f1) MB"; return 0
 }
 choose_base() {   # sets BASE, SBIN and RTD, and holds BASE shared on fd 8 until this shell exits; rc 2 (a line on stderr) when no base holds a build
