@@ -1351,3 +1351,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1352	pas	__pas_sstr_store	-	-	-	inline	-	-	0	pas
 1353	pas	__pas_preview	-	-	-	inline	-	-	0	pas
 1354	icn	ICN$UTRIM	1	3	bt_ICNx24UTRIM	leaf	-	-	0	fn_arms
+1355	rk	__rk_attr_assign	3	3	bt___rk_attr_assign	leaf	-	-	0	rt_known
