@@ -101,11 +101,13 @@ def body(key, lang, entry, reading, rows):
     rd = 'o="$(S4E_MODES=m3 python3 -I harness/scripts/util_score_row.py from-progress --suite %s --reds --dry-run 2>&1)"' % key
     have = "printf '%%s\\n' \"$o\" | grep -q '^SUITE_ROW suite=%s '" % key
     red = "printf '%%s\\n' \"$o\" | grep -qE '^SUITE_ROW_RED %s '" % re.escape(entry)
+    # the decisive lines are printed before the test, so done and next show what they measured (the cio 2026-11-12 23:2x)
+    show = "printf '%%s\\n' \"$o\" | grep -E '^SUITE_ROW suite=%s |^SUITE_ROW_RED %s ' || true" % (key, re.escape(entry))
     sk = "fleet-bus seat-conduct suites-and-grading gates-and-witnesses " + LANG_SKILL.get(lang, "scrip-architecture")
     return ("GOAL: BUG. The %s entry %s reads red in mode 3 (%s). Find the cause, cure it, land it. One bug, one row; after one honest try that cannot land, escalate it.\n"
             "SKILLS: %s\n"
-            "DONE-WHEN: cd %s && %s; %s && ! %s\n"
-            "PREMISE-WHEN: cd %s && %s; %s && %s\n"
+            "DONE-WHEN: cd %s && %s; %s; %s && ! %s\n"
+            "PREMISE-WHEN: cd %s && %s; %s; { %s || { echo 'REFUSE(2): the score writer printed no SUITE_ROW line'; exit 2; }; } && %s\n"
             "## NEXT\n"
             "1. Reproduce, from the root with S4E_HOME set: %s\n"
             "2. The oracle: %s ; then %s\n"
@@ -113,7 +115,7 @@ def body(key, lang, entry, reading, rows):
             "4. Prove it in the worktree: the reproduce line of step 1 reads PASS for the entry in mode 3; bash harness/scripts/test_feature_reps.sh %s <the feature you touched>; bash harness/scripts/test_smoke_%s.sh.\n"
             "5. Land it: bash harness/scripts/s4e_land.sh --home <the worktree> --gate '<the step 1 line, grepping m3_pass=1 m3_fail=0>' <the repos you changed>; then s4e_msg.sh claim and done.\n"
             "6. After one honest try that cannot land: bash harness/scripts/s4e_msg.sh escalate %s --stdin with the measurement (what you ran, what it printed), and send the WAKE it prints.\n"
-            % (key, entry, reading, sk, q, rd, have, red, q, rd, have, red, rep, ext, ora, re.sub(r"[^a-z0-9]+", "-", entry.lower()).strip("-")[:40] or "bug",
+            % (key, entry, reading, sk, q, rd, show, have, red, q, rd, show, have, red, rep, ext, ora, re.sub(r"[^a-z0-9]+", "-", entry.lower()).strip("-")[:40] or "bug",
                lang, {"rebus": "rebus", "snocone": "snocone"}.get(lang, lang), d2d.topic_of(key, entry)))
 
 
