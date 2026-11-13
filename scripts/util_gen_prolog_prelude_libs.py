@@ -158,7 +158,7 @@ SHADOWS = {"gnu_fd": {("fd_dom", 2): "GNU's fd_dom/2 answers the list of the dom
            "xsb_dialect": {("shell", 1): "XSB's shell/1 (lib/shell.P) takes an atom or a list of atoms and succeeds whatever the command's status, where gnu_builtins' takes an atom and fails on a nonzero status; selected only in the XSB dialect (measured on XSB 5.0.0, 2026-11-10, CTO-587)", ("shell", 2): "XSB's shell/2 answers the raw wait status (256 for exit code 1) and takes a list of atoms, where gnu_builtins' answers the exit code; selected only in the XSB dialect (measured on XSB 5.0.0, 2026-11-10, CTO-587)", ("term_size", 2): "XSB's term_size/2 counts functors and leaves (emu/std_pred_xsb_i.h term_sizew: a float 4, anything else without arguments 1) where library(terms) counts SWI's cells; the library is selected only in the XSB dialect (measured on XSB 5.0.0, 2026-10-28)", ("concat_atom", 2): "XSB's concat_atom/2 (syslib/string.P) joins ATOMIC elements, numbers included (concat_atom([x,1],A) gives x1) and FAILS on a compound element; backcomp.pl's routes through atom_concat/3, which XSB, strict, refuses a number (type_error(atom,1)); selected only in the XSB dialect (measured on XSB 5.0.0, 2026-10-29)", ("concat_atom", 3): "XSB's concat_atom/3 joins atomic elements with the separator, as concat_atom/2; selected only in the XSB dialect (measured on XSB 5.0.0, 2026-10-29)", ("import", 1): "XSB's renaming import (:- import P from M as Q.) defines Q as a call of P; this library carries xsb_builtins' no-op import/1 as its last clause, so it replaces that one in the XSB dialect"},
            "listing": {("portray_clause", 1): WHY_LISTING_PC, ("portray_clause", 2): WHY_LISTING_PC, ("portray_clause", 3): WHY_LISTING_PC}}
 QUIET = {"gnu_fd": {("fd_dom", 2)}, "tabling": {("undefined", 0)}, "varnumbers": {("numbervars", 1)}}
-QUIET_BARE = {"dcg_basics", "clpfd", "gnu_builtins", "backcomp"}
+QUIET_BARE = {"dcg_basics", "clpfd", "gnu_builtins", "backcomp", "strings"}
 WRAPS = {"gnu_fd": {"clpfd": {("#=", 2), ("#\\=", 2), ("#<", 2), ("#>", 2), ("#=<", 2), ("#>=", 2), ("#/\\", 2), ("#\\/", 2), ("#\\", 1), ("#==>", 2)}}}
 EXPAND_PL = os.path.join(HERE, "util_gen_prolog_prelude_libs_expand.pl")
 INIT_DROPS = {"clpb": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"},
@@ -269,8 +269,7 @@ OMIT = {"aggregate": {("foreach", 2): "SWI's foreach/2 resets its template betwe
                                       "hand-types it as SWI 6 did, copying the goal per solution with its other variables kept shared"},
         "quintus": {("current_stream", 3): "SCRIP lowers current_stream/3 natively (lower_prolog.c, the GNU and ISO stream table); the library's clause, a "
                                            "file definition, would override that lowering in every program naming it"},
-        "strings": {("string", 4): "quasi-quotation support ({|string(X)||...|}); SCRIP's reader has no quasi-quotations, and the bare name string "
-                                    "would select the library in every program that tests string/1"}}
+        }
 DICT_METHOD_HEADS = {(":=", 2)}
 
 SYMCH = set("#$&*+-./:<=>?@^~\\")
