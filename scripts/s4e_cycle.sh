@@ -291,14 +291,14 @@ while :; do
         # laps 2 to 10, no grader row for inria is later than 2026-11-08T20:19Z, and its SUITES.tsv row reads today_date 2026-11-09; logtalk
         # and dotnet the same): from-progress stamps the box-clock day, so a record after a lap in which every cell refused re-dates old
         # readings as today's. No cell of this lap at rc 0 or 1, no record; the row keeps the day of its last reading and the log says so.
-        if [ "${LEFT[$key]}" -le 0 ] && [ "$MODE_ARG" != --one ]; then
-            if graded_this_lap "$key"; then
-                [ "$kind" = master ] && record_suite "$lang"
-                [ "$kind" = pkg ] && record_pkg "$key"
-                [ "$kind" = small ] && record_pkg "$key"
-            else
-                log "NORECORD lap=$lap $key: no cell of this lap graded (every cell refused, died or was held); its suite row is not rewritten"
-            fi
+        # EVERY CHUNK REPORTS THE MOMENT IT ENDS (Lon 2026-11-12 19:0x CST, in the grader's window, verbatim: "You do not have to report a test
+        # suite ALL at ONCE. you report each chunk at it comes, and each chunk is bite-size regardless of which suite it came from." / "This waiting
+        # around is GOING to STOP!!!"): a cell that graded (rc 0 or 1) rewrites its suite's row at once, from the progress store, in the background so
+        # the next cells launch without waiting (from-progress takes 20 s on swi, 1.5 s on most); one lock a suite, so two records of one row run in
+        # turn and the newer lands last. A cell that refused, died or was held (rc 2) writes nothing: its row keeps the stamps of its last reading.
+        if [ "$MODE_ARG" != --one ]; then
+            case "$rc" in 0|1) ( flock 9; case "$kind" in master) record_suite "$lang";; *) record_pkg "$key";; esac ) 9> "$PROG/record.$key.lock" & ;;
+                *) log "NORECORD lap=$lap $key $cell: the cell did not grade (rc=$rc); its suite row is not rewritten";; esac
         fi
         [ "$MODE_ARG" = --one ] && { echo "ONE $key $cell rc=$rc secs=$secs"; state_put "$lap" "$((i+1))" "$total" "$key" "$cell" done; exit 0; }
     done

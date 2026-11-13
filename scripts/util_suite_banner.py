@@ -562,6 +562,17 @@ def run_range(r):
     if not a or not b: return ""
     d=lambda t: f"{t.tm_mon:02d}-{t.tm_mday:02d}"; h=lambda t: f"{t.tm_hour:02d}:{t.tm_min:02d}"
     return f"{d(a)} {h(a)}-{h(b)}" if (a.tm_year,a.tm_yday)==(b.tm_year,b.tm_yday) else f"{d(a)}>{d(b)} {h(b)}"
+def run_stamps(r):
+    """The grid's Earliest and Latest cells (Lon 2026-11-12 19:0x CST, in the grader's window, verbatim: "You can then report two date/time stampes,
+    the earliest , and the latest most recent. Do not show the run range anymore."): the box-clock MM-DD HH:MM of the oldest and of the newest reading
+    the row was assembled from (today_run_first, today_run_last, set by from-progress); blank when the row carries none."""
+    import calendar, time
+    def _s(v):
+        m=re.match(r'^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?', (v or '').strip())
+        if not m: return ""
+        t=time.localtime(calendar.timegm((int(m.group(1)),int(m.group(2)),int(m.group(3)),int(m.group(4)),int(m.group(5)),int(m.group(6) or 0),0,0,0)))
+        return f"{t.tm_mon:02d}-{t.tm_mday:02d} {t.tm_hour:02d}:{t.tm_min:02d}"
+    return [_s(r.get('today_run_first')), _s(r.get('today_run_last'))]
 # ⭐ A SEAT'S GRID SHOWS ITS OWN LANGUAGES ON ITS OWN ENGINE (Lon 2026-10-17, in-chat to hq_jvm, verbatim: "The test suite banner is wrong
 # for this seat, since JVM is only SNOBOL4 and Snocone and Rebus." · "The test suite banners have the wrong languages." · "The suite banner
 # should represent the snobol4jvm program, not SCRIP."; to hq_dotnet: "The test suite banner is wrong since .NET supports only SNOBOL4,
@@ -623,7 +634,7 @@ def grid(plain=False):
         try: tp,tt=int(r['today_pass']),int(r['today_total'])
         except (ValueError,KeyError):
             _t=(r.get('today_total') or '').strip()
-            data.append([r.get('lang',''), r['nick'], "-", _t if _t.isdigit() else "-"] + _pm(r) + ["", (r.get('today_excluded') or '').strip() or "", "-", wall(r), run_range(r), "NO READING"] + ([_read_day(r)] if eng else [])); continue
+            data.append([r.get('lang',''), r['nick'], "-", _t if _t.isdigit() else "-"] + _pm(r) + ["", (r.get('today_excluded') or '').strip() or "", "-", wall(r)] + run_stamps(r) + ["NO READING"] + ([_read_day(r)] if eng else [])); continue
         # ⛔ `.0f` alone rounds 823/826 (99.64%) up to "100%" while the State column beside it correctly
         # reads not-DONE (tp<tt) -- a contradiction inside one row (Lon 2026-09-23, caught reading this
         # exact grid). 100% is reserved for tp>=tt (RULES.md: "100% only when FAIL=0 over the printed
@@ -635,12 +646,12 @@ def grid(plain=False):
             pct=f"{pv}%"
         # ⭐ EXCL (Lon 2026-09-26, CEO-1286: "We want to show this number of EXCLUDED tests in the test-suite grid."): the programs not in
         # the SPITBOL dialect that this row's Total leaves out, from today_excluded; blank for a suite with no such ruling (the rung suites).
-        data.append([r.get('lang',''), r['nick'], f"{tp}", f"{tt}"] + _pm(r) + [delta(r, tp, tt), (r.get('today_excluded') or '').strip(), pct, wall(r), run_range(r), "VOID" if (r.get('today_void') or '').strip() else ("DONE" if tt and tp>=tt else "")] + ([_read_day(r)] if eng else []))
+        data.append([r.get('lang',''), r['nick'], f"{tp}", f"{tt}"] + _pm(r) + [delta(r, tp, tt), (r.get('today_excluded') or '').strip(), pct, wall(r)] + run_stamps(r) + ["VOID" if (r.get('today_void') or '').strip() else ("DONE" if tt and tp>=tt else "")] + ([_read_day(r)] if eng else []))
     data.sort(key=lambda r: (r[0].lower(), r[1].lower()))
     if not data:
         if eng: print(f"SUITE GRID: no row yet (engine {eng}) -- no board has graded {GRID_PROGRAMS.get(eng, eng)} into SUITES.tsv"); return
         print("SUITE GRID: no readable rows in SUITES.tsv"); return
-    hdr=["Lang","Suite","Pass","Total","M3","M4","\u0394","Excl","Pct","Wall","Run","State"] + (["Date"] if eng else [])
+    hdr=["Lang","Suite","Pass","Total","M3","M4","\u0394","Excl","Pct","Wall","Earliest","Latest","State"] + (["Date"] if eng else [])
     cols=len(hdr)
     # ⭐ ONE EXTRA COLUMN OF ROOM PER CELL (Lon 2026-09-13: "Give one extra space in each column to give room
     # to breath."). Added to the WIDTH, so the rules that span each column widen with it and the box still

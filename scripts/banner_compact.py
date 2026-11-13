@@ -20,7 +20,7 @@ the input passes through untouched, so a refused or missing grid is never hidden
 import re
 import sys
 
-CELLW = 76   # 81 until the M4 column left (Lon 2026-11-12 12:1x)
+CELLW = 82   # 81 until the M4 column left (Lon 2026-11-12 12:1x); 76 until Run became Earliest and Latest (Lon 2026-11-12 19:0x)
 WIDTH = 2 * CELLW + 3
 STATE = {"DONE": "✓", "VOID": "V", "NO READING": "?", "": ""}
 
@@ -63,13 +63,13 @@ def main():
         st = r.get("State", "")
         ds = STATE.get(st, st[:1]) if st else r.get("Δ", "")
         ex = (r.get("Excl", "") or "").strip() or "-"
-        s = f"{r.get('Lang',''):<8} {r.get('Suite',''):<12} {r.get('Pass',''):>4}/{r.get('Total',''):<4} {ex:>4} {r.get('M3',''):>4} {r.get('Wall',''):>6} {r.get('Run',''):<17} {r.get('Pct',''):>4} {ds:>4}"
+        s = f"{r.get('Lang',''):<8} {r.get('Suite',''):<12} {r.get('Pass',''):>4}/{r.get('Total',''):<4} {ex:>4} {r.get('M3',''):>4} {r.get('Wall',''):>6} {r.get('Earliest',''):<11} {r.get('Latest',''):<11} {r.get('Pct',''):>4} {ds:>4}"
         return s[:CELLW].ljust(CELLW)
 
     half = (len(rows) + 1) // 2
     left, right = rows[:half], rows[half:]
     out = [cut(h) for h in head if h.strip()]
-    hdr = f"{'Lang':<8} {'Suite':<12} {'Pass/Tot':<9} {'Excl':>4} {'M3':>4} {'Min':>6} {'Run':<17} {'Pct':>4} {'Δ':>4}".ljust(CELLW)
+    hdr = f"{'Lang':<8} {'Suite':<12} {'Pass/Tot':<9} {'Excl':>4} {'M3':>4} {'Min':>6} {'Earliest':<11} {'Latest':<11} {'Pct':>4} {'Δ':>4}".ljust(CELLW)
     out.append(hdr + " │ " + hdr)
     for i in range(half):
         l = fmt(left[i])
