@@ -544,7 +544,7 @@ def build_generated(pkg_dir, lang, out_prefix, contract, only):
 FX_STAGED = set()   # the entries whose cut ran over their NAME.fixtures/ tree (h.stage_fixtures): their ALL.csv fixtures cell reads staged, so stage_entry stages the same tree to grade
 
 
-def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None):
+def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None, any_fpc_mode=False):
     _c0 = read_contract(pkg_dir)
     if _c0["units"] == "generated":
         return build_generated(pkg_dir, lang, out_prefix, _c0, only)
@@ -554,6 +554,16 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
     oracle_bin, flags = h.resolve_oracle_bin(paths, lang)
     print(f"oracle: {oracle_bin} {flags}", file=sys.stderr)
     contract = read_contract(pkg_dir)
+    pas_cells = {}
+    _cf = pkg_dir / f"{out_prefix}.csv"
+    if lang == "pascal" and _cf.is_file():
+        with open(_cf, newline="") as _fh:
+            for _r in csv.DictReader(_fh):
+                _c = (_r.get("dialect") or "").strip()
+                if _c:
+                    if _c not in ("iso", "fpc", "objfpc", "delphi", "tp"):
+                        h.refuse(f"{_cf}: entry {_r.get('entry')} names dialect {_c!r}, which is none of iso, fpc, objfpc, delphi, tp")
+                    pas_cells[_r["entry"]] = _c
     merged = contract["stderr"] == "merged"
     # ⛔⭐ THE TABLE'S ATTRIBUTE COLUMNS ARE THE ONE SPEC, READ BY THE BUILDER AS BY THE GRADER (Lon 2026-11-08 23:0x, verbatim: "Same spec on
     # attributes and environment."; the cio 2026-11-10). MEASURED on spitbol_x32_tests: its ALL.csv declared out_files=extract1.txt extract2.txt
@@ -933,7 +943,9 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
             iso_rej_names.append((name, _w))
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (iso-rejection, {_w})", file=sys.stderr)
             continue
-        _ladder = [flags, "", "-Mobjfpc", "-Mdelphi", "-Mtp"] if (lang == "pascal" and contract["dialect"] == "any-fpc-mode") else [flags]
+        _ladder = [flags, "", "-Mobjfpc", "-Mdelphi", "-Mtp"] if (lang == "pascal" and (contract["dialect"] == "any-fpc-mode" or any_fpc_mode)) else [flags]
+        if lang == "pascal" and name in pas_cells:
+            _ladder = [{"iso": flags, "fpc": "", "objfpc": "-Mobjfpc", "delphi": "-Mdelphi", "tp": "-Mtp"}[pas_cells[name]]]
         for _fl in _ladder:
             ora_text, ora_rc, ora_kind = _oracle_isolated(_fl)
             _t_first = time.time()
@@ -1330,13 +1342,14 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
     hdr = next(csv.reader([csv_lines[0]]))
     ix = {c: i for i, c in enumerate(hdr)}
     known = {"rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb", "compile_args", "run_args", "out_files", "stderr",
-             "compare", "stage", "answer", "mode_gap_s", "timeout_s", "fixtures"} | {c for c, _fn in cols}
+             "compare", "stage", "answer", "mode_gap_s", "timeout_s", "fixtures", "dialect"} | {c for c, _fn in cols}
     if set(hdr) - known or "entry" not in ix or "rank" not in ix:
         h.refuse(f"splice gate: {f_csv}'s header is not one the splice can fill: unknown {sorted(set(hdr) - known)}")
     for e in entries:
         for _col, _need in (("out_files", getattr(e, "out_files", None)), ("compare", _cm_val(e)), ("stderr", merged), ("stage", e.name in staged), ("fixtures", e.name in FX_STAGED)):
             if _need and _col not in ix:
                 h.refuse(f"splice gate: {e.name} needs a {_col} cell and {f_csv} has no {_col} column -- a whole rebuild adds it")
+    dialect_cell = {n: ("fpc" if d == "fpc-default" else d) for n, d in dialects} if "dialect" in ix else {}
     rows = [next(csv.reader([ln])) for ln in csv_lines[1:]]
     row_at = {r[ix["entry"]]: k for k, r in enumerate(rows)}
     rank_max = max([int(r[ix["rank"]]) for r in rows if r[ix["rank"]].isdigit()] or [0])
@@ -1351,12 +1364,12 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
              "want_rc": e.want_rc, "heap_kb": m.DEFAULT_HEAP_KB, "stack_kb": m.DEFAULT_STACK_KB, "run_args": "", "mode_gap_s": "", "timeout_s": "",
              "compile_args": contract["unmarked_compile_args"] if contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "",
              "out_files": " ".join(getattr(e, "out_files", None) or []), "stderr": "merged" if merged else "", "compare": _cm_val(e),
-             "stage": "upstream" if e.name in staged else "", "fixtures": "staged" if e.name in FX_STAGED else "", "answer": ("" if staged[e.name] == "stdout" else staged[e.name]) if e.name in staged else ""}
+             "stage": "upstream" if e.name in staged else "", "fixtures": "staged" if e.name in FX_STAGED else "", "dialect": dialect_cell.get(e.name, ""), "answer": ("" if staged[e.name] == "stdout" else staged[e.name]) if e.name in staged else ""}
         v.update({c: flags_row[c] for c, _fn in cols})
         if e.name in row_at:
             prev = rows[row_at[e.name]]
             v["rank"] = prev[ix["rank"]]
-            for c in ("heap_kb", "stack_kb", "compile_args", "run_args", "mode_gap_s", "timeout_s"):
+            for c in ("heap_kb", "stack_kb", "compile_args", "run_args", "mode_gap_s", "timeout_s") + (() if e.name in dialect_cell else ("dialect",)):
                 if c in ix and prev[ix[c]].strip():
                     v[c] = prev[ix[c]].strip()
             out_lines[row_at[e.name] + 1] = _fmt(v)
@@ -1371,7 +1384,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
     def _keyed(f, header, rows_, keys):
         t = _keyed_text(_lines(pkg_dir / f), header, rows_, keys, "\t")
         staged_files[f] = None if t is None else t.encode("utf-8")
-    _keyed(f"{out_prefix}.dialect", ["# the fpc mode that cut each entry's ref (CONTRACT.tsv dialect=any-fpc-mode): name<TAB>mode"], [f"{n}\t{d}" for n, d in dialects], names)
+    _keyed(f"{out_prefix}.dialect", ["# the fpc mode that cut each entry's ref (CONTRACT.tsv dialect=any-fpc-mode): name<TAB>mode"], [f"{n}\t{d}" for n, d in dialects if n not in dialect_cell], names)
     _keyed(f"{out_prefix}.rc", [], [f"{e.name}\t{e.want_rc}" for e in entries if e.want_rc], names)
     _keyed(f"{out_prefix}.argv", [], [e.name + "\t" + "\t".join(e.argv) for e in entries if getattr(e, "argv", None)], names)
     if iso_rej_names is not None:
@@ -1984,6 +1997,8 @@ def main():
                     help="run the oracle twice per program and exclude one whose two answers differ (time, randomness, addresses)")
     ap.add_argument("--only", action="append", default=None, metavar="NAME[,NAME...]",
                     help="cut only these programs and splice them into the existing container, every other entry byte-identical (repeatable)")
+    ap.add_argument("--any-fpc-mode", action="store_true",
+                    help="pascal: a program fpc refuses under -Miso is cut again in fpc's default mode, then objfpc, delphi and tp, the first that compiles; with --only the mode lands in the entry's dialect cell of ALL.csv")
     ap.add_argument("--src-ext", default="", metavar=".EXT",
                     help="the extension the package's source programs carry, when it is not the lang's container extension "
                          "(SPITBOL's own suite ships .sbl; the container is still ALL.sno for snobol4)")
@@ -2020,7 +2035,7 @@ def main():
     if h.pkg_dir_of(str(pkg_dir / f"ALL{LANG_EXT[args.lang]}")) is not None:
         build_files_form(pkg_dir, args.lang, twice=args.twice, only=only, src_ext=args.src_ext or None)
         return
-    build(pkg_dir, args.lang, twice=args.twice, only=only, src_ext=args.src_ext or None)
+    build(pkg_dir, args.lang, twice=args.twice, only=only, src_ext=args.src_ext or None, any_fpc_mode=args.any_fpc_mode)
 
 
 if __name__ == "__main__":
