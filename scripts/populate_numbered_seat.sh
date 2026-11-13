@@ -2,8 +2,8 @@
 # populate_numbered_seat.sh NN [--from ROOT] -- ONE NUMBERED HAIKU SEAT IN ONE COMMAND (the cio, 2026-11-05; Lon 15:1x CST: "rename them all 01, 02,
 # ..., 20. Because there are no longer any specialties seats. We have skills now instead use by ANY ASSIGNED seat. Make it so."). Lon creates the folder
 # /home/claude_worker_NN (/home is root's); this fills it: the four repos cloned --shared from the coo root (its objects borrowed, origin set
-# to github; corpus, harness and .github then linked to the shared pristine), a SPARSE corpus (tests packages programs library reference editor_configs; `git -C corpus sparse-checkout add benchmarks` widens it for a
-# row that needs them), the Stop banner and inbox hooks and the skill gate named for the seat (from the source root's .claude, seat and root substituted),
+# to github; corpus, harness and .github then linked to the shared pristine), the FULL corpus (the coo 2026-11-12 18:0x, on junior_13's measurement: a sparse
+# root hid corpus/demos and every demos suite listed 0 members there; sparse is for worktrees only, s4e_worktree.sh; the links make it cost nothing), the Stop banner and inbox hooks and the skill gate named for the seat (from the source root's .claude, seat and root substituted),
 # banner_compact.py, /tmp/s4e/worker_NN, the postoffice mailbox (inbox archive, HQ file naming cio), and the worker digest (propagate_seat_digests_cto_484.py).
 # It does NOT touch ROSTER, FLEET or the old seat's rows: the cio adds the seat to ROSTER and reowns the retired HQ's rows in the same sitting, by hand, measured.
 # rc 0 populated (prints the root's du); 1 refused (no folder, folder not empty, no source root); 2 usage.
@@ -29,10 +29,7 @@ src_seat="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["env
 # objects are borrowed and none copied, and once checked out every clean file of corpus, harness and .github becomes a hard link to the read-only
 # pristine (util_relink_root.py, util_shared_pristine.sh); the root keeps its own directories, so every relative path works unchanged.
 COO=/home/claude_coo
-for r in SCRIP harness .github; do git clone -q --shared "$COO/$r" "$root/$r" && git -C "$root/$r" remote set-url origin "$(git -C "$COO/$r" remote get-url origin)" || exit 1; done
-git clone -q --shared --no-checkout "$COO/corpus" "$root/corpus" && git -C "$root/corpus" remote set-url origin "$(git -C "$COO/corpus" remote get-url origin)" || exit 1
-git -C "$root/corpus" sparse-checkout set --no-cone tests packages programs library include reference editor_configs README.md >/dev/null 2>&1 || git -C "$root/corpus" sparse-checkout set tests packages programs library include reference editor_configs
-git -C "$root/corpus" checkout -q main || exit 1
+for r in SCRIP corpus harness .github; do git clone -q --shared "$COO/$r" "$root/$r" && git -C "$root/$r" remote set-url origin "$(git -C "$COO/$r" remote get-url origin)" || exit 1; done
 for r in SCRIP corpus harness .github; do point_at_coo "$root" "$r" || exit 1; done
 for r in SCRIP corpus harness .github; do git -C "$root/$r" fetch -q origin && git -C "$root/$r" merge -q --ff-only origin/main || exit 1; done
 [ -d "${S4E_SHARED:-/home/resources/shared}/corpus/.git" ] && { bash "$root/harness/scripts/util_shared_pristine.sh" update > /dev/null; python3 -I "$root/harness/scripts/util_relink_root.py" "$root" | sed 's/^/  /'; }
@@ -47,5 +44,5 @@ python3 -c 'import json,sys; [json.load(open(f)) for f in sys.argv[1:]]' "$root/
 mkdir -p "$root/.claude/skills" && for s in "$FROM/.github/skills"/*/; do n="$(basename "$s")"; rm -rf "$root/.claude/skills/$n"; cp -r "$s" "$root/.claude/skills/$n"; done
 [ "$(ls -d "$root/.claude/skills"/*/ 2>/dev/null | wc -l)" -ge 1 ] || { echo "REFUSE(1): no skill was installed into $root/.claude/skills (source $FROM/.github/skills)"; exit 1; }
 python3 "$root/harness/scripts/propagate_seat_digests_cto_484.py" --apply "--root=$seat" | tail -1
-echo "POPULATED $seat at $root: $(du -sh "$root" | cut -f1) (sparse corpus; S4E_SEAT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["env"]["S4E_SEAT"])' "$root/.claude/settings.local.json"))"
+echo "POPULATED $seat at $root: $(du -sh "$root" | cut -f1) (full corpus; S4E_SEAT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["env"]["S4E_SEAT"])' "$root/.claude/settings.local.json"))"
 echo "NEXT, BY HAND: add $seat to ROSTER and FLEET: IDLE EXCEPT on MODE; reown the retired HQ's open rows to $seat; (cd $root/SCRIP && make -j4) under a run slot"

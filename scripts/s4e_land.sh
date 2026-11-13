@@ -507,6 +507,11 @@ for r in "${present[@]}"; do
     for d in rebase-merge rebase-apply MERGE_HEAD; do [ -e "$(git_state "$r" "$d")" ] && refuse "$r has a $d in progress"; done
 done
 for x in "${names[@]}"; do [ -e "$home/$x/.git" ] || refuse "named $x, and there is no $home/$x"; done
+new_gates() {   # <harness dir>: the test_gate_*.sh files the landing's own commits add (from the merge base, so a stale origin/main reads the same; --no-renames, so a rename into the name is an add)
+    git -C "$1" diff --no-renames --name-only --diff-filter=A origin/main...HEAD -- 'scripts/test_gate_*.sh' 2>/dev/null
+}
+ng="$(new_gates "$home/harness" | tr '\n' ' ')"   # NO NEW GATE (Lon 2026-11-12 13:1x CST, verbatim: "I do not want any STINKING GATES."; skill gates-and-witnesses section 0; the coo's ask 17:4x)
+[ -z "$ng" ] || refuse "the landing adds ${ng% }: no new gate is written (Lon 2026-11-12: \"I do not want any STINKING GATES.\"; skill gates-and-witnesses section 0); fold the check into the tool it guards as a selftest verb or flag, or prove it with a program graded against its oracle"
 mark preflight "home=$home seat=$seat repos=${present[*]} gate=$(printf '%s' "$gate" | cut -c1-120)"
 ahead() { git -C "$home/$1" rev-list --count origin/main..HEAD; }
 fetch() {
