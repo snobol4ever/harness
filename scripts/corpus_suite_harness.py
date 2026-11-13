@@ -1427,8 +1427,13 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     # ⭐ AN ERROR TERM'S CONTEXT IS THE IMPLEMENTATION'S (ISO/IEC 13211-1 7.12.1: error(E, Imp_def)): swipl's names its own frames --
     # context(system:catch/3,_), context('$bags':findall_loop/4,_), the caller left after last-call optimisation -- which no other system
     # reproduces. error-context grades every error(E, C) with C replaced by one marker in both streams; E is still compared exactly.
+    # ⭐ sorted-lines (the coo 2026-11-12 22:47 CST, on the cfo's measurement and the cio's proposal, rows xsb-examples-red-shortest-path and
+    # xsb-examples-red-first): a completed XSB table returns its answers newest first only up to 8 siblings, in hash-bucket order from 9, and for
+    # 10 atoms in a different order on two runs, an accident of XSB's implementation (CEO-1934). sorted-lines compares both streams' non-empty
+    # lines sorted, duplicates kept, as XSB's own gentest.sh compares (xsb_answer_lines); every answer is still checked, so it is no exclusion.
+    # Set by hand only on an entry whose ONE measured divergence is a completed table's answer order, the measurement named in its row.
     _toks = set(ws_blind.split("+")) if isinstance(ws_blind, str) else ({"ignore-all-space"} if ws_blind is True else set())
-    _vars, _ectx, _ws = "fresh-vars" in _toks, "error-context" in _toks, "ignore-all-space" in _toks
+    _vars, _ectx, _ws, _sort = "fresh-vars" in _toks, "error-context" in _toks, "ignore-all-space" in _toks, "sorted-lines" in _toks
     # ⭐ verdict-line (CIO-22 D, the coo 2026-11-10 on the cio's design): a GENERATED case (util_build_package_suite.py units=generated, INRIA's
     # goals and Logtalk's cases) prints one verdict line among whatever else it prints, and its ref is that one line, the suite's own expectation.
     # The FIRST stdout line whose first word is the ref's first word (the marker, @V for Logtalk) is graded against the ref's first line and every
@@ -1470,7 +1475,7 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
             if _ectx:
                 ln = _mask_error_context(ln)
             out.append("".join(ln.split()) if _ws else ln)
-        return out
+        return sorted(ln for ln in out if ln != "") if _sort else out
     _same = exp is not None and (got == exp or (bool(ws_blind) and _norm(got) == _norm(exp)))
     if _same:
         if rc is not None and rc != want_rc:
@@ -1525,6 +1530,23 @@ def tap_compare_probe():
     want = {"description": "PASS", "todo": "PASS", "verdict": "FAIL", "missing": "FAIL", "silent": "FAIL"}
     print("TAP_COMPARE_PROBE " + " ".join(f"{n}={v}" for n, v in got))
     return 0 if all(want[n] == v for n, v in got) else 1
+
+
+def sorted_compare_probe():
+    """--probe-sorted-compare: the compare token sorted-lines on six planted answers -> SORTED_COMPARE_PROBE reordered=PASS blank=PASS missing=FAIL
+    duplicate=FAIL changed=FAIL vars=PASS, rc 0 (vars under sorted-lines+fresh-vars); byte for byte the reordered answer reads FAIL, so the token is what passes it."""
+    ref = "e(1,2)\ne(1,3)\ne(2,3)\ne(2,3)\npath(1,3,_h10266)"
+    arms = (("reordered", "e(2,3)\npath(1,3,_h10266)\ne(1,3)\ne(2,3)\ne(1,2)", ref, "sorted-lines"),
+            ("blank", "e(2,3)\n\ne(1,3)\ne(2,3)\ne(1,2)\npath(1,3,_h10266)\n", ref, "sorted-lines"),
+            ("missing", "e(2,3)\ne(1,3)\ne(1,2)\npath(1,3,_h10266)", ref, "sorted-lines"),
+            ("duplicate", "e(2,3)\ne(1,3)\ne(2,3)\ne(2,3)\ne(1,2)\npath(1,3,_h10266)", ref, "sorted-lines"),
+            ("changed", "e(2,3)\ne(1,3)\ne(2,3)\ne(1,4)\npath(1,3,_h10266)", ref, "sorted-lines"),
+            ("vars", "path(1,3,_G0)\ne(2,3)\ne(1,3)\ne(2,3)\ne(1,2)", ref, "sorted-lines+fresh-vars"))
+    got = [(n, _grade_output(o.encode(), b"", 0, r, ws_blind=t).kind) for n, o, r, t in arms]
+    plain = _grade_output(arms[0][1].encode(), b"", 0, ref).kind
+    want = {"reordered": "PASS", "blank": "PASS", "missing": "FAIL", "duplicate": "FAIL", "changed": "FAIL", "vars": "PASS"}
+    print("SORTED_COMPARE_PROBE " + " ".join(f"{n}={v}" for n, v in got) + f" byte_for_byte_reordered={plain}")
+    return 0 if all(want[n] == v for n, v in got) and plain == "FAIL" else 1
 
 
 TAP_NOTES = {}
@@ -6742,9 +6764,9 @@ def validate_compare_cell(raw, where):
         return False
     if v == "ignore-all-space":
         return True
-    if v and set(v.split("+")) <= {"fresh-vars", "error-context", "ignore-all-space", "verdict-line", "tap"}:
+    if v and set(v.split("+")) <= {"fresh-vars", "error-context", "ignore-all-space", "verdict-line", "tap", "sorted-lines"}:
         return v
-    refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell or a '+'-joined set of ignore-all-space, fresh-vars, error-context, verdict-line, tap")
+    refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell or a '+'-joined set of ignore-all-space, fresh-vars, error-context, verdict-line, tap, sorted-lines")
 
 
 def validate_stage_cell(raw, where):
@@ -7770,6 +7792,8 @@ def cmd_list(args):
 def main():
     if sys.argv[1:] == ["--probe-tap-compare"]:
         sys.exit(tap_compare_probe())
+    if sys.argv[1:] == ["--probe-sorted-compare"]:
+        sys.exit(sorted_compare_probe())
     if sys.argv[1:] == ["--probe-tap"]:
         sys.exit(tap_cases_probe())
     if sys.argv[1:] == ["--probe-source"]:
