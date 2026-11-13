@@ -13,7 +13,7 @@ as a design job; this road sends it to a junior as a bug, with the steps a junio
            names the entry (util_reds_to_designers.live_rows and plan).
   DEALING  each new row goes to the junior holding the fewest live rows in QUEUE.tsv (owner, ASSIGNED:, CLAIMED: or QUEUED:seat-), ties by number:
            round robin over the juniors of TIERS.tsv (role junior, the roster the seat folders make) with no state of its own, so one call or many never fill one tube (the stagger rule).
-  OUTPUT   one line per bug: JUNIOR_BUG suite=K entry=E junior=J topic=T reading=R; then FEED_BOARD suites_read=N reds=N rowed=N bugs=N limit=N.
+  OUTPUT   one line per bug: JUNIOR_BUG suite=K entry=E junior=J topic=T reading=R; then FEED_BOARD suites_read=N reds=N rowed=N closed=N bugs=N limit=N (closed: an entry whose topic already has a baton, a DONE row waiting for the cycle).
   --apply  mints each bug: s4e_msg.sh mint TOPIC 1 --to JUNIOR --stdin. The mint's WAKE line is PRINTED, never sent (the coo wakes in waves).
   --limit N  at most N bugs in one call (default 20).   --suites K1,K2  only these suite keys.   --juniors J1,J2  another seat list.
   --probe  plants a scratch postoffice (S4E_POST) with two suites' reds, a live row and a DONE row, runs --apply there with real mints, and prints
@@ -124,7 +124,7 @@ def read_suite(key):
 
 def feed(order, reader, po, rows, limit, juniors, apply):
     topics, dw = d2d.live_rows(po)
-    n = load(po, juniors); bugs = []; reds_n = rowed_n = read_n = unread_n = 0
+    n = load(po, juniors); bugs = []; reds_n = rowed_n = read_n = unread_n = closed_n = 0
     for key, lang in order:
         if len(bugs) >= limit: break
         text = reader(key)
@@ -142,6 +142,10 @@ def feed(order, reader, po, rows, limit, juniors, apply):
             pat = re.compile(r"(^|[^A-Za-z0-9_/])" + re.escape(e) + r"($|[^A-Za-z0-9_/])")
             t = d2d.topic_of(key, e)
             if t in topics or any(pat.search(l) for l in dw.values()): rowed_n += 1; continue
+            # ⛔ A CLOSED ROW'S ENTRY WAITS FOR THE CYCLE (the coo 2026-11-12 21:3x, measured: six of nine picks refused at mint, "already exists", each a
+            # DONE row in QUEUE.done.tsv whose cure landed after the tree of the entry's red reading; each refusal left its junior unfed): the topic's
+            # baton exists, so the entry is counted rowed and the junior takes the next red
+            if os.path.exists(os.path.join(po, "tasks", t + ".task.md")): rowed_n += 1; closed_n += 1; continue
             if len(bugs) >= limit: break
             j = min(juniors, key=lambda s: (n[s], juniors.index(s))); n[j] += 1; topics.add(t)
             bugs.append((key, lang, e, j, t, reading))
@@ -156,7 +160,7 @@ def feed(order, reader, po, rows, limit, juniors, apply):
                 if l.startswith(("minted ", "WAKE:", "queued ", "⛔", "REFUSE")): print(l)
             if not ok: print("MINT_REFUSED topic=%s rc=%d" % (t, p.returncode))
     tree = subprocess.run(["git", "-C", os.path.join(ROOT, "harness"), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
-    print("FEED_BOARD suites_read=%d reds=%d unread=%d rowed=%d bugs=%d minted=%d limit=%d (tree %s)" % (read_n, reds_n, unread_n, rowed_n, len(bugs), minted, limit, tree or "?"))
+    print("FEED_BOARD suites_read=%d reds=%d unread=%d rowed=%d closed=%d bugs=%d minted=%d limit=%d (tree %s)" % (read_n, reds_n, unread_n, rowed_n, closed_n, len(bugs), minted, limit, tree or "?"))
     return bugs, rowed_n, minted
 
 
