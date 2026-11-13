@@ -2890,7 +2890,12 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
       printf '    ⭐ WHAT THE PREMISE ITSELF SAID (last 20 lines) -- read this BEFORE hypothesising:\n' >&2
       sed -e 's/^/    | /' "$log" | tail -20 >&2
     else
-      printf '    ⚠ the premise produced NO output at all -- usually a check that never ran rather than one that failed.\n' >&2
+      if printf '%s' "$pw" | grep -qE '="\$\(' && printf '%s' "$pw" | grep -q 'grep -q'; then   # junior_13's report via the coo 2026-11-12 23:01 CST: a criterion that captures its tool and tests with grep -q is silent by design
+        printf '    ⚠ the premise printed nothing, BY ITS SHAPE: it captures its tool'"'"'s output in a variable and tests it with grep -q, so its verdict is its rc alone.\n' >&2
+        printf '      rc 1 here means the problem it names is no longer measured (or the tool printed no verdict line). Run the tool part by hand to see which.\n' >&2
+      else
+        printf '    ⚠ the premise produced NO output at all -- usually a check that never ran rather than one that failed.\n' >&2
+      fi
     fi
     rm -f "$log"
     printf '    ⭐⭐ THIS IS NOT A DEFECT, NOT A FAILING GATE, AND NOT YOUR WORK GOING WRONG. It is the row'"'"'s central\n' >&2
@@ -4111,8 +4116,13 @@ case "$cmd" in
                       printf '    ⭐ WHAT THE CRITERION ITSELF SAID (last 20 lines) -- read this BEFORE hypothesising:\n' >&2
                       sed -e 's/^/    | /' "$_dwlog" | tail -20 >&2
                     elif [ "$rc" -ne 124 ]; then
-                      printf '    ⚠ the criterion produced NO output at all -- that is itself a clue: a silent non-zero is\n' >&2
-                      printf '      usually a test that never ran (missing file, bad path, rc=127) rather than one that failed.\n' >&2
+                      if printf '%s' "$dw" | grep -qE '="\$\(' && printf '%s' "$dw" | grep -q 'grep -q'; then   # junior_13's report via the coo 2026-11-12 23:01 CST: silent by design
+                        printf '    ⚠ the criterion printed nothing, BY ITS SHAPE: it captures its tool'"'"'s output in a variable and tests it with grep -q, so its verdict\n' >&2
+                        printf '      is its rc alone. rc 1 here means the problem is still measured, or the tool printed no verdict line. Run the tool part by hand to see which.\n' >&2
+                      else
+                        printf '    ⚠ the criterion produced NO output at all -- that is itself a clue: a silent non-zero is\n' >&2
+                        printf '      usually a test that never ran (missing file, bad path, rc=127) rather than one that failed.\n' >&2
+                      fi
                     fi
                     rm -f "$_dwlog"
                     if [ "$rc" -eq 126 ] || [ "$rc" -eq 127 ] || [ "$rc" -eq 2 ]; then exit 2; fi
