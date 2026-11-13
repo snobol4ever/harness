@@ -123,9 +123,9 @@ def body(key, lang, entry, reading, rows):
             "## NEXT\n"
             "1. Reproduce, from the root with S4E_HOME set: %s\n"
             "2. The oracle: %s ; then %s\n"
-            "3. Find the cause and cure it in a clean worktree: bash harness/scripts/s4e_worktree.sh new %s (load the skill the gate names before each edit).\n"
-            "4. Prove it in the worktree: the reproduce line of step 1 reads PASS for the entry in mode 3; bash harness/scripts/test_feature_reps.sh %s <the feature you touched>; bash harness/scripts/test_smoke_%s.sh.\n"
-            "5. Land it: bash harness/scripts/s4e_land.sh --home <the worktree> --gate '<the step 1 line, grepping m3_pass=1 m3_fail=0>' <the repos you changed>; then s4e_msg.sh claim and done.\n"
+            "3. Find the cause and cure it in your own root (no seat makes a worktree: Lon 2026-11-13, \"I want you to work in /home/claude folder.\"); load the skill the gate names before each edit, and commit the cure, its message naming %s, before you prove it.\n"
+            "4. Prove it in your root: the reproduce line of step 1 reads PASS for the entry in mode 3; bash harness/scripts/test_feature_reps.sh %s <the feature you touched>; bash harness/scripts/test_smoke_%s.sh.\n"
+            "5. Land it from your root: bash harness/scripts/s4e_land.sh --gate '<the step 1 line, grepping m3_pass=1 m3_fail=0>' <the repos you changed>; then s4e_msg.sh claim and done.\n"
             "6. After one honest try that cannot land: bash harness/scripts/s4e_msg.sh escalate %s --stdin with the measurement (what you ran, what it printed), and send the WAKE it prints.\n"
             % (key, entry, reading, sk, q, rd, show, have, red, q, rd, show, have, red, rep, ext, ora, re.sub(r"[^a-z0-9]+", "-", entry.lower()).strip("-")[:40] or "bug",
                lang, {"rebus": "rebus", "snocone": "snocone"}.get(lang, lang), d2d.topic_of(key, entry)))
@@ -369,7 +369,7 @@ def probe():
         got = [(b[2], b[3]) for b in bugs]
         want = [("progs/a1", "junior_02"), ("b/x2", "junior_03"), ("b/x3", "junior_01")]
         baton = open(os.path.join(w, "tasks", "tiny-red-progs-a1.task.md"), encoding="utf-8", errors="replace").read() if os.path.isfile(os.path.join(w, "tasks", "tiny-red-progs-a1.task.md")) else ""
-        steps = all(s in baton for s in ("## NEXT", "--partition 'entry:progs/a1'", "monitor_run.sh", "s4e_worktree.sh new", "s4e_land.sh", "escalate tiny-red-progs-a1", "SKILLS: fleet-bus"))
+        steps = all(s in baton for s in ("## NEXT", "--partition 'entry:progs/a1'", "monitor_run.sh", "in your own root", "s4e_land.sh", "escalate tiny-red-progs-a1", "SKILLS: fleet-bus"))
         ok = got == want and rowed == 1 and minted == 3 and "tiny-red-progs-a1" in q and "b/x1" not in str(bugs) and "b/x4" not in str(bugs) and steps
         print("FEED_PROBE bugs=%d minted=%d rowed=%d limit_held=%d dealt=%s baton_steps=%d ok=%d" % (len(bugs), minted, rowed, int(len(bugs) == 3),
               ",".join(j for _, j in got), int(steps), int(ok)))

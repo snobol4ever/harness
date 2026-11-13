@@ -7,6 +7,10 @@
 #   s4e_worktree.sh --probe
 #   s4e_worktree.sh --probe-sweep-land                                                           (the sweep keeps a worktree a lander holds)
 #
+# NO SEAT MAKES A WORKTREE (officer_02 2026-11-13, row harness-a-worktree-is-scrip-alone-everything-else-from-the-seats-root, recut on Lon's word 17:4x CST, in the coo's
+# window, verbatim: "Hmm, so ever seat has a work tree, dumb ass!!! Hence what you are doing is STUPID!!! I want you to work in /home/claude folder. We do not NEED
+# duplication. Nope, dups not needed."): new refuses rc 2 for every seat but the grader, whose cycle bases (s4e_cycle.sh base_new) and request base stay. A seat edits
+# in its own root, /home/claude_<seat>, and lands from there (s4e_land.sh --home <root>, the default). rm, list and sweep still drain the worktrees made before.
 # new makes /tmp/s4e/<seat>/wt-<name>/{SCRIP,harness,corpus,.github}: detached git worktrees of this root's four checkouts at the base (default
 # origin/main, as the root last fetched it; new fetches nothing, so a seat syncs first). THE CORPUS IS SPARSE BY DEFAULT (the coo, 2026-11-05 17:5x: the
 # whole corpus is 2.3 G a worktree; the president measured 3.0 G down to 756 M): every path but /benchmarks/ and /demos/. --full keeps the whole corpus
@@ -226,7 +230,7 @@ conf_probe() {   # --probe-conf: four arms on a scratch file and a scratch top, 
     o="$(env -u WT_MAX S4E_WT_CONF="$T/absent" bash "$me" --show-conf 2>&1)"; [ "$o" = "WT conf max=40 free_gb=0 file=$T/absent" ] || why="$why arm 2: with no file the cap is not 40 with no floor ($o);"
     o="$(WT_MAX=7 S4E_WT_CONF="$T/c" bash "$me" --show-conf 2>&1)"; [ "$o" = "WT conf max=7 free_gb=3 file=$T/c" ] || why="$why arm 3: WT_MAX in the environment did not win ($o);"
     printf 'max=5\nfree_gb=99999999\n' > "$T/c"
-    o="$(env -u WT_MAX S4E_WT_CONF="$T/c" S4E_WT_TOP="$T/top" bash "$me" new probe-floor 2>&1)"; rc=$?
+    o="$(env -u WT_MAX S4E_WT_CONF="$T/c" S4E_WT_TOP="$T/top" S4E_SEAT=grader bash "$me" new probe-floor 2>&1)"; rc=$?   # the grader: no other seat makes a worktree
     [ "$rc" = 2 ] && printf '%s\n' "$o" | grep 'under the floor of 99999999 GB' > /dev/null && [ -z "$(find "$T/top" -maxdepth 2 -name 'wt-*' 2>/dev/null)" ] || why="$why arm 4: a floor above the free space did not refuse new with nothing made (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
     if [ -z "$why" ]; then rm -rf "$T"; echo "WT conf-probe ok arms=4 (the cap and the floor read from one file; 40 and no floor with no file; WT_MAX wins; a floor above the free space refused new with nothing made)"; return 0; fi
     echo "WT conf-probe RED:$why"; echo "    kept: $T"; return 1
@@ -459,6 +463,7 @@ case "$verb" in
 esac
 case "$verb" in
     new|add)
+        [ "$SEAT" = grader ] || die "REFUSE(2): no seat makes a worktree (Lon 2026-11-13 17:4x CST: \"I want you to work in /home/claude folder. We do not NEED duplication.\"): seat $SEAT works in its own root, /home/claude_$SEAT, and lands from there (s4e_land.sh --home /home/claude_$SEAT); only the grader's cycle bases are made here" 2
         case "$cap" in ""|*[!0-9]*) die "REFUSE(2): --cap-mb needs a number of MB" 2 ;; esac
         new_wt "$name" "$base" "$langs" "$cap" ;;
     rm|remove)

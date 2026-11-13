@@ -44,6 +44,11 @@
 #                process of it remains, its gate held neither lock descriptor, and a second landing from the same home lands; prints LAND probe-orphan-lock second=landed orphans=0.
 #   --tables     print the generated-table registry (generated_tables.tsv) and run nothing
 #   --probe-rerun  the proof of LAND.conf's switches on scratch origins (four arms); prints LAND rerun-probe ok
+#   --probe-root-home  the proof of a landing from a seat's own root on a scratch root (two arms); prints LAND root-home-probe ok
+# A SEAT LANDS FROM ITS OWN ROOT (officer_02 2026-11-13, row harness-a-worktree-is-scrip-alone-everything-else-from-the-seats-root; Lon 17:4x CST, in the coo's window,
+#   verbatim: "I want you to work in /home/claude folder. We do not NEED duplication. Nope, dups not needed."): no seat makes a worktree; the home is the seat's root,
+#   the default. The landing rebases the root's own commits onto origin, gates and pushes as for any home, and then syncs the root: each shared repo it holds
+#   (git config s4e.shared, skill shared-box 4) has its clean files linked to the pristine again, since the rebase wrote them as new files (util_sync_root.sh --relink).
 # LAND.conf (the cio 2026-11-13, row the-lander-reruns-a-landing-only-for-what-touches-it; Lon: "how are we going to fix the fleet infra-structure?" /
 #   "I am willing to try anything and everything and monitor your experiments on the live fleet."): ONE FILE IN THE POSTOFFICE EVERY LANDER READS AT ITS START,
 #   key=value a line, so a switch is turned on the live fleet without a landing; an option on the command line wins, then the file, then the default, and
@@ -90,6 +95,7 @@ while [ $# -gt 0 ]; do
         --probe-orphan-lock) mode=probe_orphan_lock; shift ;;
         --probe-land-class) mode=probe_land_class; shift ;;
         --probe-rerun) mode=probe_rerun; shift ;;
+        --probe-root-home) mode=probe_root_home; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
         --proved) proved="${2:-}"; shift 2 ;;
@@ -502,10 +508,40 @@ probe_rerun() {   # THE PROOF OF LAND.conf's SWITCHES (row the-lander-reruns-a-l
 [ "$mode" = probe ] && probe
 [ "$mode" = probe_mail ] && { probe_mail; exit $?; }
 [ "$mode" = probe_push_refusal ] && probe_push_refusal
+probe_root_home() {   # A SEAT LANDS FROM ITS OWN ROOT (row harness-a-worktree-is-scrip-alone-everything-else-from-the-seats-root, recut on Lon's word 2026-11-13 17:4x CST), on a scratch root and scratch origins: (1) an edit committed in the root's corpus while origin moved lands from the root itself: the gate reads the root with the edit, the root's own commit is rebased onto origin and pushed, and the root ends clean at origin; (2) the sync keeps a seat's work: a local commit in harness and a tracked edit in .github stand where they were, named KEPT, with nothing stashed or reset, while the clean corpus fast-forwards to a moved origin
+    local T W log rc why="" h0 g0 f c0 r
+    T="$(mktemp -d "/tmp/s4e/$seat/land-root-home-probe.XXXXXX")" || refuse "cannot make a scratch directory"
+    trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+    scratch_clone "$T"; W="$T/work"; f="tests/probe_race/root-home-$$.txt"
+    mkdir -p "$W/corpus/tests/probe_race" && echo "an edit in the root" > "$W/corpus/$f" && git -C "$W/corpus" add "$f" && git -C "$W/corpus" commit -q -m "probe: an edit in the seat's root" || refuse "root-home-probe: cannot edit the scratch root"
+    advance "$T/origin/corpus.git" "probe: origin moved under the root"
+    log="$T/arm1.log"
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$W" --gate "[ \"\$S4E_HOME\" = \"$W\" ] && [ \"\$(pwd -P)\" = \"$(cd "$W" && pwd -P)\" ] && grep -qx 'an edit in the root' corpus/$f" corpus > "$log" 2>&1; rc=$?
+    sed 's/^/    arm1| /' "$log" | grep -E 'stage=(preflight|rebase|gate|push|sync)|LAND ok|LAND RED|REFUSE' | cut -c1-200 | tail -8
+    [ "$rc" = 0 ] && grep -q '^LAND ok ' "$log" || why="$why arm 1: the landing from the root returned rc=$rc without LAND ok;"
+    git -C "$T/origin/corpus.git" log --format=%s main > "$T/corpus.log"   # a file, not a pipe: grep -q under pipefail kills git log
+    grep -qx "probe: an edit in the seat's root" "$T/corpus.log" || why="$why arm 1: the root's commit is not on origin;"
+    grep -qx "probe: origin moved under the root" "$T/corpus.log" || why="$why arm 1: origin lost its own commit;"
+    [ "$(git -C "$W/corpus" rev-parse HEAD)" = "$(git -C "$T/origin/corpus.git" rev-parse main)" ] && [ -z "$(git -C "$W/corpus" status --porcelain --untracked-files=no)" ] || why="$why arm 1: the root's corpus is not clean at origin after the landing;"
+    echo local > "$W/harness/scripts/probe_local_$$.txt" && git -C "$W/harness" add "scripts/probe_local_$$.txt" && git -C "$W/harness" commit -q -m "probe: a local commit in the root" || refuse "root-home-probe: cannot commit in the scratch root's harness"
+    g0="$(git -C "$W/.github" ls-files | head -1)"; [ -n "$g0" ] && echo "a tracked edit in the root" >> "$W/.github/$g0" || refuse "root-home-probe: no tracked file in the scratch .github"
+    h0="$(git -C "$W/harness" rev-parse HEAD)"; c0="$(git -C "$W/.github" rev-parse HEAD)"
+    for r in harness .github corpus; do advance "$T/origin/$r.git" "probe: origin moved under the sync"; done
+    log="$T/arm2.log"
+    S4E_HOME="$W" S4E_SYNC_REPOS="harness .github corpus" bash "$HERE/util_sync_root.sh" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm2| /' "$log" | cut -c1-200
+    [ "$rc" = 0 ] && grep -q '^SYNC harness .* KEPT: 1 local commit' "$log" && grep -q '^SYNC \.github .* KEPT: 0 local commit(s), 1 edited file' "$log" || why="$why arm 2: the sync rc=$rc did not name harness and .github KEPT;"
+    [ "$(git -C "$W/harness" rev-parse HEAD)" = "$h0" ] && [ "$(git -C "$W/.github" rev-parse HEAD)" = "$c0" ] && ! git -C "$W/.github" diff --quiet && [ -z "$(git -C "$W/harness" stash list; git -C "$W/.github" stash list)" ] \
+        || why="$why arm 2: the sync moved, stashed or reset the seat's work;"
+    [ "$(git -C "$W/corpus" rev-parse HEAD)" = "$(git -C "$W/corpus" rev-parse origin/main)" ] || why="$why arm 2: the clean corpus did not fast-forward to its moved origin;"
+    if [ -z "$why" ]; then echo "LAND root-home-probe ok arms=2 (an edit in the root landed from the root, rebased onto a moved origin, the gate reading the root, the root clean at origin after; the sync kept a local commit and a tracked edit, KEPT, nothing stashed or reset, and fast-forwarded the clean repo)"; exit 0; fi
+    trap - EXIT; echo "LAND root-home-probe RED:$why"; echo "    kept: $T"; exit 1
+}
 [ "$mode" = probe_serial ] && probe_serial
 [ "$mode" = probe_orphan_lock ] && probe_orphan_lock
 [ "$mode" = probe_land_class ] && probe_land_class
 [ "$mode" = probe_rerun ] && probe_rerun
+[ "$mode" = probe_root_home ] && probe_root_home
 [ "$mode" = merge_probe ] && merge_probe
 # THE LEASE IS HELD ONLY AROUND THE PUSH (the cio 2026-11-04 20:1x CST, on hq_pascal's 14-minute wait behind hq_unicon's gate and seven landings queued behind
 # hq_templates' 35-minute gate): the gate runs UNLEASED on the rebased tree; the lease is taken after it, origin is fetched again under the lease, and if it moved
@@ -898,6 +934,14 @@ while :; do
     rejected=$((rejected + 1)); attempt=$((attempt + 1))
     [ "$attempt" -gt "$tries" ] && red push "the origin moved under $tries attempts; pushed so far: ${pushed[*]:-none} serial_round=$serial_round"
 done
+relink_root() {   # THEN SYNC: a root's shared repos are linked to the pristine again after the landing moved them (never a reason to fail a pushed landing)
+    local r rs=()
+    for r in corpus harness .github; do [ -e "$home/$r/.git" ] && [ "$(git -C "$home/$r" config --get s4e.shared 2>/dev/null)" = true ] && rs+=("$r"); done
+    [ "${#rs[@]}" -gt 0 ] || return 0
+    if S4E_HOME="$home" bash "$HERE/util_sync_root.sh" --relink "${rs[@]}" > "$LOG/relink" 2>&1 7>&- 8>&- 9>&-; then mark sync "relinked ${rs[*]} to the pristine: $(grep -oE '(linked|already)=[0-9]+' "$LOG/relink" | tr '\n' ' ')"
+    else echo "LAND stage=sync relink rc=$? (pushed all the same; run util_sync_root.sh): $(tail -1 "$LOG/relink" | cut -c1-160)"; fi
+}
+relink_root
 if [ "$mode" = push ]; then
     for x in "${pushed[@]}"; do record_hand_push "${x%@*}" "${x#*@}"; done
     ledger ok; rm -rf "$LOG"; echo "LAND ok mode=push stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt hand_push=leased push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds serial_round=$serial_round ($(date -u +%Y-%m-%dT%H:%M:%SZ))"; exit 0

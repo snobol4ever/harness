@@ -7,7 +7,12 @@
 # proves it on scratch: four scratch repos with alternates to this root's objects, each fetched one commit ahead of its base, the pack count must not grow.
 # USAGE: bash harness/scripts/util_sync_root.sh            fetch the four repos under $S4E_HOME, then fast-forward each: one `SYNC <repo> <before>..<after>` line each.
 #        bash harness/scripts/util_sync_root.sh --probe    one `SYNC slot=sem id=s4e-fetch j=N alternates=A packs_grew=G repos=4` line.
-# rc 0 synced (probe: green); 1 a merge refused, or a probe fetch grew a pack; 2 cannot measure (not a repo, a fetch the slot or origin refused).
+#        bash harness/scripts/util_sync_root.sh --relink [REPO...]   link a shared repo's clean files to the pristine again (s4e_land.sh after a landing from a root)
+# A SEAT'S ROOT IS ITS WORKING TREE (officer_02 2026-11-13, row harness-a-worktree-is-scrip-alone-everything-else-from-the-seats-root; Lon 17:4x CST, in the coo's window,
+# verbatim: "I want you to work in /home/claude folder. We do not NEED duplication. Nope, dups not needed."): a repo with commits origin/main lacks, or with tracked edits,
+# is left exactly as it is and named, `SYNC <repo> <head>..<head> KEPT ...`, rc 0: the sync never stashes, resets, rebases or merges over a seat's work; the seat lands it
+# (s4e_land.sh --home <root>), and the lander brings the repo to origin.
+# rc 0 synced or kept (probe: green); 1 a merge refused, or a probe fetch grew a pack; 2 cannot measure (not a repo, a fetch the slot or origin refused).
 # The fetches all run before any merge, so a refused fetch never leaves one repo merged and another behind (never half a landing).
 set -uo pipefail
 ROOT="${S4E_HOME:?REFUSE(2): S4E_HOME unset}"
@@ -48,6 +53,11 @@ sync_all() {
     for r in $REPOS; do
         dir="$ROOT/$r"
         before="$(git -C "$dir" rev-parse --short HEAD)"
+        local ah ed; ah="$(git -C "$dir" rev-list --count origin/main..HEAD 2>/dev/null)"; ed="$(git -C "$dir" status --porcelain --untracked-files=no 2>/dev/null | wc -l)"
+        if [ "${ah:-0}" -gt 0 ] || [ "$ed" -gt 0 ]; then
+            echo "SYNC $r $before..$before KEPT: ${ah:-0} local commit(s), $ed edited file(s), $(git -C "$dir" rev-list --count HEAD..origin/main 2>/dev/null) behind origin -- this root is the seat's working tree: nothing stashed, reset or merged; land the work with s4e_land.sh --home $ROOT"
+            continue
+        fi
         if git -C "$dir" merge -q --ff-only origin/main; then
             after="$(git -C "$dir" rev-parse --short HEAD)"
             echo "SYNC $r $before..$after"
@@ -107,6 +117,7 @@ probe() {
 
 case "${1:-}" in
     --probe) probe; exit $? ;;
+    --relink) shift; relink_shared ${@:-corpus harness .github}; exit $? ;;
     "") sync_all; exit $? ;;
-    *) echo "usage: util_sync_root.sh [--probe]" >&2; exit 2 ;;
+    *) echo "usage: util_sync_root.sh [--probe | --relink [REPO...]]" >&2; exit 2 ;;
 esac

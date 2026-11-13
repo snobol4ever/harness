@@ -381,16 +381,16 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
     # ALL FOUR REPOS, THEN THE BINARY (the cio 2026-11-08 11:3x on officer_03's measurement: with SCRIP left out of the sync, a premise that reads SCRIP source read false in junior_06's root at bb311e419 and the CTO-555 rename row was retired): the sync fast-forwards SCRIP too, and make -j8 fetches the build from the cache (seconds on a clean tree), so the premise is read on the current tree with its own binary; a make that fails refuses the read, and the row is skipped, never retired.
     mkdir -p "/tmp/s4e/${ME:-seat}" 2>/dev/null
     if [ "${S4E_NO_PREMISE_CHECK:-0}" != 1 ]; then
-    ( cd "$S4E" && timeout -k 5 120 bash harness/scripts/util_sync_root.sh ) >"/tmp/s4e/${ME:-seat}/next_sync.log" 2>&1 || echo "⚠ the root did not fully sync before the premise read (see /tmp/s4e/${ME:-seat}/next_sync.log): a repo with an unpushed local commit stays behind; save it on a branch and put main back at origin/main" >&2
+    ( cd "$S4E" && timeout -k 5 120 bash harness/scripts/util_sync_root.sh ) >"/tmp/s4e/${ME:-seat}/next_sync.log" 2>&1 || echo "⚠ the root did not fully sync before the premise read (see /tmp/s4e/${ME:-seat}/next_sync.log)" >&2
     ( cd "$S4E/SCRIP" && timeout -k 10 600 make -j8 ) >"/tmp/s4e/${ME:-seat}/next_make.log" 2>&1 || { echo "⛔ REFUSE(2): reserved job $2 ($_t) is released: make -j8 in $S4E/SCRIP failed after the sync (see /tmp/s4e/${ME:-seat}/next_make.log), so no premise can be read on this root; fix the build and run next again." >&2; s4e_take_refused "$_t" "$2"; return 1; }
-    # A DIRTY ROOT MEASURES NOTHING (CEO-2060; CTO-544 (7), the cto 2026-11-07 15:5x: worker_10's root carried an uncommitted cure, so the dispatch-time premise read GREEN there and the row went SUPERSEDED wrongly): the premise is graded only on a clean root; a dirty one releases the job with the dirty repos named, and the seat cleans its root (commit in a worktree, or checkout) before next serves it a job.
+    # A DIRTY ROOT MEASURES NOTHING, AND IT REFUSES NOTHING (CEO-2060; CTO-544 (7), the cto 2026-11-07 15:5x: worker_10's root carried an uncommitted cure, so the dispatch-time premise read GREEN there and the row went SUPERSEDED wrongly). A SEAT'S ROOT IS ITS WORKING TREE (officer_02 2026-11-13, row harness-a-worktree-is-scrip-alone-everything-else-from-the-seats-root; Lon 17:4x CST, in the coo's window, verbatim: "I want you to work in /home/claude folder. We do not NEED duplication."): a premise graded on a dirty root is still no measurement, so it is not read there, and the job is served as its row stands, never released; the dirty repos are named.
     local _dr="" _r
     for _r in SCRIP harness corpus .github; do [ -d "$S4E/$_r/.git" ] || continue; git -C "$S4E/$_r" diff --quiet 2>/dev/null && git -C "$S4E/$_r" diff --cached --quiet 2>/dev/null || _dr="$_dr $_r"; done
-    [ -z "$_dr" ] || { echo "⛔ REFUSE(2): reserved job $2 ($_t) is released: this root is dirty in$_dr, and a premise graded on a dirty root is no measurement (CEO-2060). Clean the root (git -C <repo> status; a cure lives in a worktree, never in the root) and run next again." >&2; s4e_take_refused "$_t" "$2"; return 1; }
+    [ -z "$_dr" ] || echo "NOTE: the premise of $_t is not read: this root is your working tree, dirty in$_dr, and a premise graded on a dirty tree is no measurement (CEO-2060); the job is served as its row stands." >&2
     fi
     # THE RED PREMISE (the cio's cut, 2026-11-07): a gate that ran and read RED returns 4, so the reserve pass can bury this head and go on; any other refusal (an rc 2 that could not measure) returns 1, as it does today.
     local _pg; _pg="$(mktemp "${TMPDIR:-/tmp}/s4e_take_pg.XXXXXX")" || return 1
-    if ! s4e_premise_gate "$_t" next >"$_pg" 2>&1; then
+    if [ -z "${_dr:-}" ] && ! s4e_premise_gate "$_t" next >"$_pg" 2>&1; then
         cat "$_pg" >&2
         if grep -q 'THE PREMISE OF THIS ROW IS RED' "$_pg"; then rm -f "$_pg"; return 4; fi
         rm -f "$_pg"; return 1
