@@ -7,4 +7,4 @@
 # READ BY util_dyn_caps_witness.sh witness: "refusal read at the cap: K of N guards, silent: S" -- N the census's LOUD guards, K those
 # whose witness read the refusal, S those whose witness ran to rc 0 past the cap with nothing refusing. Each HQ's cure brings the
 # witness for any guard it leaves LOUD; a converted table leaves the LOUD set, and its row here goes with it (a stale row is RED).
-src/runtime/rt/rt_pl_trail.c	PL_TR_ARENA_BYTES	../harness/scripts/fixtures/dyn_caps/witness/trail_17200k.pl	-d2097152k -i1048576k -s8388608k	2	trail arena exhausted after 16777215 conditional bindings
+src/runtime/rt/rt_pl_trail.c	PL_TR_ARENA_BYTES	../harness/scripts/fixtures/dyn_caps/witness/trail_34000k.pl	-d2097152k -i1048576k -s8388608k	2	trail arena exhausted after 33554431 conditional bindings

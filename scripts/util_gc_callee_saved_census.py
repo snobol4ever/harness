@@ -364,12 +364,12 @@ def _choice_word_def(insns, i, reg):
                             and re.fullmatch(r'\[\s*(rsp|rbp)\s*[+-]\s*\d+\s*\]', rcx_writer.ops[1].strip()) is not None)
     return False
 
-TRAIL_SYNC_MASK = "-536870912"
+TRAIL_SYNC_MASK = "-1073741824"
 def _trail_top_def(insns, i, reg):
     """⛔ THE TRAIL TOP'S OWN REDEFINITION (hq_collector 2026-11-01, row gc-the-callee-saved-copy-residual-...; x86_pl_tr_tidy in
     x86_call.cpp compacts the trail and ends `mov r12, rdi` then x86_pl_tr_top_sync): r12 is the Prolog trail top, the r12 island, an
     address in the trail arena and never the collected heap, and the emission says so itself by what it does with the value on the very next
-    three instructions -- it masks it with the arena mask and stores it into the arena header (`mov rax, r12; and rax, -536870912;
+    three instructions -- it masks it with the arena mask and stores it into the arena header (`mov rax, r12; and rax, -1073741824;
     mov qword ptr [rax + 0], r12`). This reader takes the declaration ONLY in that exact shape: a `mov r12, rdi` without the three
     instructions, or with another mask, or a register other than r12, stays UNCLASSIFIED (selftest arms plant each)."""
     if reg != "r12": return False
@@ -1079,13 +1079,13 @@ def selftest():
         open(p, "w").write(" .text\nt_\u03b1:\n push r12\n mov rsi, qword ptr [rsp + 8]\n mov rdi, rsi\n" + body
                            + " call rt_alloc_thing\n mov rdx, r12\n pop r12\n ret\n")
         return census([p], alloc)
-    sync = " mov rax, r12\n and rax, -536870912\n mov qword ptr [rax + 0], r12\n"
+    sync = " mov rax, r12\n and rax, -1073741824\n mov qword ptr [rax + 0], r12\n"
     tot, la, owned, passed, classes, unc, cop, heaps, pg, unk, unattr = _tt(" mov r12, rdi\n" + sync)
     ck(classes.get("r12", {}).get("TRAILTOP", 0) == 1 and bucket("TRAILTOP") == "raw" and not unc,
        f"the trail top redefined from the compaction cursor and synced into the arena header at once reads TRAILTOP, raw, got {dict(classes.get('r12',{}))} unc={unc}")
     for what, body in (("no sync triple", " mov r12, rdi\n"),
                        ("another mask", " mov r12, rdi\n mov rax, r12\n and rax, -4096\n mov qword ptr [rax + 0], r12\n"),
-                       ("another header slot", " mov r12, rdi\n mov rax, r12\n and rax, -536870912\n mov qword ptr [rax + 8], r12\n"),
+                       ("another header slot", " mov r12, rdi\n mov rax, r12\n and rax, -1073741824\n mov qword ptr [rax + 8], r12\n"),
                        ("another source", " mov r12, rsi\n" + sync)):
         tot, la, owned, passed, classes, unc, cop, heaps, pg, unk, unattr = _tt(body)
         ck(any(u[3] == "r12" and u[4] == "UNCLASSIFIED" for u in unc) and not classes.get("r12", {}).get("TRAILTOP", 0),
