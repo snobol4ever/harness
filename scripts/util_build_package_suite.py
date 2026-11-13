@@ -564,6 +564,16 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     if _c not in ("iso", "fpc", "objfpc", "delphi", "tp"):
                         h.refuse(f"{_cf}: entry {_r.get('entry')} names dialect {_c!r}, which is none of iso, fpc, objfpc, delphi, tp")
                     pas_cells[_r["entry"]] = _c
+    # ⭐ A PROLOG ROW'S DIALECT CELL NAMES THE ORACLE THAT CUTS ITS REF (the cfo 2026-11-13, accepted by the coo; skill prolog, "The oracle of an unmarked
+    # program in a suite table"): the builder cut every ref of gate_cases_prolog from swipl, and eleven entries are cases whose retired gate expected gprolog's
+    # answer, so their refs were the wrong oracle's. An entry whose dialect cell is gnu is cut from GNU Prolog 1.6.0 through gprolog_oracle_run.sh (twice under
+    # --twice, as every row is) and graded with scrip --dialect=gnu, which the reader adds from the same cell; any other cell, or none, is swipl's as before.
+    gnu_cells = set()
+    if lang == "prolog" and _cf.is_file():
+        with open(_cf, newline="") as _fh:
+            for _r in csv.DictReader(_fh):
+                if (_r.get("dialect") or "").strip() == "gnu":
+                    gnu_cells.add(_r["entry"])
     merged = contract["stderr"] == "merged"
     # ⛔⭐ THE TABLE'S ATTRIBUTE COLUMNS ARE THE ONE SPEC, READ BY THE BUILDER AS BY THE GRADER (Lon 2026-11-08 23:0x, verbatim: "Same spec on
     # attributes and environment."; the cio 2026-11-10). MEASURED on spitbol_x32_tests: its ALL.csv declared out_files=extract1.txt extract2.txt
@@ -868,6 +878,9 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                 elif lang == "icon" and merged:
                     return h.run_icon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text,
                                                                          prog_args=prog_args, out_files=out_files)
+                elif lang == "prolog" and name in gnu_cells:
+                    return h.run_oracle("bash", str(h.HARNESS_SCRIPTS / "gprolog_oracle_run.sh"), _iso_src, paths["timeout"], stdin_text=stdin_text,
+                                                              prog_args=prog_args, out_files=out_files, merge_stderr=_ms)
                 else:
                     return h.run_oracle(oracle_bin, flags, _iso_src, paths["timeout"], stdin_text=stdin_text,
                                                               prog_args=prog_args, out_files=out_files, merge_stderr=_ms)
@@ -1154,11 +1167,14 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
     _carried = []
     _gap_col = []
     _old_gap = {}
+    _dl_col = []
+    _old_dl = {}
     if out_csv.exists():
         with open(out_csv, newline="") as _f:
             _rdr = csv.DictReader(_f)
             _cmd_cols = [c for c in _cmd_cols if c in (_rdr.fieldnames or [])]
             _gap_col = ["mode_gap_s"] if "mode_gap_s" in (_rdr.fieldnames or []) else []
+            _dl_col = ["dialect"] if lang == "prolog" and "dialect" in (_rdr.fieldnames or []) else []
             for _row in _rdr:
                 if _row.get("entry") in _shipped_names and _row.get("entry") not in _absorbed_names:
                     _carried.append(_row)
@@ -1174,21 +1190,23 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                 _g = (_row.get("mode_gap_s") or "").strip()
                 if _g:
                     _old_gap[_row.get("entry")] = _g
+                if _dl_col and (_row.get("dialect") or "").strip():
+                    _old_dl[_row.get("entry")] = _row["dialect"].strip()
     with open(out_csv, "w", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
-        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _tmo_col + _cmd_cols + _of_col + _se_col + _cm_col + _sg_col + _gr_col + _gap_col + _fx_col + [c for c, _fn in cols])
+        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _tmo_col + _cmd_cols + _of_col + _se_col + _cm_col + _sg_col + _gr_col + _gap_col + _dl_col + _fx_col + [c for c, _fn in cols])
         for e in entries:
             joined = "\n".join(e.sno_lines)
             flags_row = m.attrs_for_text(joined, table_lang)
             w.writerow([e.seq, e.name, f"{pkg_dir.name}__{e.name}", pkg_dir.name, len(e.sno_lines),
-                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_decl.get(e.name, {}).get("timeout_s", "") for c in _tmo_col] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + [("merged" if getattr(e, "decl_stderr", merged) else "") for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + ((["swi-cases", e.name.rsplit("/", 1)[0] if "/" in e.name else "."] if plunit else ["tap-cases"]) if _gr_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [("staged" if e.name in FX_STAGED else "") for c in _fx_col] + [flags_row[c] for c, _fn in cols])
+                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_decl.get(e.name, {}).get("timeout_s", "") for c in _tmo_col] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + [("merged" if getattr(e, "decl_stderr", merged) else "") for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + ((["swi-cases", e.name.rsplit("/", 1)[0] if "/" in e.name else "."] if plunit else ["tap-cases"]) if _gr_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [_old_dl.get(e.name, "") for c in _dl_col] + [("staged" if e.name in FX_STAGED else "") for c in _fx_col] + [flags_row[c] for c, _fn in cols])
         _rank = max([e.seq for e in entries] or [0])
         for _row in sorted(_carried, key=lambda r: r.get("entry") or ""):
             _rank += 1
             w.writerow([_rank, _row.get("entry"), _row.get("origin") or f"{pkg_dir.name}__{_row.get('entry')}", _row.get("package") or pkg_dir.name,
                         _row.get("n_lines") or "", _row.get("stdin") or "0", _row.get("want_rc") or "0",
                         (_row.get("heap_kb") or "").strip() or m.DEFAULT_HEAP_KB, (_row.get("stack_kb") or "").strip() or m.DEFAULT_STACK_KB] + [(_row.get(c) or "").strip() for c in _tmo_col] + [(_row.get(c) or "").strip() for c in _cmd_cols]
-                       + [(_row.get(c) or "").strip() for c in _of_col] + [(_row.get(c) or "").strip() for c in _se_col] + ["" for c in _cm_col] + ["" for c in _sg_col] + ["" for c in _gr_col] + [(_row.get(c) or "").strip() for c in _gap_col] + [(_row.get(c) or "").strip() for c in _fx_col] + ["" for c, _fn in cols])
+                       + [(_row.get(c) or "").strip() for c in _of_col] + [(_row.get(c) or "").strip() for c in _se_col] + ["" for c in _cm_col] + ["" for c in _sg_col] + ["" for c in _gr_col] + [(_row.get(c) or "").strip() for c in _gap_col] + [(_row.get(c) or "").strip() for c in _dl_col] + [(_row.get(c) or "").strip() for c in _fx_col] + ["" for c, _fn in cols])
     if _carried:
         print("    settings rows: %d unit(s) still shipped and not absorbed by this build carried forward, declarations kept, no block: %s"
               % (len(_carried), ", ".join(sorted(r.get("entry") or "" for r in _carried))), file=sys.stderr)
