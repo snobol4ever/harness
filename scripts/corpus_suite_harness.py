@@ -4153,6 +4153,38 @@ def expected_refusal_names(want, out, rc):
     return False
 
 
+def _swi_sto_alone(go, work, m, v):
+    """EACH sto(rational_trees) CASE ALONE (R-1684, restored 2026-11-13 on junior_15's measurement of swi attvar/test_dif; the deleted runner
+    test_prolog_swi_suite.sh did it and the one-runner harness lost it): the plunit shim defers each such case in the file's run, printing
+    '  skip: U:T  [sto-deferred only(U,T)]', so a cyclic-term case that loops or exhausts the stack cannot end its whole file; here each
+    distinct only(U,T) spec runs ALONE, in the same program, from its own scratch directory whose pj_sto_only.pl names it, under its own 30 s
+    timeout, and util_swi_sto_merge.py puts its verdict lines where the file's run deferred it (a loop or a death reads FAIL, that case only).
+    GO(cwd) runs the entry once in this mode from CWD and returns its Verdict; V is the file's own Verdict, rewritten in place."""
+    specs = []
+    for mm in re.finditer(rb"\[sto-deferred (only\(.*\))\]\s*$", v.stdout or b"", re.M):
+        sp = mm.group(1).decode("utf-8", "replace")
+        if sp not in specs:
+            specs.append(sp)
+    if not specs:
+        return
+    base = Path(work) / ("sto_" + m)
+    for k, sp in enumerate(specs, 1):
+        d = Path(str(base) + "." + str(k))
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "pj_sto_only.pl").write_text(sp + ".\n", encoding="utf-8")
+        a = go(d)
+        (d / "out").write_bytes(a.stdout or b"")
+        (d / "err").write_bytes(a.stderr or b"")
+        (d / "rc").write_text(str(124 if a.kind == "HANG" else (a.returncode if a.returncode is not None else 0)) + "\n")
+    act, spf = Path(str(base) + ".actual"), Path(str(base) + ".specs")
+    act.write_bytes(v.stdout or b"")
+    spf.write_text("\n".join(specs) + "\n", encoding="utf-8")
+    p = subprocess.run([sys.executable, "-I", str(HARNESS_SCRIPTS / "util_swi_sto_merge.py"), str(act), str(spf), str(base) + ".", "30"], capture_output=True)
+    if p.returncode != 0:
+        refuse(f"util_swi_sto_merge.py refused rc={p.returncode}: {(p.stderr or p.stdout).decode('utf-8', 'replace').strip()[:300]}")
+    v.stdout = p.stdout
+
+
 def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=None):
     with tempfile.TemporaryDirectory(dir=tmp_root) as td:
         cand, expected = stage_entry(entry, td, ext, companion_dir)
@@ -4181,13 +4213,17 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
             (Path(td) / "wrap.pl").write_text("main :- run_tests.\n:- initialization(main).\n")
             _sf = [str(_shim), str(_org.resolve()), str(Path(td) / "wrap.pl")]
             _src = None
-        _v = run_all_modes(paths, cand, expected, Path(td), modes, stdin_text=entry.stdin, run_cwd=_rc_dir, source_path=_src, source_files=_sf,
-                             want_rc=_want, prog_argv=getattr(entry, 'argv', None),
-                             mask=getattr(entry, 'mask', None),
-                             where=entry.name, bin_dir=Path(td), heap_kb=getattr(entry, 'heap_kb', None), stack_kb=getattr(entry, 'stack_kb', None), timeout=(None if ("TIMEOUT" in os.environ or not getattr(entry, 'timeout_s', None)) else entry.timeout_s),
-                             compile_args=getattr(entry, 'compile_args', None), out_files=getattr(entry, 'out_files', None),
-                             merge_stderr=getattr(entry, 'merge_stderr', False), ws_blind=getattr(entry, 'compare_ws', False),
-                             answer_file=getattr(entry, 'answer_file', None), mode_gap_s=getattr(entry, 'mode_gap_s', 0))
+        def _go(_ms, _cwd, _tmo):
+            return run_all_modes(paths, cand, expected, Path(td), _ms, stdin_text=entry.stdin, run_cwd=_cwd, source_path=_src, source_files=_sf,
+                                 want_rc=_want, prog_argv=getattr(entry, 'argv', None),
+                                 mask=getattr(entry, 'mask', None),
+                                 where=entry.name, bin_dir=Path(td), heap_kb=getattr(entry, 'heap_kb', None), stack_kb=getattr(entry, 'stack_kb', None), timeout=_tmo,
+                                 compile_args=getattr(entry, 'compile_args', None), out_files=getattr(entry, 'out_files', None),
+                                 merge_stderr=getattr(entry, 'merge_stderr', False), ws_blind=getattr(entry, 'compare_ws', False),
+                                 answer_file=getattr(entry, 'answer_file', None), mode_gap_s=getattr(entry, 'mode_gap_s', 0))
+        _v = _go(modes, _rc_dir, (None if ("TIMEOUT" in os.environ or not getattr(entry, 'timeout_s', None)) else entry.timeout_s))
+        if getattr(entry, "grader", None) == "swi-cases":
+            for _m, _vm in _v.items(): _swi_sto_alone(lambda _c, _m=_m: _go([_m], _c, 30)[_m], Path(td), _m, _vm)
         return {m: against_expect(v, _ex) for m, v in _v.items()}
 
 
