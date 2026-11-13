@@ -6,7 +6,7 @@ READS  the design row's frozen snapshot (every Roast program not PASS), results.
        refusal names a construct), corpus/packages/raku/roast/TESTS.tsv (the constructs every Roast TAP test exercises, cut from Rakudo 09-27),
        corpus/tests/raku/LADDER.tsv (rung00..rung20, BUILT), harness/designs/raku_ladder/CORE-NAMES.tsv (Raku's CORE:: symbols, written
        once from `raku -e` and read from the file after), src/runtime/rk_rakudo_method_names.inc (Rakudo's method names: the core-method filter).
-WRITES corpus/tests/raku/LADDER.tsv (rung21.. appended, STATUS DECLARED or HELD; rung00..20 untouched),
+WRITES corpus/tests/raku/LADDER.tsv (rung21.. appended, STATUS DECLARED; rung00..20 untouched),
        corpus/packages/raku/roast/ROAST-RUNG-MAP.tsv (program TAB first-blocking rung TAB unblock rung TAB outcome TAB basis TAB construct),
        and prints the page's rung table (markdown) and the counts on stdout. --dry-run prints and writes nothing.
 THE RULE: a construct is a LANGUAGE FEATURE when its family is kw, op, lit, quote, regex, twigil, var, meta, test, or a meth/call/type/word
@@ -47,7 +47,7 @@ FAMILIES = [
  ('F17', 'packages, modules, pragmas, EVAL and pod', 'NOT-A-BOX: a use, no, need, require, unit, module or package directive is lowered at compile time and runs nothing; EVAL is the compile-at-run-time road (runtime_eval and planner_rt_plan, R11); pod is data (R2); bb_call_proc_staged for an EVAL result'),
  ('F18', 'dynamics, introspection and the call frame', 'bb_var_frame with rtx_rk_dynfind (ASM leaf walking the dynamic chain for $*X); .WHAT, .WHO, .HOW, .VAR, .DEFINITE are bb_rk_type reads; callframe and Backtrace read ARCH-GC section 13 chain'),
  ('F19', 'sets, bags and mixes', 'bb_rk_sets (new: the QuantHash family) over bb_rk_aggr; the set operators through bb_rk_hyper'),
- ('F20', 'concurrency (S17), HELD on Lon word', 'NOT-A-BOX: held; Promise, Supply, Channel, start, await, react, whenever, Lock, Proc::Async ride the thread runtime when Lon opens S17 (R11)'),
+ ('F20', 'concurrency (S17), open since Lon 2026-11-12 12:4x', 'NOT-A-BOX: Promise, Supply, Channel, start, await, react, whenever, Lock, Proc::Async; S17 opened by Lon 2026-11-12 12:4x; the on-demand Supply rides the gather pump (CTO-644), the scheduler forms are a design of their own'),
 ]
 FAM_IDX = {f[0]: i for i, f in enumerate(FAMILIES)}
 
@@ -131,7 +131,7 @@ FAM_BOX = {'F01': 'bb_lit_scalar; bb_rk_coerce for a value in context', 'F02': '
  'F08': 'bb_rk_dispatch to rtx_rk_str_* (ASM leaf); the method body is SETTING Raku', 'F09': 'bb_binop_arith with bb_rk_num; rtx_rk_bigint / rtx_rk_rat (ASM leaves)', 'F10': 'bb_rk_dispatch with bb_rk_type; bb_create / bb_field_get; the MOP is SETTING Raku',
  'F11': 'bb_rk_control on the one exceptions protocol; CATCH is a bb_rk_block arm; Test is SETTING Raku', 'F12': 'bb_rk_smartmatch / bb_rk_junction', 'F13': 'bb_match_rkrun / bb_match_rkcap / bb_match_rkland and the bb_match_* family',
  'F14': 'bb_rk_type / bb_rk_coerce; bb_rk_native cells', 'F15': 'bb_rk_phaser on the block ports', 'F16': 'bb_rk_dispatch to rtx_rk_io_* (ASM leaf over a syscall; the syscall itself is NOT-A-BOX: a kernel entry)', 'F17': 'NOT-A-BOX: lowered at compile time (a directive) or the compile-at-run-time road (EVAL) or data (pod)',
- 'F18': 'bb_var_frame with rtx_rk_dynfind (ASM leaf); bb_rk_type for the reads', 'F19': 'bb_rk_sets over bb_rk_aggr; bb_rk_hyper for the operators', 'F20': 'NOT-A-BOX: HELD on Lon word (S17 rides the thread runtime when opened)'}
+ 'F18': 'bb_var_frame with rtx_rk_dynfind (ASM leaf); bb_rk_type for the reads', 'F19': 'bb_rk_sets over bb_rk_aggr; bb_rk_hyper for the operators', 'F20': 'NOT-A-BOX: S17 open since Lon 2026-11-12 12:4x; the on-demand Supply rides the gather pump (CTO-644)'}
 def box_of(c, fam):
     if c in ('kw:EVAL', 'kw:EVALFILE', 'meth:EVAL', 'call:EVAL'): return 'NOT-A-BOX: the compile-at-run-time road (runtime_eval, planner_rt_plan), one road for every language (R11)'
     if c == 'word:pod' or c == 'twigil:=': return 'NOT-A-BOX: pod is data built by the lowerer as $=pod (R2); no box runs'
@@ -342,7 +342,7 @@ def main():
         lad = [l for l in lad if not re.match(r'^rung(0[2-9][0-9]|[1-9][0-9][0-9])\t', l)]
         for c in rungs:
             n = rung_no[c]; fam = fam_of[c]; s = slug(c)
-            status = 'HELD' if fam == 'F20' else 'DECLARED'
+            status = 'DECLARED'
             lad.append(f'rung{n:03d}\t{s}\troast construct {c} ({len(files_of[c])} red programs exercise it; family {fam} {dict((x[0], x[1]) for x in FAMILIES)[fam]}; ARCH-RAKU-TO-100 section 3)\t{s}\t\tladder__rung{n:03d}_{s}\t{status}\tthe cto 2026-10-30 (R-2044..2046): declared by util_raku_ladder_design.py; first block of {first_ct[n]} programs, unblock rung of {unblock_ct[n]}; the forms are cut from the failing Roast tests by the builder, one program at a time, each at most 20 lines, its ref from rakudo 2026.05')
         open(LADDER, 'w').write('\n'.join(lad) + '\n')
     FB = {f[0]: f[2] for f in FAMILIES}
