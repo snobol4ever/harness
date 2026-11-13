@@ -47,7 +47,7 @@ fi
 if [ -f "$root/.claude/banner_compact.py" ]; then cmp="$(printf '%s' "$out" | python3 -I "$root/.claude/banner_compact.py" 2>/dev/null)" && [ -n "$cmp" ] && out="$cmp"; fi
 # ONE WORD AND A HUGE ICON (Lon 2026-11-11 13:0x CST, in officer_04's window, verbatim: "I just want one word and a huge icon so I can see from a distance. All those words are NEVER read."):
 # the hook shows the verdict word under a block icon and nothing else; the coo's suite grid (CIO-129) stays under it. The full text still goes to BOARD.md and the cache.
-word="$(printf '%s\n' "$out" | grep -xE 'SUCCESS|IN-PROGRESS|DRAIN|STOP|FAILURE' | tail -1)"; grid="$(printf '%s\n' "$out" | grep '│')"
+word="$(printf '%s\n' "$out" | grep -xE 'SUCCESS|IN-PROGRESS|DRAIN|STOP|FAILURE' | tail -1)"; grid="$(printf '%s\n' "$out" | grep -E '│|^[0-9]+ suites, ')"   # the grid and its closing summary line ("73 suites, 44 at 100%; ..."), which carries no │ (MEASURED 2026-11-13: the filter dropped it, Lon: "It does not show the summary at the end.")
 # COLOUR AND A FIRST NEW LINE (Lon 2026-11-11 13:1x CST, in officer_04's window, verbatim: "Notice the Stop says: forgot the new line and the color is gray not green."): the client prints hook text
 # gray after "Stop says:", so the icon is drawn in coloured emoji squares, which keep their colour, and it starts on its own line. Each "#" is a square, each "." two spaces (an emoji is two columns).
 case "$word" in
