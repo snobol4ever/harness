@@ -130,21 +130,33 @@ RQ="${S4E_TEST_REQUEST_DIR:-/home/resources/postoffice/test_requests}"
 # MEASURED: the cycle syncs once a lap; the cio's request for eight csnobol4 entries admitted at 04:5x was served at 04:53 on the tree of 02:28, each entry refused rc 2
 # (PARTITION.tsv has no entry atn), and the request was spent. So a request is READY when every entry it names is a row of its suite's PARTITION.tsv in this tree, or
 # when its file is older than this lap's sync (it has seen a sync: it is served and refuses as written, so a wrong request cannot wait for ever).
-request_ready() {   # pending file -> 0 ready, 1 waits for the next sync
-    local f="$1" key ents row kind lang dir e
-    key="$(sed -n 's/^suite=//p' "$f" | head -1)"; ents="$(sed -n 's/^entries=//p' "$f" | head -1 | tr -s ' ,' '\n\n' | grep -v '^$')"
-    row="$(awk -F'\t' -v k="$key" '!/^#/ && $1 == k && ($2 == "master" || $2 == "pkg") {print $2 "\t" $3 "\t" $5; exit}' "$RUNNERS")"
-    [ -n "$row" ] && [ -n "$ents" ] || return 0
-    IFS=$'\t' read -r kind lang dir <<< "$row"; [ "$kind" = master ] && dir="$S4E/corpus/tests/$lang" || dir="$S4E/$dir"
-    [ -f "$dir/PARTITION.tsv" ] || return 0
-    for e in $ents; do
-        awk -F'\t' -v e="$e" '$1 == e {f = 1} END {exit !f}' "$dir/PARTITION.tsv" && continue
-        [ "$f" -nt "$TMPDIR/cycle/lap.sync" ] && return 1
-        return 0
-    done
+request_ready() {   # pending file -> 0: every request is ready. It used to wait for the lap's next sync when the root's partition lacked its entry
+    # (MEASURED 2026-11-12: a worst wait of 445 min from filing to result); the request base is forwarded to origin before each request (run_request),
+    # so the entry a seat just landed is there, and an entry origin lacks is refused rc 2 by the harness on that base, in seconds.
     return 0
 }
 next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && request_ready "$f" && { printf '%s\n' "$f"; return 0; }; done; return 1; }
+# A REQUEST IS GRADED ON ORIGIN'S CURRENT TREE, NEVER THE LAP'S (the grader 2026-11-12; the coo 19:2x, MEASURED by senior_03: request
+# 20261113T003057-senior_03-sno-rungs was graded on SCRIP ea374ea10, 43 commits behind origin, so its landed cure eb7cc12eb read RED; skill
+# suites-and-grading section 9, "the base moves forward every turn"). THE REQUEST BASE is one worktree of the four repositories (s4e_worktree.sh, named
+# for the row so no sweep takes it), forwarded to origin's head before each request: the root fetches (refs and objects only, its working tree is
+# untouched), the base checks the four heads out detached (MEASURED 1 s). Its binary runs IN PLACE from the build-cache entry of that SCRIP tree
+# (SCRIP= and RT_DIR=, fresh by key, harness fd486febc; MEASURED: copying an entry took 69 s); a tree with no entry yet is built once in the base
+# (make -j8), never graded on an older binary. A running request holds the base shared, a forward takes it exclusive, so the base never moves under one.
+REQBASE_NAME="reqbase"; REQBASE="${S4E_WT_TOP:-/tmp/s4e}/grader/wt-$REQBASE_NAME"
+request_base() {   # -> "SCRIP_BIN RT_DIR" of the base at origin's head on stdout; rc 2 (a line on stderr) when the base cannot be made or built
+    local r rt k c
+    if [ ! -d "$REQBASE/SCRIP" ]; then
+        ( cd "$S4E" && S4E_SEAT=grader bash harness/scripts/s4e_worktree.sh new "$REQBASE_NAME" --row cycle-greased-lightning-grader ) > "$TMPDIR/cycle/reqbase.new.log" 2>&1
+        [ -d "$REQBASE/SCRIP" ] || { echo "REFUSE(2): the request base could not be made (reqbase.new.log)" >&2; return 2; }
+    fi
+    for r in SCRIP harness corpus .github; do timeout -k 5 120 git -C "$S4E/$r" fetch -q origin main 2>/dev/null; git -C "$REQBASE/$r" checkout -q --detach origin/main 2>/dev/null || { echo "REFUSE(2): the request base's $r would not move to origin/main" >&2; return 2; }; done
+    rt="$(cd "$REQBASE/SCRIP" && env -u MAKEFLAGS -u MFLAGS -u MAKELEVEL make -s --no-print-directory --eval='s4e-print-rt-tag: ; @echo $(RT_TAG)' s4e-print-rt-tag 2>/dev/null)"
+    k="$(bash "$REQBASE/harness/scripts/util_build_cache.sh" key --root "$REQBASE/SCRIP" --tag "$rt" 2>/dev/null)"; c="${S4E_BUILD_CACHE_DIR:-/home/resources/builds/scrip}/$k"
+    if [ -n "$k" ] && [ -x "$c/scrip" ] && [ -e "$c/out/libscrip_rt.so" ]; then echo "$c/scrip $c/out"; return 0; fi
+    ( cd "$REQBASE/SCRIP" && make -j8 ) > "$TMPDIR/cycle/reqbase.make.log" 2>&1 < /dev/null || { echo "REFUSE(2): origin's SCRIP has no cache entry and make failed in the request base (reqbase.make.log)" >&2; return 2; }
+    echo "$REQBASE/SCRIP/scrip $REQBASE/SCRIP/out"
+}
 run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMPDIR/cycle/req.<name>.log
     local f="$1" name key ents row kind lang dir alls ttr t0 rc out
     name="$(basename "$f")"; out="$TMPDIR/cycle/req.$name.log"; t0=$(date +%s)
@@ -154,7 +166,9 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     IFS=$'\t' read -r kind lang dir <<< "$row"; [ "$kind" = master ] && dir="$S4E/corpus/tests/$lang" || dir="$S4E/$dir"
     alls="$dir/ALL.$(ext_of "$lang")"
     ttr="$(budget "$key" "entry:$ents")"; [ -n "$ttr" ] || ttr=1800
-    ( cd "$S4E" && SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" $(road_flag "$dir") ) > "$out" 2>&1 < /dev/null; rc=$?
+    local bb sb rd; exec 7> "$TMPDIR/cycle/reqbase.lock"; flock -x 7; bb="$(request_base 2>> "$out")" || { flock -u 7; echo "2 $(( $(date +%s) - t0 ))"; return; }; flock -s 7
+    read -r sb rd <<< "$bb"; dir="${dir/#$S4E/$REQBASE}"; alls="${alls/#$S4E/$REQBASE}"; echo "REQUEST_BASE SCRIP=$(git -C "$REQBASE/SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$REQBASE/corpus" rev-parse --short=10 HEAD) binary=$sb" >> "$out"
+    ( cd "$REQBASE" && S4E_HOME="$REQBASE" SCRIP="$sb" RT_DIR="$rd" SUITE_LIST_ALL=1 bash harness/scripts/util_run_slot.sh timeout -k 30 "$ttr" python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?
     [ "$kind" = master ] && record_suite "$lang"; [ "$kind" = pkg ] && record_pkg "$key"
     echo "$rc $(( $(date +%s) - t0 ))"; }
 finish_request() {   # name rc secs: the file lands in done/ with its per-entry verdicts and one served= line
