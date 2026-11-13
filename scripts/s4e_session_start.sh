@@ -12,6 +12,8 @@
 # hook's walk up passes it to the session that spawned it. A scope the ledger's newest SEAT line names is never weighted LON (weighted=refused).
 # ORDER (section 10): a scope is weighted ONLY when app-org.gnome.Terminal.slice already reads its CPUWeight (100 since R-2105 (d), under the grader's 300), because the first weight below
 # app.slice enables the cpu controller there; until Lon's script has set the slices, the hook registers and weights nothing.
+# A SPAWNED SEAT (the coo 2026-11-12 18:2x): a scope s4e-seat-<seat>.scope under s4e-seats.slice (spawn_fleet.sh) gets the @SEAT row less its CPUQuota, which
+# spawn sets and box_controller.sh moves; before this the hook read weighted=no there, and no seat scope carried MemorySwapMax or TasksMax.
 # It also makes the seat's TMPDIR (/tmp/s4e/<seat>). It is idempotent, takes well under a second, and NEVER fails the session (rc 0 always).
 #   s4e_session_start.sh             the hook: this session (its parent Claude process)
 #   s4e_session_start.sh --pid P     place the live session whose process is P (util_fleet_settings.sh --apply uses it)
@@ -33,6 +35,7 @@ try:
 except Exception:
     OFFICERS = {"cto", "cfo", "coo", "cao", "cqo", "cio"}
 TERM = "app-org.gnome.Terminal.slice"
+SEATS_SLICE = "s4e-seats.slice"   # spawn_fleet.sh runs each seat in systemd-run --scope --slice=s4e-seats.slice --unit=s4e-seat-<seat>
 SEAT_PROPS = census.budget_props(BROWS.get("@SEAT")) if census else []   # CPUQuota (R-2105): the session scope IS the door -- every child of a seat session inherits a four-core cap
 LON_PROPS = census.budget_props(BROWS.get("@LON")) if census else []   # R-2105 (d): inside the sessions' slice Lon's terminal outranks every seat (100) ten to one
 TERM_WEIGHT = BROWS.get(TERM, {}).get("CPUWeight", "")   # R-2105 (d): the sessions' slice at the default 100, equal to any desktop app, under the grader slice (300); a seat scope is weighted only once the sessions' slice reads it
@@ -109,6 +112,14 @@ def place(pid):
     if klass == "LON" and cg in seat_scopes(): weighted = "refused"
     elif unit.endswith(".scope") and ("/" + TERM + "/") in cg and TERM_WEIGHT and show(TERM, "CPUWeight") == TERM_WEIGHT:
         props = SEAT_PROPS if klass == "SEAT" else LON_PROPS
+        if not props: weighted = "no-budget"
+        else:
+            try:
+                r = subprocess.run(["systemctl", "--user", "set-property", "--runtime", unit] + props, capture_output=True, text=True, timeout=5)
+                weighted = "yes" if r.returncode == 0 else "failed"
+            except Exception: weighted = "failed"
+    elif klass == "SEAT" and unit.startswith("s4e-seat-") and unit.endswith(".scope") and "/" + SEATS_SLICE + "/" in cg:
+        props = [p for p in SEAT_PROPS if not p.startswith("CPUQuota=")]   # a spawned seat's scope: spawn_fleet.sh made it with the quota and box_controller.sh moves that under the ceiling, so it is never reset here; the rest of @SEAT (MemorySwapMax, TasksMax) spawn does not set (the coo 2026-11-12 18:2x: all 33 read neither)
         if not props: weighted = "no-budget"
         else:
             try:
