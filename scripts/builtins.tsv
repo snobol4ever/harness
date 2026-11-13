@@ -4,7 +4,7 @@
 # min max arity bounds; max -1 is variadic; "-" means NO SOURCE STATES IT (nothing is invented; the language steps fill it as they write the leaves).
 # entry   the C or asm symbol of the leaf; a name whose arm is not yet a separate function carries the entry it WILL have, bt_<name> (step 2 writes it); "-" for an inline row.
 # conv    leaf | gen | open | inline (the harvest reading: gen for the generator lists, inline for the pas and pl leaf kinds, open for APPLY and EVAL, leaf for the rest).
-# recv    rkm rows: the receiver class, * for every class (the harvest cannot see it).   flags: scan mut, "-" for none (the Icon scan rows belong to the scanning design).   op: the small integer one entry serves several rows with (g_bn_direct.op), else 0.
+# recv    rkm rows: the receiver class, * for every class (the harvest cannot see it).   flags: scan mut visible, "-" for none (the Icon scan rows belong to the scanning design; visible marks a SCRIP builtin a program may call by its name though the oracle's CORE lacks it, read by the Raku recognizer's undeclared-routine check).   op: the small integer one entry serves several rows with (g_bn_direct.op), else 0.
 # src     the sources that name the row today (util_builtin_sources.py): dop_direct bn_direct icn_tbl icn_known icn_gen rt_known ids fn_arms meth_arms pas rk_targets pl_leaf.
 bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1	sno	**	-	-	bt_x2Ax2A	leaf	-	-	0	fn_arms,ids
@@ -702,8 +702,8 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 702	rk	unshift_pure	-	-	bt_unshift_pure	leaf	-	-	0	fn_arms,rt_known
 703	rk	user	-	-	bt_user	leaf	-	-	0	fn_arms
 704	rk	val	-	-	bt_val	leaf	-	-	0	fn_arms,rt_known
-705	rk	wall_ms	-	-	bt_wall_ms	leaf	-	-	0	fn_arms
-706	rk	wall_us	-	-	bt_wall_us	leaf	-	-	0	fn_arms
+705	rk	wall_ms	-	-	bt_wall_ms	leaf	-	visible	0	fn_arms
+706	rk	wall_us	-	-	bt_wall_us	leaf	-	visible	0	fn_arms
 707	rkm	Bool	-	-	bt_Bool	leaf	-	-	0	meth_arms
 708	rkm	IO	-	-	bt_IO	leaf	-	-	0	meth_arms
 709	rkm	Int	-	-	bt_Int	leaf	-	-	0	meth_arms

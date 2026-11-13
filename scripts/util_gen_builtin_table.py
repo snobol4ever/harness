@@ -21,7 +21,7 @@ import os, re, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 VOCABS = ['sno', 'icn', 'pas', 'rk', 'rkm', 'pl']
 CONVS = ['leaf', 'gen', 'open', 'inline']
-FLAGS = {'scan': 1, 'mut': 2}
+FLAGS = {'scan': 1, 'mut': 2, 'visible': 4}
 COLS = ['bid', 'vocab', 'name', 'min', 'max', 'entry', 'conv', 'recv', 'flags', 'op', 'src']
 RECVS = ['*', '-', 'Str', 'Int', 'Num', 'Rat', 'Complex', 'Bool', 'List', 'Array', 'Hash', 'Map', 'Range', 'Code', 'Any']
 UNSTATED = -128
