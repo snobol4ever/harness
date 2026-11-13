@@ -24,6 +24,8 @@ work=$(mktemp -d) || exit 127
 trap 'rm -rf "$work"' EXIT
 name="$(basename "${src%.*}")"
 cp "$src" "$work/$name.icn"
+srcdir="$(dirname "$src")"
+for m in $(sed -n 's/^[[:space:]]*link[[:space:]][[:space:]]*//p' "$src" | tr ',;' '  '); do [ -f "$srcdir/$m.icn" ] && cp "$srcdir/$m.icn" "$work/" && ( cd "$work" && "$U" -c "$m.icn" < /dev/null > /dev/null 2>&1 ); done
 ( cd "$work" && "$U" -s "$name.icn" -o "$name" < /dev/null > "$work/compile.log" 2>&1 )
 if [ ! -x "$work/$name" ]; then cat "$work/compile.log" >&2; exit 126; fi
 cd "$work" && "./$name"
