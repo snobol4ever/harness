@@ -25,6 +25,7 @@ as a design job; this road sends it to a junior as a bug, with the steps a junio
            <postoffice>/.feed.lock). With --apply it mints, appends each WAKE line to $S4E_FEED_WAKES when set, and writes one line to
            /home/resources/progress/FEED_STOCK.tsv (S4E_FEED_LEDGER). box_tick.py starts it every fifth tick as the transient unit s4e-feed.
            Prints FEED_STOCK depth=N juniors=N owed=N minted=N secs=N.
+  --probe-causes  the cause holds read every census of the newest day (two dirs of one day both hold, an older day's not, S4E_CAUSES_DIR a colon list).
   --probe-stock  the proof on a scratch postoffice: no file mints nothing; depth 2 brings a junior with 0, 1 and 2 live rows to 2, 2 and 2; a
            skipped suite is never dealt; a junior outside the named set gets nothing; a second run owes nothing. Prints FEED_STOCK_PROBE ... ok=1.
   --probe  plants a scratch postoffice (S4E_POST) with two suites' reds, a live row and a DONE row, runs --apply there with real mints, and prints
@@ -137,19 +138,54 @@ def read_suite(key):
     return p.stdout + p.stderr
 
 
+def cause_dirs(root="/home/resources/progress"):
+    # EVERY CENSUS OF THE NEWEST DAY, NEVER ONLY THE LAST ONE (the coo 2026-11-13 16:4x CST, MEASURED: the sorted glob's [-1] read only causes-2026-11-13b,
+    # the raku census, so the cto's fpc-source causes and the 56-entry gate_cases_snobol4 trace cause of causes-2026-11-13 were released, and the feeder
+    # dealt trace members to juniors again between 22:24Z and 22:30Z): every causes-<date>*/ directory of the newest date; S4E_CAUSES_DIR names one or
+    # more (colon-separated) instead
+    if os.environ.get("S4E_CAUSES_DIR"): return [x for x in os.environ["S4E_CAUSES_DIR"].split(":") if x]
+    ds = sorted(glob.glob(os.path.join(root, "causes-*/")))
+    days = [m.group(1) for m in (re.match(r"causes-(\d{4}-\d{2}-\d{2})", os.path.basename(x.rstrip("/"))) for x in ds) if m]
+    if not days: return []
+    last = max(days)
+    return [x for x in ds if os.path.basename(x.rstrip("/")).startswith("causes-" + last)]
+
+
 def cause_holds(d=None):
-    # (suite, entry) -> the shared cause whose row holds it: every <cause>.members.tsv (columns suite, cause, entry) of the newest cause census,
-    # /home/resources/progress/causes-<date>/ (S4E_CAUSES_DIR names another); no census, no hold
-    if d is None:
-        d = os.environ.get("S4E_CAUSES_DIR") or (sorted(glob.glob("/home/resources/progress/causes-*/")) or [""])[-1]
+    # (suite, entry) -> the shared cause whose row holds it: every <cause>.members.tsv (columns suite, cause, entry) of every census of the newest day
+    # (cause_dirs); the first file read in name order names the cause; no census, no hold
     h = {}
-    for p in sorted(glob.glob(os.path.join(d, "*.members.tsv"))):
-        try:
-            for l in open(p, encoding="utf-8", errors="replace"):
-                c = l.rstrip("\n").split("\t")
-                if len(c) >= 3 and c[0] != "suite": h.setdefault((c[0], c[2]), os.path.basename(p)[:-len(".members.tsv")])
-        except OSError: pass
+    for dd in ([d] if d else cause_dirs()):
+        for p in sorted(glob.glob(os.path.join(dd, "*.members.tsv"))):
+            try:
+                for l in open(p, encoding="utf-8", errors="replace"):
+                    c = l.rstrip("\n").split("\t")
+                    if len(c) >= 3 and c[0] != "suite": h.setdefault((c[0], c[2]), os.path.basename(p)[:-len(".members.tsv")])
+            except OSError: pass
     return h
+
+
+def probe_causes():
+    """two censuses of one day both hold, an older day's does not, S4E_CAUSES_DIR lists override; prints CAUSES_PROBE ... ok=1"""
+    w = tempfile.mkdtemp(prefix="causes_probe_", dir=os.environ.get("TMPDIR") or None)
+    saved = os.environ.pop("S4E_CAUSES_DIR", None)
+    try:
+        for d, cause, suite, entry in (("causes-2026-11-12", "old", "s0", "e0"), ("causes-2026-11-13", "trace", "s1", "e1"), ("causes-2026-11-13b", "raku", "s2", "e2")):
+            os.makedirs(os.path.join(w, d))
+            open(os.path.join(w, d, cause + ".members.tsv"), "w").write("suite\tcause\tentry\n%s\t%s\t%s\n" % (suite, cause, entry))
+        dirs = cause_dirs(w)
+        h = {}
+        for dd in dirs: h.update(cause_holds(dd))
+        both = ("s1", "e1") in h and ("s2", "e2") in h; old = ("s0", "e0") in h
+        os.environ["S4E_CAUSES_DIR"] = os.path.join(w, "causes-2026-11-12") + ":" + os.path.join(w, "causes-2026-11-13b")
+        ov = cause_holds(); env_ok = set(ov) == {("s0", "e0"), ("s2", "e2")}
+        ok = both and not old and len(dirs) == 2 and env_ok
+        print("CAUSES_PROBE dirs=%d newest_day_both_held=%d older_day_held=%d env_list=%d ok=%d" % (len(dirs), int(both), int(old), int(env_ok), int(ok)))
+        return ok
+    finally:
+        os.environ.pop("S4E_CAUSES_DIR", None)
+        if saved is not None: os.environ["S4E_CAUSES_DIR"] = saved
+        shutil.rmtree(w, ignore_errors=True)
 
 
 def design_witnesses(root=os.path.join(HERE, "..", "designs")):
@@ -345,6 +381,7 @@ def probe():
 if __name__ == "__main__":
     if "--probe" in sys.argv[1:]: sys.exit(0 if probe() else 1)
     if "--probe-stock" in sys.argv[1:]: sys.exit(0 if probe_stock() else 1)
+    if "--probe-causes" in sys.argv[1:]: sys.exit(0 if probe_causes() else 1)
     if "--stock" in sys.argv[1:]:
         stock(PO, lambda: [(k, lang) for k, lang, _ in suites_with_reds(SUITES, set())], read_suite, runner_rows(RUNNERS), "--apply" in sys.argv[1:]); sys.exit(0)
     only = set(x for x in arg("--suites", "").split(",") if x)
