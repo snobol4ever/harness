@@ -118,6 +118,7 @@ rt_apply_land_γ	leaf	DESCR	1	-	0	call,alloc
 rt_apply_land_ω	leaf	-	0	-	0	call
 rt_apply_open	open	OTHER	1	-	1	call,alloc
 rt_arg_stage	leaf	VOID	1	-	0	call,alloc
+rt_arg_stage_d	leaf	VOID	1	-	0	call,alloc
 rt_assign_var	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_assign_var_strict	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_at_cursor	leaf	OTHER	1	-	0	call,alloc
