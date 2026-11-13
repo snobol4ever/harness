@@ -78,7 +78,8 @@ def read_secs(path, key):
                 s = float(row[10] or 0)
             except ValueError:
                 s = 0.0
-            secs[row[7]] = max(secs.get(row[7], 0.0), s)
+            if s > 0 and row[8] in ("m3", "m4") and not row[1].lower().endswith("-dirty"):   # the FASTEST clean reading: a loaded box only slows a program
+                secs[row[7]] = min(secs.get(row[7], s), s)          # (the coo 2026-11-12, on Lon's 18:2x: each update about every 1 MINUTE)
     return secs
 
 
@@ -133,7 +134,7 @@ def build(rows, feats, core_k=3, ubiquitous=0.5, chunk_entries=100, secs=None):
             coreset.add(rep)
             if not clusters[key]:
                 del clusters[key]
-    weight = (lambda x: max(secs.get(x, 0.0), 0.0)) if secs else (lambda x: 1.0)
+    weight = (lambda x: secs.get(x, 1.0)) if secs else (lambda x: 1.0)   # a program with no reading weighs 1 s, so an unread suite still chunks
     limit = float(chunk_entries)
     chunks = []
     cur, cur_w = [], 0.0
