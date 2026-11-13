@@ -1102,6 +1102,16 @@ def read_mask_sidecar(ref_path):
                 refuse("%s: an ORACLE-ONLY row removes a line from the oracle's stream and is admitted only for a kept "
                        "enhancement the oracle lacks (R-1293, R-1316 (2)) -- its reason must cite R-1293; got %r" % (mp, ln))
             key = ("oracle_only", parts[1][len("ORACLE-ONLY:"):].rstrip("\r"))
+        elif pat.startswith("ENGINE-ONLY:"):
+            # ⭐ ENGINE-ONLY:<regex> (Lon 2026-11-13 14:5x CST, in the coo's window, verbatim: "remember we have the masking feature for system/runtime
+            # variances that are correct but otherwise different."): REMOVES every line of OUR stream that matches, for a line SCRIP prints and the oracle
+            # never does because the two report an implementation-defined figure differently (unicon/list_test: 8 &allocated checks of SCRIP's 16-byte
+            # array cell against Unicon's 8). The oracle's side is never touched, so a line the oracle prints and we lose still reds. Admitted only
+            # when the reason cites LON-2026-11-13-MASK.
+            if "LON-2026-11-13-MASK" not in parts[2]:
+                refuse("%s: an ENGINE-ONLY row removes lines from SCRIP's stream and is admitted only for an implementation-defined variance under "
+                       "Lon's 2026-11-13 masking ruling -- its reason must cite LON-2026-11-13-MASK; got %r" % (mp, ln))
+            key = ("engine_only", re.compile(parts[1][len("ENGINE-ONLY:"):].rstrip("\r")))
         elif pat.startswith("SNO:"):
             # COO-489 (Lon 2026-11-08): SNO:<pattern> = <replacement> is one SNOBOL4 replacement statement, applied by the oracle sbl (see _sno_stream)
             st = pat[len("SNO:"):].strip()
@@ -1180,7 +1190,7 @@ def apply_line_mask(text, patterns, side="both"):
     for i, ln in enumerate(lines):
         for key, _reason in patterns:
             kind, val = key
-            if kind in ("oracle_only", "sno"):
+            if kind in ("oracle_only", "sno", "engine_only"):
                 continue
             if val.search(ln) if kind == "regex" else (val == i + 1):
                 lines[i] = "<<R-409 MASKED IMPLEMENTATION-DEFINED LINE>>"
@@ -1193,6 +1203,12 @@ def apply_line_mask(text, patterns, side="both"):
             if was != "<<R-409 MASKED IMPLEMENTATION-DEFINED LINE>>" and now != was:
                 n += 1
         lines = [was if was == "<<R-409 MASKED IMPLEMENTATION-DEFINED LINE>>" else now for was, now in zip(lines, got)]
+    if side == "scrip":
+        for key, _reason in patterns:
+            if key[0] == "engine_only":
+                kept = [ln for ln in lines if not key[1].search(ln)]
+                n += len(lines) - len(kept)
+                lines = kept
     if side == "oracle":
         for key, _reason in patterns:
             kind, val = key
