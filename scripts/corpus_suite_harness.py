@@ -5403,6 +5403,8 @@ def cmd_run(args):
                                    a_path=sidecar_argv_path(args.sno), modes=modes)
         if pkg_dir_of(args.sno) is not None:
             os.environ.update(_pkg_env(pkg_dir_of(args.sno), resolve_paths()))   # ALL.env reaches every launch of this package, per-process or the switch
+        elif Path(args.sno).name == "ALL" + ext:
+            os.environ.update(_pkg_env(Path(args.sno).parent, resolve_paths()))   # a container's ALL.env too (senior_09 2026-11-13, row ipl-red-procs-evallist: ipl's refs were cut with the oracle bin first on PATH and its procs/evallist_driver shells out to icont); a folder with no ALL.env adds nothing
     else:
         require_lang_for_suite("run", args.sno, args)
         ext = ".sno"
