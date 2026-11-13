@@ -97,3 +97,8 @@ gate_cases_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/gate
 gate_cases_pascal	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/gate_cases_pascal
 gate_cases_raku	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/gate_cases_raku
 gate_cases_snocone	pkg	snocone	corpus_suite_harness.py	corpus/packages/snocone/gate_cases_snocone
+prolog_cafe	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/prolog_cafe
+power_of_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/power_of_prolog
+aleph	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/aleph
+metalevel_contests	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/metalevel_contests
+rosetta-snobol4	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/rosetta-snobol4
