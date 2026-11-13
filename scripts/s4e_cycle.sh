@@ -2,7 +2,7 @@
 # s4e_cycle.sh -- THE TEST CYCLE: ONE PROCESS RUNS EVERY SUITE CELL IN ORDER, LAP AFTER LAP (Lon, in the cio's window, 2026-11-08 09:0x CST, verbatim:
 # "write a process that runs the test suite and write a fucking monitor to start it when it crashed" / "Is it not called CRON?"). No queue, no tubes,
 # no workers, no controller: this process and the cron line that restarts it (s4e_cycle_cron.sh).
-#   bash s4e_cycle.sh            the cycle: a lap is sync, make, then every cell of every master or pkg row of SUITE_RUNNERS.tsv and one cell (all) for every small row, S4E_CYCLE_WIDTH (4) cells at once; then the next lap
+#   bash s4e_cycle.sh            the cycle: a lap is sync, make, then every cell of every master or pkg row of SUITE_RUNNERS.tsv and one cell (all) for every small row, a fast lane of S4E_CYCLE_FAST (8) cells and a slow lane of S4E_CYCLE_SLOW (2) at once; then the next lap
 #   bash s4e_cycle.sh --list     print the cells of one lap (suite kind lang dir cell) and their count; runs nothing
 #   bash s4e_cycle.sh --one      run the next unfinished cell only, then exit (the proof that one cell runs end to end)
 #   S4E_CYCLE_TMP names a scratch TMPDIR for a probe (default /tmp/s4e/grader, the live cycle's cell logs; a probe that leaves it unset overwrites them)
@@ -247,29 +247,45 @@ while :; do
     # refilled with the next cell. The state names the LOWEST index still running, so a crash is charged to it and a restart resumes there (a later cell
     # that had finished runs again: time, never a reading). CELL lines come in order of finish, each with its own index. A suite's row is recorded when
     # the last of its cells of this lap has finished, whatever the order.
-    W="${S4E_CYCLE_WIDTH:-4}"; [ "$MODE_ARG" = --one ] && W=1; case "$W" in ''|*[!0-9]*|0) W=4;; esac
-    declare -A RUN=() LEFT=(); nxt="$idx"
+    # THE TWO LANES (the grader 2026-11-12, step 1 of cycle-greased-lightning, on the coo's 18:2x telegram and Lon's word of 18:0x: "The test-suite
+    # cycle runner better be GREASED LIGHTING. Each unit of work should be very small relative so that many requests from seats can go through FAST.";
+    # MEASURED CYCLE.order 2026-11-12: of 270 cells, 15 took over 600 s and held 10.6 of the lap's 14.9 cell-hours, so with one lane of 4 they held
+    # most slots for most of a lap and every request waited behind them): a cell whose last reading took over S4E_CYCLE_SLOW_SECS (600) runs in the
+    # SLOW lane, S4E_CYCLE_SLOW slots (2), and every other cell and every seat's request in the FAST lane, S4E_CYCLE_FAST slots (8; the graded-runs
+    # slice is 10 cores, the coo 18:2x). A free fast slot takes a pending request before any lap cell, so a request waits only for one fast cell to
+    # end; a slow cell never takes a fast slot. --one runs one cell in one lane. S4E_CYCLE_WIDTH, the one-lane width before, sets the fast lane if given.
+    WF="${S4E_CYCLE_FAST:-${S4E_CYCLE_WIDTH:-8}}"; WS="${S4E_CYCLE_SLOW:-2}"; SLOWS="${S4E_CYCLE_SLOW_SECS:-600}"
+    case "$WF" in ''|*[!0-9]*|0) WF=8;; esac; case "$WS" in ''|*[!0-9]*) WS=2;; esac; case "$SLOWS" in ''|*[!0-9]*) SLOWS=600;; esac
+    [ "$MODE_ARG" = --one ] && { WF=1; WS=0; }
+    declare -A RUN=() LANE=() LEFT=() CSECS=()
+    while IFS=$'\t' read -r ok oc os; do [ -n "$ok" ] && CSECS["$ok"$'\t'"$oc"]="${os%%.*}"; done < "$ORDERF" 2>/dev/null
+    FQ=(); SQ=(); fp=0; sp=0
+    for (( j = idx; j < total; j++ )); do IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$j]}"
+        if [ "$WS" -gt 0 ] && [ "${CSECS["$key"$'\t'"$cell"]:-0}" -gt "$SLOWS" ]; then SQ+=("$j"); else FQ+=("$j"); fi; done
+    lane_n() { local n=0 v; for v in "${LANE[@]}"; do [ "$v" = "$1" ] && n=$((n + 1)); done; echo "$n"; }
+    start_cell() {   # <index> <lane>: run a lap cell, or log it skipped
+        IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$1]}"
+        if grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null; then log "SKIPPED lap=$lap $(($1+1))/$total $key $cell"; return 1; fi
+        ( run_cell "$key" "$kind" "$lang" "$dir" "$cell" > "$TMPDIR/cycle/res.$1" ) & RUN[$!]="$1"; LANE[$!]="$2"; return 0; }
     mkdir -p "$RQ/serving" "$RQ/done" 2>/dev/null; for f in "$RQ"/serving/*.req; do [ -f "$f" ] && mv "$f" "$RQ/" 2>/dev/null; done   # a request a dead cycle was serving is pending again
     for (( j = idx; j < total; j++ )); do IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$j]}"; grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null || LEFT[$key]=$(( ${LEFT[$key]:-0} + 1 )); done
     while :; do
-        while [ "${#RUN[@]}" -lt "$W" ] && rf="$(next_request)"; do   # the oldest pending request first, as one more cell
+        while [ "$(lane_n f)" -lt "$WF" ] && rf="$(next_request)"; do   # a free fast slot takes the oldest pending request before any lap cell
             rn="$(basename "$rf")"; mv "$rf" "$RQ/serving/$rn" 2>/dev/null || break
-            ( run_request "$RQ/serving/$rn" > "$TMPDIR/cycle/rres.$rn" ) & RUN[$!]="r:$rn"
+            ( run_request "$RQ/serving/$rn" > "$TMPDIR/cycle/rres.$rn" ) & RUN[$!]="r:$rn"; LANE[$!]=f
         done
-        while [ "$nxt" -lt "$total" ] && [ "${#RUN[@]}" -lt "$W" ]; do
-            IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$nxt]}"
-            if grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null; then log "SKIPPED lap=$lap $((nxt+1))/$total $key $cell"; nxt=$(( nxt + 1 )); continue; fi
-            ( run_cell "$key" "$kind" "$lang" "$dir" "$cell" > "$TMPDIR/cycle/res.$nxt" ) & RUN[$!]="$nxt"; nxt=$(( nxt + 1 ))
-        done
+        while [ "$fp" -lt "${#FQ[@]}" ] && [ "$(lane_n f)" -lt "$WF" ]; do start_cell "${FQ[$fp]}" f; fp=$(( fp + 1 )); done
+        while [ "$sp" -lt "${#SQ[@]}" ] && [ "$(lane_n s)" -lt "$WS" ]; do start_cell "${SQ[$sp]}" s; sp=$(( sp + 1 )); done
         [ "${#RUN[@]}" -gt 0 ] || break
-        low="$nxt"; for i in "${RUN[@]}"; do case "$i" in r:*) ;; *) [ "$i" -lt "$low" ] && low="$i";; esac; done
+        low="$total"; [ "$fp" -lt "${#FQ[@]}" ] && low="${FQ[$fp]}"; [ "$sp" -lt "${#SQ[@]}" ] && [ "${SQ[$sp]}" -lt "$low" ] && low="${SQ[$sp]}"
+        for i in "${RUN[@]}"; do case "$i" in r:*) ;; *) [ "$i" -lt "$low" ] && low="$i";; esac; done
         if [ "$low" -lt "$total" ]; then IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$low]}"; state_put "$lap" "$low" "$total" "$key" "$cell" running; fi
         dp=""; wait -n -p dp "${!RUN[@]}"; [ -n "$dp" ] && [ -n "${RUN[$dp]:-}" ] || continue
-        i="${RUN[$dp]}"; unset 'RUN[$dp]'
+        i="${RUN[$dp]}"; ln="${LANE[$dp]:-f}"; unset 'RUN[$dp]' 'LANE[$dp]'
         case "$i" in r:*) rn="${i#r:}"; rc=2; secs=0; read -r rc secs < "$TMPDIR/cycle/rres.$rn"; rm -f "$TMPDIR/cycle/rres.$rn"; finish_request "$rn" "$rc" "$secs"; continue;; esac
         IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$i]}"
         rc=2; secs=0; read -r rc secs < "$TMPDIR/cycle/res.$i"; rm -f "$TMPDIR/cycle/res.$i"
-        log "CELL lap=$lap $((i+1))/$total $key $cell rc=$rc secs=$secs"
+        log "CELL lap=$lap $((i+1))/$total $key $cell rc=$rc secs=$secs lane=$ln"
         LEFT[$key]=$(( ${LEFT[$key]:-1} - 1 ))
         # A SUITE ROW IS WRITTEN ONLY BY A LAP THAT GRADED THE SUITE (the cio 2026-11-10; MEASURED: inria's five cells refused rc 2 in 0 s on
         # laps 2 to 10, no grader row for inria is later than 2026-11-08T20:19Z, and its SUITES.tsv row reads today_date 2026-11-09; logtalk
