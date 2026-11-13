@@ -148,7 +148,8 @@ wt_cap_scan() {
 # THE LANDED SWEEP (officer_02 2026-11-13, the same row: the coo MEASURED 17 worktrees landed, clean and idle 45 minutes or more while new refused): a worktree
 # with nothing wt_unlanded would lose is removed once idle 30 minutes, whatever its class below; only a worktree of a row its owner holds is never swept.
 # sweep_dead -- every marker worktree under $TOP/<seat>/ that a baton names (WORKTREE: <path>) whose row reads DONE, SUPERSEDED or RETIRED (QUEUE.tsv or QUEUE.retired.tsv; a row in neither is DONE),
-# idle 30 minutes or more by its directory mtime (a row left by its owner 60, a worktree no baton names 120), with no process whose cwd lies inside it and no
+# idle 30 minutes or more by its directory mtime (a row left by its owner 60, a worktree no baton names 120), with no process whose cwd lies inside it, no
+# process whose command line names its path (a seat's waiter armed to launch s4e_land.sh --home on it), no commit that is not on origin/main, and no
 # lander holding its land lock, is removed AS ITS OWNER by this script's own rm (so the guard of wt_unlanded applies) while the sweep holds the owner's land
 # lock for it, so a landing that starts in that moment refuses instead of losing its home. Prints one line, SWEPT <n>.
 # THE LAND LOCK (officer_04 2026-11-12 21:3x CST, MEASURED: the sweep removed /tmp/s4e/officer_04/wt-fusc at 03:13:21Z while s4e_land.sh --home ran its gate
@@ -166,8 +167,9 @@ wt_landing() {
     return 1
 }
 sweep_dead() {
-    local top age d b row st owner name n=0 nd=0 nl=0 nu=0 now p t busy cls floor lost pf flag lf
+    local top age d b row st owner name n=0 nd=0 nl=0 nu=0 now p t busy cls floor lost pf flag lf cmds
     now="$(date +%s)"
+    cmds="$(for p in /proc/[0-9]*/cmdline; do tr '\0' ' ' 2>/dev/null < "$p"; echo; done)"
     for top in $TOPS; do for d in "$top"/*/wt-*; do
         [ -f "$d/.s4e-worktree" ] || continue
         row=""; st=""
@@ -187,13 +189,16 @@ sweep_dead() {
         fi
         age=$((now - $(stat -c %Y "$d"))); [ "$age" -ge 1800 ] || continue
         [ "$age" -ge "$floor" ] || wt_unlanded "$d" > /dev/null || continue
+        lost="$(wt_unlanded "$d")" || case "$lost" in *unlanded-commits*) continue ;; esac
         busy=0; for p in /proc/[0-9]*/cwd; do t="$(readlink "$p" 2>/dev/null)"; case "$t" in "$d"|"$d"/*) busy=1; break ;; esac; done
+        while IFS= read -r t; do case "$t " in *"$d"[!A-Za-z0-9_.-]*) busy=1; break ;; esac; done <<< "$cmds"
         [ "$busy" = 0 ] || continue
         ! wt_landing "$d" || continue
         lf="$(wt_land_lock "$d" "$owner")"
         exec 7> "$lf" || continue
         flock -n 7 || { exec 7>&-; continue; }
         if lost="$(wt_unlanded "$d")"; then pf=""; flag=""
+        elif case "$lost" in *unlanded-commits*) true ;; *) false ;; esac; then exec 7>&-; continue
         else pf="$(wt_save_patch "$d" "$owner" "$name")" || { exec 7>&-; continue; }; flag=--discard; fi
         S4E_SEAT="$owner" S4E_WT_TOP="$top" bash "${BASH_SOURCE[0]}" rm "$name" ${flag:+$flag} > /dev/null 2>&1 7>&- || { exec 7>&-; continue; }
         rm -f "$lf"; exec 7>&-
@@ -342,12 +347,21 @@ cap_probe() {
 
 # sweep_land_probe -- the land lock's proof (officer_04's find, 2026-11-12), on a scratch TOP, land-lock top and postoffice under the seat's directory: two marked
 # worktrees no baton names, idle three hours by mtime; another seat's lander holds the land lock of one. The sweep keeps the held one and removes the free one;
-# once the holder is killed by its pid the next sweep removes the first. Prints the SWEEP-LAND line; rc 0 only when all three hold.
+# once the holder is killed by its pid the next sweep removes the first. Two more, idle three hours: one holds a commit that is not on its origin/main, one is
+# named on the command line of a live process; the sweep keeps both (the coo 2026-11-13 16:2x CST, senior_01 MEASURED: the idle sweep removed wt-rassign and
+# wt-phsig, each with a committed unlanded change, while a waiter of the seat was armed to land it). Prints the SWEEP-LAND line; rc 0 only when every arm holds.
 sweep_land_probe() {
-    local pt="$SEATDIR/sweepprobe-$(date -u +%H%M%S)-$$" w lf holder i kept=no freed=no later=no landed=no out1 out2
+    local pt="$SEATDIR/sweepprobe-$(date -u +%H%M%S)-$$" w lf holder namer i kept=no freed=no later=no landed=no ahead=no named=no out1 out2 g
     mkdir -p "$pt/$SEAT" "$pt/lander" "$pt/po/tasks" || die "REFUSE(2): cannot make $pt" 2
     for w in held free; do mkdir -p "$pt/$SEAT/wt-$w" && printf 'name=%s\nseat=%s\n' "$w" "$SEAT" > "$pt/$SEAT/wt-$w/.s4e-worktree" && touch -d '3 hours ago' "$pt/$SEAT/wt-$w" || die "REFUSE(2): cannot plant $pt/$SEAT/wt-$w" 2; done
     mkdir -p "$pt/$SEAT/wt-landed" && printf 'name=landed\nseat=%s\n' "$SEAT" > "$pt/$SEAT/wt-landed/.s4e-worktree" && touch -d '45 minutes ago' "$pt/$SEAT/wt-landed" || die "REFUSE(2): cannot plant $pt/$SEAT/wt-landed" 2
+    g="git -c user.name=probe -c user.email=probe@localhost -c init.defaultBranch=main"
+    mkdir -p "$pt/$SEAT/wt-ahead" && printf 'name=ahead\nseat=%s\nrepo=SCRIP\n' "$SEAT" > "$pt/$SEAT/wt-ahead/.s4e-worktree" && $g init -q --bare "$pt/origin.git" \
+        && $g clone -q "$pt/origin.git" "$pt/$SEAT/wt-ahead/SCRIP" 2>/dev/null && echo a > "$pt/$SEAT/wt-ahead/SCRIP/a" && $g -C "$pt/$SEAT/wt-ahead/SCRIP" add a \
+        && $g -C "$pt/$SEAT/wt-ahead/SCRIP" commit -qm a && $g -C "$pt/$SEAT/wt-ahead/SCRIP" push -q origin HEAD:main 2>/dev/null && $g -C "$pt/$SEAT/wt-ahead/SCRIP" fetch -q origin \
+        && echo b > "$pt/$SEAT/wt-ahead/SCRIP/a" && $g -C "$pt/$SEAT/wt-ahead/SCRIP" commit -qam b && touch -d '3 hours ago' "$pt/$SEAT/wt-ahead" || die "REFUSE(2): cannot plant $pt/$SEAT/wt-ahead" 2
+    mkdir -p "$pt/$SEAT/wt-named" && printf 'name=named\nseat=%s\n' "$SEAT" > "$pt/$SEAT/wt-named/.s4e-worktree" && touch -d '3 hours ago' "$pt/$SEAT/wt-named" || die "REFUSE(2): cannot plant $pt/$SEAT/wt-named" 2
+    bash -c 'while :; do sleep 1; done' namer "$pt/$SEAT/wt-named" 8>&- & namer=$!
     lf="$(LAND_TOP="$pt" wt_land_lock "$pt/$SEAT/wt-held" lander)"
     ( exec 9> "$lf"; flock 9; exec sleep 300 ) 8>&- & holder=$!
     for i in $(seq 1 100); do flock -n "$lf" true 2>/dev/null || break; sleep 0.1; done
@@ -355,12 +369,15 @@ sweep_land_probe() {
     [ -d "$pt/$SEAT/wt-held" ] && kept=yes
     [ -e "$pt/$SEAT/wt-free" ] || freed=yes
     [ -e "$pt/$SEAT/wt-landed" ] || landed=yes
+    [ -d "$pt/$SEAT/wt-ahead/SCRIP" ] && ahead=yes
+    [ -d "$pt/$SEAT/wt-named" ] && named=yes
     kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
+    kill "$namer" 2>/dev/null; wait "$namer" 2>/dev/null
     out2="$(S4E_WT_TOP="$pt" S4E_LAND_LOCK_TOP="$pt" S4E_POSTOFFICE="$pt/po" bash "${BASH_SOURCE[0]}" sweep 2>&1)"
     [ -e "$pt/$SEAT/wt-held" ] || later=yes
     rm -rf "$pt"
-    echo "SWEEP-LAND held_kept=$kept free_swept=$freed released_swept=$later landed_idle_45m_swept=$landed first='$out1' second='$out2'"
-    [ "$kept" = yes ] && [ "$freed" = yes ] && [ "$later" = yes ] && [ "$landed" = yes ]
+    echo "SWEEP-LAND held_kept=$kept free_swept=$freed released_swept=$later landed_idle_45m_swept=$landed unlanded_commit_kept=$ahead cmdline_named_kept=$named first='$out1' second='$out2'"
+    [ "$kept" = yes ] && [ "$freed" = yes ] && [ "$later" = yes ] && [ "$landed" = yes ] && [ "$ahead" = yes ] && [ "$named" = yes ]
 }
 
 probe() {
