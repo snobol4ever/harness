@@ -89,9 +89,11 @@ for L in ${GATE_LANGS:-snobol4 snocone icon prolog rebus pascal raku}; do
     cat $CHAIN "$B/parser_$L.sc" > "$T/$L.chain.sc"
     "$SCRIP" --compile "$T/$L.chain.sc" --out="$T/$L.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/$L.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$T/$L.bin" 2>/dev/null \
         || { echo "  $L: ⛔ REFUSE(2) the .sc chain did not compile or link to a mode-4 binary"; RC=2; continue; }
-    m=0; d=0; rc_=0; rs=0; rb=0; u=0; hc=0; kc=0; ks=0; first=""; firstf=""; canary=""
+    case "$L" in icon) [ -x "$ROOT/out/scrip-ipp" ] || { echo "  $L: ⛔ REFUSE(2) no pre-step $ROOT/out/scrip-ipp -- make"; RC=2; continue; } ;;
+        snobol4) [ -f "$ROOT/../harness/scripts/util_sno_include_twin.py" ] || { echo "  $L: ⛔ REFUSE(2) no pre-step harness/scripts/util_sno_include_twin.py"; RC=2; continue; } ;; esac
+    m=0; d=0; rc_=0; rs=0; rb=0; u=0; hc=0; kc=0; ks=0; pf=0; first=""; firstf=""; canary=""
     while IFS= read -r f; do
-        g=$(pp_twin "$L" "$f") || { rb=$((rb + 1)); continue; }
+        g=$(pp_twin "$L" "$f") || { pf=$((pf + 1)); red PRE-STEP; [ -n "$first" ] || first="the pre-step refused ${f#$CORPUS/}"; continue; }
         ( cd "$(dirname "$f")"; SNO_LIB="$CORPUS/include" PARSER_TREE_HASH=1 timeout -k 5 "$TMO" "$exe" - < "$g" > "$T/c.hash" 2>/dev/null ); crc=$?
         sc_run "$f" env PARSER_TREE_HASH=1 timeout -k 5 "$TMO" "$T/$L.bin" $SW > "$T/s.hash" 2>/dev/null; src=$?
         if [ $crc -eq 124 ] || [ $src -eq 124 ]; then u=$((u + 1)); red TIMEOUT; continue; fi
@@ -114,7 +116,8 @@ for L in ${GATE_LANGS:-snobol4 snocone icon prolog rebus pascal raku}; do
     [ "$canary" = LIVE ] || [ "$canary" = "" ] || { echo "  $L: ⛔ REFUSE(2) the hash canary: $canary"; RC=2; continue; }
     GRADED=$((GRADED + 1))
     verdict=MATCH; [ $d -gt 0 ] || [ $rc_ -gt 0 ] || [ $rs -gt 0 ] || [ $kc -gt 0 ] || [ $ks -gt 0 ] && verdict=RED; [ $u -gt 0 ] && verdict="COULD-NOT-MEASURE($u)"
-    echo "  $L: $verdict files=$nf hashes-compared=$hc MATCH=$m DIFF=$d REFUSED-by-C=$rc_ REFUSED-by-.sc=$rs refused-by-both=$rb CRASH-C=$kc CRASH-.sc=$ks timeout=$u${first:+ -- first: $first}"
+    [ $pf -gt 0 ] && verdict="COULD-NOT-MEASURE(pre-step $pf)"; [ "$verdict" = MATCH ] && [ $hc -eq 0 ] && verdict="COULD-NOT-MEASURE(nothing compared)"
+    echo "  $L: $verdict files=$nf hashes-compared=$hc MATCH=$m DIFF=$d REFUSED-by-C=$rc_ REFUSED-by-.sc=$rs refused-by-both=$rb pre-step-refused=$pf CRASH-C=$kc CRASH-.sc=$ks timeout=$u${first:+ -- first: $first}"
     case "$verdict" in MATCH) GREEN=$((GREEN + 1)) ;; RED) [ $RC -eq 2 ] || RC=1 ;; *) RC=2 ;; esac
 done
 [ $RC -eq 2 ] && { echo "⛔ GATE REFUSE(2) [$G]: a language could not be measured (see above)"; exit 2; }
