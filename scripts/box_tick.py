@@ -11,6 +11,7 @@
 #   box_tick.py --probe-one-limit --scratch   the planted arms only (the law of the code, no live reading): the landing's gate
 #   box_tick.py --probe-roots-sync  every clean seat root's .github and harness fast-forwarded every fifth tick, a dirty root named and left; ROOTS_SYNC line, rc 0/1
 # Every fifth tick (S4E_TICK_SWEEP_EVERY) the tick runs the LIVE s4e_msg.sh sweep and queues its WAKE lines in TICK_DIR/wake.pending (live_sweep, the coo 2026-11-12).
+# Every fifth tick (S4E_TICK_FEED_EVERY) the tick starts util_reds_to_juniors.py --stock --apply as the unit s4e-feed, never two (stock_juniors; FEED.conf the switch).
 # S4E_TICK_DRY=1: no 2 s sample, no systemctl, no expire, a scratch tick dir; the TICK line still prints with its cpu_s.
 import os, sys, re, time, json, fcntl, resource, subprocess, glob, shutil, datetime, calendar
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -547,6 +548,50 @@ def live_sweep(n):
     return "sweep=rc%d:restored=%s:wakes=%d" % (r.returncode, m.group(1) if m else "0", len(wakes))
 
 
+FEED_EVERY = int(os.environ.get("S4E_TICK_FEED_EVERY", "5"))
+FEED_UNIT = "s4e-feed"
+def stock_cmd():
+    """the one command a stock run is: a transient service in the batch slice, its WAKE lines to TICK_DIR/wake.pending, its log beside them"""
+    return ["systemd-run", "--user", "--quiet", "--collect", "--unit=" + FEED_UNIT, "--slice=s4e-batch.slice", "-p", "RuntimeMaxSec=1800",
+            "--setenv=S4E_HOME=" + ROOT, "--setenv=S4E_POST=" + POST, "--setenv=S4E_SEAT=" + os.environ.get("S4E_SEAT", "cio"),
+            "--setenv=S4E_FEED_WAKES=" + TICK_DIR + "/wake.pending", "-p", "StandardOutput=append:" + TICK_DIR + "/feed.log", "-p", "StandardError=append:" + TICK_DIR + "/feed.log",
+            sys.executable, "-I", os.path.join(ROOT, "harness/scripts/util_reds_to_juniors.py"), "--stock", "--apply"]
+
+
+def stock_juniors(n, active=None, run=None):
+    """THE CLOCK STOCKS THE JUNIORS' TUBES (the cio 2026-11-13, row the-tick-keeps-every-live-juniors-tube-stocked; Lon, in the coo's window, verbatim:
+    "It seems not enough work is going to JUNIORS. Is that correct?"; MEASURED 13:21: 11 of 16 juniors idle, nothing dealing a red but the coo's hand).
+    Every FEED_EVERY-th tick, never on a dry or probing tick: util_reds_to_juniors.py --stock --apply as the transient unit s4e-feed, never two (a unit
+    still active is left to finish). The tick waits on nothing: the feeder reads FEED.conf itself (no file or depth 0 is off) and writes its own line to
+    FEED_STOCK.tsv. Returns the TICK line's feed= text."""
+    if DRY or PROBING or n % FEED_EVERY:
+        return "feed=skipped"
+    if active is None:
+        active = systemctl("is-active", FEED_UNIT).strip() in ("active", "activating")
+    if active:
+        return "feed=busy"
+    try:
+        r = (run or (lambda c: subprocess.run(c, capture_output=True, text=True, timeout=30, stdin=subprocess.DEVNULL)))(stock_cmd())
+    except Exception as e:
+        return "feed=failed:%s" % type(e).__name__
+    return "feed=started" if r.returncode == 0 else "feed=rc%d" % r.returncode
+
+
+def probe_feed():
+    """the stock wiring on planted state: a skipped tick runs nothing, an active unit is left, a due tick runs the one command; FEED_TICK_PROBE ... ok=1"""
+    ran = []
+    class R: returncode = 0
+    run = lambda c: ran.append(c) or R()
+    a = stock_juniors(FEED_EVERY + 1, active=False, run=run)
+    b = stock_juniors(FEED_EVERY, active=True, run=run)
+    c = stock_juniors(FEED_EVERY, active=False, run=run)
+    cmd = ran[0] if ran else []
+    ok = (a == "feed=skipped" and b == "feed=busy" and c == "feed=started" and len(ran) == 1 and "--unit=" + FEED_UNIT in cmd and "--stock" in cmd and "--apply" in cmd
+          and any(x.startswith("--setenv=S4E_FEED_WAKES=") and x.endswith("/wake.pending") for x in cmd)) if not DRY else False
+    print("FEED_TICK_PROBE skipped=%s busy=%s due=%s runs=%d ok=%d" % (a, b, c, len(ran), int(ok)))
+    return 0 if ok else 1
+
+
 def log_tick(n, gq):
     """TICK_DIR/ticks.log: ONE JSON line a tick (DESIGN-PLAN test-cycle step 8, the acceptance instrument util_seat_census.py --test-cycle-acceptance reads it):
     ts, tick, grader_queue (0 since the grade tube retired, CIO-82), want and running (the grade worker
@@ -593,6 +638,7 @@ def tick():
     st = {"alarm": 0, "line": "stall=retired"}   # the grade tube's stall watch retired with the tube (CIO-82); the BOX.state and TICK line keys keep their shape
     view = regenerate_view()
     sweep = live_sweep(n)
+    feedst = stock_juniors(n)
     with open(TICK_DIR + "/decide.last", "w") as f:
         f.write(json.dumps(dict(tick=n, sensors=s, one_limit=one, grader=grader, expired=expired, fed=fed, view=view)) + "\n")
     # BOX.state: the controller is its writer (the coo 2026-11-07 15:29: the retired box_controller's file had no writer and its readers, the coo's OPS line, opswatch and
@@ -612,9 +658,9 @@ def tick():
         print("BOX.state not written: %s" % e)
     ru = resource.getrusage(resource.RUSAGE_SELF); rc = resource.getrusage(resource.RUSAGE_CHILDREN)
     cpu_s = ru.ru_utime + ru.ru_stime + rc.ru_utime + rc.ru_stime
-    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d %s %s %s expired=%d %s %s %s %s secs=%d cpu_s=%.2f%s"
+    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d %s %s %s expired=%d %s %s %s %s %s secs=%d cpu_s=%.2f%s"
           % (n, s["cpu10"], s["cpu60"], s["cpu300"], s["load1"], s.get("mem_rise", 0), one,
-             sy["disp"], grader, expired, fed, view, st["line"], sweep, int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
+             sy["disp"], grader, expired, fed, view, st["line"], sweep, feedst, int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
     return 0
 
 
@@ -747,4 +793,6 @@ if __name__ == "__main__":
         sys.exit(probe_impact())
     if arg == "--probe-area-refusal":
         sys.exit(probe_area_refusal())
-    print("usage: box_tick.py --tick | --probe-one-limit [--scratch] | --probe-rows | --probe-sync | --probe-roots-sync | --probe-impact | --probe-area-refusal"); sys.exit(2)
+    if arg == "--probe-feed":
+        sys.exit(probe_feed())
+    print("usage: box_tick.py --tick | --probe-one-limit [--scratch] | --probe-rows | --probe-sync | --probe-roots-sync | --probe-impact | --probe-area-refusal | --probe-feed"); sys.exit(2)

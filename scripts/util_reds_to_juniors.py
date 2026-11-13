@@ -16,11 +16,22 @@ as a design job; this road sends it to a junior as a bug, with the steps a junio
   OUTPUT   one line per bug: JUNIOR_BUG suite=K entry=E junior=J topic=T reading=R; then FEED_BOARD suites_read=N reds=N rowed=N closed=N alike=N bugs=N limit=N (closed: an entry whose topic already has a baton, a DONE row waiting for the cycle; alike: a red listed in a shared cause's members file of the newest cause census, /home/resources/progress/causes-<date>/<cause>.members.tsv or S4E_CAUSES_DIR, held by that cause's row, one CAUSE_HELD line per cause).
   --apply  mints each bug: s4e_msg.sh mint TOPIC 1 --to JUNIOR --stdin. The mint's WAKE line is PRINTED, never sent (the coo wakes in waves).
   --limit N  at most N bugs in one call (default 20).   --suites K1,K2  only these suite keys.   --juniors J1,J2  another seat list.
+  --stock  THE CLOCK STOCKS THE TUBES (the cio 2026-11-13, row the-tick-keeps-every-live-juniors-tube-stocked; Lon, in the coo's window, verbatim: "It seems
+           not enough work is going to JUNIORS. Is that correct?"; MEASURED 13:21: 11 of 16 juniors idle, nothing dealing a red but the coo's hand, and one
+           feeder call for one bug 3 min 7 s and 33 CPU-s, so no junior's next can run it). ONE FILE, <postoffice>/FEED.conf, key=value a line: depth=N the
+           live rows every junior holds (0 or no file: off, nothing read, nothing minted), skip_suites=K1,K2 never dealt, max=N the most bugs one run mints
+           (32). The juniors counted are the live set's alive ones (lib_wake.sh s4e_wake_live_of_tier haiku; S4E_FEED_JUNIORS names them for a probe); each
+           is brought to the depth and no further, the emptiest first; a run that owes nothing reads no suite. One run at a time (flock -n on
+           <postoffice>/.feed.lock). With --apply it mints, appends each WAKE line to $S4E_FEED_WAKES when set, and writes one line to
+           /home/resources/progress/FEED_STOCK.tsv (S4E_FEED_LEDGER). box_tick.py starts it every fifth tick as the transient unit s4e-feed.
+           Prints FEED_STOCK depth=N juniors=N owed=N minted=N secs=N.
+  --probe-stock  the proof on a scratch postoffice: no file mints nothing; depth 2 brings a junior with 0, 1 and 2 live rows to 2, 2 and 2; a
+           skipped suite is never dealt; a junior outside the named set gets nothing; a second run owes nothing. Prints FEED_STOCK_PROBE ... ok=1.
   --probe  plants a scratch postoffice (S4E_POST) with two suites' reds, a live row and a DONE row, runs --apply there with real mints, and prints
            FEED_PROBE; rc 0 only when the limit, the order, the rowed skip and the dealing read as designed. It never touches the live queue.
 rc 0 read; 1 a probe that read otherwise; 2 REFUSE (no SUITES.tsv, no SUITE_RUNNERS.tsv, a mint refused under --probe).
 """
-import os, re, subprocess, sys, tempfile, shutil, glob
+import os, re, subprocess, sys, tempfile, shutil, glob, time, fcntl
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -210,6 +221,98 @@ def feed(order, reader, po, rows, limit, juniors, apply):
     return bugs, rowed_n, minted
 
 
+def feed_conf(po):
+    c = {}
+    try:
+        for l in open(os.path.join(po, "FEED.conf"), encoding="utf-8", errors="replace"):
+            l = l.split("#", 1)[0].strip()
+            if "=" in l: k, v = l.split("=", 1); c[k.strip()] = v.strip()
+    except OSError: pass
+    return c
+
+
+def live_juniors():
+    if os.environ.get("S4E_FEED_JUNIORS") is not None: return [x for x in os.environ["S4E_FEED_JUNIORS"].split(",") if x]
+    r = subprocess.run(["bash", "-c", '. "$0"; s4e_wake_live_of_tier haiku', os.path.join(HERE, "lib_wake.sh")], capture_output=True, text=True,
+                       env=dict(os.environ, S4E_POST=PO, S4E_HOME=ROOT))
+    return [x for x in r.stdout.split() if x in JUNIORS]
+
+
+def stock(po, order_of, reader, rows, apply):
+    """-> (owed, minted): bring every live junior to FEED.conf's depth; nothing owed reads nothing"""
+    t0 = time.time(); c = feed_conf(po)
+    try: depth = int(c.get("depth", "0")); cap = int(c.get("max", "32"))
+    except ValueError: refuse("FEED.conf: depth and max are whole numbers")
+    if depth <= 0:
+        print("FEED_STOCK off (no depth in %s: the feeder runs by hand only)" % os.path.join(po, "FEED.conf")); return 0, 0
+    lock = open(os.path.join(po, ".feed.lock"), "a")
+    try: fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        print("FEED_STOCK busy (another stock run holds %s)" % os.path.join(po, ".feed.lock")); return 0, 0
+    js = live_juniors(); n = load(po, js)
+    need = [j for j in js if n[j] < depth]; owed = min(cap, sum(depth - n[j] for j in need)); minted = 0; skip = set(x for x in c.get("skip_suites", "").split(",") if x)
+    if owed:
+        wakes = []
+        class Tee:
+            def write(self, t):
+                sys.__stdout__.write(t)
+                wakes.extend(l for l in t.splitlines() if l.startswith("WAKE:"))
+            def flush(self): sys.__stdout__.flush()
+        sys.stdout = Tee()
+        try: _bugs, _rowed, minted = feed([(k, lang) for k, lang in order_of() if k not in skip], reader, po, rows, owed, need, apply)
+        finally: sys.stdout = sys.__stdout__
+        if apply and wakes and os.environ.get("S4E_FEED_WAKES"):
+            with open(os.environ["S4E_FEED_WAKES"], "a", encoding="utf-8") as f:
+                for w in wakes: f.write("%s %s\n" % (time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), w))
+    secs = int(time.time() - t0)
+    if apply:
+        led = os.environ.get("S4E_FEED_LEDGER", "/home/resources/progress/FEED_STOCK.tsv")
+        try:
+            new = not os.path.exists(led)
+            with open(led, "a", encoding="utf-8") as f:
+                if new: f.write("# FEED_STOCK.tsv -- one line a stock run of util_reds_to_juniors.py --stock --apply (the cio 2026-11-13): FEED.conf's values are judged from it\nts_utc\tdepth\tjuniors\tneedy\towed\tminted\tsecs\tskip_suites\n")
+                f.write("%s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n" % (time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), depth, len(js), len(need), owed, minted, secs, ",".join(sorted(skip)) or "-"))
+        except OSError as e: print("FEED_STOCK ledger not written: %s" % e)
+    print("FEED_STOCK depth=%d juniors=%d needy=%d owed=%d minted=%d secs=%d%s" % (depth, len(js), len(need), owed, minted, secs, "" if apply else " (dry: no --apply)"))
+    return owed, minted
+
+
+def probe_stock():
+    w = tempfile.mkdtemp(prefix="feed_stock_probe_", dir=os.environ.get("TMPDIR") or None)
+    try:
+        J = JUNIORS[:4]
+        for sub in ["tasks", "claims"] + ["%s/inbox" % j for j in J + [os.environ.get("S4E_SEAT") or "grader"]]: os.makedirs(os.path.join(w, sub), exist_ok=True)
+        open(os.path.join(w, "BOARD.md"), "w").close()
+        try: shutil.copy(os.path.join(PO, "MODE"), os.path.join(w, "MODE"))
+        except OSError: open(os.path.join(w, "MODE"), "w").write("TENET\n")
+        q0 = "1\trow-a\t%s\tQUEUED:seat-%s\n1\trow-b\t%s\tCLAIMED:%s\n1\trow-c\t%s\tQUEUED:seat-%s\n1\trow-p\t%s\tPARKED-AWAITING:verdict\n" % (J[1], J[1], J[2], J[2], J[2], J[2], J[0])
+        open(os.path.join(w, "QUEUE.tsv"), "w").write(q0)
+        # each planted row carries its baton: a mint rewrites QUEUE.tsv and drops a row with no task file (MEASURED 2026-11-13, officer_06: without
+        # these the four planted rows vanished at the first mint, so the second run read rows=2,1,0,0 and owed 3 again)
+        for t in ("row-a", "row-b", "row-c", "row-p"): open(os.path.join(w, "tasks", t + ".task.md"), "w").write("# TASK %s\nDONE-WHEN: false\n" % t)
+        planted = {"skipme": "SUITE_ROW suite=skipme pass=0 total=2\nSUITE_ROW_RED s/k1 m3=FAIL@a\nSUITE_ROW_RED s/k2 m3=FAIL@a\n",
+                   "big": "SUITE_ROW suite=big pass=1 total=9\n" + "".join("SUITE_ROW_RED b/x%d m3=FAIL@a\n" % i for i in range(1, 9))}
+        order = lambda: [("skipme", "icon"), ("big", "prolog")]
+        os.makedirs(os.path.join(w, "causes")); os.environ["S4E_CAUSES_DIR"] = os.path.join(w, "causes")
+        os.environ["S4E_FEED_JUNIORS"] = ",".join(J[:3]); os.environ["S4E_FEED_LEDGER"] = os.path.join(w, "FEED_STOCK.tsv"); os.environ["S4E_FEED_WAKES"] = os.path.join(w, "wakes")
+        off = stock(w, order, lambda k: planted[k], {}, True)
+        open(os.path.join(w, "FEED.conf"), "w").write("# planted\ndepth=2\nskip_suites=skipme\n")
+        first = stock(w, order, lambda k: planted[k], {}, True)
+        n = load(w, J); q = open(os.path.join(w, "QUEUE.tsv"), encoding="utf-8").read()
+        again = stock(w, order, lambda k: planted[k], {}, True)
+        led = [l for l in open(os.path.join(w, "FEED_STOCK.tsv"), encoding="utf-8") if not l.startswith(("#", "ts_utc"))]
+        open(os.path.join(w, "FEED.conf"), "w").write("depth=3\nmax=1\n")
+        capped = stock(w, order, lambda k: planted[k], {}, True)
+        ok = (off == (0, 0) and first == (3, 3) and [n[j] for j in J] == [2, 2, 2, 0] and "skipme-red" not in q and again == (0, 0) and len(led) == 2
+              and capped == (1, 1))
+        print("FEED_STOCK_PROBE off=%d,%d first_owed=%d first_minted=%d rows=%s skipped_dealt=%d again_owed=%d ledger_lines=%d capped_minted=%d ok=%d"
+              % (off[0], off[1], first[0], first[1], ",".join(str(n[j]) for j in J), int("skipme-red" in q), again[0], len(led), capped[1], int(ok)))
+        return ok
+    finally:
+        for k in ("S4E_FEED_JUNIORS", "S4E_FEED_LEDGER", "S4E_FEED_WAKES"): os.environ.pop(k, None)
+        shutil.rmtree(w, ignore_errors=True)
+
+
 def probe():
     w = tempfile.mkdtemp(prefix="feed_probe_", dir=os.environ.get("TMPDIR") or None)
     try:
@@ -241,6 +344,9 @@ def probe():
 
 if __name__ == "__main__":
     if "--probe" in sys.argv[1:]: sys.exit(0 if probe() else 1)
+    if "--probe-stock" in sys.argv[1:]: sys.exit(0 if probe_stock() else 1)
+    if "--stock" in sys.argv[1:]:
+        stock(PO, lambda: [(k, lang) for k, lang, _ in suites_with_reds(SUITES, set())], read_suite, runner_rows(RUNNERS), "--apply" in sys.argv[1:]); sys.exit(0)
     only = set(x for x in arg("--suites", "").split(",") if x)
     juniors = [x for x in arg("--juniors", ",".join(JUNIORS)).split(",") if x]
     order = suites_with_reds(SUITES, only)
