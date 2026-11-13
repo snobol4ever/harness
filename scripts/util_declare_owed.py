@@ -9,9 +9,11 @@ program to the package's EXCLUDED.tsv, name TAB CLASS TAB evidence, the CLASS a 
 evidence the builder's reason verbatim. A class an attribute can cure (NEEDS-INPUT a NAME.in, MISSING-INCLUDE the include path, a missing
 dependency) is never declared: it is listed as LEFT, for its absorption. A reason the map does not know is LEFT too, never guessed.
 
-usage: util_declare_owed.py KEY [--root S4E_HOME] [--skip CLASS[,CLASS...]] [--row TOPIC] [--declare-empty] [--write]
+usage: util_declare_owed.py KEY [--root S4E_HOME] [--skip CLASS[,CLASS...]] [--row TOPIC] [--declare-empty [--empty-class CLASS] [--names FILE]] [--write]
   without --write it prints what it would declare and changes nothing; --skip leaves a mapped class owed (the grader's FPC NO-OUTPUT, graded by
-  exit code); --declare-empty declares NO-OUTPUT and EMPTY too, only after their arguments, stdin and goal are ruled out. One line per program, DECLARE or LEFT, then OWED-DECLARE key=K declared=N left=M (rc 0), or REFUSE(2) when it cannot read the row.
+  exit code); --declare-empty declares NO-OUTPUT and EMPTY too, only after their arguments, stdin and goal are ruled out, as NO_ORACLE_ANSWER or
+  --empty-class's word (FAKEABLE_NO_OBSERVABLE for the gate cases, the coo's ruling 2026-11-12 22:14 CST); --names FILE declares an empty one only when
+  FILE lists it, one name a line (the ones ruled out by measurement), and leaves the rest. One line per program, DECLARE or LEFT, then OWED-DECLARE key=K declared=N left=M (rc 0), or REFUSE(2) when it cannot read the row.
 """
 import os, re, subprocess, sys
 
@@ -57,6 +59,17 @@ def main():
     skip = set((opt("--skip") or "").split(",")) - {""}
     row = opt("--row") or "packages-consolidation-finish-cio"
     write = "--write" in a
+    ecls = opt("--empty-class") or "NO_ORACLE_ANSWER"
+    if ecls not in ("NO_ORACLE_ANSWER", "FAKEABLE_NO_OBSERVABLE"):
+        print("REFUSE(2) [declare-owed]: --empty-class is NO_ORACLE_ANSWER or FAKEABLE_NO_OBSERVABLE, not %s" % ecls)
+        return 2
+    names = None
+    if opt("--names"):
+        try:
+            names = set(l.strip() for l in open(opt("--names"), encoding="utf-8") if l.strip())
+        except OSError as e:
+            print("REFUSE(2) [declare-owed]: cannot read --names %s: %s" % (opt("--names"), e))
+            return 2
     d = None
     for l in open(os.path.join(root, "harness/scripts/SUITE_RUNNERS.tsv"), encoding="utf-8"):
         c = l.rstrip("\n").split("\t")
@@ -74,7 +87,9 @@ def main():
     rows, left = [], 0
     for l in lines[:-1]:
         name, _, reason = l.partition("\t")
-        cls = next((v for p, v in CLOSED + (EMPTY if "--declare-empty" in a else []) if re.search(p, reason)), None)
+        cls = next((v for p, v in CLOSED if re.search(p, reason)), None)
+        if cls is None and "--declare-empty" in a and any(re.search(p, reason) for p, _ in EMPTY) and (names is None or name in names):
+            cls = ecls
         if cls is None or word(reason) in skip:
             left += 1
             print("LEFT     %s  [%s]" % (name, reason[:120]))
