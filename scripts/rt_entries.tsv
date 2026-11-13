@@ -707,7 +707,7 @@ rt_sno_mkexpr_d	leaf	DESCR	1	-	0	call,alloc
 rt_sno_mkpat_d	leaf	DESCR	1	-	0	call,alloc
 rt_sno_name_dl	asm	-	0	r8|r10|r11	-	clob,asm
 rt_sno_patck_d	leaf	DESCR	1	-	0	call,alloc
-rt_sno_touch_name	leaf	VOID	0	-	0	call
+rt_sno_touch_name	leaf	-	0	-	0	call
 rt_sno_xlv_d	leaf	-	0	-	0	call
 rt_stmt_enter_p	leaf	VOID	1	-	0	call,alloc
 rt_str_alloc	asm	OTHER	1	r8|r10|r11	-	alloc,clob,asm
