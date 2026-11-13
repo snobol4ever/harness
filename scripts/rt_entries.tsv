@@ -316,6 +316,7 @@ rt_pl_db_decls_install	leaf	VOID	1	-	0	call,alloc
 rt_pl_db_reclaimed_entry	asm	-	0	none	-	clob,asm
 rt_pl_db_reg_find_na	asm	-	0	r8|r10|r11	-	clob,asm
 rt_pl_db_slot_ensure	leaf	OTHER	1	-	0	call,alloc
+rt_pl_db_walk_closed	leaf	-	0	-	0	call
 rt_pl_dc_leave_γ	leaf	-	0	-	0	call
 rt_pl_dc_leave_ω	leaf	-	0	-	0	call
 rt_pl_dc_prep	leaf	-	0	-	0	call
