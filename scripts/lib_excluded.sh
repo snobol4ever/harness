@@ -23,6 +23,9 @@ declare -F inventory_refuse >/dev/null 2>&1 || inventory_refuse() { echo "⛔ IN
 # ⭐ AND THE ANGLE-BRACKET SUBSCRIPTS (Lon 2026-11-12 11:2x CST, in the coo's window, verbatim: "SInce we are not storing vanilla inside our corpus repo
 #   then mark programs with angle-bracketed arrays as EXCLUDED."): class ANGLE_SUBSCRIPTS_RULED_OUT_BY_LON, a program that subscripts with A<i> where SCRIP
 #   refuses it on purpose under CEO-1447 (2026-10-02: one way to subscript; the angle brackets kept for LAMBDA); the oracle answers it, SCRIP will not.
+# ⭐ AND THE INLINE ASSEMBLER (Lon 2026-11-13 13:3x CST, in the cto's window, verbatim: "You can excluded Pascal with inline assembler."): class
+#   INLINE_ASSEMBLER_RULED_OUT_BY_LON, a Pascal program that carries an asm block or the assembler directive (the cto's measurement, fpc-source-inline-assembler.members.tsv);
+#   SCRIP does not lower inline assembler, and the program's answer is the oracle's, never SCRIP's. Each row's evidence names the line of its first asm.
 # ⭐ AND THE TERMINAL AND NETWORK PROGRAMS (Lon 2026-10-03, in-chat to hq_icon, verbatim: "You can have terminal and network test programs marked as excluded."):
 # class NEEDS_TERMINAL, a unit whose function is to drive an interactive terminal (cursor addressing, termcap, ANSI control, single-key reads, /dev/tty), and class
 # NEEDS_NETWORK, a unit whose function is to talk to a network peer (HTTP); a graded run has neither a terminal nor a peer, so they leave the denominator named,
@@ -69,7 +72,7 @@ inventory_excluded_names() {
         extra=""; [ "$f" = "$d/EXCLUDED.dotnet.tsv" ] && extra=LON_UNICODE_BY_DESIGN
         awk -F'\t' -v extra="${extra:-\001}" '
             $0 ~ /^#/ || NF == 0 { next }
-            NF < 3 || ($2 != "NOT_SPITBOL_DIALECT" && $2 != "NEEDS_GRAPHICS_FACILITY" && $2 != "NEEDS_TERMINAL" && $2 != "NEEDS_NETWORK" && $2 != "NEEDS_C_LIBRARY" && $2 != "NEEDS_LOADFUNC" && $2 != "DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27" && $2 != "OUTSIDE_CLPFD" && $2 != "NO_ORACLE_ANSWER" && $2 != "THREADS_EXCLUDED_BY_LON" && $2 != "S17_CLOSED_BY_LON" && $2 != "SCRIP_EXCEEDS_ORACLE" && $2 != "FAKEABLE_NO_OBSERVABLE" && $2 != "NOT_A_UNIT_TEST" && $2 != "ANGLE_SUBSCRIPTS_RULED_OUT_BY_LON" && $2 != extra) || length($3) < 60 { bad = bad " " $1 "(" NF " fields, class " $2 ")"; next }
+            NF < 3 || ($2 != "NOT_SPITBOL_DIALECT" && $2 != "NEEDS_GRAPHICS_FACILITY" && $2 != "NEEDS_TERMINAL" && $2 != "NEEDS_NETWORK" && $2 != "NEEDS_C_LIBRARY" && $2 != "NEEDS_LOADFUNC" && $2 != "DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27" && $2 != "OUTSIDE_CLPFD" && $2 != "NO_ORACLE_ANSWER" && $2 != "THREADS_EXCLUDED_BY_LON" && $2 != "S17_CLOSED_BY_LON" && $2 != "SCRIP_EXCEEDS_ORACLE" && $2 != "FAKEABLE_NO_OBSERVABLE" && $2 != "NOT_A_UNIT_TEST" && $2 != "ANGLE_SUBSCRIPTS_RULED_OUT_BY_LON" && $2 != "INLINE_ASSEMBLER_RULED_OUT_BY_LON" && $2 != extra) || length($3) < 60 { bad = bad " " $1 "(" NF " fields, class " $2 ")"; next }
             { print $1 }
             END { if (bad != "") { print "MALFORMED:" bad > "/dev/stderr"; exit 2 } }' "$f" || { inventory_refuse "$f carries a malformed row (name<TAB>NOT_SPITBOL_DIALECT, NEEDS_GRAPHICS_FACILITY, NEEDS_TERMINAL, NEEDS_C_LIBRARY, NEEDS_NETWORK, NEEDS_LOADFUNC, DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27, OUTSIDE_CLPFD, NO_ORACLE_ANSWER, THREADS_EXCLUDED_BY_LON, S17_CLOSED_BY_LON, SCRIP_EXCEEDS_ORACLE, FAKEABLE_NO_OBSERVABLE or ANGLE_SUBSCRIPTS_RULED_OUT_BY_LON (and LON_UNICODE_BY_DESIGN on EXCLUDED.dotnet.tsv alone)<TAB>evidence of 60+ chars naming the feature and the oracle's verdict)"; return 2; }
     done
