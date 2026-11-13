@@ -20,7 +20,7 @@ as a design job; this road sends it to a junior as a bug, with the steps a junio
            FEED_PROBE; rc 0 only when the limit, the order, the rowed skip and the dealing read as designed. It never touches the live queue.
 rc 0 read; 1 a probe that read otherwise; 2 REFUSE (no SUITES.tsv, no SUITE_RUNNERS.tsv, a mint refused under --probe).
 """
-import os, re, subprocess, sys, tempfile, shutil
+import os, re, subprocess, sys, tempfile, shutil, glob
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -137,10 +137,26 @@ def fingerprints(path=os.environ.get("S4E_RESULTS_TSV", "/home/resources/progres
     return fp
 
 
+def design_witnesses(root=os.path.join(HERE, "..", "designs")):
+    # every entry named in the witnesses column of a design's STEPS.tsv (harness/designs/*/STEPS.tsv, skill design-plans)
+    w = {}
+    for p in glob.glob(os.path.join(root, "*", "STEPS.tsv")):
+        try:
+            head = None
+            for l in open(p, encoding="utf-8", errors="replace"):
+                if l.startswith("#") or not l.strip(): continue
+                c = l.rstrip("\n").split("\t")
+                if head is None: head = c; continue
+                if "witnesses" in head and len(c) > head.index("witnesses"):
+                    for x in c[head.index("witnesses")].split(): w.setdefault(x, "%s:%s" % (os.path.basename(os.path.dirname(p)), c[0]))
+        except OSError: pass
+    return w
+
+
 def feed(order, reader, po, rows, limit, juniors, apply):
     topics, dw = d2d.live_rows(po)
-    n = load(po, juniors); bugs = []; reds_n = rowed_n = read_n = unread_n = closed_n = alike_n = 0
-    fps = fingerprints()
+    n = load(po, juniors); bugs = []; reds_n = rowed_n = read_n = unread_n = closed_n = alike_n = design_n = 0
+    fps = fingerprints(); dws = design_witnesses(); dred = {}
     for key, lang in order:
         if len(bugs) >= limit: break
         text = reader(key)
@@ -166,6 +182,9 @@ def feed(order, reader, po, rows, limit, juniors, apply):
             t = d2d.topic_of(key, e)
             if t in topics or any(pat.search(l) for l in dw.values()): rowed_n += 1; continue
             if fps.get((key, e)) in held: alike_n += 1; continue
+            # ⛔ A DESIGN STEP'S WITNESS IS HELD BY ITS STEP (the coo 2026-11-13 00:3x, on officer_04's reading: tabling-one-engine step 2 had no live row,
+            # so its witnesses oe1 to oe10 were dealt to eight seats one by one): such a red is never a junior's bug; its step row holds it, design=N
+            if e in dws: design_n += 1; dred.setdefault(dws[e], []).append(e); continue
             # ⛔ A CLOSED ROW'S ENTRY WAITS FOR THE CYCLE (the coo 2026-11-12 21:3x, measured: six of nine picks refused at mint, "already exists", each a
             # DONE row in QUEUE.done.tsv whose cure landed after the tree of the entry's red reading; each refusal left its junior unfed): the topic's
             # baton exists, so the entry is counted rowed and the junior takes the next red
@@ -175,6 +194,7 @@ def feed(order, reader, po, rows, limit, juniors, apply):
             if fps.get((key, e)): held.add(fps[(key, e)])
             bugs.append((key, lang, e, j, t, reading))
             print("JUNIOR_BUG suite=%s entry=%s junior=%s topic=%s reading=%s" % (key, e, j, t, reading))
+    for d in sorted(dred): print("DESIGN_RED step=%s reds=%d first=%s (held by its step row; a closed step's red is a regression)" % (d, len(dred[d]), dred[d][0]))
     minted = 0
     if apply:
         for key, lang, e, j, t, reading in bugs:
@@ -185,7 +205,7 @@ def feed(order, reader, po, rows, limit, juniors, apply):
                 if l.startswith(("minted ", "WAKE:", "queued ", "⛔", "REFUSE")): print(l)
             if not ok: print("MINT_REFUSED topic=%s rc=%d" % (t, p.returncode))
     tree = subprocess.run(["git", "-C", os.path.join(ROOT, "harness"), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
-    print("FEED_BOARD suites_read=%d reds=%d unread=%d rowed=%d closed=%d alike=%d bugs=%d minted=%d limit=%d (tree %s)" % (read_n, reds_n, unread_n, rowed_n, closed_n, alike_n, len(bugs), minted, limit, tree or "?"))
+    print("FEED_BOARD suites_read=%d reds=%d unread=%d rowed=%d closed=%d alike=%d design=%d bugs=%d minted=%d limit=%d (tree %s)" % (read_n, reds_n, unread_n, rowed_n, closed_n, alike_n, design_n, len(bugs), minted, limit, tree or "?"))
     return bugs, rowed_n, minted
 
 
