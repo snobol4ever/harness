@@ -139,7 +139,7 @@ for f in "${POP[@]}"; do
     for angle in process iter time; do
       v=PASS
       case "$angle" in
-        process) ENVP=("${HEAPENV[@]}"); go "${PRI[@]}"; cp "$W/o" "$W/got"; cp "$ref" "$W/want"
+        process) ENVP=("${HEAPENV[@]}"); go "${PRI[@]}"; cp "$W/o" "$W/got"; cp --no-preserve=mode "$ref" "$W/want"
                  ens=$(sed -n 's/.*elapsed_ns=\([0-9]*\).*/\1/p' "$W/e" | tail -1); sec=$(awk -v n="${ens:-0}" 'BEGIN{printf "%.3f", n/1e9}')
                  [ "$mode" = m3 ] && s3=$sec || s4=$sec
                  SCOUT="$SCOUT\n  $rel $mode process elapsed_ms=$(( ${ens:-0} / 1000000 )) $(grep -o 'maxrss_kb=[0-9]*' "$W/e" | tail -1)";;
@@ -151,7 +151,7 @@ for f in "${POP[@]}"; do
                  SCOUT="$SCOUT\n  $rel $mode iter $SHAPE n=$NITER work_ms=${WORK:-?}";;
         time)    if [ "$SHAPE" = IN ]; then ENVP=("${HEAPENV[@]}" BENCH_MODE=time "BENCH_BUDGET_MS=$BUD"); go "${WRP[@]}"; cp "$W/o" "$W/got"; k="${ITERS:-}"
                    # no BENCH line: k is unknown, so the output cannot be counted against the REF -- UNMEASURED, not "wrong answer"
-                   if [ -z "$k" ] || [ "$k" -lt 1 ]; then v=UNPROVEN; k=0; cp "$W/o" "$W/want"; else refx "$ref" "$W/want" "$k"; fi
+                   if [ -z "$k" ] || [ "$k" -lt 1 ]; then v=UNPROVEN; k=0; cp --no-preserve=mode "$W/o" "$W/want"; else refx "$ref" "$W/want" "$k"; fi
                  else : >"$W/got"; : >"$W/want"; k=0; spent=0
                    while [ "$k" -eq 0 ] || [ "$spent" -lt "$BUD" ]; do ENVP=("${HEAPENV[@]}" BENCH_MODE=iter BENCH_N=1); go "${WRP[@]}"; cat "$W/o" >>"$W/got"; cat "$ref" >>"$W/want"
                      [ "$RC" = 0 ] || break; w1="${WORK:-0}"; k=$((k + 1)); spent=$((spent + w1)); [ "$w1" -le 0 ] && [ "$k" -ge 50 ] && break; done; fi
