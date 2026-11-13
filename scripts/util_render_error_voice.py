@@ -23,6 +23,9 @@ THE LISTS (each row is what the oracle prints for the SCRIP field, measured on t
              startup: "\\nRun-time error <code> in startup code\\n<text>\\n"
   unicon   unicon 13.3 through unicon_bin() (corpus/packages/icon/unicon_tests/ALL.ref, thread/error and mt/loaderr, are the receipts): the icon list, each traceback frame indented three spaces.
   spitbol  SPITBOL x64 fork /home/resources/x64/bin/sbl -bf (RULES.md § Oracles):
+             code 216 (no END line; measured 2026-11-10 on sbl -bf: the one line on stderr, exit status 1, no file, no line):
+             "No END statement found in source file(s).\\n"
+             every other code:
              "<file>(<line>) : ERROR <code:03d> -- <text>\\nin statement <stno>\\n"   (stno 0 when SCRIP printed none;
              frames and offending value have no SPITBOL counterpart and are dropped -- SPITBOL prints none)
   raku     rakudo-local 2026.05 (/home/resources/rakudo-local/bin/raku), the compile-time refusals only (code 701; measured
@@ -71,6 +74,8 @@ def render(lines, oracle):
                 out += ['', 'Run-time error %d' % code, 'File %s; Line %s' % (f, ln), text]
                 if val is not None: out.append('offending value: ' + val)
                 out.append('Traceback:'); out += frames if oracle == 'icon' else ['   ' + f for f in frames]
+        elif oracle == 'spitbol' and code == 216:
+            out += [SPITBOL_NO_END]
         elif oracle == 'spitbol':
             f = at.group(1) if at else ''; ln = at.group(2) if at else '0'; st = at.group(3) if (at and at.group(3)) else '0'
             out += ['%s(%s) : ERROR %03d -- %s' % (f, ln, code, text), 'in statement %s' % st]
@@ -84,6 +89,7 @@ def render(lines, oracle):
     return out
 
 SPITBOL_LINE_WIDTH = 120
+SPITBOL_NO_END = 'No END statement found in source file(s).'
 
 
 def _wrap_spitbol(lines):
@@ -197,6 +203,8 @@ def replace_fatal_in_text(lines, oracle, merged):
             while j < len(lines) and lines[j].startswith('  '):
                 j += 1
             block = lines[i:j]
+            if oracle == 'spitbol' and HEAD.match(block[0]).group(1) == '216':
+                return lines[:i] + [SPITBOL_NO_END] + lines[j:]
             rendered = render_fatal_merged(block, oracle) if merged else render_fatal_block(block, oracle)
             if not rendered:
                 return lines
