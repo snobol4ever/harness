@@ -283,7 +283,7 @@ lap_start() {
     : > "$TMPDIR/cycle/lap.sync"   # the marker request_ready compares a pending request with: a request filed after it may name what the next sync brings
     ( cd "$S4E/SCRIP" && make -j8 ) >> "$TMPDIR/cycle/make.log" 2>&1 < /dev/null; mk=$?
     log "LAP $1 start sync_rc=$sy make_rc=$mk scrip=$(git -C "$S4E/SCRIP" rev-parse --short=9 HEAD 2>/dev/null) corpus=$(git -C "$S4E/corpus" rev-parse --short=9 HEAD 2>/dev/null)"
-    [ "$mk" = 0 ] || { log "LAP $1 REFUSED: make rc $mk (see $TMPDIR/cycle/make.log); exit 1, cron starts the next try"; exit 1; }
+    [ "$mk" = 0 ] || log "LAP $1 MAKE_FAILED rc $mk (see $TMPDIR/cycle/make.log): the lap goes on; a master or pkg cell runs on a base and its own binary, a small row on the root may refuse"   # EVERY TURN GOES ON (Lon 2026-11-13 14:0x CST, in the grader's window, verbatim: "Rather at each TURN, you should update if needed and continue another TURN regardless.")
     # A LANDED CHANGE OF THIS SCRIPT IS LIVE AT THE NEXT LAP, WITH NO HAND SWAP (the cio 2026-11-10; MEASURED: pid 4174123 ran the code of
     # 2026-11-08 23:14 for ten laps while three cycle cures sat synced in its own root, and the swap before it needed Lon's hand): bash holds
     # the loop it parsed at start, so when the sync has changed this file the process replaces itself with the new text here, at the one
@@ -301,7 +301,7 @@ if [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF" 2>/dev/null)" 2>/dev/null && [ "$(ca
 echo $$ > "$PIDF"
 trap 'rm -f "$PIDF"' EXIT
 # THE BINARY IS FRESH AT EVERY START, not only at a lap start (the cio 2026-11-08 10:5x: the grader root synced mid-lap without a make, and cells 25 to 40 refused rc 2 in 2 s each on a stale binary): make on a built tree is a no-op or a cache fetch.
-( cd "$S4E/SCRIP" && make -j8 ) >> "$TMPDIR/cycle/make.log" 2>&1 < /dev/null || { log "START REFUSED: make rc $? (see $TMPDIR/cycle/make.log); exit 1, cron starts the next try"; exit 1; }
+( cd "$S4E/SCRIP" && make -j8 ) >> "$TMPDIR/cycle/make.log" 2>&1 < /dev/null || log "START MAKE_FAILED rc $? (see $TMPDIR/cycle/make.log): the cycle goes on, every turn (Lon 2026-11-13: \"continue another TURN regardless\"); a master or pkg cell runs on a base and its own binary"
 lap="$(state_get lap)"; idx="$(state_get idx)"; st="$(state_get status)"; pc="$(state_get cell)"; ps="$(state_get suite)"
 [ -n "$lap" ] || lap=0; [ -n "$idx" ] || idx=0
 if [ "$st" = running ] && [ -n "$ps" ]; then

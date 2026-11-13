@@ -20,22 +20,18 @@
 # THE PORT ENGINES RUN THEIR OWN TESTS (R-1912; Lon 2026-10-22 15:0x, verbatim: "Let HQ-JVM and HQ-DOTNET run their own tests."): MODE LANES
 # reads snobol4@dotnet=hq_dotnet and snobol4@jvm, snocone@jvm, rebus@jvm=hq_jvm, and the coo's loop grades no port engine, so --engine dotnet|jvm
 # REFUSES at filing, naming the HQ whose lane it is -- a request the loop would only return ungraded a turn later is a dark road (R-1872 reversed).
-# EXIT 0 filed (or listed); 2 refused, nothing filed: an unknown suite key, a suite not yet in the round robin, an entry its partition does not name, no seat.
+# EXIT 0 filed (or listed); 2 refused, nothing filed: an unknown suite key, a suite with no master or pkg row, an entry its partition does not name, no seat.
 # It runs nothing and builds nothing: the request is one file under /home/resources/postoffice/test_requests/ that the loop picks up between two tests.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REQ_DIR="${S4E_TEST_REQUEST_DIR:-/home/resources/postoffice/test_requests}"
 CORPUS="${S4E_CORPUS:-${S4E_HOME:-$(cd "$HERE/../.." && pwd)}/corpus}"
-# THE SUITES IN THE ROUND ROBIN (R-1802 wave 1): key|table under corpus. A suite joins this list when its runner grades one chunk and its row assembles.
-SUITES="sno-rungs|tests/snobol4 icn-rungs|tests/icon pl-rungs|tests/prolog snc-rungs|tests/snocone reb-rungs|tests/rebus pas-rungs|tests/pascal
-raku-rungs|tests/raku puzzles|packages/prolog/puzzles rosetta-prolog|packages/prolog/rosetta-prolog xsb|packages/prolog/xsb_tests
-trealla|packages/prolog/trealla_tests rosetta-pascal|packages/pascal/rosetta-pascal testpgms|packages/snobol4/spitbol_testpgms
-x64tests|packages/snobol4/spitbol_x64_tests x32tests|packages/snobol4/spitbol_x32_tests dotnet|packages/snobol4/dotnet snoflake|packages/snobol4/snoflake_suite
-aisnobol|packages/snobol4/aisnobol ipl|packages/icon/ipl
-fpc|packages/pascal/fpc_tests pat|packages/pascal/pat roast|packages/raku/roast inria|packages/prolog/inriasuite gimpel|packages/snobol4/gimpel arizona|packages/icon/arizona_tests unitests|packages/icon/unicon_tests swi|packages/prolog/swi_tests logtalk|packages/prolog/logtalk_iso
-jcon|packages/icon/jcon_tests csnobol4|packages/snobol4/csnobol4_suite prolog-bench-ref|benchmarks/prolog prolog-demos|demos/prolog scriptix-demos|demos/scriptix
-gnu|packages/prolog/gnu_prolog"
-# gnu (the cfo 2026-10-17, R-1810: the rotation grades it, a request was refused): test_prolog_gnu_suite.sh reads no S4E_CHUNK, so a request grades its whole table (62 entries, about two minutes) and writes its row
+# THE SUITES A REQUEST MAY NAME ARE THE CYCLE'S OWN (the grader 2026-11-13; skill suites-and-grading 3: a seat's request for any master or package key
+# is admitted): every master or pkg row of SUITE_RUNNERS.tsv, its table tests/<lang> for a master and its table column for a pkg, as s4e_cycle.sh
+# run_request reads them. The hand list of R-1802 wave 1 is gone. MEASURED: it refused gate_cases_raku and gate_cases_icon, pkg rows the cycle serves,
+# so landed cures waited on a reading (the coo 11:3x), and it admitted gnu and prolog-bench-ref, small rows the cycle refuses.
+RUNNERS="${S4E_SUITE_RUNNERS:-$HERE/SUITE_RUNNERS.tsv}"
+SUITES="$(awk -F'\t' '!/^#/ && ($2 == "master" || $2 == "pkg") { d = ($2 == "master") ? "tests/" $3 : $5; sub(/^corpus\//, "", d); printf "%s|%s ", $1, d }' "$RUNNERS" 2>/dev/null)"
 engine=scrip
 if [ "${1:-}" = --engine ]; then
   engine="${2:-}"; shift 2 2>/dev/null || shift $#
@@ -149,7 +145,7 @@ case "${1:-}" in
   --status) ls "$REQ_DIR"/*.req 2>/dev/null | while read -r f; do printf '%s  %s test(s) on %s\n' "$(basename "$f" .req)" "$(grep -m1 '^entries=' "$f" | cut -c9- | wc -w)" "$(sed -n 's/^engine=//p' "$f" | grep . || echo scrip)"; done; echo "pending: $(ls "$REQ_DIR"/*.req 2>/dev/null | wc -l)"; exit 0;;
 esac
 key="$1"; shift
-tab="$(table_of "$key")" || refuse "suite key '$key' is not in the round robin yet (s4e_test_request.sh --suites lists the ones that are; the rest wait for their runner's chunk seam, R-1802 wave 2)"
+tab="$(table_of "$key")" || refuse "suite key '$key' is no master or pkg row of SUITE_RUNNERS.tsv, so the cycle cannot serve it (s4e_test_request.sh --suites lists the ones it can; a small row is graded by its own runner until it becomes a package)"
 P="$CORPUS/$tab/PARTITION.tsv"
 # a table with no partition (the benchmarks and the demos, each one chunk by rule): its entries are its program files, by path or stem (R-1812)
 has_file() { [ -f "$CORPUS/$tab/$1" ] || [ -n "$(find "$CORPUS/$tab" -maxdepth 3 -type f -name "$1.*" -print -quit 2>/dev/null)" ]; }
