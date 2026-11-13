@@ -1350,3 +1350,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1351	pl	$db_unload_file	1	1	rt_pl_dop_db_unload_file	leaf	-	-	0	dop_direct
 1352	pas	__pas_sstr_store	-	-	-	inline	-	-	0	pas
 1353	pas	__pas_preview	-	-	-	inline	-	-	0	pas
+1354	icn	ICN$UTRIM	1	3	bt_ICNx24UTRIM	leaf	-	-	0	fn_arms
