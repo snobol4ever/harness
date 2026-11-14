@@ -286,9 +286,12 @@ cycle_nick() {   # key lang -> a banner nick of at most 12 characters for a row 
 }
 record_row() {   # key -> the suite's row from the progress store; a refusal the cycle cannot cure is logged and held in CYCLE.refused
     local o rc r R="$PROG/CYCLE.refused" kind lang dir mv st c
-    on_base   # the population and the stamp are the newest base's tables, held shared while the row is written
-    o="$(record_once "$1" "")"; rc=$?
     IFS=$'\t' read -r kind lang dir <<< "$(runner_row "$1")"
+    # A SMALL ROW IS WRITTEN WHERE ITS CELL RAN, ON THE ROOT (the grader 2026-11-13, MEASURED: the seven *-bench-ref rows graded rc 0 on the root every lap
+    # and every one of their writes refused "no suite table for key", the bases being sparse without corpus/benchmarks/); a master or pkg row is written
+    # on the newest base, its population and stamp that base's tables, held shared while the row is written
+    if [ "$kind" = small ]; then local BASE="$S4E"; else on_base; fi
+    o="$(record_once "$1" "")"; rc=$?
     if [ "$rc" -ne 0 ] && printf '%s\n' "$o" | grep -q "no suite key $1 in" && [ -n "$kind" ]; then
         o="$o
 $( cd "$BASE" && python3 -I harness/scripts/util_suite_banner.py --open-row "$1" "$(cycle_nick "$1" "$lang")" "🧪" "$lang" 2>&1 )"
