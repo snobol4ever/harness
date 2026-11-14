@@ -18,9 +18,10 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
+. "$HERE/lib_paths.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
-STEPS="$HERE/../designs/packed_arrays/STEPS.tsv"   # moved from corpus/tests/pascal/packed_arrays (the coo 2026-11-10, CIO-24 c, CIO-55, CIO-56: a language folder is its container alone)
+SC="$S4E_SCRIP"
+STEPS="$HERE/../designs/packed_arrays/STEPS.tsv"   # moved from corpus/tests/pascal/packed_arrays (the coo 2026-11-10, CIO-24 c, CIO-55, CIO-56: a language folder is its container alone)   # one-disk: not a path
 OUT=""
 HEAP_H="$SC/src/runtime/rt/gc_heap.h"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
@@ -39,7 +40,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default pascal_packed_arrays; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: pascal-packed-arrays -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/packed_arrays/STEPS.tsv); a witness is the entry packed_arrays__<name> of the pascal master (refs from fpc 3.2.2)"
+    echo "DESIGN-PLAN: pascal-packed-arrays -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/packed_arrays/STEPS.tsv); a witness is the entry packed_arrays__<name> of the pascal master (refs from fpc 3.2.2)"   # one-disk: not a path
     printf '%-4s %-54s %-12s %-8s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-54s %-12s %-8s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -52,12 +53,12 @@ fi
 # measures what it measured when the witness was a loose pair.
 witness() {
     local d="$2"; mkdir -p "$d"
-    design_witness_has pascal "packed_arrays__$1" || refuse "witness $1: no entry packed_arrays__$1 in corpus/tests/pascal"
+    design_witness_has pascal "packed_arrays__$1" || refuse "witness $1: no entry packed_arrays__$1 in corpus/tests/pascal"   # one-disk: not a path
     design_witness_extract pascal "packed_arrays__$1" "$d" > /dev/null 2>&1 || refuse "witness $1: its entry packed_arrays__$1 did not extract"
     WP="$d/packed_arrays__$1.pas"; WR="$d/packed_arrays__$1.ref"
 }
 if [ "$mode" = cut ]; then
-    refuse "--cut retired: the witnesses are entries of corpus/tests/pascal, each ref cut from fpc twice by util_add_ladder_witness.py --lang pascal --family packed_arrays (CIO-37)"
+    refuse "--cut retired: the witnesses are entries of corpus/tests/pascal, each ref cut from fpc twice by util_add_ladder_witness.py --lang pascal --family packed_arrays (CIO-37)"   # one-disk: not a path
 fi
 [ -n "$(col "$step" 1)" ] || refuse "no step $step in $STEPS (--list names them)"
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"

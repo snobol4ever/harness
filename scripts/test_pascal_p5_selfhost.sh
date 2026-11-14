@@ -29,9 +29,9 @@
 # "SELFHOST BLOCKED" (a half cannot run, with the reason printed).
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ REFUSE(2): no scrip at $SCRIP"; exit 2; }
-P5="${P5_DIR:-$ROOT/../corpus/packages/pascal/p5}"; SRC="$P5/source"; SMP="$P5/sample_programs"
+P5="${P5_DIR:-$S4E_CORPUS/packages/pascal/p5}"; SRC="$P5/source"; SMP="$P5/sample_programs"
 [ -f "$SRC/pcom.pas" ] && [ -f "$SRC/pint.pas" ] || { echo "⛔ REFUSE(2): no Pascal-P5 pcom.pas and pint.pas at $SRC"; exit 2; }
 [ -f "$SMP/hello.pas" ] && [ -f "$SMP/hello.cmp" ] || { echo "⛔ REFUSE(2): no P5 hello sample and transcript at $SMP"; exit 2; }
 command -v cpp >/dev/null || { echo "⛔ REFUSE(2): no cpp -- P5's own preprocessing step cannot run"; exit 2; }

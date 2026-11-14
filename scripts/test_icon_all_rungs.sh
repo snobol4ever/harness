@@ -36,8 +36,9 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once, util_timeout_retry.sh
 . "$HERE/lib_icn_rundir.sh"   # THE ONE AUTHORITY for a witness's stdin/argv/fixtures/env contract -- see that file's header
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-CORPUS="${CORPUS:-$S4E/corpus/tests/icon}"
+. "$HERE/lib_paths.sh"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+CORPUS="${CORPUS:-$S4E_CORPUS/tests/icon}"
 RUNG=""
 
 while [[ $# -gt 0 ]]; do
@@ -55,7 +56,7 @@ if [ ! -x "$SCRIP" ]; then
 fi
 if [ ! -d "$CORPUS" ]; then
     echo "SKIP corpus not found at $CORPUS" >&2
-    echo "     clone snobol4ever/corpus to $S4E/corpus to run this suite" >&2
+    echo "     clone snobol4ever/corpus to $S4E_CORPUS to run this suite" >&2
     exit 0
 fi
 

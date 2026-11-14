@@ -25,11 +25,11 @@
 #       2 REFUSED -- could not build or could not measure. A gate that cannot measure never reports green.
 # USAGE: bash ../harness/scripts/test_demo_icon_jcon_selfhost.sh [module ...]   (default: every module)
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"
-D="${JCON_DEMO_DIR:-$S4E/corpus/demos/icon/jcon}"
-PKG="${JCON_PKG_DIR:-$S4E/corpus/packages/icon/jcon-compiler}"
+D="${JCON_DEMO_DIR:-$S4E_CORPUS/demos/icon/jcon}"
+PKG="${JCON_PKG_DIR:-$S4E_CORPUS/packages/icon/jcon-compiler}"
 TMO="${JCON_TIMEOUT:-900}"
 WANT=""
 for a in "$@"; do case "$a" in --heap=*) echo "⛔ REFUSE(2): $a is retired -- jtran runs at its declared heap and stack (jtran.heap, jtran.stack; R-1353)"; exit 2;; *) WANT="$WANT $a";; esac; done

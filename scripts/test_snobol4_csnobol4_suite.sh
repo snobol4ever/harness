@@ -111,7 +111,7 @@ set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib_paths.sh"; SD="$S4E_SCRIP"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
 . "$HERE/lib_flag_gate.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_flag_gate.sh unloadable"; exit 2; }
 [ $# -eq 0 ] || flaggate_reject "$1" "(none -- set CSNOBOL4_SUITE / TIMEOUT via environment instead)"
-SUITE="${CSNOBOL4_SUITE:-$ROOT/corpus/packages/snobol4/csnobol4_suite}"
+SUITE="${CSNOBOL4_SUITE:-$S4E_CORPUS/packages/snobol4/csnobol4_suite}"
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"; TIMEOUT="${TIMEOUT:-8}"
 
 [ -d "$SUITE" ] || { echo "⛔ REFUSE(rc=2): suite dir missing: $SUITE"; exit 2; }
@@ -292,7 +292,7 @@ declared_memory_begin "$SUITE/ALL.csv" "$DECL" || { echo "⛔ REFUSE(rc=2): a de
 GATE_NAME=test_snobol4_csnobol4_suite gate_tree_watch "$(cd "$HERE/../.." && pwd)"
 SCRIP_HASH="$(git -C "$SD" rev-parse --short HEAD 2>/dev/null || echo '?')"
 TREE_LABEL="SCRIP $SCRIP_HASH"; [ "$PORT" = 1 ] && TREE_LABEL="engine $(one_runner_port_tree)"
-CORP_HASH="$(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
+CORP_HASH="$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo '?')"
 
 compile_m4() { local sno="$1" out="$2" ca="${3:-}" t pre; t="$(mktemp -d)"; pre="$(preload_for "$(basename "$sno" .sno)")"
     SNO_LIB="$SUITE" "$SCRIP" $COMPAT $pre --compile $ca "$sno" > "$t/p.s" 2>/dev/null || { rm -rf "$t"; return 1; }
@@ -529,7 +529,7 @@ EXCL_D_N="$(excluded_in_outside "$SUITE" "$OUTSIDE_LIST $NOA_LIST")" || exit 2; 
 echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set leave the denominator ($(excluded_names_count "$SUITE") named in $SUITE/EXCLUDED.tsv; Lon 2026-09-26, R-1286): pass over $DENOM"
 python3 "$HERE/corpus_suite_harness.py" extension-check "$SUITE" || exit 2
 if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (R-1822), graded in m3 alone"
-    if [ "$SUITE" = "$ROOT/corpus/packages/snobol4/csnobol4_suite" ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: scratch suite $SUITE -- not published (only the canonical suite publishes its row)"; fi
+    if [ "$SUITE" = "$S4E_CORPUS/packages/snobol4/csnobol4_suite" ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: scratch suite $SUITE -- not published (only the canonical suite publishes its row)"; fi
 else
 _cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || _cc="$(excluded_shape_stamp csnobol4 "$DENOM" "$OUT_N" "$EXCL_D_N")" || exit 2
 python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite CSNOBOL4 --modes m3,m4 \

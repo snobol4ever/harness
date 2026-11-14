@@ -396,7 +396,7 @@ def main(argv):
         print('wrote %s: %d rows' % (p, len(rows)))
         return 0
     if not os.path.exists(p) or open(p, encoding='utf-8').read() != text:
-        print('GATE RED: stale or missing: %s -- run: python3 harness/scripts/util_gen_rt_entry_table.py --write' % p)
+        print('GATE RED: stale or missing: %s -- run: python3 harness/scripts/util_gen_rt_entry_table.py --write' % p)   # one-disk: not a path
         return 1
     print('current: %d rows' % len(rows))
     return 0

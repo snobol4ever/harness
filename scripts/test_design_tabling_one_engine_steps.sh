@@ -25,10 +25,12 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope
+. "$HERE/lib_paths.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
-MASTER="$ROOT/corpus/tests/prolog"
-STEPS="$ROOT/harness/designs/tabling_one_engine/STEPS.tsv"
+SC="$S4E_SCRIP"
+MASTER="$S4E_CORPUS/tests/prolog"
+STEPS="$S4E_HARNESS/designs/tabling_one_engine/STEPS.tsv"
+rp() { case "$1" in SCRIP/*) printf "%s" "$S4E_SCRIP/${1#SCRIP/}" ;; corpus/*) printf "%s" "$S4E_CORPUS/${1#corpus/}" ;; harness/*) printf "%s" "$S4E_HARNESS/${1#harness/}" ;; .github/*) printf "%s" "$S4E_GITHUB/${1#.github/}" ;; *) printf "%s" "$ROOT/$1" ;; esac; }   # a probe token names its file from the root of the old sibling model: each repo prefix goes to its own checkout
 RESULTS=/home/resources/progress/results.tsv
 OUT=""
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
@@ -97,17 +99,17 @@ latest_pass() {
 readings=""; pgreen=1
 for tok in $probe; do
     [ "$tok" = none ] && { readings="$readings none"; continue; }
-    key="${tok%%=*}"; val="${tok#*=}"; f="${val%:*}"; arg="${val##*:}"
+    key="${tok%%=*}"; val="${tok#*=}"; f="${val%:*}"; arg="${val##*:}"; fp="$(rp "$f")"
     [ "$key" != "$tok" ] && [ "$f" != "$val" ] && [ -n "$arg" ] || refuse "probe token $tok of step $step is not KIND=FILE:VALUE"
     case "$key" in
         swi|fam) [ -r "$RESULTS" ] || refuse "no readable store at $RESULTS"; case "$arg" in ''|*[!0-9]*) refuse "token $tok: the count is not a number" ;; esac
                  if [ "$key" = swi ]; then got="$(latest_pass swi "$f" file)"; else got="$(latest_pass xsb "$f" family)"; fi
                  readings="$readings $key[$f]=$got(need $arg)"; [ "$got" -ge "$arg" ] || pgreen=0 ;;
-        nosym) [ -f "$ROOT/$f" ] || refuse "token $tok: no file $ROOT/$f"; cnt=0
-               for s in $(printf '%s' "$arg" | tr ',' ' '); do k="$(grep -c -F -- "'$s'" "$ROOT/$f")"; cnt=$((cnt + k)); done
+        nosym) [ -f "$fp" ] || refuse "token $tok: no file $fp"; cnt=0
+               for s in $(printf '%s' "$arg" | tr ',' ' '); do k="$(grep -c -F -- "'$s'" "$fp")"; cnt=$((cnt + k)); done
                readings="$readings nosym[$(basename "$f")]=$cnt"; [ "$cnt" = 0 ] || pgreen=0 ;;
-        maxlines) [ -f "$ROOT/$f" ] || refuse "token $tok: no file $ROOT/$f"; case "$arg" in ''|*[!0-9]*) refuse "token $tok: the bound is not a number" ;; esac
-                  got="$(wc -l < "$ROOT/$f")"; readings="$readings maxlines[$(basename "$f")]=$got(at most $arg)"; [ "$got" -le "$arg" ] || pgreen=0 ;;
+        maxlines) [ -f "$fp" ] || refuse "token $tok: no file $fp"; case "$arg" in ''|*[!0-9]*) refuse "token $tok: the bound is not a number" ;; esac
+                  got="$(wc -l < "$fp")"; readings="$readings maxlines[$(basename "$f")]=$got(at most $arg)"; [ "$got" -le "$arg" ] || pgreen=0 ;;
         *) refuse "unknown probe token $tok in step $step" ;;
     esac
 done

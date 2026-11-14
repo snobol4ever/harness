@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/../../lib_paths.sh"
 S4E="${S4E_HOME:-$(cd "$HERE/../../../.." && pwd)}"
 S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"
 SRC="${SWIPL_PRISTINE:-$S4A/swipl-devel-master}"
 DST="${1:-${SWIPL_MON_ROOT:-$S4A/swipl-mon}}"
 PRI="${SWIPL_PRISTINE_BIN:-$DST/pristine/bin}"
-WIT="$HERE/../../SCRIP/witnesses"
+WIT="$S4E_SCRIP/witnesses"
 [ -d "$SRC/src" ] && [ -f "$SRC/boot/init.pl" ] || { echo "REFUSE(2): pristine SWI-Prolog drop not found at $SRC (SWIPL_PRISTINE names it)"; exit 2; }
 for t in rsync patch make gcc cmake python3; do command -v "$t" >/dev/null || { echo "REFUSE(2): $t missing"; exit 2; }; done
 ls "$WIT"/sync_step_prolog*.pl > /dev/null 2>&1 || { echo "REFUSE(2): no Prolog witnesses at $WIT"; exit 2; }

@@ -15,9 +15,10 @@
 # EXIT (measure): 0 the table printed with every cell counted; 1 printed with at least one REFUSED cell; 2 could not measure at all.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
-KDIR="$ROOT/corpus/benchmarks/snobol4"
-PAGE_DEFAULT="$ROOT/.github/findings/JVM-BENCH-TABLE.md"
+KDIR="$S4E_CORPUS/benchmarks/snobol4"
+PAGE_DEFAULT="$S4E_GITHUB/findings/JVM-BENCH-TABLE.md"
 CSN=/home/resources/csnobol4/snobol4
 N=3; OUT=""; CHECK=0; PAGE=""; STEMS=(); NOTE_ONLY=0
 while [ $# -gt 0 ]; do
@@ -115,7 +116,7 @@ done
 {
     echo "# JVM-BENCH-TABLE -- snobol4jvm against pristine SPITBOL and CSNOBOL4, in instructions"
     echo
-    echo "Measured $(date '+%F %H:%M %Z') by bench_snobol4_jvm_table.sh -n $N; snobol4jvm $(git -C "$ROOT/snobol4jvm" rev-parse --short HEAD 2>/dev/null), load $(cut -d' ' -f1-3 /proc/loadavg); corpus $(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null)."
+    echo "Measured $(date '+%F %H:%M %Z') by bench_snobol4_jvm_table.sh -n $N; snobol4jvm $(git -C "$ROOT/snobol4jvm" rev-parse --short HEAD 2>/dev/null), load $(cut -d' ' -f1-3 /proc/loadavg); corpus $(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null)."
     echo "Basis: perf stat -e instructions:u (R-2035), median of $N runs; WORK is the kernel's total less an empty program's. SPITBOL is /home/resources/spitbol-bench-oracle/sbl, CSNOBOL4 is /home/resources/csnobol4/snobol4 (output must equal the kernel's .ref)."
     echo
     echo "| kernel | jar work (G) | sbl work (M) | csnobol4 work (M) | jar / sbl | jar / csnobol4 | jar overhead (G) | note |"

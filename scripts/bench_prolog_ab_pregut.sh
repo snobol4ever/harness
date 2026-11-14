@@ -29,9 +29,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #   bench_work(_) is the faithful translation -- but it is a DIFFERENT CALL, so no number from before this change may be
 #   compared against one from after it without re-measuring both arms.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; NEW="$(cd "$HERE/../../SCRIP" && pwd)"
-PREGUT_REF="${PREGUT_REF:-7ec7305a}"; OLD="${PREGUT_DIR:-$S4E/SCRIP-pregut}"
-K="${BENCH_K:-$S4E/corpus/benchmarks/prolog/bench}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; NEW="$(cd "$S4E_SCRIP" && pwd)"
+PREGUT_REF="${PREGUT_REF:-7ec7305a}"; OLD="${PREGUT_DIR:-/tmp/s4e/${S4E_SEAT:-$USER}/SCRIP-pregut}"
+K="${BENCH_K:-$S4E_CORPUS/benchmarks/prolog/bench}"
 W=/tmp/ab_pregut.$$; mkdir -p "$W"; trap 'rm -rf "$W"' EXIT
 gprolog_bin >/dev/null || exit 2
 [ -d "$K" ] || { echo "⛔ REFUSED-TO-GRADE: pristine kernel dir missing: $K"; exit 2; }

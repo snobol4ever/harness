@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""util_skill_check.py <name>... -- A FLEET SKILL IS WELL-FORMED AND CARRIES ITS SEVEN PARTS (R-2071). Reads .github/skills/<name>/SKILL.md
+"""util_skill_check.py <name>... -- A FLEET SKILL IS WELL-FORMED AND CARRIES ITS SEVEN PARTS (R-2071). Reads .github/skills/<name>/SKILL.md   # one-disk: not a path
 beside this harness. GREEN rc 0 when the file exists, opens with YAML frontmatter whose `name:` equals the folder and whose `description:` is 40 to
 1024 characters, is 3 to 40 KB, and carries the seven section markers a seat needs: the oracle (## 1), the manuals under /home/resources/manuals
 (## 2), the source map (## 3), the ARCH pages (## 4), the suites and their runners (## 5), the debugging order (## 6) and the rulings (## 7).
 RED rc 1 names each missing part. REFUSE rc 2 with no name. The DONE-WHEN of every skill row; red on an absent skill by construction.
---parser-constructs <name> (R-2075): greps each SCRIP/bootstrap/parser_*.sc for the construct families a parser-as-pattern is made of (the
+--parser-constructs <name> (R-2075): greps each SCRIP/bootstrap/parser_*.sc for the construct families a parser-as-pattern is made of (the   # one-disk: not a path
 Compiland shape, Shift and Reduce, immediate and deferred assignment, the memo table, the counter stack, PushVal, tail loops, the token convention,
 keyword lookups, FENCE, FLUSH, ARBNO, cursor pairs, the anchored nested match, the preprocess stage, the driver tail, the module wrapper, the library,
 the no-functions rule, the proving gates) and RED rc 1 names every family a parser carries that the skill does not name.
@@ -15,10 +15,12 @@ quoted code blocks (a craft skill quotes real lines from the files it governs). 
 """
 import glob, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import harness_paths as HP
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
-MARKS = ["## 1", "## 2", "## 3", "## 4", "## 5", "## 6", "## 7", "/home/resources/manuals", "ARCH-", "harness/scripts", "monitor_run.sh"]
+MARKS = ["## 1", "## 2", "## 3", "## 4", "## 5", "## 6", "## 7", "/home/resources/manuals", "ARCH-", "harness/scripts", "monitor_run.sh"]   # one-disk: not a path
 def check(name):
-    p = os.path.join(ROOT, ".github", "skills", name, "SKILL.md")
+    p = os.path.join(str(HP.github()), "skills", name, "SKILL.md")
     if not os.path.exists(p):
         return ["no file %s" % p]
     t = open(p, encoding="utf-8").read()
@@ -61,13 +63,13 @@ FAMILIES = [
                        "test_gate_bootstrap_parse_stage_ir_identity.sh", "util_parser_sc_census.py", "util_parser_sc_grade.sh"]),
 ]
 def parser_constructs(name):
-    p = os.path.join(ROOT, ".github", "skills", name, "SKILL.md")
+    p = os.path.join(str(HP.github()), "skills", name, "SKILL.md")
     if not os.path.exists(p):
         print("RED  %s: no file %s" % (name, p)); return 1
     t = open(p, encoding="utf-8").read()
-    parsers = sorted(glob.glob(os.path.join(ROOT, "SCRIP", "bootstrap", "parser_*.sc")))
+    parsers = sorted(glob.glob(os.path.join(str(HP.scrip()), "bootstrap", "parser_*.sc")))
     if not parsers:
-        print("REFUSE(2): no SCRIP/bootstrap/parser_*.sc beside this harness"); return 2
+        print("REFUSE(2): no SCRIP/bootstrap/parser_*.sc beside this harness"); return 2   # one-disk: not a path
     srcs = {os.path.basename(f): open(f, encoding="utf-8", errors="replace").read() for f in parsers}
     rc = 0
     for fam, rx, terms in FAMILIES:
@@ -80,10 +82,10 @@ def parser_constructs(name):
         else:
             print("OK   %s (%d parsers)" % (fam, len(where)))
     return rc
-CRAFT_MARKS = ["## 1", "## 2", "## 3", "## 4", "## 5", "## 6", "## 7", "RULES.md", "ARCH-", "harness/scripts", "```"]
+CRAFT_MARKS = ["## 1", "## 2", "## 3", "## 4", "## 5", "## 6", "## 7", "RULES.md", "ARCH-", "harness/scripts", "```"]   # one-disk: not a path
 CRAFT_HEADS = ["THE RULES", "THE FILES", "WORKED EXAMPLES", "THE PROVING INSTRUMENTS", "THE FORBIDDEN FORMS", "THE ARCH PAGES", "HOW A LANDING IS PROVED"]
 def check_craft(name):
-    p = os.path.join(ROOT, ".github", "skills", name, "SKILL.md")
+    p = os.path.join(str(HP.github()), "skills", name, "SKILL.md")
     if not os.path.exists(p):
         return ["no file %s" % p]
     t = open(p, encoding="utf-8").read()

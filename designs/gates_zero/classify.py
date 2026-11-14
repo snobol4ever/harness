@@ -9,6 +9,8 @@
 import collections, glob, os, re, sys
 H = os.path.dirname(os.path.abspath(__file__))
 S = os.path.normpath(os.path.join(H, '..', '..', 'scripts'))
+sys.path.insert(0, S)
+import harness_paths as HP
 PO = '/home/resources/postoffice'
 RUN = re.compile(r'\./scrip\b|\$\{?SCRIP\}?\b|\$\{?ROOT\}?/scrip\b|/scrip["\' ]|\bscrip --|corpus_suite_harness\.py"? (run|grade)|monitor_run\.sh|util_run_slot\.sh|lib_one_runner\.sh|'
                  r'test_smoke_|test_feature_reps|lib_ladder\.sh|run_prog|run_one\b|\$SC/scrip|scrip_bin|libscrip_rt\.so')
@@ -26,7 +28,7 @@ for t in rows:
         for ln in open(p, errors='replace'):
             if ln.startswith(('DONE-WHEN', 'PREMISE-WHEN')):
                 live.update(re.findall(r'test_gate_\w+', ln))
-mk = open(os.path.join(S, '..', '..', 'SCRIP', 'Makefile'), errors='replace').read()
+mk = open(os.path.join(str(HP.scrip()), 'Makefile'), errors='replace').read()
 out, cnt = [], collections.Counter()
 for f in sorted(glob.glob(os.path.join(S, 'test_gate_*.sh'))):
     n = os.path.basename(f)[:-3]

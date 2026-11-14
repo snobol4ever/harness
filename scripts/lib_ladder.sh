@@ -44,13 +44,13 @@ ladder_main() {
   # `SCRIP=/nonexistent/scrip ... --to 0`, which must REFUSE rc=2 and did not (hq_T 2026-09-03).
   local S4E HERE ROOT TO ONLY LIST SEL
   S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-  HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+  HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
   export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once
   SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"; T="${TIMEOUT:-20}"
   refuse() { echo "REFUSE (rc=2): $*"; exit 2; }
   [ -n "${LADDER_LANG:-}" ] && [ -n "${LADDER_SUITE:-}" ] && [ -n "${LADDER_EXT:-}" ] \
     || refuse "lib_ladder.sh sourced without LADDER_LANG/LADDER_SUITE/LADDER_EXT -- the per-language runner must set all three"
-  RUNGS_DIR="$S4E/corpus/tests/$LADDER_SUITE"; RUNGS_EXT="$LADDER_EXT"; export RUNGS_DIR RUNGS_EXT
+  RUNGS_DIR="$S4E_CORPUS/tests/$LADDER_SUITE"; RUNGS_EXT="$LADDER_EXT"; export RUNGS_DIR RUNGS_EXT
   TO=""; ONLY=""; LIST=0
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -179,8 +179,8 @@ PY
   # shape gate_stamp in lib_gate.sh already uses. ⭐ This file was the ONLY one still using the pipeline form for it.
   local _sd="" _cd=""
   [ -n "$(git -C "$ROOT" status --short 2>/dev/null)" ] && _sd="-DIRTY"
-  [ -n "$(git -C "$S4E/corpus" status --short 2>/dev/null)" ] && _cd="-DIRTY"
-  echo "LADDER $SEL: witnesses=$n modes=2 (m3 --run, m4 --compile+as+gcc) graded=$((n*2)) PASS=$pass FAIL=$fail  tree: SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo ?)$_sd corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo ?)$_cd"
+  [ -n "$(git -C "$S4E_CORPUS" status --short 2>/dev/null)" ] && _cd="-DIRTY"
+  echo "LADDER $SEL: witnesses=$n modes=2 (m3 --run, m4 --compile+as+gcc) graded=$((n*2)) PASS=$pass FAIL=$fail  tree: SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo ?)$_sd corpus=$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo ?)$_cd"
   [ "$n" -gt 0 ] || refuse "graded ZERO witnesses -- cannot measure, not a pass"
   # ⛔⭐ A RUNG DECLARED IN LADDER.tsv AND NOT BUILT IS RED, NOT ABSENT. The population comes from ALL.csv's
   # `ladder__rungNN_*` origins, so a rung nobody has written simply is not in it -- and `--to <top>` then
@@ -289,7 +289,7 @@ EOF
   # "no --to given". A provenance stamp whose reproduction line cannot reproduce it is worse than none:
   # the reader who tries it gets a refusal and reads the CELL as stale (hq_T 2026-09-13).
   _decl=$( [ -n "$_unb" ] && printf ' · declared top rung %s, %s rung(s) NOT BUILT (RED by declaration):%s' "$_dtop" "$(set -- $_unb; echo $#)" "$_unb" )
-    _cell="built rungs 0..${_top} PASS $pass/$((n*2)) FAIL $fail${_decl} (witnesses=$n · m3+m4 · test_${_ll}_ladder.sh${TO:+ --to $TO}${ONLY:+ --only $ONLY} · SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo ?) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo ?) RT_OPT=-O0)"
+    _cell="built rungs 0..${_top} PASS $pass/$((n*2)) FAIL $fail${_decl} (witnesses=$n · m3+m4 · test_${_ll}_ladder.sh${TO:+ --to $TO}${ONLY:+ --only $ONLY} · SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo ?) corpus=$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo ?) RT_OPT=-O0)"
     # ⛔⭐ A FILTER THAT MATCHES NOTHING MUST SAY SO, NOT FALL SILENT (hq_T 2026-09-13, on the cfo's
     # measured report). This grep listed the three SUCCESS shapes and nothing else, while
     # util_score_row.py's ONE-RUNNER identity refusal exits 0 (correctly -- a bookkeeping refusal must
@@ -301,7 +301,7 @@ EOF
     # CLASS, NOT THE SHAPE: widening the pattern to also match '⚠' would swallow the NEXT refusal wearing
     # a fourth prefix just as silently. An unmatched filter falls back to printing what it was given, so
     # any output this call site does not recognise is surfaced rather than dropped.
-    if _w=$(python3 "$ROOT/../harness/scripts/util_score_row.py" write --lang "$_ll" --column ladder --text "$_cell" --measurer "${S4E_SEAT:-}" 2>&1); then
+    if _w=$(python3 "$S4E_HARNESS/scripts/util_score_row.py" write --lang "$_ll" --column ladder --text "$_cell" --measurer "${S4E_SEAT:-}" 2>&1); then
       _shown=$(printf '%s\n' "$_w" | grep -E '^SCORE.md|ROW SKIPPED|^  now:' | cut -c1-200)
       if [ -n "$_shown" ]; then printf '%s\n' "$_shown"
       elif [ -n "$_w" ]; then echo "SCORE ROW: NOT WRITTEN (util_score_row.py exited 0 but wrote no row; the verdict below is unchanged):"; printf '%s\n' "$_w" | head -3 | cut -c1-200; fi

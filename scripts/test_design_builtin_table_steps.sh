@@ -22,11 +22,12 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
+. "$HERE/lib_paths.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
+SC="$S4E_SCRIP"
 WD="$HERE/../designs/builtin_table"   # the step table and ROWS0.tsv (CIO-56); the witnesses are staged into $ST by design_witness_stage
 ST=""
-BENCH="$ROOT/corpus/benchmarks"
+BENCH="$S4E_CORPUS/benchmarks"
 STEPS="$WD/STEPS.tsv"
 ROWS0="$WD/ROWS0.tsv"
 OUT=""
@@ -57,7 +58,7 @@ done
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 wext() { local w="$1"; for e in sno icn raku; do [ -f "$ST/$w.$e" ] && { echo "$e"; return 0; }; done; return 1; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: builtin-table -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses the entries builtin_table__<name> of their masters, else loose in corpus/tests/<lang>/builtin_table (refs from SPITBOL, Arizona Icon, Rakudo)"
+    echo "DESIGN-PLAN: builtin-table -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses the entries builtin_table__<name> of their masters, else loose in corpus/tests/<lang>/builtin_table (refs from SPITBOL, Arizona Icon, Rakudo)"   # one-disk: not a path
     printf '%-4s %-74s %-10s %-7s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-74s %-10s %-7s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -97,7 +98,7 @@ if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
 fi
 m3p=0; m4p=0; n=0; reds=""
 [ "$wits" = "-" ] && wits=""
-ST="$OUT/step$step/wit"; design_witness_stage builtin_table "$ST" $(allwits) || refuse "the plan's witnesses did not stage (lib_design_witness.sh: the entry builtin_table__<name> of a master, or a loose pair in corpus/tests/<lang>/builtin_table)"
+ST="$OUT/step$step/wit"; design_witness_stage builtin_table "$ST" $(allwits) || refuse "the plan's witnesses did not stage (lib_design_witness.sh: the entry builtin_table__<name> of a master, or a loose pair in corpus/tests/<lang>/builtin_table)"   # one-disk: not a path
 for w in $wits; do
     e="$(wext "$w")" || refuse "witness $w has no .sno, .icn or .raku in $ST"
     ref="$ST/$w.ref"; [ -f "$ref" ] || refuse "witness $w has no .ref in $ST (--cut)"

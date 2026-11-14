@@ -35,9 +35,10 @@
 set -u
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"
-SC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+SC="$(cd "$S4E_SCRIP" && pwd)"
 [ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$(dirname "${BASH_SOURCE[0]}")/util_batch.sh" bash "${BASH_SOURCE[0]}" "$@"
-CORPUS="${CORPUS:-$S4E/corpus}"; SBL="${SBL:-$S4A/x64/bin/sbl}"; SCRIP="${SCRIP:-$SC/scrip}"
+CORPUS="${CORPUS:-$S4E_CORPUS}"; SBL="${SBL:-$S4A/x64/bin/sbl}"; SCRIP="${SCRIP:-$SC/scrip}"
 DEMO="$CORPUS/demos"
 # ⛔ s191: SPITBOL's ABNORMAL-TERMINATION report carries ENVIRONMENT-DEPENDENT lines, and without stripping them this
 #    sweep REPORTS ITS OWN NOISE AS FLAG SENSITIVITY.  Measured: csnobol4_suite/tab.sno had its keywords uppercased
@@ -60,7 +61,7 @@ NRM='/^iters: [0-9][0-9]*$/d; /^ns: [0-9][0-9]*$/d; /^ms: [0-9][0-9]*$/d; /^exec
 # exactly the bug this row exists to kill, so failure must be loud, not quiet. Negative-tested by
 # injection (missing script, script exiting nonzero, empty output, malformed row) -- see the task's own
 # LEDGER/FINDING for receipts.
-SCORECARD_SH="$SC/../harness/scripts/scorecard_snobol4.sh"
+SCORECARD_SH="$S4E_HARNESS/scripts/scorecard_snobol4.sh"
 [ -x "$SCORECARD_SH" ] || { echo "FATAL: cannot extract SUITES -- $SCORECARD_SH missing or not executable. Refusing rather than falling back to a private copy." >&2; exit 1; }
 _sc_raw="$(SCORECARD_PRINT_SUITES=1 "$SCORECARD_SH" 2>&1)"; _sc_rc=$?
 if [ "$_sc_rc" -ne 0 ]; then echo "FATAL: scorecard_snobol4.sh SCORECARD_PRINT_SUITES=1 exited $_sc_rc -- refusing rather than falling back to a private copy. Output was:" >&2; printf '%s\n' "$_sc_raw" >&2; exit 1; fi

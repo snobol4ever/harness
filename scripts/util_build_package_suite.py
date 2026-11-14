@@ -4,7 +4,7 @@ every-vendored-package-absorbed-into-the-one-liner-or-multi-liner-python-harness
 hq_T doorbell 2026-09-04, Lon verbatim: "You make the programs run, you measure the output, make a REF
 file, and place it into a ONE-LINER or a MULTI-LINER Python test harness.").
 
-For corpus/packages/<lang>/<pkg>/, builds an ADDITIVE container beside the shipped files -- nothing in
+For packages/<lang>/<pkg>/ of the corpus, builds an ADDITIVE container beside the shipped files -- nothing in
 the package is moved or rewritten: ALL.<ext> / ALL.ref / ALL.csv, plus ALL.in (only if some entry needs
 stdin) and ALL.rc (only if some entry's correct exit code is non-zero). A shipped program not
 absorbed is named, with a reason, in ALL.omit -- absorbed + excluded always equals the shipped
@@ -20,7 +20,7 @@ agreement or disagreement with it is what grading measures, not a precondition f
 
 Six ways a shipped program is excluded rather than absorbed, each named by reason in ALL.omit:
   1. a `-INCLUDE "X"` naming a file vendored in none of the dirs searched: the package dir, the source's own dir, and
-     for SNOBOL4 the grader's include dir (corpus/include, the SNO_LIB the harness grades under) -- a corpus completeness
+     for SNOBOL4 the grader's include dir (include/ of the corpus, the SNO_LIB the harness grades under) -- a corpus completeness
      gap, not gradable here; the exclusion reason names the dirs it searched, never "anywhere")
   2. the oracle itself cannot produce ground truth: crashes (signal), hangs past the timeout, or dies
      gracefully (SPITBOL's own "ERROR nnn -- ... / in statement N" fatal-report shape, ported from
@@ -274,7 +274,7 @@ def read_contract(pkg_dir):
     graded by the harness's compile-refusal arm (harness 1764ac3c), instead of excluded before any run. Each key lifts exactly its one exclusion; an oracle
     crash, a hang, an empty answer or a two-run difference excludes as before.
     ⭐ CIO-22 D (the coo 2026-11-10, on the cio's design; CIO-15 d revised): `units<TAB>generated` with `generator<TAB><module>` -- a per-goal
-    suite (INRIA's goals, Logtalk's cases) is a container of GENERATED programs: the module (harness/scripts/<module>.py) yields each case of the
+    suite (INRIA's goals, Logtalk's cases) is a container of GENERATED programs: the module (scripts/<module>.py of the harness) yields each case of the
     package's own table and the builder runs no oracle (see build_generated)."""
     out = {"argv": "", "stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": ""}
     cf = pkg_dir / "CONTRACT.tsv"
@@ -422,10 +422,10 @@ def read_oracle_runs(pkg_dir):
 
 
 def _load_generator(name):
-    """The generator module a units=generated contract names: harness/scripts/<name>.py (one subdirectory allowed, for a gate's fixture),
+    """The generator module a units=generated contract names: scripts/<name>.py of the harness (one subdirectory allowed, for a gate's fixture),
     exposing cases(pkg_dir)."""
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(/[A-Za-z_][A-Za-z0-9_]*)?", name or ""):
-        h.refuse(f"generator {name!r} is not a module name under harness/scripts (letters, digits, _ and one /)")
+        h.refuse(f"generator {name!r} is not a module name under the harness scripts dir (letters, digits, _ and one /)")
     gp = Path(HERE) / f"{name}.py"
     if not gp.is_file():
         h.refuse(f"generator {name!r}: no {gp}")

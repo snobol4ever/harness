@@ -13,12 +13,12 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25
 # exactly; the intercept is the engine's own startup and is not this bar's business. Linearity: slope(n,2n) vs slope(2n,4n) within
 # LIN_TOL percent, else the reading says NONLINEAR and the bar refuses (rc 2) rather than grade a curve as a line.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 refuse() { echo "REFUSE(2) bench_prolog_ir_bar: $*" >&2; exit 2; }
 [ "${1:-}" = kernel ] && [ -n "${2:-}" ] || refuse "usage: bench_prolog_ir_bar.sh kernel K [gplc|gnu|swi] [BAR]"
 K="$2"; RIVAL="${3:-gplc}"; BAR="${4:-1.0}"; LIN_TOL="${LIN_TOL:-2}"; TARGET_IR="${TARGET_IR:-60000000}"
 case "$RIVAL" in gplc|gnu|swi) ;; *) refuse "rival must be gplc, gnu or swi";; esac
-SRC="$S4E/corpus/benchmarks/prolog/bench/$K.pl"; [ -f "$SRC" ] || refuse "no kernel $SRC"
+SRC="$S4E_CORPUS/benchmarks/prolog/bench/$K.pl"; [ -f "$SRC" ] || refuse "no kernel $SRC"
 SCRIP_BIN="${SCRIP:-$ROOT/scrip}"; RT_DIR="${RT_DIR:-$ROOT/out}"; [ -x "$SCRIP_BIN" ] || refuse "scrip not built at $SCRIP_BIN"
 . "$HERE/lib_ir_measure.sh" 2>/dev/null || refuse "cannot load lib_ir_measure.sh"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || refuse "cannot load lib_oracle_flags.sh"

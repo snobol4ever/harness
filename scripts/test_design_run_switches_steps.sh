@@ -9,6 +9,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
+. "$HERE/lib_paths.sh"
 STEPS="$HERE/../designs/run_switches/STEPS.tsv"
 refuse() { echo "REFUSE(2) [test_design_run_switches_steps]: $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
@@ -33,7 +34,7 @@ fi
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"
 [ -n "$slug" ] || refuse "no step $step in $STEPS"
 cd "$S4E" || refuse "cannot enter $S4E"
-case "$step" in 1|3|6|7|8|9|10|11) [ -n "${SCRIP_BIN:-}" ] || bash "$HERE/util_require_fresh.sh" --gate test_design_run_switches_steps "$S4E/SCRIP/scrip" "$S4E/SCRIP/out/libscrip_rt.so" || exit 2 ;; esac
+case "$step" in 1|3|6|7|8|9|10|11) [ -n "${SCRIP_BIN:-}" ] || bash "$HERE/util_require_fresh.sh" --gate test_design_run_switches_steps "$S4E_SCRIP/scrip" "$S4E_SCRIP/out/libscrip_rt.so" || exit 2 ;; esac
 mkdir -p "/tmp/s4e/${S4E_SEAT:-probe}" || refuse "cannot make the scratch directory"
 out="$(mktemp "/tmp/s4e/${S4E_SEAT:-probe}/runsw_step.XXXXXX")" || refuse "mktemp failed"
 S4E_HOME="$S4E" timeout -k 5 900 bash -c "$probe" > "$out" 2>&1; rc=$?

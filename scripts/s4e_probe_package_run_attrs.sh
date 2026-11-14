@@ -4,7 +4,7 @@
 # ALL.<kind> root files of CIO-132 (1) to (4), deleting the sidecars from the copy, so only the root files can answer; the live package is never written.
 # rc 0 GREEN, rc 1 RED (naming what is red), rc 2 could not measure.
 set -uo pipefail
-N="${1:-}"; ROOT="$PWD"; PKG="$ROOT/corpus/packages/icon/ipl"; H="$ROOT/harness/scripts"
+N="${1:-}"; ROOT="$PWD"; . "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"; PKG="$S4E_CORPUS/packages/icon/ipl"; H="$S4E_HARNESS/scripts"
 refuse() { echo "REFUSE(2) [s4e_probe_package_run_attrs $N]: $*"; exit 2; }
 red() { echo "RED [s4e_probe_package_run_attrs $N]: $*"; exit 1; }
 green() { echo "GREEN [s4e_probe_package_run_attrs $N]: $*"; exit 0; }
@@ -37,7 +37,7 @@ PYEOF
 }
 case "$N" in
 1)
-    [ -f "$ROOT/harness/designs/package_run_attrs/STEPS.tsv" ] || red "no step table"
+    [ -f "$S4E_HARNESS/designs/package_run_attrs/STEPS.tsv" ] || red "no step table"
     out="$(bash "$H/test_design_package_run_attrs_steps.sh" --list 2>&1)" || red "the harness --list failed: $(printf '%s' "$out" | tail -1)"
     printf '%s' "$out" | grep -q '^DESIGN-PLAN: package-run-attrs -- 7 steps' || red "the harness does not list the seven steps"
     green "the step table, the harness and this probe stand" ;;
@@ -217,8 +217,8 @@ PYEOF
     [ -z "$bad" ] || red "the census does not read as INDEX or PART:$bad"
     green "the census reads the attribute files as INDEX and the beside folders as PART" ;;
 7)
-    [ -f "$H/util_package_run_attrs.py" ] || red "no harness/scripts/util_package_run_attrs.py"
-    python3 "$H/util_package_run_attrs.py" --check "$ROOT/corpus/packages/icon/ipl"; rc=$?
+    [ -f "$H/util_package_run_attrs.py" ] || red "no harness/scripts/util_package_run_attrs.py"   # one-disk: not a path
+    python3 "$H/util_package_run_attrs.py" --check "$PKG"; rc=$?
     case "$rc" in 0) green "no attribute sidecar stands and every deleted one has its fact at the root";; 2) refuse "the --check could not measure";; *) red "the --check names what is not moved";; esac ;;
 *) refuse "usage: s4e_probe_package_run_attrs.sh 1-7" ;;
 esac

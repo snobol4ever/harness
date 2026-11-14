@@ -33,10 +33,11 @@ set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_icn_rundir.sh" || { echo "⛔ REFUSES rc=2: cannot load lib_icn_rundir.sh -- THE ONE run-directory contract reader" >&2; exit 2; }
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-RT_DIR="$(cd "$HERE/../../SCRIP" && pwd)/out"
+. "$HERE/lib_paths.sh"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+RT_DIR="$(cd "$S4E_SCRIP" && pwd)/out"
 RT_SO="$RT_DIR/libscrip_rt.so"
-CORPUS="${CORPUS:-$S4E/corpus/tests/icon}"
+CORPUS="${CORPUS:-$S4E_CORPUS/tests/icon}"
 RUNG=""
 
 while [[ $# -gt 0 ]]; do

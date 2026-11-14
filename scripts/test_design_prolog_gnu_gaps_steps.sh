@@ -21,10 +21,11 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
+. "$HERE/lib_paths.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
-WD="$ROOT/harness/fixtures/prolog_gnu_gaps"   # gg_listing_0, the one witness no entry can hold (its answer names its own absolute path), moved from corpus/tests/prolog/gnu_gaps (the cfo 2026-11-12, row tests-consolidation-finish-cfo)
-STEPS="$ROOT/harness/designs/prolog_gnu_gaps/STEPS.tsv"
+SC="$S4E_SCRIP"
+WD="$S4E_HARNESS/fixtures/prolog_gnu_gaps"   # gg_listing_0, the one witness no entry can hold (its answer names its own absolute path), moved from corpus/tests/prolog/gnu_gaps (the cfo 2026-11-12, row tests-consolidation-finish-cfo)   # one-disk: not a path
+STEPS="$S4E_HARNESS/designs/prolog_gnu_gaps/STEPS.tsv"
 . "$HERE/lib_design_witness.sh"
 OUT="/tmp/s4e/${S4E_SEAT:-cto}/design-prolog-gnu-gaps"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }

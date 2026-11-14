@@ -12,10 +12,10 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # board and the directory are gone (R-567); see the note at the foot of this file. What remains here is --two-number (the
 # 21-kernel bucket board) and --measured-from (its rule check), neither of which writes anything.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/prolog/bench}"
-NTSV="${NTSV:-$S4E/corpus/benchmarks/prolog/fixed-iter-n.tsv}"   # the 21-kernel universe, since vanroy/ retired (R-567)
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/prolog/bench}"
+NTSV="${NTSV:-$S4E_CORPUS/benchmarks/prolog/fixed-iter-n.tsv}"   # the 21-kernel universe, since vanroy/ retired (R-567)
 T="${TIMEOUT:-240}"; MIN_WALL_MS="${MIN_WALL_MS:-300}"; NMAX="${NMAX:-65536}"
 # ⭐ THE TWO AUTHORITIES, SOURCED NOT REIMPLEMENTED: lib_oracle_flags.sh owns WHICH BINARY IS THE RIVAL
 # (swipl_bin/gprolog_bin, loud rc=2 refusal when absent) and lib_perf_fmt.sh owns HOW A MULTIPLE IS PRINTED
@@ -127,7 +127,7 @@ two_number_board() {
   [ -f "$RT/libscrip_rt.so" ] || { echo "⛔ REFUSED-TO-GRADE (rc=2): libscrip_rt.so missing"; return 2; }
   # The population is PROLOG_DIR and BENCH_DIR, as in the three sibling angles (the coo 2026-10-03: this read $S4E's corpus alone while
   # NTSV was honoured, so a scratch kernel set named its kernels from one tree and their sources from another).
-  TN_PRO="${PROLOG_DIR:-$S4E/corpus/benchmarks/prolog}"; TN_BENCH="${BENCH_DIR:-$TN_PRO/bench}"; TN_T="${TN_T:-25}"
+  TN_PRO="${PROLOG_DIR:-$S4E_CORPUS/benchmarks/prolog}"; TN_BENCH="${BENCH_DIR:-$TN_PRO/bench}"; TN_T="${TN_T:-25}"
   local TRI EXC; TRI="$(ls -1t "$TN_PRO"/triangulation-*.tsv 2>/dev/null | head -1)"; EXC="$TN_PRO/EXCLUDED.tsv"
   [ -s "$NTSV" ] || { echo "⛔ REFUSED-TO-GRADE (rc=2): committed-N table missing or empty: $NTSV -- the 21-kernel universe has no source"; return 2; }
   [ -n "$TRI" ] || { echo "⛔ REFUSED-TO-GRADE (rc=2): no triangulation-*.tsv -- MEASURED has no source"; return 2; }
@@ -175,7 +175,7 @@ two_number_board() {
   echo "   SCRIP's own m3/m4 rows are UNPROVEN by a known compiler defect (PZ-4), not by disagreement, so they are"
   echo "   printed by the triangulator but never gate promotion -- gating on them would pin MEASURED at 0 forever."
   echo "SHARED AXES: instrument=wall clock · RT_OPT=-O0 · mode=m3 · basis printed PER ROW (SELF|FLOOR, never mixed)"
-  echo "TREE: SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null) triangulation=$(basename "$TRI") kernels=$NK"
+  echo "TREE: SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null) corpus=$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null) triangulation=$(basename "$TRI") kernels=$NK"
   echo
   printf '%-9s %-13s %-6s %11s %11s %11s   %s\n' BUCKET KERNEL BASIS SCRIP_us GNU_us SWI_us NOTE
   local k src bucket basis note rc us_s us_g us_w n_meas=0 n_decl=0 n_ref=0 n_rows=0
@@ -258,6 +258,6 @@ if [ "$TWO_NUMBER" -eq 1 ]; then two_number_board; exit $?; fi
     echo "⛔ REFUSED (rc=2): the legacy per-iteration board is RETIRED (R-567) -- it wrote the checked-in wrapped form."
     echo "   Use one of the generating angles instead:"
     echo "     angle 1  bash ../harness/scripts/test_bench_prolog_timed.sh      (live doubling search for N)"
-    echo "     angle 2  bash ../harness/scripts/bench_prolog_fixed_iter.sh      (committed N, corpus/benchmarks/prolog/fixed-iter-n.tsv)"
+    echo "     angle 2  bash ../harness/scripts/bench_prolog_fixed_iter.sh      (committed N, corpus/benchmarks/prolog/fixed-iter-n.tsv)"   # one-disk: not a path
     echo "   This script still serves --two-number (the bucket board) and --measured-from <tri.tsv> (the rule check)."
     exit 2; }

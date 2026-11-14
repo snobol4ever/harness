@@ -16,7 +16,7 @@
 import os, re, subprocess, sys, time
 PO = os.environ.get('S4E_POST', '/home/resources/postoffice')
 PFX = 'cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && '
-PFXS = 'cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}/SCRIP" && '
+PFXS = 'cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}/SCRIP" && '   # one-disk: not a path
 SRC = '. "${S4E_HARNESS:-/home/harness}/scripts/lib_paths.sh" && '
 VAR = {'SCRIP': 'S4E_SCRIP', 'harness': 'S4E_HARNESS', 'corpus': 'S4E_CORPUS', '.github': 'S4E_GITHUB'}
 BOUND = set(' \t"(=;|&<>:`\n')
@@ -169,18 +169,18 @@ def check():
 
 def selftest():
     P = PFX; S = SRC; T = [
-        (P + 'bash harness/scripts/test_x.sh', P + S + 'bash $S4E_HARNESS/scripts/test_x.sh'),
+        (P + 'bash harness/scripts/test_x.sh', P + S + 'bash $S4E_HARNESS/scripts/test_x.sh'),   # one-disk: not a path
         (P + 'cd SCRIP && ./scrip a.sno', P + S + 'cd "$S4E_SCRIP" && ./scrip a.sno'),
-        (P + 'o="$(SCRIP/scrip corpus/x.icn)"; [ "$o" = 1 ]', P + S + 'o="$($S4E_SCRIP/scrip $S4E_CORPUS/x.icn)"; [ "$o" = 1 ]'),
-        (P + "grep -q 'corpus/tests' f", P + "grep -q 'corpus/tests' f"),
+        (P + 'o="$(SCRIP/scrip corpus/x.icn)"; [ "$o" = 1 ]', P + S + 'o="$($S4E_SCRIP/scrip $S4E_CORPUS/x.icn)"; [ "$o" = 1 ]'),   # one-disk: not a path
+        (P + "grep -q 'corpus/tests' f", P + "grep -q 'corpus/tests' f"),   # one-disk: not a path
         (P + 'test -f /home/claude_cio/harness/scripts/x', P + 'test -f /home/claude_cio/harness/scripts/x'),
         (PFXS + 'P=../corpus/packages/icon && ./scrip $P/a.icn', P + S + 'cd "$S4E_SCRIP" && P=$S4E_CORPUS/packages/icon && ./scrip $P/a.icn'),
-        (P + 'cd "$S4E_HOME/SCRIP" && make', P + S + 'cd "$S4E_SCRIP" && make'),
+        (P + 'cd "$S4E_HOME/SCRIP" && make', P + S + 'cd "$S4E_SCRIP" && make'),   # one-disk: not a path
         (P + 'test -x "$S4E_HOME"/SCRIP/scrip', P + S + 'test -x "$S4E_SCRIP"/scrip'),
         (P + 'git -C corpus log -1', P + S + 'git -C "$S4E_CORPUS" log -1'),
         (P + 'echo "no harness here"', P + 'echo "no harness here"'),
-        (P + 'grep -c x .github/skills/a.md', P + S + 'grep -c x $S4E_GITHUB/skills/a.md'),
-        (P + 'o="$(cd corpus/a/b/c && ../../../../SCRIP/scrip t.icn)"', P + S + 'o="$(cd $S4E_CORPUS/a/b/c && $S4E_SCRIP/scrip t.icn)"'),
+        (P + 'grep -c x .github/skills/a.md', P + S + 'grep -c x $S4E_GITHUB/skills/a.md'),   # one-disk: not a path
+        (P + 'o="$(cd corpus/a/b/c && ../../../../SCRIP/scrip t.icn)"', P + S + 'o="$(cd $S4E_CORPUS/a/b/c && $S4E_SCRIP/scrip t.icn)"'),   # one-disk: not a path
         (P + 'cd corpus && ../SCRIP/scrip t.sno', P + S + 'cd "$S4E_CORPUS" && $S4E_SCRIP/scrip t.sno'),
     ]
     why = [f'{a!r} -> {rewrite(a)[0]!r}, want {b!r}' for a, b in T if rewrite(a)[0] != b]

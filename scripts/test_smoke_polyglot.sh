@@ -6,13 +6,13 @@
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude Fable 5  DATE: 2026-07-04
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
-S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"   # worktree trap: a hardcoded ../../corpus ignored S4E_HOME, so a scratch
+S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"   # worktree trap: a hardcoded ../../corpus ignored S4E_HOME, so a scratch   # one-disk: not a path
                                                  # worktree (SCRIP checked out elsewhere, corpus/.github NOT its siblings)
                                                  # silently graded against whatever ../../corpus happened to resolve to
                                                  # -- a false regression, not a real one, for anyone bisecting there.
 SCRIP="${S4E_SCRIP}/scrip"
 OUTDIR="${S4E_SCRIP}/out"
-TESTD="$HERE/../fixtures/smoke_polyglot"   # the three-file polyglot program and its EXCLUDED.tsv, beside this smoke (the cfo 2026-11-12, corpus/tests/scrip_test consolidated)
+TESTD="$HERE/../fixtures/smoke_polyglot"   # the three-file polyglot program and its EXCLUDED.tsv, beside this smoke (the cfo 2026-11-12, corpus/tests/scrip_test consolidated)   # one-disk: not a path
 P3=0; F3=0; P4=0; F4=0
 . "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timeout is a TIMEOUT; under overload the smoke refuses
 EXPECTED=$'TRI: mainline alive\nTRI: DOUBLE(21) = 42'

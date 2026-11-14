@@ -42,18 +42,19 @@
 #   /tmp/sb6_scr.err   scrip stderr
 #   /tmp/sb6_spl.out   oracle stdout (only if --diff)
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.   # one-disk: not a path
 
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 
 INPUT=""
 MODE="--run"
 TIMEOUT=30
 DO_DIFF=0
 QUIET=0
-CORPUS="${CORPUS:-$S4E/corpus}"
+CORPUS="${CORPUS:-$S4E_CORPUS}"
 ORACLE="${ORACLE:-$S4A/x64/bin/sbl}"
 SCRIP="${SCRIP:-$ROOT/scrip}"
 

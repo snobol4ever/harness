@@ -11,13 +11,13 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #                      BAR_MODE=m3 grades mode 3 instead of mode 4.
 # EXIT 0 at or above the bar (GREEN), 1 below it (RED, the row is open), 2 REFUSED (no binary, no rakudo, no citable reading).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 refuse() { echo "⛔ bench_raku_bar REFUSE(2): $*"; exit 2; }
 [ $# -ge 3 ] && [ "$1" = kernel ] || { echo "usage: $0 kernel <stem> <bar>"; exit 2; }
 NAME=$2; BAR=$3; MODE="${BAR_MODE:-m4}"
 [ -x "$ROOT/scrip" ] || refuse "no ./scrip (make first)"; . "$HERE/lib_oracle_flags.sh" 2>/dev/null || refuse "cannot load lib_oracle_flags.sh"; rakudo_bin > /dev/null || refuse "rakudo absent"
 T=$(mktemp -d) || refuse "mktemp"; trap 'rm -rf "$T"' EXIT
-( cd "$ROOT" && KERNELS="$NAME" OUT_TSV="$T/w.tsv" TRI_TSV="$T/t.tsv" CHECK_SHAPE=1 bash ../harness/scripts/bench_triangulate_raku.sh ) > "$T/log" 2>&1
+( cd "$ROOT" && KERNELS="$NAME" OUT_TSV="$T/w.tsv" TRI_TSV="$T/t.tsv" CHECK_SHAPE=1 bash "$S4E_HARNESS/scripts/bench_triangulate_raku.sh" ) > "$T/log" 2>&1
 [ -s "$T/w.tsv" ] || { tail -4 "$T/log" | cut -c1-160; refuse "the harness wrote no work-time record for $NAME"; }
 read -r rw rv rc <<<"$(awk -F'\t' -v k="$NAME" '$1==k && $2=="rakudo" {print $4, $9, $13}' "$T/w.tsv" | head -1)"
 read -r mw mv mc <<<"$(awk -F'\t' -v k="$NAME" -v m="$MODE" '$1==k && $2==m {print $4, $9, $13}' "$T/w.tsv" | head -1)"
