@@ -78,6 +78,9 @@ mine_pid() {  # mine_pid <pid> -> 0 when the pid carries one of this seat's hand
   h="$(tr '\0' '\n' < "/proc/$1/environ" 2>/dev/null | sed -n 's/^S4E_BG_HANDLE=//p')"
   [ -n "$h" ] && [ -f "$bgdir/$h.handle" ] && { echo "handle $h of $me_seat"; return 0; }
   cwd=$(readlink -f "/proc/$1/cwd" 2>/dev/null); case "$cwd" in "$S4E"|"$S4E"/*) echo "cwd $cwd under $S4E"; return 0 ;; esac
+  # THE SEAT'S OWN SCOPE (the coo 2026-11-14, on officer_05's measurement: a seat's sandbox cannot read /proc/<pid>/environ or cwd, so all 6 of its orphaned reduce runs read
+  # "not mine" and were killed by hand; /proc/<pid>/cgroup is world-readable there): a pid in s4e-seat-<seat>.scope or in one of the seat's s4e-mem-<seat>-* scopes is the seat's
+  [ -n "$me_seat" ] && grep -qE "/(s4e-seat-${me_seat}\.scope|s4e-mem-${me_seat}-[^/]*\.scope)(/|\$)" "/proc/$1/cgroup" 2>/dev/null && { echo "cgroup $(sed -n 's|^0::||p' "/proc/$1/cgroup" | sed 's|.*/||') of $me_seat"; return 0; }
   echo "not mine: no handle of $me_seat in its environment${h:+ (handle $h is not under $bgdir)} and cwd ${cwd:-?} is not under $S4E"; return 1; }
 kill_one() {  # kill_one <pid> <why>: TERM, then KILL after 3 s; the ledger line; prints the KILL-MINE line
   local pid="$1" cwd cmd i; cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null); cmd=$( (tr '\0' ' ' < "/proc/$pid/cmdline") 2>/dev/null | sed 's/[[:space:]]*$//')
@@ -98,7 +101,14 @@ probe() {
     case "$c" in /home/claude_*) case "$c" in "$S4E"|"$S4E"/*) ;; *) echo "${f#/proc/}" | cut -d/ -f1; break ;; esac ;; esac; done)"
   if [ -n "$other" ]; then o="$(bash "${BASH_SOURCE[0]}" --pid "$other" 2>&1)"; [ $? = 2 ] && [ -d "/proc/$other" ] || why="$why another root's pid $other was not refused rc 2 [$o];"; fi
   o="$(bash "${BASH_SOURCE[0]}" --handle "no-such-handle-$$" 2>&1)"; [ $? = 2 ] || why="$why an unknown handle was not refused rc 2 [$o];"
-  [ -z "$why" ] && { echo "KILL-MINE probe ok handle=$id own_pid=$pid killed=yes foreign_refused=pid1${other:+,pid$other} unknown_handle_refused=yes root=$S4E"; exit 0; }
+  # the scope arm: a run in the seat's own s4e-mem-<seat>-* scope, its cwd / and no handle in its environment, is the seat's (the only test a sandboxed seat can read)
+  ( cd / && exec env -i PATH=/usr/bin:/bin HOME="$HOME" XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}" \
+      systemd-run --user --scope --quiet --slice=s4e-batch.slice --unit="s4e-mem-${me_seat}-killprobe-$$" sleep 600 ) >/dev/null 2>&1 &
+  local sp="" bp=$! i; for i in $(seq 1 20); do grep -q "s4e-mem-${me_seat}-killprobe-$$" "/proc/$bp/cgroup" 2>/dev/null && { sp="$bp"; break; }; sleep 0.5; done
+  if [ -z "$sp" ]; then why="$why the scope arm could not start a run in s4e-mem-${me_seat}-killprobe-$$;"
+  else o="$(bash "${BASH_SOURCE[0]}" --pid "$sp" 2>&1)"; printf '%s\n' "$o" | grep -q "^KILL-MINE pid=$sp .*cgroup s4e-mem-${me_seat}-killprobe" || why="$why a run in the seat's own scope (cwd /, no handle) was not killed as the seat's [$o];"
+    [ -d "/proc/$sp" ] && { kill -KILL "$sp" 2>/dev/null; why="$why the scope arm's pid $sp is still alive;"; }; fi
+  [ -z "$why" ] && { echo "KILL-MINE probe ok handle=$id own_pid=$pid killed=yes foreign_refused=pid1${other:+,pid$other} unknown_handle_refused=yes own_scope_killed=yes root=$S4E"; exit 0; }
   echo "KILL-MINE PROBE RED:$why"; exit 1; }
 explain_only=""
 named_root=""
