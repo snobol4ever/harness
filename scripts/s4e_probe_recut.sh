@@ -75,11 +75,13 @@ cmp -s "$b" "$w/after.task.md" || why="$why an unknown topic changed the baton;"
 # 5. a baton whose ## NEXT repeats the criterion (the mint writes it twice): the header alone is re-cut rc 0, the NEXT line unchanged
 t2="$t-next"; b2="$po/tasks/$t2.task.md"
 printf '4\t%s\tprobe_owner\tRETIRED:criterion-refused-3-sweeps-probe\n' "$t2" >> "$po/QUEUE.tsv"
-printf '# TASK %s\nGOAL: plant\nDONE-WHEN: no-such-command-recut-probe --arg\nLINKS: minted via `mint` by probe_owner, %s\n## NEXT\nprobe\nDONE-WHEN: no-such-command-recut-probe --arg\n## QA\n## LEDGER\n- [probe_owner] minted\n' "$t2" "$now" > "$b2"
+printf '# TASK %s\nGOAL: plant\nDONE-WHEN: no-such-command-recut-probe --arg\nLINKS: minted via `mint` by probe_owner, %s\n## NEXT\nprobe\nDONE-WHEN: no-such-command-recut-probe --arg\nPREMISE-WHEN: true\n## QA\n## LEDGER\n- [probe_owner] minted\n' "$t2" "$now" > "$b2"
 printf 'DONE-WHEN: %s\n' "$new2" | bus recut "$t2" --stdin > "$w/out_next" 2>&1; rc5=$?
 [ "$rc5" = 0 ] || why="$why a baton whose NEXT repeats the DONE-WHEN was refused rc $rc5 ($(tail -1 "$w/out_next"));"
 [ "$(sed '/^## NEXT/q' "$b2" | grep -cxF "DONE-WHEN: $new2")" = 1 ] || why="$why the header DONE-WHEN was not re-cut;"
-[ "$(sed -n '/^## NEXT/,$p' "$b2" | grep -cxF 'DONE-WHEN: no-such-command-recut-probe --arg')" = 1 ] || why="$why the NEXT DONE-WHEN line was touched;"
+[ "$(sed -n '/^## NEXT/,$p' "$b2" | grep -cxF 'DONE-WHEN-BODY: no-such-command-recut-probe --arg')" = 1 ] || why="$why the NEXT DONE-WHEN copy was not relabelled DONE-WHEN-BODY with its text kept;"
+[ "$(sed -n '/^## NEXT/,$p' "$b2" | grep -cxF 'PREMISE-WHEN-BODY: true')" = 1 ] && [ "$(grep -c '^PREMISE-WHEN:' "$b2")" = 0 ] || why="$why the NEXT PREMISE-WHEN copy was not relabelled PREMISE-WHEN-BODY;"
+[ "$(grep -c '^DONE-WHEN:' "$b2")" = 1 ] || why="$why the re-cut baton carries $(grep -c '^DONE-WHEN:' "$b2") column-0 DONE-WHEN lines, not one (done refuses a second);"
 [ -n "$why" ] || [ "$pw" = 1 ] || why="$why the premise path was not exercised;"
 
 if [ -z "$why" ]; then

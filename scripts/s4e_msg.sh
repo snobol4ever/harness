@@ -3096,6 +3096,8 @@ s4e_recut_write() {   # <topic> --stdin  |  <topic> <body words...>
             if (ENVIRON["C_PW"] == "1") { print "PREMISE-WHEN: " ENVIRON["B_PW"]; skip = 1 } else print
             next }
         /^## / && !pd && ENVIRON["C_PW"] == "1" { pd = 1; print "PREMISE-WHEN: " ENVIRON["B_PW"]; print; next }
+        hd && /^DONE-WHEN:/ { sub(/^DONE-WHEN:/, "DONE-WHEN-BODY:"); print; next }   # ⛔ A COPY BELOW THE HEADER IS RELABELLED (the coo 2026-11-13 19:5x CST, MEASURED: step 5 re-cut 135 headers and left their NEXT copies, which done then refused as a SECOND, different contract): the text stays, nothing reads it as a criterion
+        hd && /^PREMISE-WHEN:/ { sub(/^PREMISE-WHEN:/, "PREMISE-WHEN-BODY:"); print; next }
         { print }' "$_b" > "$_tmp" \
     && L="$_rl" awk 'function out() { if (!done) print ENVIRON["L"]; done = 1 } /^## / && led { out(); led = 0 } { print } /^## LEDGER/ { led = 1 } END { if (led) out() }' "$_tmp" > "$_tmp.l" \
     && mv "$_tmp.l" "$_tmp" && mv "$_tmp" "$_b" \
