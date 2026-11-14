@@ -692,7 +692,7 @@ def run_xsb_gentest(xsb_bin, upstream, run, timeout):
         return kind, (tp.read_bytes() if tp.is_file() else None), err, rc
 
 
-def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, side_env=None):
+def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, side_env=None, run_cwd=None):
     """THE ICON ORACLE AS THE ICON PACKAGES' OWN HARNESS RUNS IT, for a package whose CONTRACT.tsv merges stderr (the coo
     2026-10-01, measured on jcon_tests): `icont -s -o <stem> <name>` in the file's own directory, its stderr kept apart, then
     `iconx <stem> args < in > out 2>&1` (iconx handed the bare icode name, so &progname reads the stem; exec'd through PATH
@@ -714,10 +714,11 @@ def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=N
     r = subprocess.run(["bash", "-c", f". '{lib}' && iconx_bin"], capture_output=True, text=True)
     if r.returncode != 0 or not r.stdout.strip():
         refuse(f"lib_oracle_flags.sh refused (iconx_bin): {r.stderr.strip()}")
-    _out_files_clear(d, out_files)
-    kind, out, _err, rc = _run_raw([r.stdout.strip(), stem] + [str(a) for a in (prog_args or [])], timeout, cwd=str(d),
+    _rd = Path(run_cwd) if run_cwd else d                           # NAME.alone (alone_dir_for_source): iconx runs there, handed the icode by its full path
+    _out_files_clear(_rd, out_files)
+    kind, out, _err, rc = _run_raw([r.stdout.strip(), (str((d / stem).resolve()) if run_cwd else stem)] + [str(a) for a in (prog_args or [])], timeout, cwd=str(_rd),
                                    env=(dict(os.environ, **side_env) if side_env else None), stdin_text=stdin_text, merge_stderr=True)
-    out = _out_files_append(out, d, out_files) if out_files else out
+    out = _out_files_append(out, _rd, out_files) if out_files else out
     if kind == "RAN" and rc is not None and rc < 0:
         kind = "CRASH"
     return out.decode("utf-8", "replace").rstrip("\n"), rc, kind
@@ -4393,10 +4394,42 @@ def side_env_for_source(src, run_dir):
     return out
 
 
+def alone_dir_for_source(src, parent):
+    """A PROGRAM THAT DECLARES NAME.alone RUNS IN A DIRECTORY OF ITS OWN HOLDING ONLY ITS FIXTURES (officer_06 2026-11-14, row
+    ipl-the-grader-runs-an-alone-program-in-a-directory-of-its-own; built by the cfo): the one reader ipl_alone_declared of
+    lib_icon_ipl_isolation.sh answers (0 declared, 1 absent, 2 malformed, which refuses here rc 2), and the directory is PARENT/.alone with
+    NAME.fixtures/ staged into it, as ipl_isolation_run made its own ($work/.alone). Returns the directory, or None when the source declares
+    nothing. The grader's entry and the builder's oracle cut both call this, so the ref and the grade list the same files. MEASURED before it:
+    progs/gcomp prints the files of its current directory; its container section was cut in the package's progs folder, 1,000 names, where
+    the ref beside the source reads .hidden, alpha.txt and gamma.dat. NAME.head and NAME.pty are not applied yet: a source that carries one
+    refuses, rc 2, never a run without it (none is in a container today; progs/noise carries the one .head). NAME.mask is the line mask
+    this grader already reads (ALL.mask, or the stem's own beside the case), so it is no refusal."""
+    src = Path(src)
+    if src.suffix != ".icn":
+        return None
+    stem = str(src)[:-len(".icn")]
+    for _x in (".head", ".pty"):
+        if Path(stem + _x).exists():
+            refuse(f"{src.name}: it declares {src.stem}{_x} beside {src}, a run sidecar this grader does not apply yet -- never a run without it")
+    if not Path(stem + ".alone").is_file():
+        return None
+    lib = HARNESS_SCRIPTS / "lib_icon_ipl_isolation.sh"
+    r = subprocess.run(["bash", "-c", '. "$1" && ipl_alone_declared "$2"', "-", str(lib), str(src)], stdin=subprocess.DEVNULL, capture_output=True)
+    if r.returncode == 1:
+        return None
+    if r.returncode != 0:
+        refuse(f"{src.name}: ipl_alone_declared refused {src.stem}.alone beside {src} (rc {r.returncode}): {r.stderr.decode('utf-8', 'replace').strip()[:300]}")
+    d = Path(parent) / ".alone"
+    d.mkdir(parents=True, exist_ok=True)
+    stage_fixtures(src.parent, src.stem, d)
+    return d
+
+
 def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=None):
     with tempfile.TemporaryDirectory(dir=tmp_root) as td:
         cand, expected = stage_entry(entry, td, ext, companion_dir)
-        _side = side_env_of(entry, companion_dir, cand.parent, ext)
+        _alone = alone_dir_for_source(Path(companion_dir) / f"{entry.name}{ext}", td) if (ext == ".icn" and companion_dir) else None
+        _side = side_env_of(entry, companion_dir, _alone or cand.parent, ext)
         _ex = getattr(entry, 'expect', None)
         _want = _ex.rc if (_ex is not None and _ex.ending == "EXIT" and _ex.rc is not None) else getattr(entry, 'want_rc', 0)
         _rc_dir = (Path(companion_dir) / entry.cwd) if (getattr(entry, "cwd", None) and companion_dir is not None) else None
@@ -4410,6 +4443,8 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
             shutil.copytree(_rc_dir, _scratch, copy_function=_copy2_own)
             _rc_dir, _origin = _scratch, None
         _src = str(_origin.resolve()) if (_origin is not None and _origin.is_file()) else None
+        if _alone is not None:
+            _rc_dir = _alone                                        # NAME.alone: the run directory holds its fixtures alone; the source is named by its full path
         _sf = None
         if getattr(entry, "grader", None) == "swi-cases":
             # ⭐ CIO-21 (three files): a swi-cases entry runs under the one launch as THREE FILES, the plunit shim, the entry's origin file and a

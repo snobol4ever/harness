@@ -880,8 +880,11 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     # NAME.env, NAME.pin and NAME.shims/ beside the source reach the oracle's run through the grader's own reader, h.side_env_for_source,
                     # so one reader serves the cut and the grade. MEASURED before it: progs/parens (randomize(), pinned by parens.pin) was cut bare, a
                     # random draw no run could match; under the pin iconx answers the ref beside the source twice over.
+                    # ⭐ AND IN A DIRECTORY OF ITS OWN WHEN NAME.alone SAYS SO (row ipl-the-grader-runs-an-alone-program-in-a-directory-of-its-own): the grader's
+                    # h.alone_dir_for_source makes it and stages the fixtures there; MEASURED before it: progs/gcomp was cut listing the package's progs folder.
+                    _alone = h.alone_dir_for_source(src, Path(_iso_dir))
                     return h.run_icon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text,
-                                                                         prog_args=prog_args, out_files=out_files, side_env=h.side_env_for_source(src, Path(_iso_dir)))
+                                                                         prog_args=prog_args, out_files=out_files, side_env=h.side_env_for_source(src, _alone or Path(_iso_dir)), run_cwd=_alone)
                 elif lang == "prolog" and name in gnu_cells:
                     return h.run_oracle("bash", str(h.HARNESS_SCRIPTS / "gprolog_oracle_run.sh"), _iso_src, paths["timeout"], stdin_text=stdin_text,
                                                               prog_args=prog_args, out_files=out_files, merge_stderr=_ms)
