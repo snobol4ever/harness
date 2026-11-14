@@ -7,6 +7,7 @@
 # proves it on scratch: four scratch repos with alternates to this root's objects, each fetched one commit ahead of its base, the pack count must not grow.
 # USAGE: bash harness/scripts/util_sync_root.sh            fetch the four repos under $S4E_HOME, then fast-forward each: one `SYNC <repo> <before>..<after>` line each.
 #        bash harness/scripts/util_sync_root.sh --probe    one `SYNC slot=sem id=s4e-fetch j=N alternates=A packs_grew=G repos=4` line.
+#        bash harness/scripts/util_sync_root.sh --probe-landing   a root whose land lock is held is fetched and never merged (the cio 2026-11-14); one `SYNC landing-probe ok` line.
 #        bash harness/scripts/util_sync_root.sh --relink [REPO...]   link a shared repo's clean files to the pristine again (s4e_land.sh after a landing from a root)
 # A SEAT'S ROOT IS ITS WORKING TREE (officer_02 2026-11-13, row harness-a-worktree-is-scrip-alone-everything-else-from-the-seats-root; Lon 17:4x CST, in the coo's window,
 # verbatim: "I want you to work in /home/claude folder. We do not NEED duplication. Nope, dups not needed."): a repo with commits origin/main lacks, or with tracked edits,
@@ -46,6 +47,21 @@ fetch_slot() {
 
 packs_in() { ls "$1/objects/pack" 2>/dev/null | grep -c '\.pack$'; }
 
+# NOTHING IS MERGED UNDER A RUNNING LANDING (the cio 2026-11-14, MEASURED on its own landing 09:33 CST: the tick's sync of the cio root fast-forwarded the root's clean SCRIP while
+# the landing's gate was grading from it, the freshness guard then read the binary stale, and the gate read RED on its seventh entry with six green; a boss runs its lander in the
+# background and its next sync, or the tick's, lands on the same tree). A landing holds a flock on /tmp/s4e/<seat>/land.<first 12 of sha1 of the home>.lock for its whole life
+# (s4e_land.sh); while the kernel's lock table names that file, the sync fetches as ever and merges nothing in this root, each repo named KEPT. The table is read, the lock is never
+# tried, so a landing starting at the same instant is never refused by this check. --probe-landing proves it on a scratch root.
+land_held() {
+    local h f ino; h="$(printf '%s' "$ROOT" | sha1sum | cut -c1-12)"
+    for f in /tmp/s4e/*/land."$h".lock; do
+        [ -e "$f" ] || continue
+        ino="$(stat -c %i "$f" 2>/dev/null)" || continue
+        awk -v i=":$ino" '$2 == "FLOCK" && substr($6, length($6) - length(i) + 1) == i { f = 1 } END { exit !f }' /proc/locks 2>/dev/null && return 0
+    done
+    return 1
+}
+
 sync_all() {
     local r dir before after rc=0 frc
     local have=""
@@ -63,10 +79,15 @@ sync_all() {
         fetch_slot "$(repo_dir "$r")"; frc=$?
         [ "$frc" = 0 ] || { echo "REFUSE(2): fetch of $r failed (sem/git rc $frc) -- nothing merged"; return 2; }
     done
-    local moved=""
+    local moved="" landing=0
+    land_held && landing=1
     for r in $have; do
         dir="$(repo_dir "$r")"
         before="$(git -C "$dir" rev-parse --short HEAD)"
+        if [ "$landing" = 1 ]; then
+            echo "SYNC $r $before..$before KEPT: a landing runs from this root and its gate reads this tree; fetched, nothing merged (it syncs at the next call once the landing ends)"
+            continue
+        fi
         local ah ed; ah="$(git -C "$dir" rev-list --count origin/main..HEAD 2>/dev/null)"; ed="$(git -C "$dir" status --porcelain --untracked-files=no 2>/dev/null | wc -l)"
         if [ "${ah:-0}" -gt 0 ] || [ "$ed" -gt 0 ]; then
             echo "SYNC $r $before..$before KEPT: ${ah:-0} local commit(s), $ed edited file(s), $(git -C "$dir" rev-list --count HEAD..origin/main 2>/dev/null) behind origin -- this root is the seat's working tree: nothing stashed, reset or merged; land the work with s4e_land.sh --home $ROOT"
@@ -129,8 +150,32 @@ probe() {
     return 1
 }
 
+probe_landing() {   # on a scratch root whose one repo is behind its scratch origin: with the root's land lock held the sync merges nothing and says KEPT; released, it fast-forwards
+    local seat T h lk hp before mid after o1 o2 red=""
+    seat="${S4E_SEAT:-sync}"; T="/tmp/s4e/$seat/sync-landing-probe.$$"; rm -rf "$T"; mkdir -p "$T/root" || { echo "REFUSE(2): cannot make $T"; return 2; }
+    git init -q --bare "$T/origin.git" && git clone -q "$T/origin.git" "$T/w" 2>/dev/null || { echo "REFUSE(2): cannot make the scratch origin"; rm -rf "$T"; return 2; }
+    ( cd "$T/w" && git config user.name probe && git config user.email probe@example.invalid && echo a > f && git add f && git commit -q -m one && git push -q origin HEAD:main ) || { echo "REFUSE(2): cannot commit to the scratch origin"; rm -rf "$T"; return 2; }
+    git clone -q -b main "$T/origin.git" "$T/root/harness" || { echo "REFUSE(2): cannot clone the scratch root"; rm -rf "$T"; return 2; }
+    ( cd "$T/w" && echo b > f && git commit -q -am two && git push -q origin HEAD:main ) || { echo "REFUSE(2): cannot move the scratch origin"; rm -rf "$T"; return 2; }
+    h="$(printf '%s' "$T/root" | sha1sum | cut -c1-12)"; lk="/tmp/s4e/$seat/land.$h.lock"
+    before="$(git -C "$T/root/harness" rev-parse HEAD)"
+    ( exec 9> "$lk"; flock -n 9 || exit 1; : > "$T/held"; while [ ! -e "$T/release" ]; do sleep 0.2; done ) & hp=$!
+    while [ ! -e "$T/held" ] && kill -0 "$hp" 2>/dev/null; do sleep 0.1; done
+    [ -e "$T/held" ] || { echo "REFUSE(2): the probe could not hold $lk"; rm -rf "$T" "$lk"; return 2; }
+    o1="$(S4E_HOME="$T/root" S4E_SYNC_REPOS=harness S4E_ONE_DISK_TOP="$T/none" bash "${BASH_SOURCE[0]}" 2>&1)"; mid="$(git -C "$T/root/harness" rev-parse HEAD)"
+    : > "$T/release"; wait "$hp" 2>/dev/null
+    o2="$(S4E_HOME="$T/root" S4E_SYNC_REPOS=harness S4E_ONE_DISK_TOP="$T/none" bash "${BASH_SOURCE[0]}" 2>&1)"; after="$(git -C "$T/root/harness" rev-parse HEAD)"
+    [ "$mid" = "$before" ] || red="$red the tree moved under the held land lock;"
+    printf '%s\n' "$o1" | grep -q '^SYNC harness .* KEPT: a landing runs from this root' || red="$red the held sync did not say KEPT [$(printf '%s' "$o1" | tail -1 | cut -c1-100)];"
+    [ "$after" = "$(git -C "$T/origin.git" rev-parse main)" ] || red="$red with the lock released the tree did not reach origin [$(printf '%s' "$o2" | tail -1 | cut -c1-100)];"
+    rm -rf "$T" "$lk"
+    if [ -z "$red" ]; then echo "SYNC landing-probe ok held=kept released=merged (a root whose land lock is held is fetched and never merged; once released the same call fast-forwards it)"; return 0; fi
+    echo "SYNC landing-probe RED:$red"; return 1
+}
+
 case "${1:-}" in
     --probe) probe; exit $? ;;
+    --probe-landing) probe_landing; exit $? ;;
     --relink) shift; relink_shared ${@:-corpus harness .github}; exit $? ;;
     "") sync_all; exit $? ;;
     *) echo "usage: util_sync_root.sh [--probe | --relink [REPO...]]" >&2; exit 2 ;;

@@ -7989,29 +7989,34 @@ def own_clone_args(argv):
     """A ROOT'S OWN CLONE WINS FOR AN ARGUMENT TOO (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover): while a seat's root holds its own corpus clone for a
     change (s4e_take.sh), an argument that names the one-disk corpus, /home/corpus/..., is read from the root's clone, and one line says so. 216 live batons name
     /home/corpus paths in their grading commands, and a seat that had taken corpus to re-cut a ref would otherwise grade the shared copy and read its own change as no
-    change. The defaults already follow the same rule (harness_paths.py _pick: the environment, the root's own clone, the one-disk checkout); S4E_CORPUS in the
-    environment is a choice already made and is left alone. Returns the count respelled."""
+    change. The defaults already follow the same rule (harness_paths.py _pick: the environment, the root's own clone, the one-disk checkout). S4E_CORPUS IN THE
+    ENVIRONMENT NAMES THE CORPUS OF THE RUN, SO AN ARGUMENT FOLLOWS IT TOO (the cio 2026-11-14, on the cfo's measurement, two of its own corpus landings RED at the gate
+    with the gate green by hand): s4e_land.sh runs a gate with S4E_CORPUS set to the landing root's clone, this function then left a /home/corpus/... argument alone, and
+    the gate graded the shared corpus at origin, so a corpus cure read red in its own landing. Set to the one-disk checkout itself there is nothing to respell. Returns
+    the count respelled."""
     here = str(Path(__file__).resolve().parent)
     if here not in sys.path:
         sys.path.insert(0, here)
     import harness_paths
     own, how = harness_paths._pick("S4E_CORPUS", "corpus", None)
-    if how != "own":
-        return 0
     one = os.path.join(os.environ.get("S4E_ONE_DISK_TOP", "/home"), "corpus")
+    if how == "env" and os.path.realpath(str(own)) == os.path.realpath(one):
+        return 0
+    if how not in ("own", "env"):
+        return 0
     n = 0
     for i in range(1, len(argv)):
         if argv[i].startswith(one + "/"):
             argv[i] = str(own) + argv[i][len(one):]
             n += 1
     if n:
-        sys.stderr.write("ONE-DISK: %d argument(s) under %s are read from this root's own clone, %s (the root holds one for a change; s4e_take.sh list)\n" % (n, one, own))
+        sys.stderr.write("ONE-DISK: %d argument(s) under %s are read from %s, %s\n" % (n, one, own, "the corpus S4E_CORPUS names for this run" if how == "env" else "this root's own clone (the root holds one for a change; s4e_take.sh list)"))
     return n
 
 
 def own_clone_probe():
     """--probe-own-clone: on a scratch one-disk top, an argument under the one-disk corpus is respelled while the root holds its own clone, and left when it holds none or
-    when S4E_CORPUS is set. OWN_CLONE ok|RED; rc 0 or 1."""
+    when S4E_CORPUS names the one-disk checkout itself, and follows S4E_CORPUS when it names another corpus (the lander's gate). OWN_CLONE ok|RED; rc 0 or 1."""
     t = tempfile.mkdtemp(prefix="s4e-own-clone."); why = []
     keep = {k: os.environ.get(k) for k in ("S4E_ONE_DISK_TOP", "S4E_HOME", "S4E_CORPUS")}
     try:
@@ -8024,13 +8029,16 @@ def own_clone_probe():
         if own_clone_args(av) != 2 or av[2] != t + "/claude_x/corpus/tests/x/ALL.x" or av[3] != t + "/claude_x/corpus/tests/x/ALL.ref" or av[4] != "/elsewhere/corpus/a": why.append("arm 2: with the root's own clone the arguments read %r" % av[2:])
         os.environ["S4E_CORPUS"] = t + "/corpus"
         av = ["h", "run", t + "/corpus/tests/x/ALL.x"]
-        if own_clone_args(av) != 0 or av[2] != t + "/corpus/tests/x/ALL.x": why.append("arm 3: S4E_CORPUS set, yet respelled %r" % av[2])
+        if own_clone_args(av) != 0 or av[2] != t + "/corpus/tests/x/ALL.x": why.append("arm 3: S4E_CORPUS set to the one-disk checkout, yet respelled %r" % av[2])
+        os.environ["S4E_CORPUS"] = t + "/claude_x/corpus"; os.environ["S4E_HOME"] = t + "/elsewhere"
+        av = ["h", "run", t + "/corpus/tests/x/ALL.x", t + "/corpus/tests/x/ALL.ref"]
+        if own_clone_args(av) != 2 or av[2] != t + "/claude_x/corpus/tests/x/ALL.x" or av[3] != t + "/claude_x/corpus/tests/x/ALL.ref": why.append("arm 4: S4E_CORPUS names a landing's clone (the lander's gate), yet the arguments read %r %r" % (av[2], av[3]))
     finally:
         for k, v in keep.items():
             if v is None: os.environ.pop(k, None)
             else: os.environ[k] = v
         shutil.rmtree(t, ignore_errors=True)
-    print("OWN_CLONE ok arms=3 (no clone leaves the argument; the root's own clone is read for a one-disk corpus argument and nothing else; S4E_CORPUS set is left)" if not why else "OWN_CLONE RED: " + " ".join(why))
+    print("OWN_CLONE ok arms=4 (no clone leaves the argument; the root's own clone is read for a one-disk corpus argument and nothing else; S4E_CORPUS naming the one-disk checkout is left; S4E_CORPUS naming a landing's clone is followed)" if not why else "OWN_CLONE RED: " + " ".join(why))
     return 1 if why else 0
 
 
