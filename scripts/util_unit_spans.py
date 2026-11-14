@@ -7,6 +7,7 @@
 # The split tool (step 1) reads it to cut a unit by a manifest and to name the statics a cut must export. rc 2 when clang is absent or reads nothing.
 import os, re, shutil, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
 args = sys.argv[1:]
 root = None
 if '--root' in args:
@@ -14,7 +15,7 @@ if '--root' in args:
 if len(args) != 1 or not shutil.which('clang'):
     sys.exit('REFUSE(2): usage util_unit_spans.py SRC [--root SCRIP]; clang must be on PATH')
 from util_cache_blast import compile_lines
-root = os.path.abspath(root or (os.path.join(os.environ['S4E_HOME'], 'SCRIP') if os.environ.get('S4E_HOME') else os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'SCRIP')))
+root = os.path.abspath(root or str(harness_paths.scrip()))
 src = os.path.abspath(args[0])
 flags = next((f for cc, f, s in compile_lines(root) if os.path.abspath(os.path.join(root, s)) == src), None)
 if flags is None:

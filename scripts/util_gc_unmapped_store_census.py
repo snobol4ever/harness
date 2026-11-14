@@ -82,8 +82,9 @@ exclusion) are rbp-anchored and are classified against their own layout, not aga
 import sys, os, re, subprocess, collections
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
 sys.path.insert(0, HERE)
+import harness_paths
+ROOT = str(harness_paths.scrip())
 import util_gc_callee_saved_census as CS
 import util_gc_census as GCC
 
