@@ -25,4 +25,12 @@ for r in corpus harness .github; do
         echo "$(now) LEFT $d: not a fast-forward of origin/main (a commit origin lacks; named, never discarded)"; [ $rc = 0 ] && rc=1
     fi
 done
+# THE ONE COPY OF THE SKILLS (row harness-the-skills-live-once-in-the-users-claude-skills, officer_06 2026-11-13): once a human has installed the user-level copy
+# (propagate_skills.sh --user writes its manifest, the switch), every run refreshes it from $TOP/.github/skills when it differs; before that it writes nothing.
+_man="${S4E_SKILLS_MANIFEST:-$HOME/.claude/s4e-skills.manifest}"
+if [ -f "$_man" ] && [ -f "$TOP/harness/scripts/propagate_skills.sh" ]; then
+    if ! S4E_PROPAGATE_FETCHED=1 bash "$TOP/harness/scripts/propagate_skills.sh" --user --check >/dev/null 2>&1; then
+        o="$(S4E_PROPAGATE_FETCHED=1 bash "$TOP/harness/scripts/propagate_skills.sh" --user 2>&1 | tail -1)" && echo "$(now) KEEP skills: $o" || { echo "$(now) LEFT skills: $o"; [ $rc = 0 ] && rc=1; }
+    fi
+fi
 exit $rc
