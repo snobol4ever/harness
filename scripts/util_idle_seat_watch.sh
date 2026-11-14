@@ -15,7 +15,7 @@ ticks() { awk '{print $14 + $15}' "/proc/$1/stat" 2>/dev/null; }
 poll() {
     local seat name role tube p kids t d first work
     while IFS=$'\t' read -r seat name _ _ _ _ _ role; do
-        case "$role" in junior|senior|designer|escalation) ;; *) continue;; esac
+        case " ${S4E_IDLE_ROLES:-junior senior designer escalation} " in *" $role "*) ;; *) continue;; esac
         p="$(pgrep -f "^/home/satirical/.local/bin/claude --name $name( |\$)" | head -1)"; [ -n "$p" ] || continue
         kids="$(pgrep -P "$p" | wc -l)"; t="$(ticks "$p")"; d=$(( ${t:-0} - ${cpu0[$seat]:-${t:-0}} )); cpu0[$seat]="${t:-0}"
         if [ "$kids" -gt 0 ] || [ "$d" -ge 50 ]; then idle1[$seat]=0; continue; fi
@@ -23,6 +23,7 @@ poll() {
         [ $(( $(date +%s) - ${last[$seat]:-0} )) -ge "$REWAKE" ] || continue
         first="$(awk -F'\t' -v s="$seat" '$4 == "CLAIMED:" s || $4 == "ASSIGNED:" s || $4 == "QUEUED:seat-" s {print $4 " " $2; exit}' "$PO/QUEUE.tsv")"
         if [ -n "$first" ]; then work="own"; else
+            case " ${S4E_IDLE_OWN_ONLY:-junior} " in *" $role "*) continue;; esac   # Lon 13:0x: no new rows to juniors, so a junior is woken only for its own rows
             case "$role" in junior) tube=tier-haiku;; senior) tube=tier-sonnet;; *) tube=tier-opus;; esac
             [ "$(awk -F'\t' -v q="QUEUED:$tube" '$4 == q' "$PO/QUEUE.tsv" | wc -l)" -gt 0 ] || continue
             work="tube"; first="$tube"
