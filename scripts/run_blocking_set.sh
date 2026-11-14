@@ -352,7 +352,7 @@ death_report() {  # death_report <signal-name>
     else
         printf '   ⛔ SENDER    : NO LEDGER ENTRY for pid %s in %s -- AN UNLOGGED KILLER.\n' "$$" "$KILL_LEDGER"
         printf '                 A kill that leaves no record cannot be named by its victim. Every seat signals through\n'
-        printf '                 ../harness/scripts/s4e_kill_mine.sh, which is root-scoped AND records; a bare pkill -f is the reach itself.\n'
+        printf '                 ../harness/scripts/s4e_kill_mine.sh, which is root-scoped AND records; a bare pkill -f is the reach itself.\n'  # one-disk: not a path
     fi
     runstate_write "killed-SIG$1"
 }
@@ -426,7 +426,7 @@ if [ -n "$SHARDS" ]; then
     case "$SHARDS" in [1-9]|[1-9][0-9]) : ;; *) refuse "--shards takes a count 1..99 (got '$SHARDS')" ;; esac
     # ⛔ THE FAN-OUT CEILING (R-1333, 2026-09-27): a seat caps its concurrent children at max(2, min(4, cores - demand)), read from
     # ../harness/scripts/lib_fanout.sh at launch; a requested width above it is CLAMPED and the clamp is printed, never silent.
-    . "$HERE/lib_fanout.sh" || refuse "../harness/scripts/lib_fanout.sh is missing -- the fan-out ceiling has no instrument"
+    . "$HERE/lib_fanout.sh" || refuse "../harness/scripts/lib_fanout.sh is missing -- the fan-out ceiling has no instrument"  # one-disk: not a path
     _fw=$(fanout_width); if [ "$SHARDS" -gt "$_fw" ] 2>/dev/null; then echo "fanout: --shards $SHARDS clamped to $_fw at CPU demand $(fanout_demand) ($(fanout_source)) on $(fanout_cores) cores (R-1333/1394: max(2, min(4, cores - demand)), never load1)"; SHARDS=$_fw; fi
 fi
 if [ "$SHARD_N" -gt 0 ]; then
@@ -576,7 +576,7 @@ if [ -n "$SHARDS" ]; then
                 "$k" "$_ksig" "$(grep -c '^ARMRESULT	' "$WORK/shard.$k.out" 2>/dev/null || echo 0)"
             _ksender="$(kill_ledger_lookup "$(sed -n "s/^shardpid=//p" "$WORK/shard.$k.pid" 2>/dev/null)" "$RUN_T0")"
             [ -n "$_ksender" ] && printf '      ⭐ SENDER: %s\n' "$_ksender" \
-                || printf '      ⛔ SENDER: no ledger entry -- an unlogged killer (see ../harness/scripts/s4e_kill_mine.sh).\n'
+                || printf '      ⛔ SENDER: no ledger entry -- an unlogged killer (see ../harness/scripts/s4e_kill_mine.sh).\n'  # one-disk: not a path
         fi
         grep '^ARMRESULT	' "$WORK/shard.$k.out" >> "$WORK/results.tsv" 2>/dev/null
         if [ "$krc" = 2 ] && ! grep -q '^ARMRESULT	' "$WORK/shard.$k.out" 2>/dev/null; then

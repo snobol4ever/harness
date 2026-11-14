@@ -26,7 +26,8 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-CORPUS="$(cd "$REPO/../corpus" && pwd)"
+. "$(dirname "$0")/lib_paths.sh"
+CORPUS="$(cd "$S4E_CORPUS" && pwd)"
 BIN="${1:-/tmp/beauty_full_bin}"
 
 if [[ ! -x "$BIN" ]]; then

@@ -141,7 +141,7 @@ echo "=== Prolog ==="
 
 # the loose prolog/hello.pl is the prolog master's entry scrip_test_hello, origin scrip_test_prolog_hello__hello (the cfo 2026-11-12, corpus/tests/scrip_test consolidated)
 PL_EXTRACT_DIR="$(mktemp -d)"; trap 'rm -rf "$ICN_EXTRACT_DIR" "$PL_EXTRACT_DIR"' EXIT
-RUNGS_DIR="$ROOT/../corpus/tests/prolog" RUNGS_EXT=.pl source "$HERE/lib_rungs_extract.sh"
+RUNGS_DIR="$S4E_CORPUS/tests/prolog" RUNGS_EXT=.pl source "$HERE/lib_rungs_extract.sh"
 rungs_extract_origin "scrip_test_prolog_hello__hello" "$PL_EXTRACT_DIR/hello.pl" \
     || { echo "  FAIL PL: hello (could not extract from the prolog master)"; FAIL=$((FAIL+1)); }
 file_test "PL: hello" "$PL_EXTRACT_DIR/hello.pl" "Hello, World!"

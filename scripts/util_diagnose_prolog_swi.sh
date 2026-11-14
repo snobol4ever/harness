@@ -6,14 +6,15 @@
 # Usage: bash ../harness/scripts/util_diagnose_prolog_swi.sh core/test_bips.pl [--mode m3|m4]
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-SWIT="$S4E/corpus/packages/prolog/swi_tests"
-PLUNIT="$S4E/corpus/packages/prolog/swi_tests/plunit.pl"
-SCRIP="$HERE/../../SCRIP/scrip"; RT="${RT_DIR:-$HERE/../../SCRIP/out}"
+SWIT="$S4E_CORPUS/packages/prolog/swi_tests"
+PLUNIT="$S4E_CORPUS/packages/prolog/swi_tests/plunit.pl"
+SCRIP="$S4E_SCRIP/scrip"; RT="${RT_DIR:-$S4E_SCRIP/out}"
 REL="${1:?usage: util_diagnose_prolog_swi.sh <rel/path.pl> [--mode m3|m4]}"; MODE="${3:-m3}"
 f="$SWIT/$REL"; ref="${f%.pl}.ref"
 [ -f "$f" ] || { echo "⛔ no such shipped file: $REL" >&2; exit 2; }
-[ -f "$ref" ] || { echo "⛔ no oracle ref beside $REL -- cut it: ../harness/scripts/util_swi_cut_refs.sh --write $REL" >&2; exit 2; }
+[ -f "$ref" ] || { echo "⛔ no oracle ref beside $REL -- cut it: ../harness/scripts/util_swi_cut_refs.sh --write $REL" >&2; exit 2; }  # one-disk: not a path
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 printf 'main :- run_tests.\n:- initialization(main).\n' > "$T/wrap.pl"
 echo "=== raw scrip output ($MODE) for $REL ==="

@@ -69,7 +69,7 @@ PORT_TRACE_ENV="${PORT_TRACE_ENV:-SCRIP_PL_TRACE}"
 GATE_NAME="${GATE_NAME:-$(basename "${BASH_SOURCE[1]:-gate}" .sh)}"
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"; cd "$ROOT"
 . "$HERE/lib_gate.sh"
 . "$HERE/lib_declared_arena.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: cannot source lib_declared_arena.sh -- the one reader of a declared heap and stack"; exit 2; }
 port_trace_main() {
@@ -89,7 +89,7 @@ port_trace_main() {
   CUT=0; for a in "$@"; do [ "$a" = --cut ] && CUT=1; done
   gate_parse_args "$@"
   SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-  RUNGS_DIR="$S4E/corpus/tests/$PORTTRACE_SUITE"; RUNGS_EXT="$PORTTRACE_EXT"; export RUNGS_DIR RUNGS_EXT
+  RUNGS_DIR="$S4E_CORPUS/tests/$PORTTRACE_SUITE"; RUNGS_EXT="$PORTTRACE_EXT"; export RUNGS_DIR RUNGS_EXT
   REF="$RUNGS_DIR/ALL.trace"; PREFIX_CAP="${PREFIX_CAP:-400}"; T="${TIMEOUT:-20}"
   gate_require_exec "$SCRIP" "scrip binary"
   gate_require "$RT/libscrip_rt.so" "runtime library"

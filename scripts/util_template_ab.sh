@@ -43,7 +43,7 @@ capture)
         printf '%s\t%s\t%s\n' "$f" "$rc" "$sha" >> "$AB_OUT"
     }
     export -f one
-    . "$here/../harness/scripts/lib_fanout.sh"
+    . "$S4E_HARNESS/scripts/lib_fanout.sh"
     jobs=${AB_JOBS:-$(fanout_width)}
     echo "capture $label: $jobs worker(s) in the batch class -- $(fanout_report)" >&2
     cd "$root" || exit 2

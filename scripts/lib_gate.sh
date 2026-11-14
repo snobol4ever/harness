@@ -220,27 +220,36 @@ gate_tree_signature() {
     local _root="$1"
     { find "$_root/src" -type f -print0 2>/dev/null | LC_ALL=C sort -z | xargs -0 md5sum 2>/dev/null; md5sum "$_root/Makefile" 2>/dev/null; } | md5sum | cut -c1-32
 }
-# gate_behaviour_signature <repo-root> <scrip-binary> -- md5 of the .s this binary EMITS for the pinned witnesses in
-# ../harness/scripts/fixtures/build_behaviour/. Prints the signature on stdout; returns 1 and prints nothing if NO witness compiles
+# gate_behaviour_signature <repo-root> <scrip-binary> -- b2-<md5> of the .s this binary EMITS for the pinned witnesses in
+# $S4E_HARNESS/scripts/fixtures/build_behaviour/, each copied (written whole, renamed into place, left alone when identical) into ONE fixed directory, $S4E_WITNESS_STAGE (default /tmp/s4e/behaviour-witness), and compiled from there BY RELATIVE
+# NAME: scrip --compile embeds the path of its source in the .s (b1.icn and b2.sno the name given, b3.pl the absolute path of the file, so no relative name alone is enough), so a
+# signature taken where the checkout sits moved with it (the coo 2026-11-13: /home/harness vs <root>/harness read 8dc5f735 vs 5b48116f for b1.icn); from the one directory it is the same in every checkout. THE VERSION WORD (GATE_BEHAVIOUR_VERSION, b2) leads the signature, and the ledger is read only for lines carrying it: a line recorded before reads as stale and the tree is
+# RE-RECORDED once, never refused as a moved build. A change to what the signature measures bumps the word. Prints the signature on stdout; returns 1 and prints nothing if NO witness compiles
 # (the caller turns that into rc=2 -- "I could not establish what you are about to grade"). A witness that does not compile signs as
 # one fixed line naming it and its rc (the coo 2026-10-18: R-1838 left Icon and Prolog aborting at compile by order, and the old
 # all-three rule refused every runner in every language); when every witness emits, the signature is byte-identical to the old one.
 # ~0.10s MEASURED for all three witnesses. Emission is deterministic TWICE OVER, and the second is the load-bearing one:
 # two runs on ONE binary are byte-identical, AND a 155-object rebuild of an UNCHANGED tree reproduces the signature
 # exactly -- so emission is a pure function of the tree, and a green tree cannot be turned red merely by rebuilding it.
+GATE_BEHAVIOUR_VERSION=b2
 gate_behaviour_signature() {
-    local _root="$1" _bin="$2" _tmp _w _s _r _n=0 _emit=0
+    local _root="$1" _bin="$2" _tmp _w _s _r _n=0 _emit=0 _sig _b _st="${S4E_WITNESS_STAGE:-/tmp/s4e/behaviour-witness}" _fx="$S4E_HARNESS/scripts/fixtures/build_behaviour"
     [ -x "$_bin" ] || return 1
+    case "$_bin" in /*) ;; *) _bin="$PWD/$_bin";; esac
     _tmp="$(mktemp -d 2>/dev/null)" || return 1
-    for _w in "$_root"/../harness/scripts/fixtures/build_behaviour/*.icn "$_root"/../harness/scripts/fixtures/build_behaviour/*.sno "$_root"/../harness/scripts/fixtures/build_behaviour/*.pl; do
+    mkdir -p "$_st" 2>/dev/null || { rm -rf "$_tmp"; return 1; }
+    for _w in "$_fx"/*.icn "$_fx"/*.sno "$_fx"/*.pl; do
         [ -f "$_w" ] || continue
-        _n=$((_n+1)); _s="$_tmp/$(basename "$_w").s"
-        ( env -u SCRIP_SNO_STMTKW -u SCRIP_DIAG -u SCRIP_DIAG_REGS -u SCRIP_ZD_RTCHECK "$_bin" --compile --out="$_s" "$_w" </dev/null >/dev/null 2>&1; _x=$?; exit $_x; ) >/dev/null 2>&1; _r=$?   # the subshell keeps an abort's job notice out of the caller's output
+        _b="$(basename "$_w")"
+        cmp -s "$_w" "$_st/$_b" 2>/dev/null || { cp "$_w" "$_st/.$_b.$$" 2>/dev/null && mv -f "$_st/.$_b.$$" "$_st/$_b" 2>/dev/null; } || { rm -f "$_st/.$_b.$$"; rm -rf "$_tmp"; return 1; }
+        _n=$((_n+1)); _s="$_tmp/$_b.s"
+        ( cd "$_st" && env -u SCRIP_SNO_STMTKW -u SCRIP_DIAG -u SCRIP_DIAG_REGS -u SCRIP_ZD_RTCHECK "$_bin" --compile --out="$_s" "$_b" </dev/null >/dev/null 2>&1; _x=$?; exit $_x; ) >/dev/null 2>&1; _r=$?   # the subshell keeps an abort's job notice out of the caller's output
         if [ "$_r" = 0 ] && [ -s "$_s" ]; then _emit=$((_emit+1)); else printf '# build-behaviour witness %s did not compile, rc=%s\n' "$(basename "$_w")" "$_r" > "$_s"; fi
     done
     if [ "$_n" = 0 ] || [ "$_emit" = 0 ]; then rm -rf "$_tmp"; return 1; fi
-    ( cd "$_tmp" && LC_ALL=C ls *.s | LC_ALL=C sort | xargs cat ) | md5sum | cut -c1-32
+    _sig="$( cd "$_tmp" && LC_ALL=C ls *.s | LC_ALL=C sort | xargs cat | md5sum | cut -c1-32 )"
     rm -rf "$_tmp"
+    printf '%s-%s\n' "$GATE_BEHAVIOUR_VERSION" "$_sig"
 }
 # gate_require_built_from <repo-root> [<scrip-binary>] -- ⛔⭐ THE BEHAVIOUR PROBE. THE GUARD ABOVE PROVES THE BINARY
 # IS NEWER THAN THE SOURCES; IT CANNOT PROVE THE BINARY WAS BUILT FROM THEM, AND THOSE ARE DIFFERENT CLAIMS.
@@ -270,7 +279,7 @@ gate_behaviour_signature() {
 # EXIT: 0 consistent (or first observation) - 2 REFUSED (the binary moved under a static tree, or a witness would not
 # compile). ⛔ NEVER 1, for the same reason gate_require_fresh never returns 1.
 gate_require_built_from() {
-    local _root="$1" _bin="${2:-$1/scrip}" _led _ts _bs _so _prev _prevso _now
+    local _root="$1" _bin="${2:-$1/scrip}" _led _ts _bs _so _prev _prevso _now _old
     _led="$_root/out/build_behaviour.sig"
     if [ ! -x "$_bin" ]; then
         echo "GATE UNPROVEN(2) [${GATE_NAME:-gate}]: ⛔ REFUSES rc=2: no binary at $_bin -- cannot probe what a build emits when nothing was built"
@@ -279,14 +288,15 @@ gate_require_built_from() {
     _ts="$(gate_tree_signature "$_root")"
     if ! _bs="$(gate_behaviour_signature "$_root" "$_bin")" || [ -z "$_bs" ]; then
         echo "GATE UNPROVEN(2) [${GATE_NAME:-gate}]: ⛔ REFUSES rc=2: $_bin could not --compile the pinned build-behaviour witnesses"
-        echo "    witnesses: $_root/../harness/scripts/fixtures/build_behaviour/  -- a compiler that cannot emit for these cannot be probed, and a probe that cannot measure never prints a pass"
+        echo "    witnesses: $S4E_HARNESS/scripts/fixtures/build_behaviour/  -- a compiler that cannot emit for these cannot be probed, and a probe that cannot measure never prints a pass"
         gate_stamp; return 2
     fi
     _so="$(md5sum "$_root/out/libscrip_rt.so" 2>/dev/null | cut -c1-12)"; _so="${_so:-none}"
     # ⛔ A LEDGER THAT CANNOT BE READ RECORDS, IT NEVER REFUSES. This probe rides the preflight every runner calls, so a
     # corrupt or unreadable out/build_behaviour.sig must not be able to red the whole fleet for a reason that has nothing
     # to do with the class -- awk failing here yields an empty _prev, which is the first-observation path.
-    _prev="$(awk -v t="$_ts" '$1==t {print $2; exit}' "$_led" 2>/dev/null)"
+    _prev="$(awk -v t="$_ts" -v v="$GATE_BEHAVIOUR_VERSION-" '$1==t && index($2,v)==1 {print $2; exit}' "$_led" 2>/dev/null)"
+    _old="$(awk -v t="$_ts" -v v="$GATE_BEHAVIOUR_VERSION-" '$1==t && index($2,v)!=1 {print $2; exit}' "$_led" 2>/dev/null)"
     if [ -n "$_prev" ] && [ "$_prev" != "$_bs" ] && [ "${SCRIP_ALLOW_STALE:-}" = 1 ]; then
         # ⭐ THE DECLARED OVERRIDE IS THE ONE THAT ALREADY EXISTS, NOT A SECOND KNOB. SCRIP_ALLOW_STALE already means "I
         # know this binary is not the one this tree describes, grade it anyway", and gate_score_row already refuses to
@@ -299,7 +309,7 @@ gate_require_built_from() {
         return 0
     fi
     if [ -n "$_prev" ] && [ "$_prev" != "$_bs" ]; then
-        _prevso="$(awk -v t="$_ts" '$1==t {print $3" "$4" "$5; exit}' "$_led" 2>/dev/null)"
+        _prevso="$(awk -v t="$_ts" -v v="$GATE_BEHAVIOUR_VERSION-" '$1==t && index($2,v)==1 {print $3" "$4" "$5; exit}' "$_led" 2>/dev/null)"
         echo "GATE UNPROVEN(2) [${GATE_NAME:-gate}]: ⛔ REFUSES rc=2: THE BINARY MOVED UNDER A TREE THAT DID NOT -- this build was not built from this tree"
         echo "    tree signature   $_ts   (unchanged: the same src/ and Makefile CONTENT as the earlier observation)"
         echo "    behaviour now    $_bs   libscrip_rt.so md5 $_so"
@@ -318,7 +328,8 @@ gate_require_built_from() {
         printf '%s %s %s %s %s\n' "$_ts" "$_bs" "$_so" "$_now" "${S4E_SEAT:-unknown}" >> "$_led"
         # bounded, and pruned HERE rather than by a cron nobody runs (THE PACE RULES). One line per distinct tree.
         if [ "$(wc -l < "$_led" 2>/dev/null || echo 0)" -gt 400 ] 2>/dev/null; then tail -n 200 "$_led" > "$_led.t" 2>/dev/null && mv -f "$_led.t" "$_led" 2>/dev/null; fi
-        echo "build-behaviour probe [${GATE_NAME:-gate}]: RECORDED tree $_ts -> behaviour $_bs (so $_so) -- first observation of this tree, nothing to contradict"
+        if [ -n "$_old" ]; then echo "build-behaviour probe [${GATE_NAME:-gate}]: RE-RECORDED tree $_ts -> behaviour $_bs (so $_so) -- the ledger held $_old, a signature of an older version than $GATE_BEHAVIOUR_VERSION (it embedded where the witnesses sat); read as stale, never as a moved build"
+        else echo "build-behaviour probe [${GATE_NAME:-gate}]: RECORDED tree $_ts -> behaviour $_bs (so $_so) -- first observation of this tree, nothing to contradict"; fi
     else
         echo "build-behaviour probe [${GATE_NAME:-gate}]: consistent -- tree $_ts -> behaviour $_bs (so $_so)"
     fi

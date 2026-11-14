@@ -38,11 +38,11 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # regression) AND cost throughput outright (2675/s -> 6042/s, 2.26x, with THP
 # off).  Set NOHUGE=0 to reproduce the shipping-arm instability.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.  # one-disk: not a path
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/snobol4}"  # BM-ONE (s153): timed family PROMOTED -- one copy, legacy retired, harness.inc is the driver
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/snobol4}"  # BM-ONE (s153): timed family PROMOTED -- one copy, legacy retired, harness.inc is the driver
 T="${TIMEOUT:-60}"; REPS="${REPS:-1}"; NOHUGE="${NOHUGE:-1}"
 # ⛔ THE TWIN IS bench_wrap_snobol4.py's (R-1984, Lon 2026-10-25: "Fix the S4 triangulation script since it is broken, duh!"): the kernels are
 # PRISTINE since the kernel convention (R-1221/1267) and carry no `*BENCH kernel=... check=...` line, so bench_wrap.sh refused all 23 and this
@@ -77,7 +77,7 @@ ENGINES="${ENGINES:-sbl m3 m4}"
 # row bench-external-cpu-and-elapsed-clock: every run below is forked through out/bench_rusage --
 # the sbl/s, m3/s, m4/s rates ARE the external cpu(user+sys) instrument now, not self-timed TIME().
 WRAP="$ROOT/out/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
 NIVCSW_FLAG="${BENCH_NIVCSW_THRESHOLD:-20}"   # same knob/default as the other bench_rusage call sites
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 rate() { awk -v i="$1" -v m="$2" 'BEGIN{ if(m+0>0) printf "%.0f", i/m*1000; else printf "NA" }'; }
@@ -137,7 +137,7 @@ echo "TIME-BASED SNOBOL4 BENCHMARKS -- fixed time budget, iterations counted"
 echo "engines: $ENGINES   reps: $REPS   corpus: $B"
 echo "measurement condition: SCRIP_NOHUGE=$NOHUGE  heap and stack: each unit's declared .heap/.stack, the same switches to m3, m4 and sbl (R-1353)"
 if [ -f "$FLOORTSV" ]; then echo "noise floor: $FLOORTSV (per-row; min-det = 3*cv; cpu = external authority, elap = external alongside)"
-else echo "noise floor: NOT BAKED -- run ../harness/scripts/bake_noise_floor_snobol4_timed.sh"; fi
+else echo "noise floor: NOT BAKED -- run ../harness/scripts/bake_noise_floor_snobol4_timed.sh"; fi  # one-disk: not a path
 echo
 printf "%-20s %12s %12s %12s   %8s %8s %5s %7s %12s %12s  %s\n" BENCHMARK "sbl/s" "m3/s" "m4/s" "m3:sbl" "m4:m3" "gc" "nivcsw" "min-det(cpu)" "min-det(elap)" "check"
 printf "%-20s %12s %12s %12s   %8s %8s %5s %7s %12s %12s  %s\n" "--------------------" "------------" "------------" "------------" "--------" "--------" "-----" "-------" "------------" "------------" "-----"
@@ -223,7 +223,7 @@ fi
 [ -n "$XPASSED" ] && echo "⛔ XPASS:$XPASSED -- passes WITH a sibling .xfail present. Re-measure, then RETIRE the marker."
 if [ -n "$UNGRADED" ]; then
   echo "⛔ UNGRADED (in $B, not harness-driven, absent from the table above):$UNGRADED"
-  echo "   Every benchmark here is wrapped by ../harness/scripts/bench_wrap_snobol4.py (R-1984); a kernel it refuses is named here and"
+  echo "   Every benchmark here is wrapped by ../harness/scripts/bench_wrap_snobol4.py (R-1984); a kernel it refuses is named here and"  # one-disk: not a path
   echo "   can build its timed twin -- convert it or delete it (BM-2, s265 shape). This is a FAILURE."
 else
   echo "ungraded: none -- every .sno in $B is a standalone program with a *BENCH marker and was wrapped and graded (BM-2, s265)."

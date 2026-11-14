@@ -3,7 +3,7 @@
 
 THE RULE (the cto's ruling of 2026-10-31 17:1x CDT on shared-dev step 8, ARCH-SHARED-DEVELOPMENT 3.4): every live oracle run goes through
 util_oracle.sh -- one run slot before the clock, timeout -k 5, the SHA-keyed shared cache under /home/resources/progress/oracle. This census
-reads the source of every script under ../harness/scripts (or --dir) and counts, per file, the lines that still name an oracle binary
+reads the source of every script under $S4E_HARNESS/scripts (or --dir) and counts, per file, the lines that still name an oracle binary
 directly: a call of one of the accessors of lib_oracle_flags.sh that util_oracle.sh serves (ACCESSORS below) or a literal path to one of
 those binaries or to their wrappers (PATHS below). A guard such as [ -x "$(swipl_bin)" ] counts too: util_oracle.sh refuses rc 2 on a
 missing binary itself, so a caller moved to it needs no guard.

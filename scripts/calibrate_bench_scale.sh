@@ -21,7 +21,7 @@ TARGET="${1:-2.5}"
 RAW="$(bash "$HERE/test_bench_snobol4_timed.sh")" || true
 {
   echo "# SCALE.tsv -- per-kernel FIXED ITERATION COUNT for angle 2 (bench_snobol4_fixed_iter.sh)."
-  echo "# Baked $(date -u +%Y-%m-%dT%H:%M:%SZ) by ../harness/scripts/calibrate_bench_scale.sh, target=${TARGET}s"
+  echo "# Baked $(date -u +%Y-%m-%dT%H:%M:%SZ) by ../harness/scripts/calibrate_bench_scale.sh, target=${TARGET}s"  # one-disk: not a path
   echo "# on the FASTEST of sbl/m3/m4's angle-1-measured rate (a slower engine on this N simply runs"
   echo "# longer -- see this script's own header). Regenerate with this script; never hand-edit."
   awk -v target="$TARGET" '

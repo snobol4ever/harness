@@ -64,7 +64,7 @@ excludes refuses (removing an entry renumbers every banner after it); the splice
 read back with the same banner number, source, ref and stdin, and every untouched ALL.csv line must be the same line.
 The partition (util_suite_partition.py build) and the package's own tables (UNGRADED.tsv, EXCLUDED.tsv) are the lander's, as after a build.
 
-Grading is unchanged machinery: python3 ../harness/scripts/corpus_suite_harness.py run ALL.<ext> ALL.ref --modes m3,m4
+Grading is unchanged machinery: python3 $S4E_HARNESS/scripts/corpus_suite_harness.py run ALL.<ext> ALL.ref --modes m3,m4
 Stdlib only except corpus_suite_harness/util_build_rungs_suite, imported for the ONE suite-grammar and
 ONE attribute-table authorities respectively -- never a second parser or a second column set.
 """

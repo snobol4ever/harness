@@ -19,8 +19,8 @@
 # declared beside the demo (already proven sufficient for .work). HEAP/STACK sidecars are copied from the demo beside it.
 # rc 0 written; 2 a demo copy, its .work, the transpile or the oracle missing.
 set -u
-here=$(cd "$(dirname "$0")" && pwd); W=$(cd "$here/../../SCRIP" && pwd); ROOT=$(cd "$W/.." && pwd)
-D="$ROOT/corpus/demos/snocone"; BD="$ROOT/corpus/benchmarks/snocone/parsers"
+here=$(cd "$(dirname "$0")" && pwd); . "$here/lib_paths.sh"; W=$(cd "$S4E_SCRIP" && pwd)
+D="$S4E_CORPUS/demos/snocone"; BD="$S4E_CORPUS/benchmarks/snocone/parsers"
 SBL="${SBL:-/home/resources/x64/bin/sbl}"; CUT=0; [ "${1:-}" = --cut-refs ] && CUT=1
 mkdir -p "$BD"
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT

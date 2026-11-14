@@ -83,11 +83,12 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # an empty or partial grid as though it were a result.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-ROOT="$HERE/../../SCRIP"
+ROOT="$S4E_SCRIP"
 SCRIP_BIN="${SCRIP:-$ROOT/scrip}"
 RTDIR="$ROOT/out"
-CORPUS_SRC="${CORPUS_SRC:-$S4E/corpus/benchmarks/icon}"
+CORPUS_SRC="${CORPUS_SRC:-$S4E_CORPUS/benchmarks/icon}"
 REPS="${REPS:-5}"                 # angle 3: timed runs kept, median reported
 WARMUP="${WARMUP:-2}"             # angle 3: runs discarded first (the JVM needs them; natives pay nothing)
 BUDGET_A1="${BUDGET_A1:-2}"       # angle 1: fixed wall-clock budget in seconds
@@ -243,7 +244,7 @@ done
 # is not immune, so the load average is PRINTED WITH THE BOARD and the wall multiples are read with it.
 LOADAVG="$(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo '?')"
 TREE="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo '?')"
-CTREE="$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
+CTREE="$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo '?')"
 NK="$(echo "$KERNELS" | wc -w)"
 echo "ICON_KERNEL_SET tree=SCRIP $TREE corpus $CTREE RT_OPT=-O0 date=$(date -u +%Y-%m-%dT%H:%MZ) kernels=$NK reps=$REPS warmup=$WARMUP loadavg=$LOADAVG"
 echo "  ⚠ SHARED BOX: 1/5/15-min load average at start = $LOADAVG. Instrument [A] Ir is IMMUNE to it (an instruction count does not"

@@ -9,7 +9,7 @@ snobol4dotnet bugs using that technique. Keep changing things around a bit to ge
 Icon." · "For every class of program that fails, add a program to SnoRungs test suite to capture future regressions." The (R-1915): any
 seat reruns batch N, a fixed seed per batch, the batch's verdict line.
 
-THE GENERATOR IS ONE SOURCE: the Icon section of corpus/demos/scriptix/infinite_snobol4/infinite_snobol4.md (the SCRIPtix program; its
+THE GENERATOR IS ONE SOURCE: the Icon section of demos/scriptix/infinite_snobol4/infinite_snobol4.md of the corpus (the SCRIPtix program; its
 README says how it was grown), extracted here at run time between its ```Icon fence and the next ```, with OFFLINE_MAIN below appended (the
 SCRIPtix program's drive() is called by its Snocone section; offline, main() reads the same key=value options and writes the batch file).
 icont builds it once per text into DIR. THE EVALUATOR is inf_eval.sno beside it: one test per input line, EVAL under SETEXIT, one result
@@ -38,8 +38,10 @@ not landed: the driver refuses rc 2 and names it.
 import argparse, hashlib, os, random, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import harness_paths
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
-INF = os.path.join(ROOT, 'corpus', 'demos', 'scriptix', 'infinite_snobol4')
+INF = os.path.join(str(harness_paths.corpus()), 'demos', 'scriptix', 'infinite_snobol4')
 ICONT = '/home/resources/icon-master/bin/icont'
 SBL = '/home/resources/x64/bin/sbl'
 
@@ -94,7 +96,7 @@ def engine_argv(engine):
         if r.returncode != 0:
             refuse(r.stderr.strip() or runner + ' --binaries refused')
         return ['bash', runner]
-    scrip = os.path.join(ROOT, 'SCRIP', 'scrip')
+    scrip = os.path.join(str(harness_paths.scrip()), 'scrip')
     if not os.path.exists(scrip):
         refuse('no SCRIP beside harness at ' + scrip)
     return [scrip, '--stlimit', '--run']

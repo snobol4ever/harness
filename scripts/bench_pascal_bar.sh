@@ -17,7 +17,7 @@ refuse_timing() { local g; if g="$(perf_load_guard)"; then echo "⛔ bench_pasca
 NAME=$2; BAR=$3; MODE="${BAR_MODE:-m4}"
 [ -x "$ROOT/scrip" ] || refuse "no ./scrip (make first)"; . "$HERE/lib_oracle_flags.sh" 2>/dev/null || refuse "cannot load lib_oracle_flags.sh"; fpc_bin > /dev/null || refuse "fpc absent"
 T=$(mktemp -d) || refuse "mktemp"; trap 'rm -rf "$T"' EXIT
-( cd "$ROOT" && KERNELS="$NAME" bash ../harness/scripts/test_bench_pascal_timed.sh ) > "$T/log" 2>&1
+( cd "$ROOT" && KERNELS="$NAME" bash "$HERE/test_bench_pascal_timed.sh" ) > "$T/log" 2>&1
 row=$(grep -E "^$NAME[[:space:]]" "$T/log" | head -1); [ -n "$row" ] || { tail -4 "$T/log" | cut -c1-160; refuse_timing "angle 1 printed no row for $NAME"; }
 read -r _k fpc m3 m4 check <<<"$row"
 case "$MODE" in m3) mine=$m3;; *) mine=$m4;; esac

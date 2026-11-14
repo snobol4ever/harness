@@ -30,7 +30,7 @@ came from): a comparison that omits a field the grader reads is not a comparison
 adding it HERE too, or this silently starts passing on a difference that matters.
 
 EXIT: 0 identical in content · 1 differences found (a real result) · 2 could not measure.
-Usage: python3 ../harness/scripts/util_rungs_content_diff.py <dirA> <dirB> [--lang snobol4] [--stem ALL]
+Usage: python3 $S4E_HARNESS/scripts/util_rungs_content_diff.py <dirA> <dirB> [--lang snobol4] [--stem ALL]
 """
 import sys, os, argparse
 

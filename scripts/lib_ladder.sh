@@ -260,7 +260,7 @@ EOF
           done
           [ -z "$_miss" ] || _fgap="$_fgap"$'\n'"    rung$_num declares $(set -- $_miss; echo $#) form(s) with no witness bearing the name:$_miss"
       done < "$_ltsv"
-      [ -z "$_fgap" ] || { echo "⚠ FORM-LEVEL GAP (reported, and the verdict below is unchanged -- see ../harness/scripts/util_ladder_form_census.py):$_fgap"; }
+      [ -z "$_fgap" ] || { echo "⚠ FORM-LEVEL GAP (reported, and the verdict below is unchanged -- see ../harness/scripts/util_ladder_form_census.py):$_fgap"; }  # one-disk: not a path
   fi
   _top=$(printf '%s\n' "${!rp[@]}" "${!rf[@]}" | sort -n | tail -1)
   if [ -z "$ONLY" ]; then

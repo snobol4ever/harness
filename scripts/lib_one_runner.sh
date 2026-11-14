@@ -31,6 +31,7 @@
 # row -- test_snobol4_aisnobol_suite.sh cds into the engine root, and one_runner_port_publish then took dirname of a RELATIVE BASH_SOURCE[0],
 # "can't open file /home/claude_jvm/../harness/scripts/util_score_row.py"). Every function below reads _ONE_RUNNER_HERE, never BASH_SOURCE at call time.
 _ONE_RUNNER_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$_ONE_RUNNER_HERE/lib_paths.sh"
 # ⛔ EVERY CHILD RUNS HEADLESS (2026-10-23, after an oracle re-measure opened GUI windows on Lon's desktop): every guarded runner
 # sources this file first, so the display variables leave the runner's environment here and no program, oracle or helper it starts can
 # open a window; corpus_suite_harness.py drops them for its own children the same way.
@@ -96,7 +97,7 @@ one_runner_in_a_shared_checkout() {  # rc 0 = inside a checkout of the shared co
 }
 one_runner_suite_is_a_board() {
   local suite="$1" corpus sp cr
-  corpus="${S4E_CORPUS:-${S4E_HOME:-$(cd "$_ONE_RUNNER_HERE/../.." && pwd)}/corpus}"
+  corpus="$S4E_CORPUS"
   sp="$(cd "$(dirname "$suite")" 2>/dev/null && pwd)/$(basename "$suite")" || return 0
   cr="$(cd "$corpus" 2>/dev/null && pwd)" || return 0
   [ -n "$cr" ] || return 0
@@ -254,7 +255,7 @@ one_runner_bin_fingerprint() {
     while IFS= read -r _f; do md5sum "$_f" | cut -c1-12; done <<< "$_bins" | tr '\n' ' '
     return 0
   fi
-  _t="$(cd "$_ONE_RUNNER_HERE/../../SCRIP" && pwd)"
+  _t="$(cd "$S4E_SCRIP" && pwd)"
   _b="${SCRIP:-$_t/scrip}"; _r="${RT_DIR:-$_t/out}/libscrip_rt.so"
   [ -f "$_b" ] && [ -f "$_r" ] || return 1
   md5sum "$_b" "$_r" 2>/dev/null | cut -c1-12 | tr '\n' ' '
@@ -342,7 +343,7 @@ one_runner_guard() {
     printf 'ONE-RUNNER SINGLE FILE by %s on %s: %s, no progress row and no score row\n' "${seat:-?}" "$board" "$S4E_ONE_RUNNER_SINGLE_FILE"; return 0
   fi
   if [ -n "${S4E_ONE_RUNNER_FIXTURE:-}" ]; then
-    local _fxpop="${S4E_CORPUS:-${S4E_HOME:-$(cd "$_ONE_RUNNER_HERE/../.." && pwd)}/corpus}"
+    local _fxpop="$S4E_CORPUS"
     if [ -z "$suite" ] && ! one_runner_in_a_shared_checkout "$_fxpop"; then printf 'ONE-RUNNER FIXTURE by %s on %s: %s\n' "${seat:-?}" "$board" "$S4E_ONE_RUNNER_FIXTURE"; return 0; fi
     printf '⛔ ONE-RUNNER FIXTURE NOT ADMITTED: %s grades %s, the shared corpus or a population a board reads -- the exemption admits a scratch population only (R-1302 (c)); point the fixture at one (S4E_HOME, --corpus, the runner'"'"'s *_SUITE) with a scratch S4E_PROGRESS_DB\n' "$board" "${suite:-$_fxpop}" >&2
   fi
@@ -352,7 +353,7 @@ one_runner_guard() {
     # computed done (S4E_DONE_WHEN_RUN=1) was the one road by which a non-tester seat still ran a suite; it is refused here and in the
     # harness alike. A DONE-WHEN that needs a suite's verdict reads the coo's SUITE TABLE row at a tree at or after the landing
     # (../harness/scripts/util_suite_row_at_or_after.sh <suite-key> <tree>); the lane owner's own done never reaches this line (admitted above).
-    if [ "${S4E_DONE_WHEN_RUN:-}" = 1 ]; then printf '⛔ REFUSE(2) DONE RUNS NO BOARD FOR ANY SEAT (R-1342 clause 5): %s is a board, seat %s is not its runner, and the bus computed done no longer admits it -- read the coo'"'"'s SUITE TABLE row instead: ../harness/scripts/util_suite_row_at_or_after.sh <suite-key> <tree>\n' "$board" "${seat:-?}"; return 2; fi
+    if [ "${S4E_DONE_WHEN_RUN:-}" = 1 ]; then printf '⛔ REFUSE(2) DONE RUNS NO BOARD FOR ANY SEAT (R-1342 clause 5): %s is a board, seat %s is not its runner, and the bus computed done no longer admits it -- read the coo'"'"'s SUITE TABLE row instead: ../harness/scripts/util_suite_row_at_or_after.sh <suite-key> <tree>\n' "$board" "${seat:-?}"; return 2; fi  # one-disk: not a path
     if [ -n "${S4E_ONE_RUNNER_OVERRIDE:-}" ]; then printf '⚠ ONE-RUNNER OVERRIDE by %s on %s: %s\n' "${seat:-?}" "$board" "$S4E_ONE_RUNNER_OVERRIDE"; return 0; fi
   else
     printf '⛔ ONE SEAT, ONE LANGUAGE: %s is a language HQ -- no S4E_ONE_RUNNER_OVERRIDE and no DONE-WHEN admits it to a %s board (Lon 2026-09-24: "Just have each seat run only their own test suites.")\n' "$seat" "${lang:-unknown}" >&2
@@ -378,7 +379,7 @@ one_runner_guard() {
 ONE_RUNNER_PROBE_SEAT='__one_runner_probe_not_a_seat__'
 one_runner_prove_seam() {
   local out rc fails=0 outside
-  out=$(S4E_SEAT="$ONE_RUNNER_PROBE_SEAT" S4E_DONE_WHEN_RUN='' S4E_ONE_RUNNER_OVERRIDE='' S4E_ONE_RUNNER_FIXTURE='' one_runner_guard 'one-runner-seam-probe' "${S4E_CORPUS:-${S4E_HOME:-$(cd "$_ONE_RUNNER_HERE/../.." && pwd)}/corpus}" 2>&1); rc=$?
+  out=$(S4E_SEAT="$ONE_RUNNER_PROBE_SEAT" S4E_DONE_WHEN_RUN='' S4E_ONE_RUNNER_OVERRIDE='' S4E_ONE_RUNNER_FIXTURE='' one_runner_guard 'one-runner-seam-probe' "$S4E_CORPUS" 2>&1); rc=$?
   if [ "$rc" = 2 ] && printf '%s' "$out" | grep -q 'REFUSE(2) ONE RUNNER'; then printf '  OK   ARM 1 the guard REFUSES a board to a seat its language LANE does not name (rc=2, message asserted)
 '
   else printf '  FAIL ARM 1 expected rc=2 and a REFUSE message on a corpus-rooted board, got rc=%s: %s

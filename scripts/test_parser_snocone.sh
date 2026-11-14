@@ -5,7 +5,7 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_paths.sh"
-SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"   # ⭐ was "$HERE/scrip" (../harness/scripts/scrip, a dead symlink to a nonexistent /home/claude/one4all/scrip) -- every other caller in this tree uses ../scrip; the binary lives at the SCRIP root, not inside ../harness/scripts/
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"   # ⭐ was "$HERE/scrip" (../harness/scripts/scrip, a dead symlink to a nonexistent /home/claude/one4all/scrip) -- every other caller in this tree uses ../scrip; the binary lives at the SCRIP root, not inside ../harness/scripts/  # one-disk: not a path
 SD="${SD:-$S4E_SCRIP/bootstrap}"
 
 if [ ! -f "$SCRIP" ]; then echo "SKIP scrip not found: $SCRIP"; exit 0; fi

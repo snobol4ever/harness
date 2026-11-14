@@ -5,7 +5,7 @@
 # as /<name>, and removes a root copy whose source is gone. --check only reports which roots differ (rc 1 when any does). Idempotent; never a
 # symlink (CEO-1853). Re-run after every skill landing. Only skills from .github/skills are touched; a root's other skills are left alone.
 HERE=$(cd "$(dirname "$0")" && pwd)
-if [ -d "$HERE/../skills" ]; then G=$HERE/..; else G=$HERE/../../.github; fi; SRC=$G/skills   # harness/scripts since 2026-11-11 (Lon: "move scripts to harness."); a .github clone's scripts/ copy (the behind probe) still finds its own skills
+if [ -d "$HERE/../skills" ]; then G=$HERE/..; else . "$HERE/lib_paths.sh"; G=$S4E_GITHUB; fi; SRC=$G/skills   # scripts/ of the harness since 2026-11-11 (Lon: "move scripts to harness."); a .github clone's scripts/ copy (the behind probe) still finds its own skills
 CHECK=0; PROBE=0; MODE=roots; for a in "$@"; do case "$a" in --check) CHECK=1;; --probe-behind) PROBE=1;; --user) MODE=user;; --drop-roots) MODE=drop;; esac; done
 # ONE COPY OF THE SKILLS (Lon 2026-11-13 20:1x CST, in the coo's window, verbatim: "Is it not possible for all the seats to not duplicate the skills but to point to the
 # /home/.github/skills folder?"; row harness-the-skills-live-once-in-the-users-claude-skills, officer_06). Every seat runs as one Unix user and Claude Code reads the

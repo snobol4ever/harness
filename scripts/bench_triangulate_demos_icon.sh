@@ -47,7 +47,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 "$HERE/util_require_fresh.sh" --gate bench_triangulate_demos_icon "${SCRIP:-$S4E_SCRIP/scrip}" "$S4E_SCRIP/out/libscrip_rt.so" || exit 2
-S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"
 D="${JCON_DEMO_DIR:-$S4E_CORPUS/demos/icon/jcon}"
 PKG="${JCON_PKG_DIR:-$S4E_CORPUS/packages/icon/jcon-compiler}"
@@ -66,7 +66,7 @@ ICONT="$(icont_bin)" || refuse "the Arizona icont oracle is missing. ⛔ Not a \
 [ -d "$D" ] || refuse "Icon demo corpus missing ($D)."
 [ -d "$PKG" ] || refuse "JCON package missing ($PKG)."
 WRAP="$ROOT/out/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || refuse "bench_rusage failed to build."
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/bench_rusage.c" || refuse "bench_rusage failed to build."
 "$WRAP" true 2>&1 | grep -q 'inblock=' || refuse "$WRAP predates the inblock/oublock fields -- angle 3 would report empty. Rebuild it."
 
 W="$(mktemp -d "${TMPDIR:-/tmp}/icondemo3a.XXXXXX")" || refuse "cannot make a work dir."

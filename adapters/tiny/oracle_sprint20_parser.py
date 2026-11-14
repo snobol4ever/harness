@@ -16,7 +16,9 @@ sys.path.insert(0, os.path.join(ROOT, 'src', 'ir'))
 from sno_parser import parse_source, parse_file
 from ir import Expr, PatExpr, Goto, Stmt, Program
 
-BEAUTY_RUN = os.path.abspath(os.path.join(ROOT, '..', 'corpus',
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'scripts'))
+import harness_paths
+BEAUTY_RUN = os.path.abspath(os.path.join(str(harness_paths.corpus()),
                               'programs', 'beauty', 'beauty.sno'))
 
 passed = 0

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """util_gen_rakudo_method_names.py -- generate src/runtime/rk_rakudo_method_names.inc, the sorted list of every method name Rakudo's own core types have (Mu, Any, Cool, Str, Int, List, Hash, IO::Path, Exception, Grammar, ...), which the Raku runtime (by_name_dispatch.c rk_is_rakudo_method) uses to tell a METHOD THAT DOES NOT EXIST ("zzz", "nosuch": X::Method::NotFound) from a REAL Rakudo method that SCRIP has not implemented yet (the statement still fails quietly, as it always did, and is a gap to fill, not a typo to report).
 
-Usage: python3 ../harness/scripts/util_gen_rakudo_method_names.py [--raku /usr/bin/raku] [--out PATH] [--check]
+Usage: python3 $S4E_HARNESS/scripts/util_gen_rakudo_method_names.py [--raku /usr/bin/raku] [--out PATH] [--check]
 
   --raku   the Rakudo oracle (default /usr/bin/raku); the names come from `.^methods(:all)` of each core type, run inside a `try` per type because a few meta-objects refuse introspection (the Grammar and Cursor lookups are flaky, so the oracle runs four times and the union is taken, plus the three Grammar entry points by name).
   --check  write nothing; exit 0 when the checked-in file equals what would be generated.
 
-The generated file is passed through ../harness/scripts/util_reflow_200.py --apply (the repository's 200-column rule), so it is byte-stable under that tool and --check compares after the same pass. It holds data only: one const array of strings sorted bytewise (strcmp order) and its length.
+The generated file is passed through $S4E_HARNESS/scripts/util_reflow_200.py --apply (the repository's 200-column rule), so it is byte-stable under that tool and --check compares after the same pass. It holds data only: one const array of strings sorted bytewise (strcmp order) and its length.
 """
 import argparse, os, subprocess, sys, tempfile
 

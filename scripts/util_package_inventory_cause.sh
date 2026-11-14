@@ -29,7 +29,7 @@ ROOT="$S4E_SCRIP"
 [ "$#" -eq 3 ] || { echo "REFUSE(2): usage: $(basename "$0") <lang> <label> <clause-regex>"; exit 2; }
 LANG_="$1"; LABEL="$2"; RX="$3"
 . "$HERE/lib_inventory.sh" 2>/dev/null || { echo "REFUSE(2): lib_inventory.sh unloadable -- cannot call the shared body"; exit 2; }
-PKGINV_CORPUS="${PKGINV_CORPUS:-$ROOT/../corpus}"
+PKGINV_CORPUS="${PKGINV_CORPUS:-$S4E_CORPUS}"
 LANGDIR="$PKGINV_CORPUS/packages/$LANG_"
 # ⭐ THE MATCH IS THE CELL'S OWN REGEX, UNANCHORED AND CASE-INSENSITIVE, exactly as util_score_row.py joins
 # a clause key to a table label (`re.search(rx, k, re.I)`, util_score_row.py:2556) -- never a second
