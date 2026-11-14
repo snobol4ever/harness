@@ -1,0 +1,7 @@
+        I = 0
+        S =
+LOOP    S = S 'x'
+        I = I + 1
+        LT(I,400000)                         :S(LOOP)
+        OUTPUT = SIZE(S)
+END

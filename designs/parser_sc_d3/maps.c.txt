@@ -1,0 +1,65 @@
+Catchpoint 1 (syscall 'exit_group' [231])
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <https://debuginfod.ubuntu.com>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+1
+
+Catchpoint 1 (call to syscall exit_group), __GI__exit (status=status@entry=0) at ../sysdeps/unix/sysv/linux/_exit.c:30
+warning: 30	../sysdeps/unix/sysv/linux/_exit.c: No such file or directory
+process 845126
+Mapped address spaces:
+
+          Start Addr           End Addr       Size     Offset  Perms  objfile
+            0x400000           0x406000     0x6000        0x0  r--p   /home/claude_cfo/SCRIP/scrip
+            0x406000           0x436000    0x30000     0x6000  r-xp   /home/claude_cfo/SCRIP/scrip
+            0x436000           0x447000    0x11000    0x36000  r--p   /home/claude_cfo/SCRIP/scrip
+            0x447000           0x448000     0x1000    0x47000  r--p   /home/claude_cfo/SCRIP/scrip
+            0x448000           0x449000     0x1000    0x48000  rw-p   /home/claude_cfo/SCRIP/scrip
+            0x449000           0x488000    0x3f000        0x0  rw-p   [heap]
+          0x70000000         0x70001000     0x1000        0x0  rw-p   
+          0x70001000         0xb0001000 0x40000000        0x0  rw-p   
+      0x7fff68e00000     0x7fff69200000   0x400000        0x0  rw-p   
+      0x7fff693fd000     0x7fff69bfe000   0x801000        0x0  rw-p   
+      0x7fff69bfe000     0x7fff69e00000   0x202000        0x0  rw-p   
+      0x7fff69e00000     0x7fff69f00000   0x100000        0x0  rw-p   
+      0x7fff69f00000     0x7fff71e00000  0x7f00000        0x0  ---p   
+      0x7fff71e00000     0x7fff71e01000     0x1000        0x0  r-xp   
+      0x7fff71e01000     0x7ffff2200000 0x803ff000        0x0  rw-p   
+      0x7ffff22ef000     0x7ffff23f0000   0x101000        0x0  rw-p   
+      0x7ffff23f0000     0x7ffff63f0000  0x4000000        0x0  rw-p   
+      0x7ffff63f0000     0x7ffff6400000    0x10000        0x0  ---p   
+      0x7ffff6400000     0x7ffff6428000    0x28000        0x0  r--p   /usr/lib/x86_64-linux-gnu/libc.so.6
+      0x7ffff6428000     0x7ffff65b1000   0x189000    0x28000  r-xp   /usr/lib/x86_64-linux-gnu/libc.so.6
+      0x7ffff65b1000     0x7ffff6600000    0x4f000   0x1b1000  r--p   /usr/lib/x86_64-linux-gnu/libc.so.6
+      0x7ffff6600000     0x7ffff6604000     0x4000   0x1ff000  r--p   /usr/lib/x86_64-linux-gnu/libc.so.6
+      0x7ffff6604000     0x7ffff6606000     0x2000   0x203000  rw-p   /usr/lib/x86_64-linux-gnu/libc.so.6
+      0x7ffff6606000     0x7ffff6613000     0xd000        0x0  rw-p   
+      0x7ffff6616000     0x7ffff6717000   0x101000        0x0  rw-p   
+      0x7ffff6717000     0x7ffff6727000    0x10000        0x0  r--p   /usr/lib/x86_64-linux-gnu/libm.so.6
+      0x7ffff6727000     0x7ffff67a6000    0x7f000    0x10000  r-xp   /usr/lib/x86_64-linux-gnu/libm.so.6
+      0x7ffff67a6000     0x7ffff67fe000    0x58000    0x8f000  r--p   /usr/lib/x86_64-linux-gnu/libm.so.6
+      0x7ffff67fe000     0x7ffff67ff000     0x1000    0xe7000  r--p   /usr/lib/x86_64-linux-gnu/libm.so.6
+      0x7ffff67ff000     0x7ffff6800000     0x1000    0xe8000  rw-p   /usr/lib/x86_64-linux-gnu/libm.so.6
+      0x7ffff6800000     0x7ffff68f5000    0xf5000        0x0  r--p   /home/claude_cfo/SCRIP/out/libscrip_rt.so
+      0x7ffff68f5000     0x7ffff7391000   0xa9c000    0xf5000  r-xp   /home/claude_cfo/SCRIP/out/libscrip_rt.so
+      0x7ffff7391000     0x7ffff7918000   0x587000   0xb91000  r--p   /home/claude_cfo/SCRIP/out/libscrip_rt.so
+      0x7ffff7918000     0x7ffff795b000    0x43000  0x1118000  r--p   /home/claude_cfo/SCRIP/out/libscrip_rt.so
+      0x7ffff795b000     0x7ffff7b6b000   0x210000  0x115b000  rw-p   /home/claude_cfo/SCRIP/out/libscrip_rt.so
+      0x7ffff7b6b000     0x7ffff7ed9000   0x36e000        0x0  rw-p   
+      0x7ffff7fa0000     0x7ffff7fa2000     0x2000        0x0  rw-p   
+      0x7ffff7fb2000     0x7ffff7fbd000     0xb000        0x0  rw-p   
+      0x7ffff7fbd000     0x7ffff7fc1000     0x4000        0x0  r--p   [vvar]
+      0x7ffff7fc1000     0x7ffff7fc3000     0x2000        0x0  r--p   [vvar_vclock]
+      0x7ffff7fc3000     0x7ffff7fc5000     0x2000        0x0  r-xp   [vdso]
+      0x7ffff7fc5000     0x7ffff7fc6000     0x1000        0x0  r--p   /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+      0x7ffff7fc6000     0x7ffff7ff1000    0x2b000     0x1000  r-xp   /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+      0x7ffff7ff1000     0x7ffff7ffb000     0xa000    0x2c000  r--p   /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+      0x7ffff7ffb000     0x7ffff7ffd000     0x2000    0x36000  r--p   /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+      0x7ffff7ffd000     0x7ffff7fff000     0x2000    0x38000  rw-p   /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+      0x7fffffbfb000     0x7ffffffff000   0x404000        0x0  rw-p   [stack]
+  0xffffffffff600000 0xffffffffff601000     0x1000        0x0  --xp   [vsyscall]
