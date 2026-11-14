@@ -20,7 +20,17 @@ S4E="${S4E_HOME:-/home/claude_grader}"
 # THE TREE GRADED NAMES ALL FOUR REPOS (officer_02 2026-11-13, row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them): lib_paths.sh and harness_paths.py read /home/corpus,
 # /home/harness and /home/.github once each is a checkout, so every run here pins S4E_SCRIP, S4E_CORPUS, S4E_HARNESS and S4E_GITHUB to the tree it grades (a base, or this root), and a
 # chunk keeps its own snapshot whatever the one-disk checkouts hold.
-export S4E_HOME="$S4E" S4E_SCRIP="$S4E/SCRIP" S4E_CORPUS="$S4E/corpus" S4E_HARNESS="$S4E/harness" S4E_GITHUB="$S4E/.github" S4E_SEAT=grader S4E_CLASS=grader S4E_BATCH="${S4E_BATCH:-1}" S4E_MODES="${S4E_MODES:-m3}" TMPDIR="${S4E_CYCLE_TMP:-/tmp/s4e/grader}"   # S4E_MODES exported: the cells and the suite row (util_score_row.py from-progress) read the same modes, m3 alone under Lon's mode-3-only order   # one-disk: not a path (the pin: the graded tree's own four repos, by design (lines 20-22))
+# THE ROOT HOLDS ITS SCRIP CLONE ALONE (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover; Lon, in the cio's window, verbatim: "We are meant not to have folder
+# .github, harness, and corpus in each /home/claude folder ... Complete the new disk/file layout."): the root's four are what lib_paths.sh names for it (its SCRIP, and
+# /home/corpus, /home/harness and /home/.github once the root holds none of its own), and a base still holds all four as siblings. td <tree> <repo> names a repo of a
+# tree, tp <tree> <path> respells a path written under the root (cells: $S4E/corpus/...) for the tree a chunk runs on, and pin <tree> sets T_SCRIP, T_CORPUS,
+# T_HARNESS and T_GITHUB, so every launch below pins the four to the tree it grades whichever kind it is.
+export S4E_HOME="$S4E"; unset S4E_SCRIP S4E_CORPUS S4E_HARNESS S4E_GITHUB
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh"
+td() { if [ "$1" = "$S4E" ]; then case "$2" in SCRIP) printf '%s' "$S4E_SCRIP";; corpus) printf '%s' "$S4E_CORPUS";; harness) printf '%s' "$S4E_HARNESS";; .github) printf '%s' "$S4E_GITHUB";; esac; else printf '%s/%s' "$1" "$2"; fi; }
+tp() { local rel r; case "$2" in "$S4E"/*) rel="${2#"$S4E"/}"; r="${rel%%/*}"; if [ "$r" = "$rel" ]; then td "$1" "$r"; else printf '%s/%s' "$(td "$1" "$r")" "${rel#*/}"; fi;; *) printf '%s' "$2";; esac; }
+pin() { T_SCRIP="$(td "$1" SCRIP)"; T_CORPUS="$(td "$1" corpus)"; T_HARNESS="$(td "$1" harness)"; T_GITHUB="$(td "$1" .github)"; }
+export S4E_SEAT=grader S4E_CLASS=grader S4E_BATCH="${S4E_BATCH:-1}" S4E_MODES="${S4E_MODES:-m3}" TMPDIR="${S4E_CYCLE_TMP:-/tmp/s4e/grader}"   # S4E_MODES exported: the cells and the suite row (util_score_row.py from-progress) read the same modes, m3 alone under Lon's mode-3-only order   # one-disk: not a path (the pin: the graded tree's own four repos, by design (lines 20-22))
 PROG="${S4E_CYCLE_PROG:-/home/resources/progress}"
 STATE="$PROG/CYCLE.state"; LOG="$PROG/CYCLE.log"; PIDF="$PROG/CYCLE.pid"; CRASH="$PROG/CYCLE.crash"; SKIP="$PROG/CYCLE.skip"
 RUNNERS="$S4E_HARNESS/scripts/SUITE_RUNNERS.tsv"
@@ -76,7 +86,7 @@ order_cells() {   # stdin: the cells in the table's order; stdout: the lap's ord
         { line[NR] = $0; su[NR] = $1; k = $1 "\t" $5; if (k in s) { tot[$1] += s[k]; seen[$1] = 1 } }
         END { for (i = 1; i <= NR; i++) printf "%d\t%d\t%s\n", (!have ? 0 : (su[i] in seen) ? tot[su[i]] + 1 : 0), i, line[i] }' | sort -t "$(printf '\t')" -k1,1n -k2,2n | cut -f3-
 }
-budget() { S4E_HOME="${3:-$S4E}" S4E_SCRIP="${3:-$S4E}/SCRIP" S4E_CORPUS="${3:-$S4E}/corpus" S4E_HARNESS="${3:-$S4E}/harness" S4E_GITHUB="${3:-$S4E}/.github" python3 -I "${3:-$S4E}/harness/scripts/util_grade_job.py" budget --suite "$1" --cell "$2" 2>/dev/null | sed -n 's/.* ttr_s=\([0-9]*\).*/\1/p' | head -1; }   # one-disk: not a path (the pin of the tree it is given: a base's own four repos)
+budget() { local T_SCRIP T_CORPUS T_HARNESS T_GITHUB; pin "${3:-$S4E}"; S4E_HOME="${3:-$S4E}" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" python3 -I "$T_HARNESS/scripts/util_grade_job.py" budget --suite "$1" --cell "$2" 2>/dev/null | sed -n 's/.* ttr_s=\([0-9]*\).*/\1/p' | head -1; }   # one-disk: not a path (the pin of the tree it is given: a base's own four repos)
 container_key() { case "$1" in snobol4) echo sno-rungs;; icon) echo icn-rungs;; prolog) echo pl-rungs;; pascal) echo pas-rungs;; raku) echo raku-rungs;; snocone) echo snc-rungs;; rebus) echo reb-rungs;; esac; }
 ext_of() { case "$1" in snobol4) echo sno;; icon) echo icn;; prolog) echo pl;; pascal) echo pas;; raku) echo raku;; rebus) echo reb;; snocone) echo sc;; scriptix) echo md;; esac; }
 # A SUITE IS ON DISK IN ONE OF THREE FORMS, AND THE ONE LAUNCH READS ALL THREE UNDER THE SAME ALL.<ext> ALL.ref COMMAND LINE (the coo 2026-11-10, row
@@ -123,11 +133,12 @@ run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23
         ( cd "$S4E" && timeout -k 30 "$ttr" bash "$S4E_HARNESS/scripts/util_run_slot.sh" bash "$S4E_HARNESS"/scripts/$dir $nw ) > "$out" 2>&1 < /dev/null; rc=$?
         echo "$rc $(( $(date +%s) - t0 ))"; return "$rc"
     fi
-    on_base; dir="${dir/#$S4E/$BASE}"; alls="$dir/ALL.$(ext_of "$lang")"   # a master or pkg cell runs on a base at origin's newest heads (choose_base)
+    local T_SCRIP T_CORPUS T_HARNESS T_GITHUB
+    on_base; pin "$BASE"; dir="$(tp "$BASE" "$dir")"; alls="$dir/ALL.$(ext_of "$lang")"   # a master or pkg cell runs on a base at origin's newest heads (choose_base)
     ttr="$(budget "$key" "$cell" "$BASE")"; [ -n "$ttr" ] || ttr=3600
-    echo "CELL_BASE $BASE SCRIP=$(git -C "$BASE/SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$BASE/corpus" rev-parse --short=10 HEAD) binary=$SBIN" > "$out"
+    echo "CELL_BASE $BASE SCRIP=$(git -C "$T_SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$T_CORPUS" rev-parse --short=10 HEAD) binary=$SBIN" > "$out"
     if ! suite_on_disk "$dir" "$alls"; then echo "REFUSE(2): no suite in $dir: no container ($alls and ALL.ref), no format 2 (MULTI-LINERS.md or ONE-LINERS.$(ext_of "$lang")), no files form (a path column in ALL.csv) -- the unified layout is owed (util_build_package_suite.py)" > "$out"; echo "2 0"; return 2; fi
-    ( cd "$BASE" && S4E_HOME="$BASE" S4E_SCRIP="$BASE/SCRIP" S4E_CORPUS="$BASE/corpus" S4E_HARNESS="$BASE/harness" S4E_GITHUB="$BASE/.github" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
+    ( cd "$BASE" && S4E_HOME="$BASE" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash "$T_HARNESS/scripts/util_run_slot.sh" python3 "$T_HARNESS/scripts/corpus_suite_harness.py" run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
     echo "$rc $(( $(date +%s) - t0 ))"
 }
 # THE TEST REQUESTS (the cio 2026-11-10, row bus-one-queue-the-grading-tube-retires-the-cycle-serves-the-test-requests-itself, CIO-82; the grade tube,
@@ -165,7 +176,7 @@ next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && request_ready 
 # it is removed (S4E_WT_TOP=/tmp/s4e S4E_SEAT=grader s4e_worktree.sh rm base<N>), and base_new then makes it anew on /home.
 BASE_TOP="${S4E_WT_TOP:-$(S4E_SEAT=grader bash "$S4E_HARNESS/scripts/s4e_worktree.sh" --show-top 2>/dev/null | sed -n 's/^WT top=\([^ ]*\) .*/\1/p')}"; BASE_TOP="${BASE_TOP:-/tmp/s4e}/grader"; NBASES="${S4E_CYCLE_BASES:-2}"; FETCH_SECS="${S4E_CYCLE_FETCH_SECS:-20}"
 case "$NBASES" in ''|*[!0-9]*|0) NBASES=2;; esac; case "$FETCH_SECS" in ''|*[!0-9]*) FETCH_SECS=20;; esac
-heads_of() { local r; for r in SCRIP harness corpus .github; do git -C "$1/$r" rev-parse "${2:-HEAD}" 2>/dev/null || echo -; done | tr '\n' ' '; }
+heads_of() { local r; for r in SCRIP harness corpus .github; do git -C "$(td "$1" "$r")" rev-parse "${2:-HEAD}" 2>/dev/null || echo -; done | tr '\n' ' '; }
 base_bin() {   # base -> "SCRIP_BIN RT_DIR": the base's OWN SCRIP/scrip and SCRIP/out, one build of its SCRIP tree; rc 2 (a line on stderr) when it cannot be had   # one-disk: not a path (a comment: the base's own clone)
     # THE BASE RUNS ITS OWN BINARY, NEVER THE CACHE'S FILES IN PLACE (the coo and officer_08 2026-11-13 17:4x CST, MEASURED: scrip resolves a linked
     # library relative to its own binary, so the cache's scrip tried /home/resources/builds/scrip/<key>/../corpus/... and every program that links one
@@ -194,7 +205,7 @@ choose_base() {   # sets BASE, SBIN and RTD, and holds BASE shared on fd 8 until
     local now last want cur n b r bb
     exec 6> "$TMPDIR/cycle/base.lock"; flock -x 6
     now=$(date +%s); last=$(stat -c %Y "$TMPDIR/cycle/base.fetched" 2>/dev/null || echo 0)
-    if [ $(( now - last )) -ge "$FETCH_SECS" ]; then for r in SCRIP harness corpus .github; do timeout -k 5 120 git -C "$S4E/$r" fetch -q origin main 2>/dev/null; done; : > "$TMPDIR/cycle/base.fetched"; fi
+    if [ $(( now - last )) -ge "$FETCH_SECS" ]; then for r in SCRIP harness corpus .github; do timeout -k 5 120 git -C "$(td "$S4E" "$r")" fetch -q origin main 2>/dev/null; done; : > "$TMPDIR/cycle/base.fetched"; fi
     want="$(heads_of "$S4E" origin/main)"; cur="$(cat "$TMPDIR/cycle/base.current" 2>/dev/null)"
     if [ -z "$cur" ] || [ ! -f "$cur/.s4e-bin" ] || ! grep -q "^$cur/SCRIP/scrip " "$cur/.s4e-bin" || [ "$(heads_of "$cur")" != "$want" ]; then   # a .s4e-bin that names another tree's files (the build cache's, before 2026-11-13 17:5x) is stale
         for (( n = 1; n <= NBASES; n++ )); do
@@ -229,7 +240,7 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     key="$(sed -n 's/^suite=//p' "$f" | head -1)"; ents="$(sed -n 's/^entries=//p' "$f" | head -1 | tr -s ' ,' '\n\n' | grep -v '^$' | tr '\n' ',' | sed 's/,$//')"
     row="$(awk -F'\t' -v k="$key" '!/^#/ && $1 == k && ($2 == "master" || $2 == "pkg") {print $2 "\t" $3 "\t" $5; exit}' "$RUNNERS")"
     [ -n "$row" ] && [ -n "$ents" ] || { echo "REFUSE(2): suite $key has no master or pkg row of SUITE_RUNNERS.tsv, or the request names no entries" > "$out"; echo "2 0"; return; }
-    IFS=$'\t' read -r kind lang dir <<< "$row"; [ "$kind" = master ] && dir="$S4E_CORPUS/tests/$lang" || dir="$S4E/$dir"   # one-disk: not a path (column 5 of SUITE_RUNNERS.tsv is a path from the root)
+    IFS=$'\t' read -r kind lang dir <<< "$row"; [ "$kind" = master ] && dir="$S4E/corpus/tests/$lang" || dir="$S4E/$dir"   # one-disk: not a path (the root's spelling, as cells writes it; column 5 of SUITE_RUNNERS.tsv is a path from the root; tp respells it for the base below)
     alls="$dir/ALL.$(ext_of "$lang")"
     # A REQUEST READS THE TREE THAT HOLDS ITS LANDING (junior_09 2026-11-13, MEASURED: request 20261113T223938-junior_09-gate_cases_snobol4-493276 was
     # graded at 22:40:46Z on corpus bc7da5229 although origin held the cure b30cac7ee since 22:38:47Z, the root fetched it at 22:39:53Z, and base 1 was
@@ -244,11 +255,12 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
         [ "$(date +%s)" -ge "$tq" ] && { echo "REQUEST_BASE_STALE $BASE: no base reached origin's heads of the request ($want0) in ${S4E_REQ_FRESH_WAIT:-900} s; graded a turn behind" >> "$out"; break; }
         exec 8<&-; sleep 15; choose_base 2>> "$out" || { echo "2 $(( $(date +%s) - t0 ))"; return; }
     done
-    dir="${dir/#$S4E/$BASE}"; alls="${alls/#$S4E/$BASE}"; echo "REQUEST_BASE $BASE SCRIP=$(git -C "$BASE/SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$BASE/corpus" rev-parse --short=10 HEAD) binary=$SBIN" >> "$out"
+    local T_SCRIP T_CORPUS T_HARNESS T_GITHUB; pin "$BASE"
+    dir="$(tp "$BASE" "$dir")"; alls="$(tp "$BASE" "$alls")"; echo "REQUEST_BASE $BASE SCRIP=$(git -C "$T_SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$T_CORPUS" rev-parse --short=10 HEAD) binary=$SBIN" >> "$out"
     # THE BOUND IS READ FROM THE BASE THE REQUEST RUNS ON (senior_01 2026-11-13, MEASURED: it was read from the grader root's ALL.csv before the forward, so
     # puzzles hakank_swi_euler14, whose timeout_s origin had raised to 3600 at corpus dd98b6587, was killed at ttr 420 s though it answers in 299 s)
     ttr="$(budget "$key" "entry:$ents" "$BASE")"; [ -n "$ttr" ] || ttr=1800
-    ( cd "$BASE" && S4E_HOME="$BASE" S4E_SCRIP="$BASE/SCRIP" S4E_CORPUS="$BASE/corpus" S4E_HARNESS="$BASE/harness" S4E_GITHUB="$BASE/.github" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 bash harness/scripts/util_run_slot.sh timeout -k 30 "$ttr" python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
+    ( cd "$BASE" && S4E_HOME="$BASE" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 bash "$T_HARNESS/scripts/util_run_slot.sh" timeout -k 30 "$ttr" python3 "$T_HARNESS/scripts/corpus_suite_harness.py" run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
     [ "$kind" = master ] && record_suite "$lang"; [ "$kind" = pkg ] && record_pkg "$key"
     echo "$rc $(( $(date +%s) - t0 ))"; }
 finish_request() {   # name rc secs: the file lands in done/ with its per-entry verdicts and one served= line
@@ -278,7 +290,8 @@ record_pkg() {   # key -> that pkg row of SUITES.tsv, from its progress rows in 
 # with the corpus commit that last changed the suite's table (the honest-denominator rule, CEO-546, asks a move to name why; in the moving sandbox,
 # skill suites-and-grading section 9, the why is that commit). CYCLE.refused keeps only what is still refused, for keys the cycle still runs.
 record_once() {   # key stamp -> from-progress output; rc its exit
-    ( cd "${BASE:-$S4E}" && S4E_HOME="${BASE:-$S4E}" S4E_SCRIP="${BASE:-$S4E}/SCRIP" S4E_CORPUS="${BASE:-$S4E}/corpus" S4E_HARNESS="${BASE:-$S4E}/harness" S4E_GITHUB="${BASE:-$S4E}/.github" S4E_CRITERION_CHANGED="$2" timeout -k 30 900 python3 -I harness/scripts/util_score_row.py from-progress --suite "$1" --partial 2>&1 < /dev/null )   # one-disk: not a path (the graded tree's own four repos, a base or this root)
+    local T_SCRIP T_CORPUS T_HARNESS T_GITHUB; pin "${BASE:-$S4E}"
+    ( cd "${BASE:-$S4E}" && S4E_HOME="${BASE:-$S4E}" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" S4E_CRITERION_CHANGED="$2" timeout -k 30 900 python3 -I "$T_HARNESS/scripts/util_score_row.py" from-progress --suite "$1" --partial 2>&1 < /dev/null )   # one-disk: not a path (the graded tree's own four repos, a base or this root)
 }
 runner_row() {   # key -> "kind lang dir" of its SUITE_RUNNERS.tsv row, dir from the corpus root
     awk -F'\t' -v k="$1" '!/^#/ && $1 == k { d = ($2 == "master") ? "tests/" $3 : $5; sub(/^corpus\//, "", d); print $2 "\t" $3 "\t" d; exit }' "$RUNNERS"
@@ -308,12 +321,12 @@ record_row() {   # key -> the suite's row from the progress store; a refusal the
     o="$(record_once "$1" "")"; rc=$?
     if [ "$rc" -ne 0 ] && printf '%s\n' "$o" | grep -q "no suite key $1 in" && [ -n "$kind" ]; then
         o="$o
-$( cd "$BASE" && python3 -I harness/scripts/util_suite_banner.py --open-row "$1" "$(cycle_nick "$1" "$lang")" "🧪" "$lang" 2>&1 )"   # one-disk: not a path (the base's own harness, the tree graded)
+$( cd "$BASE" && python3 -I "$(td "$BASE" harness)/scripts/util_suite_banner.py" --open-row "$1" "$(cycle_nick "$1" "$lang")" "🧪" "$lang" 2>&1 )"   # one-disk: not a path (the base's own harness, the tree graded)
         o="$o
 $(record_once "$1" "")"; rc=$?
     fi
     if [ "$rc" -ne 0 ] && mv="$(printf '%s\n' "$o" | grep -oE 'denominator moves [0-9]+ -> [0-9]+' | tail -1)" && [ -n "$mv" ] && [ -n "$dir" ]; then
-        c="$(git -C "$BASE/corpus" log -1 --format='%h %s' -- "$dir" 2>/dev/null | tr '\t|' '  ' | cut -c1-140)"
+        c="$(git -C "$(td "$BASE" corpus)" log -1 --format='%h %s' -- "$dir" 2>/dev/null | tr '\t|' '  ' | cut -c1-140)"
         st="$(date +%F):${mv#denominator moves }, the table ${dir} last moved at corpus ${c:-unknown} (stamped by the cycle)"
         o="$o
 $(record_once "$1" "$st")"; rc=$?

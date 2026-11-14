@@ -105,7 +105,7 @@ while [ $# -gt 0 ]; do
                   " | --push [--gate CMD | --proved TEXT] [REPO ...] | --probe | --tables" ;;
     esac
 done
-[ -n "$home" ] || home="$(cd "$HERE/../.." && pwd)"
+[ -n "$home" ] || home="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"   # the seat's root, never the folder above /home/harness (officer_05 2026-11-13: run from /home/harness with no --home the home read /home)
 PROBE_GREEN="${S4E_LAND_PROBE_GREEN:-/home/resources/progress/LAND_PROBE_GREEN.tsv}"   # hash, utc, seat, stages: one green probe per lander hash, box-wide
 PO_LAND="${S4E_POSTOFFICE:-/home/resources/postoffice}"; CONF="$PO_LAND/LAND.conf"   # the switches of the header's LAND.conf block; a scratch postoffice has its own file, so a probe never reads the live one
 conf() { local v; v="$(awk -F= -v k="$1" '!/^#/ && $1 == k { v = $2 } END { print v }' "$CONF" 2>/dev/null)"; printf '%s' "${v:-$2}"; }
@@ -139,12 +139,16 @@ if [ "$mode" = tables ]; then
     exit 0
 fi
 scratch_clone() {   # <T>: a bare scratch origin of each repo borrowing this root's objects, and a work clone of each under <T>/work (corpus sparse); the probes build on it
-    local src="$home" T="$1" r sha objs b
+    local T="$1" r sha objs b sr
     mkdir -p "$T/origin" "$T/work" "$T/po"
     for r in "${ORDER[@]}"; do
-        [ -e "$src/$r/.git" ] || refuse "probe: no $src/$r to borrow"
-        sha="$(git -C "$src/$r" rev-parse HEAD)" || refuse "probe: $r has no HEAD"
-        objs="$(cd "$src/$r" && git rev-parse --path-format=absolute --git-common-dir)/objects"
+        # a root that holds its SCRIP clone alone lends SCRIP; corpus, harness and .github are borrowed from the root's own clone while it holds one, else from the
+        # one-disk checkout lib_paths.sh names (officer_05 2026-11-13, the cio 2026-11-14: in a cutover root the probe refused on the first missing sibling)
+        sr="$(rd "$r")"
+        [ -e "$sr/.git" ] || case "$r" in corpus) sr="$S4E_CORPUS" ;; harness) sr="$S4E_HARNESS" ;; .github) sr="$S4E_GITHUB" ;; esac
+        [ -e "$sr/.git" ] || refuse "probe: no $r to borrow: neither $(rd "$r") nor its one-disk checkout ($sr) is a repo"
+        sha="$(git -C "$sr" rev-parse HEAD)" || refuse "probe: $r has no HEAD"
+        objs="$(cd "$sr" && git rev-parse --path-format=absolute --git-common-dir)/objects"
         b="$T/origin/$r.git"
         git init -q --bare "$b" && echo "$objs" > "$b/objects/info/alternates" || refuse "probe: cannot make the scratch origin of $r"
         git -C "$b" update-ref refs/heads/main "$sha" && git -C "$b" symbolic-ref HEAD refs/heads/main || refuse "probe: cannot point the scratch origin of $r at $sha"
@@ -1042,6 +1046,18 @@ keep_home_trees() {   # THEN THE FLEET'S TREES: a push of corpus, harness or .gi
     done
 }
 keep_home_trees
+drop_taken() {   # THEN THE ROOT LETS GO OF WHAT IT TOOK (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover): a root holds corpus, harness or .github only while it
+    # carries a change to it; a clone s4e_take.sh made (git config s4e.taken) that now stands clean at origin/main is removed, and the root reads the one-disk
+    # checkout again. A clone that still holds an edit, a stash or a commit origin lacks is kept and named; one take did not make is never touched; the clone
+    # this lander itself runs from is left for the seat (s4e_take.sh drop). Never a reason to fail a pushed landing.
+    local r o
+    for r in corpus harness .github; do
+        [ -e "$home/$r/.git" ] && [ "$(git -C "$home/$r" config --get s4e.taken 2>/dev/null)" = true ] || continue
+        case "$HERE/" in "$home/$r"/*) echo "LAND stage=sync $home/$r kept: this lander runs from it (s4e_take.sh drop $r once done)"; continue ;; esac
+        o="$(S4E_HOME="$home" bash "$HERE/s4e_take.sh" drop --landed "$r" 2>&1 7>&- 8>&- 9>&-)"; [ -z "$o" ] || echo "LAND stage=sync $(printf '%s' "$o" | tail -1 | cut -c1-220)"
+    done
+}
+[ -f "$HERE/s4e_take.sh" ] && drop_taken
 if [ "$mode" = push ]; then
     for x in "${pushed[@]}"; do record_hand_push "${x%@*}" "${x#*@}"; done
     ledger ok; rm -rf "$LOG"; echo "LAND ok mode=push stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt hand_push=leased push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds serial_round=$serial_round ($(date -u +%Y-%m-%dT%H:%M:%SZ))"; exit 0

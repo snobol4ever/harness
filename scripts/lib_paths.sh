@@ -3,6 +3,7 @@
 # CST, in the coo's window, verbatim: "So I'm creating /home/corpus and /home/harness for the ENTIRE FLEET to share. So get those scripts fixed."; 18:1x: "a root folder is
 # either a SCRIP, snobol4dotnet, or snobol4jvm clone with no siblings ... all shell scripts will change from the SIBLING model to the ABSOLUtE model."). Source it; it exports:
 #   S4E_SCRIP    the seat's SCRIP clone: $S4E_SCRIP when set, else the root itself when the root IS a SCRIP clone (it holds src/ and a Makefile), else <root>/SCRIP
+#   (corpus, harness and .github: a seat root's OWN clone, <root>/<repo> holding .git, comes before the one-disk checkout: s4e_take.sh, the cio 2026-11-14)
 #   S4E_CORPUS   $S4E_CORPUS when set, else /home/corpus once it is a checkout (it holds .git) and the home is a seat's (S4E_HOME unset or /home/claude_<seat>), else <root>/corpus
 #   S4E_HARNESS  $S4E_HARNESS when set, else /home/harness once it is a checkout, else <root>/harness
 #   S4E_GITHUB   $S4E_GITHUB when set, else /home/.github once it is a checkout, else <root>/.github
@@ -19,7 +20,10 @@ _s4e_paths_seat_home() {   # the one-disk checkouts are a default only for a rea
     local h="${S4E_HOME%/}" n; n="${h#/home/claude_}"; [ "$n" != "$h" ] && [ -n "$n" ] && [ "${n#*/}" = "$n" ]
 }
 _s4e_paths_pick() {   # <env value> <one-disk dir> <sibling dir>
-    if [ -n "$1" ]; then printf '%s\tenv' "$1"; elif _s4e_paths_seat_home && [ -e "$2/.git" ]; then printf '%s\tone-disk' "$2"; else printf '%s\tsibling' "$3"; fi
+    # A ROOT'S OWN CLONE WINS WHILE THE ROOT HOLDS ONE (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover): a seat root holds corpus, harness or .github
+    # only while it carries a change to it (s4e_take.sh makes the clone, the landing drops it), so the seat's runs grade its own change with nothing set.
+    if [ -n "$1" ]; then printf '%s\tenv' "$1"; elif _s4e_paths_seat_home && [ "$3" != "$2" ] && [ -e "$3/.git" ]; then printf '%s\town' "$3"
+    elif _s4e_paths_seat_home && [ -e "$2/.git" ]; then printf '%s\tone-disk' "$2"; else printf '%s\tsibling' "$3"; fi
 }
 if [ -n "${S4E_SCRIP:-}" ]; then _s4e_scrip_from=env
 elif [ -d "$_s4e_paths_root/src" ] && [ -f "$_s4e_paths_root/Makefile" ]; then S4E_SCRIP="$_s4e_paths_root"; _s4e_scrip_from=root
@@ -52,8 +56,12 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
                 o="$($un -u S4E_ONE_DISK_TOP S4E_HOME=/home/claude_selftest_seat bash "$me/lib_paths.sh" --show)"; case "$o" in *"S4E_CORPUS=/home/corpus (one-disk)"*) ;; *) why="$why arm 5: a seat root did not read /home/corpus ($o);" ;; esac
                 p="$($un -u S4E_ONE_DISK_TOP S4E_HOME=/home/claude_selftest_seat python3 -I "$me/harness_paths.py" --show)"; [ "$p" = "$o" ] || why="$why arm 5: harness_paths.py for a seat root says '$p';"
             fi
+            mkdir -p "$t/root/corpus/.git"
+            o="$($un S4E_ONE_DISK_TOP="$t" S4E_HOME="$t/root" bash "$me/lib_paths.sh" --show)"
+            [ "$o" = "S4E_SCRIP=$t/root (root) S4E_CORPUS=$t/root/corpus (own) S4E_HARNESS=$t/harness (one-disk) S4E_GITHUB=$t/.github (one-disk)" ] || why="$why arm 6: a root's own clone did not win over the one-disk checkout ($o);"
+            p="$($un S4E_ONE_DISK_TOP="$t" S4E_HOME="$t/root" python3 -I "$me/harness_paths.py" --show)"; [ "$p" = "$o" ] || why="$why arm 6: harness_paths.py with a root's own clone says '$p';"
             rm -rf "$t"
-            [ -z "$why" ] && { echo "LIB_PATHS ok arms=5 (the environment wins; the siblings with nothing absolute; the root as the SCRIP clone and /home/corpus, /home/harness, /home/.github once each is a checkout; Python and bash agree; a scratch S4E_HOME reads its own siblings, a seat root the one-disk checkouts)"; exit 0; }
+            [ -z "$why" ] && { echo "LIB_PATHS ok arms=6 (a root's own clone of corpus, harness or .github wins while the root holds one;the environment wins; the siblings with nothing absolute; the root as the SCRIP clone and /home/corpus, /home/harness, /home/.github once each is a checkout; Python and bash agree; a scratch S4E_HOME reads its own siblings, a seat root the one-disk checkouts)"; exit 0; }
             echo "LIB_PATHS RED:$why"; exit 1 ;;
         *) echo "usage: source lib_paths.sh | bash lib_paths.sh --show | --selftest" >&2; exit 2 ;;
     esac

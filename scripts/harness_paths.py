@@ -29,9 +29,13 @@ def _pick(env, name, root):
     if v:
         return Path(v), "env"
     one = Path(os.environ.get("S4E_ONE_DISK_TOP", "/home")) / name
+    own = _root(root) / name
+    # a root's own clone wins while the root holds one (s4e_take.sh makes it, the landing drops it; the cio 2026-11-14, lib_paths.sh _s4e_paths_pick)
+    if _seat_home() and str(own) != str(one) and (own / ".git").exists():
+        return own, "own"
     if _seat_home() and (one / ".git").exists():
         return one, "one-disk"
-    return _root(root) / name, "sibling"
+    return own, "sibling"
 
 
 def _scrip(root):

@@ -1,7 +1,7 @@
 #!/bin/bash
 # box_act.sh -- THE TICK'S ACTUATORS (row tick-act-arms-copied-from-the-controller, the cio's ruling 2026-11-07; skill shared-box): a verbatim copy of box_controller.sh's unit_of(), apply() (its lines 39 to 57) and the BOX.state line (its lines 122, 124 and 125), with the decided substitutions: $S/ -> ${S4E_BOX_S:-/home/claude_coo/.scratch/verifier}/; the BOX.state path -> ${S4E_BOX_STATE:-/home/resources/progress/BOX.state}; systemctl set-property prefixed by run; the jobserver set and the s4e_msg.sh send pipes prefixed by run (the jobserver's run sits before setsid, which cannot exec a shell function); the decide text read from stdin into $DL where the controller reads $S/decide.last. S4E_ACT_DRY=1 prints each run line as DRY and runs nothing. Usage: box_act.sh < decide.last (apply, then the BOX.state line).
 U=/sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service; TERM_SL=$U/app.slice/app-org.gnome.Terminal.slice; export XDG_RUNTIME_DIR=/run/user/$(id -u)
-JS=/home/claude_coo/harness/scripts/util_jobserver.sh; MSG=/home/claude_coo/harness/scripts/s4e_msg.sh; P=${S4E_BOX_P:-/home/resources/progress}
+_act_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; JS=$_act_here/util_jobserver.sh; MSG=$_act_here/s4e_msg.sh; P=${S4E_BOX_P:-/home/resources/progress}
 run() { if [ "${S4E_ACT_DRY:-0}" = 1 ]; then printf 'DRY %s\n' "$*"; else "$@"; fi; }
 unit_of() { local p n; for p in $(pgrep -f '^claude --name '); do n=$(tr '\0' ' ' < /proc/$p/cmdline | awk '{print tolower($3)}' | tr '-' '_'); [ "$n" = "$1" ] && { cut -d: -f3 /proc/$p/cgroup | sed 's|.*/||'; return 0; }; done; return 1; }
 apply() {  # the ACTUATOR lines of decide() on stdin -> the box; every change logged in box_controller.log

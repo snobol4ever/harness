@@ -26,11 +26,14 @@ SEM_HOME="${S4E_SEM_HOME:-/tmp/s4e-sem}"
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh"
 repo_dir() { if [ "$1" = SCRIP ]; then printf '%s' "$S4E_SCRIP"; else printf '%s/%s' "$ROOT" "$1"; fi; }
 
-# point_at_coo ROOT REPO: the alternates line for one repo, written once (idempotent). The coo's own root gets none, and a repo the coo root lacks gets none.
-point_at_coo() {
-    local objs="/home/claude_coo/$2/.git/objects" alt="$1/$2/.git/objects/info/alternates"
-    [ "$1" = /home/claude_coo ] && return 0
+# point_at_store ROOT REPO: the alternates line for one repo, written once (idempotent). NO ROOT BORROWS FROM ANOTHER ROOT (the cio 2026-11-14, row
+# harness-one-disk-step-6-the-cutover; until then the line named /home/claude_coo/<repo>, and this function wrote it back at every sync): SCRIP borrows from the
+# one store /home/SCRIP.git, and a corpus, harness or .github a root holds for a change (s4e_take.sh) from its one-disk checkout. A store that is absent gets no line.
+point_at_store() {
+    local objs alt="$1/$2/.git/objects/info/alternates"
+    case "$2" in SCRIP) objs="${S4E_SCRIP_STORE:-/home/SCRIP.git}/objects" ;; *) objs="${S4E_ONE_DISK_TOP:-/home}/$2/.git/objects" ;; esac
     [ -d "$objs" ] || return 0
+    [ "$(cd "$1/$2/.git/objects" 2>/dev/null && pwd -P)" != "$(cd "$objs" && pwd -P)" ] || return 0
     mkdir -p "$(dirname "$alt")" || return 1
     grep -qxF "$objs" "$alt" 2>/dev/null || printf '%s\n' "$objs" >> "$alt"
 }
@@ -54,7 +57,7 @@ sync_all() {
             echo "SYNC $r absent from $ROOT (the absolute model: $r is read from its one-disk checkout)"; continue
         fi
         have="$have $r"
-        [ "$dir" = "$ROOT/$r" ] && { point_at_coo "$ROOT" "$r" || { echo "REFUSE(2): cannot write $dir/.git/objects/info/alternates"; return 2; }; }
+        [ "$dir" = "$ROOT/$r" ] && { point_at_store "$ROOT" "$r" || { echo "REFUSE(2): cannot write $dir/.git/objects/info/alternates"; return 2; }; }
     done
     for r in $have; do
         fetch_slot "$(repo_dir "$r")"; frc=$?
@@ -91,11 +94,11 @@ relink_shared() {
         [ "$(git -C "$ROOT/$r" config --get s4e.shared 2>/dev/null)" = true ] || continue
         ph="$(git -C "${S4E_SHARED:-/home/resources/shared}/$r" rev-parse HEAD 2>/dev/null)"; sh="$(git -C "$ROOT/$r" rev-parse HEAD)"
         if [ "$ph" != "$sh" ] && ! git -C "$ROOT/$r" merge-base --is-ancestor "$sh" "$ph" 2>/dev/null; then
-            bash "$ROOT/harness/scripts/util_shared_pristine.sh" update "$r" | sed 's/^/  /'
+            bash "$(dirname "${BASH_SOURCE[0]}")/util_shared_pristine.sh" update "$r" | sed 's/^/  /'
         fi
         todo="$todo --repo $r"
     done
-    [ -n "$todo" ] && python3 -I "$ROOT/harness/scripts/util_relink_root.py" "$ROOT" $todo | sed 's/^/  /'
+    [ -n "$todo" ] && python3 -I "$(dirname "${BASH_SOURCE[0]}")/util_relink_root.py" "$ROOT" $todo | sed 's/^/  /'
     return 0
 }
 

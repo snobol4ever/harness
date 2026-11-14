@@ -8,32 +8,25 @@
 # It does NOT touch ROSTER, FLEET or the old seat's rows: the cio adds the seat to ROSTER and reowns the retired HQ's rows in the same sitting, by hand, measured.
 # rc 0 populated (prints the root's du); 1 refused (no folder, folder not empty, no source root); 2 usage.
 set -uo pipefail
-# point_at_coo ROOT REPO: the alternates line for one repo, written once (idempotent), as util_sync_root.sh writes it (the cio 2026-11-07): the seat's fetches move refs and the few new objects, never a pack.
-point_at_coo() {
-    local objs="/home/claude_coo/$2/.git/objects" alt="$1/$2/.git/objects/info/alternates"
-    [ "$1" = /home/claude_coo ] && return 0
-    [ -d "$objs" ] || return 0
-    mkdir -p "$(dirname "$alt")" || return 1
-    grep -qxF "$objs" "$alt" 2>/dev/null || printf '%s\n' "$objs" >> "$alt"
-}
+# THE NEW LAYOUT SUPERSEDES THE HEADER'S FOUR REPOS (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover; Lon, in the cio's window, verbatim: "We are meant not
+# to have folder .github, harness, and corpus in each /home/claude folder, but they have not been cleaned out. Complete the new disk/file layout."): a seat root is
+# its SCRIP clone, .claude and CLAUDE.md, nothing else. SCRIP borrows its objects from the one store /home/SCRIP.git (the grader's keeper keeps it at origin); corpus,
+# harness and .github are read from /home/corpus, /home/harness and /home/.github (lib_paths.sh), and this script runs from /home/harness.
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; STORE="${S4E_SCRIP_STORE:-/home/SCRIP.git}"; GH="${S4E_GITHUB:-/home/.github}"
 NN="${1:-}"; FROM=/home/claude_cio; [ "${2:-}" = --from ] && FROM="${3:?--from ROOT}"
 # grader: the grade workers own root, which nothing but the controller syncs and builds (the coo 2026-11-07 16:23: a cio landing rebuilt the binary under job 1221)
 case "$NN" in [0-9][0-9]) seat="junior_$NN";; junior_[0-9][0-9]|officer_[0-9][0-9]|senior_[0-9][0-9]|grader) seat="$NN";; *) echo "usage: populate_numbered_seat.sh NN|officer_NN|senior_NN [--from ROOT]  (NN two digits: the seat is worker_NN; a named numbered seat is itself; Lon 2026-11-07 15:4x: the Opus designers and Sonnet seniors)"; exit 2;; esac
 root="/home/claude_$seat"; PO=/home/resources/postoffice
 [ -d "$root" ] || { echo "REFUSE(1): $root does not exist -- Lon creates the folder (/home is root's)"; exit 1; }
 [ -z "$(ls -A "$root")" ] || { echo "REFUSE(1): $root is not empty -- this script fills an empty folder only"; exit 1; }
-for r in SCRIP corpus harness .github; do [ -d "$FROM/$r/.git" ] || { echo "REFUSE(1): $FROM/$r is not a repo"; exit 1; }; done
+[ "$(git --git-dir="$STORE" rev-parse --is-bare-repository 2>/dev/null)" = true ] || { echo "REFUSE(1): $STORE is not the bare SCRIP store"; exit 1; }
+[ -d "$GH/skills" ] || { echo "REFUSE(1): no skills at $GH/skills"; exit 1; }
 [ -f "$FROM/.claude/settings.json" ] && [ -f "$FROM/.claude/settings.local.json" ] || { echo "REFUSE(1): $FROM/.claude has no settings to template"; exit 1; }
 src_seat="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["env"]["S4E_SEAT"])' "$FROM/.claude/settings.local.json")"
-# THE SHARED FORM (the cio 2026-11-12, row fleet-32-16-8-4-shared-repos; /home read 67G free): each repo is cloned --shared from the coo root, so its
-# objects are borrowed and none copied, and once checked out every clean file of corpus, harness and .github becomes a hard link to the read-only
-# pristine (util_relink_root.py, util_shared_pristine.sh); the root keeps its own directories, so every relative path works unchanged.
-COO=/home/claude_coo
-for r in SCRIP corpus harness .github; do git clone -q --shared "$COO/$r" "$root/$r" && git -C "$root/$r" remote set-url origin "$(git -C "$COO/$r" remote get-url origin)" || exit 1; done
-for r in SCRIP corpus harness .github; do point_at_coo "$root" "$r" || exit 1; done
-for r in SCRIP corpus harness .github; do git -C "$root/$r" fetch -q origin && git -C "$root/$r" merge -q --ff-only origin/main || exit 1; done
-[ -d "${S4E_SHARED:-/home/resources/shared}/corpus/.git" ] && { bash "$root/harness/scripts/util_shared_pristine.sh" update > /dev/null; python3 -I "$root/harness/scripts/util_relink_root.py" "$root" | sed 's/^/  /'; }
-mkdir -p "$root/.claude" "$root/.scratch" "/tmp/s4e/$seat" "$PO/$seat/inbox" "$PO/$seat/archive"
+# THE CLONE BORROWS THE STORE'S OBJECTS (clone --shared writes the alternates line), origin is github, and main stands at origin's newest head.
+git clone -q --shared --no-checkout "$STORE" "$root/SCRIP" && git -C "$root/SCRIP" remote set-url origin "$(git --git-dir="$STORE" remote get-url origin)" || exit 1
+git -C "$root/SCRIP" config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' && git -C "$root/SCRIP" fetch -q origin && git -C "$root/SCRIP" checkout -q -B main origin/main && git -C "$root/SCRIP" branch -q --set-upstream-to=origin/main main || exit 1
+mkdir -p "$root/.claude" "/tmp/s4e/$seat" "$PO/$seat/inbox" "$PO/$seat/archive"
 [ -d "$PO/$seat/HQ" ] && rmdir "$PO/$seat/HQ"; echo cio > "$PO/$seat/HQ"
 sed "s#$FROM#$root#g; s#\b$src_seat\b#$seat#g" "$FROM/.claude/settings.json" > "$root/.claude/settings.json"
 sed "s#$FROM#$root#g; s#\b$src_seat\b#$seat#g" "$FROM/.claude/settings.local.json" > "$root/.claude/settings.local.json"
@@ -46,12 +39,12 @@ python3 -c 'import json,sys; [json.load(open(f)) for f in sys.argv[1:]]' "$root/
 # stale that way); the root is refused instead if the user-level copy lacks a skill of the source. With no manifest the root copy is made as before.
 _uskills="${S4E_SKILLS_USER:-$HOME/.claude/skills}"; _uman="${S4E_SKILLS_MANIFEST:-$(dirname "$_uskills")/s4e-skills.manifest}"
 if [ -f "$_uman" ]; then
-    for s in "$FROM/.github/skills"/*/; do n="$(basename "$s")"; [ -f "$_uskills/$n/SKILL.md" ] || { echo "REFUSE(1): the user-level skills $_uskills lack $n (run propagate_skills.sh --user); no root copy is made once $_uman exists"; exit 1; }; done
+    for s in "$GH/skills"/*/; do n="$(basename "$s")"; [ -f "$_uskills/$n/SKILL.md" ] || { echo "REFUSE(1): the user-level skills $_uskills lack $n (run propagate_skills.sh --user); no root copy is made once $_uman exists"; exit 1; }; done
     echo "SKILLS user-level: $_uskills serves $(wc -l < "$_uman") skills; no root copy"
 else
-mkdir -p "$root/.claude/skills" && for s in "$FROM/.github/skills"/*/; do n="$(basename "$s")"; rm -rf "$root/.claude/skills/$n"; cp -r "$s" "$root/.claude/skills/$n"; done
-[ "$(ls -d "$root/.claude/skills"/*/ 2>/dev/null | wc -l)" -ge 1 ] || { echo "REFUSE(1): no skill was installed into $root/.claude/skills (source $FROM/.github/skills)"; exit 1; }
+mkdir -p "$root/.claude/skills" && for s in "$GH/skills"/*/; do n="$(basename "$s")"; rm -rf "$root/.claude/skills/$n"; cp -r "$s" "$root/.claude/skills/$n"; done
+[ "$(ls -d "$root/.claude/skills"/*/ 2>/dev/null | wc -l)" -ge 1 ] || { echo "REFUSE(1): no skill was installed into $root/.claude/skills (source $GH/skills)"; exit 1; }
 fi
-python3 "$root/harness/scripts/propagate_seat_digests_cto_484.py" --apply "--root=$seat" | tail -1
-echo "POPULATED $seat at $root: $(du -sh "$root" | cut -f1) (full corpus; S4E_SEAT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["env"]["S4E_SEAT"])' "$root/.claude/settings.local.json"))"
+python3 "$HERE/propagate_seat_digests_cto_484.py" --apply "--root=$seat" | tail -1
+echo "POPULATED $seat at $root: $(du -sh "$root" | cut -f1) (its SCRIP clone alone; S4E_SEAT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["env"]["S4E_SEAT"])' "$root/.claude/settings.local.json"))"
 echo "NEXT, BY HAND: add $seat to ROSTER and FLEET: IDLE EXCEPT on MODE; reown the retired HQ's open rows to $seat; (cd $root/SCRIP && make -j4) under a run slot"

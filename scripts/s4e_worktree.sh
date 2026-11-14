@@ -34,7 +34,15 @@
 # THE LINE: WORKTREE repos=4 build=fetched size_mb=N cap_mb=C corpus=full|sparse:<langs> path=<wt>
 # rc 0 made, removed or listed; rc 1 refused by a measurement (no build fetched, over the cap, a name taken, no such worktree); rc 2 usage, the cap, a missing baton, or cannot measure.
 set -u
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+# WHERE THE FOUR REPOS ARE (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover; Lon, in the cio's window, verbatim: "We are meant not to have folder
+# .github, harness, and corpus in each /home/claude folder, but they have not been cleaned out. Complete the new disk/file layout."): a root holds its SCRIP clone
+# alone, so the worktrees of a base are taken from the four lib_paths.sh names (rd): SCRIP from the seat's clone, corpus, harness and .github from /home/corpus,
+# /home/harness and /home/.github, the grader's to keep. MEASURED before it: this script found the four as siblings of its own folder, so run from /home/harness
+# it read /home/SCRIP and refused, and the cycle's bases could be made only while /home/claude_grader held all four.
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd -P)}"
+. "$HERE/lib_paths.sh"
+rd() { case "$1" in SCRIP) printf '%s' "$S4E_SCRIP" ;; harness) printf '%s' "$S4E_HARNESS" ;; corpus) printf '%s' "$S4E_CORPUS" ;; .github) printf '%s' "$S4E_GITHUB" ;; *) printf '%s/%s' "$ROOT" "$1" ;; esac; }
 REPOS="SCRIP harness corpus .github"
 CAP_MB=4096
 # THE CAP IS ONE SHARED NUMBER WITH A DISK FLOOR (row the-worktree-cap-is-one-shared-number-with-a-disk-floor, the cio 2026-11-13, MEASURED 11:58 CST: 40 worktrees stood, the
@@ -45,7 +53,7 @@ CAP_MB=4096
 WT_CONF="${S4E_WT_CONF:-/home/resources/postoffice/WORKTREES.conf}"
 wt_conf() { awk -F= -v k="$1" '!/^#/ && $1 == k { v = $2 } END { if (v ~ /^[0-9]+$/) print v }' "$WT_CONF" 2>/dev/null; }
 WT_MAX="${WT_MAX:-$(wt_conf max)}"; WT_MAX="${WT_MAX:-40}"; WT_FREE_GB="$(wt_conf free_gb)"; WT_FREE_GB="${WT_FREE_GB:-0}"
-TIERS_TSV="$ROOT/.github/TIERS.tsv"
+TIERS_TSV="$S4E_GITHUB/TIERS.tsv"
 # THE WORKTREES LIVE ON /home (officer_02 2026-11-13, row worktrees-live-on-home-and-hard-link-their-build; MEASURED by the coo 14:3x CST: /tmp, its own 63 GB
 # filesystem, read 87 to 90% full, 48 GB of it worktrees, and new refused box-wide under the free_gb floor). A worktree under /tmp could share no byte with the
 # pristine of /home/resources/shared, since a hard link cannot join two filesystems (util_relink_root.py refuses). TOP is WORKTREES.conf's top= line, else
@@ -80,9 +88,9 @@ drop() {
     [ -f "$marker" ] || die "REFUSE(1): $wt has no $marker -- new did not make it, so rm leaves it alone" 1
     for r in $REPOS; do
         grep -qx "repo=$r" "$marker" || continue
-        git -C "$ROOT/$r" worktree remove --force --force "$wt/$r" >/dev/null 2>&1
+        git -C "$(rd "$r")" worktree remove --force --force "$wt/$r" >/dev/null 2>&1
         rm -rf "$wt/$r"
-        git -C "$ROOT/$r" worktree prune >/dev/null 2>&1
+        git -C "$(rd "$r")" worktree prune >/dev/null 2>&1
     done
     rm -rf "$wt"
 }
@@ -272,15 +280,15 @@ new_wt() {
         [ -f "$BATONS/$row.task.md" ] || die "REFUSE(2): no baton $BATONS/$row.task.md for --row $row" 2
     fi
     for r in $REPOS; do
-        git -C "$ROOT/$r" rev-parse -q --verify "$base^{commit}" >/dev/null 2>&1 || die "REFUSE(2): base '$base' is not a commit in $ROOT/$r" 2
+        git -C "$(rd "$r")" rev-parse -q --verify "$base^{commit}" >/dev/null 2>&1 || die "REFUSE(2): base '$base' is not a commit in $(rd "$r")" 2
     done
     if [ -n "$langs" ]; then
         sparse=1; corpus_mode="sparse:$langs"
         for l in $(printf '%s' "$langs" | tr ',' ' '); do
             case "$l" in ""|*[!a-z0-9_]*) die "REFUSE(2): language '$l' must be [a-z0-9_]+" 2 ;; esac
-            [ -n "$(git -C "$ROOT/corpus" ls-tree -d "$base" -- "tests/$l")" ] || die "REFUSE(2): corpus at $base has no tests/$l" 2
+            [ -n "$(git -C "$S4E_CORPUS" ls-tree -d "$base" -- "tests/$l")" ] || die "REFUSE(2): corpus at $base has no tests/$l" 2
             pats+=("/tests/$l/")
-            [ -n "$(git -C "$ROOT/corpus" ls-tree -d "$base" -- "packages/$l")" ] && pats+=("/packages/$l/")   # the language's vendored packages (the coo 2026-11-08 10:57 on officer_05's measurement: a Unicon program that calls a posix builtin links posix.icn from packages/icon/unicon_ipl, so an icon worktree without packages/icon read step 13b RED after its cure)
+            [ -n "$(git -C "$S4E_CORPUS" ls-tree -d "$base" -- "packages/$l")" ] && pats+=("/packages/$l/")   # the language's vendored packages (the coo 2026-11-08 10:57 on officer_05's measurement: a Unicon program that calls a posix builtin links posix.icn from packages/icon/unicon_ipl, so an icon worktree without packages/icon read step 13b RED after its cure)
         done
         pats+=(/include/ /library/ /README.md /LICENSE /NOTICE /.gitignore)
     elif [ "$full" = 0 ]; then
@@ -288,7 +296,7 @@ new_wt() {
         pats+=('/*' '!/benchmarks/' '!/demos/')
     fi
     mkdir -p "$wt" || die "REFUSE(2): cannot make $wt" 2
-    sha="$(git -C "$ROOT/SCRIP" rev-parse --short=12 "$base^{commit}")"
+    sha="$(git -C "$S4E_SCRIP" rev-parse --short=12 "$base^{commit}")"
     made="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     {
         printf 'name=%s\nseat=%s\nbase=%s\nsha=%s\nmade=%s\ncorpus=%s\n' "$name" "$SEAT" "$base" "$sha" "$made" "$corpus_mode"
@@ -296,25 +304,25 @@ new_wt() {
     } > "$wt/.s4e-worktree"
     for r in $REPOS; do
         if [ "$r" = corpus ] && [ "$sparse" = 1 ]; then
-            git -C "$ROOT/$r" worktree add -q --no-checkout --detach "$wt/$r" "$base" \
+            git -C "$(rd "$r")" worktree add -q --no-checkout --detach "$wt/$r" "$base" \
                 && git -C "$wt/$r" sparse-checkout set --no-cone "${pats[@]}" \
                 && git -C "$wt/$r" reset -q --hard \
                 || { drop "$wt"; die "REFUSE(2): could not make the sparse corpus worktree" 2; }
         else
-            git -C "$ROOT/$r" worktree add -q --detach "$wt/$r" "$base" \
+            git -C "$(rd "$r")" worktree add -q --detach "$wt/$r" "$base" \
                 || { drop "$wt"; die "REFUSE(2): git worktree add $r failed" 2; }
         fi
     done
     rt="$(cd "$wt/SCRIP" && env -u MAKEFLAGS -u MFLAGS -u MAKELEVEL make -s --no-print-directory --eval='s4e-print-rt-tag: ; @echo $(RT_TAG)' s4e-print-rt-tag 2>/dev/null)" || rt=""
     [ -n "$rt" ] || { drop "$wt"; die "REFUSE(2): make could not print RT_TAG in $wt/SCRIP" 2; }
-    fo="$(bash "$ROOT/harness/scripts/util_build_cache.sh" fetch --root "$wt/SCRIP" --tag "$rt" 2>&1)"
+    fo="$(bash "$HERE/util_build_cache.sh" fetch --root "$wt/SCRIP" --tag "$rt" 2>&1)"
     b=not-fetched
     if grep -q '^FETCHED ' <<<"$fo" && [ -x "$wt/SCRIP/scrip" ] && [ -f "$wt/SCRIP/out/libscrip_rt.so" ]; then b=fetched; fi
     lk=copy
     if [ "$link" = 0 ]; then :
     elif [ "$(stat -c %d "$wt" 2>/dev/null)" != "$(stat -c %d "$SHARED" 2>/dev/null)" ]; then lk=copy:other-filesystem
     else
-        if lo="$(python3 -I "$ROOT/harness/scripts/util_relink_root.py" "$wt" --repo corpus --repo harness --repo .github --pristine "$SHARED" 2>&1)"; then
+        if lo="$(python3 -I "$HERE/util_relink_root.py" "$wt" --repo corpus --repo harness --repo .github --pristine "$SHARED" 2>&1)"; then
             lk="hard-link:$(printf '%s\n' "$lo" | awk '{ for (i = 1; i <= NF; i++) if ($i ~ /^linked=/) { sub(/^linked=/, "", $i); s += $i } } END { print s + 0 }')"
         else lk=copy:relink-refused; echo "WARN: util_relink_root.py refused on $wt, so its files stay copies: $(printf '%s' "$lo" | tail -1 | cut -c1-200)" >&2; fi
     fi
@@ -417,7 +425,7 @@ list_wts() {
         n="$(sed -n 's/^name=//p' "$m")"; b="$(sed -n 's/^base=//p' "$m")"; made="$(sed -n 's/^made=//p' "$m")"; c="$(sed -n 's/^corpus=//p' "$m")"
         reg=0
         for r in $REPOS; do
-            git -C "$ROOT/$r" worktree list --porcelain | grep -Fqx "worktree $wt/$r" && reg=$((reg + 1))
+            git -C "$(rd "$r")" worktree list --porcelain | grep -Fqx "worktree $wt/$r" && reg=$((reg + 1))
         done
         echo "WORKTREE-LIST name=$n base=$b made=$made corpus=$c registered=$reg/4 path=$wt"
     done

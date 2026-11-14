@@ -10,7 +10,7 @@
 # so its cost is the size of the recent packs, not the size of the corpus; loose objects are packed by the same call. It runs at idle
 # I/O, one repo at a time, in s4e-batch.slice when systemd-run can place it (ARCH-SHARED-DEVELOPMENT section 5: batch work runs
 # in the batch class). Without --apply it prints each repo's pack count and size and what it would do; it never touches a work tree.
-# Install (Lon): crontab line  17 3 * * *  XDG_RUNTIME_DIR=/run/user/1000 systemd-run --user --scope --slice=s4e-batch.slice -q bash /home/claude_coo/harness/scripts/util_git_maintenance.sh --apply >> /home/resources/progress/GIT_MAINT.log 2>&1
+# Install (Lon): crontab line  17 3 * * *  XDG_RUNTIME_DIR=/run/user/1000 systemd-run --user --scope --slice=s4e-batch.slice -q bash /home/harness/scripts/util_git_maintenance.sh --apply >> /home/resources/progress/GIT_MAINT.log 2>&1
 # (ARCH-SHARED-DEVELOPMENT 5: a cron job is a batch scope; the cto, shared-dev step 1, 2026-10-31)
 set -u
 APPLY=0; ROOTS=()

@@ -36,7 +36,7 @@
 # in danger. --if-over PCT exits 0 at once, printing nothing, while use is under PCT: the cheap guard the cron line runs every 5 minutes
 # (crontab of satirical, written by the officer at R-1902, re-homed into the batch slice by the cto at shared-dev step 1 (ARCH-SHARED-DEVELOPMENT 5);
 # flock on /home/resources/progress/.tmp-sweep.lock so two runs never overlap):
-#   */5 * * * * XDG_RUNTIME_DIR=/run/user/1000 systemd-run --user --scope --slice=s4e-batch.slice -q flock -n /home/resources/progress/.tmp-sweep.lock bash /home/claude_coo/harness/scripts/util_tmp_sweep.sh
+#   */5 * * * * XDG_RUNTIME_DIR=/run/user/1000 systemd-run --user --scope --slice=s4e-batch.slice -q flock -n /home/resources/progress/.tmp-sweep.lock bash /home/harness/scripts/util_tmp_sweep.sh
 #               --apply --if-over 70 --dead-sessions-hours 6 >> /home/resources/progress/TMP-SWEEP.cron.log 2>&1
 # The receipt adds used_before=<pct> pressure=<pct> bulk=<n> bulk_mb=<mb> used_after=<pct>; a bulk deletion prints as class "bulk".
 # USE: bash harness/scripts/util_tmp_sweep.sh            # dry run: what would go, by class, with bytes
