@@ -79,7 +79,9 @@ OUTCOMES = ("PASS", "FAIL", "CRASH", "ABORT", "HANG", "SKIP", "REFUSE", "UNGRADE
             "DEFERRED", "OUTSIDE", "UNGRADABLE", "OOM")
 DB_DEFAULT = "/home/resources/progress/results.tsv"
 HERE = os.path.dirname(os.path.abspath(__file__))
-S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP", ".."))
+sys.path.insert(0, HERE)
+import harness_paths   # THE ABSOLUTE MODEL (lib_paths.sh): S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, else /home/<repo>, else the sibling
+S4E = os.environ.get("S4E_HOME") or os.path.dirname(os.path.dirname(HERE))
 
 
 class ProgressUnwritable(Exception):
@@ -186,7 +188,7 @@ def context():
     if _CTX:
         return _CTX
     _CTX["scrip"] = _git_short(_tree_default())
-    _CTX["corpus"] = _git_short(os.path.join(S4E, "corpus"))
+    _CTX["corpus"] = _git_short(str(harness_paths.corpus(S4E)))
     # ⛔ S4E_SEAT WINS OVER THE ROOT PATH (coo 2026-09-16; hq_raku via the cfo: base-vs-head boards graded on two DETACHED WORKTREES
     # were attributed to root:base and root:head -- a pseudo-seat no LANES: line names -- so a batch audit keyed on measurer could not
     # see 1854 sound rows). The seat that set S4E_SEAT is the measurer; the path map is the fallback for a seat that set nothing.
@@ -230,8 +232,8 @@ def _bin_digest(scrip_bin=None, rt_dir=None):
     scrip is ~40 KB and every template lives in out/libscrip_rt.so, so a digest of scrip alone calls two
     different compilers the same build (measured 2026-09-05, hq_T and hq_C independently)."""
     import hashlib
-    sb = scrip_bin or os.environ.get("SCRIP") or os.path.join(S4E, "SCRIP", "scrip")
-    rd = rt_dir or os.environ.get("RT_DIR") or os.path.join(S4E, "SCRIP", "out")
+    sb = scrip_bin or os.environ.get("SCRIP") or os.path.join(str(harness_paths.scrip(S4E)), "scrip")
+    rd = rt_dir or os.environ.get("RT_DIR") or os.path.join(str(harness_paths.scrip(S4E)), "out")
     h = hashlib.md5()
     ok = 0
     files = (sb, os.path.join(rd, "libscrip_rt.so"))
@@ -255,7 +257,7 @@ def _tree_default():
         b = engine_binaries()
         if b:
             return _tree_of_binary(b[0])
-    return os.path.join(S4E, "SCRIP")
+    return str(harness_paths.scrip(S4E))
 
 
 def _tree_of_binary(scrip_bin):
@@ -269,7 +271,7 @@ def _tree_of_binary(scrip_bin):
                 return out.stdout.strip()
         except Exception:
             pass
-    return os.path.join(S4E, "SCRIP")
+    return str(harness_paths.scrip(S4E))
 
 
 def _ground(scrip_bin=None, rt_dir=None):
@@ -281,7 +283,7 @@ def _ground(scrip_bin=None, rt_dir=None):
     # ⛔ THE MOVE IS READ ON THE FULL HASH (the grader 2026-11-12, MEASURED: git lengthened its abbreviation from 9 to 10 characters mid-lap, so
     # the same commit read scrip ea374ea10 -> ea374ea103 and three graded cells of lap 23 appended nothing: xsb chunk:03, puzzles chunk:01 and
     # chunk:02, about 5 h). A row's stamp stays the short form; the comparison is the commit itself, dirtiness included.
-    st, ct = (_tree_of_binary(scrip_bin) if scrip_bin else _tree_default()), os.path.join(S4E, "corpus")
+    st, ct = (_tree_of_binary(scrip_bin) if scrip_bin else _tree_default()), str(harness_paths.corpus(S4E))
     return {"scrip": _git_short(st), "corpus": _git_short(ct), "fp": _bin_digest(scrip_bin, rt_dir),
             "scrip_id": _git_short(st, full=True), "corpus_id": _git_short(ct, full=True)}
 
@@ -421,7 +423,7 @@ def bin_fingerprint():
     import hashlib
     # the tree THIS FILE lives in, whose scrip the harness beside it grades by default -- never S4E_HOME/SCRIP, which in a worktree is a
     # different binary (the coo 2026-09-28: a rebuild of the graded binary went unseen and the seat root's was fingerprinted instead)
-    tree = os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP"))
+    tree = os.path.abspath(str(harness_paths.scrip(os.path.dirname(os.path.dirname(HERE)))))
     b = os.environ.get("SCRIP") or os.path.join(tree, "scrip")
     r = os.path.join(os.environ.get("RT_DIR") or os.path.join(tree, "out"), "libscrip_rt.so")
     # ⛔ under a port engine the graded files are the ones its runner names (R-1822): without this a port root has no ./scrip, this read
@@ -589,7 +591,7 @@ def append_rows(rows, db=None):
         dev = ctx.get("devpass", "")
         if dev:
             note = DEVPASS_TOKEN + dev + (";" + note if note else "")
-        lines.append("\t".join([ts, ctx["scrip"], ctx["corpus"], ctx["measurer"], r["class"], r["suite"], r["lang"], r["program"], r["mode"], r["outcome"], r["secs"], note, ctx.get("fingerprint", ""), r["config"]]))
+        lines.append("\t".join([ts, ctx["scrip"], ctx["corpus"], ctx["measurer"], r["class"], r["suite"], r["lang"], r["program"], r["mode"], r["outcome"], r["secs"], note, ctx.get("fingerprint", ""), r["config"]]))   # one-disk: not a path
     payload = "\n".join(lines) + "\n"
     try:
         d = os.path.dirname(path)
@@ -667,7 +669,7 @@ def _driven_library(prog):
         return prog
     stem, nominal = m.group(1), m.group(1) + m.group(2)
     # the corpus the run graded: a runner's overlay or fixture (CORPUS, as scorecard_snobol4.sh reads it) before the seat's own
-    for base in [b for b in (os.environ.get("CORPUS"), os.path.join(S4E, "corpus")) if b]:
+    for base in [b for b in (os.environ.get("CORPUS"), str(harness_paths.corpus(S4E))) if b]:
         if os.path.isfile(os.path.join(base, nominal)):
             return nominal
         for ext in (".spt", ".inc", ".INC"):
@@ -771,21 +773,24 @@ def selftest():
     import tempfile, shutil
     global S4E
     t = tempfile.mkdtemp(prefix="s4e_pin_selftest.")
+    S_, C_ = "scrip_repo", "corpus_repo"
+    old_env = {k: os.environ.get(k) for k in ("S4E_SCRIP", "S4E_CORPUS")}
     old_s4e, git = S4E, lambda r, *a: subprocess.run(["git", "-C", os.path.join(t, r)] + list(a), capture_output=True, text=True, check=True)
     try:
-        for r in ("SCRIP", "corpus"):
+        for r in (S_, C_):
             subprocess.run(["git", "-c", "init.defaultBranch=main", "init", "-q", os.path.join(t, r)], check=True, capture_output=True)
             for k, v in (("user.email", "selftest@example.invalid"), ("user.name", "selftest"), ("core.abbrev", "7")): git(r, "config", k, v)
             with open(os.path.join(t, r, ".gitignore"), "w") as f: f.write("scrip\nout/\n")
             git(r, "add", ".gitignore"); git(r, "commit", "-q", "-m", r)
-        os.makedirs(os.path.join(t, "SCRIP", "out"))
+        os.makedirs(os.path.join(t, S_, "out"))
         for f, s in (("scrip", "driver\n"), ("out/libscrip_rt.so", "runtime\n")):
-            with open(os.path.join(t, "SCRIP", f), "w") as h: h.write(s)
+            with open(os.path.join(t, S_, f), "w") as h: h.write(s)
         S4E = t
-        pin_context(os.path.join(t, "SCRIP", "scrip"), os.path.join(t, "SCRIP", "out"))
+        os.environ["S4E_SCRIP"], os.environ["S4E_CORPUS"] = os.path.join(t, S_), os.path.join(t, C_)
+        pin_context(os.path.join(t, S_, "scrip"), os.path.join(t, S_, "out"))
         s0 = _PINNED.get("scrip")
-        for r in ("SCRIP", "corpus"): git(r, "config", "core.abbrev", "12")
-        s1 = _git_short(os.path.join(t, "SCRIP"))
+        for r in (S_, C_): git(r, "config", "core.abbrev", "12")
+        s1 = _git_short(os.path.join(t, S_))
         if s0 == s1 or not s1.startswith(s0):
             print(f"REFUSE(2): the abbreviation did not lengthen ({s0} then {s1}): the arm measures nothing"); return 2
         a1 = True
@@ -793,7 +798,7 @@ def selftest():
         except ProgressGroundMoved: a1 = False
         print(("ARM 1 OK: the abbreviation grew %s -> %s on the same commit and the check stood" if a1 else
                "ARM 1 FAIL: the same commit read as a move after the abbreviation grew (%s -> %s)") % (s0, s1))
-        git("SCRIP", "commit", "-q", "--allow-empty", "-m", "a move")
+        git(S_, "commit", "-q", "--allow-empty", "-m", "a move")
         a2 = False
         try: assert_ground_unmoved()
         except ProgressGroundMoved: a2 = True
@@ -803,7 +808,11 @@ def selftest():
     except (OSError, subprocess.CalledProcessError) as e:
         print(f"REFUSE(2): the scratch repositories could not be made: {e}"); return 2
     finally:
-        S4E = old_s4e; _PINNED.clear(); _PINNED_BIN.clear(); _CTX.clear(); shutil.rmtree(t, ignore_errors=True)
+        S4E = old_s4e
+        for k, v in old_env.items():
+            if v is None: os.environ.pop(k, None)
+            else: os.environ[k] = v
+        _PINNED.clear(); _PINNED_BIN.clear(); _CTX.clear(); shutil.rmtree(t, ignore_errors=True)
 
 
 def _main(argv):

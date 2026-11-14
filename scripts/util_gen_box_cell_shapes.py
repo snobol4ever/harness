@@ -12,8 +12,10 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import harness_paths   # THE ABSOLUTE MODEL (lib_paths.sh): S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, else /home/<repo>, else the sibling
 TSV = os.path.join(HERE, 'box_cell_shapes.tsv')
-INC = os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP', 'src', 'planner', 'box_cell_shapes.inc'))
+INC = os.path.join(str(harness_paths.scrip()), 'src', 'planner', 'box_cell_shapes.inc')
 WHEN = {'always': 'BCS_ALWAYS', 'call_curmov': 'BCS_CALL_CURMOV', 'icn_local': 'BCS_ICN_LOCAL', 'icn_suspend': 'BCS_ICN_SUSPEND',
         'has_operands': 'BCS_HAS_OPERANDS', 'no_operands': 'BCS_NO_OPERANDS', 'patv': 'BCS_PATV', 'home_frame': 'BCS_HOME_FRAME', 'icn_home': 'BCS_ICN_HOME',
         'home_state': 'BCS_HOME_STATE', 'pl_home': 'BCS_PL_HOME', 'pl_home_dyn': 'BCS_PL_HOME_DYN', 'pl_home_range_hdr': 'BCS_PL_HOME_RANGE_HDR',

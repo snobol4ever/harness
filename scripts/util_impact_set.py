@@ -25,6 +25,8 @@ rc 0 printed; rc 2 refused (no root, no commit, a table row or declared script m
 import fnmatch, os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import harness_paths   # THE ABSOLUTE MODEL (lib_paths.sh): S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, else /home/<repo>, else the sibling
 REPOS = ("SCRIP", "harness", "corpus", ".github")
 TOKENS = {"-", "build", "preflight", "area", "refgates", "namegates", "buildgates", "self"}
 
@@ -189,7 +191,7 @@ def main():
         refuse(tag, "--proof and --eight are two questions: ask one at a time")
     root = os.path.abspath(arg("--root", "SCRIP"))
     home = os.path.dirname(root)
-    corpus = os.path.abspath(arg("--corpus", os.path.join(home, "corpus")))
+    corpus = os.path.abspath(arg("--corpus", str(harness_paths.corpus(home))))
     scripts = os.path.abspath(arg("--scripts", HERE))
     table = os.path.abspath(arg("--table", os.path.join(scripts, "impact_proof.tsv")))
     repo = arg("--repo", os.path.basename(root))

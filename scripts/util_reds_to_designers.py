@@ -18,6 +18,8 @@ import os, re, subprocess, sys, tempfile, shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
+sys.path.insert(0, HERE)
+import harness_paths   # THE ABSOLUTE MODEL (lib_paths.sh): S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, else /home/<repo>, else the sibling
 PO = os.environ.get("S4E_POST", "/home/resources/postoffice")
 
 
@@ -104,7 +106,7 @@ def run(suite, reds_text, areas_path, po, apply):
     reds = read_reds(reds_text); areas = read_areas(areas_path); topics, dw = live_rows(po)
     jobs, rowed = plan(suite, reds, areas, topics, dw)
     for e, o, t, rd in jobs: print("DESIGN_JOB entry=%s officer=%s topic=%s reading=%s" % (e, o, t, rd))
-    tree = subprocess.run(["git", "-C", os.path.join(ROOT, "harness"), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
+    tree = subprocess.run(["git", "-C", str(harness_paths.harness(ROOT)), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
     print("DOWN_BOARD suite=%s reds=%d rowed=%d jobs=%d (tree %s)" % (suite, len(reds), rowed, len(jobs), tree or "?"))
     if apply:
         for e, o, t, rd in jobs:
@@ -141,7 +143,7 @@ def probe():
 if __name__ == "__main__":
     if "--probe" in sys.argv[1:]: sys.exit(0 if probe() else 1)
     suite = arg("--suite", "unitests")
-    areas = arg("--areas", os.path.join(ROOT, "harness", "designs", "unicon", "AREAS.tsv"))
+    areas = arg("--areas", os.path.join(str(harness_paths.harness(ROOT)), "designs", "unicon", "AREAS.tsv"))
     env = dict(os.environ, S4E_MODES="m3")
     p = subprocess.run([sys.executable, "-I", os.path.join(HERE, "util_score_row.py"), "from-progress", "--suite", suite, "--reds", "--dry-run"],
                        capture_output=True, text=True, env=env, timeout=900)

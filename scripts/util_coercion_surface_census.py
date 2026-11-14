@@ -28,8 +28,11 @@ EXIT: 0 all declared tags present and nothing uncovered - 1 a missing tag or an 
 No build, no binary, no network: it reads source and a data file.
 """
 import os, re, sys
-ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP")
-TSV = os.path.join(ROOT, "..", "harness", "scripts", "coercion_surface_sites.tsv")
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import harness_paths   # THE ABSOLUTE MODEL (lib_paths.sh): S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, else /home/<repo>, else the sibling
+ROOT = str(harness_paths.scrip())
+TSV = os.path.join(str(harness_paths.harness()), "scripts", "coercion_surface_sites.tsv")
 SCAN_ROOTS = [os.path.join(ROOT, "src", "runtime"), os.path.join(ROOT, "src", "driver")]
 SWITCH_RE = re.compile(r"switch\s*\(\s*[A-Za-z_][A-Za-z0-9_]*\s*(?:\.|->)\s*v\s*\)")
 TAG_RE = re.compile(r"(?<![A-Za-z0-9_])(DT_[A-Z_]+|IS_(?:INT|REAL|STR|NULL|CSET|FAIL|NAMEVAL)_fn)(?![A-Za-z0-9_])")

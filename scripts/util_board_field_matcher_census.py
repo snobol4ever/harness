@@ -35,7 +35,9 @@ Usage: python3 ../harness/scripts/util_board_field_matcher_census.py [--root DIR
 import argparse, os, re, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP"))
+sys.path.insert(0, HERE)
+import harness_paths   # THE ABSOLUTE MODEL (lib_paths.sh): S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, else /home/<repo>, else the sibling
+ROOT = os.path.abspath(str(harness_paths.scrip()))
 
 # the literal is a PATTERN when one of these introduces it on the same line
 # ⛔ THE CONTEXT MUST BE THE LITERAL'S OWN, NOT ANYWHERE EARLIER ON THE LINE: a first pass let `grep ... &&`
@@ -52,7 +54,7 @@ LIT_RX = re.compile(r"'(?:[^'\\]|\\.)*'|\"(?:[^\"\\]|\\.)*\"|r\"(?:[^\"\\]|\\.)*
 
 def derive_vocabulary(root, out=print):
     """the board's field NAMES and per-mode SUFFIXES, read out of the harness's own SUITE_BOARD printer"""
-    h = os.path.join(root, "..", "harness", "scripts", "corpus_suite_harness.py")
+    h = os.path.join(str(harness_paths.harness(os.path.dirname(root))), "scripts", "corpus_suite_harness.py")
     if not os.path.exists(h):
         out(f"CENSUS board-matchers REFUSED(2): no corpus_suite_harness.py at {h} -- the field vocabulary has no source")
         return None, None
@@ -170,7 +172,7 @@ def census(root, verbose=False, out=print):
         f"{len(names)} field name(s), {len(suffixes)} per-mode suffix(es) -- never a hand list, and a printer that "
         f"is renamed REFUSES rc=2 rather than report zeros")
     rows = []
-    sd = os.path.join(root, "..", "harness", "scripts")
+    sd = os.path.join(str(harness_paths.harness(os.path.dirname(root))), "scripts")
     for d, _s, fs in os.walk(sd):
         for f in sorted(fs):
             if f.endswith((".sh", ".py")) and f != os.path.basename(__file__):
