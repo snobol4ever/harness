@@ -67,7 +67,6 @@ dat_field_get	asm	-	0	r8|r10|r11	-	clob,asm
 dat_set_live	leaf	-	0	-	0	call
 descr_identical	asm	-	0	r8|r10|r11	-	call,clob,asm
 dop_nl	leaf	-	0	-	0	call
-dop_pl_acyclic_term	leaf	DESCR	1	-	0	call,alloc
 dop_pl_at_end_of_stream	leaf	-	0	-	0	call
 dop_pl_between_special	leaf	DESCR	1	-	0	call,alloc
 dop_pl_flush_output	leaf	-	0	-	0	call
@@ -321,6 +320,7 @@ rt_pl_db_walk_closed	leaf	-	0	-	0	call
 rt_pl_dc_leave_γ	leaf	-	0	-	0	call
 rt_pl_dc_leave_ω	leaf	-	0	-	0	call
 rt_pl_dc_prep	leaf	-	0	-	0	call
+rt_pl_dop_acyclic_term	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_aggregate_reduce	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_alarm_pop	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_alarm_push	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
@@ -637,6 +637,7 @@ rt_pl_dop_wall_us	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_wot_capture	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_wot_discard	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_wot_open	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
+rt_pl_dop_write1	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_write_canonical_sb	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_write_sb	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_write_term	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm

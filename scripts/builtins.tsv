@@ -812,7 +812,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 812	rkm	value	-	-	bt_value	leaf	-	-	0	meth_arms
 813	rkm	wordcase	-	-	bt_wordcase	leaf	-	-	0	meth_arms
 814	rkm	words	-	-	bt_words	leaf	-	-	0	meth_arms
-815	pl	$acyclic_term	1	1	dop_pl_acyclic_term	leaf	-	-	0	dop_direct
+815	pl	$acyclic_term	1	1	rt_pl_dop_acyclic_term	leaf	-	-	0	dop_direct
 816	pl	$aggregate_reduce	3	3	rt_pl_dop_aggregate_reduce	leaf	-	-	0	dop_direct
 817	pl	$append1	1	1	rt_pl_dop_append1	leaf	-	-	0	dop_direct
 818	pl	$arg	3	3	rt_pl_dop_arg	leaf	-	-	0	dop_direct
@@ -1187,7 +1187,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1187	pl	$wot_capture	4	4	rt_pl_dop_wot_capture	leaf	-	-	0	dop_direct
 1188	pl	$wot_discard	3	3	rt_pl_dop_wot_discard	leaf	-	-	0	dop_direct
 1189	pl	$wot_open	3	3	rt_pl_dop_wot_open	leaf	-	-	0	dop_direct
-1190	pl	$write	1	1	dop_write	leaf	-	-	0	dop_direct
+1190	pl	$write	1	1	rt_pl_dop_write1	leaf	-	-	0	dop_direct
 1191	pl	$write_canonical	1	1	dop_pl_write_canonical	leaf	-	-	0	dop_direct
 1192	pl	$write_canonical_s	2	2	rt_pl_dop_write_canonical_sb	leaf	-	-	0	dop_direct
 1193	pl	$write_s	2	2	rt_pl_dop_write_sb	leaf	-	-	0	dop_direct
