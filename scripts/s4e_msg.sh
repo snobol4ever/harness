@@ -1942,12 +1942,11 @@ s4e_claim_probe_overlap() {   # step 21's probe on a scratch postoffice: a notic
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$_w/PROTOCOL-VERSION"
     printf '# plant queue (box-scheduler step 21)\n2\tov-plant-p\t%s\tFREE\n2\tov-plant-q\t%s\tFREE\n2\tov-plant-b\tprobe_b\tCLAIMED:probe_b\n2\tov-plant-c\tprobe_c\tCLAIMED:probe_c\n2\tov-plant-d\tprobe_d\tCLAIMED:probe_d\n2\tov-plant-e\tprobe_e\tCLAIMED:probe_e\n' "$ME" "$ME" > "$_w/QUEUE.tsv"
     mk() { printf '# TASK %s\nGOAL: plant%s\nDONE-WHEN: test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\n%s## NEXT\nplant\n## QA\n## LEDGER\n' "$1" "$3" "$2" > "$_w/tasks/$1.task.md"; }
-    mk ov-plant-p 'TOUCHES: SCRIP/src/planner harness/scripts/s4e_msg.sh
-' ''
+    mk ov-plant-p $'TOUCHES: SCRIP/src/planner harness/scripts/s4e_msg.sh\n' ''   # one-disk: not a path (a fixture: a landing's repo-relative TOUCHES)
     mk ov-plant-q '' ''
-    mk ov-plant-b 'TOUCHES: SCRIP/src/planner/zd_layout.c
-' ''; mk ov-plant-c 'TOUCHES: SCRIP/src/parsers/icon
-' ''; mk ov-plant-d '' ''; mk ov-plant-e '' '; Landing files: harness/scripts/s4e_msg.sh, corpus/tests/x.ref; more'
+    mk ov-plant-b $'TOUCHES: SCRIP/src/planner/zd_layout.c\n' ''   # one-disk: not a path (a fixture: a landing's repo-relative TOUCHES)
+    mk ov-plant-c $'TOUCHES: SCRIP/src/parsers/icon\n' ''   # one-disk: not a path (a fixture: a landing's repo-relative TOUCHES)
+    mk ov-plant-d '' ''; mk ov-plant-e '' '; Landing files: harness/scripts/s4e_msg.sh, corpus/tests/x.ref; more'   # one-disk: not a path (a fixture: a LEDGER's repo-relative Landing files)
     for _s in b c d e; do printf 'probe_%s\nRUNNING\n' "$_s" > "$_w/claims/ov-plant-$_s.claim"; done
     _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" claim ov-plant-p 2>&1)"
     cnt() { ls "$_w/$1/inbox" 2>/dev/null | wc -l; }
@@ -3206,9 +3205,9 @@ case "$cmd" in check|clear) ;; *)
   if [ "$_n" -gt 0 ]; then mkdir -p "$PO/$ME" 2>/dev/null; printf '%s' "$_keep" > "$_an" 2>/dev/null; else rm -f "$_an" 2>/dev/null; fi
   if [ "$_new" -gt 0 ]; then
     { printf '\n⛔⛔⛔ %s HAS %s UNREAD HQ MESSAGE(S) — READ THEM BEFORE ANYTHING ELSE ⛔⛔⛔\n%s' "$ME" "$_new" "$_nl"
-      printf '    bash harness/scripts/s4e_msg.sh check      <- do this now\n\n'; } >&$_bfd
-  elif [ "$_n" -gt 0 ] && [ "$_unread" = 0 ]; then printf '[%s] %s read, not cleared; bash harness/scripts/s4e_msg.sh clear archives them\n' "$ME" "$_read" >&$_bfd
-  elif [ "$_n" -gt 0 ]; then printf '[%s] %s unread, %s read not cleared (announced above once); bash harness/scripts/s4e_msg.sh check\n' "$ME" "$_unread" "$_read" >&$_bfd; fi ;;
+      printf '    bash %s/scripts/s4e_msg.sh check      <- do this now\n\n' "$S4E_HARNESS"; } >&$_bfd
+  elif [ "$_n" -gt 0 ] && [ "$_unread" = 0 ]; then printf '[%s] %s read, not cleared; bash %s/scripts/s4e_msg.sh clear archives them\n' "$ME" "$_read" "$S4E_HARNESS" >&$_bfd
+  elif [ "$_n" -gt 0 ]; then printf '[%s] %s unread, %s read not cleared (announced above once); bash %s/scripts/s4e_msg.sh check\n' "$ME" "$_unread" "$_read" "$S4E_HARNESS" >&$_bfd; fi ;;
 esac
 # ⭐ ONE PROTOCOL NUMBER, HOISTED (2026-08-29, row s4e-clear-needs-protocol-version-guard): next() and clear() both
 # guard on it now, and two inline copies of one value is the drift class this file convicts elsewhere. Bump it HERE and
@@ -3922,7 +3921,7 @@ case "$cmd" in
               if _cite="$(s4e_manifest_rowd_cite "$topic")"; then
                 printf '⛔ REFUSED: "%s" is cited as ROWD evidence in the corpus coverage manifest, so closing it REDS\n' "$topic" >&2
                 printf '   `make test` FOR EVERY SEAT until the manifest is re-pointed by hand. This has happened THREE times in one day.\n' >&2
-                printf '   The citing line (harness/scripts/corpus_coverage_manifest.tsv):\n       %s\n' "$_cite" >&2
+                printf '   The citing line (harness/scripts/corpus_coverage_manifest.tsv):\n       %s\n' "$_cite" >&2   # one-disk: not a path (a message: the file's name in its repo)
                 printf '   HAND OFF FIRST, then close -- in the SCRIP checkout, one of:\n' >&2
                 printf '     (a) re-point the ROWD topic to a LIVE successor row that still covers that subtree, or\n' >&2
                 printf '     (b) flip the subtree to GATED and name the harness script that now proves it.\n' >&2
@@ -4142,7 +4141,7 @@ case "$cmd" in
                       # ⛔ R-786 (coo 2026-09-16; hq_prolog's rung-9 row exited 127 in zero seconds for eleven days and was read as RED): rc 126/127
                       # (not executable / command not found) and rc 2 (the criterion itself REFUSED) are REFUSALS -- the instrument laws:
                       # cannot measure is not red. The row stays open, the claim unchanged, and the cause is printed from the criterion's own output.
-                      printf '\n⛔ REFUSED (rc=2): the DONE-WHEN exited %s -- %s -- so `done` COULD NOT MEASURE it. This is NOT red: fix the criterion (cd into $S4E_HOME/SCRIP, name a script that exists, make it executable) and re-run.\n' \
+                      printf '\n⛔ REFUSED (rc=2): the DONE-WHEN exited %s -- %s -- so `done` COULD NOT MEASURE it. This is NOT red: fix the criterion (source lib_paths.sh and cd "$S4E_SCRIP", name a script that exists, make it executable) and re-run.\n' \
                         "$rc" "$([ "$rc" -eq 127 ] && echo 'command not found' || { [ "$rc" -eq 126 ] && echo 'not executable' || echo 'the criterion itself refused'; })" >&2
                     else
                       printf '\n⛔⛔⛔ NOT DONE — the task DONE-WHEN exited %s after %ss (timeout %ss). The claim is UNCHANGED and the row stays open.\n' "$rc" "$_dwel" "$_dwto" >&2
@@ -4412,7 +4411,7 @@ case "$cmd" in
            if [ "$_arc" -eq 126 ] || [ "$_arc" -eq 127 ] || [ "$_arc" -eq 2 ]; then
              printf '\n⛔ REFUSED(2): %s HAS AN UNRUNNABLE DONE-WHEN -- it exited %s (%s) in a probe run; a criterion that cannot run is a refusal, not a red (R-786).\n' \
                "$topic" "$_arc" "$([ "$_arc" -eq 127 ] && echo 'command not found' || { [ "$_arc" -eq 126 ] && echo 'not executable' || echo 'the criterion itself refused'; })" >&2
-             printf '   first line it said: %s\n   Fix the DONE-WHEN (cd "$S4E_HOME/SCRIP", name a script that exists), then assign again. No claim written.\n' "$(grep -m1 . "$_alog" | cut -c1-160)" >&2
+             printf '   first line it said: %s\n   Fix the DONE-WHEN (source lib_paths.sh and cd "$S4E_SCRIP", name a script that exists), then assign again. No claim written.\n' "$(grep -m1 . "$_alog" | cut -c1-160)" >&2
              rm -f "$_alog"; exit 2
            fi
            [ "$_arc" -eq 124 ] && printf '⚠ the DONE-WHEN probe of %s did not finish within %ss (the probe budget; its whole tree was killed) -- assigning, unverified\n' "$topic" "$(s4e_dispatch_timeout "$PO/tasks/$topic.task.md")" >&2
@@ -4470,7 +4469,7 @@ case "$cmd" in
          # the file boundary is the narrow-instrument defect wearing a census's clothes. ✅ The fix is the safe path,
          # not an exemption: an internal caller that needed a bypass would be the first argument for the next one.
          _sk="$(s4e_skills_for_topic "$topic")"
-         if printf '%s' "ASSIGNED: $topic. Run: bash harness/scripts/s4e_msg.sh next — it serves this row FIRST, ahead of anything you picked yourself. The task file is authoritative; this message is only the doorbell.${_sk:+ Load before touching code (SOP step 5): $_sk}" | S4E_NO_BANNER=1 "$0" send "$seat" "task-$topic" --stdin >/dev/null 2>&1
+         if printf '%s' "ASSIGNED: $topic. Run: bash $S4E_HARNESS/scripts/s4e_msg.sh next — it serves this row FIRST, ahead of anything you picked yourself. The task file is authoritative; this message is only the doorbell.${_sk:+ Load before touching code (SOP step 5): $_sk}" | S4E_NO_BANNER=1 "$0" send "$seat" "task-$topic" --stdin >/dev/null 2>&1
          then echo "assigned $topic -> $seat (claim written, doorbell sent)"
          else echo "assigned $topic -> $seat (claim written; ⛔ DOORBELL NOT SENT — the claim still governs, $seat gets it from next)"; fi
          s4e_wake_hint "seat-$seat" "$topic" assign
@@ -4572,7 +4571,7 @@ MINTED-WITHOUT-CRITERION: ${S4E_MINT_NO_CRITERION} (S4E_MINT_NO_CRITERION; R-138
              else
                  printf '⛔ REFUSED: no DONE-WHEN was supplied -- a row exists only while a measurement says the problem exists (R-1386).\n' >&2
                  printf '   Nothing was written: no QUEUE.tsv row, no baton. Mint again with the WITNESS as the criterion:\n' >&2
-                 printf '      DONE-WHEN: bash ../harness/scripts/test_gate_<thing>.sh\n' >&2
+                 printf '      DONE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && . "${S4E_HARNESS:-/home/harness}/scripts/lib_paths.sh" && bash "$S4E_HARNESS/scripts/test_gate_<thing>.sh"\n' >&2
                  printf '      DONE-WHEN: out=$(./scrip w.sno 2>&1); [ "$out" = "want" ] || exit 1; echo PASS\n' >&2
                  printf '   The failing program, the gate that reds, the SUITE TABLE row that is not 100%% -- never a sentence.\n' >&2
                  printf '   (A bus gate minting a FIXTURE row sets S4E_MINT_NO_CRITERION="why"; the baton records it.)\n' >&2
@@ -4594,7 +4593,7 @@ MINTED-WITHOUT-CRITERION: ${S4E_MINT_NO_CRITERION} (S4E_MINT_NO_CRITERION; R-138
                  printf '      that cannot exit 0 makes the row PERMANENTLY UNCLOSEABLE -- it can be cured perfectly\n' >&2
                  printf '      and still record no flip, and the cost lands on whoever cures it, not on whoever minted it.\n' >&2
                  printf '   A DONE-WHEN is a COMMAND that can exit non-zero, never prose (LAW 1). The shape:\n' >&2
-                 printf '      DONE-WHEN: bash ../harness/scripts/test_gate_<thing>.sh\n' >&2
+                 printf '      DONE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && . "${S4E_HARNESS:-/home/harness}/scripts/lib_paths.sh" && bash "$S4E_HARNESS/scripts/test_gate_<thing>.sh"\n' >&2
                  printf '      DONE-WHEN: out=$(./scrip w.sno 2>&1); [ "$out" = "want" ] || exit 1; echo PASS\n' >&2
                  printf '   See any of %s/tasks/*.task.md for live examples.\n' "$PO" >&2
                  exit 2; }
@@ -5307,7 +5306,7 @@ TASKEOF
          # `timeout 75` kills only the bash, so the census outlived the banner -- the per-response class R-1671 removed. The
          # four numbers still print on a direct handoff_status.sh invocation, the handoff boundary Lon's 09-21 order names.
          if [ -f "$hs" ]; then hout="$(SKIP_S_ARTIFACT_CHECK=1 SKIP_ZLS_ALL=1 SKIP_GC_ACCEPTANCE=1 timeout -k 5 75 bash "$hs" 2>&1)"; hrc=$?; else hout="handoff_status.sh NOT FOUND at $hs"; hrc=2; fi
-         if [ "$hrc" = 124 ]; then hout="$hout"$'\n'"⛔ handoff_status.sh NOT MEASURED — timed out at the banner's 75 s budget (load $(cut -d' ' -f1 /proc/loadavg)); this is a refusal, not a red: run bash ../harness/scripts/handoff_status.sh by hand"; hrc=2; fi
+         if [ "$hrc" = 124 ]; then hout="$hout"$'\n'"⛔ handoff_status.sh NOT MEASURED — timed out at the banner's 75 s budget (load $(cut -d' ' -f1 /proc/loadavg)); this is a refusal, not a red: run bash $hs by hand"; hrc=2; fi
          # ⭐ fix-dispatch-bus-two-failure-modes (s266, seat07's q-s4e-msg-banner-attribution-undercount):
          # `held` used to be "whichever of my OPEN claims sorts first ALPHABETICALLY" -- a seat holding two
          # open claims could run `done <topic>` to close ONE and have its OWN banner report the OTHER.
