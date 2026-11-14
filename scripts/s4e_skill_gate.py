@@ -39,6 +39,11 @@ RULES = [   # (regex on the path, skills) -- every matching rule applies; the pa
 ]
 WRITE_MARK = re.compile(r"(?:>>?|\btee\b(?:\s+-a)?|\bcp\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+)|\bmv\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+))\s+[\"']?(?P<path>[\w./~-]+)[\"']?")   # a quoted target is a target
 INPLACE = re.compile(r"(?:\bsed\s+(?:-[a-zA-Z]*\s+)*-i[^\s]*|\bperl\s+-[a-zA-Z]*i[^\s]*)\s+(?P<rest>[^|;&]*)")   # the path is any later token of the same command
+# THE ONE-DISK CHECKOUTS ARE NOBODY'S TO EDIT (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover; Lon: "Each seat shares harness and corpus in ONE PLACE on disk."):
+# /home/corpus, /home/harness and /home/.github are every seat's and the grader's keeper holds them at origin. MEASURED the day of the cut: their files are mode 664 and 775
+# and nothing refused an edit, while 242 live batons name a path under them. An Edit, a Write or a shell write under one of the three refuses with the cure: s4e_take.sh makes
+# the root's own clone, the edit goes there, the landing drops it (skill seat-conduct 2). No skill lifts it.
+ONE_DISK = re.compile(r"^/home/(corpus|harness|\.github)(?:/|$)")
 PY_OPEN = re.compile(r"open\(\s*['\"](?P<path>[^'\"]+)['\"]\s*,\s*['\"][wa][^'\"]*['\"]")
 
 
@@ -81,7 +86,7 @@ def paths_of(tool, inp):
             found += [tok for tok in re.findall(r"[\w./~-]+", m.group("rest").replace("\"", "").replace("'", "")) if "/" in tok]
         if base:
             found = [p if p.startswith(("/", "~")) else base + "/" + p for p in found]
-        return [p for p in found if re.search(r"SCRIP/|/src/|bootstrap/|harness/scripts/|corpus/|resources/postoffice/|resources/progress/|\.github/", p)]
+        return [p for p in found if re.search(r"SCRIP/|/src/|bootstrap/|harness/scripts/|corpus/|resources/postoffice/|resources/progress/|\.github/|^/home/harness/", p)]
     return []
 
 
@@ -107,6 +112,14 @@ def judge(tool, inp, transcript):
     paths = paths_of(tool, inp)
     if not paths:
         return 0, ""
+    for p in paths:
+        m = ONE_DISK.match(os.path.normpath(p)) if p.startswith("/") else None
+        if m:
+            r = m.group(1)
+            return 2, ("SKILL GATE: %s is in the one-disk checkout /home/%s, which every seat shares and nobody edits (the grader keeps it at origin). "
+                       "Run: bash /home/harness/scripts/s4e_take.sh %s  -- it makes your root's own clone; make the same edit there (your root, then %s/%s); "
+                       "land with s4e_land.sh --row <topic> and the landing drops the clone (skill seat-conduct section 2)."
+                       % (os.path.basename(p), r, r, r, os.path.normpath(p)[len("/home/" + r) + 1:]))
     gen = [p for p in paths if skills_for(p) is None]
     if gen:
         return 2, "SKILL GATE: %s is a GENERATED table, regenerated and never edited (make regenerates it; skill fleet-bus section 7, the landing recipe)." % os.path.basename(gen[0])
@@ -163,6 +176,11 @@ def self_test():
         ("Bash tee onto a quoted bus path wants fleet-bus", "Bash", {"command": "echo x | tee \"" + R + "/harness/scripts/s4e_msg.sh\""}, none, 2, ["/fleet-bus"]),
         ("Edit of the tabling prelude wants prolog-tabling beside prolog", "Edit", {"file_path": R + "/SCRIP/src/parsers/prolog/prelude/tabling.pl"}, none, 2, ["/prolog-tabling", "/prolog"]),
         ("Edit of the suite table wants suites-and-grading", "Edit", {"file_path": "/home/resources/progress/SUITES.tsv"}, none, 2, ["/suites-and-grading"]),
+        ("Edit under the one-disk corpus refuses with the take line, whatever is loaded", "Edit", {"file_path": "/home/corpus/tests/pascal/ALL.ref"}, some, 2, ["s4e_take.sh corpus", "corpus/tests/pascal/ALL.ref", "one-disk"]),
+        ("Write under the one-disk harness refuses with the take line", "Write", {"file_path": "/home/harness/designs/new_plan/STEPS.tsv"}, some, 2, ["s4e_take.sh harness", "one-disk"]),
+        ("Edit under the one-disk .github refuses with the take line", "Edit", {"file_path": "/home/.github/skills/fleet-bus/SKILL.md"}, none, 2, ["s4e_take.sh .github", "one-disk"]),
+        ("Bash sed -i on a one-disk script refuses with the take line", "Bash", {"command": "sed -i s/a/b/ /home/harness/scripts/s4e_msg.sh"}, some, 2, ["s4e_take.sh harness", "one-disk"]),
+        ("the same edit in the root's own clone is judged by its skills alone", "Edit", {"file_path": R + "/.github/README.md"}, none, 0, []),
     ]
     bad = 0
     for i, (name, tool, inp, tr, want, words) in enumerate(cases, 1):
