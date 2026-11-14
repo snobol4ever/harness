@@ -58,7 +58,8 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import corpus_suite_harness as csh  # noqa: E402  -- the ONE authority for Entry/read/write_block_suite
 
-S4E = HERE.parent.parent
+import harness_paths  # noqa: E402  -- the absolute model: where corpus lives
+S4E_CORPUS = harness_paths.corpus()
 ORACLE = {
     "icon": ["/home/resources/icon-master/bin/icon"],  # icont+iconx, one step -- grading wants one step
     "snobol4": ["/home/resources/x64/bin/sbl", "-bf"],  # THE one SNOBOL4 oracle (Lon 2026-09-07/08, RULES sec
@@ -443,7 +444,7 @@ def main():
     # shared table where they would claim membership of a family this rung suite is not in.
     cfg = csh.LANG_CONFIGS[lang] if lang in csh.LANG_CONFIGS else {
         "ext": ".sno", "comment_open": "*", "comment_close": ""}
-    rungs_dir = Path(args.rungs_dir) if args.rungs_dir else S4E / "corpus" / "tests" / lang
+    rungs_dir = Path(args.rungs_dir) if args.rungs_dir else S4E_CORPUS / "tests" / lang
     rungs_src, rungs_ref, rungs_csv = (rungs_dir / ("ALL" + cfg["ext"]), rungs_dir / "ALL.ref",
                                            rungs_dir / "ALL.csv")
     # ⭐ FORMAT 2 IS WRITTEN DIRECTLY (CIO-54, CIO-55; officer_04): the section and the row go in through csh.write_container_dir, never

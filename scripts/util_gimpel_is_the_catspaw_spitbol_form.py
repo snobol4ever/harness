@@ -23,8 +23,9 @@
 #   KEYS     the newest gimpel pass in the progress DB keys no library or program by a .sno name
 # rc 0 all four hold, rc 1 any fails (each failure named), rc 2 cannot measure.
 import difflib, os, re, sys
-home = os.environ.get('S4E_HOME') or os.path.dirname(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP"))
-V = os.path.join(home, 'corpus', 'packages', 'snobol4', 'gimpel')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
+V = os.path.join(str(harness_paths.corpus()), 'packages', 'snobol4', 'gimpel')
 SP = os.environ.get('GIMPEL_SPITBOL_FORM', '/home/resources/gimpel/SPITBOL')
 DB = os.environ.get('S4E_PROGRESS_DB', '/home/resources/progress/results.tsv')
 if not os.path.isdir(V) or not os.path.isdir(SP) or not os.path.isfile(DB):

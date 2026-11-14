@@ -45,7 +45,8 @@ import difflib
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
+import harness_paths
+ROOT = str(harness_paths.scrip())
 DEFAULT_SO = os.path.join(ROOT, "out", "libscrip_rt.so")
 DEFAULT_OUT = os.path.join(ROOT, "src", "templates", "x86", "gc_allocating_table.inc")
 
