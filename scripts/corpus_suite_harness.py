@@ -1849,7 +1849,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     # byte-identical to its .ref when run from its own directory in BOTH modes, FAIL in both from
     # anywhere else. Consistent for suite entries too: run_suite_entry materializes the entry into a
     # temp dir and passes THAT path, so parent is the temp dir -- exactly where it copies companions.
-    return classify(argv, timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    return classify(_screen_wrap(argv, out_files), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
@@ -1980,7 +1980,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # the declared heap and stack ride the binary's command line as -d -i -s (see _size_switches), read at its first allocation
     # Same rule as run_m3 above: the compiled binary's relative opens must resolve against the
     # SOURCE's directory, not the harness's cwd. out_bin is an absolute path, so moving cwd is safe.
-    return classify(argv, timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    return classify(_screen_wrap(argv, out_files), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 # ⛔⭐ run_ast TAKES NO prog_argv AND MUST NOT -- NOT AN OVERSIGHT. `--dump-ast` never executes the
@@ -7222,6 +7222,14 @@ def validate_stderr_cell(raw, where):
     refuse(f"{where}: stderr cell {v!r} -- the column admits the empty cell or 'merged' only")
 
 
+SCREEN_FILE = "screen.dump"
+def _screen_wrap(argv, out_files):
+    """THE SCREEN ROAD (Lon 2026-11-14: "We are absolutely DOING GRAPHICS, X-windows." / "We should be able to do off-line ... GUI tests."; skill icon
+    section 1): an entry whose out_files names screen.dump is a graphics program. Its command runs under util_screen_run.py, on a virtual X display
+    of its own; that script ends a program that waits for a human once its screen holds still and writes the one-line screen.dump, which the
+    out_files road then appends to the answer like any written file. Every other entry's command is returned as it came."""
+    if not out_files or SCREEN_FILE not in out_files: return argv
+    return [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py"), "--out", SCREEN_FILE, "--"] + list(argv)
 def _out_files_clear(cwd, names):
     for n in names or []:
         (Path(cwd) / n).unlink(missing_ok=True)
