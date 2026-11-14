@@ -9,7 +9,8 @@
 # and auto-starts counting PASS/FAIL the moment it emits real output. Exit 0 iff mode 2 is all-PASS.
 # AUTHORS: Lon Jones Cherryholmes · Claude Sonnet 4.6 · Claude Sonnet  DATE: 2026-05-31
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
+. "$HERE/lib_paths.sh"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
 . "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 SMX_SIG='\[SMX\]'                       # both refuse banners begin with "[SMX]"
 P2=0; F2=0; P3=0; F3=0; X3=0; P4=0; F4=0; X4=0; N=0

@@ -45,12 +45,12 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # USAGE: bash ../harness/scripts/bench_triangulate_demos_icon.sh [--out FILE] [name ...]
 #        BUDGET_MS=3000 REPS_A2=5 TOL_PCT=15 ENGINES="iconx m3 m4"
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
-"$HERE/util_require_fresh.sh" --gate bench_triangulate_demos_icon "${SCRIP:-$HERE/../../SCRIP/scrip}" "$HERE/../../SCRIP/out/libscrip_rt.so" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
+"$HERE/util_require_fresh.sh" --gate bench_triangulate_demos_icon "${SCRIP:-$S4E_SCRIP/scrip}" "$S4E_SCRIP/out/libscrip_rt.so" || exit 2
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"
-D="${JCON_DEMO_DIR:-$S4E/corpus/demos/icon/jcon}"
-PKG="${JCON_PKG_DIR:-$S4E/corpus/packages/icon/jcon-compiler}"
+D="${JCON_DEMO_DIR:-$S4E_CORPUS/demos/icon/jcon}"
+PKG="${JCON_PKG_DIR:-$S4E_CORPUS/packages/icon/jcon-compiler}"
 TOL="${TOL_PCT:-15}"; BUDGET_MS="${BUDGET_MS:-3000}"; REPS_A2="${REPS_A2:-5}"
 ENGINES="${ENGINES:-iconx m3 m4}"; OUT=""
 ARGS_LEFT=""
@@ -152,7 +152,7 @@ echo "⛔ OVERHEAD BASIS: EMPTY-PROGRAM SUBTRACTION (the marked interim of RULES
 echo "   BENCHMARK BASIS) -- these are unmodified upstream JCON sources with no wall_ms hook. WORK = total - overhead."
 echo "instrument: out/bench_rusage external cpu(user+sys); engines: $ENGINES; budget(a1)=${BUDGET_MS}ms; reps(a2)=$REPS_A2; tol=${TOL}%"
 echo "oracle: $ICONT / iconx (Arizona v9.5.25a); RT_OPT=-O0 (no -O2 build exists)"
-echo "trees: SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)  corpus $(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)"
+echo "trees: SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)  corpus $(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null)"
 for e in $ENGINES; do echo "overhead(empty program, $e): ${OVH[$e]} ms cpu"; done
 # ⛔ THE GRID OPENS HERE so no multiple below can print without the load it ran under, and so a cell that
 # REFUSES is counted in THIS shell (perf_row is called directly, never inside $( ) -- arm G of the dark-cell gate).

@@ -8,7 +8,7 @@ below. This is the instrument that says whether a language's ladder actually has
 row -- every per-language ladder DONE-WHEN refuses rc=2 until it can call this.
 
 THE CENSUS SCHEMA (this row): RUNG CONSTRUCT REFERENCE FORMS PAIRS WITNESS_ORIGIN STATUS NOTE, in
-corpus/tests/<lang>/LADDER.tsv. FORMS and PAIRS are slugs separated by '|', ';' or ',' -- the live
+tests/<lang>/LADDER.tsv of the corpus. FORMS and PAIRS are slugs separated by '|', ';' or ',' -- the live
 censuses use '|' and the ratified schema line names only the columns. A form's witness is any origin
 in that language's ALL.csv matching ladder__<rung>_*_<form>; a pair's is ladder__<rung>_*_with_<lower>.
 
@@ -44,7 +44,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # gate disagreeing is the gate doing its job, not noise to route around. Convention copied from
 # util_score_row.py:38 and lib_gate.sh:51 rather than re-derived -- they are the authority on this variable.
 S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP", ".."))
-CORPUS = os.path.join(S4E, "corpus")
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+import harness_paths   # THE ABSOLUTE MODEL: S4E_CORPUS, else /home/corpus once it is a checkout, else the sibling
+CORPUS = str(harness_paths.corpus(S4E))
 LANGS = ["snobol4", "icon", "prolog", "raku", "pascal", "snocone", "rebus"]
 EXT = {"snobol4": ".sno", "icon": ".icn", "prolog": ".pl", "raku": ".raku",
        "pascal": ".pas", "snocone": ".sc", "rebus": ".reb"}

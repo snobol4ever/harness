@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_tests_layout_census.py -- WHAT SITS UNDER corpus/tests/ BESIDE THE CONTAINERS, AND WHY (the cio 2026-11-10, CIO-24, on Lon's words in the
+"""util_tests_layout_census.py -- WHAT SITS UNDER the corpus's tests/ BESIDE THE CONTAINERS, AND WHY (the cio 2026-11-10, CIO-24, on Lon's words in the
 cio's window, verbatim: "I suspect the $/corpus/tests folder should contain one folder per language with the name of the language." / "What's
 confusing is the ONE-LINER and MULTI-LINER programs are not grouped into the one file. Why are these folders not organized properly. Get to work.").
 
@@ -17,10 +17,12 @@ For each language folder, every tracked file that is not the container, classed:
   PROGRAM-NO-REF   a program with no .ref beside it (a parser fixture, a module another program loads, a sample): no run grades it
   SIDECAR          a .ref .in .heap .stack .argv .env or the like beside a loose program
   TABLE DOC OTHER  a step table or census (.tsv .csv), a document (.md .txt), anything else
-and, for the folder as a whole, SUBFOLDERS (every directory, config/ among them). Then the entries of corpus/tests/ that are not a language folder.
+and, for the folder as a whole, SUBFOLDERS (every directory, config/ among them). Then the entries of the corpus's tests/ that are not a language folder.
 --list prints one line per file (class, path); --check: rc 0 when no selected language holds a file outside the container and, with no
---lang, corpus/tests/ holds nothing but the language folders; rc 1 otherwise; rc 2 refused. It reads; it writes nothing and runs no program."""
+--lang, the corpus's tests/ holds nothing but the language folders; rc 1 otherwise; rc 2 refused. It reads; it writes nothing and runs no program."""
 import collections, os, subprocess, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths   # THE ABSOLUTE MODEL: S4E_CORPUS, else /home/corpus once it is a checkout, else the sibling
 
 EXT = {"snobol4": "sno", "icon": "icn", "prolog": "pl", "pascal": "pas", "raku": "raku", "rebus": "reb", "snocone": "sc"}
 PROG = {"sno", "icn", "pl", "pas", "raku", "reb", "sc", "spt", "inc", "t", "lgt", "P", "scrip", "pp", "p"}
@@ -36,7 +38,7 @@ def opt(a, name):
 def main():
     a = sys.argv[1:]
     root = opt(a, "--root") or os.environ.get("S4E_HOME") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    corpus = os.path.join(root, "corpus")
+    corpus = str(harness_paths.corpus(root))
     tests = os.path.join(corpus, "tests")
     only = opt(a, "--lang")
     if not os.path.isdir(tests) or (only and only not in EXT):
@@ -100,7 +102,7 @@ def main():
             if top not in EXT:
                 strangers[top + ("/" if "/" in f else "")] += 1
         print("%-9s %7s %6d  %s" % ("ALL", "", sum(total.values()), "  ".join("%*d" % (len(c), total[c]) for c in ORDER)))
-        print("NOT-A-LANGUAGE under corpus/tests/: %s" % (" ".join("%s(%d)" % kv for kv in sorted(strangers.items())) or "none"))
+        print("NOT-A-LANGUAGE under %s/tests/: %s" % (os.path.basename(corpus), " ".join("%s(%d)" % kv for kv in sorted(strangers.items())) or "none"))
         bad += 1 if strangers else 0
     print("TESTS-LAYOUT not_ok=%d" % bad)
     return 1 if ("--check" in a and bad) else 0

@@ -26,7 +26,8 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+SCRIP="$(cd "$S4E_SCRIP" && pwd)"
 TEST="$SCRIP/test/parser/snocone/test_snocone_parse_h.c"
 SRCDIR="$SCRIP/src/parsers/snocone"
 BIN="/tmp/test_snocone_parse_h"

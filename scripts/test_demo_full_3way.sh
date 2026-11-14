@@ -7,9 +7,10 @@
 # defaults; SCRIP at each demo's declared -d131072k -s4096k is tri-identical in both modes under the shell's own 8 MB ulimit -- the
 # s107 "-d512m -i64m, -s256m, ulimit -s unlimited" recipe is no longer a need.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY the .github, SCRIP and corpus clones); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
 set -u
-SC=${SC:-$S4E/SCRIP}; D=${D:-$S4E/corpus/demos}
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+SC=${SC:-$S4E_SCRIP}; D=${D:-$S4E_CORPUS/demos}
 . "$(dirname "${BASH_SOURCE[0]}")/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255)." >&2; exit 3; }
 SBL=${SBL:-$S4A/x64/bin/sbl}   # CORRECTNESS oracle -- tri-identity gate, not timing
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT

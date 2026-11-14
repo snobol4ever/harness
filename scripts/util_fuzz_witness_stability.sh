@@ -23,7 +23,7 @@
 # ⛔ An unstable witness is NOT a failure of this script.  Instability is the measurement.  Use rc=1
 # as "do not grade a cure against this set until the named witnesses are stabilised or excluded".
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; SD="$S4E_SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"
 # not-a-corpus-path: tests/snobol4/probe_loose/fuzz -- the retired directory, named only in the refusal text; the five witnesses are materialized from ALL.sno by util_fuzz_witness_materialize.sh into a scratch dir
 if [ -n "${FUZZ_DIR:-}" ]; then DIR="$FUZZ_DIR"; else
@@ -52,7 +52,7 @@ one_run() {  # $1=mode  $2=sno  -> prints "rc=<n> out=<sha of stdout>"
     printf 'rc=%s out=%s\n' "$rc" "$(printf '%s' "$out" | md5sum | cut -c1-12)"
 }
 echo "── fuzz witness stability · ${#SNOS[@]} witnesses · N=$N repeats · modes: $MODES · (stdout,rc) compared AS A PAIR"
-echo "   SCRIP $(git -C "$SD" rev-parse --short HEAD 2>/dev/null || echo '?')  corpus $(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
+echo "   SCRIP $(git -C "$SD" rev-parse --short HEAD 2>/dev/null || echo '?')  corpus $(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo '?')"
 UNSTABLE=0; STABLE=0; UNSTABLE_NAMES=""
 for sno in "${SNOS[@]}"; do
     name="$(basename "$sno" .sno)"

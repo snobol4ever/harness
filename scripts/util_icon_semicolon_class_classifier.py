@@ -118,7 +118,7 @@ def brace_rewrite(lines, li, col):
     (`ICN_SEQ_EXPR`); Arizona icont groups ONE expression in `( )` and spells a compound expression `{ }`.
     Deleting the semicolon does not repair these files, it produces `(a b)`, which is also invalid — so they
     are NOT hq_B's deletion row and must never be counted into it. The repair is the one this seat already
-    made by hand under HQV-19 for harness/fixtures/parser_icon/paren_seq.icn: change the GROUPING, keep the semicolons,
+    made by hand under HQV-19 for the fixtures/parser_icon/paren_seq.icn of the harness: change the GROUPING, keep the semicolons,
     and the AST still yields TT_SEQ_EXPR so the fixture still pins the shape it is named for. Measured here
     rather than asserted, for the same reason as everything else in this file.
     """

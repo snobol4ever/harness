@@ -38,7 +38,7 @@ re-minted from a current red (mint refuses a placeholder DONE-WHEN since this ru
             root, and a criterion that BUILDS there and is killed at the timeout leaves the tree half-built, so every later
             criterion that runs the binary refuses rc 2 -- nine rows were retired as cannot-measure after the 88th criterion's make
             was killed at 240 s, and every one of the three sampled read RED on the re-knit tree. So the tree is KNIT (ZB_KNIT_CMD,
-            default make -s -C $S4E_HOME/SCRIP, 900 s) once before the run phase and again after every kill, each knit printed as a
+            default make -s -C the SCRIP clone, 900 s) once before the run phase and again after every kill, each knit printed as a
             KNIT line with its rc and seconds; a knit that fails HALTS the run phase (the remaining criteria are left as they were,
             written UNTOUCHED, never retired), because every rc 2 after it would be false. The gate plants a criterion that sleeps
             past --timeout and reads two KNIT lines.
@@ -52,6 +52,8 @@ import json, os, re, shutil, signal, subprocess, sys, tempfile, time
 PO = os.environ.get("S4E_POSTOFFICE", "/home/resources/postoffice")
 Q, QR, TASKS = PO + "/QUEUE.tsv", PO + "/QUEUE.retired.tsv", PO + "/tasks"
 S4E = os.environ.get("S4E_HOME") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # the coo 2026-11-04: the root that holds this .github (the ceo root is gone; the default crashed every sweep since 11-01)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths   # THE ABSOLUTE MODEL: S4E_SCRIP, S4E_HARNESS, else the sibling under the root
 if "--help" in sys.argv or "-h" in sys.argv: print(__doc__); sys.exit(0)
 apply = "--apply" in sys.argv; norun = "--no-run" in sys.argv
 _m = re.search(r"^ROSTER:\s*(.*)$", open("/home/resources/postoffice/MODE", encoding="utf-8").read(), re.M); SEATED = set(_m.group(1).split()) if _m else set()   # MODE's keyed ROSTER line: the seated seats (the coo 2026-11-04)
@@ -71,7 +73,7 @@ def donewhen(topic):
     return ""
 
 def board_topics():
-    xc = S4E + "/harness/scripts/util_donewhen_exemption_census.py"
+    xc = os.path.join(str(harness_paths.harness(S4E)), "scripts", "util_donewhen_exemption_census.py")
     try:
         p = subprocess.run([sys.executable, xc, "--json"], capture_output=True, text=True, timeout=600, env=dict(os.environ, S4E_TASKS=TASKS))
         d = json.loads(p.stdout or "{}")
@@ -112,7 +114,7 @@ def run_dw(dw):
     with tempfile.TemporaryFile() as fh:
         # THE CHECK CACHE (ARCH-SHARED-DEVELOPMENT 3.3, shared-dev step 7): a criterion that names only cacheable test_gate_*.sh goes through
         # util_check_cache.sh under the same name s4e_msg.sh done uses, so the sweep and done share one verdict per tree.
-        cc = os.path.join(S4E, "harness", "scripts", "util_check_cache.sh")
+        cc = os.path.join(str(harness_paths.harness(S4E)), "scripts", "util_check_cache.sh")
         cacheable = os.path.isfile(cc) and subprocess.run(["bash", cc, "--cacheable-text", dw], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
         argv = ["bash", cc, "done-when", "--", "bash", "-c", dw] if cacheable else ["bash", "-c", dw]
         p = subprocess.Popen(argv, cwd=S4E, env=env, stdin=subprocess.DEVNULL, stdout=fh, stderr=subprocess.STDOUT, start_new_session=True)
@@ -127,7 +129,7 @@ def load_now():
     except Exception: la = "?"
     return la, str(os.cpu_count() or "?")
 
-KNIT_CMD = os.environ.get("ZB_KNIT_CMD", "make -s -C %s/SCRIP" % S4E)
+KNIT_CMD = os.environ.get("ZB_KNIT_CMD", "make -s -C %s" % harness_paths.scrip(S4E))
 def knit(why):
     # the ceo's root is where every criterion runs; a criterion that builds there and is killed at the timeout leaves it half-built,
     # and every later criterion that runs the binary refuses rc 2 (2026-10-08 22:07: nine rows retired as cannot-measure after the

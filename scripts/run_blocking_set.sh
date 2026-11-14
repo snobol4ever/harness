@@ -72,7 +72,8 @@
 set -u
 NAME=run_blocking_set
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 MAKEFILE="$ROOT/Makefile"
 DECL_TARGET="test-sequential"
 ARMS_FILE=""

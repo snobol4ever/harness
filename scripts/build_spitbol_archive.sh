@@ -20,7 +20,8 @@
 
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+REPO="$(cd "$S4E_SCRIP" && pwd)"
 X64="${X64:-$(cd "$REPO/../x64" 2>/dev/null && pwd || echo "")}"
 
 # ── locate x64 repo ──────────────────────────────────────────────────────────
