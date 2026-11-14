@@ -180,6 +180,45 @@ def dirty_trees(ctx):
     return [k for k in ("corpus", "harness") if str(ctx.get(k, "")).endswith("-dirty")]
 
 
+# A READING OF A COMMIT ORIGIN DOES NOT HOLD NEVER ENTERS THE SHARED STORE (the cio 2026-11-14, on the coo's measurement, three times in one day: the cto's 116
+# readings at 5fccbd5709, seven of them greens origin lacked, so two criteria that read the store closed green with nothing landed; the coo's six pascal-rungs readings
+# at 77a936433e; the cio's own sub_tests_floratest OOM at 68d008c57, newest over the grader's PASS on origin). Only a DIRTY tree was left unread, so a seat's proof run
+# on a committed cure, before its landing, was stored as though it were origin's and from-progress took it as the program's newest reading. THE RULE: the SCRIP, corpus
+# and harness commits a run grades must each be on a branch of origin that is not a wip/ branch (origin/main first, the cheap test; then any other; then one fetch of
+# main and the test again, for a clone whose remote ref is behind). A repository with no remote named origin is a scratch one and is not judged. The rule guards the
+# shared store alone (DB_DEFAULT): a private S4E_PROGRESS_DB records whatever its owner grades. S4E_PROGRESS_ORIGIN_ONLY=1 applies it to any store (the selftest).
+def _off_origin(repo):
+    def g(*a, t=60):
+        return subprocess.run(["git", "--no-optional-locks", "-C", repo] + list(a), capture_output=True, text=True, timeout=t)
+    def on():
+        if g("merge-base", "--is-ancestor", "HEAD", "refs/remotes/origin/main").returncode == 0:
+            return True
+        r = g("for-each-ref", "--contains", "HEAD", "--format=%(refname)", "refs/remotes/origin")
+        return r.returncode == 0 and any(l and not l.startswith("refs/remotes/origin/wip/") and l != "refs/remotes/origin/HEAD" for l in r.stdout.split("\n"))
+    try:
+        if g("rev-parse", "--verify", "-q", "HEAD").returncode != 0 or g("remote", "get-url", "origin").returncode != 0:
+            return False
+        if on():
+            return False
+        g("fetch", "-q", "origin", "main", t=180)
+        return not on()
+    except Exception:
+        return False   # a git that cannot answer does not cost the cycle its readings
+
+
+def unlanded_trees(ctx):
+    return list(ctx.get("unlanded") or [])
+
+
+def _origin_only(path):
+    if os.environ.get("S4E_PROGRESS_ORIGIN_ONLY", "") == "1":
+        return True
+    try:
+        return os.path.realpath(path) == os.path.realpath(DB_DEFAULT)
+    except OSError:
+        return True
+
+
 def recording_off():
     return os.environ.get("S4E_PROGRESS_OFF", "") == "1"
 
@@ -205,6 +244,8 @@ def context():
     _CTX["scrip"] = _git_short(_tree_default())
     _CTX["corpus"] = _git_short(str(harness_paths.corpus(S4E)))
     _CTX["harness"] = _git_short(HARNESS_TREE)
+    _CTX["unlanded"] = [k for k, r in (("scrip", _tree_default()), ("corpus", str(harness_paths.corpus(S4E))), ("harness", HARNESS_TREE))
+                        if not str(_CTX.get(k, "")).endswith("-dirty") and _CTX.get(k) != "unknown" and _off_origin(r)]
     # ⛔ S4E_SEAT WINS OVER THE ROOT PATH (coo 2026-09-16; hq_raku via the cfo: base-vs-head boards graded on two DETACHED WORKTREES
     # were attributed to root:base and root:head -- a pseudo-seat no LANES: line names -- so a batch audit keyed on measurer could not
     # see 1854 sound rows). The seat that set S4E_SEAT is the measurer; the path map is the fallback for a seat that set nothing.
@@ -623,6 +664,12 @@ def append_rows(rows, db=None):
         print(f"progress: UNREAD -- {len(rows)} row(s) NOT recorded in {path}: the {' and the '.join(_dt)} tree{'s are' if len(_dt) > 1 else ' is'} "
               f"dirty ({', '.join(k + ' ' + ctx[k] for k in _dt)}); a reading on a dirty tree never enters the store (CEO-2060): commit, then grade", file=sys.stderr)
         return 0
+    _ul = unlanded_trees(ctx) if _origin_only(path) else []
+    if _ul:
+        print(f"progress: UNREAD -- {len(rows)} row(s) NOT recorded in {path}: the {' and the '.join(_ul)} commit{'s are' if len(_ul) > 1 else ' is'} "
+              f"on no branch of origin ({', '.join(k + ' ' + str(ctx[k]) for k in _ul)}); a reading of a commit origin does not hold never enters the shared store: "
+              f"land, then grade, or name a private store in S4E_PROGRESS_DB", file=sys.stderr)
+        return 0
     ts = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
     lines = []
     for r in rows:
@@ -891,10 +938,33 @@ def selftest():
             try: assert_ground_unmoved()
             except ProgressGroundMoved: a7 = True
             print("ARM 7 OK: a corpus commit inside the run's scope is refused" if a7 else "ARM 7 FAIL: a corpus commit inside the scope was not refused")
+            # ARMS 8 TO 11: the shared store takes a reading only of a commit a branch of origin holds, a wip/ branch aside (the cio 2026-11-14)
+            O_ = os.path.join(t, "origin.git")
+            subprocess.run(["git", "-c", "init.defaultBranch=main", "init", "-q", "--bare", O_], check=True, capture_output=True)
+            git(S_, "branch", "-M", "main"); git(S_, "remote", "add", "origin", O_); git(S_, "push", "-q", "origin", "main"); git(S_, "fetch", "-q", "origin")
+            os.environ["S4E_PROGRESS_ORIGIN_ONLY"] = "1"
+            def reading():
+                pin_context(os.path.join(t, S_, "scrip"), os.path.join(t, S_, "out"))
+                before = written(); append_rows([dict(row)], db=db); return written() - before
+            a8 = reading() == 1
+            print("ARM 8 OK: a commit on origin/main wrote the row" if a8 else "ARM 8 FAIL: a commit on origin/main wrote no row")
+            git(S_, "commit", "-q", "--allow-empty", "-m", "a cure not landed")
+            a9 = reading() == 0
+            print("ARM 9 OK: a committed cure origin does not hold wrote no row" if a9 else "ARM 9 FAIL: a commit on no branch of origin wrote a row")
+            git(S_, "push", "-q", "origin", "HEAD:refs/heads/wip/seat/cure"); git(S_, "fetch", "-q", "origin")
+            a10 = reading() == 0
+            print("ARM 10 OK: a commit only a wip/ branch of origin holds wrote no row" if a10 else "ARM 10 FAIL: a commit on a wip/ branch alone wrote a row")
+            os.environ.pop("S4E_PROGRESS_ORIGIN_ONLY", None)
+            a11p = reading() == 1
+            os.environ["S4E_PROGRESS_ORIGIN_ONLY"] = "1"
+            git(S_, "push", "-q", "origin", "HEAD:refs/heads/main")
+            a11 = a11p and reading() == 1
+            print("ARM 11 OK: a private store took the unlanded reading, and the shared rule took it once the commit landed (the stale remote ref cured by one fetch)" if a11 else "ARM 11 FAIL: private store wrote=%s, or the landed commit wrote no row" % a11p)
+            os.environ.pop("S4E_PROGRESS_ORIGIN_ONLY", None)
         finally:
             HARNESS_TREE = old_ht
-        ok = a1 and a2 and a3 and a4 and a5 and a6 and a7
-        print(f"PROGRESS_PIN_SELFTEST arms=7 {'OK' if ok else 'FAIL'}")
+        ok = a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11
+        print(f"PROGRESS_PIN_SELFTEST arms=11 {'OK' if ok else 'FAIL'}")
         return 0 if ok else 1
     except (OSError, subprocess.CalledProcessError) as e:
         print(f"REFUSE(2): the scratch repositories could not be made: {e}"); return 2
