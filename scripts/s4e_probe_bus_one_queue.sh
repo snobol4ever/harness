@@ -299,5 +299,24 @@ wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operatin
     grep -q 'ADMITTED WITH A RED PREMISE, COMPUTED' "$w/tasks/$c1.task.md" || why="$why the cured row's LEDGER carries no computed admission line;"
     [ "$(st "$c2")" = FREE ] || why="$why a row whose premise and criterion are both red was taken: it reads $(st "$c2");"
     verdict "minted=6 queued=6 free=$free lost=$lost not_in_tube=$notq cured_row=$(st "$c1") open_row=$(st "$c2")";;
-*) refuse "no step $N (1..13)";;
+14) # NOT LANDING IS NO REASON TO ESCALATE (Lon 2026-11-14 13:2x CST, in the coo's window: "So NOT LANDING is not a reason to ESCALATE. Correct?"; the coo 2026-11-14): a worker whose own newest
+    # landing of the row ended red:rebase, red:push, refuse or stopped is refused rc 2 with nothing written; one whose newest landing ended red:gate escalates; another seat's lander red does not bind it
+    e="busq14-esc-$$"; row 2 "$e" "$J" "CLAIMED:$J"; baton "$e"
+    p="$(live_claude "$J")"; live_claude "$S" >/dev/null; printf '%s\nRESERVED file tube=tier-haiku session=PJ97 pid=%s 2026-11-08T00:00:00Z\n' "$J" "$p" > "$w/claims/$e.claim"
+    lr() { printf '%s\t%s\t%s\t%s\t1\t0\t0\t9\t0\ttries=1\tgate=1\n' "$1" "$2" "$e" "$3" >> "$w/LANDINGS.tsv"; }
+    refused=0
+    for o in red:rebase red:push refuse stopped; do
+        lr 2026-11-14T19:30:00Z "$J" "$o"
+        out="$(printf 'measured: the landing lost its rebase\n' | bus "$J" escalate "$e" --stdin)"; rc=$?
+        [ "$rc" = 2 ] && refused=$((refused + 1)) || why="$why escalate after a landing that ended $o exited $rc, not 2;"
+        [ "$(st "$e")" = "CLAIMED:$J" ] || why="$why after a refused escalate ($o) the row reads $(st "$e");"
+        printf '%s\n' "$out" | grep -q 'NOT LANDING IS NO REASON TO ESCALATE' || why="$why the $o refusal does not name the law;"
+    done
+    lr 2026-11-14T19:31:00Z "$S" red:rebase
+    lr 2026-11-14T19:30:30Z "$J" red:gate
+    out="$(printf 'measured: the cure reads red in its own gate\n' | bus "$J" escalate "$e" --stdin)"; rc=$?
+    [ "$rc" = 0 ] || why="$why escalate after the seat's own red:gate (another seat's red:rebase newer) exited $rc [$(printf '%s' "$out" | grep -m1 -E '⛔|REFUSE' | cut -c1-90)];"
+    [ "$(st "$e")" = QUEUED:tier-sonnet ] || why="$why the row escalated after red:gate reads $(st "$e");"
+    verdict "lander_outcomes_refused=$refused/4 after_red_gate=$(st "$e")";;
+*) refuse "no step $N (1..14)";;
 esac

@@ -246,6 +246,15 @@ PYEOF
 }
 s4e_escalate_tell() {   # <seat> <topic> <rung> <from> <to> <measurement-file>: one telegram naming the row, the rung and the measurement file
     s4e_telegram "$1" "escalated-$2-rung$3" "NOTICE: $2 escalated to $5 (rung $3, from $4); its owner is that tube's rung; re-cut it only by escalate --to. The measurement is $6 (the baton's ## ESCALATION has it verbatim)."; }
+s4e_escalate_not_landing() {   # <topic> <seat>: NOT LANDING IS NO REASON TO ESCALATE (Lon 2026-11-14 13:2x CST, in the coo's window, verbatim: "So NOT LANDING is not a reason to ESCALATE. Correct?"; MEASURED by the coo: 9 of the day's escalations were cures that only lost a landing, red:rebase on tests/pascal or the push lease). rc 2, nothing written, when the seat's own newest LANDINGS.tsv line for the row ended red:rebase, red:push, refuse or stopped, the lander's outcomes; rc 0 when it ended ok, red:gate or red:derive (the cure's own red), or the seat never landed the row. s4e_probe_bus_one_queue.sh 14 proves it.
+    local _led _ln _out
+    if [ "$PO" = /home/resources/postoffice ]; then _led="${S4E_LAND_LEDGER:-/home/resources/progress/LANDINGS.tsv}"; else _led="${S4E_LAND_LEDGER:-$PO/LANDINGS.tsv}"; fi
+    [ -f "$_led" ] || return 0
+    _ln="$(awk -F'\t' -v t="$1" -v s="$2" '$2 == s && $3 == t' "$_led" | tail -1)"; [ -n "$_ln" ] || return 0
+    _out="$(printf '%s\n' "$_ln" | cut -f4)"
+    case "$_out" in red:rebase|red:push|refuse|stopped) ;; *) return 0 ;; esac
+    printf '⛔ REFUSED (rc 2): your newest landing of %s ended %s at %s (%s). NOT LANDING IS NO REASON TO ESCALATE (Lon 2026-11-14): keep the row and launch the same landing again, once, in the background: bash /home/harness/scripts/s4e_land.sh --row %s. A cure that no longer applies on origin is re-made on the newest origin by you. A lander fault that repeats goes to the cio by send, with its LANDINGS.tsv line. Nothing was written.\n' "$1" "$_out" "$(printf '%s\n' "$_ln" | cut -f1)" "$_led" "$1" >&2
+    return 2; }
 s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio 2026-11-05 17:5x): one honest try has failed; the claim's holder or a boss moves the job one tube up with the measurement
     local _t="$1" _c="$PO/claims/$1.claim" _body _holder _bosses _rline _job _tube _above="" _new="" _by _des _iso _rung _mf _i _seat _tg=0 _top=0 _ttr
     [ -t 0 ] && { printf '⛔ REFUSED: escalate reads the measurement from stdin (s4e_msg.sh escalate %s --stdin).\n' "$_t" >&2; return 2; }
@@ -254,7 +263,7 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
     [ -f "$_c" ] || { printf '⛔ REFUSED: %s has no claim; escalate only a row a seat holds.\n' "$_t" >&2; return 2; }
     _holder="$(head -1 "$_c")"
     _bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" | head -1)"
-    case " $_bosses " in *" $ME "*) : ;; *) [ "$_holder" = "$ME" ] || { printf '⛔ REFUSED: %s is claimed by %s; only that seat or a boss may escalate it.\n' "$_t" "$_holder" >&2; return 2; };; esac
+    case " $_bosses " in *" $ME "*) : ;; *) [ "$_holder" = "$ME" ] || { printf '⛔ REFUSED: %s is claimed by %s; only that seat or a boss may escalate it.\n' "$_t" "$_holder" >&2; return 2; }; s4e_escalate_not_landing "$_t" "$ME" || return 2;; esac
     if s4e_file_road; then   # bus-one-queue step 3: on the file road the column is the tube; no job is killed, put or recorded
         _tube="$(sed -n 's/^RESERVED file tube=\([^ ]*\).*/\1/p' "$_c" | tail -1)"
         [ -n "$_tube" ] || { printf '⛔ REFUSED: the claim of %s has no RESERVED file tube=<tube> line; there is no tube to move it up from.\n' "$_t" >&2; return 2; }
