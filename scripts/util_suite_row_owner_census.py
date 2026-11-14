@@ -119,8 +119,10 @@ for x in reds: print(x)
 #   ASLEEP        a worker named in the sleeping list (--sleeping F, default the controller's list; a missing file means nobody sleeps). A sleeping worker is neither idle nor starved and is never counted in STARVED or DRY; the board prints asleep=N (the cio's ruling, 2026-11-07, row census-seat-arm-counts-the-sleeping-workers-as-starved-under-a-workers-awake-cap).
 # rc 1 when STARVED, DRY or OVERDUE is above 0. --probe-seat-arm plants the inputs in a scratch dir, one sleeping worker among them, and prints SEAT_ARM_PROBE when it reads them as the cio's ruling says.
 import subprocess
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths as HP
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-TIERS = arg("--tiers", os.path.join(ROOT, ".github", "TIERS.tsv")); CLAIMS = arg("--claims", "/home/resources/postoffice/claims"); TUBES = arg("--tubes", None)
+TIERS = arg("--tiers", os.path.join(str(HP.github(ROOT)), "TIERS.tsv")); CLAIMS = arg("--claims", "/home/resources/postoffice/claims"); TUBES = arg("--tubes", None)
 SLEEPING = arg("--sleeping", "/home/claude_coo/.scratch/verifier/sleeping")
 OVERDUE_S = 1800
 def table(path, need):

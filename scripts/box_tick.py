@@ -173,7 +173,7 @@ GRADE_TUBE = os.environ.get("S4E_GRADE_TUBE") or "grade"
 LAP_TSV = os.environ.get("S4E_LAP_TSV") or (PROG + "/LAP.tsv")
 FEED_TSV = os.environ.get("S4E_FEED_TSV") or (PROG + "/FEED.tsv")
 SUITES_TSV = os.environ.get("S4E_SUITES_TSV") or (PROG + "/SUITES.tsv")
-RUNNERS_TSV = os.path.join(ROOT, "harness", "scripts", "SUITE_RUNNERS.tsv")
+RUNNERS_TSV = os.path.join(str(HP.harness(ROOT)), "scripts", "SUITE_RUNNERS.tsv")
 def _rows(path):
     try: return [l.rstrip("\n").split("\t") for l in open(path, encoding="utf-8") if l.strip() and not l.startswith("#")]
     except OSError: return []
@@ -185,7 +185,7 @@ def _append(path, text):
 def master_pkg_rows(): return [r for r in _rows(RUNNERS_TSV) if len(r) >= 5 and r[1] in ("master", "pkg")]
 def suite_cells(r):
     """the cells of one SUITE_RUNNERS row: core and every chunk:NN of its PARTITION.tsv (table <corpus>/tests/<lang> for a master, the table column for a pkg)"""
-    d = os.path.join(ROOT, "corpus", "tests", r[2]) if r[1] == "master" else os.path.join(ROOT, r[4])
+    d = os.path.join(str(HP.corpus(ROOT)), "tests", r[2]) if r[1] == "master" else (os.path.join(str(HP.corpus(ROOT)), r[4][len("corpus/"):]) if r[4].startswith("corpus/") else os.path.join(ROOT, r[4]))
     rows = _rows(os.path.join(d, "PARTITION.tsv"))
     if len(rows) < 2 or "part" not in rows[0]: return []
     ip = rows[0].index("part")
@@ -195,17 +195,17 @@ def origin_head():
     """the short head of origin/main in SCRIP after a fetch under the s4e-fetch sem slot (the shape util_sync_root.sh uses); a fetch the slot refuses leaves the
     last fetched origin/main standing. Returns "" when origin/main does not resolve."""
     try:
-        subprocess.run(["sem", "--will-cite", "--id", "s4e-fetch", "-j", "4", "--fg", "--semaphoretimeout", "-60", "git", "-C", os.path.join(ROOT, "SCRIP"), "fetch", "-q", "origin", "main"],
+        subprocess.run(["sem", "--will-cite", "--id", "s4e-fetch", "-j", "4", "--fg", "--semaphoretimeout", "-60", "git", "-C", str(HP.scrip(ROOT)), "fetch", "-q", "origin", "main"],
                        env=dict(os.environ, PARALLEL_HOME="/tmp/s4e-sem"), capture_output=True, text=True, timeout=300)
     except (OSError, subprocess.TimeoutExpired): pass
-    r = subprocess.run(["git", "-C", os.path.join(ROOT, "SCRIP"), "rev-parse", "--short=9", "origin/main"], capture_output=True, text=True, timeout=20)
+    r = subprocess.run(["git", "-C", str(HP.scrip(ROOT)), "rev-parse", "--short=9", "origin/main"], capture_output=True, text=True, timeout=20)
     return r.stdout.strip() if r.returncode == 0 else ""
 def _git_out(*args):
-    return subprocess.run(["git", "-C", os.path.join(ROOT, "SCRIP")] + list(args), capture_output=True, text=True, timeout=20).stdout.strip()
+    return subprocess.run(["git", "-C", str(HP.scrip(ROOT))] + list(args), capture_output=True, text=True, timeout=20).stdout.strip()
 def landing_features(base):
     """the impact set of the range base..origin/main: test_area_smoke.sh --list-only with AREA_SMOKE_BASE=base (its LIST line names the features; a MAP line
     carrying `*` is a widening). Returns (widen, features); the reading is parse_area's."""
-    r = subprocess.run(["bash", os.path.join(ROOT, "harness", "scripts", "test_area_smoke.sh"), "--list-only"], capture_output=True, text=True, timeout=300,
+    r = subprocess.run(["bash", os.path.join(str(HP.harness(ROOT)), "scripts", "test_area_smoke.sh"), "--list-only"], capture_output=True, text=True, timeout=300,
                        env=dict(os.environ, AREA_SMOKE_BASE=base), cwd=ROOT)
     return parse_area(r.returncode, r.stdout + r.stderr)
 def parse_area(rc, out):
@@ -235,7 +235,7 @@ def probe_area_refusal():
 def shell_vocab(lang):
     """the shells vocabulary of one master (test-cycle step 5c): every whitespace word of the shells column of its PARTITION.tsv, the union over the rows;
     an absent table or column is empty. A feature outside it has no shell cell (util_suite_partition builds shells for distinctive features only)"""
-    rows = _rows(os.path.join(ROOT, "corpus", "tests", lang, "PARTITION.tsv"))
+    rows = _rows(os.path.join(str(HP.corpus(ROOT)), "tests", lang, "PARTITION.tsv"))
     if not rows or "shells" not in rows[0]: return set()
     ish = rows[0].index("shells")
     return {w for x in rows[1:] if len(x) > ish for w in x[ish].split()}
@@ -250,7 +250,7 @@ def cells_for(widen, feats):
     if widen: return [(r[0], "chunk:01") for r in masters]
     cells = {}
     for r in masters:
-        try: cols = set(open(os.path.join(ROOT, "corpus", "tests", r[2], "ALL.csv"), encoding="utf-8").readline().strip().split(","))
+        try: cols = set(open(os.path.join(str(HP.corpus(ROOT)), "tests", r[2], "ALL.csv"), encoding="utf-8").readline().strip().split(","))
         except OSError: continue
         vocab = shell_vocab(r[2])
         for t in feats:
@@ -264,7 +264,7 @@ def probe_impact():
     masters = [r for r in master_pkg_rows() if r[1] == "master"]
     feats, dropped = [], 0
     for r in masters:
-        try: cols = open(os.path.join(ROOT, "corpus", "tests", r[2], "ALL.csv"), encoding="utf-8").readline().strip().split(",")
+        try: cols = open(os.path.join(str(HP.corpus(ROOT)), "tests", r[2], "ALL.csv"), encoding="utf-8").readline().strip().split(",")
         except OSError: continue
         vocab = shell_vocab(r[2])
         feats += ["%s:%s" % (r[2], c) for c in cols]

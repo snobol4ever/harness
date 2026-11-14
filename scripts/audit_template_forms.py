@@ -35,6 +35,8 @@ Usage: python3 ../harness/scripts/audit_template_forms.py [--root DIR] [--tsv] [
 (kind, IR_X, its boxes joined by |), for the watch loop to diff two readings.
 """
 import argparse, glob, os, re, subprocess, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths as HP
 
 ALPHA = "x86_alpha()"
 NOT = "\u00ac "
@@ -375,7 +377,7 @@ def dispatch(root):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--root", default=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP"))
+    ap.add_argument("--root", default=str(HP.scrip()))
     ap.add_argument("--tsv", action="store_true")
     ap.add_argument("--top", type=int, default=0)
     a = ap.parse_args()

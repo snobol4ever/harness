@@ -36,7 +36,9 @@ tree that this instrument cannot make (the caller may be emitted code or another
 it as covered.  DARK is worse than RED.
 """
 import os, re, subprocess, sys
-HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
+HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
+import harness_paths as HP
+ROOT = str(HP.scrip(os.path.dirname(os.path.dirname(HERE))))
 SITE_RE = re.compile(r'^\s+(src/[A-Za-z0-9_./-]+):(\d+)\s+\(([^,]+),\s*([^)]+)\)\s*$')
 FNHDR_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_ *]*\**\s*[A-Za-z_][A-Za-z0-9_]*\s*\(')
 WINDOW = 3

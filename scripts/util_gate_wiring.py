@@ -55,6 +55,14 @@ exists only inside such a comment.  Lines beginning `echo`/`printf` are skipped 
 NAMED in a diagnostic is not a gate RUN.
 """
 import argparse, datetime, io, os, re, subprocess, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths as HP
+
+
+def _hs(root):
+    """the harness scripts dir of the SCRIP clone at root: harness_paths.harness() of root's parent (S4E_HARNESS, else /home/harness, else the sibling)"""
+    return os.path.join(str(HP.harness(os.path.dirname(os.path.abspath(root)))), "scripts")
+
 
 CLASSES = ("WIRED", "RULING", "TASK")
 CEIL_KEY = "# TASK-CEILING:"
@@ -75,7 +83,7 @@ def sh_names(text):
 
 
 def disk_gates(root):
-    d = os.path.join(root, "..", "harness", "scripts")
+    d = _hs(root)
     return sorted(f for f in os.listdir(d) if f.startswith("test_gate_") and f.endswith(".sh"))
 
 
@@ -180,7 +188,7 @@ def recipe_doubles(root, entry="test"):
     with a reason, refused if blank -- the same bargain this file already strikes with RULING, and for the same
     reason (an escape hatch that takes no reason becomes the silent backlog with a tidier name)."""
     order, recipes = run_targets(root, entry)
-    sdir = os.path.join(root, "..", "harness", "scripts")
+    sdir = _hs(root)
     known = set(os.listdir(sdir)) if os.path.isdir(sdir) else set()
     seen, unreasoned = {}, []
     for t in order:
@@ -259,7 +267,7 @@ def reachable(root, skipped=None):
         texts.append(p.stdout)
     for blob in texts:
         for t in txt_names(blob):
-            pop = os.path.join(root, "..", "harness", "scripts", t)
+            pop = os.path.join(_hs(root), t)
             if not os.path.exists(pop):
                 continue
             with open(pop, encoding="utf-8", errors="replace") as fh:
@@ -272,7 +280,7 @@ def reachable(root, skipped=None):
         if n in seen:
             continue
         seen.add(n)
-        p = os.path.join(root, "..", "harness", "scripts", n)
+        p = os.path.join(_hs(root), n)
         if os.path.exists(p):
             with open(p, encoding="utf-8", errors="replace") as fh:
                 work += [r for r in sh_names(fh.read()) if r not in seen]
@@ -280,7 +288,7 @@ def reachable(root, skipped=None):
 
 
 def tsv_path(root):
-    return os.path.join(root, "..", "harness", "scripts", "gate_wiring.tsv")
+    return os.path.join(_hs(root), "gate_wiring.tsv")
 
 
 def load(root):
@@ -600,10 +608,10 @@ def _fx(td, gates, recipe, tsv, post=None):
     earlier arm's fixture -- three arms went red for gates a later arm had left lying about, and the failure
     read as a bug in adopt. A fixture builder that accumulates is testing a world no arm described."""
     import shutil as _sh
-    _sh.rmtree(os.path.join(td, "harness", "scripts"), ignore_errors=True)
-    os.makedirs(os.path.join(td, "harness", "scripts"), exist_ok=True)
-    os.makedirs(os.path.join(td, "SCRIP"), exist_ok=True)
-    with open(os.path.join(td, "SCRIP", "Makefile"), "w") as fh:
+    _sh.rmtree(os.path.join(td, "harness", "scripts"), ignore_errors=True)  # one-disk: not a path
+    os.makedirs(os.path.join(td, "harness", "scripts"), exist_ok=True)  # one-disk: not a path
+    os.makedirs(os.path.join(td, "SCRIP"), exist_ok=True)  # one-disk: not a path
+    with open(os.path.join(td, "SCRIP", "Makefile"), "w") as fh:  # one-disk: not a path
         fh.write("test:\n")
         for line in recipe:
             fh.write("\t%s\n" % line)
@@ -611,10 +619,10 @@ def _fx(td, gates, recipe, tsv, post=None):
         for line in (post or ["@true"]):
             fh.write("\t%s\n" % line)
     for g in gates:
-        with open(os.path.join(td, "harness", "scripts", g), "w") as fh:
+        with open(os.path.join(td, "harness", "scripts", g), "w") as fh:  # one-disk: not a path
             fh.write("#!/usr/bin/env bash\nexit 0\n")
     if tsv is not None:
-        with open(os.path.join(td, "harness", "scripts", "gate_wiring.tsv"), "w") as fh:
+        with open(os.path.join(td, "harness", "scripts", "gate_wiring.tsv"), "w") as fh:  # one-disk: not a path
             fh.write(tsv)
     return td
 
@@ -641,7 +649,8 @@ def selftest(out=sys.stdout):
     G = ["test_gate_a.sh", "test_gate_b.sh", "test_gate_c.sh"]
     HDR = "# scratch\n%s 1\n" % CEIL_KEY
     print("--- util_gate_wiring selftest ---", file=out)
-    td = tempfile.mkdtemp(prefix="gw_"); root = os.path.join(td, "SCRIP")
+    td = tempfile.mkdtemp(prefix="gw_"); root = os.path.join(td, "SCRIP")  # one-disk: not a path
+    _was = os.environ.get("S4E_HARNESS"); os.environ["S4E_HARNESS"] = os.path.join(td, "harness")  # one-disk: not a path
     try:
         # ARM 1 CLEAN: two wired, one declared TASK inside the ceiling, nothing on disk unaccounted for.
         _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh", "bash ../harness/scripts/test_gate_b.sh"],
@@ -672,7 +681,7 @@ def selftest(out=sys.stdout):
         rc, txt = run(check, root); ck("5 clean after adopt", rc, 0)
         rows, ceil, _ = load(root); ck("5 ceiling ratcheted down", ceil, 0)
         # ARM 6 A RECORDED GATE IS DELETED: the line is a claim about nothing.
-        os.remove(os.path.join(td, "harness", "scripts", "test_gate_c.sh"))
+        os.remove(os.path.join(td, "harness", "scripts", "test_gate_c.sh"))  # one-disk: not a path
         rc, txt = run(check, root); ck("6 recorded-but-gone", rc, 1)
         ck("6 names the deleted gate", "test_gate_c.sh" in txt, True)
         rc, txt = run(adopt, root); ck("6 adopt drops it", rc, 0)
@@ -704,7 +713,7 @@ def selftest(out=sys.stdout):
         rc, txt = run(check, root); ck("10 duplicate + unknown class", rc, 1)
         ck("10 names both faults", "LISTED TWICE" in txt and "UNKNOWN CLASS" in txt, True)
         # ARM 11 CANNOT MEASURE IS NOT CLEAN AND NOT A REFUSAL: a Makefile with no `test:` target must be rc=2.
-        with open(os.path.join(td, "SCRIP", "Makefile"), "w") as fh:
+        with open(os.path.join(td, "SCRIP", "Makefile"), "w") as fh:  # one-disk: not a path
             fh.write("other:\n\t@true\n")
         rc, txt = run(check, root); ck("11 unmeasurable is rc=2", rc, 2)
         ck("11 says it examined nothing", "UNVERIFIED" in txt, True)
@@ -713,7 +722,7 @@ def selftest(out=sys.stdout):
         # instrument from lying in the comfortable direction.
         _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh   # see also test_gate_b.sh",
                     "echo 'run test_gate_c.sh by hand'"], None)
-        with open(os.path.join(td, "harness", "scripts", "test_gate_a.sh"), "w") as fh:
+        with open(os.path.join(td, "harness", "scripts", "test_gate_a.sh"), "w") as fh:  # one-disk: not a path
             fh.write("#!/usr/bin/env bash\nfor f in \"$HERE\"/test_gate_*.sh; do grep -q x \"$f\"; done\nexit 0\n")
         got = sorted(g for g in disk_gates(root) if g in reachable(root))
         ck("12 only the executed gate is reachable", got, ["test_gate_a.sh"])
@@ -722,15 +731,15 @@ def selftest(out=sys.stdout):
         # first draft of this instrument therefore filed 22 genuinely-run gates as debt. Expanding a recipe
         # stops answering the question you asked the moment a target reads its population from a file.
         _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh"], None)
-        with open(os.path.join(td, "SCRIP", "Makefile"), "a") as fh:
+        with open(os.path.join(td, "SCRIP", "Makefile"), "a") as fh:  # one-disk: not a path
             fh.write("preflight:\n\t@while read -r arm; do bash $$arm; done < <(grep -E '^../harness/scripts/' \"$(ROOT)/../harness/scripts/pop_arms.txt\")\n")
-        with open(os.path.join(td, "harness", "scripts", "pop_arms.txt"), "w") as fh:
+        with open(os.path.join(td, "harness", "scripts", "pop_arms.txt"), "w") as fh:  # one-disk: not a path
             fh.write("# a declared population\n../harness/scripts/test_gate_b.sh\n")
         got = sorted(g for g in disk_gates(root) if g in reachable(root))
         ck("13 declared-population arm is reachable", got, ["test_gate_a.sh", "test_gate_b.sh"])
         # ARM 14 AND AN OPTIONAL TARGET THAT WILL NOT EXPAND IS NAMED, NEVER SILENTLY DROPPED: its gates leave
         # the wired set, and a refusal that cannot say WHY they left is loud and undiagnosable.
-        with open(os.path.join(td, "SCRIP", "Makefile"), "w") as fh:
+        with open(os.path.join(td, "SCRIP", "Makefile"), "w") as fh:  # one-disk: not a path
             fh.write("test:\n\tbash ../harness/scripts/test_gate_a.sh\n")
         skipped = []
         reachable(root, skipped=skipped)
@@ -786,6 +795,8 @@ def selftest(out=sys.stdout):
         rc, txt = run(check, root); ck("16 one line, a comment and an echo are not a double", rc, 0)
     finally:
         shutil.rmtree(td, ignore_errors=True)
+        if _was is None: os.environ.pop("S4E_HARNESS", None)
+        else: os.environ["S4E_HARNESS"] = _was
     print("--- %d arm(s) failed ---" % len(fails), file=out)
     return 1 if fails else 0
 
@@ -797,7 +808,7 @@ def main(argv=None):
     ap.add_argument("--root", default=None, help="SCRIP root (default: this script's parent)")
     ap.add_argument("--by", default=None, help="declarer for `declare` (default $S4E_SEAT)")
     ns = ap.parse_args(argv)
-    root = ns.root or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP")
+    root = ns.root or str(HP.scrip())
     if ns.cmd == "check":
         return check(root)
     if ns.cmd == "adopt":
