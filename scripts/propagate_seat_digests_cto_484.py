@@ -193,6 +193,11 @@ def render_settings(root, harness):
     seat = docs["settings.local.json"].get("env", {}).get("S4E_SEAT")
     if not seat: sys.exit("REFUSE(2): %s/.claude/settings.local.json names no S4E_SEAT" % root)
     h = os.path.join(harness, "scripts"); out = []
+    # EVERY SESSION IN A ROOT CARRIES S4E_HOME, HOWEVER IT WAS OPENED (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover; the coo's measurement: util_sync_root.sh
+    # refused "S4E_HOME unset" in a window opened by hand; MEASURED: spawn_fleet.sh exports it, the three live sessions opened by hand carried none, and with it unset about
+    # 160 scripts read their root as the folder two above the script, which is /home since the scripts run from /home/harness, so lib_paths.sh read S4E_SCRIP=/home/SCRIP,
+    # a folder that does not exist). The env block of settings.local.json already carries S4E_SEAT to every session; S4E_HOME sits beside it.
+    docs["settings.local.json"].setdefault("env", {})["S4E_HOME"] = root
     for f, evs in HOOKS.items():
         d = docs[f]; hooks = d.setdefault("hooks", {})
         for ev, (mark, matcher, tmo, msg, cmd) in evs.items():
