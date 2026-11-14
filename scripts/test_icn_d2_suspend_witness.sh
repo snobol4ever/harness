@@ -37,9 +37,10 @@
 #         REPS=20 SCRIP_ICN_GENFRAME2=1 bash ../harness/scripts/...        # more samples: raise REPS before trusting any green
 # EXIT:   0 = every witness CORRECT in both modes (the gate may flip) | 1 = at least one CRASH/WRONG | 2 = REFUSED, could not measure.
 set -u
-cd "$(dirname "$0")/../../SCRIP" || { echo "⛔ REFUSE: cannot reach SCRIP root"; exit 2; }
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+cd "$S4E_SCRIP" || { echo "⛔ REFUSE: cannot reach SCRIP root"; exit 2; }
 ROOT="$PWD"
-. ../harness/scripts/lib_oracle_flags.sh 2>/dev/null || { echo "⛔ REFUSE: lib_oracle_flags.sh would not load -- it is the ONE authority for oracle paths and this harness will not hand-assemble one."; exit 2; }
+. "$S4E_HARNESS/scripts/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSE: lib_oracle_flags.sh would not load -- it is the ONE authority for oracle paths and this harness will not hand-assemble one."; exit 2; }
 ICONT="$(icont_bin)" || { echo "⛔ REFUSE rc=2: the Icon oracle is unreachable. Grading against a missing oracle prints a plausible, entirely false table."; exit 2; }
 [ -x "$ROOT/scrip" ] || { echo "⛔ REFUSE rc=2: ./scrip is not built. ⛔ NEVER run a board and a build in the same tree at once (s268) -- 'make pristine' deletes ./scrip and the board then grades a missing compiler."; exit 2; }
 [ -f "$ROOT/out/libscrip_rt.so" ] || { echo "⛔ REFUSE rc=2: out/libscrip_rt.so missing -- mode-4 cannot link."; exit 2; }

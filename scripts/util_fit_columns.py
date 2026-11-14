@@ -13,7 +13,7 @@ show that again. Show as a grid." / "Do not show the test suite banner ever agai
      or U+26D4, one character occupying TWO columns. Off-by-one per glyph is exactly the three-column
      overshoot that made the suite grid 83 and unreadable in the first place.
 
-So there is ONE width authority in this tree -- `dw()` in .github/scripts/util_suite_banner.py, which
+So there is ONE width authority in this tree -- `dw()` in scripts/util_suite_banner.py of the .github repo, which
 already handles wide characters, variation selectors and regional-indicator pairs -- and it is IMPORTED
 here rather than reimplemented. A second width function beside it is the same defect as a second roster:
 both answer, neither agrees, and nothing announces the disagreement.
@@ -26,8 +26,9 @@ ASCII-only width and SAYS NOTHING, because a banner printed slightly wide beats 
 import sys, os, io, contextlib, importlib.util
 def _load_dw():
     here = os.path.dirname(os.path.abspath(__file__))
-    for cand in (os.path.join(here, "util_suite_banner.py"), os.path.join(here, "..", "..", "SCRIP", "..", ".github", "scripts", "util_suite_banner.py"),
-                 os.path.join(here, "..", "..", "SCRIP", ".github", "scripts", "util_suite_banner.py")):
+    sys.path.insert(0, here)
+    import harness_paths
+    for cand in (os.path.join(here, "util_suite_banner.py"), os.path.join(str(harness_paths.github()), "scripts", "util_suite_banner.py")):
         cand = os.path.abspath(cand)
         if not os.path.exists(cand): continue
         try:

@@ -12,7 +12,7 @@
 # are not (measured on this row: simple_program_10, say_die_1, sub_say_12, sub_say_6).
 # Usage: util_raku_entry_grade.sh <entry> [entry ...]        rc: 0 all green · 1 a red · 2 could not measure
 set -u
-here=$(cd "$(dirname "$0")" && pwd); root=$(cd "$here/../../SCRIP" && pwd); corpus="$root/../corpus"
+here=$(cd "$(dirname "$0")" && pwd); . "$here/lib_paths.sh"; root="$S4E_SCRIP"; corpus="$S4E_CORPUS"
 M="$corpus/tests/raku"
 [ $# -ge 1 ] || { echo "⛔ REFUSE(2) [util_raku_entry_grade]: no entry named -- a grader with an empty population cannot report a verdict" >&2; exit 2; }
 [ -x "$root/scrip" ] || { echo "⛔ REFUSE(2) [util_raku_entry_grade]: no $root/scrip -- run make first" >&2; exit 2; }

@@ -3,7 +3,7 @@
 (box-scheduler step 20, CTO-496; the cause of 'the same arm red for hours before anyone claimed it').
 
 Reads the coo's loop record /home/resources/progress/results.tsv and writes nothing (the coo alone writes a progress row). REF is resolved in
-the SCRIP checkout ($S4E_HOME/SCRIP, else the checkout beside this harness) to a commit. The readings of that commit are the rows whose
+the SCRIP checkout (S4E_SCRIP, else the seat's clone) to a commit. The readings of that commit are the rows whose
 scrip column is a prefix of its hash (the loop writes 7 and 9 characters); a row on a dirty tree (scrip ending -dirty) is unread (CEO-2060).
 When the loop has not yet graded REF itself, the newest ancestor it graded is read and the line says so (behind=N commits), never a silence.
 Per (suite, program, mode) the newest reading counts. A red is FAIL CRASH HANG REJECT OOM ABORT UNPROVEN SKIP; UNGRADED UNGRADABLE OUTSIDE are
@@ -23,9 +23,9 @@ DEPTH = 20000
 def refuse(msg):
     print("REFUSE(2): " + msg, file=sys.stderr); sys.exit(2)
 def scrip_dir():
-    home = os.environ.get("S4E_HOME")
-    if not home: home = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-    d = os.path.join(home, "SCRIP")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import harness_paths
+    d = str(harness_paths.scrip(os.environ.get("S4E_HOME")))
     if not os.path.isdir(d): refuse("no SCRIP checkout at " + d)
     return d
 def git(d, *a):

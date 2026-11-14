@@ -22,9 +22,10 @@
 # Exit: 0 normally; with CHECK=1, 0 if every .s is already current, 1 if any would change.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -u
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+ROOT="$S4E_SCRIP"
 SCRIP="$ROOT/scrip"
-CORPUS="${ICON_CORPUS:-$S4E/corpus/benchmarks/icon}"
+CORPUS="${ICON_CORPUS:-$S4E_CORPUS/benchmarks/icon}"
 GLOB="${1:-*.icn}"
 # ⛔⭐ $1 IS A GLOB, NOT A COMMIT LABEL, AND THE SIBLING REGENS TAKE A LABEL THERE (coo 2026-09-11).
 # util_regen_benchmark_s_artifacts.sh, util_regen_demo_s_artifacts.sh and util_regen_prolog_bench_s_artifacts.sh

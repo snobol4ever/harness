@@ -40,8 +40,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-SCRIP_BIN="${SCRIP:-$HERE/../../SCRIP/scrip}"
-RT_DIR="$HERE/../../SCRIP/out"
+. "$HERE/lib_paths.sh"
+SCRIP_BIN="${SCRIP:-$S4E_SCRIP/scrip}"
+RT_DIR="$S4E_SCRIP/out"
 TMO="${IR_TIMEOUT:-900}"
 BASE_N="${BASE_N:-160}"      # fallback only; N is calibrated per kernel below
 TARGET_IR="${TARGET_IR:-60000000}"   # aim each measured run at ~60M Ir: deep into the linear regime, seconds under callgrind
@@ -59,7 +60,7 @@ PERF_STAMP_OFF=1
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || refuse "lib_oracle_flags.sh unloadable (the ONE oracle-path authority)."
 SBL="$(sbl_clean_bin)"; [ -x "$SBL" ] || refuse "clean SPITBOL benchmark oracle absent: $SBL"
 SBL_FLAGS="$(sbl_lang_flags)"
-B="$S4E/corpus/benchmarks/snobol4"
+B="$S4E_CORPUS/benchmarks/snobol4"
 [ -d "$B" ] || refuse "kernel dir missing: $B"
 W="$(mktemp -d "${TMPDIR:-/tmp}/irslope.XXXXXX")" || refuse "cannot make a work dir."
 trap 'rm -rf "$W"' EXIT
@@ -91,8 +92,8 @@ ir_m4() {
   gcc -no-pie "$d/p.s" -o "$d/p.bin" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -lpthread >/dev/null 2>&1 || return 0
   ir_of "$d/p.bin" < /dev/null
 }
-TREE="$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"
-CTREE="$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
+TREE="$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"
+CTREE="$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo '?')"
 echo "IR_SLOPE lang=snobol4 tree=SCRIP $TREE corpus $CTREE RT_OPT=-O0 instrument=callgrind-Ir-regression date=$(date -u +%Y-%m-%d)"
 echo "  basis: Ir(n) = OVERHEAD + n*WORK fitted at n = $BASE_N / $((BASE_N*2)) / $((BASE_N*4)); WORK is the SLOPE"
 echo "         (Ir per iteration, startup cancelled exactly), OVERHEAD is the INTERCEPT (its own number)."

@@ -23,9 +23,10 @@
 # DONE BAR: m3 AND m4 each zero silent FAIL — this is the HARD floor, inside make test's reach.
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude  DATE: 2026-09-03
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${HERE}/../../SCRIP/scrip"
+. "$HERE/lib_paths.sh"
+SCRIP="$S4E_SCRIP/scrip"
 . "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
-RT_SO="${HERE}/../../SCRIP/out/libscrip_rt.so"
+RT_SO="$S4E_SCRIP/out/libscrip_rt.so"
 MODE3_MIN="${MODE3_MIN:-1}"
 MODE4_MIN="${MODE4_MIN:-0}"
 P3=0; F3=0; P4=0; F4=0; N=0
@@ -41,7 +42,7 @@ pascal() {
     local s4 bin4
     s4=$(mktemp "${TMPDIR:-/tmp}/pas_XXXXXX.s"); bin4=$(mktemp "${TMPDIR:-/tmp}/pas_XXXXXX.bin"); rm -f "$bin4"
     if [ "${S4E_MODE4:-0}" = 1 ] && smoke_t -k 5 8 "$SCRIP" --compile "$tmp" --out="$s4" </dev/null >/dev/null 2>&1 && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
-        if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
+        if gcc -no-pie "$s4" -L"$S4E_SCRIP/out" -lscrip_rt -Wl,-rpath,"$S4E_SCRIP/out" -o "$bin4" 2>/dev/null; then
             a4=$(printf '%s\n' "$stdin_data" | smoke_t -k 5 8 "$bin4" 2>/dev/null)
         fi
     fi

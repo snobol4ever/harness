@@ -8,8 +8,9 @@
 # A telegram wakes nobody (CIO-51: the designer parks the red). S4E_RESULTS overrides the results table; S4E_POST the postoffice (a probe's scratch one).
 : "${S4E_HOME:?REFUSE(2) [lib_grade_cell]: S4E_HOME unset}"
 RESULTS="${S4E_RESULTS:-/home/resources/progress/results.tsv}"
-TIERS="${S4E_TIERS:-$S4E_HOME/.github/TIERS.tsv}"
-MSG="$S4E_HOME/harness/scripts/s4e_msg.sh"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+TIERS="${S4E_TIERS:-$S4E_GITHUB/TIERS.tsv}"
+MSG="$S4E_HARNESS/scripts/s4e_msg.sh"
 designer_of() {
     local s
     s="$(awk -F'\t' -v k="$1" '$1 !~ /^#/ && $1 != "seat" { n = split($8, r, ","); for (i = 1; i <= n; i++) if (r[i] == k) { print $1; exit } }' "$TIERS")"
@@ -40,7 +41,7 @@ PY
 tell_lap_new_reds() {
     local tree="$1" snap="$2" lines key prog mode outc d sent=0 total=0; shift 2
     [ -f "$snap" ] || { echo "LAP_NEW_REDS refused=no-snapshot told=0 reds=0"; return 0; }
-    lines="$(python3 -c "$NEWREDS_PY" "$S4E_HOME/harness/scripts" "$snap" "$RESULTS" "$@")" || { echo "LAP_NEW_REDS refused=reader told=0 reds=0"; return 0; }
+    lines="$(python3 -c "$NEWREDS_PY" "$S4E_HARNESS/scripts" "$snap" "$RESULTS" "$@")" || { echo "LAP_NEW_REDS refused=reader told=0 reds=0"; return 0; }
     declare -A BODY=() CNT=() SHOWN=()
     while IFS=$'\t' read -r key prog mode outc; do
         [ -n "$key" ] || continue

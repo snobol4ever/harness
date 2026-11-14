@@ -6,7 +6,7 @@ Six roles, each a different file: the officer in charge (cto: rulings, designs, 
 queue, the wake rule), the general officers (cfo cao cqo: a lander on any language), the language lanes (one language's suites, oracle, manual, extension,
 ladder), the layer seats (zetas runtime collector templates packages: shared code, all eight smokes, the regenerated tables) and the ports (dotnet jvm:
 their own repo, S4E_ENGINE, the SPITBOL ref). A seat's file is its header, its identity block (SEATS below), then the parts its role names from
-.github/digest/parts/ ({ext} and {lang} filled for a lane). Without --apply it prints each root's new size and whether it changes; with --apply it
+the digest/parts folder of the .github repo ({ext} and {lang} filled for a lane). Without --apply it prints each root's new size and whether it changes; with --apply it
 writes the file (LF, UTF-8) and keeps the previous text beside it as CLAUDE.md.bak-2026-11-04-cto-484 (never overwritten once written); --out=<dir>
 renders every seat into <dir>/<seat>/CLAUDE.md for grading without touching a root. Idempotent. The gates: test_gate_seat_digests_within_budget.sh,
 test_gate_digest_matches_rules.sh.

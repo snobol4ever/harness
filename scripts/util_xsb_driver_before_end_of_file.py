@@ -17,6 +17,8 @@ PKGDIR defaults to the sibling corpus: <harness>/../corpus/packages/prolog/xsb_t
 """
 import argparse, csv, re, sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import harness_paths as _hp
 
 MARK = "\n% DRIVER (appended by the vendoring"
 EOF_CLAUSE = re.compile(r"(?m)^end_of_file\.[ \t]*$")
@@ -58,7 +60,7 @@ def entries(pkg):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("pkgdir", nargs="?", default=str(Path(__file__).resolve().parent.parent.parent / "corpus" / "packages" / "prolog" / "xsb_tests"))
+    ap.add_argument("pkgdir", nargs="?", default=str(_hp.corpus() / "packages" / "prolog" / "xsb_tests"))
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--check", action="store_true")
     g.add_argument("--apply", action="store_true")
