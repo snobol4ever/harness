@@ -26,7 +26,7 @@ FLAGS="$(sbl_lang_flags)"
 if [ -z "${WITNESS_DIR:-}" ]; then
     WITNESS_DIR="$(mktemp -d)"
     trap 'rm -rf "$WITNESS_DIR"' EXIT
-    for f in "$S4E"/corpus/tests/snobol4/probe_loose_errpath_*.sno; do
+    for f in "$S4E_CORPUS"/tests/snobol4/probe_loose_errpath_*.sno; do
         [ -f "$f" ] || continue
         cp "$f" "$WITNESS_DIR/$(basename "$f" | sed 's/^probe_loose_errpath_//')"
     done

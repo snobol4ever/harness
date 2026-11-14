@@ -307,7 +307,7 @@ step11() {   # a package prelude retires into the dialect switch: swi and xsb (C
     got="$(cd "$T" && timeout -k 5 120 "$SCRIP" --dialect=xsb --run rs11_xsb_import.pl < /dev/null 2> "$T/e2")" || red "scrip under the xsb dialect exits non-zero"
     [ ! -s "$T/e2" ] || red "the xsb witness writes to standard error: $(head -1 "$T/e2" | cut -c1-100)"
     [ "$got" = "$(cat "$D/rs11_xsb_import.out")" ] || red "the xsb witness reads '$(printf '%s' "$got" | tr '\n' '|')', XSB reads '$(tr '\n' '|' < "$D/rs11_xsb_import.out")'"
-    [ -z "$(ls "$S4E"/corpus/packages/*/*/ALL.prelude 2>/dev/null | head -1)" ] || red "$(ls "$S4E"/corpus/packages/*/*/ALL.prelude 2>/dev/null | wc -l) package preludes remain"
+    [ -z "$(ls "$S4E_CORPUS"/packages/*/*/ALL.prelude 2>/dev/null | head -1)" ] || red "$(ls "$S4E_CORPUS"/packages/*/*/ALL.prelude 2>/dev/null | wc -l) package preludes remain"
     verdict "both dialects answer their witness with no prelude, and no package holds one"
 }
 

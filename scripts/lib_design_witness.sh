@@ -10,9 +10,10 @@
 #   design_witness_has LANG ENTRY                  rc 0 when the master holds ENTRY, 1 when it does not (a witness its language row has not absorbed)
 # DESIGN_WITNESS_DIR names another container directory (a gate's scratch copy); DESIGN_WITNESS_TIMEOUT bounds one grade (default 900 s).
 _dw_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-_dw_root="$(cd "$_dw_here/../.." && pwd)"
+. "$_dw_here/lib_paths.sh"   # S4E_SCRIP and S4E_CORPUS: the absolute model (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover; MEASURED: run from /home/harness the folder two above
+# this file is /home, so a grade did cd /home/SCRIP, a folder that does not exist, and a seat holding its own corpus clone for a change was read past)
 _dw_ext() { case "$1" in snobol4) echo sno ;; icon) echo icn ;; prolog) echo pl ;; pascal) echo pas ;; raku) echo raku ;; rebus) echo reb ;; snocone) echo sc ;; *) echo "" ;; esac; }
-_dw_dir() { echo "${DESIGN_WITNESS_DIR:-$_dw_root/corpus/tests/$1}"; }
+_dw_dir() { echo "${DESIGN_WITNESS_DIR:-$S4E_CORPUS/tests/$1}"; }
 _dw_check() {
     local ext dir; ext="$(_dw_ext "$1")"; dir="$(_dw_dir "$1")"
     [ -n "$ext" ] || { echo "REFUSE(2) [lib_design_witness]: no language $1" >&2; return 2; }
@@ -23,7 +24,7 @@ design_witness_grade() {
     local lang="$1" entry="$2" modes="${3:-m3}" ext dir
     _dw_check "$lang" || return 2
     ext="$(_dw_ext "$lang")"; dir="$(_dw_dir "$lang")"
-    ( cd "$_dw_root/SCRIP" && S4E_PROGRESS_OFF=1 timeout -k 10 "${DESIGN_WITNESS_TIMEOUT:-900}" python3 "$_dw_here/corpus_suite_harness.py" run "$dir/ALL.$ext" "$dir/ALL.ref" --lang "$lang" --modes "$modes" --partition "entry:$entry" < /dev/null )
+    ( cd "$S4E_SCRIP" && S4E_PROGRESS_OFF=1 timeout -k 10 "${DESIGN_WITNESS_TIMEOUT:-900}" python3 "$_dw_here/corpus_suite_harness.py" run "$dir/ALL.$ext" "$dir/ALL.ref" --lang "$lang" --modes "$modes" --partition "entry:$entry" < /dev/null )
 }
 design_witness_extract() {
     local lang="$1" entry="$2" out="$3" ext dir
@@ -62,7 +63,7 @@ design_witness_stage() {
             printf '%s\tentry\t%s\n' "$w" "$l" >> "$st/.where"; found=1; break
         done
         [ "$found" = 1 ] && continue
-        for d in "$_dw_root"/corpus/tests/*/"$plan" "$_dw_here/../fixtures/$plan"; do
+        for d in "$S4E_CORPUS"/tests/*/"$plan" "$_dw_here/../fixtures/$plan"; do
             compgen -G "$d/$w.*" > /dev/null || continue
             cp -r "$d/$w".* "$st/" || return 2
             printf '%s\tloose\t%s\n' "$w" "$(cd "$d" && pwd)" >> "$st/.where"; found=1; break
@@ -80,7 +81,7 @@ design_witness_stage_all() {
         _dw_check "$l" 2>/dev/null || continue
         stems="$stems $(python3 "$_dw_here/corpus_suite_harness.py" list "$dir/ALL.$ext" "$dir/ALL.ref" --lang "$l" < /dev/null 2>/dev/null | sed -n "s/^${plan}__//p" | tr '\n' ' ')"
     done
-    for f in "$_dw_root"/corpus/tests/*/"$plan"/*.{sno,icn,pl,pas,raku,reb,sc} "$_dw_here/../fixtures/$plan"/*.{sno,icn,pl,pas,raku,reb,sc}; do
+    for f in "$S4E_CORPUS"/tests/*/"$plan"/*.{sno,icn,pl,pas,raku,reb,sc} "$_dw_here/../fixtures/$plan"/*.{sno,icn,pl,pas,raku,reb,sc}; do
         [ -f "$f" ] || continue; f="$(basename "$f")"; stems="$stems ${f%.*}"
     done
     stems="$(printf '%s\n' $stems | sort -u | tr '\n' ' ')"

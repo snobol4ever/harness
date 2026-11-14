@@ -5439,7 +5439,7 @@ def cmd_run(args):
     _rt_md5 = "unknown"
     try:
         import hashlib
-        _rt_so = os.path.join(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP"), "out", "libscrip_rt.so")
+        _rt_so = str(paths["rt_dir"] / "libscrip_rt.so")   # the runtime this board loads (RT_DIR, else the scrip in use), never the folder three above this file, which is /home since the harness lives once on disk (the coo 2026-11-14: every board line read md5=unreadable)
         if paths["engine"] != "scrip":
             _rt_so = (engine_binaries(paths["engine"]) + ["", ""])[1]
         with open(os.path.realpath(_rt_so), "rb") as _f: _rt_md5 = hashlib.md5(_f.read()).hexdigest()[:12]
@@ -6563,7 +6563,17 @@ def sidecar_stem(src_path):
     folder."; the demo is the same chain concatenated and carried the same sizes). lib_declared_arena.sh's _lda_sidecar is its twin."""
     p = Path(os.path.abspath(src_path))
     if p.parent.name == "bootstrap" and p.name.startswith("parser_") and p.suffix == ".sc":
-        return p.parent.parent.parent / "corpus" / "demos" / "snocone" / p.stem / p.name
+        # the corpus beside that SCRIP when one stands there (a cycle base, a fixture); else where harness_paths.py says the corpus lives (the coo and the cio 2026-11-14, row
+        # harness-one-disk-step-6-the-cutover; MEASURED by the coo: a seat root is its SCRIP clone alone, /home/claude_<seat>/corpus is gone, so every bootstrap parser graded there
+        # lost its .heap, .stack and .oracle_args, while /home/corpus/demos/snocone/parser_snobol4/parser_snobol4.heap exists)
+        corpus = p.parent.parent.parent / "corpus"
+        if not corpus.is_dir():
+            here = str(Path(__file__).resolve().parent)
+            if here not in sys.path:
+                sys.path.insert(0, here)
+            import harness_paths
+            corpus = harness_paths.corpus()
+        return corpus / "demos" / "snocone" / p.stem / p.name
     return Path(src_path)
 
 

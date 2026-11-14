@@ -57,7 +57,9 @@ _lda_sidecar() {
   local p="$1" d
   case "$p" in *bootstrap/parser_*.sc)
     d="$(cd "$(dirname "$p")" 2>/dev/null && pwd)"
-    case "$d" in */bootstrap) echo "$(dirname "$(dirname "$d")")/corpus/demos/snocone/$(basename "${p%.*}")/$(basename "${p%.*}").$2"; return 0;; esac;;
+    # the corpus beside that SCRIP when one stands there (a cycle base), else S4E_CORPUS as lib_paths.sh reads it (the coo and the cio 2026-11-14: a seat root holds no corpus)
+    case "$d" in */bootstrap) local c; c="$(dirname "$(dirname "$d")")/corpus"; [ -d "$c" ] || c="${S4E_CORPUS:-$(. "$_LDA_HERE/lib_paths.sh"; printf %s "$S4E_CORPUS")}"
+      echo "$c/demos/snocone/$(basename "${p%.*}")/$(basename "${p%.*}").$2"; return 0;; esac;;
   esac
   echo "${p%.*}.$2"
 }
