@@ -38,7 +38,8 @@ PLANG=${1:?Usage: run_parser_sync_monitor.sh <lang> <sample-input>}
 SAMPLE=${2:?Usage: run_parser_sync_monitor.sh <lang> <sample-input>}
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+REPO_ROOT="$(cd "$S4E_SCRIP" && pwd)"
 
 PARSER_SC="$REPO_ROOT/bootstrap/parser_${PLANG}.sc"
 if [[ ! -f "$PARSER_SC" ]]; then
@@ -68,7 +69,7 @@ SNO_OUT="/tmp/parser_${PLANG}.sno"
 # PIVOT (2026-05-17, Claude Sonnet 4.6): include gen.sc and language-specific helpers
 # alongside the parser so all six languages transpile cleanly.  Helpers will be
 # eliminated in a later cleanup session (SCT-4/5/6); for now they are included.
-CORPUS_SCRIP="$REPO_ROOT/bootstrap"   # the runtime moved here from the retired corpus/SCRIP/ (s267 REPO BOUNDARY)
+CORPUS_SCRIP="$REPO_ROOT/bootstrap"   # the runtime moved here from the retired corpus/SCRIP/ (s267 REPO BOUNDARY)   # one-disk: not a path
 RUNTIME=(
     "$CORPUS_SCRIP/global.sc"
     "$CORPUS_SCRIP/case.sc"

@@ -23,7 +23,7 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; SC="$(cd "$S4E_SCRIP" && pwd)"
 S4E="${S4E_HOME:-$(cd "$SC/.." && pwd)}"; CORPUS="${CORPUS:-$S4E_CORPUS}"
-BOARD="$SC/../harness/scripts/scorecard_snobol4.sh"
+BOARD="$S4E_HARNESS/scripts/scorecard_snobol4.sh"
 suite="${1:?usage: $0 <suite> <dir>... [--apply]}"; shift
 apply=""; dirs=""
 for a in "$@"; do case "$a" in --apply) apply=1;; *) dirs="${dirs:+$dirs }$a";; esac; done

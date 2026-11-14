@@ -4124,8 +4124,8 @@ def cmd_selftest(a):
         else:
             print("SELFTEST FAIL: unstamped cell -- %r" % (_vl[:1],)); ok = False
         # ⛔ COLUMN KIND: a rung suite runner named with the vendor suffix classifies M, a vendor runner still V (hq_raku 2026-09-16)
-        _ck = (citation_kind("bash ../harness/scripts/test_raku_ir_full_suite.sh"), citation_kind("bash ../harness/scripts/test_icon_ipl_suite.sh"),
-               citation_kind("bash ../harness/scripts/test_prolog_rung_suite.sh"))
+        _ck = (citation_kind("bash ../harness/scripts/test_raku_ir_full_suite.sh"), citation_kind("bash ../harness/scripts/test_icon_ipl_suite.sh"),   # one-disk: not a path
+               citation_kind("bash ../harness/scripts/test_prolog_rung_suite.sh"))   # one-disk: not a path
         if _ck == ("M", "V", "L"):
             print("SELFTEST: citation_kind reads the Raku rungs runner as M (its name ends in the vendor suffix), a vendor runner as V, the Prolog rung runner as L")
         else:
@@ -4703,7 +4703,7 @@ def counted_fractions(lang, vcell):
                     "runner is not retrofitted; it IS wired and inventory_line REFUSED, which emits nothing "
                     "while the runner stays green; or it is wired AND validates and simply has not been RUN "
                     "since the carriage landed). ⭐ DO NOT GUESS FROM THIS LINE: run "
-                    "`bash ../harness/scripts/util_package_inventory_cause.sh <lang> <label> <regex>`, or "
+                    "`bash ../harness/scripts/util_package_inventory_cause.sh <lang> <label> <regex>`, or "   # one-disk: not a path
                     "`util_package_shipped_is_runner_written.sh`, which calls it per package and prints the "
                     "MEASURED cause -- only one of the four is carriage work."
                     % (len(_missing_inv), ", ".join(_missing_inv)))

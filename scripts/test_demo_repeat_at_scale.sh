@@ -5,7 +5,7 @@
 # at x1024 SIGSEGVs at a jump into unmapped memory on 7-9 of 30 m3 runs and 3-4 of 30 m4 runs; its x1 test input passes 30 of 30) is RED here.
 # EXIT 0 every run of both modes printed SPITBOL's answer; 1 at least one did not; 2 REFUSED (no demo, no scrip, no oracle answer).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; S4E="$(cd "$ROOT/.." && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; S4E="$(cd "$ROOT/.." && pwd)"   # one-disk: not a path
 D="$S4E_CORPUS/demos/snobol4"; SCRIP="$ROOT/scrip"; N="${2:-30}"; FAM="${1:-}"
 . "$HERE/lib_oracle_flags.sh" || { echo "⛔ REFUSED: cannot load lib_oracle_flags.sh" >&2; exit 2; }
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSED: cannot load lib_declared_arena.sh" >&2; exit 2; }

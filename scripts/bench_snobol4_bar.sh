@@ -17,14 +17,14 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # EXIT 0 at or above the bar (GREEN), 1 below it (RED, the row is open), 2 REFUSED (no binary, no oracle, no twin printed, outputs differ).
 # The oracle is the clean SPITBOL benchmark oracle, sbl_clean_bin (lib_oracle_flags.sh), never the monitor-hooked correctness fork.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"   # one-disk: not a path
 . "$HERE/lib_oracle_flags.sh"
 refuse() { echo "⛔ bench_snobol4_bar REFUSE(2): $*"; exit 2; }
 [ $# -ge 3 ] || { echo "usage: $0 kernel <name> <bar> | demo <name> <bar>"; exit 2; }
 KIND=$1; NAME=$2; BAR=$3
 SCRIP="$ROOT/scrip"; [ -x "$SCRIP" ] || refuse "no ./scrip (make first)"
 SBL="$(sbl_clean_bin)"; [ -x "$SBL" ] || refuse "clean SPITBOL oracle missing ($SBL)"
-WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || refuse "bench_rusage did not build"
+WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || refuse "bench_rusage did not build"
 T=$(mktemp -d) || refuse "mktemp"; trap 'rm -rf "$T"' EXIT
 . "$HERE/lib_perf_fmt.sh"
 refuse_timing() { local g; if g="$(perf_load_guard)"; then echo "⛔ bench_snobol4_bar REFUSE(2) $g: $*"; else echo "⛔ bench_snobol4_bar REFUSE(2): $* ($g)"; fi; exit 2; }
@@ -33,7 +33,7 @@ case "$KIND" in
   kernel)
     BD="$S4E_CORPUS/benchmarks/snobol4"; [ -f "$BD/$NAME.sno" ] || refuse "no kernel $BD/$NAME.sno"
     cp "$BD/$NAME.sno" "$T/"; [ -f "$BD/$NAME.ref" ] && cp "$BD/$NAME.ref" "$T/"; [ -f "$BD/harness.inc" ] && cp "$BD/harness.inc" "$T/"
-    ( cd "$ROOT" && BENCH_SNOBOL4_DIR="$T" BENCH_ORACLE_ARM=1 BENCH_ITER_N="${BAR_ITER_N:-3}" BENCH_BUD_MS="${BAR_BUD_MS:-500}" bash ../harness/scripts/test_snobol4_bench_suite.sh ) > "$T/log" 2>&1
+    ( cd "$ROOT" && BENCH_SNOBOL4_DIR="$T" BENCH_ORACLE_ARM=1 BENCH_ITER_N="${BAR_ITER_N:-3}" BENCH_BUD_MS="${BAR_BUD_MS:-500}" bash "$S4E_HARNESS/scripts/test_snobol4_bench_suite.sh" ) > "$T/log" 2>&1
     s=$(grep -E "scouting $NAME sbl: BENCH mode=time" "$T/log" | sed -E 's/.*iters=([0-9]+) ns=([0-9]+).*/\2 \1/' | head -1)
     m=$(grep -E "scouting $NAME m4: BENCH mode=time" "$T/log" | sed -E 's/.*iters=([0-9]+) ns=([0-9]+).*/\2 \1/' | head -1)
     [ -n "$s" ] && [ -n "$m" ] || { tail -5 "$T/log"; refuse_timing "the harness printed no time twin for $NAME (sbl='$s' m4='$m')"; }

@@ -23,10 +23,10 @@ set -u
 set -f   # ⛔ the map's `*` carrier is a word, never a glob: unquoted expansions of the hit list must not turn it into the checkout's top-level names (the cto, 2026-09-28, batch 2b: preflight read 65 arms 1 red on a core.c landing)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_paths.sh"; ROOT="${AREA_SMOKE_ROOT:-$(cd "$S4E_SCRIP" && pwd)}"
-MAP="$ROOT/../harness/scripts/area_map.tsv"; [ -f "$MAP" ] || MAP="$HERE/area_map.tsv"
+MAP="$S4E_HARNESS/scripts/area_map.tsv"; [ -f "$MAP" ] || MAP="$HERE/area_map.tsv"
 H="$HERE/corpus_suite_harness.py"
 BASE="${AREA_SMOKE_BASE:-origin/main}"
-[ -f "$MAP" ] || { echo "AREA_SMOKE REFUSE(2): ../harness/scripts/area_map.tsv is missing -- the carrier map is the instrument"; exit 2; }
+[ -f "$MAP" ] || { echo "AREA_SMOKE REFUSE(2): ../harness/scripts/area_map.tsv is missing -- the carrier map is the instrument"; exit 2; }   # one-disk: not a path
 [ -f "$H" ] || { echo "AREA_SMOKE REFUSE(2): corpus_suite_harness.py is missing beside this script"; exit 2; }
 LIST=""; FEATS=(); for a in "$@"; do case "$a" in --list-only) LIST=--list-only;; -*) echo "AREA_SMOKE REFUSE(2): unknown switch $a"; exit 2;; *) FEATS+=("$a");; esac; done
 # ⛔⭐⭐⭐⭐ ZERO OR ONE TEST PER SEAT (Lon 2026-10-11 11:5x CDT, verbatim: "I'm thinking each seat can run ZERO test, oh ONE test, instead. Then let COO
@@ -107,7 +107,7 @@ if [ ${#FEATS[@]} -eq 0 ]; then
   [ -z "$noarea" ] || echo "AREA_SMOKE no area (mapped to -):$noarea"
   [ -z "$deleted" ] || echo "AREA_SMOKE no area (deleted by this landing, the files that replace it carry the rows):$deleted"
   if [ -n "$unmapped" ]; then
-    echo "AREA_SMOKE REFUSE(2): touched src/ file(s) with NO ROW in ../harness/scripts/area_map.tsv:$unmapped -- add feature<TAB>carrier rows with this landing (a shared node maps to *, a frontend to lang:<x>, a helper to -)"
+    echo "AREA_SMOKE REFUSE(2): touched src/ file(s) with NO ROW in ../harness/scripts/area_map.tsv:$unmapped -- add feature<TAB>carrier rows with this landing (a shared node maps to *, a frontend to lang:<x>, a helper to -)"   # one-disk: not a path
     exit 2
   fi
   # ⛔ A SHARED NODE IS THE OFFICER'S, NOT A SMOKE'S (Lon 2026-09-27, verbatim: "Should catch all SPAN problems, but not all system

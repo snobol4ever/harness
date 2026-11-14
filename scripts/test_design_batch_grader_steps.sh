@@ -10,6 +10,7 @@
 # VERDICT: STEP N <slug>: probe rc=<rc> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure (a stale ./scrip refuses before any probe that runs it).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 WD="$HERE/../designs/batch_grader"; STEPS="$WD/STEPS.tsv"   # the table (CIO-56); a probe reads the witnesses in $BG_W, staged by design_witness_stage_all
@@ -28,7 +29,7 @@ done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N | --cut"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: batch-grader -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses the entries batch_grader__<name> of their masters, else loose in corpus/tests/<lang>/batch_grader, bg08 the fixture harness/fixtures/batch_grader"
+    echo "DESIGN-PLAN: batch-grader -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses the entries batch_grader__<name> of their masters, else loose in corpus/tests/<lang>/batch_grader, bg08 the fixture harness/fixtures/batch_grader"   # one-disk: not a path
     printf '%-4s %-110s %-10s %-8s %s\n' step slug executor depends witnesses
     awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6 {printf "%-4s %-110s %-10s %-8s %s\n", $1, $2, $3, $4, $6}' "$STEPS"
     exit 0
@@ -71,10 +72,10 @@ fi
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"
 [ -n "$slug" ] || refuse "no step $step in $STEPS"
 cd "$S4E" || refuse "cannot enter $S4E"
-case "$probe" in *SCRIP/scrip*) [ -n "${SCRIP_BIN:-}" ] || bash "$HERE/util_require_fresh.sh" --gate test_design_batch_grader_steps "$S4E/SCRIP/scrip" "$S4E/SCRIP/out/libscrip_rt.so" || exit 2 ;; esac
+case "$probe" in *SCRIP/scrip*) [ -n "${SCRIP_BIN:-}" ] || bash "$HERE/util_require_fresh.sh" --gate test_design_batch_grader_steps "$S4E_SCRIP/scrip" "$S4E_SCRIP/out/libscrip_rt.so" || exit 2 ;; esac
 mkdir -p "/tmp/s4e/${S4E_SEAT:-cio}"
 out="$(mktemp "${TMPDIR:-/tmp}/s4e_batch_grader_step.XXXXXX")"
-BG_W="$(mktemp -d "/tmp/s4e/${S4E_SEAT:-cio}/bg_wit.XXXXXX")" && design_witness_stage_all batch_grader "$BG_W" || refuse "the witnesses did not stage (lib_design_witness.sh: an entry batch_grader__<name>, a loose pair in corpus/tests/<lang>/batch_grader, or harness/fixtures/batch_grader)"
+BG_W="$(mktemp -d "/tmp/s4e/${S4E_SEAT:-cio}/bg_wit.XXXXXX")" && design_witness_stage_all batch_grader "$BG_W" || refuse "the witnesses did not stage (lib_design_witness.sh: an entry batch_grader__<name>, a loose pair in corpus/tests/<lang>/batch_grader, or harness/fixtures/batch_grader)"   # one-disk: not a path
 BG_W="$BG_W" S4E_HOME="$S4E" timeout -k 5 600 bash -c "$probe" > "$out" 2>&1; rc=$?; rm -rf "$BG_W"
 tail -5 "$out" | sed 's/^/    /'; refused=0; grep -q 'REFUSE(2)' "$out" && refused=1; rm -f "$out"
 case "$rc" in 0) v=GREEN; ec=0 ;; 124|137) v="REFUSED (the probe ran past its 600 s budget)"; ec=2 ;; 2) if [ "$refused" = 1 ]; then v="REFUSED (could not measure)"; ec=2; else v="RED (the probe exited 2 without its own REFUSE(2): scrip refused a switch it does not have yet, or cmp found no output file -- the lines above say which)"; ec=1; fi ;; *) v=RED; ec=1 ;; esac

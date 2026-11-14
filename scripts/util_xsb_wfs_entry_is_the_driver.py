@@ -15,7 +15,7 @@ stage=upstream, answer=temp-sorted; stage_upstream writes pNN.P and pNN.pl from 
                      (util_suite_partition.py build): the vendored per-file text stays, it is the staged example
 
 util_build_package_suite.py calls wfs_entry_text() when it absorbs a wfs entry, so a rebuild writes the same text.
-PKGDIR defaults to the sibling corpus: <harness>/../corpus/packages/prolog/xsb_tests.
+PKGDIR defaults to the sibling corpus: <harness>/../corpus/packages/prolog/xsb_tests.   # one-disk: not a path
 """
 import argparse, csv, subprocess, sys
 from pathlib import Path

@@ -86,7 +86,7 @@ if [ -z "${RUNGS_DIR:-}" ]; then
     raku)    RUNGS_DIR="$_ME_S4E/corpus/tests/raku";    RUNGS_EXT="${RUNGS_EXT:-.raku}";;
     rebus)   RUNGS_DIR="$_ME_S4E/corpus/tests/rebus";   RUNGS_EXT="${RUNGS_EXT:-.reb}";;
     '') echo "⛔ REFUSE(lib_rungs_extract, rc=2): RUNGS_DIR is unset and RUNGS_LANG names no language -- there is no default rungs. Set RUNGS_DIR=<corpus/tests/<lang>> or RUNGS_LANG=<snobol4|icon|prolog|snocone|pascal|raku|rebus> before sourcing (a missing language is a refusal, never a quiet snobol4)." >&2; return 2 2>/dev/null || exit 2;;
-    *) echo "⛔ REFUSE(lib_rungs_extract, rc=2): RUNGS_LANG='$RUNGS_LANG' is not a language with a rung suite under corpus/tests/." >&2; return 2 2>/dev/null || exit 2;;
+    *) echo "⛔ REFUSE(lib_rungs_extract, rc=2): RUNGS_LANG='$RUNGS_LANG' is not a language with a rung suite under corpus/tests/." >&2; return 2 2>/dev/null || exit 2;;   # one-disk: not a path
   esac
 fi
 RUNGS_EXT="${RUNGS_EXT:-.sno}"

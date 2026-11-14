@@ -72,7 +72,7 @@ FPC="$(fpc_bin)" || exit 2
 #   <k>.heap / <k>.stack sidecars as SPITBOL's -d<kb>k -s<kb>k switches on every m3 and m4 command line, the reps=1 correctness gate included.
 declare -a DECL_SW=(); declare -A DECLW=()
 WRAP="$ROOT/out/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 
 # fpc needs {$mode objfpc} prepended (default 16-bit `integer` silently corrupts the Hennessy RNG --

@@ -2,9 +2,9 @@
 """Resolve and materialize the companion closure of a rung suite suite -- the BUILD-TIME half of the cure in
 lib_companion_closure.py (read that file's header first; it carries the measured defect and the refusal rules).
 
-    python3 ../harness/scripts/util_rungs_companion_closure.py --lang snobol4            # CHECK  (default)
-    python3 ../harness/scripts/util_rungs_companion_closure.py --lang snobol4 --write    # CURE
-    python3 ../harness/scripts/util_rungs_companion_closure.py --lang all                # every rung suite that exists
+    python3 ../harness/scripts/util_rungs_companion_closure.py --lang snobol4            # CHECK  (default)   # one-disk: not a path
+    python3 ../harness/scripts/util_rungs_companion_closure.py --lang snobol4 --write    # CURE   # one-disk: not a path
+    python3 ../harness/scripts/util_rungs_companion_closure.py --lang all                # every rung suite that exists   # one-disk: not a path
 
 EXIT CODES -- rc=0 clean · rc=1 MEASURED GAP (some entry names a companion that exists on the declared path and is not
 beside the rungs; --write cures it) · rc=2 REFUSAL (could not measure: no rungs pair, or an ambiguous basename).
@@ -117,7 +117,7 @@ def one_lang(lang, corpus_root, write, quiet=False):
         src = r["materializable"][name]
         print(f"     {name:<28} <- {os.path.relpath(src, corpus_root):<40} ({_attribute(texts, name)})")
     if not write:
-        print(f"   cure: python3 ../harness/scripts/util_rungs_companion_closure.py --lang {lang} --write")
+        print(f"   cure: python3 ../harness/scripts/util_rungs_companion_closure.py --lang {lang} --write")   # one-disk: not a path
         return 1
     os.makedirs(cfg_dir, exist_ok=True)
     for name in sorted(r["materializable"]):

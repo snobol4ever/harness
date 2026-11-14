@@ -40,7 +40,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # EXIT 0 every kernel PASS; 1 any kernel not PASS; 2 REFUSED (no binary, no oracle, no population, a tool that cannot be built).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
-S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"   # one-disk: not a path
 SCRIP="$ROOT/scrip"; RT="$ROOT/out"; BD="$S4E_CORPUS/benchmarks/icon"; GEN="$HERE/util_icon_bench_wrap.py"
 OUTDIR=""; NITER=2; BUD=200; TMO=300; NOWRITE=0; WANT=""
 refuse() { echo "⛔ ICON BENCH SUITE REFUSE(2): $*"; exit 2; }

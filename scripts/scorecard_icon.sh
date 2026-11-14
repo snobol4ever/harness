@@ -19,9 +19,9 @@ w_of(){ case "$1" in rungs_m3) echo 25;; rungs_m4) echo 20;; rungs_m3_cells) ech
 parse_rungs(){ sed -n 's/.*PASS=\([0-9]*\) FAIL=\([0-9]*\) XFAIL=\([0-9]*\) TOTAL=\([0-9]*\).*/\1 \4/p' | tail -1; }
 run_suite(){ local s="$1" out="$2" r=""
   case "$s" in
-    rungs_m3)       r="$(cd "$SD" && bash ../harness/scripts/test_icon_all_rungs.sh 2>/dev/null | parse_rungs)";;
-    rungs_m3_cells) r="$(cd "$SD" && SCRIP_ICN_CELLS=1 bash ../harness/scripts/test_icon_all_rungs.sh 2>/dev/null | parse_rungs)";;
-    rungs_m4)       r="$(cd "$SD" && bash ../harness/scripts/test_icon_x64_all_rungs.sh --corpus "$CORPUS/icon" 2>/dev/null | parse_rungs)";;
+    rungs_m3)       r="$(cd "$SD" && bash "$S4E_HARNESS/scripts/test_icon_all_rungs.sh" 2>/dev/null | parse_rungs)";;
+    rungs_m3_cells) r="$(cd "$SD" && SCRIP_ICN_CELLS=1 bash "$S4E_HARNESS/scripts/test_icon_all_rungs.sh" 2>/dev/null | parse_rungs)";;
+    rungs_m4)       r="$(cd "$SD" && bash "$S4E_HARNESS/scripts/test_icon_x64_all_rungs.sh" --corpus "$CORPUS/icon" 2>/dev/null | parse_rungs)";;
     bench_correct)  local raw rc pc tc
                     # ⛔ row icon-board-timeout-scored-as-zero (hq_C find): `timeout 900` killing this suite used to
                     # collapse into "0 0" (awk's END block always prints something, even over zero input lines), which
@@ -29,14 +29,14 @@ run_suite(){ local s="$1" out="$2" r=""
                     # SCORED AS A FAILURE (0%) at weight 15 instead of reported as UNPROVEN, understating Icon META by
                     # ~13 points (69.0 vs the honest 82.0). lib_gate.sh's own law applies here even though this suite
                     # doesn't source it: zero-examined is indistinguishable from all-clean, so it is refused, not passed.
-                    raw="$( { [ -d "$ORACLE_BIN" ] && export PATH="$ORACLE_BIN:$PATH"; cd "$SD" && SCRIPDIR="$SD" timeout -k 5 900 bash ../harness/scripts/honest_icon_correctness.sh; } 2>/dev/null )"; rc=$?  # timeout-retry: exempt -- a whole-script cap, not a graded unit
+                    raw="$( { [ -d "$ORACLE_BIN" ] && export PATH="$ORACLE_BIN:$PATH"; cd "$SD" && SCRIPDIR="$SD" timeout -k 5 900 bash "$S4E_HARNESS/scripts/honest_icon_correctness.sh"; } 2>/dev/null )"; rc=$?  # timeout-retry: exempt -- a whole-script cap, not a graded unit
                     read -r pc tc <<< "$(printf '%s\n' "$raw" | awk -F'|' '/^[a-z0-9_]+ *\|/{t++; if ($0 ~ /IDENTICAL/) p++} END{print p+0, t+0}')"
                     if [ "$rc" -eq 124 ]; then r="UNPROVEN timeout(900s)_examined=${tc:-0}"
                     elif [ "${tc:-0}" -eq 0 ]; then r="UNPROVEN examined=0_rc=$rc"
                     else r="$pc $tc"; fi;;
-    smoke)          r="$(cd "$SD" && timeout -k 5 600 bash ../harness/scripts/test_smoke_icon.sh 2>/dev/null | sed -n 's/.*PASS=\([0-9]*\) FAIL=\([0-9]*\) *\/ *\([0-9]*\).*/\1 \3/p' | awk '{p+=$1; t+=$2} END{print p+0, t+0}')";;  # timeout-retry: exempt -- a whole-script cap, not a graded unit
-    crosscheck)     r="$(cd "$SD" && timeout -k 5 600 bash ../harness/scripts/test_crosscheck_icon.sh 2>/dev/null | sed -n 's/.*PASS=\([0-9]*\) FAIL=\([0-9]*\).*/\1 \2/p' | tail -1 | awk '{print $1, $1+$2}')";;  # timeout-retry: exempt -- a whole-script cap, not a graded unit
-    gates)          local p=0 t=0 g; for g in no_stack one_reg_frame semicolon_required rbp_census_ratchet zk5_gva zcells_gva local_no_nv global_no_nv_m3 scan var; do t=$((t+1)); (cd "$SD" && timeout -k 5 240 bash "../harness/scripts/test_gate_icn_$g.sh" >/dev/null 2>&1) && p=$((p+1)); done; r="$p $t";;  # timeout-retry: exempt -- a gate's cap, not a graded unit
+    smoke)          r="$(cd "$SD" && timeout -k 5 600 bash "$S4E_HARNESS/scripts/test_smoke_icon.sh" 2>/dev/null | sed -n 's/.*PASS=\([0-9]*\) FAIL=\([0-9]*\) *\/ *\([0-9]*\).*/\1 \3/p' | awk '{p+=$1; t+=$2} END{print p+0, t+0}')";;  # timeout-retry: exempt -- a whole-script cap, not a graded unit
+    crosscheck)     r="$(cd "$SD" && timeout -k 5 600 bash "$S4E_HARNESS/scripts/test_crosscheck_icon.sh" 2>/dev/null | sed -n 's/.*PASS=\([0-9]*\) FAIL=\([0-9]*\).*/\1 \2/p' | tail -1 | awk '{print $1, $1+$2}')";;  # timeout-retry: exempt -- a whole-script cap, not a graded unit
+    gates)          local p=0 t=0 g; for g in no_stack one_reg_frame semicolon_required rbp_census_ratchet zk5_gva zcells_gva local_no_nv global_no_nv_m3 scan var; do t=$((t+1)); (cd "$SD" && timeout -k 5 240 bash "$S4E_HARNESS/scripts/test_gate_icn_$g.sh" >/dev/null 2>&1) && p=$((p+1)); done; r="$p $t";;  # timeout-retry: exempt -- a gate's cap, not a graded unit
   esac
   [ -n "$r" ] && echo "$r" > "$out/$s" && echo "  $s: $r" || echo "  $s: NO RESULT (suite errored — file not written)"; }
 cmd="${1:-report}"; shift || true

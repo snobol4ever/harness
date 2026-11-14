@@ -42,7 +42,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 "$HERE/util_require_fresh.sh" --gate bench_triangulate_demos_snobol4 "${SCRIP:-$S4E_SCRIP/scrip}" "$S4E_SCRIP/out/libscrip_rt.so" || exit 2
-S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"   # one-disk: not a path
 SCRIP="${SCRIP:-$ROOT/scrip}"
 D="${DEMO_DIR:-$S4E_CORPUS/demos/snobol4}"
 SCALETSV="${DEMO_SCALE:-$D/DEMO-SCALE.tsv}"
@@ -68,9 +68,9 @@ SBL="$(sbl_clean_bin)" || { echo "⛔ REFUSED: clean SPITBOL benchmark oracle mi
 [ -d "$D" ] || { echo "⛔ REFUSED: demo corpus missing ($D)." >&2; exit 2; }
 [ -f "$SCALETSV" ] || { echo "⛔ REFUSED: $SCALETSV missing -- scales are MEASURED ceilings, never guessed at run time." >&2; exit 2; }
 WRAP="$ROOT/out/bench_rusage"
-if [ ! -x "$WRAP" ]; then gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }; fi
+if [ ! -x "$WRAP" ]; then gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }; fi
 if ! "$WRAP" true 2>&1 | grep -q 'inblock='; then
-  echo "⛔ REFUSED: $WRAP predates the inblock/oublock fields -- angle 3 would report empty. Rebuild: gcc -O2 -o $WRAP $ROOT/../harness/scripts/bench_rusage.c" >&2; exit 2; fi
+  echo "⛔ REFUSED: $WRAP predates the inblock/oublock fields -- angle 3 would report empty. Rebuild: gcc -O2 -o $WRAP $S4E_HARNESS/scripts/bench_rusage.c" >&2; exit 2; fi
 
 W="${DEMO_WORK:-${TMPDIR:-/tmp}/demo3a.$$}"; mkdir -p "$W" || exit 2
 RT="$ROOT/out"

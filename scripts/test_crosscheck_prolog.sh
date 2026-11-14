@@ -12,7 +12,8 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }   # m3 runs at the declared size (R-1353)
-SCRIP="${HERE}/../../SCRIP/scrip"
+. "$HERE/lib_paths.sh"
+SCRIP="$S4E_SCRIP/scrip"
 TIMEOUT=30
 PASS=0; FAIL=0; SKIP=0; ORACLE_MISS=0; M3_PASS=0; M3_FAIL=0; M4_PASS=0; M4_FAIL=0; DIVERGE=0; NOORACLE=0
 
@@ -91,7 +92,7 @@ xcheck "recursion" "$T"
 rm -f "$T"
 
 # Rung corpus files (PJ-9b: extended to walk flat-file corpus, not just subdirs)
-RUNGS=$S4E/corpus/tests/prolog
+RUNGS=$S4E_CORPUS/tests/prolog
 if [ -d "$RUNGS" ]; then
     for f in "$RUNGS"/rung*.pl; do
         [ -f "$f" ] || continue
