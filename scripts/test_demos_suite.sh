@@ -18,13 +18,14 @@ L="${1:-}"; shift || true
 NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
 . "$HERE/lib_fixture_root.sh" || { echo "⛔ REFUSE(2): cannot load lib_fixture_root.sh -- the one way a scratch root is staged"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 G=test_demos_suite
 refuse() { echo "⛔ REFUSED(2) [$G $L]: $*" >&2; exit 2; }
 case "$L" in icon|prolog|snobol4|snocone|scriptix|pascal|raku|rebus) ;; *) refuse "usage: test_demos_suite.sh <lang> [--no-write] -- lang one of icon prolog snobol4 snocone scriptix pascal raku rebus (got '${L}'; the SCRIPtix documents left demos/scrip and .scrip for demos/scriptix and .md on 2026-10-02, R-1421)";; esac
-DD="${DEMOS_DIR:-$S4E/corpus/demos/$L}"
-SCRIP="$HERE/../../SCRIP/scrip"; RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"; TMO="${DEMO_TIMEOUT:-60}"
+DD="${DEMOS_DIR:-$S4E_CORPUS/demos/$L}"
+SCRIP="$S4E_SCRIP/scrip"; RT_DIR="${RT_DIR:-$S4E_SCRIP/out}"; TMO="${DEMO_TIMEOUT:-60}"
 [ -d "$DD" ] || refuse "no demo tree at $DD"
 DEMOS_PARENT="$(cd "$DD/.." && pwd)"; ROOT="$(cd "$DD/../.." && pwd)"   # <root>/demos/<lang>: the roots beside demos/ are mirrored
 # ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; R-1822; Lon 2026-10-18, in-chat to hq_dotnet,
@@ -105,15 +106,15 @@ for r in "${PROGS[@]}"; do
     fi
     t0="$(progress_clock)"
     # shellcheck disable=SC2086
-    ( cd "$W" && SNO_LIB="$W:$S4E/corpus/include" "$TIMEOUT_RETRY" "$TMO" "$SCRIP" $sw --run $ca "$b" ${args[@]+-- "${args[@]}"} < "$in" > "$W/.m3" 2> "$W/.m3e" ); r3=$?
+    ( cd "$W" && SNO_LIB="$W:$S4E_CORPUS/include" "$TIMEOUT_RETRY" "$TMO" "$SCRIP" $sw --run $ca "$b" ${args[@]+-- "${args[@]}"} < "$in" > "$W/.m3" 2> "$W/.m3e" ); r3=$?
     s3="$(progress_secs_since "$t0")"; t0="$(progress_clock)"   # each mode's own seconds for its row (R-1676 (c)); m4's take compile and link
     v3="$(verdict "$r3" "$W/.m3" "$ref")"
     # shellcheck disable=SC2086
     if [ "$PORT" = 1 ]; then v4=-; r4=0   # a port has no mode 4: no compile, no row
-    elif ( cd "$W" && SNO_LIB="$W:$S4E/corpus/include" "$TIMEOUT_RETRY" "$TMO" "$SCRIP" --compile $ca "$b" < /dev/null > "$W/.p.s" 2> "$W/.p.cc" ) && [ -s "$W/.p.s" ] \
+    elif ( cd "$W" && SNO_LIB="$W:$S4E_CORPUS/include" "$TIMEOUT_RETRY" "$TMO" "$SCRIP" --compile $ca "$b" < /dev/null > "$W/.p.s" 2> "$W/.p.cc" ) && [ -s "$W/.p.s" ] \
        && cc -m64 -no-pie "$W/.p.s" -o "$W/.p4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >> "$W/.p.cc" 2>&1; then
         # shellcheck disable=SC2086
-        ( cd "$W" && SNO_LIB="$W:$S4E/corpus/include" "$TIMEOUT_RETRY" "$TMO" "$W/.p4" $sw ${args[@]+"${args[@]}"} < "$in" > "$W/.m4" 2> "$W/.m4e" ); r4=$?
+        ( cd "$W" && SNO_LIB="$W:$S4E_CORPUS/include" "$TIMEOUT_RETRY" "$TMO" "$W/.p4" $sw ${args[@]+"${args[@]}"} < "$in" > "$W/.m4" 2> "$W/.m4e" ); r4=$?
         v4="$(verdict "$r4" "$W/.m4" "$ref")"
     else v4=FAIL; r4=125; fi
     s4="$(progress_secs_since "$t0")"
@@ -126,7 +127,7 @@ for r in "${PROGS[@]}"; do
     printf '%-40s %-6s %-6s %s\n' "$r" "$v3" "$v4" "$note"
     rm -rf "$M"
 done
-SCRIP_HASH="$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"; [ "$PORT" = 1 ] && SCRIP_HASH="$(one_runner_port_tree | tr ' ' @)"; CORP_HASH="$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
+SCRIP_HASH="$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"; [ "$PORT" = 1 ] && SCRIP_HASH="$(one_runner_port_tree | tr ' ' @)"; CORP_HASH="$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo '?')"
 # ⭐ THE BOARD LINE IS THE RECEIPT (R-827/839, R-1325 ask 1, coo COO-207): a *SUITE_BOARD line in key=value form, its
 # fraction stated as all_pass=/all_n= so util_score_row.py READS the row off the line that measured it (never typed beside
 # it) and archives it verbatim under .github/board-lines/. shipped= is the whole census, containers= the declared library

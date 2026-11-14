@@ -3,7 +3,8 @@
 # Gate: exits 0 in < 2s on a clean build.
 # AUTHORS: Lon Jones Cherryholmes · Claude Sonnet 4.6  DATE: 2026-04-14
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${HERE}/../../SCRIP/scrip"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
+SCRIP="${S4E_SCRIP}/scrip"
 . "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 PASS=0; FAIL=0
 

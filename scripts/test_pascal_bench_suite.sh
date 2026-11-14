@@ -27,11 +27,12 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 set -u
 GATE_NAME=test_pascal_bench_suite
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 B="$ROOT/corpus/benchmarks/pascal"
 NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1   # ⭐ PUBLISHING IS THE DEFAULT (R-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
-SCRIP="$HERE/../../SCRIP/scrip"
-RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"
+SCRIP="$S4E_SCRIP/scrip"
+RT_DIR="${RT_DIR:-$S4E_SCRIP/out}"
 ITER_N="${BENCH_ITER_N:-3}"
 TIME_LIMIT="${BENCH_TIME_LIMIT:-2}"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
@@ -41,7 +42,7 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 . "$HERE/lib_progress.sh" 2>/dev/null || refuse "lib_progress.sh unloadable"
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the ONE reader of a program's declared -d/-s sidecars (R-1281)"
 declare -a DECL_SW=()
-WRAP="$HERE/../../SCRIP/out/bench_rusage"
+WRAP="$S4E_SCRIP/out/bench_rusage"
 [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/bench_rusage.c" || refuse "out/bench_rusage failed to build -- angle 1 has no wrapper"
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac
 case "$TIME_LIMIT" in ''|*[!0-9]*|0) refuse "BENCH_TIME_LIMIT must be a positive whole number of seconds (got '$TIME_LIMIT')";; esac
@@ -121,7 +122,7 @@ echo
 echo "PASCAL_BENCH_BOARD total=$TOTAL both_pass=$BOTH m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} (three angles each: process wrapper, fixed iterations N=$ITER_N, fixed time limit ${TIME_LIMIT}s; every run diffed against its .ref)"
 [ -n "$NAMED" ] && echo "  not passing:$NAMED"
 echo "  evidence: every run's stdout and rusage line kept under $OUTDIR (scratch, not a corpus file -- OUT is REF, R-1222)"
-echo "  tree: SCRIP=$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$HERE/../../SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT/corpus" diff --quiet 2>/dev/null || echo -dirty) RT_OPT=-O0"
+echo "  tree: SCRIP=$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E_SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT/corpus" diff --quiet 2>/dev/null || echo -dirty) RT_OPT=-O0"
 # ⭐ PUBLISHING: the suite-table row is PasBench, key pascal-bench-ref -- the SAME name as this runner's progress suite, on purpose
 # (coo 2026-09-23: every key-to-DB map falls back to the key itself, so the bench rows need no map entry anywhere). The rows are
 # appended FIRST because util_score_row.py's R-750 cross-check reads the pascal-bench-ref rows on the tree the write stamps; the

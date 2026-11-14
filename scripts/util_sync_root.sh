@@ -20,6 +20,11 @@ REPOS="${S4E_SYNC_REPOS:-SCRIP corpus harness .github}"   # S4E_SYNC_REPOS names
 FETCH_SLOTS="${S4E_FETCH_SLOTS:-4}"
 FETCH_WAIT="${S4E_FETCH_WAIT:-600}"
 SEM_HOME="${S4E_SEM_HOME:-/tmp/s4e-sem}"
+# THE ABSOLUTE MODEL (officer_02 2026-11-13, row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them; Lon 18:1x CST: "a root folder is either a SCRIP, snobol4dotnet, or
+# snobol4jvm clone with no siblings"): SCRIP is S4E_SCRIP (lib_paths.sh: the root itself once it is the clone, else its sibling); corpus, harness and .github are synced only while the
+# root still holds them as siblings. The one-disk checkouts (/home/corpus, /home/harness, /home/.github) are never a seat's to sync: the grader keeps them at origin.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh"
+repo_dir() { if [ "$1" = SCRIP ]; then printf '%s' "$S4E_SCRIP"; else printf '%s/%s' "$ROOT" "$1"; fi; }
 
 # point_at_coo ROOT REPO: the alternates line for one repo, written once (idempotent). The coo's own root gets none, and a repo the coo root lacks gets none.
 point_at_coo() {
@@ -40,18 +45,24 @@ packs_in() { ls "$1/objects/pack" 2>/dev/null | grep -c '\.pack$'; }
 
 sync_all() {
     local r dir before after rc=0 frc
+    local have=""
     for r in $REPOS; do
-        dir="$ROOT/$r"
-        git -C "$dir" rev-parse --git-dir > /dev/null 2>&1 || { echo "REFUSE(2): $dir is not a git repo"; return 2; }
-        point_at_coo "$ROOT" "$r" || { echo "REFUSE(2): cannot write $dir/.git/objects/info/alternates"; return 2; }
+        dir="$(repo_dir "$r")"
+        if ! git -C "$dir" rev-parse --git-dir > /dev/null 2>&1; then
+            [ "$r" = SCRIP ] && { echo "REFUSE(2): $dir is not a git repo"; return 2; }
+            [ -e "$dir" ] && { echo "REFUSE(2): $dir is not a git repo"; return 2; }
+            echo "SYNC $r absent from $ROOT (the absolute model: $r is read from its one-disk checkout)"; continue
+        fi
+        have="$have $r"
+        [ "$dir" = "$ROOT/$r" ] && { point_at_coo "$ROOT" "$r" || { echo "REFUSE(2): cannot write $dir/.git/objects/info/alternates"; return 2; }; }
     done
-    for r in $REPOS; do
-        fetch_slot "$ROOT/$r"; frc=$?
+    for r in $have; do
+        fetch_slot "$(repo_dir "$r")"; frc=$?
         [ "$frc" = 0 ] || { echo "REFUSE(2): fetch of $r failed (sem/git rc $frc) -- nothing merged"; return 2; }
     done
     local moved=""
-    for r in $REPOS; do
-        dir="$ROOT/$r"
+    for r in $have; do
+        dir="$(repo_dir "$r")"
         before="$(git -C "$dir" rev-parse --short HEAD)"
         local ah ed; ah="$(git -C "$dir" rev-list --count origin/main..HEAD 2>/dev/null)"; ed="$(git -C "$dir" status --porcelain --untracked-files=no 2>/dev/null | wc -l)"
         if [ "${ah:-0}" -gt 0 ] || [ "$ed" -gt 0 ]; then

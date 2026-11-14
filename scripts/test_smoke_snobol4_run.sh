@@ -6,9 +6,10 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"
-CORPUS="${CORPUS:-$S4E/corpus}"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+RT_DIR="${RT_DIR:-$S4E_SCRIP/out}"
+CORPUS="${CORPUS:-$S4E_CORPUS}"
 INC="$CORPUS/include"
 TIMEOUT="${TIMEOUT:-10}"
 # ⛔ REPOINTED (seat04, 2026-08-30, row dead-suite-path-consumer-sweep): $CORPUS/crosscheck was retired by
@@ -36,7 +37,7 @@ compile_mode4() {
     local sno="$1" out="$2"
     local tmp; tmp="$(mktemp -d)"
     SNO_LIB="$INC" "$SCRIP" --compile "$sno" > "$tmp/p.s" 2>/dev/null || { rm -rf "$tmp"; return 1; }
-    (cd "$HERE/../../SCRIP" && gcc -c "$tmp/p.s" -o "$tmp/p.o" 2>/dev/null) || { rm -rf "$tmp"; return 1; }
+    (cd "$S4E_SCRIP" && gcc -c "$tmp/p.s" -o "$tmp/p.o" 2>/dev/null) || { rm -rf "$tmp"; return 1; }
     gcc "$tmp/p.o" -L"$RT_DIR" -lscrip_rt -lm \
         -Wl,-rpath,"$RT_DIR" -o "$out" 2>/dev/null || { rm -rf "$tmp"; return 1; }
     rm -rf "$tmp"

@@ -9,9 +9,10 @@
 # Exit 0 iff mode-3 has zero FAIL AND mode-4 has zero FAIL AND m3 PASS >= $MODE3_MIN AND m4 PASS >= $MODE4_MIN.
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude Sonnet · Claude Opus  DATE: 2026-05-31 (3-mode; de-interp'd to 2-mode 2026-06-15)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${HERE}/../../SCRIP/scrip"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
+SCRIP="${S4E_SCRIP}/scrip"
 . "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
-RT_SO="${HERE}/../../SCRIP/out/libscrip_rt.so"
+RT_SO="${S4E_SCRIP}/out/libscrip_rt.so"
 MODE3_MIN="${MODE3_MIN:-0}"
 MODE4_MIN="${MODE4_MIN:-0}"
 P3=0; F3=0; X3=0; P4=0; F4=0; X4=0; N=0
@@ -29,7 +30,7 @@ raku() {
     a4=""
     s4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.s"); bin4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.bin"); rm -f "$bin4"
     if [ "${S4E_MODE4:-0}" = 1 ] && smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null && [ -s "$s4" ] && [ -f "$RT_SO" ]; then   # mode 3 ONLY (Lon, COO-487)
-        if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
+        if gcc -no-pie "$s4" -L"${S4E_SCRIP}/out" -lscrip_rt -Wl,-rpath,"${S4E_SCRIP}/out" -o "$bin4" 2>/dev/null; then
             a4=$(smoke_t -k 5 8 "$bin4" 2>/dev/null </dev/null); rc4=$?
         fi
     fi
@@ -67,7 +68,7 @@ raku_dies() {
     s4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.s"); bin4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.bin"); rm -f "$bin4"
     if [ "${S4E_MODE4:-0}" = 1 ]; then smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null; crc4=$?; fi   # mode 3 ONLY (Lon, COO-487)
     if [ "$crc4" -eq 0 ] && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
-        if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
+        if gcc -no-pie "$s4" -L"${S4E_SCRIP}/out" -lscrip_rt -Wl,-rpath,"${S4E_SCRIP}/out" -o "$bin4" 2>/dev/null; then
             a4=$(smoke_t -k 5 8 "$bin4" 2>/dev/null </dev/null); rc4=$?
         fi
     elif [ "$crc4" -ne 0 ]; then

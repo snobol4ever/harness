@@ -12,9 +12,10 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="$ROOT/scrip"
-ICN_CORPUS="$S4E/corpus/tests/icon"
+ICN_CORPUS="$S4E_CORPUS/tests/icon"
 TIMEOUT=8
 PASS=0; FAIL=0
 

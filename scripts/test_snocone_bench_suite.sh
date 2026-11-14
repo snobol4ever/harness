@@ -38,9 +38,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #                snocone-bench-ref, nick SncBench -- never --column bench, which is the grid's B TIMING cell); non-fatal by design.
 # EXIT 0 every program PASS; 1 any program not PASS; 2 REFUSED (no binary, no population, a tool that cannot be built).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
-SCRIP="$ROOT/scrip"; RT="$ROOT/out"; BD="$S4E/corpus/benchmarks/snocone"; GEN="$HERE/bench_wrap_snocone.py"
+SCRIP="$ROOT/scrip"; RT="$ROOT/out"; BD="$S4E_CORPUS/benchmarks/snocone"; GEN="$HERE/bench_wrap_snocone.py"
 OUTDIR=""; NITER=""; BUD=200; TMO=300; NOWRITE=0
 MODES="$(printf "%s" "${S4E_MODES:-m3}" | tr "," " ")"
 # ⭐ PUBLISHING IS THE DEFAULT (R-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
@@ -77,7 +77,7 @@ run_one() { local mode="$1" prog="$2" in="$3" tag="$4"; shift 4
     : >"$W/o"; cp "$W/c.err" "$W/e"; RC=97; return; fi
   "$@" timeout -k 5 "$TMO" "$W/$tag.x" "${SW[@]}" <"$in" >"$W/o" 2>"$W/e"; RC=$?  # timeout-retry: exempt -- a timed run: the rusage prefix wraps this timeout, so the tool's own process would enter the measurement -- and a timeout is retried once at util_timeout_retry.sh --longer (Lon 2026-10-15, in-chat to the coo: "do a retry with longer timeouts")
   [ "$RC" = 124 ] && { "$@" timeout "$("$HERE/util_timeout_retry.sh" --longer "$TMO")" "$W/$tag.x" "${SW[@]}" <"$in" >"$W/o" 2>"$W/e"; RC=$?; }; }  # timeout-retry: exempt -- the longer retry of the timed run above
-echo "=== SNOCONE BENCHMARK SUITE: ${#POP[@]} programs x 2 modes x 3 angles, graded against each REF (SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT" diff --quiet 2>/dev/null || echo -DIRTY), corpus $(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E/corpus" diff --quiet 2>/dev/null || echo -DIRTY), RT_OPT from the Makefile, iter n=${NITER:-marker check}, time budget ${BUD} ms) ==="
+echo "=== SNOCONE BENCHMARK SUITE: ${#POP[@]} programs x 2 modes x 3 angles, graded against each REF (SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT" diff --quiet 2>/dev/null || echo -DIRTY), corpus $(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E_CORPUS" diff --quiet 2>/dev/null || echo -DIRTY), RT_OPT from the Makefile, iter n=${NITER:-marker check}, time budget ${BUD} ms) ==="
 PASS=0; P3=0; P4=0; REFLESS=0; UNWRAP=0; HEAPD=0; NOTES=""; SCOUT=""; PREFUSED=0
 sev() { case "$1" in PASS) echo 0;; FAIL) echo 1;; UNPROVEN) echo 2;; CRASH) echo 3;; HANG) echo 4;; esac; }
 worst() { if [ "$(sev "$2")" -gt "$(sev "$1")" ]; then echo "$2"; else echo "$1"; fi; }

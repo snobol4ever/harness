@@ -9,7 +9,7 @@
 # and no score row, so this is a seat's run and never a board. A feature no shell carries REFUSES rc 2 and prints the table's vocabulary.
 # usage: bash ../harness/scripts/test_feature_reps.sh <lang> <feature>... [--list] [--modes m3,m4]      REPS_CAP=N caps the handful.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"; cd "$ROOT" || exit 2
 C="${S4E_CORPUS:-${S4E_HOME:-$(cd "$ROOT/.." && pwd)}/corpus}"
 [ $# -ge 2 ] || { echo "usage: test_feature_reps.sh <lang> <feature>... [--list] [--modes m3,m4]"; exit 2; }
 lang="$1"; shift; LIST=""; MODES="m3,m4"; FEATS=()

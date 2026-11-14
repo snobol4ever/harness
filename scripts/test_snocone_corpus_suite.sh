@@ -35,9 +35,10 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -uo pipefail   # deliberately NOT -e: this script's own diagnostic must never mask a fail count
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RUNGS_SNO="$S4E/corpus/tests/snocone/ALL.sc"
-RUNGS_REF="$S4E/corpus/tests/snocone/ALL.ref"
-RUNGS_CSV="$S4E/corpus/tests/snocone/ALL.csv"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
+RUNGS_SNO="$S4E_CORPUS/tests/snocone/ALL.sc"
+RUNGS_REF="$S4E_CORPUS/tests/snocone/ALL.ref"
+RUNGS_CSV="$S4E_CORPUS/tests/snocone/ALL.csv"
 
 echo "=== Snocone corpus suite (m3+m4) ==="
 

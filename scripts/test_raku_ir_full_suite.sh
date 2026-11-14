@@ -10,9 +10,10 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # both modes -- there is no modes column (Lon 2026-09-23, R-1218/1230).
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-SNO="$S4E/corpus/tests/raku/ALL.raku"
-REF="$S4E/corpus/tests/raku/ALL.ref"
+SNO="$S4E_CORPUS/tests/raku/ALL.raku"
+REF="$S4E_CORPUS/tests/raku/ALL.ref"
 
 if { [ ! -f "$SNO" ] || [ ! -f "$REF" ]; } && [ ! -f "$(dirname "$SNO")/MULTI-LINERS.md" ] && [ ! -f "$(dirname "$SNO")/ONE-LINERS.raku" ]; then   # format 2 is read under the same line (CIO-24 f)
     echo "⛔ REFUSING (rc=2): raku rungs suite population absent -- expected $SNO + $REF" >&2

@@ -108,7 +108,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # module/* coverage rows added below — measured RED today for reasons unrelated to this denominator, see
 # the MODULE-REPLACEMENT COVERAGE paragraph further down).
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
+HERE="$(cd "$(dirname "$0")" && pwd)"; . "$HERE/lib_paths.sh"; SD="$S4E_SCRIP"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
 . "$HERE/lib_flag_gate.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_flag_gate.sh unloadable"; exit 2; }
 [ $# -eq 0 ] || flaggate_reject "$1" "(none -- set CSNOBOL4_SUITE / TIMEOUT via environment instead)"
 SUITE="${CSNOBOL4_SUITE:-$ROOT/corpus/packages/snobol4/csnobol4_suite}"
@@ -131,7 +131,7 @@ if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready 
 # an incremental make -- a vendor board is exactly where that is least visible, because a plausible all-FAIL
 # table is this class's normal output. NO LOGIC HERE: util_require_fresh.sh sources gate_require_fresh from
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
-"$HERE/util_require_fresh.sh" --gate test_snobol4_csnobol4_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
+"$HERE/util_require_fresh.sh" --gate test_snobol4_csnobol4_suite "$SCRIP" "${RT_DIR:-$S4E_SCRIP/out}/libscrip_rt.so" || exit 2
 [ -f "$RT_DIR/libscrip_rt.so" ] || { echo "⛔ REFUSE(rc=2): no $RT_DIR/libscrip_rt.so"; exit 2; }
 fi
 # THE --compat SWITCH IS RETIRED (Lon 2026-09-07): there is one dialect, SPITBOL's, and no per-suite flag.

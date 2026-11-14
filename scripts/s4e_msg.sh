@@ -40,6 +40,7 @@ set -u
 # (claims/msg globs are suffix-anchored, e.g. *.claim/*.msg -- nothing here is ever named with a leading dot).
 shopt -s dotglob
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 sibling root
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh"   # THE ABSOLUTE MODEL (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them): S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB, each the sibling under $S4E until its one-disk checkout stands
 PO="${S4E_POST:-/home/resources/postoffice}"
 # ⛔⭐ ONE COLUMN FITTER FOR THE WHOLE SCRIPT (Lon 2026-09-13, in-chat, routed by cto to all seats:
 # "That banner printed is nu-formatted and un-readble with wrapping text ... Show as a grid."). Anything this
@@ -155,7 +156,7 @@ s4e_mint_ts() { grep -m1 'minted via `mint`' "$PO/tasks/$1.task.md" 2>/dev/null 
 # ⭐ THE QUEUE IS THE FILE (DESIGN-PLAN bus-one-queue, CIO-8 phase two, CIO-82; the acceptance landed 2026-11-10): a row's column QUEUED:<tube> is its
 # place in a tube (seat-SEAT, tier-TIER, ask-TIER), its claim is the reserve, PO/QUEUE.tsv under PO/.queue.flock the one queue; the tiers come from
 # .github/TIERS.tsv, never from a seat pattern here. The queue daemon and its client are retired.
-S4E_TIERS="${S4E_TIERS:-$S4E/.github/TIERS.tsv}"
+S4E_TIERS="${S4E_TIERS:-$S4E_GITHUB/TIERS.tsv}"
 s4e_tier_name() { case "$1" in 1|fable) echo fable;; 2|opus) echo opus;; 3|sonnet) echo sonnet;; 4|haiku) echo haiku;; *) return 1;; esac; }
 s4e_tier_of() { local _t; _t="$(awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $7; exit}' "$S4E_TIERS" 2>/dev/null)"; [ -n "$_t" ] && s4e_tier_name "$_t"; }
 s4e_watch_of() { local _t _r; _t="$(s4e_tier_of "$1")" || return 1; _r="$(awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $8; exit}' "$S4E_TIERS" 2>/dev/null)"; if [ "$_r" = designer ]; then echo "seat-$1,ask-$_t"; else echo "seat-$1,ask-$_t,tier-$_t"; fi; }   # officers design only (Lon 2026-11-08): an officer is served its seat tube and its ask tube, never a tier tube
@@ -185,13 +186,13 @@ s4e_kick_row() { printf 'kicked_by=none job=none (the file road: the column is t
 s4e_done_delete_job() { printf 'job_deleted=0 job=none (the file road: the row has no job)\n'; return 0; }
 s4e_worktree_rm_row() {   # <topic>: the bus half of the worktree rule (fleet-queue step 6): done and park remove each WORKTREE: <path> the baton names, when s4e_worktree.sh exists (box-scheduler 36); one LEDGER line per removal
     local _b="$PO/tasks/$1.task.md" _w _rc _o _p _t _busy
-    [ -f "$S4E/harness/scripts/s4e_worktree.sh" ] || return 0
+    [ -f "$S4E_HARNESS/scripts/s4e_worktree.sh" ] || return 0
     while IFS= read -r _w; do
         [ -n "$_w" ] || continue
         _n="$(basename "$_w")"; _n="${_n#wt-}"; _o="$(basename "$(dirname "$_w")")"; _busy=0
         for _p in /proc/[0-9]*/cwd; do [ "$_p" = "/proc/$$/cwd" ] && continue; _t="$(readlink "$_p" 2>/dev/null)"; case "$_t" in "$_w"|"$_w"/*) _busy=1; break ;; esac; done
         if [ "$_busy" = 1 ]; then printf -- '- [%s·%s] WORKTREE kept %s: a live process is inside (fleet-queue step 6: done and park never cut a seat off its working directory)\n' "$ME" "$(date -u +%F)" "$_w" >> "$_b"; continue; fi
-        S4E_SEAT="$_o" bash "$S4E/harness/scripts/s4e_worktree.sh" rm "$_n" >/dev/null 2>&1; _rc=$?
+        S4E_SEAT="$_o" bash "$S4E_HARNESS/scripts/s4e_worktree.sh" rm "$_n" >/dev/null 2>&1; _rc=$?
         printf -- '- [%s·%s] WORKTREE rm %s as %s rc=%s (fleet-queue step 6: done and park remove the worktrees the baton names, as the seat that made them)\n' "$ME" "$(date -u +%F)" "$_w" "$_o" "$_rc" >> "$_b"
     done <<< "$(sed -n 's/^WORKTREE: //p' "$_b" 2>/dev/null)"
     return 0; }
@@ -206,7 +207,7 @@ s4e_baton_head_set() {   # <topic> <KEY> <value>: one KEY: line in the baton hea
     else sed -i "0,/^LINKS:/{/^LINKS:/a\\
 $2: $3
 }" "$_b"; fi; }
-s4e_queue_view() { mkdir -p "/tmp/s4e/$ME" 2>/dev/null; python3 "$S4E/harness/scripts/util_queue_view.py" --regenerate >>"/tmp/s4e/$ME/view.log" 2>&1 || echo "$(date -u +%FT%TZ) view regenerate rc=$? from $0 $*" >> "/tmp/s4e/$ME/view.err"; }   # fleet-queue step 12: QUEUE.tsv is regenerated after every state, owner or mint write
+s4e_queue_view() { mkdir -p "/tmp/s4e/$ME" 2>/dev/null; python3 "$S4E_HARNESS/scripts/util_queue_view.py" --regenerate >>"/tmp/s4e/$ME/view.log" 2>&1 || echo "$(date -u +%FT%TZ) view regenerate rc=$? from $0 $*" >> "/tmp/s4e/$ME/view.err"; }   # fleet-queue step 12: QUEUE.tsv is regenerated after every state, owner or mint write
 s4e_skills_required_ok() {   # <tier> <goal text>: a sonnet or haiku row carries a SKILLS: line (Lon: "given the proper SKILL FIRST")
     case "$1" in sonnet|haiku) printf '%s\n' "$2" | grep -q '^SKILLS:[[:space:]]*[^[:space:]]';; *) return 0;; esac; }
 s4e_queue_pri() { case "$1" in seat-*) echo $((100 + $2));; ask-*) echo 50;; *) echo $((1000 + $2));; esac; }   # <tube> <rank>: a directed job outranks tier work, an ask outranks both
@@ -381,11 +382,11 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
     # ALL FOUR REPOS, THEN THE BINARY (the cio 2026-11-08 11:3x on officer_03's measurement: with SCRIP left out of the sync, a premise that reads SCRIP source read false in junior_06's root at bb311e419 and the CTO-555 rename row was retired): the sync fast-forwards SCRIP too, and make -j8 fetches the build from the cache (seconds on a clean tree), so the premise is read on the current tree with its own binary; a make that fails refuses the read, and the row is skipped, never retired.
     mkdir -p "/tmp/s4e/${ME:-seat}" 2>/dev/null
     if [ "${S4E_NO_PREMISE_CHECK:-0}" != 1 ]; then
-    ( cd "$S4E" && timeout -k 5 120 bash harness/scripts/util_sync_root.sh ) >"/tmp/s4e/${ME:-seat}/next_sync.log" 2>&1 || echo "⚠ the root did not fully sync before the premise read (see /tmp/s4e/${ME:-seat}/next_sync.log)" >&2
-    ( cd "$S4E/SCRIP" && timeout -k 10 600 make -j8 ) >"/tmp/s4e/${ME:-seat}/next_make.log" 2>&1 || { echo "⛔ REFUSE(2): reserved job $2 ($_t) is released: make -j8 in $S4E/SCRIP failed after the sync (see /tmp/s4e/${ME:-seat}/next_make.log), so no premise can be read on this root; fix the build and run next again." >&2; s4e_take_refused "$_t" "$2"; return 1; }
+    ( cd "$S4E" && S4E_HOME="$S4E" timeout -k 5 120 bash "$S4E_HARNESS/scripts/util_sync_root.sh" ) >"/tmp/s4e/${ME:-seat}/next_sync.log" 2>&1 || echo "⚠ the root did not fully sync before the premise read (see /tmp/s4e/${ME:-seat}/next_sync.log)" >&2
+    ( cd "$S4E_SCRIP" && timeout -k 10 600 make -j8 ) >"/tmp/s4e/${ME:-seat}/next_make.log" 2>&1 || { echo "⛔ REFUSE(2): reserved job $2 ($_t) is released: make -j8 in $S4E_SCRIP failed after the sync (see /tmp/s4e/${ME:-seat}/next_make.log), so no premise can be read on this root; fix the build and run next again." >&2; s4e_take_refused "$_t" "$2"; return 1; }
     # A DIRTY ROOT MEASURES NOTHING, AND IT REFUSES NOTHING (CEO-2060; CTO-544 (7), the cto 2026-11-07 15:5x: worker_10's root carried an uncommitted cure, so the dispatch-time premise read GREEN there and the row went SUPERSEDED wrongly). A SEAT'S ROOT IS ITS WORKING TREE (officer_02 2026-11-13, row harness-a-worktree-is-scrip-alone-everything-else-from-the-seats-root; Lon 17:4x CST, in the coo's window, verbatim: "I want you to work in /home/claude folder. We do not NEED duplication."): a premise graded on a dirty root is still no measurement, so it is not read there, and the job is served as its row stands, never released; the dirty repos are named.
     local _dr="" _r
-    for _r in SCRIP harness corpus .github; do [ -d "$S4E/$_r/.git" ] || continue; git -C "$S4E/$_r" diff --quiet 2>/dev/null && git -C "$S4E/$_r" diff --cached --quiet 2>/dev/null || _dr="$_dr $_r"; done
+    for _r in SCRIP harness corpus .github; do local _rd="$S4E/$_r"; [ "$_r" = SCRIP ] && _rd="$S4E_SCRIP"; [ -e "$_rd/.git" ] || continue; git -C "$_rd" diff --quiet 2>/dev/null && git -C "$_rd" diff --cached --quiet 2>/dev/null || _dr="$_dr $_r"; done   # the root's own repos: its SCRIP clone (S4E_SCRIP) and the siblings it still holds
     [ -z "$_dr" ] || echo "NOTE: the premise of $_t is not read: this root is your working tree, dirty in$_dr, and a premise graded on a dirty tree is no measurement (CEO-2060); the job is served as its row stands." >&2
     fi
     # THE RED PREMISE (the cio's cut, 2026-11-07): a gate that ran and read RED returns 4, so the reserve pass can bury this head and go on; any other refusal (an rc 2 that could not measure) returns 1, as it does today.
@@ -427,7 +428,7 @@ s4e_refuse_red_head() {   # <topic> <job> <tube>: bury the reserved head through
     if [ "$_ok" = 1 ]; then _how="buried by its holder"; else _how="not buried within 24 s (the holder is gone or stuck; the job returns to ready when its connection closes)"; fi
     mkdir -p "$PO/claims/expired"; mv -f "$_c" "$PO/claims/expired/$_t.claim.premise-red-$_ts" 2>/dev/null
     # A RED PREMISE AT ONE ROOT PARKS THE ROW, IT DOES NOT RETIRE IT (the cio 2026-11-08 11:3x; three false SUPERSEDED today, each re-minted by hand because no verb reopens SUPERSEDED): the row reads PARKED-PREMISE-RED:<reader>@<scrip tree>, the LEDGER names the reader and its four trees, and the designer re-checks the premise on origin, recuts it if it was wrong, and queues the row again.
-    local _h; _h="scrip=$(git -C "$S4E/SCRIP" rev-parse --short=9 HEAD 2>/dev/null) corpus=$(git -C "$S4E/corpus" rev-parse --short=9 HEAD 2>/dev/null) harness=$(git -C "$S4E/harness" rev-parse --short=9 HEAD 2>/dev/null) github=$(git -C "$S4E/.github" rev-parse --short=9 HEAD 2>/dev/null)"
+    local _h; _h="scrip=$(git -C "$S4E_SCRIP" rev-parse --short=9 HEAD 2>/dev/null) corpus=$(git -C "$S4E_CORPUS" rev-parse --short=9 HEAD 2>/dev/null) harness=$(git -C "$S4E_HARNESS" rev-parse --short=9 HEAD 2>/dev/null) github=$(git -C "$S4E_GITHUB" rev-parse --short=9 HEAD 2>/dev/null)"
     s4e_set_row_state "$_t" "PARKED-PREMISE-RED:$ME@${_h#scrip=}" >/dev/null 2>&1 || true
     s4e_ledger_prepend "$_t" "- [$ME·$(date -u +%F)] PREMISE-WHEN read RED at dispatch on $ME's root ($_h): reserved job $_j from $_tb was $_how; the row is PARKED-PREMISE-RED:$ME. The designer re-reads the premise on origin: wrong, recut it; right, the row is done or superseded by its own measurement; then queue it again."
     printf 'NEXT refused_head job=%s topic=%s buried=%s state=PARKED-PREMISE-RED\n' "$_j" "$_t" "$_ok"
@@ -441,7 +442,7 @@ s4e_file_reserve_pass() {   # bus-one-queue step 1: next on the file road; ask-<
             s4e_queue_take_claim "$_t" file "$_tube"; _rc=$?
             if [ "$_rc" = 0 ]; then serve "$_t" "RESERVED" "(from $_tube on the file road; the claim is the reserve)"; exit 0; fi
             if [ "$_rc" = 4 ]; then
-                s4e_set_row_state "$_t" "PARKED-PREMISE-RED:$ME@$(git -C "$S4E/SCRIP" rev-parse --short HEAD 2>/dev/null)" >/dev/null 2>&1 || true
+                s4e_set_row_state "$_t" "PARKED-PREMISE-RED:$ME@$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null)" >/dev/null 2>&1 || true
                 s4e_ledger_prepend "$_t" "- [$ME·$(date -u +%F)] PREMISE-WHEN read RED at a file-road serve on $ME's root; the row is parked, not retired (CIO-10)"
             fi
         done < <(awk -F'\t' -v s="QUEUED:$_tube" '/^[0-9]/ && $4 == s {print $1"\t"$2}' "$PO/QUEUE.tsv" | while IFS=$'\t' read -r _r _n; do printf '%s\t%s\t%s\t%s\n' "$_r" "$(printf '%s %s' "$ME" "$_n" | cksum | cut -d' ' -f1)" "$(s4e_mint_ts "$_n" | grep . || echo -)" "$_n"; done | sort -t$'\t' -k1,1n -k2,2n -k3,3)
@@ -1137,7 +1138,7 @@ s4e_cite_board() {
 # CONSTRUCTION and cannot drift -- the emit_rec_fb / icn_gen_host_reserve lesson: two copies of one rule DO drift.
 # ⛔ MATCHES ON $3=="ROWD" ALONE, never on $1, so a future kind= still trips the guard. FAILS CLOSED by design.
 s4e_manifest_rowd_cite() {   # echo the citing manifest line(s) for topic $1; rc 0 = cited (refuse), rc 1 = not cited
-    local t="$1" m="$S4E/harness/scripts/corpus_coverage_manifest.tsv"
+    local t="$1" m="$S4E_HARNESS/scripts/corpus_coverage_manifest.tsv"
     [ -n "$t" ] && [ -f "$m" ] || return 1
     awk -F'\t' -v t="$t" '/^#/ {next} $3=="ROWD" && $4==t {print; f=1} END{exit !f}' "$m"
 }
@@ -1234,7 +1235,7 @@ s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the arch
   printf '# plant queue (box-scheduler step 8, CTO-496)\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n2\t%s\tplant-owner\tFREE\n2\t%s\tplant-other\tASSIGNED:plant-other\n2\t%s\tplant-other\tCLAIMED:plant-other\n2\t%s\tplant-owner\tFREE\n' \
     "$_g" "$_r" "$_k" "$_b" "$_sw" > "$_w/QUEUE.tsv"
   printf 'plant-other\nASSIGNED-BY plant %s\nRUNNING\n' "$_now" > "$_w/swap.foreign"
-  for _x in "$_g|test -f \"\$S4E_HOME/harness/scripts/s4e_msg.sh\"" "$_r|test -f \"\$S4E_HOME/harness/scripts/sweep-plant-absent-$$\"" "$_k|test -f \"\$S4E_HOME/harness/scripts/s4e_msg.sh\"" "$_b|test -f \"\$S4E_HOME/harness/scripts/s4e_msg.sh\"" \
+  for _x in "$_g|test -f \"\$S4E_HARNESS/scripts/s4e_msg.sh\"" "$_r|test -f \"\$S4E_HARNESS/scripts/sweep-plant-absent-$$\"" "$_k|test -f \"\$S4E_HARNESS/scripts/s4e_msg.sh\"" "$_b|test -f \"\$S4E_HARNESS/scripts/s4e_msg.sh\"" \
       "$_sw|cp \"$_w/swap.foreign\" \"$_w/claims/$_sw.claim\" && test -f \"$_w/sweep-plant-absent-$$\""; do
     printf '# TASK %s\nGOAL: plant\nDONE-WHEN: %s\nLINKS: minted via mint by %s, %s\n## NEXT\n## QA\n## LEDGER\n' "${_x%%|*}" "${_x#*|}" "$ME" "$_now" > "$_w/tasks/${_x%%|*}.task.md"; done
   printf 'plant-owner\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_g.claim"
@@ -1277,7 +1278,7 @@ s4e_sweep_plant_measuring_dead() {   # the cure's probe (box-scheduler step 8): 
   mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox"; cp "$PO/MODE" "$_w/MODE" 2>/dev/null
   _p=$(( $(cat /proc/sys/kernel/pid_max 2>/dev/null || echo 4194304) + 1 )); _g="sweep-plant-measuring-dead-$$"
   printf '2\t%s\tplant-owner\tMEASURING:plant-owner:%s\n' "$_g" "$_p" > "$_w/QUEUE.tsv"
-  printf '# TASK %s\nGOAL: plant\nDONE-WHEN: cd "$S4E_HOME" && test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_g" > "$_w/tasks/$_g.task.md"
+  printf '# TASK %s\nGOAL: plant\nDONE-WHEN: cd "$S4E_HOME" && test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_g" > "$_w/tasks/$_g.task.md"
   printf 'plant-owner\nASSIGNED-BY plant %s\n' "$(date -u +%FT%TZ)" > "$_w/claims/$_g.claim"
   _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 60 2>&1)"
   _rev="$(printf '%s\n' "$_o" | grep -c "^SWEEP reverted $_g to ")"
@@ -1382,7 +1383,7 @@ s4e_done_probe_budget() {
     printf '# plant queue (fleet-queue DONE-BUDGET-S)\n2\t%s\t%s\tFREE\n2\t%s\t%s\tFREE\n' "$a" "$ME" "$b" "$ME" > "$w/QUEUE.tsv"
     # A criterion that examines the tree (a `$` and a path, so the vacuity probe is not run on it) and takes 3 s to pass.
     for t in "$a:2" "$b:5"; do
-      printf '# TASK %s\nGOAL: plant\nDONE-BUDGET-S: %s\nDONE-WHEN: sleep 3; test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' \
+      printf '# TASK %s\nGOAL: plant\nDONE-BUDGET-S: %s\nDONE-WHEN: sleep 3; test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' \
         "${t%%:*}" "${t#*:}" "$now" > "$w/tasks/${t%%:*}.task.md"; done
     run() { env -u S4E_PID_LOCK -u S4E_DONE_TIMEOUT -u S4E_DONE_OVERRIDE S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" "$@" 2>&1; }
     run claim "$a" > /dev/null; o2="$(run done "$a")"; rc2=$?
@@ -1405,7 +1406,7 @@ s4e_done_plant_unblock() {   # step 35's probe on a scratch postoffice: a row AS
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/PROTOCOL-VERSION"
     a="unblock-closer-$$"; b="unblock-assigned-$$"; c="unblock-free-$$"
     printf '# plant queue (box-scheduler step 35)\n2\t%s\t%s\tFREE\n2\t%s\t%s\tASSIGNED:%s\n2\t%s\tplant-y\tFREE\n' "$a" "$ME" "$b" "$ME" "$ME" "$c" > "$w/QUEUE.tsv"
-    for t in "$a" "$b" "$c"; do printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$t" "$now" > "$w/tasks/$t.task.md"; done
+    for t in "$a" "$b" "$c"; do printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$t" "$now" > "$w/tasks/$t.task.md"; done
     run() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" "$@" 2>&1; }
     run park "$b" "BLOCKED-ON:$a" > /dev/null; run park "$c" "PARKED-AWAITING:$a" > /dev/null
     grep -q "^RESTORE-STATE: ASSIGNED:$ME$" "$w/tasks/$b.task.md" || why="$why park did not record RESTORE-STATE ASSIGNED:plant-x on the assigned row;"
@@ -1427,8 +1428,8 @@ s4e_done_plant_restore_seat() {   # fleet-done-restores-a-blocked-row-only-to-a-
     mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" || { echo "REFUSE(2) [done --probe-restore-seat]: cannot make the scratch postoffice"; exit 2; }
     { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
     printf '# plant queue (fleet-done restores a blocked row to a seat that exists)\n2\t%s\t%s\tASSIGNED:%s\n2\t%s\t%s\tBLOCKED-ON:%s\n' "$a" "$ME" "$ME" "$b" "$ME" "$a" > "$w/QUEUE.tsv"
-    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$a" "$now" > "$w/tasks/$a.task.md"
-    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\nRESTORE-STATE: ASSIGNED:hq_nobody\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$b" "$now" > "$w/tasks/$b.task.md"
+    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$a" "$now" > "$w/tasks/$a.task.md"
+    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\nLINKS: plant %s\nRESTORE-STATE: ASSIGNED:hq_nobody\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$b" "$now" > "$w/tasks/$b.task.md"
     printf '%s\nASSIGNED-BY plant %s\nRUNNING\n' "$ME" "$now" > "$w/claims/$a.claim"
     o="$(env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" done "$a" 2>&1)"; drc=$?
     [ "$drc" = 0 ] || why="$why done of the closer returned rc $drc;"
@@ -1635,7 +1636,7 @@ s4e_unclaim_plant_column() {   # unclaim --probe-column (row 618, the cio 2026-1
   trap 'kill "$S4E_UCP" 2>/dev/null' EXIT; export S4E_SEAT_SCOPES="$_w/scopes"
   mkdir -p "$_w/claims" "$_w/tasks" "$_w/$_seat/inbox"; cp "$PO/MODE" "$_w/MODE"; _now="$(date -u +%FT%TZ)"
   _ta="unclaim-plant-reserved-$$"; _tb="unclaim-plant-jobless-$$"; _tc="unclaim-plant-column-$$"
-  for _x in "$_ta" "$_tb" "$_tc"; do printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nPREMISE-WHEN: true\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x" "$_now" > "$_w/tasks/$_x.task.md"; done
+  for _x in "$_ta" "$_tb" "$_tc"; do printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\nPREMISE-WHEN: true\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x" "$_now" > "$_w/tasks/$_x.task.md"; done
   printf '2\t%s\t@haiku\tQUEUED:%s\n2\t%s\t@haiku\tCLAIMED:%s\n2\t%s\t@haiku\tCLAIMED:%s\n' "$_ta" "$_tube" "$_tb" "$_seat" "$_tc" "$_seat" > "$_w/QUEUE.tsv"
   # (a) the seat's own next serves the QUEUED row from the file and takes the claim; its unclaim puts the row back in its tube
   _o="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 "$0" next 2>&1)"
@@ -1879,13 +1880,13 @@ s4e_announce_claim() {   # <topic> -- box-scheduler step 21 (CTO-496): a claim n
   else printf '  %d live row(s) by other seats; a notice went only where the paths meet (CLAIMS.log is the record for every other seat)\n' "$_k"; fi
 }
 s4e_claim_probe_premise() {   # claim --probe-premise (job 595, the cio 2026-11-07): the premise is read only where a row is FREE or QUEUED; an assigned, awaiting or self-held row and a done read none. One CLAIM line on a scratch postoffice; each 1 is the contract held.
-    local _w _a=0 _b=0 _c=0 _d=0 _o _rc _sh="$S4E/harness/scripts/s4e_msg.sh" _t
+    local _w _a=0 _b=0 _c=0 _d=0 _o _rc _sh="$S4E_HARNESS/scripts/s4e_msg.sh" _t
     _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_premise_probe.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
     mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox" || { rm -rf "$_w"; echo "REFUSE(2): cannot make the scratch postoffice"; return 2; }
     cp "$PO/MODE" "$_w/MODE" 2>/dev/null || { rm -rf "$_w"; echo "REFUSE(2): no MODE to copy"; return 2; }
     printf '# premise probe queue\n2\tpp-free\tunassigned\tFREE\n2\tpp-assigned\t%s\tASSIGNED:%s\n2\tpp-awaiting\t%s\tPARKED-AWAITING:req-pp\n2\tpp-claimed\t%s\tCLAIMED:%s\n' "$ME" "$ME" "$ME" "$ME" "$ME" > "$_w/QUEUE.tsv"
     for _t in pp-free pp-assigned pp-awaiting pp-claimed; do
-        printf '# TASK %s\nGOAL: premise probe.\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nPREMISE-WHEN: test -f /no-such-file-s4e-premise-probe-%s\nLINKS: none\n## NEXT\nprobe\n## LEDGER\n' "$_t" "$_t" > "$_w/tasks/$_t.task.md"
+        printf '# TASK %s\nGOAL: premise probe.\nDONE-WHEN: test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\nPREMISE-WHEN: test -f /no-such-file-s4e-premise-probe-%s\nLINKS: none\n## NEXT\nprobe\n## LEDGER\n' "$_t" "$_t" > "$_w/tasks/$_t.task.md"
     done
     printf '%s\nRUNNING\n' "$ME" > "$_w/claims/pp-claimed.claim"
     _o="$(S4E_POST="$_w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$_sh" claim pp-free 2>&1)"; _rc=$?
@@ -1905,7 +1906,7 @@ s4e_claim_probe_overlap() {   # step 21's probe on a scratch postoffice: a notic
     { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$_w/MODE"
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$_w/PROTOCOL-VERSION"
     printf '# plant queue (box-scheduler step 21)\n2\tov-plant-p\t%s\tFREE\n2\tov-plant-q\t%s\tFREE\n2\tov-plant-b\tprobe_b\tCLAIMED:probe_b\n2\tov-plant-c\tprobe_c\tCLAIMED:probe_c\n2\tov-plant-d\tprobe_d\tCLAIMED:probe_d\n2\tov-plant-e\tprobe_e\tCLAIMED:probe_e\n' "$ME" "$ME" > "$_w/QUEUE.tsv"
-    mk() { printf '# TASK %s\nGOAL: plant%s\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\n%s## NEXT\nplant\n## QA\n## LEDGER\n' "$1" "$3" "$2" > "$_w/tasks/$1.task.md"; }
+    mk() { printf '# TASK %s\nGOAL: plant%s\nDONE-WHEN: test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\n%s## NEXT\nplant\n## QA\n## LEDGER\n' "$1" "$3" "$2" > "$_w/tasks/$1.task.md"; }
     mk ov-plant-p 'TOUCHES: SCRIP/src/planner harness/scripts/s4e_msg.sh
 ' ''
     mk ov-plant-q '' ''
@@ -2555,7 +2556,7 @@ s4e_donewhen_is_noop() {   # $1 = raw DONE-WHEN text; rc 0 = certifies nothing
 s4e_donewhen_needs_compiler() {   # $1 = raw DONE-WHEN text
     local dw="${1:-}" b; _gca_why=""
     printf '%s' "$dw" | grep -qE '(^|[^A-Za-z0-9_./-])(\./)?(SCRIP/)?scrip([[:space:]]|$)' || return 1
-    b="$S4E/SCRIP/scrip"
+    b="$S4E_SCRIP/scrip"
     [ -x "$b" ] && return 1
     _gca_why="the criterion drives the compiler and $b is not built (run make) -- a missing binary is COULD-NOT-MEASURE, never a red row"
     return 0; }
@@ -2842,7 +2843,7 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
         printf '⚠ PREMISE NOT MEASURED (rc=2): %s. Admitted unverified -- an unbuilt tree is not a false premise.\n' "$_gca_why" >&2
         return 0; fi
     # A STALE BINARY READS NOTHING (the cio 2026-11-08 11:1x; the coo 11:05 and officer_04 11:2x: step 13c and batch-grader-step-9b were retired SUPERSEDED on a premise that read red where the root's scrip was not a build of its tree, so the probe refused rc 2 and a PREMISE of the form [ rc = 1 ] read the refusal as red): a premise that drives scrip is not run on a root whose binary is stale; the row is skipped, never buried.
-    if printf '%s' "$pw" | grep -qE '(^|[^A-Za-z0-9_./-])(\./)?(SCRIP/)?scrip([[:space:]]|$)' && [ -x "$S4E/SCRIP/scrip" ] && ! ( cd "$S4E/SCRIP" && bash ../harness/scripts/util_require_fresh.sh >/dev/null 2>&1 ); then
+    if printf '%s' "$pw" | grep -qE '(^|[^A-Za-z0-9_./-])(\./)?(SCRIP/)?scrip([[:space:]]|$)' && [ -x "$S4E_SCRIP/scrip" ] && ! ( cd "$S4E_SCRIP" && bash "$S4E_HARNESS/scripts/util_require_fresh.sh" >/dev/null 2>&1 ); then
         printf 'REFUSE(2): the premise of %s was not read: this root'"'"'s scrip is not a build of its tree (util_require_fresh), and a refusal must never read as red. Run make -j8 in SCRIP, then next again; the row is skipped, not retired.\n' "$t" >&2
         return 1; fi
     # ⭐⭐ STEP 34 (CTO-503): THE ROW'S OWN BUDGET, read by the one reader in lib_donewhen.sh -- a baton's PREMISE-BUDGET:
@@ -3388,7 +3389,7 @@ case "$cmd" in
            if [ "$S4E_PROTO" -lt "$need" ]; then
              echo "⛔ REFUSING TO CLEAR — your s4e_msg.sh is PROTOCOL $S4E_PROTO, the fleet is on $need." >&2
              echo "   A stale clone's clear can DESTROY mail (the pre-archive rm path). Nothing was touched." >&2
-             echo "   Fix, then re-run:  cd \"$S4E/SCRIP\" && git pull --rebase origin main" >&2
+             echo "   Fix, then re-run:  cd \"$S4E_SCRIP\" && git pull --rebase origin main" >&2
              exit 3; fi; fi
          [ -f "$lc" ] || { echo "⛔ REFUSED: nothing has been read in this seat. Run 'check' first -- clear only removes what check displayed." >&2; exit 2; }
          _cl=0; _kept=0; _fail=0
@@ -4084,8 +4085,8 @@ case "$cmd" in
                   _dcb="$(cat "$c")"; s4e_pid_release
                   # THE CHECK CACHE (ARCH-SHARED-DEVELOPMENT 3.3, shared-dev step 7): a DONE-WHEN that names only cacheable test_gate_*.sh runs once per
                   # tree for the fleet; util_check_cache.sh replays a stored verdict on clean trees at the same hashes and runs live otherwise.
-                  if bash "$S4E/harness/scripts/util_check_cache.sh" --cacheable-text "$dw" 2>/dev/null; then
-                    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_DONE_WHEN_RUN=1 s4e_bounded "$_dwto" bash "$S4E/harness/scripts/util_check_cache.sh" done-when -- bash -c "$dw" ) >"$_dwlog" 2>&1; rc=$?
+                  if bash "$S4E_HARNESS/scripts/util_check_cache.sh" --cacheable-text "$dw" 2>/dev/null; then
+                    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_DONE_WHEN_RUN=1 s4e_bounded "$_dwto" bash "$S4E_HARNESS/scripts/util_check_cache.sh" done-when -- bash -c "$dw" ) >"$_dwlog" 2>&1; rc=$?
                     head -1 "$_dwlog" | grep -q '^CACHED ' && printf '  %s\n' "$(head -1 "$_dwlog")"
                   else
                     ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_DONE_WHEN_RUN=1 s4e_bounded "$_dwto" bash -c "$dw" ) >"$_dwlog" 2>&1; rc=$?
@@ -4156,7 +4157,7 @@ case "$cmd" in
               # criterion is.  That ordering IS the cure: seat11's DONE-WHEN passed and the row closed, and the
               # 299 red rungs entries were discovered by other seats hours later.  See s4e_codegen_touched above
               # for why the touch set is COMPUTED and why this CITES a board rather than running one (R-697, R-1232).
-              _cg_repo="$S4E/SCRIP"; _cg_touch="$(s4e_codegen_touched "$_cg_repo" "$c")"
+              _cg_repo="$S4E_SCRIP"; _cg_touch="$(s4e_codegen_touched "$_cg_repo" "$c")"
               if [ -n "$_cg_touch" ]; then
                 printf '\n⭐ CODEGEN CONTROL ARM -- this landing touches codegen, computed from the diff (never asserted):\n'
                 printf '%s\n' "$_cg_touch" | sed 's/^/     /'
@@ -4173,7 +4174,7 @@ case "$cmd" in
                   _cg_suites="snobol4-rungs"
                   printf '%s\n' "$_cg_touch" | grep -qE 'lower_icon\.c|templates/.*icn|icn.*\.cpp' && _cg_suites="$_cg_suites icon-rungs"
                   _cg_scrip="$(git -C "$_cg_repo" rev-parse --short HEAD 2>/dev/null)"
-                  _cg_corpus="$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)"
+                  _cg_corpus="$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null)"
                   _cg_db="${S4E_PROGRESS_DB:-/home/resources/progress/results.tsv}"
                   _cg_inh="$(s4e_baton_inherited "$tf")"
                   printf '   tree: scrip=%s corpus=%s   db=%s\n' "${_cg_scrip:-?}" "${_cg_corpus:-?}" "$_cg_db"
@@ -4217,7 +4218,7 @@ case "$cmd" in
               # computation -- rc, the tree it ran on, how long, computed or overridden, when, by whom. A DONE row whose claim has
               # no such line reached DONE by a path outside this verb (17 in QUEUE.tsv on 2026-09-16, one reopened RED by audit);
               # util_queue_visibility_census.py names them (class R) and `sweep` refuses to move them.
-              _dtree="$(git -C "$S4E/SCRIP" rev-parse --short HEAD 2>/dev/null || echo unknown)"; [ -n "$(git -C "$S4E/SCRIP" status --porcelain 2>/dev/null)" ] && _dtree="$_dtree-DIRTY"
+              _dtree="$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null || echo unknown)"; [ -n "$(git -C "$S4E_SCRIP" status --porcelain 2>/dev/null)" ] && _dtree="$_dtree-DIRTY"
               printf 'RECEIPT done rc=0 tree=%s elapsed=%ss via=%s %s by %s\n' "$_dtree" "${_dwel:-?}" "$([ -n "${S4E_DONE_OVERRIDE:-}" ] && echo override || echo computed)" "$(date -u +%FT%TZ)" "$ME" >> "$c"
               grep -q '^DONE$' "$c" || echo DONE >> "$c"; echo "done $topic"
               s4e_done_delete_job "$topic"; s4e_worktree_rm_row "$topic"
@@ -4729,7 +4730,7 @@ TASKEOF
              echo "⛔ REFUSING TO DISPATCH — your s4e_msg.sh is PROTOCOL $S4E_PROTO, the fleet is on $need."
              echo "   Your clone is behind origin and would run the OLD picker: no rank sort, no assign-awareness."
              echo "   That mis-locks a row and HIDES IT FROM THE WHOLE FLEET (a claimed row leaves the picker)."
-             echo "   Fix, then re-run:  cd \"$S4E/SCRIP\" && git pull --rebase origin main"
+             echo "   Fix, then re-run:  cd \"$S4E_SCRIP\" && git pull --rebase origin main"
              exit 3; fi; fi
          # ⭐ V2-1 SERVE ORDER (LAW 2): my-ASSIGNED  ->  my-unfinished  ->  RANK-SORTED free.
          # v1 served the topmost row in FILE ORDER, which made rank decorative: 53 rank-0 rows sat buried behind lesser
@@ -5245,11 +5246,11 @@ TASKEOF
          # ⭐ officer-only, WARN-only (Lon trust-audit 2026-08-28: health checks must be HARNESS-FIRED, not remembered —
          # the same defect class as the old hand-fired banner). Fast (<1s), reads the postoffice, never flips the
          # verdict; rc=2 from the census prints as its own refusal line rather than a silent green.
-         if [ "$ME" = "cto" ] && [ -x "$S4E/harness/scripts/util_queue_visibility_census.py" ]; then
-             _cns="$(python3 "$S4E/harness/scripts/util_queue_visibility_census.py" 2>&1 | tail -1)"
+         if [ "$ME" = "cto" ] && [ -x "$S4E_HARNESS/scripts/util_queue_visibility_census.py" ]; then
+             _cns="$(python3 "$S4E_HARNESS/scripts/util_queue_visibility_census.py" 2>&1 | tail -1)"
              :
          fi
-         hs="$S4E/harness/scripts/handoff_status.sh"
+         hs="$S4E_HARNESS/scripts/handoff_status.sh"
          [ -f "$hs" ] || hs="$(cd "$(dirname "$0")" && pwd)/handoff_status.sh"
          # ⛔ SKIP_S_ARTIFACT_CHECK=1 (2026-08-27, Lon's "go fix it" — the missing-banners defect, seat09/hq_P diagnosis):
          # the .s-artifact verifier runs `make pristine` (minutes; races and WIPES live builds), so every banner that reached
@@ -5404,7 +5405,7 @@ TASKEOF
          # the instrument was calling real work nothing, loudest for the seats doing the careful half. It is the
          # digest's own class wearing new clothes: a guard keyed on a NAME is a coincidence, not a guard -- here keyed
          # on a PATH PREFIX. Matched at a path BOUNDARY now, so it counts findings/ and any historical root-level one.
-         fnd=$(git -C "$S4E/.github" log --since="$since" --diff-filter=A --name-only --format= 2>/dev/null | grep -E '(^|/)FINDING-' | grep -ci -e "$ME" -e "$mealt" ${row1:+-e "$row1"} || true); fnd="${fnd:-0}"
+         fnd=$(git -C "$S4E_GITHUB" log --since="$since" --diff-filter=A --name-only --format= 2>/dev/null | grep -E '(^|/)FINDING-' | grep -ci -e "$ME" -e "$mealt" ${row1:+-e "$row1"} || true); fnd="${fnd:-0}"
          vd="NOTHING LANDED"; [ -z "$row1" ] || vd="$(s4e_banner_verdict "$row1" "$S4E"/*/)"   # the row's own reading from the claim, the LEDGER and origin: a landing through a worktree or a green done is not a commit this clone made
          if [ "$vd" = SUCCESS ]; then lvl="row ${rowst} ${row1} · landed on origin (the LEDGER's hashes or the closed claim) · ${cmts} commit(s) · ${fnd} FINDING(s), attributed since ${since}"
          elif [ "$cmts" -eq 0 ] && [ "$fnd" -eq 0 ]; then lvl="⚠ NOTHING ATTRIBUTABLE LANDED"
@@ -5535,7 +5536,7 @@ TASKEOF
          # it reverses his 2026-11-08 12:4x "Just not the test suite banner."). S4E_BANNER_GRID=0 leaves the grid out; unset or anything else prints it after the status lines and the verdict.
          # WORK THAT IS NOT ON main IS NAMED AT EVERY STOP (the cio 2026-11-11, CIO-125; Lon, in the cio's window, verbatim: "Investigate how hundreds of fixes went un-pushed."): MEASURED that day, 466 patches in 147
          # branches stood off main in 26 seat folders and on origin and no tool counted them. One line when this seat's folders hold a branch or a worktree with commits origin/main lacks; nothing when they hold none.
-         _sb="$S4E/harness/scripts/util_suite_banner.py"
+         _sb="$S4E_HARNESS/scripts/util_suite_banner.py"
          # ONLY THE COO'S BANNER CARRIES THE GRID (Lon 2026-11-11 10:4x CST, in the cto's window, verbatim: "Fix your stop hook banner to be status only, no test suite. COO will be the only one with
          # the banner. It is just too big now for all the seats and one seat will do. The COO." / "Tell CIO to fix all the seats banners."; CIO-129; it narrows CIO-114). The default is the grid for the
          # seat coo and status only for every other seat; S4E_BANNER_GRID=1 asks for the grid anywhere (the banner gate does) and 0 leaves it out anywhere.

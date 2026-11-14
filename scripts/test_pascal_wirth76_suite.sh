@@ -10,19 +10,20 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 set -u
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
 . "$HERE/lib_flag_gate.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: lib_flag_gate.sh unloadable"; exit 2; }
 . "$HERE/lib_inventory.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: lib_inventory.sh unloadable"; exit 2; }
 . "$HERE/lib_progress.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: lib_progress.sh unloadable"; exit 2; }
 [ $# -eq 0 ] || flaggate_reject "$1" "(none -- set WIRTH76_SUITE_RUN_TIMEOUT via environment instead)"
-SCRIP="${HERE}/../../SCRIP/scrip"
-RT_SO="${HERE}/../../SCRIP/out/libscrip_rt.so"
-SUITE="${WIRTH76_SUITE:-$S4E/corpus/packages/pascal/wirth1976}"
+SCRIP="${S4E_SCRIP}/scrip"
+RT_SO="${S4E_SCRIP}/out/libscrip_rt.so"
+SUITE="${WIRTH76_SUITE:-$S4E_CORPUS/packages/pascal/wirth1976}"
 KEY="${WIRTH76_SUITE_KEY:-wirth76}"
 WANTRC="$SUITE/ALL.rc"
 RUN_TIMEOUT="${WIRTH76_SUITE_RUN_TIMEOUT:-10}"
 [ -d "$SUITE" ] || { echo "⛔ REFUSED-TO-GRADE: $SUITE missing (the package is hq_pascal's row: pascal-wirth-1976-...-r-1580)"; exit 2; }
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE: scrip not built"; exit 2; }
-"$HERE/util_require_fresh.sh" --gate test_pascal_wirth76_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
+"$HERE/util_require_fresh.sh" --gate test_pascal_wirth76_suite "$SCRIP" "${RT_DIR:-$S4E_SCRIP/out}/libscrip_rt.so" || exit 2
 [ -f "$RT_SO" ] || { echo "⛔ REFUSED-TO-GRADE: $RT_SO missing (m4 link needs it)"; exit 2; }
 TIMEOUT_TSV="$SUITE/ALL.timeout.tsv"; declare -A TMO_OF=()
 if [ -f "$TIMEOUT_TSV" ]; then
@@ -69,7 +70,7 @@ for name in "${PROGS[@]}"; do
     fi
     m4bin="$TMP/${name}.bin"; m4s="$TMP/${name}.s"; _t0="$(progress_clock)"
     if "$TIMEOUT_RETRY" "$T_RUN" "$SCRIP" --compile "$pas" --out="$m4s" < /dev/null 2>/dev/null \
-        && gcc -no-pie "$m4s" -L "${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$m4bin" 2>/dev/null; then
+        && gcc -no-pie "$m4s" -L "${S4E_SCRIP}/out" -lscrip_rt -Wl,-rpath,"${S4E_SCRIP}/out" -o "$m4bin" 2>/dev/null; then
         m4out=$(cd "$TMP" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$T_RUN" "$m4bin" < "$inp" 2>/dev/null); m4rc=$?
         S4="$(progress_secs_since "$_t0")"
         if [ "$m4out" = "$exp" ] && [ "$m4rc" = "$wantrc" ]; then

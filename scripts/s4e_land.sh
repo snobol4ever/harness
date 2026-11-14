@@ -115,14 +115,27 @@ for _v in "$tries" "$width" "$line_wait"; do case "$_v" in ''|*[!0-9]*) refuse "
 if [ "$PO_LAND" = /home/resources/postoffice ]; then LEDGER="${S4E_LAND_LEDGER:-/home/resources/progress/LANDINGS.tsv}"; else LEDGER="${S4E_LAND_LEDGER:-$PO_LAND/LANDINGS.tsv}"; fi
 [ -n "$home" ] || refuse "--home is empty: name the root that holds SCRIP harness corpus and .github (worker_02 2026-11-07 16:0x: a backgrounded shell passed an unset variable)"
 home="$(cd "$home" 2>/dev/null && pwd)" || refuse "no root at $home"
-TSV="$home/harness/scripts/generated_tables.tsv"
+# THE ABSOLUTE MODEL (officer_02 2026-11-13, row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them; Lon 18:1x CST, in the coo's window, verbatim: "a root folder is
+# either a SCRIP, snobol4dotnet, or snobol4jvm clone with no siblings ... all shell scripts will change from the SIBLING model to the ABSOLUtE model."): rd <repo> names a repo of the
+# home: SCRIP is the home itself when the home IS the SCRIP clone (src/, a Makefile, .git), else <home>/SCRIP; corpus, harness and .github are <home>/<repo>, a repo of the landing
+# only while the home holds it. The lander's tools (the registry, the check cache, the generators) come from the home's harness when it holds one, else S4E_HARNESS (lib_paths.sh:
+# /home/harness once it is a checkout). The gate runs with S4E_HOME=<home>, S4E_SCRIP its SCRIP, and S4E_CORPUS, S4E_HARNESS, S4E_GITHUB its own sibling where it holds one, so it
+# grades the tree it lands; a repo the home lacks is read from its one-disk checkout.
+. "$HERE/lib_paths.sh"
+rd() { case "$1" in SCRIP) if [ -d "$home/src" ] && [ -f "$home/Makefile" ] && [ -e "$home/.git" ]; then printf '%s' "$home"; else printf '%s/SCRIP' "$home"; fi ;; *) printf '%s/%s' "$home" "$1" ;; esac; }
+if [ -e "$home/harness/.git" ]; then TH="$home/harness"; else TH="$S4E_HARNESS"; fi
+genv=(env S4E_HOME="$home" S4E_SCRIP="$(rd SCRIP)")
+[ -e "$home/corpus/.git" ] && genv+=(S4E_CORPUS="$home/corpus")
+[ -e "$home/harness/.git" ] && genv+=(S4E_HARNESS="$home/harness")
+[ -e "$home/.github/.git" ] && genv+=(S4E_GITHUB="$home/.github")
+TSV="$TH/scripts/generated_tables.tsv"
 seat="${S4E_SEAT:-$(bash "$HERE/s4e_msg.sh" whoami 2>/dev/null | tail -1 | tr -d '[:space:]')}"
 [ -n "$seat" ] || seat="$(id -un)"
 mkdir -p "/tmp/s4e/$seat" || refuse "cannot make /tmp/s4e/$seat"
 if [ "$mode" = tables ]; then
     [ -f "$TSV" ] || refuse "no registry at $TSV"
     awk -F'\t' '!/^#/' "$TSV" | column -t -s $'\t'
-    for k in $(awk -F'\t' '!/^#/ && $1 != "name" && !s[$1]++ {print $1}' "$TSV"); do r="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $3; exit}' "$TSV")"; r="${r%%/*}"; [ -e "$home/$r/.git" ] || echo "# skipped in this home: $k (no $r checkout under $home)"; done
+    for k in $(awk -F'\t' '!/^#/ && $1 != "name" && !s[$1]++ {print $1}' "$TSV"); do r="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $3; exit}' "$TSV")"; r="${r%%/*}"; [ -e "$(rd "$r")/.git" ] || echo "# skipped in this home: $k (no $r checkout under $home)"; done
     exit 0
 fi
 scratch_clone() {   # <T>: a bare scratch origin of each repo borrowing this root's objects, and a work clone of each under <T>/work (corpus sparse); the probes build on it
@@ -585,12 +598,13 @@ ledger() {   # <outcome>: ONE LINE A LANDING IN THE PROGRESS STORE (the box kept
       printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "$seat" "${row:-gate}" "$1" "${attempt:-1}" "${moved_rounds:-0}" "${serial_round:-0}" "$(( $(date +%s) - land_t0 ))" "${line_waited:-0}" "tries=$tries,touches=$touches_from,tables=$tables_mode,width=$width" "${s% }"; } >> "$LEDGER" 2>/dev/null || true
 }
 present=()
-for r in "${ORDER[@]}"; do [ -e "$home/$r/.git" ] && present+=("$r"); done
-for r in SCRIP harness corpus; do [ -e "$home/$r/.git" ] || refuse "no $home/$r: a landing builds SCRIP beside harness and corpus"; done
+for r in "${ORDER[@]}"; do [ -e "$(rd "$r")/.git" ] && present+=("$r"); done
+[ -e "$(rd SCRIP)/.git" ] || refuse "no SCRIP clone at $home or $home/SCRIP: a landing builds SCRIP"
+[ -f "$TSV" ] || refuse "no generated-table registry at $TSV: the home holds no harness and S4E_HARNESS ($S4E_HARNESS) holds none"
 own_files() {   # the files the landing's own commits change, "repo/path" a line, read against the merge base so a stale origin/main reads the same
     local r f
     for r in "${present[@]}"; do
-        while IFS= read -r f; do [ -n "$f" ] && printf '%s/%s\n' "$r" "$f"; done < <(command git -C "$home/$r" diff --name-only origin/main...HEAD 2>/dev/null)
+        while IFS= read -r f; do [ -n "$f" ] && printf '%s/%s\n' "$r" "$f"; done < <(command git -C "$(rd "$r")" diff --name-only origin/main...HEAD 2>/dev/null)
     done
 }
 own="$(own_files)"
@@ -651,8 +665,8 @@ stop_lander() {   # <signal>: a stopped lander takes its children with it (TERM,
     exit 2
 }
 trap 'stop_lander TERM' TERM; trap 'stop_lander INT' INT; trap 'stop_lander HUP' HUP
-g() { local r="$1"; shift; timeout -k 5 180 git -C "$home/$r" "$@" 7>&- 8>&- 9>&-; }
-git_state() { local p; p="$(git -C "$home/$1" rev-parse --git-path "$2")"; case "$p" in /*) printf '%s' "$p" ;; *) printf '%s/%s/%s' "$home" "$1" "$p" ;; esac; }   # --git-path answers relative to the repo, and this script runs elsewhere
+g() { local r="$1"; shift; timeout -k 5 180 git -C "$(rd "$r")" "$@" 7>&- 8>&- 9>&-; }
+git_state() { local p; p="$(git -C "$(rd "$1")" rev-parse --git-path "$2")"; case "$p" in /*) printf '%s' "$p" ;; *) printf '%s/%s' "$(rd "$1")" "$p" ;; esac; }   # --git-path answers relative to the repo, and this script runs elsewhere
 if [ -n "$row" ]; then
     tf="${S4E_POSTOFFICE:-/home/resources/postoffice}/tasks/$row.task.md"
     [ -f "$tf" ] || refuse "no baton $tf"
@@ -666,21 +680,21 @@ if [ "$mode" = push ]; then
 else [ -n "$gate" ] || refuse "no gate: name the row (--row TOPIC) or the command (--gate CMD); a landing is never pushed ungated"; fi
 named() { local x; [ "${#names[@]}" = 0 ] && return 0; for x in "${names[@]}"; do [ "$x" = "$1" ] && return 0; done; return 1; }
 for r in "${present[@]}"; do
-    [ -n "$(git -C "$home/$r" status --porcelain --untracked-files=no)" ] && refuse "$r has uncommitted tracked changes: a landing lands commits"
+    [ -n "$(git -C "$(rd "$r")" status --porcelain --untracked-files=no)" ] && refuse "$r has uncommitted tracked changes: a landing lands commits"
     for d in rebase-merge rebase-apply MERGE_HEAD; do [ -e "$(git_state "$r" "$d")" ] && refuse "$r has a $d in progress"; done
 done
-for x in "${names[@]}"; do [ -e "$home/$x/.git" ] || refuse "named $x, and there is no $home/$x"; done
+for x in "${names[@]}"; do [ -e "$(rd "$x")/.git" ] || refuse "named $x, and there is no $home/$x"; done
 new_gates() {   # <harness dir>: the test_gate_*.sh files the landing's own commits add (from the merge base, so a stale origin/main reads the same; --no-renames, so a rename into the name is an add)
     git -C "$1" diff --no-renames --name-only --diff-filter=A origin/main...HEAD -- 'scripts/test_gate_*.sh' 2>/dev/null
 }
-ng="$(new_gates "$home/harness" | tr '\n' ' ')"   # NO NEW GATE (Lon 2026-11-12 13:1x CST, verbatim: "I do not want any STINKING GATES."; skill gates-and-witnesses section 0; the coo's ask 17:4x)
+ng=""; [ -e "$home/harness/.git" ] && ng="$(new_gates "$home/harness" | tr '\n' ' ')"   # NO NEW GATE (Lon 2026-11-12 13:1x CST, verbatim: "I do not want any STINKING GATES."; skill gates-and-witnesses section 0; the coo's ask 17:4x)
 [ -z "$ng" ] || refuse "the landing adds ${ng% }: no new gate is written (Lon 2026-11-12: \"I do not want any STINKING GATES.\"; skill gates-and-witnesses section 0); fold the check into the tool it guards as a selftest verb or flag, or prove it with a program graded against its oracle"
 mark preflight "home=$home seat=$seat repos=${present[*]} gate=$(printf '%s' "$gate" | cut -c1-120)"
-ahead() { git -C "$home/$1" rev-list --count origin/main..HEAD; }
+ahead() { git -C "$(rd "$1")" rev-list --count origin/main..HEAD; }
 fetch() {
     local r
     for r in "${present[@]}"; do g "$r" fetch -q origin main > "$LOG/fetch.$r" 2>&1 || red fetch "repo=$r $(tail -1 "$LOG/fetch.$r")"; done
-    mark fetch "$(for r in "${present[@]}"; do printf '%s@%s ' "$r" "$(git -C "$home/$r" rev-parse --short=9 origin/main)"; done)"
+    mark fetch "$(for r in "${present[@]}"; do printf '%s@%s ' "$r" "$(git -C "$(rd "$r")" rev-parse --short=9 origin/main)"; done)"
 }
 rebase() {
     local r a u
@@ -700,18 +714,18 @@ resolve_output_conflicts() {   # <repo> (step 19: generated tables merge by rege
     local r="$1" f o is_out other; local -a outs u   # outputs of this repo, take the replayed side and continue; the regenerate stage then rewrites them from the merged sources. Any other conflict aborts and reads RED.
     mapfile -t outs < <(awk -F'\t' -v p="^$r/" '!/^#/ && $1 != "name" && $3 ~ p {sub(p, "", $3); print $3}' "$TSV")
     while [ -e "$(git_state "$r" rebase-merge)" ] || [ -e "$(git_state "$r" rebase-apply)" ]; do
-        mapfile -t u < <(git -C "$home/$r" diff --name-only --diff-filter=U)
+        mapfile -t u < <(git -C "$(rd "$r")" diff --name-only --diff-filter=U)
         other=""
         for f in "${u[@]}"; do is_out=0; for o in "${outs[@]}"; do [ "$f" = "$o" ] && is_out=1; done; [ "$is_out" = 1 ] || other="$other $f"; done
         if [ -n "$other" ] || [ "${#u[@]}" = 0 ]; then
-            git -C "$home/$r" rebase --abort > /dev/null 2>&1
+            git -C "$(rd "$r")" rebase --abort > /dev/null 2>&1
             red rebase "repo=$r conflicts=${other:-?} (not a generated output; the rebase was aborted; the tree is as it was)"
         fi
         for f in "${u[@]}"; do
-            git -C "$home/$r" checkout --theirs -- "$f" > /dev/null 2>&1 && git -C "$home/$r" add -- "$f" || { git -C "$home/$r" rebase --abort > /dev/null 2>&1; red rebase "repo=$r cannot take the replayed side of $f"; }
+            git -C "$(rd "$r")" checkout --theirs -- "$f" > /dev/null 2>&1 && git -C "$(rd "$r")" add -- "$f" || { git -C "$(rd "$r")" rebase --abort > /dev/null 2>&1; red rebase "repo=$r cannot take the replayed side of $f"; }
             merged_outputs=$((merged_outputs + 1)); merged_names="$merged_names $r/$f"
         done
-        GIT_EDITOR=true git -C "$home/$r" rebase --continue > "$LOG/rebase.$r" 2>&1 || true
+        GIT_EDITOR=true git -C "$(rd "$r")" rebase --continue > "$LOG/rebase.$r" 2>&1 || true
     done
 }
 written=(); summary=""; binfo=""
@@ -726,7 +740,7 @@ regen() {
     [ "${#ks[@]}" -gt 0 ] || { summary="0 checked, 0 stale (skipped ${skipped[*]})"; return 0; }
     for k in "${ks[@]}"; do
         c="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $4; exit}' "$TSV")"
-        ( cd "$home" && S4E_HOME="$home" S4E_RUN_SLOT_HELD=1 timeout -k 5 900 bash "$home/harness/scripts/util_check_cache.sh" "land-$k" -- bash -c "$c" > "$LOG/check.$k" 2>&1; echo $? > "$LOG/check.$k.rc" ) 7>&- 8>&- 9>&- &   # the table checks run on the landing's own admission (class land), no run slot each: 236 run-slot waits of 4413 s by the checks on 2026-11-08 by 10:35 (SLOT_WAITS.tsv), 14 checks three at a time behind a pool of 8 (the cio 10:4x)
+        ( cd "$(dirname "$TH")" && "${genv[@]}" S4E_RUN_SLOT_HELD=1 timeout -k 5 900 bash "$TH/scripts/util_check_cache.sh" "land-$k" -- bash -c "$c" > "$LOG/check.$k" 2>&1; echo $? > "$LOG/check.$k.rc" ) 7>&- 8>&- 9>&- &   # the table checks run on the landing's own admission (class land), no run slot each: 236 run-slot waits of 4413 s by the checks on 2026-11-08 by 10:35 (SLOT_WAITS.tsv), 14 checks three at a time behind a pool of 8 (the cio 10:4x)
         pids+=($!)
     done
     wait "${pids[@]}"
@@ -742,10 +756,10 @@ regen() {
     for k in "${stale[@]}"; do
         w="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $5; exit}' "$TSV")"
         c="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $4; exit}' "$TSV")"
-        ( cd "$home" && timeout -k 5 900 bash -c "$w" ) > "$LOG/write.$k" 2>&1 7>&- 8>&- 9>&- || red "$2" "table=$k write failed: $(tail -1 "$LOG/write.$k")"
+        ( cd "$(dirname "$TH")" && "${genv[@]}" timeout -k 5 900 bash -c "$w" ) > "$LOG/write.$k" 2>&1 7>&- 8>&- 9>&- || red "$2" "table=$k write failed: $(tail -1 "$LOG/write.$k")"
         ph="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $2; exit}' "$TSV")"
-        if [ "$ph" = built ] && [ -n "$(git -C "$home/SCRIP" status --porcelain --untracked-files=no -- src 2>/dev/null)" ]; then build derive-recheck; fi
-        ( cd "$home" && timeout -k 5 900 bash -c "$c" ) > "$LOG/recheck.$k" 2>&1 7>&- 8>&- 9>&-; rc=$?
+        if [ "$ph" = built ] && [ -n "$(git -C "$(rd SCRIP)" status --porcelain --untracked-files=no -- src 2>/dev/null)" ]; then build derive-recheck; fi
+        ( cd "$(dirname "$TH")" && "${genv[@]}" timeout -k 5 900 bash -c "$c" ) > "$LOG/recheck.$k" 2>&1 7>&- 8>&- 9>&-; rc=$?
         [ "$rc" = 0 ] || { [ "$rc" = 2 ] && red "$2" "the re-check of table $k refused (rc 2): $(head -1 "$LOG/recheck.$k")"; red "$2" "table=$k is still stale after its own write: $(tail -1 "$LOG/recheck.$k")"; }
         written+=("$k")
     done
@@ -753,7 +767,7 @@ regen() {
 }
 absent_repo_of() {   # <table name> -> prints the repo of its first output when that repo has no checkout in the home (rc 0), else rc 1
     local o r; o="$(awk -F'\t' -v k="$1" '!/^#/ && $1 == k {print $3; exit}' "$TSV")"; r="${o%%/*}"
-    [ -n "$r" ] && [ "$r" != "$o" ] && [ ! -e "$home/$r/.git" ] && { printf '%s' "$r"; return 0; }; return 1
+    [ -n "$r" ] && [ "$r" != "$o" ] && [ ! -e "$(rd "$r")/.git" ] && { printf '%s' "$r"; return 0; }; return 1
 }
 commit_regen() {
     local r o k f outs msg
@@ -764,15 +778,15 @@ commit_regen() {
             while IFS= read -r o; do [ "${o%%/*}" = "$r" ] && outs+=("${o#*/}"); done < <(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $3}' "$TSV")
         done
         [ "${#outs[@]}" = 0 ] && continue
-        git -C "$home/$r" add -- "${outs[@]}" || red "$1" "repo=$r cannot stage the regenerated tables"
-        git -C "$home/$r" diff --cached --quiet && continue
-        msg="LAND: regenerate ${written[*]} on origin $(git -C "$home/$r" rev-parse --short=9 origin/main) (s4e_land.sh: a generated table is regenerated, never edited)"
-        git -C "$home/$r" -c user.name=LCherryholmes -c user.email=lcherryh@yahoo.com commit -q -m "$msg" > "$LOG/commit.$r" 2>&1 ||
+        git -C "$(rd "$r")" add -- "${outs[@]}" || red "$1" "repo=$r cannot stage the regenerated tables"
+        git -C "$(rd "$r")" diff --cached --quiet && continue
+        msg="LAND: regenerate ${written[*]} on origin $(git -C "$(rd "$r")" rev-parse --short=9 origin/main) (s4e_land.sh: a generated table is regenerated, never edited)"
+        git -C "$(rd "$r")" -c user.name=LCherryholmes -c user.email=lcherryh@yahoo.com commit -q -m "$msg" > "$LOG/commit.$r" 2>&1 ||
             red "$1" "repo=$r cannot commit the regenerated tables: $(tail -1 "$LOG/commit.$r")"
         named "$r" || [ "${#names[@]}" = 0 ] || names+=("$r")
     done
     for r in "${present[@]}"; do
-        f="$(git -C "$home/$r" status --porcelain --untracked-files=no | head -5 | tr '\n' ' ')"
+        f="$(git -C "$(rd "$r")" status --porcelain --untracked-files=no | head -5 | tr '\n' ' ')"
         [ -n "$f" ] && red "$1" "repo=$r a generator wrote outside its declared outputs: $f"
     done
     return 0
@@ -780,15 +794,15 @@ commit_regen() {
 build() {   # THE LAND CLASS GUARDS THE BUILD ONLY (CIO-136): the make alone takes a land slot, with S4E_ADMITTED unset for the make so the Makefile's compile door takes its own slots; the gate, the fetch and the rebase take none
     local -a adm=(bash "$HERE/util_run_slot.sh" --admit land env -u S4E_ADMITTED)
     [ -n "${S4E_LAND_UNADMITTED:-}" ] && adm=(env)
-    spawn "$LOG/make.$1.log" "$home/SCRIP" "${adm[@]}" timeout -k 5 1800 make -j8 || red "$1" "make -j8 rc=$?: $(grep -m1 -E 'error|Error' "$LOG/make.$1.log" | cut -c1-200)"
-    binfo="$(sed -n 's/^source //p' "$home/SCRIP/out/buildinfo" 2>/dev/null | head -1)"
+    spawn "$LOG/make.$1.log" "$(rd SCRIP)" "${adm[@]}" timeout -k 5 1800 make -j8 || red "$1" "make -j8 rc=$?: $(grep -m1 -E 'error|Error' "$LOG/make.$1.log" | cut -c1-200)"
+    binfo="$(sed -n 's/^source //p' "$(rd SCRIP)/out/buildinfo" 2>/dev/null | head -1)"
 }
 gate_run() {
     local rc
-    spawn "$LOG/gate.log" "$home" env S4E_HOME="$home" timeout -k 5 "$gt" bash -c "$gate"; rc=$?
+    spawn "$LOG/gate.log" "$home" "${genv[@]}" timeout -k 5 "$gt" bash -c "$gate"; rc=$?
     tail -5 "$LOG/gate.log" | sed 's/^/    gate| /'
     case "$rc" in
-        0) mark gate "rc=0 on $(git -C "$home/SCRIP" rev-parse --short=9 HEAD)" ;;
+        0) mark gate "rc=0 on $(git -C "$(rd SCRIP)" rev-parse --short=9 HEAD)" ;;
         2) refuse "the gate could not measure (rc 2): nothing pushed" ;;
         124|137) refuse "the gate ran past its $gt s budget: nothing pushed" ;;
         *) red gate "rc=$rc: nothing pushed" ;;
@@ -799,7 +813,7 @@ gate_run_serial() {   # <label>: the last round's ONE gate, run UNDER the lease 
     local rc sgt="$gt"
     [ "$sgt" -gt "$serial_cap" ] && sgt="$serial_cap"
     serial_round=1
-    spawn "$LOG/gate.log" "$home" env S4E_HOME="$home" timeout -k 5 "$sgt" bash -c "$gate"; rc=$?
+    spawn "$LOG/gate.log" "$home" "${genv[@]}" timeout -k 5 "$sgt" bash -c "$gate"; rc=$?
     tail -5 "$LOG/gate.log" | sed 's/^/    gate| /'
     case "$rc" in
         0) mark "regate:lease:serial" "$1 (the gate ran under the lease, cap ${sgt}s)" ;;
@@ -812,9 +826,9 @@ SERVER_REFUSAL='fatal error in commit_refs|remote rejected[^(]*\(failure\)|inter
 push_retries="${S4E_LAND_PUSH_RETRIES:-4}"; push_backoff="${S4E_LAND_PUSH_BACKOFF:-5}"; server_refusals=0; retried_push=0; rebased_unmoved=0; moved_rounds=0
 push_one() {
     local r="$1" mine theirs seen k=0 w
-    [ "$(ahead "$r")" -gt 0 ] || { echo "LAND stage=push:$r nothing to push (origin $(git -C "$home/$r" rev-parse --short=9 origin/main))"; return 0; }
+    [ "$(ahead "$r")" -gt 0 ] || { echo "LAND stage=push:$r nothing to push (origin $(git -C "$(rd "$r")" rev-parse --short=9 origin/main))"; return 0; }
     named "$r" || refuse "$r carries commits and is not named"
-    mine="$(git -C "$home/$r" rev-parse HEAD)"; seen="$(git -C "$home/$r" rev-parse origin/main)"
+    mine="$(git -C "$(rd "$r")" rev-parse HEAD)"; seen="$(git -C "$(rd "$r")" rev-parse origin/main)"
     while :; do
         g "$r" push -q origin HEAD:refs/heads/main > "$LOG/push.$r" 2>&1
         theirs="$(g "$r" ls-remote origin refs/heads/main | cut -f1)"
@@ -832,7 +846,7 @@ push_one() {
         echo "LAND stage=push:$r REFUSED by the server, origin unmoved at ${seen:0:9} ($(grep -m1 -iE "$SERVER_REFUSAL" "$LOG/push.$r" | cut -c1-100)): the push alone is retried in ${w}s, no rebase, no regate (retry $k of $push_retries)"
         retried_push=$((retried_push + 1)); sleep "$w"
     done
-    bash "$home/harness/scripts/s4e_push_rejected.sh" "$home/$r" > "$LOG/rejected.$r" 2>&1 7>&- 8>&- 9>&-
+    bash "$TH/scripts/s4e_push_rejected.sh" "$(rd "$r")" > "$LOG/rejected.$r" 2>&1 7>&- 8>&- 9>&-
     if [ "$theirs" = "$seen" ]; then
         rebased_unmoved=$((rebased_unmoved + 1))
         echo "LAND stage=push:$r REJECTED with origin unmoved at ${seen:0:9}, an unrecognised refusal ($(tail -1 "$LOG/push.$r" | cut -c1-120)); recorded, going round again"
@@ -846,18 +860,18 @@ push_one() {
 # change every program). After a rejected push the gate is re-run only when the rebase brought in a commit under SCRIP/src/runtime, SCRIP/src/templates,
 # SCRIP/Makefile, a generated table's output, or one of the row's TOUCHES: prefixes; a landing with no TOUCHES re-gates on any change at all.
 declare -A origin_seen
-note_origins() { local r; for r in "${present[@]}"; do origin_seen[$r]="$(git -C "$home/$r" rev-parse origin/main)"; done; }
+note_origins() { local r; for r in "${present[@]}"; do origin_seen[$r]="$(git -C "$(rd "$r")" rev-parse origin/main)"; done; }
 affected_since() {   # -> prints "reason=affected|unaffected files=N"; rc 0 affected
     local r f old new n=0 hit=0 t p; local -a outs
     mapfile -t outs < <(awk -F'\t' '!/^#/ && $1 != "name" {print $3}' "$TSV")
     for r in "${present[@]}"; do
-        old="${origin_seen[$r]:-}"; new="$(git -C "$home/$r" rev-parse origin/main)"; [ -n "$old" ] && [ "$old" != "$new" ] || continue
+        old="${origin_seen[$r]:-}"; new="$(git -C "$(rd "$r")" rev-parse origin/main)"; [ -n "$old" ] && [ "$old" != "$new" ] || continue
         while IFS= read -r f; do
             [ -n "$f" ] || continue; n=$((n+1)); p="$r/$f"
             case "$p" in SCRIP/src/runtime/*|SCRIP/src/templates/*|SCRIP/Makefile) hit=1 ;; esac
             for t in "${outs[@]}"; do [ "$p" = "$t" ] && hit=1; done
             if [ -n "$touches" ]; then for t in $touches; do case "$p" in "$t"|"$t"/*) hit=1 ;; esac; done; else hit=1; fi
-        done < <(git -C "$home/$r" diff --name-only "$old" "$new" 2>/dev/null)
+        done < <(git -C "$(rd "$r")" diff --name-only "$old" "$new" 2>/dev/null)
     done
     [ "$hit" = 1 ] && { echo "reason=affected files=$n"; return 0; }; echo "reason=unaffected files=$n"; return 1; }
 record_hand_push() { local f="${S4E_POSTOFFICE:-/home/resources/postoffice}/HAND_PUSHES.tsv"
@@ -867,7 +881,7 @@ pushed=(); rejected=0; attempt=1
 pushes() {   # the pushes in ORDER; rc 3 when one is refused (land_round decides: round again, or on the last round the one serial gate and the pushes once more)
     local r
     for r in "${ORDER[@]}"; do
-        [ -e "$home/$r/.git" ] || continue
+        [ -e "$(rd "$r")/.git" ] || continue
         push_one "$r" || return 3
     done
     return 0
@@ -897,7 +911,7 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
     note_origins
     take_lease
     fetch
-    for r in "${present[@]}"; do [ "${origin_seen[$r]}" = "$(git -C "$home/$r" rev-parse origin/main)" ] || moved=1; done
+    for r in "${present[@]}"; do [ "${origin_seen[$r]}" = "$(git -C "$(rd "$r")" rev-parse origin/main)" ] || moved=1; done
     if [ "$moved" = 1 ]; then
         rebase
         if a="$(affected_since)"; then
@@ -936,7 +950,7 @@ while :; do
 done
 relink_root() {   # THEN SYNC: a root's shared repos are linked to the pristine again after the landing moved them (never a reason to fail a pushed landing)
     local r rs=()
-    for r in corpus harness .github; do [ -e "$home/$r/.git" ] && [ "$(git -C "$home/$r" config --get s4e.shared 2>/dev/null)" = true ] && rs+=("$r"); done
+    for r in corpus harness .github; do [ -e "$(rd "$r")/.git" ] && [ "$(git -C "$(rd "$r")" config --get s4e.shared 2>/dev/null)" = true ] && rs+=("$r"); done
     [ "${#rs[@]}" -gt 0 ] || return 0
     if S4E_HOME="$home" bash "$HERE/util_sync_root.sh" --relink "${rs[@]}" > "$LOG/relink" 2>&1 7>&- 8>&- 9>&-; then mark sync "relinked ${rs[*]} to the pristine: $(grep -oE '(linked|already)=[0-9]+' "$LOG/relink" | tr '\n' ' ')"
     else echo "LAND stage=sync relink rc=$? (pushed all the same; run util_sync_root.sh): $(tail -1 "$LOG/relink" | cut -c1-160)"; fi

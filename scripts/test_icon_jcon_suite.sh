@@ -48,6 +48,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
 . "$HERE/lib_flag_gate.sh" 2>/dev/null || { echo "⛔ REFUSED TO GRADE: lib_flag_gate.sh unloadable" >&2; exit 2; }
 . "$HERE/lib_progress.sh" 2>/dev/null || { echo "⛔ REFUSED TO GRADE: lib_progress.sh unloadable -- a run that records nothing is a defect of that run (R-331)" >&2; exit 2; }
 PROGRESS_CONFIG="$(progress_config_of_env)"   # every row declares what it ran under: the GC axis in this environment, else shipped (the board sets none per child)
@@ -57,11 +58,11 @@ PROGRESS_CONFIG="$(progress_config_of_env)"   # every row declares what it ran u
 # destroy a real measurement of 81 programs -- the reason gate_score_row is non-fatal by design. So the
 # failures are counted and NAMED in the run's own output, which is what makes the receipt honest.
 PROGRESS_FAILED=0
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"
 RT_SO="${RT_SO:-$ROOT/out/libscrip_rt.so}"
-CORPUS="${CORPUS:-$S4E/corpus/packages/icon/jcon_tests}"
-CORPUS_PUBLISHED="$S4E/corpus/packages/icon/jcon_tests"   # ⛔ the ONE population the JCON row in SCORE.md may ever name -- see the score-write guard at the foot of this file
+CORPUS="${CORPUS:-$S4E_CORPUS/packages/icon/jcon_tests}"
+CORPUS_PUBLISHED="$S4E_CORPUS/packages/icon/jcon_tests"   # ⛔ the ONE population the JCON row in SCORE.md may ever name -- see the score-write guard at the foot of this file
 # ⛔ icont_bin() comes from the ONE authority, never a hand-assembled path and never bare `icont` on PATH:
 # CLAUDE.md's measured lesson is a seat that ran `command -v icont`, got nothing, and wrote "no Icon oracle
 # exists" into a digest. The staleness arm below is the only consumer here, and it degrades to NAMING the
@@ -115,7 +116,7 @@ fi
 # an incremental make -- a vendor board is exactly where that is least visible, because a plausible all-FAIL
 # table is this class's normal output. NO LOGIC HERE: util_require_fresh.sh sources gate_require_fresh from
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
-"$HERE/util_require_fresh.sh" --gate test_icon_jcon_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
+"$HERE/util_require_fresh.sh" --gate test_icon_jcon_suite "$SCRIP" "${RT_DIR:-$S4E_SCRIP/out}/libscrip_rt.so" || exit 2
 # ⛔⭐ THE BINARY MOVED UNDER THIS BOARD (R-524 (1), wired by the coo 2026-09-10 as THE ONE RUNNER).
 # The line above proves the binary is CURRENT AT THE START. It cannot see a swap that happens while the board is
 # still grading, and the dirty guard downstream reads the tree at WRITE time -- so hq_R's board straddled a binary
@@ -126,7 +127,7 @@ fi
 # ./scrip is a ~40 KB driver and the emitter lives in the .so: a scrip-only fingerprint is vacuous exactly when an
 # emitter change is the thing that moved.
 . "$HERE/lib_gate.sh" 2>/dev/null || { echo "⛔ REFUSED TO GRADE rc=2: lib_gate.sh unloadable -- this board cannot tell whether its binary moves under it" >&2; exit 2; }
-GATE_NAME=test_icon_jcon_suite gate_bin_watch "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so"
+GATE_NAME=test_icon_jcon_suite gate_bin_watch "$SCRIP" "${RT_DIR:-$S4E_SCRIP/out}/libscrip_rt.so"
 # ⛔⭐ THE TREE MOVED UNDER THIS BOARD, and the stamp that names the tree this row actually graded
 # (coo 2026-09-10, COO-54, on the coo's own witness: a pass recorded one corpus hash and a background job
 # moved corpus eight seconds later; gate_bin_watch stayed silent and was right to, because the BINARY had

@@ -53,6 +53,7 @@ set -uo pipefail   # deliberately NOT -e: a per-file compile/run failure is DATA
 
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
 [ -f "$HERE/lib_progress.sh" ] && . "$HERE/lib_progress.sh"   # R-331: a runner that grades with its OWN loop appends its own rows
 . "$HERE/lib_flag_gate.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: lib_flag_gate.sh unloadable"; exit 2; }
 . "$HERE/lib_inventory.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: lib_inventory.sh unloadable"; exit 2; }
@@ -63,9 +64,9 @@ while [ $# -gt 0 ]; do
         *) flaggate_reject "$1" "--driver REL.pl, or none (set GNU_SUITE_VERBOSE / GNU_SUITE_CLASSIFY_TIMEOUT / GNU_SUITE_RUN_TIMEOUT via environment instead)" ;;
     esac
 done
-SCRIP="${HERE}/../../SCRIP/scrip"
-RT_SO="${HERE}/../../SCRIP/out/libscrip_rt.so"
-PKG="${GNU_PROLOG_SUITE:-$S4E/corpus/packages/prolog/gnu_prolog}"   # line 2 sets it to this default, so the guard judges the suite graded here
+SCRIP="${S4E_SCRIP}/scrip"
+RT_SO="${S4E_SCRIP}/out/libscrip_rt.so"
+PKG="${GNU_PROLOG_SUITE:-$S4E_CORPUS/packages/prolog/gnu_prolog}"   # line 2 sets it to this default, so the guard judges the suite graded here
 CLASSIFY_TIMEOUT="${GNU_SUITE_CLASSIFY_TIMEOUT:-10}"
 RUN_TIMEOUT="${GNU_SUITE_RUN_TIMEOUT:-15}"
 GPROLOG_BIN="$(gprolog_bin 2>/dev/null || true)"
@@ -92,7 +93,7 @@ is_bootstrap_only() {  # $1 = rel path (for the named list), $2 = full path (for
 # an incremental make -- a vendor board is exactly where that is least visible, because a plausible all-FAIL
 # table is this class's normal output. NO LOGIC HERE: util_require_fresh.sh sources gate_require_fresh from
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
-"$HERE/util_require_fresh.sh" --gate test_prolog_gnu_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
+"$HERE/util_require_fresh.sh" --gate test_prolog_gnu_suite "$SCRIP" "${RT_DIR:-$S4E_SCRIP/out}/libscrip_rt.so" || exit 2
 [ -f "$RT_SO" ]      || { echo "⛔ REFUSED-TO-GRADE: $RT_SO missing (m4 link needs it)"; exit 2; }
 [ -n "$GPROLOG_BIN" ] || { echo "⛔ REFUSED-TO-GRADE: gprolog not on PATH"; exit 2; }
 
@@ -267,7 +268,7 @@ for f in "${FILES[@]}"; do
         m3_out=$(cd "$TMP" && run_at_declared_table "$DECL" "${rel%.pl}" -- "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --run "${CA[@]}" "$drv" ${dargv[0]+--} "${dargv[@]}" < "$din" 2>/dev/null); m3rc=$?
         S3="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"
         m4_out=""; m4rc=0
-        if [ "$drc" -eq 0 ] && gcc -no-pie "$dout" -L "${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$dbin" 2>/dev/null; then
+        if [ "$drc" -eq 0 ] && gcc -no-pie "$dout" -L "${S4E_SCRIP}/out" -lscrip_rt -Wl,-rpath,"${S4E_SCRIP}/out" -o "$dbin" 2>/dev/null; then
             m4_out=$(cd "$TMP" && run_at_declared_table "$DECL" "${rel%.pl}" -- "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$dbin" "${dargv[@]}" < "$din" 2>/dev/null); m4rc=$?
         fi
         S4="$(progress_secs_sum "$(progress_secs_since "$_t0")" "$_cs")"
@@ -346,7 +347,7 @@ for f in "${FILES[@]}"; do
         S3="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"
         bin="$TMP/${base}.bin"
         m4_out=""
-        if gcc -no-pie "$out" -L "${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin" 2>/dev/null; then
+        if gcc -no-pie "$out" -L "${S4E_SCRIP}/out" -lscrip_rt -Wl,-rpath,"${S4E_SCRIP}/out" -o "$bin" 2>/dev/null; then
             m4_out=$(run_at_declared_table "$DECL" "${rel%.pl}" -- "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$bin" < /dev/null 2>/dev/null)
         fi
         S4="$(progress_secs_sum "$(progress_secs_since "$_t0")" "$_cs")"

@@ -39,9 +39,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #   --no-write  do not publish; without it a whole-population pass (no kernel named) publishes (R-1302 (a)) through util_score_row.py --column bench-ref (key icon-bench-ref, nick IcnBench); non-fatal by design.
 # EXIT 0 every kernel PASS; 1 any kernel not PASS; 2 REFUSED (no binary, no oracle, no population, a tool that cannot be built).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
-SCRIP="$ROOT/scrip"; RT="$ROOT/out"; BD="$S4E/corpus/benchmarks/icon"; GEN="$HERE/util_icon_bench_wrap.py"
+SCRIP="$ROOT/scrip"; RT="$ROOT/out"; BD="$S4E_CORPUS/benchmarks/icon"; GEN="$HERE/util_icon_bench_wrap.py"
 OUTDIR=""; NITER=2; BUD=200; TMO=300; NOWRITE=0; WANT=""
 refuse() { echo "⛔ ICON BENCH SUITE REFUSE(2): $*"; exit 2; }
 # ⭐ PUBLISHING IS THE DEFAULT (R-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
@@ -88,7 +88,7 @@ kind() { if [ "$RC" = 124 ]; then echo HANG; elif [ "$RC" -ge 128 ]; then echo C
 record() { local cfg; cfg=$(env "${HEAPENV[@]}" python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import util_progress_append as p; a = p.gc_axis_env(); print(",".join("%s=%s" % kv for kv in a.items()) if a else "shipped")' "$HERE")
   python3 "$PW" append --class benchmark --suite icon-bench-ref --lang icon --program "$1" --mode "$2" --outcome "$3" --secs "$4" --note "$5" --config "$cfg" >/dev/null 2>"$W/p.err" \
     || { PREFUSED=$((PREFUSED + 1)); NOTES="$NOTES\n    $1 $2: the progress row was REFUSED -- $(head -1 "$W/p.err")"; }; }
-echo "=== ICON BENCHMARK SUITE: ${#POP[@]} kernels x 2 modes x 3 angles, graded against each REF (SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT" diff --quiet 2>/dev/null || echo -DIRTY), corpus $(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E/corpus" diff --quiet 2>/dev/null || echo -DIRTY), RT_OPT=-O0, iter n=$NITER, time budget ${BUD} ms, oracle $ICONT) ==="
+echo "=== ICON BENCHMARK SUITE: ${#POP[@]} kernels x 2 modes x 3 angles, graded against each REF (SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT" diff --quiet 2>/dev/null || echo -DIRTY), corpus $(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E_CORPUS" diff --quiet 2>/dev/null || echo -DIRTY), RT_OPT=-O0, iter n=$NITER, time budget ${BUD} ms, oracle $ICONT) ==="
 PASS=0; P3=0; P4=0; REFLESS=0; DRIFT=0; WSENS=0; LIN=0; LPROC=0; HEAPD=0; PREFUSED=0; NOTES=""; SCOUT=""
 for f in "${POP[@]}"; do
   rel="${f#"$BD"/}"; NM="$(basename "$f" .icn)"; KD="$(dirname "$f")"; ref="${f%.icn}.ref"; IN="$(stdin_of "$f")"; K="$W/k"; rm -rf "$K"; mkdir -p "$K"

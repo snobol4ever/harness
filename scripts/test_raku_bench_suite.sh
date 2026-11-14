@@ -25,13 +25,14 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # EXIT 0 every kernel PASS; 1 any kernel not PASS; 2 REFUSED.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"   # S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB: the absolute model, each its sibling until its one-disk checkout stands (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-BD="${BENCH_RAKU_DIR:-$S4E/corpus/benchmarks/raku}"
+BD="${BENCH_RAKU_DIR:-$S4E_CORPUS/benchmarks/raku}"
 MODES="$(printf "%s" "${S4E_MODES:-m3}" | tr "," " ")"
 GATE_NAME=test_raku_bench_suite
 LANG_KEY=raku; SUITE_KEY=raku-bench-ref; EXT=raku
-SCRIP="$HERE/../../SCRIP/scrip"
-RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"
+SCRIP="$S4E_SCRIP/scrip"
+RT_DIR="${RT_DIR:-$S4E_SCRIP/out}"
 ITER_N="${BENCH_ITER_N:-3}"
 BUD_MS="${BENCH_BUD_MS:-200}"
 NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1   # ⭐ PUBLISHING IS THE DEFAULT (R-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
@@ -42,7 +43,7 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the one reader of a declared arena"
 . "$HERE/lib_progress.sh" 2>/dev/null || refuse "lib_progress.sh unloadable"
 GEN="$HERE/bench_wrap_raku.py"; [ -f "$GEN" ] || refuse "no wrapper generator at $GEN -- angles 2 and 3 have nothing to run"
-WRAP="$HERE/../../SCRIP/out/bench_rusage"
+WRAP="$S4E_SCRIP/out/bench_rusage"
 [ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/bench_rusage.c" || refuse "out/bench_rusage failed to build -- angle 1 has no wrapper"
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac
 case "$BUD_MS" in ''|*[!0-9]*|0) refuse "BENCH_BUD_MS must be a positive whole number of milliseconds (got '$BUD_MS')";; esac
@@ -181,7 +182,7 @@ echo
 echo "$LINE"
 [ -n "$NAMED" ] && echo "  not passing:$NAMED"
 [ -n "$OUTN" ] && echo "  not run, out of the denominator (OUTSIDE.tsv, Lon 2026-10-10):$OUTN"
-echo "  tree: SCRIP=$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$HERE/../../SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E/corpus" diff --quiet 2>/dev/null || echo -dirty) RT_OPT=$(readelf --debug-dump=info "$HERE/../../SCRIP/out/libscrip_rt.so" 2>/dev/null | grep -m1 -o ' -O[0-3sg]' | tr -d ' ' || echo '?') (read from libscrip_rt.so's DWARF)"
+echo "  tree: SCRIP=$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E_SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E_CORPUS" diff --quiet 2>/dev/null || echo -dirty) RT_OPT=$(readelf --debug-dump=info "$S4E_SCRIP/out/libscrip_rt.so" 2>/dev/null | grep -m1 -o ' -O[0-3sg]' | tr -d ' ' || echo '?') (read from libscrip_rt.so's DWARF)"
 if [ "$IS_BOARD" = 0 ]; then
   echo "  population $BD is OUTSIDE the corpus tree -- not a board (R-547): graded, and no progress row and no suite row written"
 else
