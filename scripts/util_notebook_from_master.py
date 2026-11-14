@@ -73,6 +73,10 @@ def notebook(title, items, lang):
         cells.append(md_cell("### " + name))
         count += 1
         cells.append(code_cell(lang, prog, out, count))
+    # nbformat 4.5 asks every cell for an id (1 to 64 of [A-Za-z0-9-_], unique in the notebook); a cell's
+    # place is its id, so the same entries always write the same bytes.
+    for k, c in enumerate(cells):
+        c["id"] = f"cell-{k}"
     return {"nbformat": 4, "nbformat_minor": 5,
             "metadata": {"kernelspec": {"name": "scrip", "display_name": "SCRIP", "language": "scrip"},
                          "language_info": {"name": "scrip"}},
@@ -181,6 +185,9 @@ def probe():
             return bad(f"cell kinds {kinds} are not title, md, code, md, code")
         if nb["metadata"]["kernelspec"]["name"] != "scrip":
             return bad("kernelspec name is not scrip")
+        ids = [c.get("id") for c in cells]
+        if None in ids or len(set(ids)) != len(ids):
+            return bad(f"cell ids {ids} are not one distinct id a cell")
         codes = [c for c in cells if c["cell_type"] == "code"]
         for (name, prog, expect_out), c in zip(items, codes):
             src = "".join(c["source"])
