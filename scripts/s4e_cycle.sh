@@ -27,6 +27,12 @@ mkdir -p "$TMPDIR/cycle" "$PROG" || exit 2
 # render the suite table into S4E_SCORE_MD, the record stays /home/resources/progress/SUITES.tsv; the scratch is seeded from the root's SCORE.md.
 export S4E_SCORE_MD="${S4E_SCORE_MD:-$TMPDIR/cycle/SCORE.md}"
 [ -s "$S4E_SCORE_MD" ] || [ ! -f "$S4E/.github/SCORE.md" ] || cp -f "$S4E/.github/SCORE.md" "$S4E_SCORE_MD"
+[ ! -f "$S4E_SCORE_MD" ] || [ -w "$S4E_SCORE_MD" ] || chmod u+w "$S4E_SCORE_MD"   # a root's tracked files are read-only shared links (skill shared-box 4), so a fresh copy is mode 444 and the render refused PermissionError (MEASURED 2026-11-13, a scratch S4E_CYCLE_PROG)
+# THE CYCLE NAMES ITS TABLE, IT NEVER LETS THE ROOT'S NAME CHOOSE IT (the grader 2026-11-13; MEASURED: from 21:26Z every row write refused "rc=1, no
+# refusal line" and CYCLE.refused held 71 rows, because util_score_row.py writes /home/resources/progress/SUITES.tsv only for a root spelled
+# /home/claude_<seat> and takes every other root for a fixture with its own .github/SUITES.tsv, and the row is written on a base under
+# /home/resources/worktrees/grader, which has none: util_suite_banner.py --set died on FileNotFoundError and left SUITES.tsv.lock in the base's .github).
+export S4E_SUITES_TSV="${S4E_SUITES_TSV:-$PROG/SUITES.tsv}"
 [ -f "$RUNNERS" ] || { echo "REFUSE(2) [cycle]: no $RUNNERS"; exit 2; }
 MODE_ARG="${1:-}"
 SELF="$(readlink -f "${BASH_SOURCE[0]}")"; SELF_SUM="$(md5sum < "$SELF" 2>/dev/null)"
@@ -312,6 +318,7 @@ lap_start() {
     if [ "$(git -C "$S4E/.github" status --porcelain --untracked-files=no 2>/dev/null)" = " M SCORE.md" ]; then git -C "$S4E/.github" checkout -q -- SCORE.md >> "$TMPDIR/cycle/sync.log" 2>&1; fi
     ( cd "$S4E" && bash harness/scripts/util_sync_root.sh ) >> "$TMPDIR/cycle/sync.log" 2>&1 < /dev/null; sy=$?
     [ ! -f "$S4E/.github/SCORE.md" ] || cp -f "$S4E/.github/SCORE.md" "$S4E_SCORE_MD" 2>> "$TMPDIR/cycle/sync.log"
+    [ ! -f "$S4E_SCORE_MD" ] || [ -w "$S4E_SCORE_MD" ] || chmod u+w "$S4E_SCORE_MD"
     : > "$TMPDIR/cycle/lap.sync"   # the marker request_ready compares a pending request with: a request filed after it may name what the next sync brings
     ( cd "$S4E/SCRIP" && make -j8 ) >> "$TMPDIR/cycle/make.log" 2>&1 < /dev/null; mk=$?
     log "LAP $1 start sync_rc=$sy make_rc=$mk scrip=$(git -C "$S4E/SCRIP" rev-parse --short=9 HEAD 2>/dev/null) corpus=$(git -C "$S4E/corpus" rev-parse --short=9 HEAD 2>/dev/null)"
