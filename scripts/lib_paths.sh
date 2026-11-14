@@ -3,7 +3,7 @@
 # CST, in the coo's window, verbatim: "So I'm creating /home/corpus and /home/harness for the ENTIRE FLEET to share. So get those scripts fixed."; 18:1x: "a root folder is
 # either a SCRIP, snobol4dotnet, or snobol4jvm clone with no siblings ... all shell scripts will change from the SIBLING model to the ABSOLUtE model."). Source it; it exports:
 #   S4E_SCRIP    the seat's SCRIP clone: $S4E_SCRIP when set, else the root itself when the root IS a SCRIP clone (it holds src/ and a Makefile), else <root>/SCRIP
-#   S4E_CORPUS   $S4E_CORPUS when set, else /home/corpus once it is a checkout (it holds .git), else <root>/corpus
+#   S4E_CORPUS   $S4E_CORPUS when set, else /home/corpus once it is a checkout (it holds .git) and the home is a seat's (S4E_HOME unset or /home/claude_<seat>), else <root>/corpus
 #   S4E_HARNESS  $S4E_HARNESS when set, else /home/harness once it is a checkout, else <root>/harness
 #   S4E_GITHUB   $S4E_GITHUB when set, else /home/.github once it is a checkout, else <root>/.github
 # <root> is $S4E_HOME, else the root this script sits in. Each falls back to the sibling while its absolute checkout is absent, so sourcing this moves nothing on a
@@ -12,8 +12,14 @@
 #   bash lib_paths.sh --selftest   the environment wins; the siblings with nothing absolute; the root as the SCRIP clone; the one-disk checkouts; Python agrees. LIB_PATHS ok|RED
 _s4e_paths_root="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 _s4e_paths_top="${S4E_ONE_DISK_TOP:-/home}"
+_s4e_paths_seat_home() {   # the one-disk checkouts are a default only for a real seat: S4E_HOME unset, or a seat root /home/claude_<seat>, or S4E_ONE_DISK_TOP named (a probe's
+    # own scratch top). A scratch S4E_HOME (a fixture, a probe's root) reads every repo as its own sibling, so it never writes the real /home/.github, corpus or harness
+    # (the coo 2026-11-13 20:3x CST, on senior_01's measurement: util_score_row.py's fixture set S4E_HOME alone and wrote the real SCORE.md and SUITES.tsv)
+    [ -n "${S4E_ONE_DISK_TOP:-}" ] || [ -z "${S4E_HOME:-}" ] && return 0
+    local h="${S4E_HOME%/}" n; n="${h#/home/claude_}"; [ "$n" != "$h" ] && [ -n "$n" ] && [ "${n#*/}" = "$n" ]
+}
 _s4e_paths_pick() {   # <env value> <one-disk dir> <sibling dir>
-    if [ -n "$1" ]; then printf '%s\tenv' "$1"; elif [ -e "$2/.git" ]; then printf '%s\tone-disk' "$2"; else printf '%s\tsibling' "$3"; fi
+    if [ -n "$1" ]; then printf '%s\tenv' "$1"; elif _s4e_paths_seat_home && [ -e "$2/.git" ]; then printf '%s\tone-disk' "$2"; else printf '%s\tsibling' "$3"; fi
 }
 if [ -n "${S4E_SCRIP:-}" ]; then _s4e_scrip_from=env
 elif [ -d "$_s4e_paths_root/src" ] && [ -f "$_s4e_paths_root/Makefile" ]; then S4E_SCRIP="$_s4e_paths_root"; _s4e_scrip_from=root
@@ -38,8 +44,16 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
             p="$($un S4E_ONE_DISK_TOP="$t" S4E_HOME="$t/root" python3 -I "$me/harness_paths.py" --show)"; [ "$p" = "$o" ] || why="$why arm 4: harness_paths.py says '$p';"
             o="$($un S4E_ONE_DISK_TOP="$t/none" S4E_HOME=/r bash "$me/lib_paths.sh" --show)"
             p="$($un S4E_ONE_DISK_TOP="$t/none" S4E_HOME=/r python3 -I "$me/harness_paths.py" --show)"; [ "$p" = "$o" ] || why="$why arm 4: harness_paths.py with nothing absolute says '$p';"
+            mkdir -p "$t/scratch"
+            o="$($un -u S4E_ONE_DISK_TOP S4E_HOME="$t/scratch" bash "$me/lib_paths.sh" --show)"
+            [ "$o" = "S4E_SCRIP=$t/scratch/SCRIP (sibling) S4E_CORPUS=$t/scratch/corpus (sibling) S4E_HARNESS=$t/scratch/harness (sibling) S4E_GITHUB=$t/scratch/.github (sibling)" ] || why="$why arm 5: a scratch S4E_HOME did not read its own siblings ($o);"
+            p="$($un -u S4E_ONE_DISK_TOP S4E_HOME="$t/scratch" python3 -I "$me/harness_paths.py" --show)"; [ "$p" = "$o" ] || why="$why arm 5: harness_paths.py with a scratch S4E_HOME says '$p';"
+            if [ -e /home/corpus/.git ]; then
+                o="$($un -u S4E_ONE_DISK_TOP S4E_HOME=/home/claude_selftest_seat bash "$me/lib_paths.sh" --show)"; case "$o" in *"S4E_CORPUS=/home/corpus (one-disk)"*) ;; *) why="$why arm 5: a seat root did not read /home/corpus ($o);" ;; esac
+                p="$($un -u S4E_ONE_DISK_TOP S4E_HOME=/home/claude_selftest_seat python3 -I "$me/harness_paths.py" --show)"; [ "$p" = "$o" ] || why="$why arm 5: harness_paths.py for a seat root says '$p';"
+            fi
             rm -rf "$t"
-            [ -z "$why" ] && { echo "LIB_PATHS ok arms=4 (the environment wins; the siblings with nothing absolute; the root as the SCRIP clone and /home/corpus, /home/harness, /home/.github once each is a checkout; Python and bash agree)"; exit 0; }
+            [ -z "$why" ] && { echo "LIB_PATHS ok arms=5 (the environment wins; the siblings with nothing absolute; the root as the SCRIP clone and /home/corpus, /home/harness, /home/.github once each is a checkout; Python and bash agree; a scratch S4E_HOME reads its own siblings, a seat root the one-disk checkouts)"; exit 0; }
             echo "LIB_PATHS RED:$why"; exit 1 ;;
         *) echo "usage: source lib_paths.sh | bash lib_paths.sh --show | --selftest" >&2; exit 2 ;;
     esac

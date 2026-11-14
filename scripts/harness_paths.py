@@ -14,12 +14,22 @@ def _root(root=None):
     return Path(os.environ.get("S4E_HOME") or Path(__file__).resolve().parent.parent.parent)
 
 
+def _seat_home():
+    # the one-disk checkouts are a default only for a real seat (lib_paths.sh _s4e_paths_seat_home): S4E_HOME unset, a seat root /home/claude_<seat>, or
+    # S4E_ONE_DISK_TOP named; a scratch S4E_HOME reads every repo as its own sibling (the coo 2026-11-13 20:3x CST, on senior_01's util_score_row.py measurement)
+    if os.environ.get("S4E_ONE_DISK_TOP") or not os.environ.get("S4E_HOME"):
+        return True
+    h = os.environ["S4E_HOME"].rstrip("/")
+    n = h[len("/home/claude_"):] if h.startswith("/home/claude_") else ""
+    return bool(n) and "/" not in n
+
+
 def _pick(env, name, root):
     v = os.environ.get(env)
     if v:
         return Path(v), "env"
     one = Path(os.environ.get("S4E_ONE_DISK_TOP", "/home")) / name
-    if (one / ".git").exists():
+    if _seat_home() and (one / ".git").exists():
         return one, "one-disk"
     return _root(root) / name, "sibling"
 
