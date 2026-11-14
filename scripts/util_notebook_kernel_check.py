@@ -6,7 +6,7 @@
   util_notebook_kernel_check.py --probe             the tool's own proof on a planted notebook
 
 check: THE ONE KERNEL (Lon 2026-11-11: "there is only ONE kernel. Its name is SCRIP and handle all the languages.") is installed into scratch by the scrip binary
-itself (SCRIP_BIN, else SCRIP/scrip of S4E_HOME; scrip --kernel-install), and a notebook that names any other kernel refuses; a deep copy of the notebook is run by
+itself (SCRIP_BIN, else the scrip binary of the SCRIP clone, S4E_SCRIP; scrip --kernel-install), and a notebook that names any other kernel refuses; a deep copy of the notebook is run by
 nbclient in the notebook's own folder with errors allowed. A code cell is SAME when the text of its stdout streams equals the saved cell's and the
 run holds no stderr stream and no error output; else DIFFERS. One line a notebook:
   NOTEBOOK_KERNEL nb=NAME cells=N same=S differs=D first=K      (K the 1-based number of the first differing code cell, 0 when none)
@@ -110,8 +110,9 @@ def probe(scrip, scratch):
 
 
 def main(argv):
-    home = os.environ.get("S4E_HOME") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    scrip = os.environ.get("SCRIP_BIN") or os.path.join(home, "SCRIP", "scrip")
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import harness_paths
+    scrip = os.environ.get("SCRIP_BIN") or os.path.join(str(harness_paths.scrip()), "scrip")
     if not (len(argv) >= 2 and (argv[1] == "--probe" or (argv[1] == "check" and len(argv) >= 3))):
         print("usage: util_notebook_kernel_check.py check NOTEBOOK... | --probe")
         return 2

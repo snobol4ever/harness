@@ -1,6 +1,7 @@
 #!/bin/bash
 # build_snobol4_frontend.sh — build snobol4 frontend
 set -e
-ROOT="$(cd "$(dirname "$0")/../../SCRIP" && pwd)"
+. "$(dirname "$0")/lib_paths.sh"
+ROOT="$S4E_SCRIP"
 cd "$ROOT/src/parsers/snobol4" && make
 echo "Built: snobol4 frontend"

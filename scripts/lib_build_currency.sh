@@ -61,7 +61,7 @@ s4e_bc_assert_current() {   # $1 = artifact path, $2 = human label, $3 = repo ro
 # parser_main.c and the headers it was compiled against, whose layouts it shares with the runtime.
 assert_parser_current() {
     local lang="$1" root="${2:-}" art d deps f at newest=0 nf="" m
-    [ -n "$root" ] || root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+    [ -n "$root" ] || { . "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"; root="$S4E_SCRIP"; }
     art="$root/out/parser_$lang"
     [ -x "$art" ] || { echo "⛔ REFUSED-TO-GRADE (rc=2): out/parser_$lang not built: $art -- cure: cd $root && make parsers" >&2; return 2; }
     d="${OBJ:-/tmp/si_objs$(printf '%s' "$root" | tr / -)}/parser_$lang.d"

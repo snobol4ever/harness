@@ -14,7 +14,8 @@
 #                                   retargeted to another function is byte-identical) plus `objdump -s` of EVERY non-debug section (-fPIC
 #                                   pointer tables live in .data.rel.local/.data.rel.ro, which a -j .data/.rodata/.bss list never sees)
 build_flags_load() {
-    local root="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)}"
+    local root="${1:-}"
+    [ -n "$root" ] || { . "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"; root="$S4E_SCRIP"; }
     local db; db="$(make -C "$root" -s -pn buildinfo 2>/dev/null)" || true
     BF_CC="$(printf '%s\n' "$db" | sed -n 's/^CC :\{0,1\}= //p' | head -1)"
     BF_RT_OPT="$(printf '%s\n' "$db" | sed -n 's/^RT_OPT :\{0,1\}= //p' | head -1)"

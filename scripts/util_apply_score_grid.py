@@ -154,7 +154,7 @@ def apply_grid(score_md, grid_text, stamp, dry_run=False):
         return 1 if prose_at_risk else 0
     open(score_md, "w", encoding="utf-8").write("\n".join(lines))
     print("merged %d row(s) in place: %s" % (len(changed), "; ".join(changed)))
-    print("⛔ NOT DONE UNTIL PUSHED: commit .github/SCORE.md with the landing that carried this measurement.")
+    print("⛔ NOT DONE UNTIL PUSHED: commit %s/SCORE.md with the landing that carried this measurement." % ".github")
     return 1 if prose_at_risk else 0
 
 
@@ -166,7 +166,9 @@ def selftest():
     ok = True
     d = tempfile.mkdtemp(prefix="apply_score_grid.selftest.")
     try:
-        real = os.path.join(os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP"), "..", ".github", "SCORE.md")
+        sys.path.insert(0, HERE)
+        import harness_paths
+        real = os.path.join(str(harness_paths.github()), "SCORE.md")
         real = os.path.abspath(real)
         if not os.path.exists(real):
             print("SELFTEST REFUSED: no SCORE.md at %s -- cannot prove a merge against the real shape" % real)

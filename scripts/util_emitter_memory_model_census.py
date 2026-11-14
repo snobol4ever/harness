@@ -25,7 +25,9 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SCRIP = os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP'))
+sys.path.insert(0, HERE)
+import harness_paths
+SCRIP = os.path.normpath(str(harness_paths.scrip()))
 FAMILIES = ('fc_', 'frame_', 'zd_', 'zls_', 'xop_', 'act_', 'planner_')
 ALLOW = set()
 DEF = re.compile(r'^\s*(?:extern\s+"C"\s+)?(?:static\s+)?(?:inline\s+)?(?:const\s+)?[A-Za-z_][\w\s\*:<>,]*?[\s\*]([A-Za-z_]\w*)\s*\(([^;{}]*)\)\s*(?:const\s*)?\{')

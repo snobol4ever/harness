@@ -23,9 +23,9 @@
 # rc 0 every cell at or under the bar; rc 1 a cell above it; rc 2 a cell could not be measured (G+R+U=N asserted).
 # READ RED at SCRIP 19e10ef38 (2026-10-15, the officer): table_access m3 87.15 / m4 88.71 percent C; browse m3 91.44 / m4 92.88; geddump m4 86.00.
 # COLLECTION_ASM_BAR overrides the bar (default 1.00 percent).
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"
 refuse() { echo "⛔ REFUSED (rc=2): util_collection_asm_share: $*"; exit 2; }
-CORPUS="${CORPUS_DIR:-$(cd "$ROOT/../corpus" 2>/dev/null && pwd)}"
+CORPUS="${CORPUS_DIR:-$S4E_CORPUS}"
 [ -d "$CORPUS/benchmarks" ] || refuse "no corpus beside $ROOT (set CORPUS_DIR)"
 BAR="${COLLECTION_ASM_BAR:-1.00}"
 WITNESSES=("snobol4/table_access.sno 64 m3,m4" "prolog/bench/browse.pl 64 m3,m4" "icon/geddump.icn - m4")

@@ -34,7 +34,8 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_subject_tree.sh"
 REPO="$(s4e_subject_repo "${BASH_SOURCE[0]}")"
-MSG="${LANE_GATE_MSG:-$REPO/../harness/scripts/s4e_msg.sh}"
+. "$HERE/lib_paths.sh"
+MSG="${LANE_GATE_MSG:-$S4E_HARNESS/scripts/s4e_msg.sh}"
 PO="${S4E_POST:-/home/resources/postoffice}"
 MODEF="${LANE_GATE_MODE:-$PO/MODE}"
 

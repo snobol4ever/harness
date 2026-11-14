@@ -4,7 +4,8 @@
 # Expected: ilasm exits 0 (Operation completed successfully) for all 19.
 set -e
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+REPO="$S4E_SCRIP"
 SRC="$REPO/src"
 OUT="/tmp/sn4_net_bb_gate"
 mkdir -p "$OUT"

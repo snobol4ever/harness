@@ -3,7 +3,7 @@
 
 usage: util_inf_snobol4_coverage_census.py [--scope N] [--seeds K] [--size M] [--family F] [--step S --need H] [--tsv OUT] [--out DIR]
 
-THE VOCABULARY is corpus/demos/scriptix/infinite_snobol4/COVERAGE.tsv (the cto, R-1999; one row per construct of the SPITBOL manual v3.7,
+THE VOCABULARY is COVERAGE.tsv of the infinite_snobol4 demo, under demos/scriptix of the corpus repo (the cto, R-1999; one row per construct of the SPITBOL manual v3.7,
 with the regex that recognises it on a generated test line, the instrument that is to reach it and the DESIGN-PLAN step that adds it).
 THE MEASUREMENT: the generator (the Icon section of infinite_snobol4.md, built through util_inf_snobol4_differential.build_generator) writes a
 spread of batches at --scope N -- every walk, kind and preset the driver draws from, and from scope 11 the statement walk (kind=stmt),
@@ -21,7 +21,9 @@ once DESIGN-PLAN step 1 lands (ARCH-RANDOM-SNOBOL4-GENERATOR.md).
 import argparse, csv, hashlib, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
-INF = os.path.join(ROOT, 'corpus', 'demos', 'scriptix', 'infinite_snobol4')
+sys.path.insert(0, HERE)
+import harness_paths
+INF = os.path.join(str(harness_paths.corpus()), 'demos', 'scriptix', 'infinite_snobol4')
 VOCAB = os.path.join(INF, 'COVERAGE.tsv')
 sys.path.insert(0, HERE)
 import util_inf_snobol4_differential as drv

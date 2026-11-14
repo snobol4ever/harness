@@ -9,8 +9,8 @@
 #                                            tier (chosen by the topic's checksum over the live set, so two movers spread their wakes) and list the others;
 #                                            lon-hold or an empty tube prints nothing. Reads $S4E_TIERS (seat name root model effort color tier role) and
 #                                            MODE's FLEET: IDLE EXCEPT line (the live set; no line means every seat of the tier is live).
-s4e_wake_tiers() {   # the tiers table: S4E_TIERS when the bus set it, else the root's .github/TIERS.tsv (officer_03, 2026-11-08 10:5x: from a seat root the helper read "S4E_TIERS unset" and named nobody)
-    if [ -n "${S4E_TIERS:-}" ]; then printf '%s' "$S4E_TIERS"; else printf '%s/.github/TIERS.tsv' "${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"; fi; }
+s4e_wake_tiers() {   # the tiers table: S4E_TIERS when the bus set it, else TIERS.tsv of the .github repo (officer_03, 2026-11-08 10:5x: from a seat root the helper read "S4E_TIERS unset" and named nobody)
+    if [ -n "${S4E_TIERS:-}" ]; then printf '%s' "$S4E_TIERS"; else . "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"; printf '%s/TIERS.tsv' "$S4E_GITHUB"; fi; }
 s4e_wake_live_of_tier() {   # <tier name> -> the live seats of that tier, one per line
     local _tn _fl _ex; case "$1" in fable) _tn=1;; opus) _tn=2;; sonnet) _tn=3;; haiku) _tn=4;; *) return 0;; esac
     _fl="$(grep -m1 '^FLEET: IDLE' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null)"
@@ -47,6 +47,6 @@ s4e_wake_hint() {   # <tube> <topic> <verb>
     _pick=$(( $(printf '%s' "$_t" | cksum | cut -d' ' -f1) % _n + 1 )); eval "_s=\${$_pick}"
     _name="$(awk -F'\t' -v s="$_s" '!/^#/ && $1==s {print $2; exit}' "$(s4e_wake_tiers)" 2>/dev/null)"; [ -n "$_name" ] || _name="$_s"
     _others=""; for _x in "$@"; do [ "$_x" = "$_s" ] || _others="$_others $(awk -F'\t' -v s="$_x" '!/^#/ && $1==s {print $2; exit}' "$(s4e_wake_tiers)" 2>/dev/null)"; done
-    printf 'WAKE: SendMessage to %s now (seat %s; tube %s%s) with this first line: "%s %s: run bash harness/scripts/s4e_msg.sh next, it serves this job"\n' "$_name" "$_s" "$_tube" "${_others:+; also live:$_others}" "$_v" "$_t"
+    printf 'WAKE: SendMessage to %s now (seat %s; tube %s%s) with this first line: "%s %s: run bash %s/scripts/s4e_msg.sh next, it serves this job"\n' "$_name" "$_s" "$_tube" "${_others:+; also live:$_others}" "$_v" "$_t" harness
     printf '      DESIGN FLOWS DOWN, PROBLEMS FLOW UP (Lon 2026-11-08): the seat that moves work wakes its taker before doing anything else; a telegram wakes nobody, the coo is for emergencies.\n'
 }

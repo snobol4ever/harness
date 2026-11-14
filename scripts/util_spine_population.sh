@@ -9,7 +9,7 @@
 # rc 0 listed · rc 2 no corpus.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-C="$HERE/../../corpus"; L=""
+. "$HERE/lib_paths.sh"; C="$S4E_CORPUS"; L=""
 while [ $# -gt 0 ]; do case "$1" in --corpus) C="$2"; shift 2;; --lang) L="$2"; shift 2;; *) echo "usage: util_spine_population.sh [--corpus DIR] [--lang L]" >&2; exit 2;; esac; done
 [ -d "$C/benchmarks" ] && [ -d "$C/demos" ] || { echo "REFUSE(2): no corpus at $C" >&2; exit 2; }
 C="$(cd "$C" && pwd)"
