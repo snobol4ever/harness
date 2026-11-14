@@ -125,9 +125,9 @@ def body(key, lang, entry, reading, rows):
             "1. Reproduce, from the root with S4E_HOME set: %s\n"
             "2. The oracle: %s ; then %s\n"
             "3. Find the cause and cure it in your own root (no seat makes a worktree: Lon 2026-11-13, \"I want you to work in /home/claude folder.\"); load the skill the gate names before each edit, and commit the cure, its message naming %s, before you prove it.\n"
-            "4. Prove it in your root: the reproduce line of step 1 reads PASS for the entry in mode 3; bash harness/scripts/test_feature_reps.sh %s <the feature you touched>; bash harness/scripts/test_smoke_%s.sh.\n"  # one-disk: not a path
-            "5. Land it from your root: bash harness/scripts/s4e_land.sh --gate '<the step 1 line, grepping m3_pass=1 m3_fail=0>' <the repos you changed>; then s4e_msg.sh claim and done.\n"  # one-disk: not a path
-            "6. After one honest try that cannot land: bash harness/scripts/s4e_msg.sh escalate %s --stdin with the measurement (what you ran, what it printed), and send the WAKE it prints.\n"  # one-disk: not a path
+            "4. Prove it in your root: the reproduce line of step 1 reads PASS for the entry in mode 3; bash /home/harness/scripts/test_feature_reps.sh %s <the feature you touched>; bash /home/harness/scripts/test_smoke_%s.sh.\n"
+            "5. Land it from your root: bash /home/harness/scripts/s4e_land.sh --gate '<the step 1 line, grepping m3_pass=1 m3_fail=0>' <the repos you changed>; then s4e_msg.sh claim and done.\n"
+            "6. After one honest try that cannot land: bash /home/harness/scripts/s4e_msg.sh escalate %s --stdin with the measurement (what you ran, what it printed), and send the WAKE it prints.\n"
             % (key, entry, reading, sk, q, rd, show, have, red, q, rd, show, have, red, rep, ext, ora, re.sub(r"[^a-z0-9]+", "-", entry.lower()).strip("-")[:40] or "bug",
                lang, {"rebus": "rebus", "snocone": "snocone"}.get(lang, lang), d2d.topic_of(key, entry)))
 

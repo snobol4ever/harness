@@ -47,6 +47,6 @@ s4e_wake_hint() {   # <tube> <topic> <verb>
     _pick=$(( $(printf '%s' "$_t" | cksum | cut -d' ' -f1) % _n + 1 )); eval "_s=\${$_pick}"
     _name="$(awk -F'\t' -v s="$_s" '!/^#/ && $1==s {print $2; exit}' "$(s4e_wake_tiers)" 2>/dev/null)"; [ -n "$_name" ] || _name="$_s"
     _others=""; for _x in "$@"; do [ "$_x" = "$_s" ] || _others="$_others $(awk -F'\t' -v s="$_x" '!/^#/ && $1==s {print $2; exit}' "$(s4e_wake_tiers)" 2>/dev/null)"; done
-    printf 'WAKE: SendMessage to %s now (seat %s; tube %s%s) with this first line: "%s %s: run bash %s/scripts/s4e_msg.sh next, it serves this job"\n' "$_name" "$_s" "$_tube" "${_others:+; also live:$_others}" "$_v" "$_t" harness
+    printf 'WAKE: SendMessage to %s now (seat %s; tube %s%s) with this first line: "%s %s: run bash %s/scripts/s4e_msg.sh next, it serves this job"\n' "$_name" "$_s" "$_tube" "${_others:+; also live:$_others}" "$_v" "$_t" /home/harness
     printf '      DESIGN FLOWS DOWN, PROBLEMS FLOW UP (Lon 2026-11-08): the seat that moves work wakes its taker before doing anything else; a telegram wakes nobody, the coo is for emergencies.\n'
 }
