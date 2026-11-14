@@ -522,7 +522,7 @@ probe_rerun() {   # THE PROOF OF LAND.conf's SWITCHES (row the-lander-reruns-a-l
 [ "$mode" = probe_mail ] && { probe_mail; exit $?; }
 [ "$mode" = probe_push_refusal ] && probe_push_refusal
 probe_root_home() {   # A SEAT LANDS FROM ITS OWN ROOT (row harness-a-worktree-is-scrip-alone-everything-else-from-the-seats-root, recut on Lon's word 2026-11-13 17:4x CST), on a scratch root and scratch origins: (1) an edit committed in the root's corpus while origin moved lands from the root itself: the gate reads the root with the edit, the root's own commit is rebased onto origin and pushed, and the root ends clean at origin; (2) the sync keeps a seat's work: a local commit in harness and a tracked edit in .github stand where they were, named KEPT, with nothing stashed or reset, while the clean corpus fast-forwards to a moved origin
-    local T W log rc why="" h0 g0 f c0 r
+    local T W log rc why="" h0 g0 f c0 r f3 hc
     T="$(mktemp -d "/tmp/s4e/$seat/land-root-home-probe.XXXXXX")" || refuse "cannot make a scratch directory"
     trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
     scratch_clone "$T"; W="$T/work"; f="tests/probe_race/root-home-$$.txt"
@@ -547,7 +547,18 @@ probe_root_home() {   # A SEAT LANDS FROM ITS OWN ROOT (row harness-a-worktree-i
     [ "$(git -C "$W/harness" rev-parse HEAD)" = "$h0" ] && [ "$(git -C "$W/.github" rev-parse HEAD)" = "$c0" ] && ! git -C "$W/.github" diff --quiet && [ -z "$(git -C "$W/harness" stash list; git -C "$W/.github" stash list)" ] \
         || why="$why arm 2: the sync moved, stashed or reset the seat's work;"
     [ "$(git -C "$W/corpus" rev-parse HEAD)" = "$(git -C "$W/corpus" rev-parse origin/main)" ] || why="$why arm 2: the clean corpus did not fast-forward to its moved origin;"
-    if [ -z "$why" ]; then echo "LAND root-home-probe ok arms=2 (an edit in the root landed from the root, rebased onto a moved origin, the gate reading the root, the root clean at origin after; the sync kept a local commit and a tracked edit, KEPT, nothing stashed or reset, and fast-forwarded the clean repo)"; exit 0; fi
+    git -C "$W/.github" checkout -q -- . || refuse "root-home-probe: cannot clean the scratch .github after arm 2"
+    f3="tests/probe_race/held-$$.txt"; echo "a held commit" > "$W/corpus/$f3" && git -C "$W/corpus" add "$f3" && git -C "$W/corpus" commit -q -m "probe: a held commit in the root's corpus" \
+        || refuse "root-home-probe: cannot commit in the scratch root's corpus"
+    hc="$(git -C "$W/corpus" rev-parse HEAD)"; log="$T/arm3.log"
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$W" --gate "[ ! -e corpus/$f3 ] && [ ! -e \"\$S4E_CORPUS/$f3\" ] && [ -d corpus/tests/probe_race ] && [ -e harness/scripts/probe_local_$$.txt ] && [ -e \"\$S4E_HARNESS/scripts/probe_local_$$.txt\" ]" harness > "$log" 2>&1; rc=$?
+    sed 's/^/    arm3| /' "$log" | grep -E 'stage=(rebase|gate|push)|LAND ok|LAND RED|REFUSE' | cut -c1-200 | tail -8
+    [ "$rc" = 0 ] && grep -q '^LAND ok ' "$log" || why="$why arm 3: the harness landing beside a held corpus commit returned rc=$rc without LAND ok;"
+    git -C "$T/origin/harness.git" log --format=%s main > "$T/harness3.log"; grep -qx "probe: a local commit in the root" "$T/harness3.log" || why="$why arm 3: the harness commit is not on origin;"
+    git -C "$T/origin/corpus.git" log --format=%s main > "$T/corpus3.log"; ! grep -qx "probe: a held commit in the root's corpus" "$T/corpus3.log" || why="$why arm 3: the held corpus commit reached origin;"
+    [ "$(git -C "$W/corpus" rev-parse HEAD)" = "$hc" ] || why="$why arm 3: the held corpus commit did not stay where it was;"
+    grep -q '^LAND stage=push:corpus held: 1 unlanded' "$log" || why="$why arm 3: the push stage did not name corpus held;"
+    if [ -z "$why" ]; then echo "LAND root-home-probe ok arms=3 (an edit in the root landed from the root, rebased onto a moved origin, the gate reading the root, the root clean at origin after; the sync kept a local commit and a tracked edit, KEPT, nothing stashed or reset, and fast-forwarded the clean repo; a harness commit landed alone beside a held corpus commit, the gate reading corpus at origin, the held commit unpushed and in place)"; exit 0; fi
     trap - EXIT; echo "LAND root-home-probe RED:$why"; echo "    kept: $T"; exit 1
 }
 [ "$mode" = probe_serial ] && probe_serial
@@ -691,6 +702,60 @@ ng=""; [ -e "$home/harness/.git" ] && ng="$(new_gates "$home/harness" | tr '\n' 
 [ -z "$ng" ] || refuse "the landing adds ${ng% }: no new gate is written (Lon 2026-11-12: \"I do not want any STINKING GATES.\"; skill gates-and-witnesses section 0); fold the check into the tool it guards as a selftest verb or flag, or prove it with a program graded against its oracle"
 mark preflight "home=$home seat=$seat repos=${present[*]} gate=$(printf '%s' "$gate" | cut -c1-120)"
 ahead() { git -C "$(rd "$1")" rev-list --count origin/main..HEAD; }
+# THE NAMED REPOS ARE THE LANDING (the coo 2026-11-13 19:5x CST, on senior_12's measurement: with no worktrees a root holds a parked cure in one repo while its seat lands
+# another, and the lander refused "carries unlanded commits and is not named"). When REPO is named, a repo that carries commits and is NOT named is HELD: it is never rebased
+# or pushed and its commits stay as they are, and every stage that reads it (the build, the tables, the gate) reads its origin/main, never the unpushed tree: the one-disk
+# checkout (lib_paths.sh) when that is clean at the same commit, else a shared clone of origin/main under the landing's log. The gate runs in a view home of links
+# (<repo> -> the home's own, or the held repo's origin view), so a relative path in a DONE-WHEN reads the same. A stale table whose output lies in a held repo refuses.
+held=()
+if [ "${#names[@]}" -gt 0 ]; then for r in "${present[@]}"; do named "$r" || [ "$(ahead "$r")" = 0 ] || held+=("$r"); done; fi
+is_held() { local x; for x in "${held[@]}"; do [ "$x" = "$1" ] && return 0; done; return 1; }
+VH=""
+rv() { if is_held "$1"; then printf '%s/%s' "$VH" "$1"; else rd "$1"; fi; }
+home_is_scrip() { [ -d "$home/src" ] && [ -f "$home/Makefile" ] && [ -e "$home/.git" ]; }
+vhome() { if [ "${#held[@]}" = 0 ]; then printf '%s' "$home"; elif home_is_scrip; then rv SCRIP; else printf '%s' "$VH"; fi; }
+one_disk_of() { case "$1" in corpus) printf '%s' "$S4E_CORPUS" ;; harness) printf '%s' "$S4E_HARNESS" ;; .github) printf '%s' "$S4E_GITHUB" ;; esac; }
+held_views() {   # after every fetch: point each held repo's view at the home's origin/main of that repo
+    local r sha od oh sv i sp
+    [ "${#held[@]}" -gt 0 ] || return 0
+    VH="$LOG/view"; mkdir -p "$VH" || refuse "cannot make the view home $VH"
+    for r in "${present[@]}"; do
+        is_held "$r" || { ln -sfn "$(rd "$r")" "$VH/$r"; continue; }
+        sha="$(git -C "$(rd "$r")" rev-parse origin/main)" || refuse "held $r has no origin/main"
+        od="$(one_disk_of "$r")"; i=0
+        if [ -n "$od" ] && [ "$(cd "$od" 2>/dev/null && pwd -P)" = "$(cd "$(rd "$r")" && pwd -P)" ]; then od=""; fi
+        while [ -n "$od" ] && [ "$i" -lt 90 ] && oh="$(git -C "$od" rev-parse HEAD 2>/dev/null)" && [ "$oh" != "$sha" ] && git -C "$(rd "$r")" merge-base --is-ancestor "$oh" "$sha" 2>/dev/null; do
+            sleep 3; i=$((i + 3))   # the one-disk checkout is behind origin: util_shared_pristine.sh brings it there each minute
+        done
+        if [ -n "$od" ] && [ "$(git -C "$od" rev-parse HEAD 2>/dev/null)" = "$sha" ] && [ -z "$(git -C "$od" --no-optional-locks status --porcelain --untracked-files=no 2>/dev/null)" ]; then
+            ln -sfn "$od" "$VH/$r"; held_from[$r]="one-disk $od"
+        else
+            sv="$LOG/held.$r"
+            if [ ! -e "$sv/.git" ]; then
+                git clone -q --shared --no-checkout "$(rd "$r")" "$sv" > "$LOG/held.$r.log" 2>&1 || refuse "cannot clone held $r for its origin view: $(tail -1 "$LOG/held.$r.log")"
+                if [ "$(git -C "$(rd "$r")" config --bool core.sparseCheckout 2>/dev/null)" = true ]; then   # a sparse home gets a sparse view (the probes' corpus): never a full checkout it lacks
+                    if [ "$(git -C "$(rd "$r")" config --bool core.sparseCheckoutCone 2>/dev/null)" = true ]; then
+                        mapfile -t sp < <(git -C "$(rd "$r")" sparse-checkout list 2>/dev/null)
+                        git -C "$sv" sparse-checkout set --cone "${sp[@]}" > "$LOG/held.$r.log" 2>&1 || refuse "cannot make the sparse view of held $r: $(tail -1 "$LOG/held.$r.log")"
+                    else
+                        git -C "$sv" config core.sparseCheckout true && cp "$(cd "$(rd "$r")" && git rev-parse --path-format=absolute --git-path info/sparse-checkout)" "$sv/.git/info/sparse-checkout"                             || refuse "cannot copy the sparse patterns of held $r"
+                    fi
+                fi
+            fi
+            git -C "$sv" checkout -q --detach "$sha" > "$LOG/held.$r.log" 2>&1 || refuse "cannot check out origin/main of held $r: $(tail -1 "$LOG/held.$r.log")"
+            ln -sfn "$sv" "$VH/$r"; held_from[$r]="clone ${sha:0:9}"
+        fi
+    done
+    set_genv
+}
+declare -A held_from=()
+set_genv() {
+    genv=(env S4E_HOME="$(vhome)" S4E_SCRIP="$(rv SCRIP)")
+    [ -e "$(rd corpus)/.git" ] && genv+=(S4E_CORPUS="$(rv corpus)")
+    [ -e "$(rd harness)/.git" ] && genv+=(S4E_HARNESS="$(rv harness)")
+    [ -e "$(rd .github)/.git" ] && genv+=(S4E_GITHUB="$(rv .github)")
+    if is_held harness; then TH="$(rv harness)"; TSV="$TH/scripts/generated_tables.tsv"; fi
+}
 fetch() {
     local r
     for r in "${present[@]}"; do g "$r" fetch -q origin main > "$LOG/fetch.$r" 2>&1 || red fetch "repo=$r $(tail -1 "$LOG/fetch.$r")"; done
@@ -699,6 +764,7 @@ fetch() {
 rebase() {
     local r a u
     for r in "${present[@]}"; do
+        is_held "$r" && continue
         a="$(ahead "$r")"
         if [ "$a" -gt 0 ]; then
             named "$r" || refuse "$r carries $a unlanded commit(s) and is not named: the gate would read a tree that is not pushed"
@@ -707,7 +773,8 @@ rebase() {
             g "$r" merge -q --ff-only origin/main > "$LOG/rebase.$r" 2>&1 || red rebase "repo=$r cannot fast-forward to origin/main: $(tail -1 "$LOG/rebase.$r")"
         fi
     done
-    mark rebase "$(for r in "${present[@]}"; do printf '%s+%s ' "$r" "$(ahead "$r")"; done)${merged_names:+merged_outputs=$merged_outputs (${merged_names# }) taken from the replayed side, regenerated by the regenerate stage}"
+    held_views
+    mark rebase "$(for r in "${present[@]}"; do if is_held "$r"; then printf '%s=held+%s(%s) ' "$r" "$(ahead "$r")" "${held_from[$r]}"; else printf '%s+%s ' "$r" "$(ahead "$r")"; fi; done)${merged_names:+merged_outputs=$merged_outputs (${merged_names# }) taken from the replayed side, regenerated by the regenerate stage}"
 }
 merged_outputs=0; merged_names=""
 resolve_output_conflicts() {   # <repo> (step 19: generated tables merge by regeneration, never by hand): while the rebase stops on conflicts confined to registered generated
@@ -730,7 +797,7 @@ resolve_output_conflicts() {   # <repo> (step 19: generated tables merge by rege
 }
 written=(); summary=""; binfo=""
 regen() {
-    local phase="$1" k c w rc ph stale=() pids=()
+    local phase="$1" k c w rc ph o stale=() pids=()
     written=()
     mapfile -t ks < <(awk -F'\t' -v p="^($phase)\$" '!/^#/ && $1 != "name" && $2 ~ p && !s[$1]++ {print $1}' "$TSV")
     [ "${#ks[@]}" -gt 0 ] || refuse "the registry has no $phase-phase table"
@@ -754,6 +821,7 @@ regen() {
         esac
     done
     for k in "${stale[@]}"; do
+        while IFS= read -r o; do is_held "${o%%/*}" && refuse "table $k is stale and writes ${o}, in ${o%%/*}, which is held (its commits are not named): name ${o%%/*} too, or land its commits first"; done < <(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $3}' "$TSV")
         w="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $5; exit}' "$TSV")"
         c="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $4; exit}' "$TSV")"
         ( cd "$(dirname "$TH")" && "${genv[@]}" timeout -k 5 900 bash -c "$w" ) > "$LOG/write.$k" 2>&1 7>&- 8>&- 9>&- || red "$2" "table=$k write failed: $(tail -1 "$LOG/write.$k")"
@@ -794,12 +862,12 @@ commit_regen() {
 build() {   # THE LAND CLASS GUARDS THE BUILD ONLY (CIO-136): the make alone takes a land slot, with S4E_ADMITTED unset for the make so the Makefile's compile door takes its own slots; the gate, the fetch and the rebase take none
     local -a adm=(bash "$HERE/util_run_slot.sh" --admit land env -u S4E_ADMITTED)
     [ -n "${S4E_LAND_UNADMITTED:-}" ] && adm=(env)
-    spawn "$LOG/make.$1.log" "$(rd SCRIP)" "${adm[@]}" timeout -k 5 1800 make -j8 || red "$1" "make -j8 rc=$?: $(grep -m1 -E 'error|Error' "$LOG/make.$1.log" | cut -c1-200)"
-    binfo="$(sed -n 's/^source //p' "$(rd SCRIP)/out/buildinfo" 2>/dev/null | head -1)"
+    spawn "$LOG/make.$1.log" "$(rv SCRIP)" "${adm[@]}" timeout -k 5 1800 make -j8 || red "$1" "make -j8 rc=$?: $(grep -m1 -E 'error|Error' "$LOG/make.$1.log" | cut -c1-200)"
+    binfo="$(sed -n 's/^source //p' "$(rv SCRIP)/out/buildinfo" 2>/dev/null | head -1)"
 }
 gate_run() {
     local rc
-    spawn "$LOG/gate.log" "$home" "${genv[@]}" timeout -k 5 "$gt" bash -c "$gate"; rc=$?
+    spawn "$LOG/gate.log" "$(vhome)" "${genv[@]}" timeout -k 5 "$gt" bash -c "$gate"; rc=$?
     tail -5 "$LOG/gate.log" | sed 's/^/    gate| /'
     case "$rc" in
         0) mark gate "rc=0 on $(git -C "$(rd SCRIP)" rev-parse --short=9 HEAD)" ;;
@@ -813,7 +881,7 @@ gate_run_serial() {   # <label>: the last round's ONE gate, run UNDER the lease 
     local rc sgt="$gt"
     [ "$sgt" -gt "$serial_cap" ] && sgt="$serial_cap"
     serial_round=1
-    spawn "$LOG/gate.log" "$home" "${genv[@]}" timeout -k 5 "$sgt" bash -c "$gate"; rc=$?
+    spawn "$LOG/gate.log" "$(vhome)" "${genv[@]}" timeout -k 5 "$sgt" bash -c "$gate"; rc=$?
     tail -5 "$LOG/gate.log" | sed 's/^/    gate| /'
     case "$rc" in
         0) mark "regate:lease:serial" "$1 (the gate ran under the lease, cap ${sgt}s)" ;;
@@ -882,6 +950,7 @@ pushes() {   # the pushes in ORDER; rc 3 when one is refused (land_round decides
     local r
     for r in "${ORDER[@]}"; do
         [ -e "$(rd "$r")/.git" ] || continue
+        is_held "$r" && { echo "LAND stage=push:$r held: $(ahead "$r") unlanded commit(s), not named, left as they are"; continue; }
         push_one "$r" || return 3
     done
     return 0
