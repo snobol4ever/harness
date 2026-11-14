@@ -70,6 +70,8 @@ if [ -n "$grid" ]; then
     elif [ -s "$cc" ]; then extra="$(cat "$cc")
 (the cycle line and the countdown above were rendered at $(date -r "$cc" +%H:%M); the live read did not finish in 8 s)"; fi
 fi
+# NO VERDICT IS NEVER SHOWN (Lon 2026-11-14, verbatim: "get stop-turn banner to not say NO VERDICT."): when the verb printed no verdict word this turn (it ran over its budget under load), the last verdict in the cache is shown, and only with no cache at all PENDING, the banner is still being made.
+[ -n "$word" ] || word="$(grep -xE 'SUCCESS|IN-PROGRESS|DRAIN|STOP|FAILURE' "$c" 2>/dev/null | tail -1)"; [ -n "$word" ] || word="PENDING"
 # COLOUR AND A FIRST NEW LINE (Lon 2026-11-11 13:1x CST, in officer_04's window, verbatim: "Notice the Stop says: forgot the new line and the color is gray not green."): the client prints hook text
 # gray after "Stop says:", so the icon is drawn in coloured emoji squares, which keep their colour, and it starts on its own line. Each "#" is a square, each "." two spaces (an emoji is two columns).
 case "$word" in
@@ -93,7 +95,12 @@ case "$word" in
 ..#..
 .....
 ..#..' ;;
-  *)           ic='⛔'; sq='🟥'; [ -n "$word" ] || word="NO VERDICT"; pat='#...#
+  PENDING)     ic='⏳'; sq='🟨'; pat='#####
+.###.
+..#..
+.###.
+#####' ;;
+  *)           ic='⛔'; sq='🟥'; pat='#...#
 .#.#.
 ..#..
 .#.#.
