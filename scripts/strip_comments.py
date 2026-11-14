@@ -14,9 +14,11 @@ Usage:
   strip_comments.py --check          # rc=1 if any comment (other than a 200-char separator) or blank line survives; the R5 gate arm
 """
 import os, re, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
 
 KEEP_SEPARATORS = True   # Option A (default). Set False for Option B (literal zero).
-SRC_ROOT = os.path.join(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP"), "src")
+SRC_ROOT = os.path.join(str(harness_paths.scrip()), "src")
 EXTS = (".c", ".h", ".cpp", ".hpp", ".y", ".l", ".s", ".S")
 GENERATED = re.compile(r"(\.lex\.c|\.tab\.c|\.tab\.h|(^|/)lex\.[^/]+\.c)$")
 SEP = re.compile(r"^\s*/\*[-=]+\*/\s*$")

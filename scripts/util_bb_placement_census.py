@@ -88,10 +88,12 @@ rc 0 = measured; rc 2 = the instrument did not measure (a program unmeasured).
 import argparse, collections, hashlib, json, os, re, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SC = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
+sys.path.insert(0, HERE)
+import harness_paths
+SC = str(harness_paths.scrip())
 ROOT = os.environ.get('S4E_HOME') or os.path.dirname(SC)
 SCRIP = os.path.join(SC, 'scrip')
-CORPUS = os.path.join(ROOT, 'corpus')
+CORPUS = str(harness_paths.corpus(ROOT))
 EXT = {'.sno': 'snobol4', '.icn': 'icon', '.pl': 'prolog', '.sc': 'snocone', '.reb': 'rebus', '.pas': 'pascal', '.raku': 'raku'}
 GEN_KINDS = {'SUSPEND', 'PROC_GEN', 'CREATE', 'ACTIVATE', 'CORET', 'COFAIL'}
 HOMES = re.compile(r'^\[HOMES\] g=(-?\d+) graph=(\S+) (all|local)=(\S+) (?:kind=(\S+) )?home=(\S+) off=(-?\d+)(?: xf=(-?\d+) xfwhy=(\S+))?$')

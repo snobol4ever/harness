@@ -26,7 +26,9 @@ A defined data symbol objdump cannot place is REFUSED rc=2, never guessed into e
 import os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
+sys.path.insert(0, HERE)
+import harness_paths
+ROOT = str(harness_paths.scrip())
 TREES = {"runtime": ("runtime",), "compiler": ("parsers", "lower", "emitter", "templates", "ir", "optimizer", "driver")}
 
 

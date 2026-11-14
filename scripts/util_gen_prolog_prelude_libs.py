@@ -123,7 +123,9 @@ rc 0 written / in sync; 1 stale (--check); 2 refused (a construct named above, o
 import argparse, os, re, shutil, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
+sys.path.insert(0, HERE)
+import harness_paths
+ROOT = str(harness_paths.scrip())
 PRELUDE_DIR = os.path.join(ROOT, "src", "parsers", "prolog", "prelude")
 DEFAULT_OUT = os.path.join(ROOT, "src", "parsers", "prolog", "prolog_prelude_libs.inc")
 REFS_PL = os.path.join(HERE, "util_gen_prolog_prelude_libs_refs.pl")
