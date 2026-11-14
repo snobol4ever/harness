@@ -260,11 +260,11 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     # 15 s for S4E_REQ_FRESH_WAIT seconds (900); only past that does it grade a turn behind, and the log says REQUEST_BASE_STALE.
     rm -f "$TMPDIR/cycle/base.fetched"
     local want0 tq; tq=$(( $(date +%s) + ${S4E_REQ_FRESH_WAIT:-900} ))
-    choose_base 2>> "$out" || { echo "2 $(( $(date +%s) - t0 ))"; return; }   # a request runs on origin's newest heads, never the root's (no fallback)
+    choose_base 2>> "$out" || { echo "3 $(( $(date +%s) - t0 ))"; return; }   # a request runs on origin's newest heads, never the root's (no fallback); 3: no base yet, it is pending again
     want0="$(heads_of "$S4E" origin/main)"
     until base_holds "$BASE" "$want0"; do
         [ "$(date +%s)" -ge "$tq" ] && { echo "REQUEST_BASE_STALE $BASE: no base reached origin's heads of the request ($want0) in ${S4E_REQ_FRESH_WAIT:-900} s; graded a turn behind" >> "$out"; break; }
-        exec 8<&-; sleep 15; choose_base 2>> "$out" || { echo "2 $(( $(date +%s) - t0 ))"; return; }
+        exec 8<&-; sleep 15; choose_base 2>> "$out" || { echo "3 $(( $(date +%s) - t0 ))"; return; }
     done
     local T_SCRIP T_CORPUS T_HARNESS T_GITHUB; pin "$BASE"
     dir="$(tp "$BASE" "$dir")"; alls="$(tp "$BASE" "$alls")"; echo "REQUEST_BASE $BASE SCRIP=$(git -C "$T_SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$T_CORPUS" rev-parse --short=10 HEAD) binary=$SBIN" >> "$out"
@@ -276,7 +276,12 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     echo "$rc $(( $(date +%s) - t0 ))"; }
 finish_request() {   # name rc secs: the file lands in done/ with its per-entry verdicts and one served= line
     local name="$1" rc="$2" secs="$3" s="$RQ/serving/$1" e erc body tree n=0
-    tree="$(git -C "$S4E_SCRIP" rev-parse --short=9 HEAD 2>/dev/null)"; body="$(cat "$s" 2>/dev/null)"
+    # THE VERDICT NAMES THE TREE IT WAS GRADED ON (the grader 2026-11-14, on the coo's telegram 11:3x CST and the cfo's measurement: every served
+    # request read tree=83c939215, the grader root's SCRIP, which no request runs on since the moving base; and a request refused for want of a base
+    # before the first build of a restart was filed as an answer, rc 2, so a junior's close read it as a verdict). The tree is the SCRIP of the
+    # REQUEST_BASE line its own run logged; a request with no such line was graded on no base and says so. A request no base can take yet is rc 3
+    # in run_request and goes back to pending (REQUEST_PENDING in CYCLE.log), never to done/.
+    tree="$(sed -n 's/^REQUEST_BASE [^ ]* SCRIP=\([0-9a-f]*\) .*/\1/p' "$TMPDIR/cycle/req.$name.log" 2>/dev/null | tail -1 | cut -c1-9)"; tree="${tree:-no-base}"; body="$(cat "$s" 2>/dev/null)"
     for e in $(sed -n 's/^entries=//p' "$s" | head -1 | tr ',' ' '); do
         erc="$rc"; [ "$rc" = 1 ] && { grep -qE "^  (FAIL|CRASH|HANG|UNPROVEN) [^ ]+ ([^ ]+__)?$e[: ]" "$TMPDIR/cycle/req.$name.log" 2>/dev/null && erc=1 || erc=0; }
         body="$body"$'\n'"graded=$e"$'\n'"rc=$erc"; n=$((n+1)); done
@@ -446,7 +451,9 @@ while :; do
         if [ "$low" -lt "$total" ]; then IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$low]}"; state_put "$lap" "$low" "$total" "$key" "$cell" running; fi
         dp=""; wait -n -p dp "${!RUN[@]}"; [ -n "$dp" ] && [ -n "${RUN[$dp]:-}" ] || continue
         i="${RUN[$dp]}"; ln="${LANE[$dp]:-f}"; unset 'RUN[$dp]' 'LANE[$dp]'
-        case "$i" in r:*) rn="${i#r:}"; rc=2; secs=0; read -r rc secs < "$TMPDIR/cycle/rres.$rn"; rm -f "$TMPDIR/cycle/rres.$rn"; finish_request "$rn" "$rc" "$secs"; continue;; esac
+        case "$i" in r:*) rn="${i#r:}"; rc=2; secs=0; read -r rc secs < "$TMPDIR/cycle/rres.$rn"; rm -f "$TMPDIR/cycle/rres.$rn"
+            if [ "$rc" = 3 ]; then mv -f "$RQ/serving/$rn" "$RQ/" 2>/dev/null; log "REQUEST_PENDING lap=$lap $rn: no base holds a build yet (base.log); it waits for one, never graded on the root"; continue; fi
+            finish_request "$rn" "$rc" "$secs"; continue;; esac
         IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$i]}"
         rc=2; secs=0; read -r rc secs < "$TMPDIR/cycle/res.$i"; rm -f "$TMPDIR/cycle/res.$i"
         log "CELL lap=$lap $((i+1))/$total $key $cell rc=$rc secs=$secs lane=$ln"
