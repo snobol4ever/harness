@@ -168,6 +168,7 @@ wt_cap_scan() {
 # in it; the lander read LAND RED stage=gate rc=1 with an empty gate.log): s4e_land.sh --home <wt> holds <LAND_TOP>/<its seat>/land.<sha1 of the path, 12>.lock
 # on fd 9 for the whole landing, and its children hold no cwd inside the worktree between steps, so a held lock is the one proof that a landing is using it.
 LAND_TOP="${S4E_LAND_LOCK_TOP:-/tmp/s4e}"
+if [ "${PO:-}" = /home/resources/postoffice ]; then SWEEPS="${S4E_WT_SWEEPS:-/home/resources/progress/WORKTREE_SWEEPS.tsv}"; else SWEEPS="${S4E_WT_SWEEPS:-${PO:-/tmp}/WORKTREE_SWEEPS.tsv}"; fi   # the sweep's ledger; a probe's scratch postoffice keeps its own
 wt_land_lock() { printf '%s/%s/land.%s.lock' "$LAND_TOP" "$2" "$(printf '%s' "$1" | sha1sum | cut -c1-12)"; }
 wt_landing() {
     local lf h
@@ -186,6 +187,12 @@ sweep_dead() {
         [ -f "$d/.s4e-worktree" ] || continue
         row=""; st=""
         owner="$(basename "$(dirname "$d")")"; name="${d##*/wt-}"
+        # THE CYCLE'S BASES ARE THE CYCLE'S, AND A HELD WORKTREE IS IN USE (the cio 2026-11-14, on the grader's measurement: wt-base2, the cycle's current base, was removed
+        # under the cycle at about 17:2xZ; no baton named it after the cutover, a base's folder mtime does not move while chunks read it, so it read unnamed and idle, and no
+        # log named the remover). The sweep never takes wt-base<N> under the grader's top (s4e_cycle.sh makes and retires its own bases), never a worktree whose .s4e-hold is
+        # held by a live process (a chunk holds its base shared for its life), and writes one line a removal.
+        case "$owner/$name" in grader/base[0-9]*) continue ;; esac
+        [ -e "$d/.s4e-hold" ] && ! flock -n "$d/.s4e-hold" true 2>/dev/null && continue
         b="$(grep -lxF "WORKTREE: $d" "$BATONS"/*.task.md 2>/dev/null | head -1)"
         if [ -z "$b" ]; then cls=unnamed; floor=7200
         else
@@ -216,6 +223,8 @@ sweep_dead() {
         rm -f "$lf"; exec 7>&-
         n=$((n + 1))
         case "$cls" in done) nd=$((nd + 1)) ;; left) nl=$((nl + 1)) ;; unnamed) nu=$((nu + 1)) ;; esac
+        { [ -s "$SWEEPS" ] || printf '# at_utc\tworktree\tclass\tidle_s\trow\tpatch  -- one line a worktree the sweep removed (s4e_worktree.sh sweep)\n'
+          printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "$d" "$cls" "$age" "${row:--}" "${pf:--}"; } >> "$SWEEPS" 2>/dev/null || true
         if [ -n "$pf" ] && [ -n "$b" ]; then printf -- '- [sweep] worktree %s removed %s; patch %s\n' "$d" "$cls" "$pf" >> "$b"; fi
     done; done
     echo "SWEPT $n done=$nd left=$nl unnamed=$nu"
@@ -364,6 +373,7 @@ cap_probe() {
 # wt-phsig, each with a committed unlanded change, while a waiter of the seat was armed to land it). Prints the SWEEP-LAND line; rc 0 only when every arm holds.
 sweep_land_probe() {
     local pt="$SEATDIR/sweepprobe-$(date -u +%H%M%S)-$$" w lf holder namer i kept=no freed=no later=no landed=no ahead=no named=no out1 out2 g
+    SWEEPS="$pt.sweeps.tsv"; export S4E_WT_SWEEPS="$SWEEPS"   # a probe writes only scratch state: its removals never enter the live ledger
     mkdir -p "$pt/$SEAT" "$pt/lander" "$pt/po/tasks" || die "REFUSE(2): cannot make $pt" 2
     for w in held free; do mkdir -p "$pt/$SEAT/wt-$w" && printf 'name=%s\nseat=%s\n' "$w" "$SEAT" > "$pt/$SEAT/wt-$w/.s4e-worktree" && touch -d '3 hours ago' "$pt/$SEAT/wt-$w" || die "REFUSE(2): cannot plant $pt/$SEAT/wt-$w" 2; done
     mkdir -p "$pt/$SEAT/wt-landed" && printf 'name=landed\nseat=%s\n' "$SEAT" > "$pt/$SEAT/wt-landed/.s4e-worktree" && touch -d '45 minutes ago' "$pt/$SEAT/wt-landed" || die "REFUSE(2): cannot plant $pt/$SEAT/wt-landed" 2

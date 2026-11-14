@@ -45,6 +45,7 @@
 #   --tables     print the generated-table registry (generated_tables.tsv) and run nothing
 #   --probe-rerun  the proof of LAND.conf's switches on scratch origins (five arms); prints LAND rerun-probe ok
 #   --probe-root-home  the proof of a landing from a seat's own root on a scratch root (two arms); prints LAND root-home-probe ok
+#   --probe-finish  a landing of two repos whose second push is overtaken after its one serial round is spent finishes under its lease; prints LAND finish-probe ok
 #   --probe-table-merge  two landings that each add a row to one container's ALL.csv and PARTITION.tsv both land (the second merges by entry key); two that change one cell
 #                differently read RED with the table named; prints LAND table-merge-probe ok
 # A SEAT LANDS FROM ITS OWN ROOT (officer_02 2026-11-13, row harness-a-worktree-is-scrip-alone-everything-else-from-the-seats-root; Lon 17:4x CST, in the coo's window,
@@ -79,8 +80,16 @@ fi
 SELF="$S4E_LAND_SELF"; HERE="$(cd "$(dirname "$SELF")" && pwd)"; RUNNING_COPY="${BASH_SOURCE[0]}"
 ORDER=(SCRIP harness corpus .github)
 home=""; gate=""; row=""; gt=1800; tries=""; mode=land; names=(); touches=""; proved=""
-refuse() { declare -F ledger > /dev/null && ledger refuse; echo "LAND REFUSE(2) $*"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 2; }
-red() { declare -F ledger > /dev/null && ledger "red:$1"; echo "LAND RED stage=$1 $2"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 1; }
+half_open=0
+half_note() {   # the landing ends with part of it on origin: said loudly and written down, since every other seat's table check and build now read a tree no landing proved
+    [ "${half_open:-0}" = 1 ] || return 0
+    local f="${S4E_LAND_HALF:-$(dirname "${LEDGER:-/home/resources/progress/LANDINGS.tsv}")/HALF_LANDED.tsv}"
+    echo "LAND ⛔ ORIGIN IS HALF-LANDED: ${pushed[*]:-?} is on origin and the rest of this landing is not. Run the same landing again AT ONCE (it lands the rest); tell the cio if it cannot."
+    { [ -s "$f" ] || printf '# at_utc\tseat\trow\ton_origin\thome  -- a landing that ended with part of it pushed (s4e_land.sh); the same landing run again lands the rest\n'
+      printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "${seat:-?}" "${row:-gate}" "${pushed[*]:-?}" "${home:-?}"; } >> "$f" 2>/dev/null || true
+}
+refuse() { declare -F ledger > /dev/null && ledger refuse; half_note; echo "LAND REFUSE(2) $*"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 2; }
+red() { declare -F ledger > /dev/null && ledger "red:$1"; half_note; echo "LAND RED stage=$1 $2"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 1; }
 ORIG_ARGS=("$@")   # fleet-control step 3: the landing re-runs itself under the land class admission below
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -98,6 +107,7 @@ while [ $# -gt 0 ]; do
         --probe-land-class) mode=probe_land_class; shift ;;
         --probe-rerun) mode=probe_rerun; shift ;;
         --probe-table-merge) mode=probe_table_merge; shift ;;
+        --probe-finish) mode=probe_finish; shift ;;
         --probe-root-home) mode=probe_root_home; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
@@ -567,6 +577,35 @@ probe_table_merge() {   # THE KEYED MERGE OF A CONTAINER'S TABLES, on scratch or
     echo "LAND table-merge-probe ok arms=2 (two landings that each added a row to one container both landed, origin's ALL.csv holding both counted 1 to 5 and its PARTITION.tsv both; two that changed one cell differently read RED at the rebase with the table named, nothing pushed, the tree as it was)"
     exit 0
 }
+probe_finish() {   # A LANDING THAT HAS PUSHED ONE REPO FINISHES, on scratch origins: the landing changes harness and corpus; a racer lands in the landing's corpus directory during the gate (the one serial round is spent under the lease), a second racer lands there after the lease's fetch (the plant), so harness is pushed and the corpus push is overtaken: the landing rebases, gates once more under the lease and pushes corpus, and origin never stays half-landed
+    local T log rc R hb cb
+    T="$(mktemp -d "/tmp/s4e/$seat/land-finish.XXXXXX")" || refuse "cannot make a scratch directory"
+    trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+    rr() { echo "LAND finish-probe RED: $*"; echo "    kept: $T"; trap - EXIT; exit 1; }
+    scratch_clone "$T"; R="$T/racer"
+    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$R" && git -C "$R" sparse-checkout set --cone tests/probe_race && git -C "$R" reset -q --hard HEAD || refuse "probe: cannot clone the racer"
+    git -C "$R" config user.name LCherryholmes; git -C "$R" config user.email lcherryh@yahoo.com
+    racer() {   # <script> <marker> <file>: once, land a file under corpus/tests/probe_race on the scratch origin
+        printf '#!/usr/bin/env bash\n[ -e "%s" ] && exit 0\n: > "%s"\ncd "%s" && git pull -q --rebase origin main' "$T/$2" "$T/$2" "$R" > "$T/$1"
+        printf ' && mkdir -p tests/probe_race && echo race > "tests/probe_race/%s" && git add -A && git commit -q -m "probe: a racer lands %s" && git push -q origin HEAD:main\n' "$3" "$3" >> "$T/$1"; }
+    printf 'tries=1\ntouches=derived\ntables=affected\n' > "$T/po/LAND.conf"
+    mkdir -p "$T/work/harness/probe_own" "$T/work/corpus/tests/probe_race" && echo own > "$T/work/harness/probe_own/f-$$.txt" && echo own > "$T/work/corpus/tests/probe_race/own-$$.txt" \
+        && git -C "$T/work/harness" add -A && git -C "$T/work/harness" commit -q -m "probe: the landing changes harness" && git -C "$T/work/corpus" add -A && git -C "$T/work/corpus" commit -q -m "probe: the landing changes corpus" || refuse "probe: cannot commit the landing"
+    racer raceA.sh racedA "finish-a-$$.txt"; racer raceB.sh racedB "finish-b-$$.txt"
+    hb="$(git -C "$T/origin/harness.git" rev-parse main)"; cb="$(git -C "$T/origin/corpus.git" rev-parse main)"
+    log="$T/land.log"
+    S4E_LAND_HALF="$T/half.tsv" S4E_LAND_PLANT="bash $T/raceB.sh" S4E_LAND_UNADMITTED=1 S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate "echo g >> $T/gates && bash $T/raceA.sh" > "$log" 2>&1; rc=$?
+    sed 's/^/    finish| /' "$log" | grep -E 'regate|stage=finish|REJECTED|HALF|LAND ok|LAND RED|REFUSE' | cut -c1-200 | tail -7
+    [ "$rc" = 0 ] && grep '^LAND stage=regate:lease:serial ' "$log" > /dev/null && grep '^LAND stage=push:corpus REJECTED' "$log" > /dev/null && grep '^LAND stage=finish attempt=1' "$log" > /dev/null && grep '^LAND ok ' "$log" > /dev/null \
+        || rr "rc=$rc: expected the serial round spent, the corpus push overtaken, one finish attempt and LAND ok"
+    git -C "$T/origin/harness.git" log --format=%s main | grep -x "probe: the landing changes harness" > /dev/null && git -C "$T/origin/corpus.git" log --format=%s main | grep -x "probe: the landing changes corpus" > /dev/null \
+        || rr "origin does not hold both halves of the landing (harness $(git -C "$T/origin/harness.git" rev-parse --short main), corpus $(git -C "$T/origin/corpus.git" rev-parse --short main))"
+    [ ! -s "$T/half.tsv" ] || rr "a landing that finished wrote a half-landed line: $(tail -1 "$T/half.tsv")"
+    [ "$(wc -l < "$T/gates")" = 3 ] || rr "the gate ran $(wc -l < "$T/gates") time(s), expected 3 (the first, the serial round, the finish)"
+    echo "LAND finish-probe ok (a landing of harness and corpus whose corpus push was overtaken after its serial round was spent rebased, gated once more under its lease and pushed corpus: both halves on origin, no half-landed line, three gate runs)"
+    exit 0
+}
+[ "$mode" = probe_finish ] && probe_finish
 [ "$mode" = probe_table_merge ] && probe_table_merge
 [ "$mode" = probe ] && probe
 [ "$mode" = probe_mail ] && { probe_mail; exit $?; }
@@ -962,7 +1001,7 @@ build() {   # THE LAND CLASS GUARDS THE BUILD ONLY (CIO-136): the make alone tak
 }
 gate_run() {
     local rc
-    spawn "$LOG/gate.log" "$(vhome)" "${genv[@]}" timeout -k 5 "$gt" bash -c "$gate"; rc=$?
+    spawn "$LOG/gate.log" "$(vhome)" "${genv[@]}" S4E_CORE_HELD=1 S4E_RUN_SLOT_HELD=1 timeout -k 5 "$gt" bash -c "$gate"; rc=$?   # A LANDING'S GATE TAKES NO CORE TOKEN (the cio 2026-11-14, on the cto's measurement relayed by the coo: a gate run through the harness waited minutes for run slots while origin moved in three repos, and the landing was refused at the push; run directly it took 40 s and landed): the gate's own runs wait in no line; the kernel's one limit still bounds them
     tail -5 "$LOG/gate.log" | sed 's/^/    gate| /'
     case "$rc" in
         0) mark gate "rc=0 on $(git -C "$(rd SCRIP)" rev-parse --short=9 HEAD)" ;;
@@ -976,7 +1015,7 @@ gate_run_serial() {   # <label>: the last round's ONE gate, run UNDER the lease 
     local rc sgt="$gt"
     [ "$sgt" -gt "$serial_cap" ] && sgt="$serial_cap"
     serial_round=1
-    spawn "$LOG/gate.log" "$(vhome)" "${genv[@]}" timeout -k 5 "$sgt" bash -c "$gate"; rc=$?
+    spawn "$LOG/gate.log" "$(vhome)" "${genv[@]}" S4E_CORE_HELD=1 S4E_RUN_SLOT_HELD=1 timeout -k 5 "$sgt" bash -c "$gate"; rc=$?
     tail -5 "$LOG/gate.log" | sed 's/^/    gate| /'
     case "$rc" in
         0) mark "regate:lease:serial" "$1 (the gate ran under the lease, cap ${sgt}s)" ;;
@@ -1024,15 +1063,20 @@ push_one() {
 # SCRIP/Makefile, a generated table's output, or one of the row's TOUCHES: prefixes; a landing with no TOUCHES re-gates on any change at all.
 declare -A origin_seen
 note_origins() { local r; for r in "${present[@]}"; do origin_seen[$r]="$(git -C "$(rd "$r")" merge-base HEAD origin/main)"; done; }   # WHAT THE TREE HOLDS, NEVER THE REF'S VALUE (row the-lander-reads-origin-moved-from-what-its-tree-holds, the cio 2026-11-13, MEASURED landing harness f45ef5b94: a fetch in the root moved origin/main under the gate, the ref was remembered as seen, the fetch under the lease read no move, and the push went non-fast-forward: one whole round more). After a rebase the base and the ref are one commit; when the ref moved under the gate the tree's base is the older, so the lease's fetch reads moved and the tree is rebased.
+# A LANDING OF TEXT BUILDS NOTHING UNDER THE LEASE (the cio 2026-11-14, on the cfo's measurement: a landing of ONE commit under .github, its gate two greps, held the box-wide
+# lease 343 s because origin's SCRIP had moved: the lander rebuilt SCRIP and ran the serial gate). A landing whose own commits change nothing under SCRIP, corpus or harness
+# takes no mover under the SCRIP runtime or a generated output as a hit, and builds nothing in its serial round: nothing it lands can depend on the binary.
+text_only() { local r; for r in "${present[@]}"; do [ "$r" = .github ] && continue; is_held "$r" && continue; [ "$(ahead "$r")" = 0 ] || return 1; done; return 0; }
 affected_since() {   # -> prints "reason=affected|unaffected files=N"; rc 0 affected
-    local r f old new n=0 hit=0 t p; local -a outs
+    local r f old new n=0 hit=0 t p txt=0; local -a outs
+    text_only && txt=1
     mapfile -t outs < <(awk -F'\t' '!/^#/ && $1 != "name" {print $3}' "$TSV")
     for r in "${present[@]}"; do
         old="${origin_seen[$r]:-}"; new="$(git -C "$(rd "$r")" rev-parse origin/main)"; [ -n "$old" ] && [ "$old" != "$new" ] || continue
         while IFS= read -r f; do
             [ -n "$f" ] || continue; n=$((n+1)); p="$r/$f"
-            case "$p" in SCRIP/src/runtime/*|SCRIP/src/templates/*|SCRIP/Makefile) hit=1 ;; esac
-            for t in "${outs[@]}"; do [ "$p" = "$t" ] && hit=1; done
+            [ "$txt" = 1 ] || case "$p" in SCRIP/src/runtime/*|SCRIP/src/templates/*|SCRIP/Makefile) hit=1 ;; esac
+            [ "$txt" = 1 ] || for t in "${outs[@]}"; do [ "$p" = "$t" ] && hit=1; done
             if [ -n "$touches" ]; then for t in $touches; do case "$p" in "$t"|"$t"/*) hit=1 ;; esac; done; else hit=1; fi
         done < <(git -C "$(rd "$r")" diff --name-only "$old" "$new" 2>/dev/null)
     done
@@ -1080,7 +1124,7 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
         rebase
         if a="$(affected_since)"; then
             moved_rounds=$((moved_rounds + 1))
-            if [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then [ "$mode" = push ] || { build serial; mark build:serial "${binfo:-built}"; }; gate_run_serial "$a"; note_origins
+            if [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then [ "$mode" = push ] || text_only || { build serial; mark build:serial "${binfo:-built}"; }; gate_run_serial "$a"; note_origins
             else drop_lease "(origin moved under the gate, $a: the gate re-runs unleased)"; return 3; fi
         else
             mark "regate:lease" "$a (the gate stands: origin moved outside the row's population; the rebased tree is pushed)"
@@ -1090,9 +1134,25 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
     [ -n "${S4E_LAND_PLANT:-}" ] && { bash -c "$S4E_LAND_PLANT" > "$LOG/plant" 2>&1 7>&- 8>&- 9>&- || true; }   # the probe's plant: a hand push that lands between the lease's fetch and the push
     pushes; rc=$?
     if [ "$rc" = 3 ] && [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then
-        fetch; rebase; [ "$mode" = push ] || { build serial; mark build:serial "${binfo:-built}"; }; gate_run_serial "rebased after a push the origin refused on the last attempt"; note_origins
+        fetch; rebase; [ "$mode" = push ] || text_only || { build serial; mark build:serial "${binfo:-built}"; }; gate_run_serial "rebased after a push the origin refused on the last attempt"; note_origins
         pushes; rc=$?
     fi
+    # A LANDING THAT HAS PUSHED ONE REPO FINISHES THE REST BEFORE IT LETS GO (the cio 2026-11-14, MEASURED: senior_10's landing pushed SCRIP 710dc909f at about 17:56Z, its
+    # harness push was overtaken, its one serial round was already spent, and it ended; origin then stood HALF-LANDED for 20 minutes, SCRIP's builtin table naming
+    # rt_pl_dop_acyclic_term while origin's builtins.tsv still named the old leaf, every seat's table check reading stale, until the cio landed the harness half by hand).
+    # The pushes go repo by repo and cannot be one act; so once any repo of the landing is on origin, an overtaken push is fetched, rebased, gated again under the lease when the
+    # movers touch the landing's population, and pushed again, up to six times, the lease never dropped between. --probe-finish proves it on scratch origins.
+    local fin=0
+    while [ "$rc" = 3 ] && [ "${#pushed[@]}" -gt 0 ] && [ "$fin" -lt 6 ]; do
+        fin=$((fin + 1)); half_open=1
+        echo "LAND stage=finish attempt=$fin: ${pushed[*]} is on origin and a later push was overtaken; the rest is rebased and pushed now, the lease kept"
+        note_origins; fetch; rebase
+        if a="$(affected_since)"; then [ "$mode" = push ] || text_only || { build serial; mark build:serial "${binfo:-built}"; }; [ -z "$gate" ] || gate_run_serial "$a (finishing a landing already partly on origin)"; fi
+        note_origins
+        pushes; rc=$?
+    done
+    [ "$rc" = 3 ] && [ "${#pushed[@]}" -gt 0 ] && { half_open=1; drop_lease "(a push was rejected six times with part of the landing on origin)"; red push "the rest of the landing could not be pushed in six attempts; on origin: ${pushed[*]}"; }
+    half_open=0
     [ "$rc" = 3 ] && { drop_lease "(a push was rejected: going round again)"; return 3; }
     drop_lease "(pushed ${pushed[*]:-nothing})"
     return 0
