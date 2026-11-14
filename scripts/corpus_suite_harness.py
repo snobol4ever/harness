@@ -7739,6 +7739,11 @@ def cmd_smoke(args):
     modes = parse_modes(args.modes or "m3,m4", "smoke")
     if not paths["corpus"].is_dir():
         refuse(f"smoke: corpus root {paths['corpus']} is not a directory (S4E_HOME={os.environ.get('S4E_HOME', '<unset>')})")
+    # ⛔ A SMOKE RUNS THROUGH THE MEMORY DOOR TOO (the coo 2026-11-14 10:1x CST, MEASURED: test_feature_reps.sh pascal ran the core
+    # entry packed_arrays__pa08_wide, heap_kb 6291456, bare inside three juniors' 4 GB seat scopes; junior_01's scope read 4149 MB of
+    # its 4096 MB high with 821 MB swapped and its session stalled, the grader's freeze of 08:1x again): like cmd_run, the smoke
+    # re-runs itself once inside one scope at the board cap, so a big declared heap is bounded by its own scope, never the session's.
+    _mem_scope().enter("board", sys.orig_argv)
     sel, unknown = smoke_select(paths["corpus"], features, only)
     if not sel:
         refuse("smoke: no attribute table found under %s%s" % (paths["corpus"], f" matching {only}" if only else ""))
