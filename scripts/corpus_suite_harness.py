@@ -692,7 +692,7 @@ def run_xsb_gentest(xsb_bin, upstream, run, timeout):
         return kind, (tp.read_bytes() if tp.is_file() else None), err, rc
 
 
-def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None):
+def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, side_env=None):
     """THE ICON ORACLE AS THE ICON PACKAGES' OWN HARNESS RUNS IT, for a package whose CONTRACT.tsv merges stderr (the coo
     2026-10-01, measured on jcon_tests): `icont -s -o <stem> <name>` in the file's own directory, its stderr kept apart, then
     `iconx <stem> args < in > out 2>&1` (iconx handed the bare icode name, so &progname reads the stem; exec'd through PATH
@@ -716,7 +716,7 @@ def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=N
         refuse(f"lib_oracle_flags.sh refused (iconx_bin): {r.stderr.strip()}")
     _out_files_clear(d, out_files)
     kind, out, _err, rc = _run_raw([r.stdout.strip(), stem] + [str(a) for a in (prog_args or [])], timeout, cwd=str(d),
-                                   stdin_text=stdin_text, merge_stderr=True)
+                                   env=(dict(os.environ, **side_env) if side_env else None), stdin_text=stdin_text, merge_stderr=True)
     out = _out_files_append(out, d, out_files) if out_files else out
     if kind == "RAN" and rc is not None and rc < 0:
         kind = "CRASH"
@@ -1808,7 +1808,7 @@ def stdbuf_wrap(paths, argv):
     return argv
 
 
-def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, run_cwd=None, source_path=None, source_files=None):
+def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, run_cwd=None, source_path=None, source_files=None, side_env=None):
     timeout = timeout or paths["timeout"]
     # ⛔⭐ ARGV IS THE BARE NAME, NOT THE FULL PATH (row suite-harness-argv-echoes-a-mktemp-path-so-
     # diagnostic-programs-cannot-be-graded) -- a diagnostic that echoes its own argv (e.g. a SPITBOL
@@ -1830,6 +1830,8 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     if prog_argv:
         argv = argv + ["--"] + [str(a) for a in prog_argv]
     env = dict(os.environ, SNO_LIB=str(paths["inc"]))
+    if side_env:
+        env.update(side_env)                                        # the entry's NAME.env, NAME.pin and NAME.shims/, as its ref was cut (side_env_of)
     # ⛔⭐ THE DECLARED ARENA IS EXPORTED HERE, FOR THIS PROGRAM ONLY (Lon 2026-09-23, "each test
     # should have the needed amount of memory in the attribute TSV/CSV files"; R-1167). heap_kb
     # None means the cell was empty, and an empty cell is the SHIPPED DEFAULT -- so the env of an
@@ -1909,7 +1911,7 @@ def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None, run_cwd=Non
     return None
 
 
-def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, run_cwd=None, source_path=None, source_files=None):
+def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, run_cwd=None, source_path=None, source_files=None, side_env=None):
     timeout = timeout or paths["timeout"]
     if not (paths["rt_dir"] / "libscrip_rt.so").is_file():
         return Verdict("SKIP", detail="libscrip_rt.so not built")
@@ -1967,6 +1969,10 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     _same = out_bin.parent.resolve() == run_dir.resolve()
     argv = stdbuf_wrap(paths, [out_bin.name]) + _size_switches(heap_kb, stack_kb) + _host_u_switch(sno_path, prog_argv) + (["--"] + [str(a) for a in prog_argv] if prog_argv else [])
     env = dict(os.environ, SNO_LIB=str(paths["inc"]), PATH=str(out_bin.parent) + os.pathsep + os.environ.get("PATH", ""))
+    if side_env:                                                    # the binary's run alone, never its compile: the sidecars are the program's, as in mode 3
+        env.update({k: v for k, v in side_env.items() if k != "PATH"})
+        if "PATH" in side_env:
+            env["PATH"] = str(out_bin.parent) + os.pathsep + side_env["PATH"]
     # ⛔⭐ EXPORTED AT THE RUN AND DELIBERATELY NOT AT THE COMPILE. `scrip --compile` runs the COMPILER
     # in this same process image, so setting the arena there would grade the compiler at the test's
     # declared window instead of the test -- a number wearing the wrong subject's name. The declaration
@@ -2262,7 +2268,7 @@ def convert_one(paths, sno_path, ref_path, seq, tmp_root, modes, companion_dir=N
     return None, {"ok": False, "reason": f"NEITHER form reproduced the original's behavior: orig={orig_verdicts}"}
 
 
-def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, timeout=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, mode_gap_s=0, run_cwd=None, source_path=None, source_files=None):
+def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, timeout=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, mode_gap_s=0, run_cwd=None, source_path=None, source_files=None, side_env=None):
     """Every mode is graded against the ONE ref: the two modes are one machine in two media (Lon 2026-09-23, R-1218/1230)."""
     out = {}
     # ⭐ A TRACE PER ENTRY AND MODE (the coo 2026-10-09, the cfo's ask for the rank-0 row gc-rt-c-c-to-bb-...): rt_c2bb_hit appends every
@@ -2281,7 +2287,7 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
         if _trd:
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m3.trace" % Path(sno_path).stem)
         _t0 = time.monotonic()
-        out["m3"] = run_m3(paths, sno_path, expected_text, run_cwd=run_cwd, source_path=source_path, source_files=source_files, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+        out["m3"] = run_m3(paths, sno_path, expected_text, run_cwd=run_cwd, source_path=source_path, source_files=source_files, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file, side_env=side_env)
         out["m3"].secs = time.monotonic() - _t0
     if "m4" in modes:
         _gap("m4")
@@ -2289,7 +2295,7 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m4.trace" % Path(sno_path).stem)
         with tempfile.TemporaryDirectory(dir=tmp_root) as td:
             _t0 = time.monotonic()
-            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), run_cwd=run_cwd, source_path=source_path, source_files=source_files, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), run_cwd=run_cwd, source_path=source_path, source_files=source_files, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file, side_env=side_env)
             out["m4"].secs = time.monotonic() - _t0
     if _trd:
         os.environ.pop("SCRIP_C2BB_TRACE", None)
@@ -4347,9 +4353,50 @@ def _swi_sto_alone(go, work, m, v):
     v.stdout = p.stdout
 
 
+def side_env_of(entry, companion_dir, run_dir, ext):
+    """AN ENTRY IS RUN UNDER THE SIDECARS ITS REF WAS CUT UNDER (officer_04 2026-11-13 and officer_06's ruling 2026-11-14, skill suites-and-grading
+    section 4; built by the cfo, row ipl-the-grader-applies-env-pin-and-shims-through-ipl-env-apply): NAME.env, NAME.pin or NAME.shims/ beside an
+    Icon entry's source are applied by the ONE reader, ipl_env_apply of lib_icon_ipl_isolation.sh, called once per entry and never re-expressed
+    here. It returns the KEY=VALUE pairs to lay over the environment of the mode-3 run and of the mode-4 binary's run: the env lines (@RUNDIR
+    the directory the program runs in), LD_PRELOAD of the clock-and-entropy pin, and a PATH with the stand-in commands first. The array is
+    seeded with this process's PATH, since the library puts the shims ahead of the PATH the array already holds. None when the entry has no
+    such sidecar, so every other entry's run is byte for byte what it was. A library refusal (rc 2: a malformed line, a shim that is no
+    executable file, a pin that does not build) is this grader's refusal, rc 2: a program is never run bare of a sidecar it declares.
+    MEASURED on SCRIP 3b1f73fcf: progs/parens reads its ref under its pin and differs without it."""
+    if ext != ".icn" or not companion_dir:
+        return None
+    return side_env_for_source(Path(companion_dir) / f"{entry.name}{ext}", run_dir)
+
+
+def side_env_for_source(src, run_dir):
+    """The same reader for a caller that holds the source's path and not an entry: the builder's oracle cut (util_build_package_suite.py), so a
+    ref is cut under the sidecars its grade will apply. MEASURED before it: the container's section for progs/parens was cut with no pin, a
+    random draw, while the oracle under the pin, SCRIP under the pin and the ref beside the source are byte equal."""
+    src = Path(src)
+    if src.suffix != ".icn":
+        return None
+    stem = str(src)[:-len(".icn")]
+    if not (Path(stem + ".env").is_file() or Path(stem + ".pin").is_file() or Path(stem + ".shims").is_dir()):
+        return None
+    lib = HARNESS_SCRIPTS / "lib_icon_ipl_isolation.sh"
+    if not lib.is_file():
+        refuse(f"{src.name}: it declares run sidecars beside {src} and the one reader {lib} is missing")
+    r = subprocess.run(["bash", "-c", '. "$1" && a=("PATH=$PATH") && ipl_env_apply "$2" "$3" a && printf "%s\\0" "${a[@]}"', "-", str(lib), str(src), str(run_dir)],
+                       stdin=subprocess.DEVNULL, capture_output=True)
+    if r.returncode != 0:
+        refuse(f"{src.name}: ipl_env_apply refused its run sidecars beside {src} (rc {r.returncode}): {r.stderr.decode('utf-8', 'replace').strip()[:300]}")
+    out = {}
+    for kv in r.stdout.split(b"\0"):
+        if kv:
+            k, _, v = kv.decode("utf-8", "surrogateescape").partition("=")
+            out[k] = v
+    return out
+
+
 def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=None):
     with tempfile.TemporaryDirectory(dir=tmp_root) as td:
         cand, expected = stage_entry(entry, td, ext, companion_dir)
+        _side = side_env_of(entry, companion_dir, cand.parent, ext)
         _ex = getattr(entry, 'expect', None)
         _want = _ex.rc if (_ex is not None and _ex.ending == "EXIT" and _ex.rc is not None) else getattr(entry, 'want_rc', 0)
         _rc_dir = (Path(companion_dir) / entry.cwd) if (getattr(entry, "cwd", None) and companion_dir is not None) else None
@@ -4382,7 +4429,7 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
                                  where=entry.name, bin_dir=Path(td), heap_kb=getattr(entry, 'heap_kb', None), stack_kb=getattr(entry, 'stack_kb', None), timeout=_tmo,
                                  compile_args=getattr(entry, 'compile_args', None), out_files=getattr(entry, 'out_files', None),
                                  merge_stderr=getattr(entry, 'merge_stderr', False), ws_blind=getattr(entry, 'compare_ws', False),
-                                 answer_file=getattr(entry, 'answer_file', None), mode_gap_s=getattr(entry, 'mode_gap_s', 0))
+                                 answer_file=getattr(entry, 'answer_file', None), mode_gap_s=getattr(entry, 'mode_gap_s', 0), side_env=_side)
         _v = _go(modes, _rc_dir, (None if ("TIMEOUT" in os.environ or not getattr(entry, 'timeout_s', None)) else entry.timeout_s))
         if getattr(entry, "grader", None) == "swi-cases":
             for _m, _vm in _v.items(): _swi_sto_alone(lambda _c, _m=_m: _go([_m], _c, 30)[_m], Path(td), _m, _vm)

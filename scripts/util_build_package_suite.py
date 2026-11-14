@@ -876,8 +876,12 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     return h.run_unicon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text,
                                                                          prog_args=prog_args, out_files=out_files)
                 elif lang == "icon" and merged:
+                    # ⭐ THE REF IS CUT UNDER THE SIDECARS ITS GRADE APPLIES (the cfo 2026-11-14, row ipl-the-grader-applies-env-pin-and-shims-through-ipl-env-apply):
+                    # NAME.env, NAME.pin and NAME.shims/ beside the source reach the oracle's run through the grader's own reader, h.side_env_for_source,
+                    # so one reader serves the cut and the grade. MEASURED before it: progs/parens (randomize(), pinned by parens.pin) was cut bare, a
+                    # random draw no run could match; under the pin iconx answers the ref beside the source twice over.
                     return h.run_icon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text,
-                                                                         prog_args=prog_args, out_files=out_files)
+                                                                         prog_args=prog_args, out_files=out_files, side_env=h.side_env_for_source(src, Path(_iso_dir)))
                 elif lang == "prolog" and name in gnu_cells:
                     return h.run_oracle("bash", str(h.HARNESS_SCRIPTS / "gprolog_oracle_run.sh"), _iso_src, paths["timeout"], stdin_text=stdin_text,
                                                               prog_args=prog_args, out_files=out_files, merge_stderr=_ms)
