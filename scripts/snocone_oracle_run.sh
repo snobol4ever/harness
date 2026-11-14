@@ -9,7 +9,8 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_oracle_flags.sh" || exit 127
-SCRIP_BIN="${SCRIP:-$HERE/../../SCRIP/scrip}"
+. "$HERE/lib_paths.sh" || exit 127
+SCRIP_BIN="${SCRIP:-$S4E_SCRIP/scrip}"
 [ -x "$SCRIP_BIN" ] || { echo "snocone_oracle_run.sh: no scrip at $SCRIP_BIN -- make" >&2; exit 127; }
 SBL="$(sbl_correctness_bin)" || exit 127
 FLAGS="$(sbl_lang_flags)"

@@ -15,7 +15,7 @@
 # Exit: 0 OK · 1 BREAK/DIFF · 2 REFUSED (bison/flex cannot generate, Makefile unreadable, no files given, or nothing measured).
 # Usage: bash ../harness/scripts/util_style200_oracle_yl.sh src/parsers/*/*.y src/parsers/*/*.l     (STYLE200_BASE=<commit> to re-prove a landed sweep)
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"
 . "$HERE/lib_build_flags.sh"
 build_flags_load "$ROOT" || exit 2
 gen_tools_ready || exit 2

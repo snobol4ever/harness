@@ -2,11 +2,12 @@
 # test_smoke_snobol4_jvm.sh — SJ4-JVM-3 gate: full JVM pipeline on smoke programs
 # scrip --compile --target=jvm → .j file → jasmin.jar → .class → java → verify output
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY the .github, SCRIP and corpus clones); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-JASMIN="${JASMIN:-$HERE/../../SCRIP/miscellaneous/jasmin.jar}"
+. "$HERE/lib_paths.sh"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+JASMIN="${JASMIN:-$S4E_SCRIP/miscellaneous/jasmin.jar}"
 ORACLE="${ORACLE:-$S4A/x64/bin/sbl}"
 PASS=0; FAIL=0
 
@@ -38,11 +39,11 @@ run_smoke() {
     fi
     # Copy runtime classes
     mkdir -p "$class_dir/rt"
-    java -jar "$JASMIN" "$HERE/../../SCRIP/miscellaneous/runtimes/jvm/SnoRt.j" -d "$class_dir" > /dev/null 2>&1
-    java -jar "$JASMIN" "$HERE/../../SCRIP/miscellaneous/runtimes/jvm/SnoRtMatchState.j" -d "$class_dir" > /dev/null 2>&1
+    java -jar "$JASMIN" "$S4E_SCRIP/miscellaneous/runtimes/jvm/SnoRt.j" -d "$class_dir" > /dev/null 2>&1
+    java -jar "$JASMIN" "$S4E_SCRIP/miscellaneous/runtimes/jvm/SnoRtMatchState.j" -d "$class_dir" > /dev/null 2>&1
     # Compile SnoPat.java (pattern matcher) with SnoRt on classpath
     if which javac > /dev/null 2>&1; then
-        javac -cp "$class_dir" -d "$class_dir" "$HERE/../../SCRIP/miscellaneous/runtimes/jvm/SnoPat.java" > /dev/null 2>&1
+        javac -cp "$class_dir" -d "$class_dir" "$S4E_SCRIP/miscellaneous/runtimes/jvm/SnoPat.java" > /dev/null 2>&1
     fi
     # Run
     local jvm_out=$(timeout -k 5 5 java -cp "$class_dir" Prog 2>/dev/null || echo "")

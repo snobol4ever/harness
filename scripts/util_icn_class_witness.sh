@@ -36,7 +36,7 @@
 # 3.5 7 set table 'abc' list ra rb "str". A cross-type ORDER defect is invisible to any mix too narrow to
 # contain the pair that is out of order, so a heterogeneous-compare witness must span types, not count them.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"
 . "$HERE/lib_oracle_flags.sh" || { echo "UNPROVEN(2): lib_oracle_flags.sh unavailable"; exit 2; }
 
 witness_for() {

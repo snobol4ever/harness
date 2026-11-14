@@ -9,9 +9,10 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -u
 # ⭐ V2-5 GATE HONESTY: examining nothing (wiped/empty corpus) must exit UNPROVEN(2), never read as a pass.
 . "$(dirname "$0")/lib_gate.sh"
-SCRIP="${SCRIP:-$S4E/SCRIP/scrip}"
-RTDIR="${RTDIR:-$S4E/SCRIP/out}"
-CORPUS_SRC="${CORPUS_SRC:-$S4E/corpus/benchmarks/icon}"
+. "$(dirname "$0")/lib_paths.sh"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+RTDIR="${RTDIR:-$S4E_SCRIP/out}"
+CORPUS_SRC="${CORPUS_SRC:-$S4E_CORPUS/benchmarks/icon}"
 WORK="${WORK:-/tmp/bench_scrip_only}"
 TMO="${TMO:-30}"
 rm -rf "$WORK"; mkdir -p "$WORK/corpus"

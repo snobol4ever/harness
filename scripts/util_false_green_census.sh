@@ -17,8 +17,11 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE="${S4E_FG_BASE:-$HERE/../..}"   # the root whose corpus and .github are read (a worktree of harness names the seat root here)
-REAL_CORPUS="$(cd "$BASE/corpus" 2>/dev/null && pwd)"
+eval "$(S4E_HOME="$BASE" bash -c '. "$1/lib_paths.sh"; printf "FG_REAL_SCRIP=%q FG_REAL_CORPUS=%q FG_REAL_GITHUB=%q\n" "$S4E_SCRIP" "$S4E_CORPUS" "$S4E_GITHUB"' _ "$HERE")"   # the real repos the census reads, by the four variables of lib_paths.sh, resolved for the root BASE names
+REAL_CORPUS="$(cd "$FG_REAL_CORPUS" 2>/dev/null && pwd)"
 ROOT="${S4E_FG_ROOT:-$(cd "$BASE" && pwd)/.scratch/fg}"   # the seat root's own scratch, kept between runs (its corpus worktree is 1.6 GB)
+fg_repo() { printf '%s/%s' "$ROOT" "$1"; }   # the staged root keeps the four repos as its own directories; each is named once here, as the four variables the runner reads
+FG_CORPUS="$(fg_repo corpus)"; FG_HARNESS="$(fg_repo harness)"; FG_SCRIP="$(fg_repo SCRIP)"; FG_GITHUB="$(fg_repo .github)"
 refuse() { echo "REFUSE(2) [false-green]: $* -- nothing measured"; exit 2; }
 engines="silent refuser"
 # --engine real grades the seat's own built SCRIP (its scrip and its current .so files copied in) under the same scratch tables: the runner's verdict
@@ -28,32 +31,32 @@ if [ "${1:-}" = --engine ]; then engines="$(echo "${2:-}" | tr ',' ' ')"; [ "$en
 FG_REF="${S4E_FG_REF:-origin/main}"   # the corpus commit the staged root grades (a branch carrying a corpus cure, before it lands)
 runner="${1:-}"; [ -n "$runner" ] || refuse "name a runner (one of one_runner_boards.txt)"; shift
 [ -r "$HERE/$runner" ] || refuse "no runner $runner beside this script"
-[ -n "$REAL_CORPUS" ] && git -C "$REAL_CORPUS" rev-parse -q --verify origin/main > /dev/null || refuse "no corpus repo with an origin/main at $BASE/corpus"
+[ -n "$REAL_CORPUS" ] && git -C "$REAL_CORPUS" rev-parse -q --verify origin/main > /dev/null || refuse "no corpus repo with an origin/main at $FG_REAL_CORPUS"
 SEAT="${S4E_SEAT:-$(basename "$(cd "$BASE" && pwd)" | sed -n 's/^claude_//p')}"   # the staged root is no seat root, so the guard is told whose run this is
 [ -n "$SEAT" ] || refuse "no seat: run from a seat root or set S4E_SEAT"
 mkdir -p "$ROOT" || refuse "cannot make $ROOT"
-if [ ! -d "$ROOT/corpus/.git" ] && [ ! -f "$ROOT/corpus/.git" ]; then
-  git -C "$REAL_CORPUS" worktree add -q --detach "$ROOT/corpus" "$FG_REF" > /dev/null 2>&1 || refuse "git worktree add $ROOT/corpus failed"
+if [ ! -d "$FG_CORPUS/.git" ] && [ ! -f "$FG_CORPUS/.git" ]; then
+  git -C "$REAL_CORPUS" worktree add -q --detach "$FG_CORPUS" "$FG_REF" > /dev/null 2>&1 || refuse "git worktree add $FG_CORPUS failed"
 else
-  git -C "$ROOT/corpus" checkout -q --detach "$FG_REF" 2> /dev/null && git -C "$ROOT/corpus" clean -qfdx > /dev/null 2>&1 || refuse "cannot reset the census corpus worktree $ROOT/corpus to $FG_REF"
+  git -C "$FG_CORPUS" checkout -q --detach "$FG_REF" 2> /dev/null && git -C "$FG_CORPUS" clean -qfdx > /dev/null 2>&1 || refuse "cannot reset the census corpus worktree $FG_CORPUS to $FG_REF"
 fi
-rm -rf "$ROOT/harness" "$ROOT/SCRIP" "$ROOT/.github"; rm -f "$ROOT/progress/$runner".*   # each runner keeps its own outputs and scratch tables beside the others
-mkdir -p "$ROOT/harness" "$ROOT/SCRIP/out" "$ROOT/.github" "$ROOT/progress"
-cp -r "$HERE" "$ROOT/harness/scripts"
-cp "$BASE/.github/SCORE.md" "$ROOT/.github/SCORE.md" 2> /dev/null || : > "$ROOT/.github/SCORE.md"
-: > "$ROOT/SCRIP/out/libscrip_rt.so"
+rm -rf "$FG_HARNESS" "$FG_SCRIP" "$FG_GITHUB"; rm -f "$ROOT/progress/$runner".*   # each runner keeps its own outputs and scratch tables beside the others
+mkdir -p "$FG_HARNESS" "$FG_SCRIP/out" "$FG_GITHUB" "$ROOT/progress"
+cp -r "$HERE" "$FG_HARNESS/scripts"
+cp "$FG_REAL_GITHUB/SCORE.md" "$FG_GITHUB/SCORE.md" 2> /dev/null || : > "$FG_GITHUB/SCORE.md"
+: > "$FG_SCRIP/out/libscrip_rt.so"
 # a runner stamps the SCRIP HEAD it graded and refuses without one (jcon, arizona, csnobol4): the staged SCRIP is a scratch git repo of one empty commit
-git -C "$ROOT/SCRIP" init -q 2> /dev/null && GIT_AUTHOR_NAME=fg GIT_AUTHOR_EMAIL=fg@localhost GIT_COMMITTER_NAME=fg GIT_COMMITTER_EMAIL=fg@localhost \
-  git -C "$ROOT/SCRIP" commit -q --allow-empty -m "false-green census stub engine" > /dev/null 2>&1 || refuse "cannot make the staged SCRIP a git repo"
+git -C "$FG_SCRIP" init -q 2> /dev/null && GIT_AUTHOR_NAME=fg GIT_AUTHOR_EMAIL=fg@localhost GIT_COMMITTER_NAME=fg GIT_COMMITTER_EMAIL=fg@localhost \
+  git -C "$FG_SCRIP" commit -q --allow-empty -m "false-green census stub engine" > /dev/null 2>&1 || refuse "cannot make the staged SCRIP a git repo"
 fail=0
 for e in $engines; do
-  rm -f "$ROOT/SCRIP/out/"*.so
+  rm -f "$FG_SCRIP/out/"*.so
   if [ "$e" = real ]; then
-    [ -x "$BASE/SCRIP/scrip" ] && [ -f "$BASE/SCRIP/out/libscrip_rt.so" ] || refuse "--engine real: no built SCRIP at $BASE/SCRIP"
-    cp "$BASE/SCRIP/scrip" "$ROOT/SCRIP/scrip"; for so in "$BASE/SCRIP/out/"*.so; do case "${so##*/}" in *-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].so) ;; *) cp "$so" "$ROOT/SCRIP/out/";; esac; done
+    [ -x "$FG_REAL_SCRIP/scrip" ] && [ -f "$FG_REAL_SCRIP/out/libscrip_rt.so" ] || refuse "--engine real: no built SCRIP at $FG_REAL_SCRIP"
+    cp "$FG_REAL_SCRIP/scrip" "$FG_SCRIP/scrip"; for so in "$FG_REAL_SCRIP/out/"*.so; do case "${so##*/}" in *-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].so) ;; *) cp "$so" "$FG_SCRIP/out/";; esac; done
   elif [ "$e" = silent ]; then
     printf '%s\n' '#!/bin/sh' 'c=0; o=""' 'while [ $# -gt 0 ]; do case "$1" in --compile) c=1;; --out=*) o="${1#--out=}";; esac; shift; done' \
-      '[ "$c" = 1 ] || exit 0' 'if [ -n "$o" ]; then echo "# stub engine: prints nothing" > "$o"; else echo "# stub engine: prints nothing"; fi' 'exit 0' > "$ROOT/SCRIP/scrip"
+      '[ "$c" = 1 ] || exit 0' 'if [ -n "$o" ]; then echo "# stub engine: prints nothing" > "$o"; else echo "# stub engine: prints nothing"; fi' 'exit 0' > "$FG_SCRIP/scrip"
   else
     # --compile succeeds (a build probe refuses a compiler that cannot emit), and what it emits is a program that prints the same error and exits 1
     printf '%s\n' '#!/bin/sh' 'c=0; o=""' 'while [ $# -gt 0 ]; do case "$1" in --compile) c=1;; --out=*) o="${1#--out=}";; esac; shift; done' \
@@ -70,21 +73,21 @@ main:
 	.section .rodata
 msg:	.string \"error 1: refused by the stub engine\"
 	.section .note.GNU-stack,\"\",@progbits"' \
-      'if [ -n "$o" ]; then printf "%s\n" "$a" > "$o"; else printf "%s\n" "$a"; fi' 'exit 0' > "$ROOT/SCRIP/scrip"
+      'if [ -n "$o" ]; then printf "%s\n" "$a" > "$o"; else printf "%s\n" "$a"; fi' 'exit 0' > "$FG_SCRIP/scrip"
   fi
-  [ -f "$ROOT/SCRIP/out/libscrip_rt.so" ] || : > "$ROOT/SCRIP/out/libscrip_rt.so"
-  chmod +x "$ROOT/SCRIP/scrip"; rm -f "$ROOT/SCRIP/out/build_behaviour.sig"   # each stub is its own build: the checkout's behaviour ledger starts empty
+  [ -f "$FG_SCRIP/out/libscrip_rt.so" ] || : > "$FG_SCRIP/out/libscrip_rt.so"
+  chmod +x "$FG_SCRIP/scrip"; rm -f "$FG_SCRIP/out/build_behaviour.sig"   # each stub is its own build: the checkout's behaviour ledger starts empty
   db="$ROOT/progress/$runner.$e.results.tsv"; head -1 /home/resources/progress/results.tsv > "$db"; : > "$db.current"
   cp /home/resources/progress/SUITES.tsv "$ROOT/progress/$runner.$e.SUITES.tsv"
   out="$ROOT/progress/$runner.$e.out"
-  ( cd "$ROOT/SCRIP" && S4E_SEAT="$SEAT" S4E_PROGRESS_DB="$db" S4E_SUITES_TSV="$ROOT/progress/$runner.$e.SUITES.tsv" S4E_SCORE_MD="$ROOT/.github/SCORE.md" \
-      timeout -k 5 7200 bash "$ROOT/harness/scripts/$runner" "$@" < /dev/null > "$out" 2>&1 )
+  ( cd "$FG_SCRIP" && S4E_SCRIP="$FG_SCRIP" S4E_CORPUS="$FG_CORPUS" S4E_HARNESS="$FG_HARNESS" S4E_GITHUB="$FG_GITHUB" S4E_SEAT="$SEAT" S4E_PROGRESS_DB="$db" S4E_SUITES_TSV="$ROOT/progress/$runner.$e.SUITES.tsv" S4E_SCORE_MD="$FG_GITHUB/SCORE.md" \
+      timeout -k 5 7200 bash "$FG_HARNESS/scripts/$runner" "$@" < /dev/null > "$out" 2>&1 )
   rows=$(awk 'NR>1' "$db" | grep -c .)
   if [ "$rows" = 0 ]; then
     echo "FALSE_GREEN runner=$runner engine=$e rows=0 :: UNMEASURED -- the runner wrote no progress row under the stub; its tail:"; tail -4 "$out" | sed 's/^/    /'; fail=2; continue
   fi
   # a PASS on a program its package EXCLUDES (any EXCLUDED*.tsv row of the graded corpus) is outside the denominator, so it is excused and named, never counted
-  excl="$ROOT/progress/$runner.$e.excluded"; cat "$ROOT"/corpus/packages/*/*/EXCLUDED*.tsv 2> /dev/null | awk -F'\t' '!/^#/ && NF > 1 {n = $1; sub(/\.[A-Za-z]+$/, "", n); print n}' | sort -u > "$excl"
+  excl="$ROOT/progress/$runner.$e.excluded"; cat "$FG_CORPUS"/packages/*/*/EXCLUDED*.tsv 2> /dev/null | awk -F'\t' '!/^#/ && NF > 1 {n = $1; sub(/\.[A-Za-z]+$/, "", n); print n}' | sort -u > "$excl"
   excused=$(awk -F'\t' 'NR==FNR {x[$1]=1; next} FNR>1 && $10=="PASS" && ($8 in x) {print $8 " " $9}' "$excl" "$db" | sort -u)
   passed=$(awk -F'\t' 'NR==FNR {x[$1]=1; next} FNR>1 && $10=="PASS" && !($8 in x) {print $8 " " $9}' "$excl" "$db" | sort -u)
   [ -n "$excused" ] && [ "$e" != real ] && echo "  excused, EXCLUDED by their package: $(printf '%s\n' "$excused" | grep -c .) PASS row(s) -- $(printf '%s\n' "$excused" | head -12 | tr '\n' ',' | sed 's/,$//')"

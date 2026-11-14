@@ -41,7 +41,7 @@ container_package_excl() {
 container_package_run() {
   local lang="$1" ext="$2" key="$3" suite="$4" gate="$5"
   local here sd board rc out field_ scored shipped excl denom bothp m3p m4p inv cc
-  here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; sd="$here/../../SCRIP"
+  here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$here/lib_paths.sh"; sd="$S4E_SCRIP"
   export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$here/util_timeout_retry.sh}"
   . "$here/lib_inventory.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_inventory.sh unloadable"; return 2; }
   [ -x "$sd/scrip" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $sd/scrip -- build first (make)"; return 2; }
@@ -50,15 +50,15 @@ container_package_run() {
   # scrip --run-files process, called by the grader's --run-files, and is graded from the switch's OUT and report.
   local rf=""
   if [ -f "$suite/ALL.csv" ] && head -1 "$suite/ALL.csv" | tr ',' '\n' | grep -qx path; then case ",${S4E_MODES:-m3}," in *,m3,*) rf="--run-files";; esac; fi
-  [ -n "$rf" ] || { [ -f "$suite/ALL.$ext" ] && [ -f "$suite/ALL.ref" ]; } || { echo "⛔ REFUSE(rc=2): no container at $suite/ALL.{$ext,ref} -- run: python3 ../harness/scripts/util_build_package_suite.py $suite --lang $lang --twice"; return 2; }
+  [ -n "$rf" ] || { [ -f "$suite/ALL.$ext" ] && [ -f "$suite/ALL.ref" ]; } || { echo "⛔ REFUSE(rc=2): no container at $suite/ALL.{$ext,ref} -- run: python3 $S4E_HARNESS/scripts/util_build_package_suite.py $suite --lang $lang --twice"; return 2; }
   # ⛔⭐ ONE CHUNK, NOT THE SUITE (R-1802, Lon 2026-10-15 via the officer: "Why are we running suites at a time versus sets/blocks at a time in a round
   # robin approach?"): S4E_CHUNK=chunk:NN grades that stored PARTITION.tsv chunk of the container in the modes S4E_MODES names, default m3 (CIO-7), through the harness, which appends one
   # progress row per program and mode stamped partition=chunk:NN, and writes NO suite row -- util_score_row.py from-progress --suite <key> assembles the
   # row from the latest per-program readings, shipped minus EXCLUDED as below (the coo's verifier loop runs it after every chunk).
   if [ -n "${S4E_CHUNK:-}" ]; then
     case "$S4E_CHUNK" in core|core@*|chunk:[0-9]*|entry:*) ;; *) echo "⛔ REFUSE(rc=2): S4E_CHUNK=$S4E_CHUNK is not core[@entry], chunk:NN[@entry] or entry:<name>[,entry:<name>...] (a request, R-1806)"; return 2;; esac
-    [ -f "$suite/PARTITION.tsv" ] || { echo "⛔ REFUSE(rc=2): no $suite/PARTITION.tsv -- build it: python3 ../harness/scripts/util_suite_partition.py build $suite/ALL.csv"; return 2; }
-    out="$(cd "$sd" && SUITE_LIST_ALL=1 python3 ../harness/scripts/corpus_suite_harness.py run "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" $rf --partition "$S4E_CHUNK" 2>&1)"; rc=$?
+    [ -f "$suite/PARTITION.tsv" ] || { echo "⛔ REFUSE(rc=2): no $suite/PARTITION.tsv -- build it: python3 $S4E_HARNESS/scripts/util_suite_partition.py build $suite/ALL.csv"; return 2; }
+    out="$(cd "$sd" && SUITE_LIST_ALL=1 python3 $S4E_HARNESS/scripts/corpus_suite_harness.py run "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" $rf --partition "$S4E_CHUNK" 2>&1)"; rc=$?
     printf '%s\n' "$out"
     printf '%s\n' "$out" | grep -q '^SUITE_BOARD ' || { echo "⛔ REFUSE(rc=2): corpus_suite_harness.py printed no SUITE_BOARD line for $S4E_CHUNK (above) -- nothing measured"; return 2; }
     echo "$(printf '%s' "$key" | tr 'a-z-' 'A-Z_')_CHUNK $S4E_CHUNK graded: one progress row per program and mode; no suite row from a chunk -- the row is util_score_row.py from-progress --suite $key (R-1802)"
@@ -71,7 +71,7 @@ container_package_run() {
   conts="$(inventory_container_names "$suite")" && xc="$(container_package_excl "$suite" "$ext")" \
     || { echo "⛔ REFUSE(rc=2): $suite/CONTAINERS.tsv or EXCLUDED.tsv is refused (the reader said why above) -- no row over an unread exclusion"; return 2; }
   excl="${xc% *}"; ncont="${xc#* }"
-  out="$(cd "$sd" && SUITE_LIST_ALL=1 python3 ../harness/scripts/corpus_suite_harness.py run "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" --modes "$modes" $rf 2>&1)"; rc=$?
+  out="$(cd "$sd" && SUITE_LIST_ALL=1 python3 $S4E_HARNESS/scripts/corpus_suite_harness.py run "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" --modes "$modes" $rf 2>&1)"; rc=$?
   printf '%s\n' "$out"
   board="$(printf '%s\n' "$out" | grep -m1 '^SUITE_BOARD ')"
   [ -n "$board" ] || { echo "⛔ REFUSE(rc=2): corpus_suite_harness.py printed no SUITE_BOARD line (above) -- nothing measured, no row written"; return 2; }
@@ -84,7 +84,7 @@ container_package_run() {
   # the harness's all_pass while the denominator left it out -- puzzles read 26 over a population holding 16 graded programs. The harness lists every
   # non-PASS entry per mode (SUITE_LIST_ALL=1); the passes are the graded entries outside EXCLUDED.tsv that no line names, in each mode and in both.
   local _gl _ex popg
-  _gl="$(cd "$sd" && S4E_PROGRESS_OFF=1 python3 ../harness/scripts/corpus_suite_harness.py list "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" 2>/dev/null)"
+  _gl="$(cd "$sd" && S4E_PROGRESS_OFF=1 python3 $S4E_HARNESS/scripts/corpus_suite_harness.py list "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" 2>/dev/null)"
   _ex="$(inventory_excluded_names "$suite")" || { echo "⛔ REFUSE(rc=2): $suite/EXCLUDED.tsv is refused (the reader said why above)"; return 2; }
   if [ -n "$_ex" ] && [ -n "$(comm -12 <(printf '%s\n' "$_gl" | sort -u) <(printf '%s\n' "$_ex" | sed "s/\.$ext\$//" | sort -u))" ]; then
     read -r popg bothp m3p m4p < <(python3 - "$ext" <(printf '%s\n' "$_gl") <(printf '%s\n' "$_ex") <(printf '%s\n' "$out") "$modes" <<'PYEX'
@@ -112,7 +112,7 @@ PYEX
   # the lane's declared rows, and test_gate_progress_configuration_declarations_do_not_regress.sh read rosetta-pascal, rosetta-prolog,
   # puzzles and trealla as lanes that stopped declaring); rows-tsv's ninth column, from the ONE reader of the environment
   cfg="$(progress_config_of_env)"
-  graded_list="$(cd "$sd" && S4E_PROGRESS_OFF=1 python3 ../harness/scripts/corpus_suite_harness.py list "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" 2>/dev/null)"
+  graded_list="$(cd "$sd" && S4E_PROGRESS_OFF=1 python3 $S4E_HARNESS/scripts/corpus_suite_harness.py list "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" 2>/dev/null)"
   # ⭐ AN EXCLUDED PROGRAM THE CONTAINER DOES NOT GRADE WRITES NO ROW (R-1696: a program with no oracle answer is EXCLUDED, never debt): it is out
   # of the denominator as a CONTAINERS.tsv fragment is, so an UNGRADED row for it would put it back into the population the audit tallies
   exnames="$(inventory_excluded_names "$suite")" || { echo "⛔ REFUSE(rc=2): $suite/EXCLUDED.tsv is refused (the reader said why above)"; return 2; }

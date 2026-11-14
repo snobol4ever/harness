@@ -37,13 +37,14 @@
 
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$S4E_SCRIP"
 SCRIP="$ROOT/scrip"
 RT_SO="$ROOT/out/libscrip_rt.so"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-[ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE scrip not built — run ../harness/scripts/build_scrip.sh"; exit 2; }
+[ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE scrip not built — run $S4E_HARNESS/scripts/build_scrip.sh"; exit 2; }
 [ -f "$RT_SO" ] || { echo "⛔ REFUSED-TO-GRADE libscrip_rt.so not built — run: make libscrip_rt"; exit 2; }
 
 EXPECTED_OUTPUT="Hello, World!"

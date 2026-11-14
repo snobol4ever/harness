@@ -7,14 +7,14 @@ R-1289: "Get a new lexer/parser for Raku before doing the benchmarks. Just get t
 produce no trees.").
 
 THE POPULATION, three parts, every unit named by a durable key:
-    rungs:<entry>     every entry of corpus/tests/raku/ALL.raku, extracted alone (a rung suite is a CONTAINER of
+    rungs:<entry>     every entry of the corpus's tests/raku/ALL.raku, extracted alone (a rung suite is a CONTAINER of
                        programs, never one program) through corpus_suite_harness.py's own suite readers
-    bench:<file>       every *.raku kernel under corpus/benchmarks/raku
+    bench:<file>       every *.raku kernel under the corpus's benchmarks/raku
     roast:<relpath>    every *.t file under the roast checkout (/home/resources/roast-master)
 
 THE ORACLE is Rakudo's syntax check, `raku -c FILE` (v2022.12 on the box), run with the file at its own path so
 a roast file's `use lib $*PROGRAM.parent(2).add(...)` resolves. Its verdict per unit is CACHED in
-harness/designs/raku_ladder/RAKUDO-SYNTAX-VERDICTS.tsv, keyed by the unit's key and the md5 of its text: a unit
+the harness's designs/raku_ladder/RAKUDO-SYNTAX-VERDICTS.tsv, keyed by the unit's key and the md5 of its text: a unit
 whose text changed is re-cut automatically, `--recut` re-cuts all. Verdicts: accept (rc 0), reject (rc != 0,
 with Rakudo's first error line kept as the class), timeout (the oracle did not answer: UNGRADABLE, named).
 
@@ -30,14 +30,14 @@ import argparse, concurrent.futures, csv, hashlib, os, subprocess, sys, tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-SCRIP_DIR = (HERE.parent.parent / "SCRIP")
-HOME = Path(os.environ.get("S4E_HOME", SCRIP_DIR.parent))
-CORPUS = HOME / "corpus"
+sys.path.insert(0, str(HERE)); import harness_paths as _hp
+SCRIP_DIR = _hp.scrip()
+CORPUS = _hp.corpus()
 RUNGS = CORPUS / "tests" / "raku" / "ALL.raku"
 RUNGS_REF = CORPUS / "tests" / "raku" / "ALL.ref"
 BENCH = CORPUS / "benchmarks" / "raku"
 ROAST = Path(os.environ.get("RAKU_ROAST_DIR", "/home/resources/roast-master"))
-CACHE = HERE.parent / "designs" / "raku_ladder" / "RAKUDO-SYNTAX-VERDICTS.tsv"   # moved from corpus/tests/raku/config (the cfo 2026-11-12, CIO-55)
+CACHE = _hp.harness() / "designs" / "raku_ladder" / "RAKUDO-SYNTAX-VERDICTS.tsv"   # moved from the corpus's tests/raku/config (the cfo 2026-11-12, CIO-55)
 RAKU = os.environ.get("RAKU_BIN", "/usr/bin/raku")
 SCRIP = SCRIP_DIR / "scrip"
 FIELDS = ["key", "md5", "verdict", "rc", "first_error"]
@@ -123,7 +123,7 @@ def save_cache(rows):
     tmp = CACHE.with_suffix(".tmp")
     with open(tmp, "w", encoding="utf-8", newline="") as f:
         f.write(f"# Rakudo's own syntax verdict (`raku -c`, {RAKU}) per unit of the Raku syntax-agreement population;\n")
-        f.write("# written by harness/scripts/util_raku_syntax_agreement.py -- a unit is re-cut when its md5 changes, all on --recut\n")
+        f.write("# written by util_raku_syntax_agreement.py -- a unit is re-cut when its md5 changes, all on --recut\n")
         w = csv.DictWriter(f, fieldnames=FIELDS, delimiter="\t", lineterminator="\n")
         w.writeheader()
         for k in sorted(rows):
