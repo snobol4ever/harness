@@ -12,7 +12,7 @@ export SCRIP_DIAG=0
 # Medians over the good runs of R (default 5); a run with a wrong answer or no BENCH line is counted and named, never timed. EXIT 0 every run
 # of every cell measured; 1 a run failed; 2 REFUSED.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="$(cd "$ROOT/.." && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; S4E="$(cd "$ROOT/.." && pwd)"
 LANG_="${1:-}"; shift || true
 REPS=5; ONLY=""; PROG=""; PIN=""
 while [ $# -gt 0 ]; do case "$1" in --reps) REPS="$2"; shift 2;; --only) ONLY="$2"; shift 2;; --prog) PROG="$2"; shift 2;; --input) PIN="$2"; shift 2;; *) echo "⛔ REFUSED: unknown argument $1" >&2; exit 2;; esac; done
@@ -23,9 +23,9 @@ SCRIP="$ROOT/scrip"; RT="$ROOT/out"; WRAP="$ROOT/out/bench_rusage"
 [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: out/bench_rusage did not build" >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 case "$LANG_" in
-  snobol4) GEN=(python3 "$HERE/bench_wrap_snobol4.py" --mode once); EXT=sno; D="$S4E/corpus/benchmarks/snobol4"; RIVAL=sbl; RBIN="$(sbl_clean_bin)"
-           mkdir -p "$W/cwd" && cp -p "$S4E/corpus/include/"*.inc "$W/cwd/" ;;
-  raku)    GEN=(python3 "$HERE/bench_wrap_raku.py" --mode once); EXT=raku; D="$S4E/corpus/benchmarks/raku"; RIVAL=rakudo; RBIN="$(rakudo_bin)"
+  snobol4) GEN=(python3 "$HERE/bench_wrap_snobol4.py" --mode once); EXT=sno; D="$S4E_CORPUS/benchmarks/snobol4"; RIVAL=sbl; RBIN="$(sbl_clean_bin)"
+           mkdir -p "$W/cwd" && cp -p "$S4E_CORPUS/include/"*.inc "$W/cwd/" ;;
+  raku)    GEN=(python3 "$HERE/bench_wrap_raku.py" --mode once); EXT=raku; D="$S4E_CORPUS/benchmarks/raku"; RIVAL=rakudo; RBIN="$(rakudo_bin)"
            mkdir -p "$W/cwd" "$W/prelude" && cp -p "$D/prelude_rakudo.rakumod" "$W/prelude/" && cp -p "$D/"*.json "$W/" ;;
   *) echo "⛔ REFUSED: usage: $0 <snobol4|raku> [--reps R] [--only \"k1 k2\"] [--prog FILE --input FILE]" >&2; exit 2 ;;
 esac

@@ -5,7 +5,7 @@ test suite system deleted 21 package runner scripts (harness cc278350, 2026-11-0
 gates whose code named one, 6 read green, 17 red, 27 refused or did not finish. A gate that runs a script that is gone measures nothing.
 
 usage: util_dead_script_gates.py [--check] [--list] | --gate NAME | --probe
-A DELETED SCRIPT is a file name git records as deleted under harness/scripts and that is on disk nowhere under harness/scripts or .github/scripts.
+A DELETED SCRIPT is a file name git records as deleted under S4E_HARNESS/scripts and that is on disk nowhere under S4E_HARNESS/scripts or S4E_GITHUB/scripts.
 A gate NAMES it when the name stands in a line of the gate that is not a comment. A name a gate makes up for a scratch fixture was never in git and
 is not counted.
   (no switch)  DEAD_SCRIPT_GATES gates=N naming_a_deleted_script=M deleted_scripts_named=K, rc 0

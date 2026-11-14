@@ -10,7 +10,8 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${HERE}/../../SCRIP/scrip"
+. "$HERE/lib_paths.sh"
+SCRIP="${S4E_SCRIP}/scrip"
 TIMEOUT=30
 PASS=0; FAIL=0; SKIP=0
 
@@ -70,7 +71,7 @@ rm -f "$T"
 # ⭐ A silent drop is worse than a skip and far worse than a failure: the summary line is not merely
 # incomplete, it is CONFIDENT -- SKIP=0 positively asserts that nothing was left out. Counting the miss is
 # what makes the denominator honest, so the else branch below is the real fix and the path is only the cause.
-BEAUTY=${CORPUS:-$S4E/corpus}/demos/snocone/beauty/test
+BEAUTY=${CORPUS:-$S4E_CORPUS}/demos/snocone/beauty/test
 for subsys in assign fence global arith; do
     f="$BEAUTY/test_$subsys.sc"
     ref="$BEAUTY/test_$subsys.ref"

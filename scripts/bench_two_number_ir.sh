@@ -33,9 +33,10 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-SCRIP_BIN="${SCRIP:-$HERE/../../SCRIP/scrip}"
-RT_DIR="$HERE/../../SCRIP/out"
-B="$S4E/corpus/benchmarks"
+. "$HERE/lib_paths.sh"
+SCRIP_BIN="${SCRIP:-$S4E_SCRIP/scrip}"
+RT_DIR="$S4E_SCRIP/out"
+B="$S4E_CORPUS/benchmarks"
 TMO="${IR_TIMEOUT:-600}"
 LANG_ARG="${1:-}"
 refuse() { echo "⛔ TWO-NUMBER BOARD REFUSED (rc=2): $*" >&2; exit 2; }
@@ -117,8 +118,8 @@ rival_ir() {  # $1 = kernel source path -> Ir on the rival engine, or empty if n
                fi
                return 0
              fi
-             [ -f "$S4E/corpus/benchmarks/snobol4/$tw.sno" ] || return 0
-             ir_of "$(sbl_clean_bin)" $(sbl_lang_flags) "$S4E/corpus/benchmarks/snobol4/$tw.sno" < /dev/null;;
+             [ -f "$S4E_CORPUS/benchmarks/snobol4/$tw.sno" ] || return 0
+             ir_of "$(sbl_clean_bin)" $(sbl_lang_flags) "$S4E_CORPUS/benchmarks/snobol4/$tw.sno" < /dev/null;;
     icon)   d="$(mktemp -d "$WORKDIR/ic.XXXXXX")"; ( cd "$d" && "$(icont_bin)" -o "$d/o.oracle" "$f" ) >/dev/null 2>&1 || return 0
             ir_of "$(iconx_bin)" "$d/o.oracle" < /dev/null;;
     prolog) command -v swipl >/dev/null 2>&1 || return 0; ir_of swipl -q -g true -t halt "$f" < /dev/null;;
@@ -140,8 +141,8 @@ E="$WORKDIR/empty.$EXT"; write_empty "$E"
 OVH_M3="$(ir_of "$SCRIP_BIN" --run "$E" < /dev/null)"
 OVH_M4="$(scrip_m4_ir "$E")"
 OVH_RV="$(rival_ir "$E")"
-TREE="$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"
-CORPUS_TREE="$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
+TREE="$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"
+CORPUS_TREE="$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo '?')"
 echo "TWO_NUMBER_IR lang=$LANG_ARG tree=SCRIP $TREE corpus $CORPUS_TREE RT_OPT=-O0 instrument=callgrind-Ir date=$(date -u +%Y-%m-%d)"
 echo "  basis: WORK = total Ir - OVERHEAD; OVERHEAD = empty-program subtraction (the marked interim of"
 echo "         RULES.md § THE TWO-NUMBER BENCHMARK BASIS). Multiple = rival WORK / SCRIP WORK (FASTER axis)."

@@ -9,7 +9,8 @@
 # Idempotent. Safe to run multiple times.
 set -euo pipefail
 
-SCRIP="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+SCRIP="$S4E_SCRIP"
 ROOT="$(cd "$SCRIP/.." && pwd)"
 
 echo "=== snobol4ever session setup ==="

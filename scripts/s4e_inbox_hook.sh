@@ -26,6 +26,7 @@
 # another seat against this inbox, which is exactly the layer-2 false-GREEN hq_P found in the batons.
 set -u
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
 PO="${S4E_POST:-/home/resources/postoffice}"
 ME="${S4E_SEAT:-}"
 if [ -z "$ME" ]; then case "$S4E" in
@@ -86,7 +87,7 @@ fi
 # looks-wired-cannot-fire defect this fleet has now measured four times today. This is the live
 # path: it runs for every seat at every prompt, costs a cmp per repo, and says nothing unless it
 # actually installed something. Never allowed to break the inbox banner above it.
-if [ -x "$S4E/harness/scripts/install_commit_msg_hook.sh" ]; then
-  _h="$(bash "$S4E/harness/scripts/install_commit_msg_hook.sh" --quiet 2>/dev/null || true)"
+if [ -x "$S4E_HARNESS/scripts/install_commit_msg_hook.sh" ]; then
+  _h="$(bash "$S4E_HARNESS/scripts/install_commit_msg_hook.sh" --quiet 2>/dev/null || true)"
   [ -n "$_h" ] && printf '%s\n' "$_h"
 fi

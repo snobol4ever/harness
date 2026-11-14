@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""util_raku_ladder_status.py -- THE RAKU LADDER INSTRUMENT (.github/ARCH-RAKU-TO-100.md section 9; row
+"""util_raku_ladder_status.py -- THE RAKU LADDER INSTRUMENT (S4E_GITHUB/ARCH-RAKU-TO-100.md section 9; row
 raku-ladder-step-0-the-ladder-instrument-util-raku-ladder-status-reads-the-rungs-and-replaces-the-map-r-2044). A READ: it runs no program.
 
-READS  corpus/tests/raku/LADDER.tsv (every declared rung, its construct and family), corpus/tests/raku/ALL.csv (the RakRungs master:
-       a rung's FORMS are its ladder__rungNNN_* entries), corpus/packages/raku/roast/ROAST-RUNG-MAP.tsv (every red Roast program's first-block
+READS  S4E_CORPUS/tests/raku/LADDER.tsv (every declared rung, its construct and family), S4E_CORPUS/tests/raku/ALL.csv (the RakRungs master:
+       a rung's FORMS are its ladder__rungNNN_* entries), S4E_CORPUS/packages/raku/roast/ROAST-RUNG-MAP.tsv (every red Roast program's first-block
        and unblock rung) and /home/resources/progress/results.tsv (the latest reading per program and mode). A reading stamped on a -dirty
        SCRIP tree measures no tree on origin and is UNREAD here (R-2060).
 A RUNG is GREEN when it has at least one form and every form reads PASS in m3 AND m4 at its latest reading; a rung with no form yet is RED
@@ -23,9 +23,14 @@ Every run prints LADDER_SUMMARY (all declared rungs by family) and exits 0 unles
 import argparse, csv, importlib.util, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-LADDER = os.path.join(ROOT, 'corpus/tests/raku/LADDER.tsv')
-MAP = os.path.join(ROOT, 'corpus/packages/raku/roast/ROAST-RUNG-MAP.tsv')   # moved from corpus/tests/raku/config (the cfo 2026-11-12, CIO-55)
-MASTER = os.path.join(ROOT, 'corpus/tests/raku/ALL.csv')
+sys.path.insert(0, HERE)
+import harness_paths
+CORP = str(harness_paths.corpus())
+HARN = str(harness_paths.harness())
+SCR = str(harness_paths.scrip())
+LADDER = os.path.join(CORP, 'tests/raku/LADDER.tsv')
+MAP = os.path.join(CORP, 'packages/raku/roast/ROAST-RUNG-MAP.tsv')   # moved from S4E_CORPUS/tests/raku/config (the cfo 2026-11-12, CIO-55)
+MASTER = os.path.join(CORP, 'tests/raku/ALL.csv')
 RESULTS = os.environ.get('S4E_LADDER_RESULTS', '/home/resources/progress/results.tsv')
 RUNGS_SUITE, ROAST_SUITE = 'raku-rungs', 'roast'
 
@@ -117,7 +122,7 @@ def load_map():
 def roast_count():
     sr = os.path.join(HERE, 'util_score_row.py')
     p = subprocess.run([sys.executable, sr, 'from-progress', '--suite', ROAST_SUITE, '--dry-run'], capture_output=True, text=True,
-                       cwd=os.path.join(ROOT, 'SCRIP'))
+                       cwd=SCR)
     m = re.search(r'would set roast -> (\d+)/(\d+)(?: excluded=(\d+))? stamped ([0-9a-f]+(?:-dirty)?)', p.stdout + p.stderr)
     if not m:
         print('ROAST_COUNT REFUSE(2): util_score_row.py from-progress --suite roast --dry-run rc=%d said no row' % p.returncode)

@@ -14,8 +14,9 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${HERE}/../../SCRIP/scrip"
-RT_SO="${HERE}/../../SCRIP/out/libscrip_rt.so"
+. "$HERE/lib_paths.sh"
+SCRIP="${S4E_SCRIP}/scrip"
+RT_SO="${S4E_SCRIP}/out/libscrip_rt.so"
 TIMEOUT=30
 PASS=0; FAIL=0; SKIP=0; M4OK=0; M4BAD=0
 
@@ -24,7 +25,7 @@ icn_mode4_run() {
     local file="$1" s4 bin4 out=""
     s4=$(mktemp /tmp/icn_XXXXXX.s); bin4=$(mktemp /tmp/icn_XXXXXX.bin); rm -f "$bin4"
     if timeout -k 5 "$TIMEOUT" "$SCRIP" --compile "$file" >"$s4" 2>/dev/null </dev/null && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
-        if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
+        if gcc -no-pie "$s4" -L"${S4E_SCRIP}/out" -lscrip_rt -Wl,-rpath,"${S4E_SCRIP}/out" -o "$bin4" 2>/dev/null; then
             out=$(timeout -k 5 "$TIMEOUT" "$bin4" 2>/dev/null </dev/null)
         fi
     fi
@@ -90,7 +91,7 @@ xcheck "every_to" "$T"
 rm -f "$T"
 
 # Rung files — if present
-RUNGS=$S4E/SCRIP/test/icon
+RUNGS=$S4E_SCRIP/test/icon
 for rung in rung01 rung02 rung03; do
     f="$RUNGS/${rung}.icn"
     ref="$RUNGS/${rung}.ref"

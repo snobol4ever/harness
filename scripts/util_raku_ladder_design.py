@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """util_raku_ladder_design.py -- THE RAKU-TO-100 LADDER AND ROAST MAP, GENERATED FROM THE DATA (the cto, 2026-10-30, R-2044/2045/2046;
-.github/ARCH-RAKU-TO-100.md section 3 is the rule this script applies, and the script is the rule's one executable form).
+S4E_GITHUB/ARCH-RAKU-TO-100.md section 3 is the rule this script applies, and the script is the rule's one executable form).
 
 READS  the design row's frozen snapshot (every Roast program not PASS), results.tsv (the latest mode-3 note per program: the emitter's
-       refusal names a construct), corpus/packages/raku/roast/TESTS.tsv (the constructs every Roast TAP test exercises, cut from Rakudo 09-27),
-       corpus/tests/raku/LADDER.tsv (rung00..rung20, BUILT), harness/designs/raku_ladder/CORE-NAMES.tsv (Raku's CORE:: symbols, written
+       refusal names a construct), S4E_CORPUS/packages/raku/roast/TESTS.tsv (the constructs every Roast TAP test exercises, cut from Rakudo 09-27),
+       S4E_CORPUS/tests/raku/LADDER.tsv (rung00..rung20, BUILT), S4E_HARNESS/designs/raku_ladder/CORE-NAMES.tsv (Raku's CORE:: symbols, written
        once from `raku -e` and read from the file after), src/runtime/rk_rakudo_method_names.inc (Rakudo's method names: the core-method filter).
-WRITES corpus/tests/raku/LADDER.tsv (rung21.. appended, STATUS DECLARED; rung00..20 untouched),
-       corpus/packages/raku/roast/ROAST-RUNG-MAP.tsv (program TAB first-blocking rung TAB unblock rung TAB outcome TAB basis TAB construct),
+WRITES S4E_CORPUS/tests/raku/LADDER.tsv (rung21.. appended, STATUS DECLARED; rung00..20 untouched),
+       S4E_CORPUS/packages/raku/roast/ROAST-RUNG-MAP.tsv (program TAB first-blocking rung TAB unblock rung TAB outcome TAB basis TAB construct),
        and prints the page's rung table (markdown) and the counts on stdout. --dry-run prints and writes nothing.
 THE RULE: a construct is a LANGUAGE FEATURE when its family is kw, op, lit, quote, regex, twigil, var, meta, test, or a meth/call/type/word
        name Raku's CORE or Rakudo's method list knows (a test-local name places nothing); features are grouped into twenty families in
@@ -18,13 +18,18 @@ THE RULE: a construct is a LANGUAGE FEATURE when its family is kw, op, lit, quot
 """
 import collections, os, re, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
+CORP = str(harness_paths.corpus())
+HARN = str(harness_paths.harness())
+SCR = str(harness_paths.scrip())
 SN = '/home/resources/postoffice/tasks/design-raku-to-100-every-roast-feature-on-a-complexity-ordered-rung-ladder-built-incrementally-r-2044.snapshot.tsv'
 RESULTS = '/home/resources/progress/results.tsv'
-TESTS = os.path.join(ROOT, 'corpus/packages/raku/roast/TESTS.tsv')
-LADDER = os.path.join(ROOT, 'corpus/tests/raku/LADDER.tsv')
-MAP = os.path.join(ROOT, 'corpus/packages/raku/roast/ROAST-RUNG-MAP.tsv')   # moved from corpus/tests/raku/config (the cfo 2026-11-12, CIO-55)
-CORE = os.path.join(ROOT, 'harness/designs/raku_ladder/CORE-NAMES.tsv')   # moved from corpus/tests/raku/config (the cfo 2026-11-12, CIO-55)
-METH = os.path.join(ROOT, 'SCRIP/src/runtime/rk_rakudo_method_names.inc')
+TESTS = os.path.join(CORP, 'packages/raku/roast/TESTS.tsv')
+LADDER = os.path.join(CORP, 'tests/raku/LADDER.tsv')
+MAP = os.path.join(CORP, 'packages/raku/roast/ROAST-RUNG-MAP.tsv')   # moved from S4E_CORPUS/tests/raku/config (the cfo 2026-11-12, CIO-55)
+CORE = os.path.join(HARN, 'designs/raku_ladder/CORE-NAMES.tsv')   # moved from S4E_CORPUS/tests/raku/config (the cfo 2026-11-12, CIO-55)
+METH = os.path.join(SCR, 'src/runtime/rk_rakudo_method_names.inc')
 DRY = '--dry-run' in sys.argv
 
 FAMILIES = [
@@ -335,7 +340,7 @@ def main():
     # outputs
     if not DRY:
         with open(MAP, 'w') as f:
-            f.write('# ROAST-RUNG-MAP.tsv -- every Roast program of the R-2044 snapshot (not PASS at the 11:41 reading) on the rung that FIRST blocks it (column 2) and the rung that UNBLOCKS it (column 3: the highest rung among the features its tests exercise), with its outcome, the basis of the placement (tests: TESTS.tsv constructs; refusal:<construct>: the emitter refusal named it; chapter:<dir>: no feature row, placed at the chapter family first rung) and the first-blocking construct; written by harness/scripts/util_raku_ladder_design.py (ARCH-RAKU-TO-100 section 3). A program moves up the map as rungs go green; a program still red with every rung green gains a FORM on its unblock rung.\n')
+            f.write('# ROAST-RUNG-MAP.tsv -- every Roast program of the R-2044 snapshot (not PASS at the 11:41 reading) on the rung that FIRST blocks it (column 2) and the rung that UNBLOCKS it (column 3: the highest rung among the features its tests exercise), with its outcome, the basis of the placement (tests: TESTS.tsv constructs; refusal:<construct>: the emitter refusal named it; chapter:<dir>: no feature row, placed at the chapter family first rung) and the first-blocking construct; written by harness' '/scripts/util_raku_ladder_design.py (ARCH-RAKU-TO-100 section 3). A program moves up the map as rungs go green; a program still red with every rung green gains a FORM on its unblock rung.\n')
             f.write('# program\tfirst_rung\tunblock_rung\toutcome\tbasis\tconstruct\n')
             for p, a, b, o, bs, c in placed: f.write(f'{p}\trung{a:03d}\trung{b:03d}\t{o}\t{bs}\t{c}\n')
         lad = open(LADDER).read().rstrip('\n').split('\n')

@@ -10,9 +10,10 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # (IDENTICAL only — never rc/non-empty, the s164 rsg lesson); a missing suite file drops from BOTH sums and the
 # report says PARTIAL. FALSIFIABILITY: report recomputes from files only — edit one file, META must move.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY S4E_GITHUB/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
 set -uo pipefail
-SD="$(cd "$(dirname "$0")/../../SCRIP" && pwd)"; CORPUS="${CORPUS:-$S4E/corpus}"; ORACLE_BIN="${ORACLE_BIN:-$S4A/icon-master/bin}"
+SD="$S4E_SCRIP"; CORPUS="${CORPUS:-$S4E_CORPUS}"; ORACLE_BIN="${ORACLE_BIN:-$S4A/icon-master/bin}"
 SUITES_ALL="rungs_m3 rungs_m3_cells rungs_m4 bench_correct smoke crosscheck gates"
 w_of(){ case "$1" in rungs_m3) echo 25;; rungs_m4) echo 20;; rungs_m3_cells) echo 10;; bench_correct) echo 15;; smoke) echo 10;; crosscheck) echo 5;; gates) echo 10;; *) echo 0;; esac; }
 parse_rungs(){ sed -n 's/.*PASS=\([0-9]*\) FAIL=\([0-9]*\) XFAIL=\([0-9]*\) TOTAL=\([0-9]*\).*/\1 \4/p' | tail -1; }

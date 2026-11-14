@@ -32,9 +32,10 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once, util_timeout_retry.sh
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-CORPUS="${CORPUS:-$S4E/corpus/tests/prolog}"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+CORPUS="${CORPUS:-$S4E_CORPUS/tests/prolog}"
 RUNG=""
 MODE="all"                              # DEFAULT: run all three modes
 SMX_SIG='\[SMX\]'                       # both refuse banners begin with "[SMX]"
@@ -62,10 +63,10 @@ fi
 # does, the officer -> hq_T 2026-09-04). Existence is not currency: a binary that IS there can still predate the tree
 # whose SHA the board stamps on the verdict. NO LOGIC HERE -- util_require_fresh.sh sources gate_require_fresh
 # from lib_gate.sh, the ONE authority (hq_B 4c7253e99), never a second copy.
-"$HERE/util_require_fresh.sh" --gate test_prolog_rung_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
+"$HERE/util_require_fresh.sh" --gate test_prolog_rung_suite "$SCRIP" "${RT_DIR:-$S4E_SCRIP/out}/libscrip_rt.so" || exit 2
 if [ ! -d "$CORPUS" ]; then
     echo "⛔ REFUSED TO GRADE rc=2: no corpus at $CORPUS" >&2
-    echo "     clone snobol4ever/corpus to $S4E/corpus to run this suite" >&2
+    echo "     clone snobol4ever/corpus to $S4E_CORPUS to run this suite" >&2
     exit 0
 fi
 

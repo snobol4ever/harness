@@ -23,8 +23,9 @@
 # rc 0 every output equal and icn_dj_spine_alt has no retaining-disjunction home · rc 1 an output differs or that home remains · rc 2 could not measure.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
+SC="$S4E_SCRIP"
 [ -x "$SC/scrip" ] || { echo "REFUSE(2): no $SC/scrip"; exit 2; }
 [ -f "$SC/out/libscrip_rt.so" ] || { echo "REFUSE(2): no $SC/out/libscrip_rt.so"; exit 2; }
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT

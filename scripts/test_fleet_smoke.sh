@@ -10,7 +10,7 @@
 # rc 0 = every language smoke green; 1 = a red, named; 2 = could not measure (a smoke refused, or a runner is missing).
 # usage: bash ../harness/scripts/test_fleet_smoke.sh [--list]   (--list prints the eight runners and runs nothing)
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; cd "$ROOT" || exit 2
 LANGS="snobol4 icon prolog snocone rebus raku pascal polyglot"
 RECORD="${S4E_SMOKE_RECORD:-/home/resources/progress/SMOKE.tsv}"
 if [ "${1:-}" = --list ]; then for l in $LANGS; do echo "../harness/scripts/test_smoke_$l.sh"; done; exit 0; fi

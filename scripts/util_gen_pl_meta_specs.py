@@ -7,11 +7,11 @@ predicate_property(H, meta_predicate(Spec)) answers from ONE column of the predi
 gets the column from its :- meta_predicate directive at lowering; a builtin with no Prolog source (the C and asm builtins and
 the control constructs) gets it from the table this script writes, never from a list typed by hand.
 
-  --cut      run the oracles and write harness/scripts/pl_meta_specs.tsv: swipl 9.0.4's
+  --cut      run the oracles and write S4E_HARNESS/scripts/pl_meta_specs.tsv: swipl 9.0.4's
              findall over predicate_property(system:H, meta_predicate(S)) (147 rows) and gprolog 1.4.5's
              predicate_property(H, meta_predicate(S)) over its builtins (54 rows), each spec's arguments printed as the oracle
              prints them (0..9 : ^ // ? + - * for swipl, 0..9 : ? + - for gprolog -- verbatim, never normalised).
-  (default)  write SCRIP/src/runtime/pl_meta_specs.inc from the TSV: one token array and two row tables (swi, gnu), each row
+  (default)  write S4E_SCRIP/src/runtime/pl_meta_specs.inc from the TSV: one token array and two row tables (swi, gnu), each row
              { name, arity, index of its first token }; the runtime and the lowerer read it through rt_pl_meta_builtin.
   --check    rc 1 when the .inc is not what the TSV gives (an .inc edited by hand, or a TSV re-cut without a regeneration).
 
@@ -23,8 +23,10 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import harness_paths
 TSV = os.path.join(HERE, "pl_meta_specs.tsv")
-INC = os.path.join(HERE, "..", "..", "SCRIP", "src", "runtime", "pl_meta_specs.inc")
+INC = os.path.join(str(harness_paths.scrip()), "src", "runtime", "pl_meta_specs.inc")
 SWIPL = "/usr/bin/swipl"
 GPLC = "/usr/bin/gplc"
 SWI_GOAL = ("forall((predicate_property(system:H, meta_predicate(S)), functor(S, N, A)), "
