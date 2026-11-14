@@ -31,6 +31,10 @@ def exports_of(src):
     for m in re.finditer(r"^my[ \t]+(\$\*[A-Za-z_][A-Za-z0-9_-]*)", src, re.M):
         if m.group(1) not in names:
             names.append(m.group(1))
+    for line in re.finditer(r"^augment[ \t]+class[ \t]+[^\n]*", src, re.M):
+        for m in re.finditer(r"\bmethod[ \t]+([A-Za-z_][A-Za-z0-9_-]*)", line.group(0)):
+            if "." + m.group(1) not in names:
+                names.append("." + m.group(1))
     return " " + " ".join(names) + " " if names else ""
 
 
