@@ -26,12 +26,13 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" || exit 2; case "${1:-
 # second wipes the first, and `report` then scores a partial denominator that LOOKS like a whole board.  A
 # META number comes from ONE run naming every suite; a --suites run gets its OWN --out dir (s182).
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.  # one-disk: not a path
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once, util_timeout_retry.sh
-SC="$(cd "$HERE/../../SCRIP" 2>/dev/null && pwd)"
-CORPUS="${CORPUS:-$S4E/corpus}"
+. "$HERE/lib_paths.sh"
+SC="$S4E_SCRIP"
+CORPUS="${CORPUS:-$S4E_CORPUS}"
 SBL="${SBL:-$S4A/x64/bin/sbl}"
 # ⭐ UNDER A PORT ENGINE THE SCORECARD GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; R-1822; Lon 2026-10-18, in-chat to hq_dotnet,
 # verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face) unless the caller
@@ -418,7 +419,7 @@ cmd_run() {
   for nm in $(echo "$only" | tr ',' ' '); do
     echo "$SUITES" | awk 'NF{print $1}' | grep -qx -- "$nm" && continue
     case "$nm" in
-      lon) echo "⛔ REFUSED --suites lon: Lon ruled corpus/lon is not to be run, and the suite was DELETED from this scorecard at s189. There is no flag that runs it." >&2;;
+      lon) echo "⛔ REFUSED --suites lon: Lon ruled corpus/lon is not to be run, and the suite was DELETED from this scorecard at s189. There is no flag that runs it." >&2;;  # one-disk: not a path
       *)   echo "⛔ REFUSED --suites $nm: no such suite. Known: $(echo "$SUITES" | awk 'NF{print $1}' | tr '\n' ' ')" >&2;;
     esac; bad=1
   done

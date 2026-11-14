@@ -6,6 +6,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 
 TIMEOUT=${TIMEOUT:-10}
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+. "$SCRIPT_DIR/lib_paths.sh"
 
 # shellcheck source=lib_oracle_flags.sh
 . "$SCRIPT_DIR/lib_oracle_flags.sh"                                     # icont_bin(): the ONE authority for the Icon oracle path -- it is NOT on PATH, and bare `icont` reads as "no Icon oracle exists"
@@ -15,8 +16,8 @@ ICONT=$(icont_bin) || { echo "ERROR: Icon oracle unresolvable -- refusing rather
 # 2026-08-24 corpus re-grid; the old hardcoded corpus/demos/scrip/ path had additionally been resolving through
 # $REPO_ROOT/.. = /home (one level above the seat root), so it could never have matched even before the move.
 icn_src() {                                                             # $1 = basename to find under the corpus
-    local hit; hit=$(find "$S4E/corpus" -name "$1" -type f 2>/dev/null | sort | head -1)
-    [ -n "$hit" ] || { printf "⛔ ICON SOURCE UNRESOLVABLE UNDER %s: %s\n" "$S4E/corpus" "$1" >&2; return 1; }
+    local hit; hit=$(find "$S4E_CORPUS" -name "$1" -type f 2>/dev/null | sort | head -1)
+    [ -n "$hit" ] || { printf "⛔ ICON SOURCE UNRESOLVABLE UNDER %s: %s\n" "$S4E_CORPUS" "$1" >&2; return 1; }
     printf '%s\n' "$hit"
 }
 PARSER_SRC=$(icn_src icon_parser.icn)     || exit 2
@@ -30,7 +31,7 @@ trap 'rm -rf "$TMP"' EXIT INT TERM
 DIRS=("$@")
 if [ ${#DIRS[@]} -eq 0 ]; then
   DIRS=()                                                               # ⛔ only directories that EXIST -- a dead path in this list silently shrinks the denominator (find's error is swallowed by 2>/dev/null)
-  for d in "$S4E/corpus/tests/icon"; do [ -d "$d" ] && DIRS+=("$d"); done
+  for d in "$S4E_CORPUS/tests/icon"; do [ -d "$d" ] && DIRS+=("$d"); done
   [ ${#DIRS[@]} -gt 0 ] || { echo "ERROR: no Icon corpus directory resolved -- refusing"; exit 2; }
 fi
 

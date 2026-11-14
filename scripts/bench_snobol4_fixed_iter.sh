@@ -28,9 +28,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME
 S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/snobol4}"
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/snobol4}"
 SCALETSV="${SCALETSV:-$B/SCALE.tsv}"
 T="${TIMEOUT:-120}"; REPS="${REPS:-1}"; NOHUGE="${NOHUGE:-1}"
 STATIC="${STATIC:-0}"    # row m4-static-link-arm: opt-in m4 link arm, out/libscrip_rt.so stays canonical
@@ -53,7 +53,7 @@ ENGINES="${ENGINES:-sbl m3 m4}"
 [ -d "$B" ]     || { echo "SKIP fixed-iter bench corpus missing ($B)"; exit 0; }
 [ -f "$SCALETSV" ] || { echo "REFUSING: no $SCALETSV -- angle 2 needs a committed per-kernel N; run ../harness/scripts/calibrate_bench_scale.sh once to bake it, then commit it. Not deriving one on the fly (that would be re-deriving from scratch on every run, exactly what this row exists to stop)." >&2; exit 3; }
 WRAP="$ROOT/out/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
 if [ "$STATIC" = 1 ]; then
   RT_A="$(static_rt_archive "$ROOT")" || { echo "REFUSING: STATIC=1 but out/libscrip_rt.a could not be built (make libscrip_rt_static)" >&2; exit 3; }
 fi

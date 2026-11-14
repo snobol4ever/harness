@@ -26,7 +26,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
+. "$HERE/lib_paths.sh"; SC="$S4E_SCRIP"
 WD="$HERE/../designs/zeta_layout"   # the step table and ROWS0.tsv (CIO-56); the witnesses are staged into $ST by design_witness_stage
 ST=""
 GCW="$HERE/gc_witnesses"
@@ -57,7 +57,7 @@ done
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 wext() { local w="$1"; for e in sno icn pl pas raku; do [ -f "$ST/$w.$e" ] && { echo "$e"; return 0; }; done; return 1; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: zeta-layout -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses the entries zeta_layout__<name> of their masters, else loose in corpus/tests/<lang>/zeta_layout (refs from SPITBOL, Arizona Icon, swipl, fpc -Miso, Rakudo)"
+    echo "DESIGN-PLAN: zeta-layout -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses the entries zeta_layout__<name> of their masters, else loose in corpus/tests/<lang>/zeta_layout (refs from SPITBOL, Arizona Icon, swipl, fpc -Miso, Rakudo)"  # one-disk: not a path
     printf '%-4s %-78s %-12s %-7s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-78s %-12s %-7s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -103,7 +103,7 @@ fi
 declare -A pass=([m3]=0 [m4]=0 [m3s]=0 [m4s]=0)
 n=0; reds=""
 [ "$wits" = "-" ] && wits=""
-ST="$OUT/step$step/wit"; design_witness_stage zeta_layout "$ST" $(allwits) || refuse "the plan's witnesses did not stage (lib_design_witness.sh: the entry zeta_layout__<name> of a master, or a loose pair in corpus/tests/<lang>/zeta_layout)"
+ST="$OUT/step$step/wit"; design_witness_stage zeta_layout "$ST" $(allwits) || refuse "the plan's witnesses did not stage (lib_design_witness.sh: the entry zeta_layout__<name> of a master, or a loose pair in corpus/tests/<lang>/zeta_layout)"  # one-disk: not a path
 run_one() { # $1 dir $2 binary-or-scrip $3 witness-file-or-empty $4 stress(0|1) -> writes $1/out, returns rc
     local d="$1" bin="$2" f="$3" s="$4" rc
     if [ "$s" = 1 ]; then ( cd "$d" && env -u SCRIP_HEAP_MB $STRESS_ENV timeout -k 5 300 "$bin" -d131072k -s4096k $f < /dev/null > "$d/out" 2> "$d/err" ); rc=$?

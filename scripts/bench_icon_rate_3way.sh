@@ -37,7 +37,8 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255), Icon-aware since row icon-oracle-accessors-shared." >&2; exit 3; }
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root
-R="$S4E/SCRIP"; SCRIP=$R/scrip; RT=$R/out
+. "$HERE/lib_paths.sh"
+R="$S4E_SCRIP"; SCRIP=$R/scrip; RT=$R/out
 ICONT_BIN="$(icont_bin)" || exit 2
 iconx_bin >/dev/null || exit 2
 I="$(dirname "$ICONT_BIN")"
@@ -48,7 +49,7 @@ export PATH="$I:$PATH"
 # jcon_path_export() is the ONE authority (lib_oracle_flags.sh) and it EXPORTS PATH rather than handing back a
 # path, because jcon re-execs BY NAME and resolves its siblings off PATH -- an absolute path alone is not enough.
 eval "$(jcon_path_export)" || { echo "REFUSING(2): the jcon rival is unreachable -- this board prints a jcon column and must never print it blank." >&2; exit 2; }
-S=${S4E_RATE:-$S4E/corpus/benchmarks/icon/rate}
+S=${S4E_RATE:-$S4E_CORPUS/benchmarks/icon/rate}
 WARM=${WARM:-500}; BUD=${BUD:-1500}; REPS=${REPS:-3}
 LOAD0=$(cut -d" " -f1-3 /proc/loadavg)
 W=$(mktemp -d /tmp/rate3_XXXXXX); cd "$W"; cp $S/*.icn .

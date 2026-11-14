@@ -8,12 +8,12 @@
 # The officer's .github/scripts/util_relay_trigger.py counts these per seat per hour; a seat losing races is what starts the relay
 # (R-1709: one seat at a time holds the push baton). Your reflog already counts your rebases; this counts the races you lost.
 set -u
-here="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
 repo="${1:-$PWD}"
 po="${S4E_POSTOFFICE:-/home/resources/postoffice}"
 [ -d "$po" ] || { echo "REFUSE(2): no postoffice at $po -- nothing recorded"; exit 2; }
 git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 || { echo "REFUSE(2): $repo is not a git repository -- nothing recorded"; exit 2; }
-seat="$(bash "$here/../harness/scripts/s4e_msg.sh" whoami 2>/dev/null | tail -1 | tr -d '[:space:]')"
+seat="$(bash "$S4E_HARNESS/scripts/s4e_msg.sh" whoami 2>/dev/null | tail -1 | tr -d '[:space:]')"
 [ -n "$seat" ] || seat="unknown-$(id -un)"
 name="$(basename "$(git -C "$repo" rev-parse --show-toplevel 2>/dev/null)")"
 mine="$(git -C "$repo" rev-parse --short=9 HEAD 2>/dev/null)"

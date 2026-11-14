@@ -51,7 +51,7 @@ Unicon built at: $DEST
 NEXT, and none of it is this script's to do:
   1. ceo adds the ICON ORACLE row to /home/resources/ORACLES.md naming this path, its role as
      RIVAL + CROSS-CHECK, and that Arizona icont remains the baseline.
-  2. a seat adds unicon_bin() to harness/scripts/lib_oracle_flags.sh beside icont_bin()/iconx_bin(),
+  2. a seat adds unicon_bin() to lib_oracle_flags.sh of the harness repo, beside icont_bin()/iconx_bin(),
      so no script ever assembles this path from memory (the one-path-segment trap, ORACLES.md).
   3. the coo re-baselines Icon benchmark grids with the third arm present; grids gain a column,
      they are NOT re-stamped -- existing numbers keep their own tree labels.

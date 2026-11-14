@@ -17,8 +17,10 @@
 # defect ("MANDATORY LAST ACT OF EVERY SESSION" -- unfollowable, since no session knows which reply is
 # its last) and Lon's cure there was a Stop hook, not a sterner rule.  This is that cure for step 1.
 import json, os, shutil, sys
-seat_root = os.environ.get("S4E_HOME") or os.path.dirname(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP"))
-hook_sh = os.path.join(seat_root, "SCRIP", "scripts", "s4e_inbox_hook.sh")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
+seat_root = os.environ.get("S4E_HOME") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+hook_sh = os.path.join(str(harness_paths.scrip(seat_root)), "scripts", "s4e_inbox_hook.sh")
 settings = os.path.join(seat_root, ".claude", "settings.json")
 if not os.path.exists(hook_sh):
     sys.exit("REFUSED: %s does not exist -- pull SCRIP first (landed 3970f54a)." % hook_sh)

@@ -18,8 +18,8 @@
 # rc=0 every named lane is runner-written · rc=1 at least one is not · rc=2 CANNOT MEASURE (no row, no board)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
-BOARD="$ROOT/../.github/SCORE.md"
+. "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"
+BOARD="$S4E_GITHUB/SCORE.md"
 [ -f "$BOARD" ] || { echo "REFUSE(2): no SCORE.md at $BOARD -- cannot measure"; exit 2; }
 LANGS="$*"
 # ⛔ THE SCRIPTS DIR GOES IN BY ENVIRONMENT, NEVER BY INTERPOLATION -- the heredoc delimiter stays QUOTED

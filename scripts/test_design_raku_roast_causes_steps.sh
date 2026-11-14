@@ -29,14 +29,14 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
-STEPS="$HERE/../designs/raku_roast_causes/STEPS.tsv"   # moved from corpus/tests/raku/roast_causes (the cfo 2026-11-12, the tests/raku consolidation; CIO-24 c, CIO-56: a language folder is its container alone)
+. "$HERE/lib_paths.sh"; SC="$S4E_SCRIP"
+STEPS="$HERE/../designs/raku_roast_causes/STEPS.tsv"   # moved from corpus/tests/raku/roast_causes (the cfo 2026-11-12, the tests/raku consolidation; CIO-24 c, CIO-56: a language folder is its container alone)  # one-disk: not a path
 . "$HERE/lib_design_witness.sh" || { echo "REFUSE(2): lib_design_witness.sh unloadable" >&2; exit 2; }
 # ⭐ A WITNESS IS THE ENTRY roast_causes__NAME OF THE RAKU MASTER (the cfo 2026-11-12; each ref cut from Rakudo twice by util_add_ladder_witness.py
 # --family roast_causes, equal to the loose .ref it replaced): witness NAME DIR extracts it into DIR and sets WP (its .raku) and WR (its ref).
 witness() {
     mkdir -p "$2"
-    design_witness_has raku "roast_causes__$1" || refuse "witness $1: no entry roast_causes__$1 in corpus/tests/raku"
+    design_witness_has raku "roast_causes__$1" || refuse "witness $1: no entry roast_causes__$1 in corpus/tests/raku"  # one-disk: not a path
     design_witness_extract raku "roast_causes__$1" "$2" > /dev/null 2>&1 || refuse "witness $1: its entry roast_causes__$1 did not extract"
     WP="$2/roast_causes__$1.raku"; WR="$2/roast_causes__$1.ref"
 }
@@ -60,7 +60,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default raku_roast_causes; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: raku-roast-causes -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses are the entries roast_causes__<name> of corpus/tests/raku (refs from Rakudo 2026.05)"
+    echo "DESIGN-PLAN: raku-roast-causes -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses are the entries roast_causes__<name> of corpus/tests/raku (refs from Rakudo 2026.05)"  # one-disk: not a path
     printf '%-4s %-46s %-9s %-10s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-46s %-9s %-10s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -69,7 +69,7 @@ if [ "$mode" = list ]; then
 fi
 RAKU="$(. "$HERE/lib_oracle_flags.sh" && rakudo_bin)" || refuse "no rakudo (lib_oracle_flags.sh rakudo_bin)"
 if [ "$mode" = cut ]; then
-    refuse "--cut retired: the witnesses are entries of corpus/tests/raku, each ref cut from Rakudo twice by util_add_ladder_witness.py --lang raku --family roast_causes (CIO-37)"
+    refuse "--cut retired: the witnesses are entries of corpus/tests/raku, each ref cut from Rakudo twice by util_add_ladder_witness.py --lang raku --family roast_causes (CIO-37)"  # one-disk: not a path
 fi
 [ -n "$(col "$step" 1)" ] || refuse "no step $step in $STEPS (--list names them)"
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"

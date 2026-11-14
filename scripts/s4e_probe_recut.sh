@@ -8,20 +8,20 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 ME="${S4E_SEAT:-}"
 refuse() { echo "REFUSE(2) [recut --probe]: $*"; exit 2; }
-[ -n "$ME" ] || refuse "S4E_SEAT unset -- run it as: bash harness/scripts/s4e_msg.sh recut --probe"
+[ -n "$ME" ] || refuse "S4E_SEAT unset -- run it as: bash harness/scripts/s4e_msg.sh recut --probe"  # one-disk: not a path
 mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 w="$(mktemp -d "/tmp/s4e/$ME/recut_probe.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$w"' EXIT
 po="$w/po"; t="recut-probe-$$"; now="$(date -u +%FT%TZ)"; b="$po/tasks/$t.task.md"
 mkdir -p "$po/tasks" "$po/$ME/inbox" || refuse "cannot make the scratch postoffice"
 printf '3\t%s\tprobe_owner\tRETIRED:criterion-refused-3-sweeps-probe\n' "$t" > "$po/QUEUE.tsv"
-oprem='grep -q old-premise-probe "$S4E_HOME/harness/scripts/s4e_msg.sh"'
+oprem='grep -q old-premise-probe "${S4E_HARNESS:-/home/harness}/scripts/s4e_msg.sh"'
 printf '# TASK %s\nGOAL: plant\nDONE-WHEN: no-such-command-recut-probe --arg\nPREMISE-WHEN: %s\nLINKS: minted via `mint` by probe_owner, %s\n## NEXT\nprobe\n## QA\n## LEDGER\n- [probe_owner] minted\n' "$t" "$oprem" "$now" > "$b"
 bus() { env -u S4E_PID_LOCK S4E_POST="$po" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$HERE/s4e_msg.sh" "$@"; }
-new='test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"'
-new2='test -f "$S4E_HOME/harness/scripts/s4e_probe_recut.sh"'
-prem2='grep -q "recut)" "$S4E_HOME/harness/scripts/s4e_msg.sh"'
-prem3='grep -q "recut)" "$S4E_HOME/harness/scripts/s4e_probe_recut.sh"'
+new='test -f "${S4E_HARNESS:-/home/harness}/scripts/s4e_msg.sh"'
+new2='test -f "${S4E_HARNESS:-/home/harness}/scripts/s4e_probe_recut.sh"'
+prem2='grep -q "recut)" "${S4E_HARNESS:-/home/harness}/scripts/s4e_msg.sh"'
+prem3='grep -q "recut)" "${S4E_HARNESS:-/home/harness}/scripts/s4e_probe_recut.sh"'
 why=""; pw=0
 
 # 1. the bare step-27 body: the DONE-WHEN re-cut, its old text on DONE-WHEN-WAS directly above the new line, the premise untouched

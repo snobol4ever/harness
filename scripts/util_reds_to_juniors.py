@@ -37,6 +37,7 @@ import os, re, subprocess, sys, tempfile, shutil, glob, time, fcntl
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import util_reds_to_designers as d2d
+import harness_paths
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
 PO = os.environ.get("S4E_POST", "/home/resources/postoffice")
@@ -83,16 +84,16 @@ def runner_rows(path):
 def reproduce(key, lang, entry, rows):
     r = rows.get(key)
     if r and r[1] in ("master", "pkg"):
-        d = "corpus/tests/" + r[2] if r[1] == "master" else r[4]
+        d = "corpus/tests/" + r[2] if r[1] == "master" else r[4]  # one-disk: not a path
         x = EXT.get(r[2], r[2])
-        return ("python3 harness/scripts/corpus_suite_harness.py run %s/ALL.%s %s/ALL.ref --lang %s --modes m3 --partition 'entry:%s'" % (d, x, d, r[2], entry),
-                "python3 harness/scripts/corpus_suite_harness.py extract %s/ALL.%s %s/ALL.ref '%s' /tmp/s4e/$S4E_SEAT/bug.%s --out-ref /tmp/s4e/$S4E_SEAT/bug.ref --out-in /tmp/s4e/$S4E_SEAT/bug.in" % (d, x, d, entry, x),
-                "bash harness/scripts/monitor_run.sh /tmp/s4e/$S4E_SEAT/bug.%s --oracle" % x)
+        return ("python3 harness/scripts/corpus_suite_harness.py run %s/ALL.%s %s/ALL.ref --lang %s --modes m3 --partition 'entry:%s'" % (d, x, d, r[2], entry),  # one-disk: not a path
+                "python3 harness/scripts/corpus_suite_harness.py extract %s/ALL.%s %s/ALL.ref '%s' /tmp/s4e/$S4E_SEAT/bug.%s --out-ref /tmp/s4e/$S4E_SEAT/bug.ref --out-in /tmp/s4e/$S4E_SEAT/bug.in" % (d, x, d, entry, x),  # one-disk: not a path
+                "bash harness/scripts/monitor_run.sh /tmp/s4e/$S4E_SEAT/bug.%s --oracle" % x)  # one-disk: not a path
     if r and r[1] == "small":
-        return ("bash harness/scripts/%s (the suite's own runner; the entry %s is one of its programs)" % (r[3], entry),
-                "the program %s as its runner names it" % entry, "bash harness/scripts/monitor_run.sh <that program> --oracle")
+        return ("bash harness/scripts/%s (the suite's own runner; the entry %s is one of its programs)" % (r[3], entry),  # one-disk: not a path
+                "the program %s as its runner names it" % entry, "bash harness/scripts/monitor_run.sh <that program> --oracle")  # one-disk: not a path
     return ("the suite %s has no runner row in SUITE_RUNNERS.tsv: grade %s by the command its suite row names" % (key, entry),
-            "the program %s" % entry, "bash harness/scripts/monitor_run.sh <that program> --oracle")
+            "the program %s" % entry, "bash harness/scripts/monitor_run.sh <that program> --oracle")  # one-disk: not a path
 
 
 def load(po, juniors):
@@ -124,9 +125,9 @@ def body(key, lang, entry, reading, rows):
             "1. Reproduce, from the root with S4E_HOME set: %s\n"
             "2. The oracle: %s ; then %s\n"
             "3. Find the cause and cure it in your own root (no seat makes a worktree: Lon 2026-11-13, \"I want you to work in /home/claude folder.\"); load the skill the gate names before each edit, and commit the cure, its message naming %s, before you prove it.\n"
-            "4. Prove it in your root: the reproduce line of step 1 reads PASS for the entry in mode 3; bash harness/scripts/test_feature_reps.sh %s <the feature you touched>; bash harness/scripts/test_smoke_%s.sh.\n"
-            "5. Land it from your root: bash harness/scripts/s4e_land.sh --gate '<the step 1 line, grepping m3_pass=1 m3_fail=0>' <the repos you changed>; then s4e_msg.sh claim and done.\n"
-            "6. After one honest try that cannot land: bash harness/scripts/s4e_msg.sh escalate %s --stdin with the measurement (what you ran, what it printed), and send the WAKE it prints.\n"
+            "4. Prove it in your root: the reproduce line of step 1 reads PASS for the entry in mode 3; bash harness/scripts/test_feature_reps.sh %s <the feature you touched>; bash harness/scripts/test_smoke_%s.sh.\n"  # one-disk: not a path
+            "5. Land it from your root: bash harness/scripts/s4e_land.sh --gate '<the step 1 line, grepping m3_pass=1 m3_fail=0>' <the repos you changed>; then s4e_msg.sh claim and done.\n"  # one-disk: not a path
+            "6. After one honest try that cannot land: bash harness/scripts/s4e_msg.sh escalate %s --stdin with the measurement (what you ran, what it printed), and send the WAKE it prints.\n"  # one-disk: not a path
             % (key, entry, reading, sk, q, rd, show, have, red, q, rd, show, have, red, rep, ext, ora, re.sub(r"[^a-z0-9]+", "-", entry.lower()).strip("-")[:40] or "bug",
                lang, {"rebus": "rebus", "snocone": "snocone"}.get(lang, lang), d2d.topic_of(key, entry)))
 
@@ -252,7 +253,7 @@ def feed(order, reader, po, rows, limit, juniors, apply):
             for l in (p.stdout + p.stderr).splitlines():
                 if l.startswith(("minted ", "WAKE:", "queued ", "⛔", "REFUSE")): print(l)
             if not ok: print("MINT_REFUSED topic=%s rc=%d" % (t, p.returncode))
-    tree = subprocess.run(["git", "-C", os.path.join(ROOT, "harness"), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
+    tree = subprocess.run(["git", "-C", str(harness_paths.harness()), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
     print("FEED_BOARD suites_read=%d reds=%d unread=%d rowed=%d closed=%d alike=%d design=%d bugs=%d minted=%d limit=%d (tree %s)" % (read_n, reds_n, unread_n, rowed_n, closed_n, alike_n, design_n, len(bugs), minted, limit, tree or "?"))
     return bugs, rowed_n, minted
 
@@ -361,7 +362,7 @@ def probe():
         planted = {"tiny": "SUITE_ROW suite=tiny pass=1 total=3\nSUITE_ROW_RED progs/rowed m3=FAIL@a\nSUITE_ROW_RED progs/a1 m3=FAIL@a\n",
                    "big": "SUITE_ROW suite=big pass=1 total=5\nSUITE_ROW_RED b/x1 m3=FAIL@a\nSUITE_ROW_RED b/x2 m3=CRASH@a\nSUITE_ROW_RED b/x3 m3=FAIL@a\nSUITE_ROW_RED b/x4 m3=FAIL@a\n",
                    "mute": "REFUSE(2): planted refusal\n"}
-        rows = {"tiny": ["tiny", "pkg", "icon", "corpus_suite_harness.py", "corpus/packages/icon/tiny"]}
+        rows = {"tiny": ["tiny", "pkg", "icon", "corpus_suite_harness.py", "corpus/packages/icon/tiny"]}  # one-disk: not a path
         os.makedirs(os.path.join(w, "causes")); os.environ["S4E_CAUSES_DIR"] = os.path.join(w, "causes")
         open(os.path.join(w, "causes", "shared.members.tsv"), "w").write("suite\tcause\tentry\nbig\tshared\tb/x1\n")
         bugs, rowed, minted = feed([("mute", "icon"), ("tiny", "icon"), ("big", "prolog")], lambda k: planted[k], w, rows, 3, JUNIORS[:3], True)

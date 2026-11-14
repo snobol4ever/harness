@@ -57,7 +57,7 @@ PW="$HERE/util_progress_append.py"; [ -f "$PW" ] || refuse "the one progress-dat
 "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" >/dev/null || refuse "the binary is older than the tree -- run make (util_require_fresh.sh)"
 W="$(mktemp -d "${TMPDIR:-/tmp}/sncbench.XXXXXX")" || refuse "cannot make a work dir"; trap 'rm -rf "$W"' EXIT
 [ -n "$OUTDIR" ] || OUTDIR="$W/out"; mkdir -p "$OUTDIR" || refuse "cannot make $OUTDIR"
-RUSAGE="$W/bench_rusage"; gcc -o "$RUSAGE" "$ROOT/../harness/scripts/bench_rusage.c" 2>"$W/rusage.err" || refuse "harness/scripts/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"
+RUSAGE="$W/bench_rusage"; gcc -o "$RUSAGE" "$S4E_HARNESS/scripts/bench_rusage.c" 2>"$W/rusage.err" || refuse "harness/scripts/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"  # one-disk: not a path
 mapfile -t POP < <(find "$BD" -type f -name '*.sc' | LC_ALL=C sort)
 # ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the officer's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
 # S4E_CHUNK=entry:<kernel>[,...] only those kernels are graded, their rows appended, no suite row written (rr_end); under S4E_LIST=1 the

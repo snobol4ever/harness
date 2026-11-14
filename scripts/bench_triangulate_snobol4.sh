@@ -36,9 +36,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME
 S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"
 SCRIP="${SCRIP:-$ROOT/scrip}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/snobol4}"          # the REAL corpus dir -- always the SCALE.tsv home
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/snobol4}"          # the REAL corpus dir -- always the SCALE.tsv home
 TOL="${TOL_PCT:-10}"
 CHECK_SHAPE=0
 for a in "$@"; do case "$a" in --check-shape) CHECK_SHAPE=1 ;; esac; done
@@ -50,13 +50,13 @@ KERNEL="${CHECK_SHAPE_KERNEL:-array_sum}"
 SBL="$(sbl_clean_bin)" || { echo "⛔ REFUSED: clean SPITBOL benchmark oracle missing or not -bf-capable -- see lib_oracle_flags.sh." >&2; exit 2; }
 [ -d "$B" ] || { echo "⛔ REFUSED: benchmark corpus missing ($B)." >&2; exit 2; }
 WRAP="$ROOT/out/bench_rusage"
-if [ ! -x "$WRAP" ]; then gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }; fi
+if [ ! -x "$WRAP" ]; then gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }; fi
 # item 2's disk columns are load-bearing for this script's own telemetry angle -- refuse rather than
 # silently reporting inblock/oublock as empty if a stale pre-item-2 binary is sitting in tools/.
 WRAP_SELFTEST="$(mktemp)"; "$WRAP" true >"$WRAP_SELFTEST" 2>&1
 if ! grep -q 'inblock=' "$WRAP_SELFTEST"; then
   rm -f "$WRAP_SELFTEST"
-  echo "⛔ REFUSED: $WRAP predates the inblock/oublock fields (item 2) -- rebuild: gcc -O2 -o $WRAP $ROOT/../harness/scripts/bench_rusage.c" >&2
+  echo "⛔ REFUSED: $WRAP predates the inblock/oublock fields (item 2) -- rebuild: gcc -O2 -o $WRAP $S4E_HARNESS/scripts/bench_rusage.c" >&2
   exit 2
 fi
 rm -f "$WRAP_SELFTEST"
@@ -75,7 +75,7 @@ TS="$(date -u +%Y%m%dT%H%M%SZ)"
 if [ "$CHECK_SHAPE" -eq 1 ]; then OUT_TSV="${OUT_TSV:-$(mktemp)}"; else OUT_TSV="${OUT_TSV:-$B/triangulation-$TS.tsv}"; fi
 
 echo "THREE-ANGLE TRIANGULATION -- angle 1 (fixed time) vs angle 2 (fixed iters) vs disk telemetry"
-echo "tree=SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo '?') corpus $(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?') RT_OPT=$(readelf --debug-dump=info "$ROOT/out/libscrip_rt.so" 2>/dev/null | grep -m1 -o ' -O[0-3sg]' | tr -d ' ' || echo '?') date=$(date -u +%Y-%m-%d)"
+echo "tree=SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo '?') corpus $(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo '?') RT_OPT=$(readelf --debug-dump=info "$ROOT/out/libscrip_rt.so" 2>/dev/null | grep -m1 -o ' -O[0-3sg]' | tr -d ' ' || echo '?') date=$(date -u +%Y-%m-%d)"
 echo "tolerance: PER-ROW, = 3*sqrt(cv_angle1^2 + cv_angle2^2) from $([ -f "${FLOORTSV:-$B/NOISE-FLOOR.tsv}" ] && echo NOISE-FLOOR.tsv || echo '<UNBAKED -- flat floor only>'), floored at TOL_PCT=$TOL%; each row prints the tolerance it was judged against"
 [ "$CHECK_SHAPE" -eq 1 ] && echo "mode: --check-shape (kernel=$KERNEL, RUN_B=$RUN_B, OUT_TSV is scratch, not committed)"
 echo

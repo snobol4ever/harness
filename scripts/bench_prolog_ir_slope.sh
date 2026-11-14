@@ -44,9 +44,10 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # EXIT: 0 = board printed, 1 = a kernel read UNPROVEN/NONLINEAR, 2 = REFUSED (could not measure).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-SCRIP_BIN="${SCRIP:-$HERE/../../SCRIP/scrip}"
-RT_DIR="$HERE/../../SCRIP/out"
+SCRIP_BIN="${SCRIP:-$S4E_SCRIP/scrip}"
+RT_DIR="$S4E_SCRIP/out"
 TMO="${IR_TIMEOUT:-900}"
 BASE_N="${BASE_N:-40}"
 TARGET_IR="${TARGET_IR:-60000000}"
@@ -68,7 +69,7 @@ command -v valgrind >/dev/null 2>&1 || refuse "valgrind not on PATH -- this boar
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || refuse "lib_oracle_flags.sh unloadable (the ONE oracle-path authority)."
 SWI="$(swipl_bin)"    || refuse "swipl oracle absent -- lib_oracle_flags refused it."
 GNU="$(gprolog_bin)"  || refuse "gprolog oracle absent -- lib_oracle_flags refused it."
-B="$S4E/corpus/benchmarks/prolog/bench"
+B="$S4E_CORPUS/benchmarks/prolog/bench"
 [ -d "$B" ] || refuse "kernel dir missing: $B"
 W="$(mktemp -d "${TMPDIR:-/tmp}/plirslope.XXXXXX")" || refuse "cannot make a work dir."
 trap 'rm -rf "$W"' EXIT
@@ -99,8 +100,8 @@ ir_m4() {
   gcc -no-pie "$d/p.s" -o "$d/p.bin" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -lpthread >/dev/null 2>&1 || return 0
   ir_of "$d/p.bin" < /dev/null
 }
-TREE="$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"
-CTREE="$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
+TREE="$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"
+CTREE="$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo '?')"
 echo "IR_SLOPE lang=prolog tree=SCRIP $TREE corpus $CTREE RT_OPT=-O0 instrument=callgrind-Ir-regression date=$(date -u +%Y-%m-%d)"
 echo "  basis: Ir(n) = OVERHEAD + n*WORK fitted at n = N / 2N / 4N; WORK is the SLOPE (Ir per iteration,"
 echo "         startup cancelled exactly), OVERHEAD is the INTERCEPT and is ITS OWN NUMBER -- the two are"

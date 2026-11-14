@@ -29,7 +29,7 @@ seat="${S4E_SEAT:-probe}"; mkdir -p "/tmp/s4e/$seat"; t="$(mktemp -d "/tmp/s4e/$
 trap 'rm -rf "$t"' EXIT
 . "$here/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
 lifo="$t/lifo"; design_witness_stage_all lifo "$lifo" > /dev/null || refuse "the lifo witnesses did not stage (lib_design_witness.sh: the entries lifo__<name> of the prolog master; the cfo 2026-11-12)"
-cp "$here/../designs/prolog_lifo/STEPS.tsv" "$lifo/STEPS.tsv" || refuse "no step table at harness/designs/prolog_lifo/STEPS.tsv"
+cp "$here/../designs/prolog_lifo/STEPS.tsv" "$lifo/STEPS.tsv" || refuse "no step table at harness/designs/prolog_lifo/STEPS.tsv"  # one-disk: not a path
 wit="$lifo/lifo_catch_findall.pl"; [ -f "$wit" ] || refuse "no witness $wit"
 tree="$(git -C "$root/SCRIP" rev-parse --short=9 HEAD 2>/dev/null)"
 if [ "$arm" = same ]; then

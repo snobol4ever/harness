@@ -18,14 +18,15 @@
 # rc=2 REFUSES when a prerequisite is missing (an instrument that reports success while doing nothing is the recurring failure).
 set -u
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-SCRIP="${SCRIP:-$S4E/SCRIP/scrip}"
-RT_DIR="${RT_DIR:-$(cd "$(dirname "$0")/../../SCRIP/out" && pwd)}"
-PKG="$S4E/corpus/packages/pascal/p4"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+RT_DIR="${RT_DIR:-$(cd "$S4E_SCRIP/out" && pwd)}"
+PKG="$S4E_CORPUS/packages/pascal/p4"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 [ -x "$SCRIP" ] || { echo "REFUSE(2): no scrip binary at $SCRIP"; exit 2; }
 for f in comp.pas int.pas comp_detab.p PATCHES.md; do [ -f "$PKG/$f" ] || { echo "REFUSE(2): $PKG/$f missing -- the vendored P4 (PATCHES.md) is the population"; exit 2; }; done
 [ -x /usr/bin/time ] || { echo "REFUSE(2): /usr/bin/time missing -- no WORK time without it"; exit 2; }
-TREE="SCRIP=$(git -C "$S4E/SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E/SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null) RT_OPT=-O0 mode=m3"
+TREE="SCRIP=$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E_SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null) RT_OPT=-O0 mode=m3"
 W=$(mktemp -d) || exit 2; trap 'rm -rf "$W"' EXIT
 tm() { /usr/bin/time -f "%e %M" -o "$W/t" "$@"; local rc=$?; read -r secs kb < "$W/t"; echo "WORK $1_$(basename "${!#}" 2>/dev/null) wall=${secs}s rss=${kb}KB" >&2; return $rc; }
 echo "P4 self-host on $TREE"

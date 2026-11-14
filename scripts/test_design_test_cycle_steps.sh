@@ -11,6 +11,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
+. "$HERE/lib_paths.sh"
 WD="$HERE/../designs/test_cycle"; STEPS="$WD/STEPS.tsv"
 refuse() { echo "REFUSE(2) [test_design_test_cycle_steps]: $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
@@ -35,7 +36,7 @@ if [ "$mode" = cut ]; then echo "test-cycle has no oracle witnesses: nothing to 
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"
 [ -n "$slug" ] || refuse "no step $step in $STEPS"
 cd "$S4E" || refuse "cannot enter $S4E"
-case "$probe" in *SCRIP/scrip*) [ -n "${SCRIP_BIN:-}" ] || bash "$HERE/util_require_fresh.sh" --gate test_design_test_cycle_steps "$S4E/SCRIP/scrip" "$S4E/SCRIP/out/libscrip_rt.so" || exit 2 ;; esac
+case "$probe" in *SCRIP/scrip*) [ -n "${SCRIP_BIN:-}" ] || bash "$HERE/util_require_fresh.sh" --gate test_design_test_cycle_steps "$S4E_SCRIP/scrip" "$S4E_SCRIP/out/libscrip_rt.so" || exit 2 ;; esac
 mkdir -p "/tmp/s4e/${S4E_SEAT:-coo}"
 out="$(mktemp "${TMPDIR:-/tmp}/s4e_batch_grader_step.XXXXXX")"
 S4E_HOME="$S4E" timeout -k 5 600 bash -c "$probe" > "$out" 2>&1; rc=$?

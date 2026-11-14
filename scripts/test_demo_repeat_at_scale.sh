@@ -5,8 +5,8 @@
 # at x1024 SIGSEGVs at a jump into unmapped memory on 7-9 of 30 m3 runs and 3-4 of 30 m4 runs; its x1 test input passes 30 of 30) is RED here.
 # EXIT 0 every run of both modes printed SPITBOL's answer; 1 at least one did not; 2 REFUSED (no demo, no scrip, no oracle answer).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="$(cd "$ROOT/.." && pwd)"
-D="$S4E/corpus/demos/snobol4"; SCRIP="$ROOT/scrip"; N="${2:-30}"; FAM="${1:-}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; S4E="$(cd "$ROOT/.." && pwd)"
+D="$S4E_CORPUS/demos/snobol4"; SCRIP="$ROOT/scrip"; N="${2:-30}"; FAM="${1:-}"
 . "$HERE/lib_oracle_flags.sh" || { echo "⛔ REFUSED: cannot load lib_oracle_flags.sh" >&2; exit 2; }
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSED: cannot load lib_declared_arena.sh" >&2; exit 2; }
 [ -n "$FAM" ] || { echo "usage: $0 <demo-family> [N]" >&2; exit 2; }
@@ -16,7 +16,7 @@ P="$D/$(cut -f2 <<<"$row")"; SRC="$D/$(cut -f3 <<<"$row")"; SCALE="$(cut -f4 <<<
 SBL="$(sbl_correctness_bin)"; [ -x "$SBL" ] || { echo "⛔ REFUSED: no SPITBOL ($SBL)" >&2; exit 2; }
 SWD="$(declared_switches_beside "$P")" && OAD="$(declared_oracle_args_beside "$P")" || { echo "⛔ REFUSED: $FAM's declared sizes are refused" >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
-mkdir -p "$W/cwd" && cp -p "$S4E/corpus/include/"*.inc "$W/cwd/"
+mkdir -p "$W/cwd" && cp -p "$S4E_CORPUS/include/"*.inc "$W/cwd/"
 for ((i=0;i<SCALE;i++)); do cat "$SRC"; done > "$W/in"
 (cd "$W/cwd" && timeout -k 5 120 "$SBL" $(sbl_lang_flags) $OAD "$P" < "$W/in" > "$W/want" 2> /dev/null); orc=$?
 [ "$orc" = 0 ] && [ -s "$W/want" ] || { echo "⛔ REFUSED: SPITBOL gave no answer for $FAM at x$SCALE (rc=$orc)" >&2; exit 2; }

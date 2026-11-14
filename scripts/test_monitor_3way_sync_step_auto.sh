@@ -62,12 +62,13 @@
 #
 # AUTHORS: Lon Jones Cherryholmes · Claude Sonnet 4.6  DATE: 2026-04-26
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.  # one-disk: not a path
 
 set -uo pipefail
 
 SNO=${1:?Usage: test_monitor_3way_sync_step_auto.sh <file.sno> [--trail N]}
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 MON_DIR="$HERE/monitor"
 
 # --trail N  (optional second argument) — override how many last-agreed events
@@ -80,7 +81,7 @@ fi
 X64_DIR="${X64_DIR:-$S4A/x64}"
 SPITBOL="$X64_DIR/bin/sbl"
 CSNOBOL4="$S4A/csnobol4/snobol4"
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
 SNO4_REPO="${SNO4_REPO:-$S4A/snobol4dotnet}"
 SNO4_DLL="${SNO4_DLL:-$SNO4_REPO/Snobol4/bin/Release/net10.0/Snobol4.dll}"
 ICON_MON="${ICON_MON_ROOT:-$S4A/icon-mon}"
@@ -88,7 +89,7 @@ GPROLOG_MON="${GPROLOG_MON_ROOT:-$S4A/gprolog-mon}"
 FPC_MON="${FPC_MON_ROOT:-$S4A/fpc-mon}"
 RAKUDO_MON="${RAKUDO_MON_ROOT:-$S4A/rakudo-mon}"
 SWIPL_MON="${SWIPL_MON_ROOT:-$S4A/swipl-mon}"
-INC="${INC:-$S4E/corpus/include}"
+INC="${INC:-$S4E_CORPUS/include}"
 
 TIMEOUT="${MONITOR_TIMEOUT:-15}"
 SCRIP_ONLY="${SCRIP_ONLY:-0}"
@@ -177,7 +178,7 @@ OARGS=(); [[ -n "$_mon_oa" ]] && read -r -a OARGS <<<"$_mon_oa"
 OENV=(); [[ -n "$_mon_oe" ]] && read -r -a OENV <<<"$_mon_oe"
 # the runtime this harness links against is its own repository's (the coo 2026-10-03, R-1496): $S4E/SCRIP/out is a sibling checkout's
 # when the harness runs from a worktree, so a worktree's participant linked a runtime the worktree never built
-SD="$(cd "$HERE/../../SCRIP" && pwd)"
+SD="$(cd "$S4E_SCRIP" && pwd)"
 
 echo "[auto] program:    $base"
 echo "[auto] tmp:        $TMP"

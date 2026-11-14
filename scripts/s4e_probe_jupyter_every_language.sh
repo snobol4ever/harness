@@ -21,21 +21,22 @@
 # SCRIP_BIN overrides the binary (a worktree's scrip).
 set -u
 cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" || exit 2
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"; NB="$S4E_CORPUS/notebooks"
 arm="${1:-all}"; one="${2:-}"
 case "$arm" in notebooks|session|all|note) ;; lang) case " snobol4 snocone rebus icon unicon prolog pascal raku " in *" $one "*) ;; *) echo "usage: lang needs one of the eight languages"; exit 2 ;; esac ;; *) echo "usage: s4e_probe_jupyter_every_language.sh notebooks|session|note|all|lang L"; exit 2 ;; esac
-SCRIP_BIN="${SCRIP_BIN:-$PWD/SCRIP/scrip}"
+SCRIP_BIN="${SCRIP_BIN:-$S4E_SCRIP/scrip}"
 [ -x "$SCRIP_BIN" ] || { echo "REFUSE(2): $SCRIP_BIN is not built"; exit 2; }
 python3 -c 'import jupyter_client, nbformat' 2>/dev/null || { echo "REFUSE(2): jupyter_client or nbformat is not importable"; exit 2; }
-[ -d corpus/notebooks ] || { echo "REFUSE(2): no corpus/notebooks"; exit 2; }
+[ -d "$NB" ] || { echo "REFUSE(2): no notebooks folder $NB"; exit 2; }
 TREE="$(git -C "$(dirname "$SCRIP_BIN")" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 LANGS="snobol4 snocone rebus icon unicon prolog pascal raku"
 rc_all=0
 notebooks_arm() {
     local have miss="" l out bad want="${1:-$LANGS}" files
-    have="$(python3 - <<'PY'
+    have="$(python3 - "$NB" <<'PY'
 import glob, json, re, sys
 seen = set()
-for f in sorted(glob.glob("corpus/notebooks/**/*.ipynb", recursive=True)):
+for f in sorted(glob.glob(sys.argv[1] + "/**/*.ipynb", recursive=True)):
     try: nb = json.load(open(f))
     except Exception: print("BADJSON " + f); continue
     if (nb.get("metadata", {}).get("kernelspec", {}) or {}).get("name") != "scrip": continue
@@ -48,12 +49,12 @@ for f in sorted(glob.glob("corpus/notebooks/**/*.ipynb", recursive=True)):
 print(" ".join(sorted(seen)))
 PY
 )"
-    files="$(find corpus/notebooks -name '*.ipynb' | sort)"
-    if [ "$want" != "$LANGS" ]; then files="$(for f in $files; do grep -qiE '"%%[[:space:]]*'"$want"'([^a-z]|$)' "$f" && echo "$f"; done)"; [ "$want" = snobol4 ] && files="$(find corpus/notebooks -maxdepth 1 -name '*.ipynb' | sort)"; fi
-    case "$have" in *BADJSON*) echo "REFUSE(2): a notebook under corpus/notebooks does not parse: $have"; return 2 ;; esac
+    files="$(find "$NB" -name '*.ipynb' | sort)"
+    if [ "$want" != "$LANGS" ]; then files="$(for f in $files; do grep -qiE '"%%[[:space:]]*'"$want"'([^a-z]|$)' "$f" && echo "$f"; done)"; [ "$want" = snobol4 ] && files="$(find "$NB" -maxdepth 1 -name '*.ipynb' | sort)"; fi
+    case "$have" in *BADJSON*) echo "REFUSE(2): a notebook under $NB does not parse: $have"; return 2 ;; esac
     for l in $want; do case " $have " in *" $l "*) ;; *) miss="$miss $l" ;; esac; done
     [ -n "$files" ] || { echo "JUPYTER_NOTEBOOKS_BOARD notebooks=0 differing=0 languages_missing=$want (tree $TREE)"; echo "  RED: no scrip notebook carries a code cell of: $want"; return 1; }
-    out="$(timeout -k 5 3000 python3 harness/scripts/util_notebook_kernel_check.py check $files 2>&1)"; local crc=$?
+    out="$(timeout -k 5 3000 python3 "$S4E_HARNESS/scripts/util_notebook_kernel_check.py" check $files 2>&1)"; local crc=$?
     [ "$crc" = 2 ] && { echo "REFUSE(2): util_notebook_kernel_check.py could not measure:"; printf '%s\n' "$out" | grep -m3 REFUSE; return 2; }
     bad="$(printf '%s\n' "$out" | grep '^NOTEBOOK_KERNEL ' | grep -vc ' differs=0 ')"
     local nn; nn="$(printf '%s\n' "$out" | grep -c '^NOTEBOOK_KERNEL ')"

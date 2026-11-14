@@ -18,7 +18,7 @@ S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 ME="${S4E_SEAT:-}"
 crit="${S4E_PROBE_CRIT_S:-10}"
 refuse() { echo "REFUSE(2) [whoami --probe-lock]: $*"; exit 2; }
-[ -n "$ME" ] || refuse "S4E_SEAT unset -- run it as: bash harness/scripts/s4e_msg.sh whoami --probe-lock"
+[ -n "$ME" ] || refuse "S4E_SEAT unset -- run it as: bash harness/scripts/s4e_msg.sh whoami --probe-lock"  # one-disk: not a path
 case "$crit" in ''|*[!0-9]*) refuse "S4E_PROBE_CRIT_S takes whole seconds" ;; esac
 [ "$crit" -ge 2 ] || refuse "S4E_PROBE_CRIT_S must be at least 2 s, so the probe window is not empty"
 [ -r /proc/locks ] || refuse "/proc/locks is unreadable, so the kernel lock table cannot be measured"
@@ -30,7 +30,7 @@ trap cleanup EXIT
 t="flock-lock-probe-$$"; now="$(date -u +%FT%TZ)"; trace="$w/lock.trace"
 mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" "$w/probe_peer/inbox"
 printf '# plant queue (fleet-queue step 19, the cio 2026-11-05)\n2\t%s\t%s\tASSIGNED:%s\n' "$t" "$ME" "$ME" > "$w/QUEUE.tsv"
-printf '# TASK %s\nGOAL: plant\nDONE-WHEN: sleep %s && test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: minted via mint by %s, %s\n## NEXT\n## QA\n## LEDGER\n' \
+printf '# TASK %s\nGOAL: plant\nDONE-WHEN: sleep %s && test -f "${S4E_HARNESS:-/home/harness}/scripts/s4e_msg.sh"\nLINKS: minted via mint by %s, %s\n## NEXT\n## QA\n## LEDGER\n' \
     "$t" "$crit" "$ME" "$now" > "$w/tasks/$t.task.md"
 printf '%s\nASSIGNED-BY plant %s\nRUNNING\n' "$ME" "$now" > "$w/claims/$t.claim"
 # The done runs as its own process: env execs bash, so $! is the verb's pid, the pid the kernel names as the holder in /proc/locks.

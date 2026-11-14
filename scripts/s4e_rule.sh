@@ -11,9 +11,10 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
+. "$HERE/lib_paths.sh"
 PO="${S4E_POST:-/home/resources/postoffice}"
 ME="${S4E_SEAT:-}"
-[ -n "$ME" ] || { echo "REFUSE(2) [rule]: S4E_SEAT unset -- run it as: bash harness/scripts/s4e_msg.sh rule ..." >&2; exit 2; }
+[ -n "$ME" ] || { echo "REFUSE(2) [rule]: S4E_SEAT unset -- run it as: bash harness/scripts/s4e_msg.sh rule ..." >&2; exit 2; }  # one-disk: not a path
 refuse() { echo "⛔ RULE REFUSED (nothing written): $*" >&2; exit 1; }
 usage="s4e_msg.sh rule <GOAL-file> <RULING-ID> --to <seat[,seat...]> --row <topic> [--no-push] --stdin <<'R' (headline line, then body) R"
 probe() {
@@ -75,7 +76,7 @@ while [ $# -gt 0 ]; do
         *) refuse "unknown argument '$1'; usage: $usage" ;;
     esac
 done
-case "$goal" in /*) ;; *) goal="$S4E/.github/$goal" ;; esac
+case "$goal" in /*) ;; *) goal="$S4E_GITHUB/$goal" ;; esac
 gf="$(basename "$goal")"; repo="$(dirname "$goal")"
 [ -f "$goal" ] || refuse "no GOAL file $goal"
 [ "$(grep -c '^## LIVE CURSOR' "$goal")" = 1 ] || refuse "$gf has no single ## LIVE CURSOR heading"

@@ -236,7 +236,7 @@ perf_load_guard() {
 # it out (measured on both builds of one tree, 2026-10-01). A library that cannot be read stamps RT_DIAG=UNKNOWN, never a guess.
 perf_build_stamp() {
     local root lib opt diag
-    root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+    root="$(. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh" && printf %s "$S4E_SCRIP")"
     lib="${1:-$root/out/libscrip_rt.so}"
     opt="${RT_OPT:-$(make -s -C "$root" buildinfo 2>/dev/null | sed -n 's/^RT_OPT *: *//p' | sed 's/ *$//')}"
     if [ -r "$lib" ]; then if grep -q -a 'ZGC-WALK' "$lib"; then diag=1; else diag=0; fi; else diag=UNKNOWN; fi

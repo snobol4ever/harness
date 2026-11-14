@@ -4,7 +4,7 @@
 Row prolog-logtalk-iso-3268-conformance-cases-have-no-runner (hq_R, 2026-09-12).
 
 ⛔⭐ WHAT THIS GRADES AGAINST, AND WHY IT IS NOT AN ORACLE DIFF. Every case in
-corpus/packages/prolog/logtalk_iso carries its OWN expectation, taken from ISO/IEC 13211-1 and citing the
+corpus/packages/prolog/logtalk_iso carries its OWN expectation, taken from ISO/IEC 13211-1 and citing the  # one-disk: not a path
 standard's section numbers in the comment above it. So this runner does not compare scrip to gprolog's
 opinion or swipl's -- it compares scrip to the standard as the standard states it, which is a stronger
 instrument than any oracle diff this repo owns, and it is why this row decides whether "100% of the
@@ -46,7 +46,9 @@ import lib_timeout_retry as _ltr   # noqa: E402 -- a graded run's timeout under 
 # disagree about what is implemented is the same defect as two counts that can disagree about a population.
 # THE SHIM LIVES IN THE PACKAGE IT SERVES (the cio 2026-11-11; it was harness/scripts/lib_logtalk_lgtunit.pl): every generated case includes it by
 # name, so it stands beside the suite as the one copy and the container holds no copy of it (3,524 copies were 72 MB).
-SHIM = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "corpus", "packages", "prolog", "logtalk_iso", "lgtunit_shim.pl"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
+SHIM = os.path.join(str(harness_paths.corpus()), "packages", "prolog", "logtalk_iso", "lgtunit_shim.pl")
 
 # Directives in a file's database section that are Logtalk/dialect scaffolding, not Prolog the case needs.
 DROP_DIRECTIVES = ("if", "elif", "else", "endif", "import", "use_module", "ensure_loaded",
@@ -1267,7 +1269,7 @@ def _fmt_reason(plan, why):
 
 def main(argv):
     import argparse
-    ap = argparse.ArgumentParser(description="grade corpus/packages/prolog/logtalk_iso against ISO/IEC 13211-1")
+    ap = argparse.ArgumentParser(description="grade corpus/packages/prolog/logtalk_iso against ISO/IEC 13211-1")  # one-disk: not a path
     ap.add_argument("--suite", required=True)
     ap.add_argument("--scrip", required=True)
     ap.add_argument("--modes", default="m3")

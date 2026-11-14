@@ -299,7 +299,7 @@ def main(argv):
         return 0
     stale = [p for p, want in zip(paths, texts) if not os.path.exists(p) or open(p, encoding='utf-8').read() != want]
     if stale:
-        print('GATE RED: stale or missing: %s -- run: python3 harness/scripts/util_gen_builtin_table.py --write' % ', '.join(stale))
+        print('GATE RED: stale or missing: %s -- run: python3 harness/scripts/util_gen_builtin_table.py --write' % ', '.join(stale))  # one-disk: not a path
         return 1
     print('current: %d rows, bids up to %d, %d legacy' % (len(rows), max(r['bid'] for r in rows), len(legacy_rows(rows))))
     return 0

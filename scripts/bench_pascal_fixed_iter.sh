@@ -34,9 +34,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # faster) this replaces -- perf_mult callers downstream must pass (rival, ours), never (ours, rival).
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/pascal}"
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/pascal}"
 SCALE="${SCALE_TSV:-$B/SCALE.tsv}"
 T="${TIMEOUT:-60}"; LIN_TOL="${LIN_TOL:-10}"; NMAX="${NMAX:-200000}"
 KERNELS="${KERNELS:-}"   # optional allowlist, space-separated basenames -- same convention as the Prolog scripts
@@ -48,7 +48,7 @@ FPC="$(fpc_bin)" || exit 2
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1281)"; exit 2; }
 declare -a DECL_SW=(); declare -A DECLW=()
 WRAP="$ROOT/out/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 
 fpc_build() {

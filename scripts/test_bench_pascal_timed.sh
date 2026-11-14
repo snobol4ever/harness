@@ -37,9 +37,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # downstream must pass (rival, ours), never (ours, rival), or the published multiple silently inverts.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/pascal}"
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/pascal}"
 # ⛔ TIMEOUT WAS 30, RAISED TO 60 (matching angle 2's own default): measured live this session, one of
 # five run1_min trials at bubble/m4 n3=64 hit the 30s wall (exit=124, a real `timeout` kill, not a crash)
 # under this box's load (~10/16 cores) -- hq_P's own reference FINDING for this same kernel measured at

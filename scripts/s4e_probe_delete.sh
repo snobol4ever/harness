@@ -9,7 +9,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 ME="${S4E_SEAT:-}"
 refuse() { echo "REFUSE(2) [delete --plant]: $*"; exit 2; }
-[ -n "$ME" ] || refuse "S4E_SEAT unset -- run it as: bash harness/scripts/s4e_msg.sh delete --plant"
+[ -n "$ME" ] || refuse "S4E_SEAT unset -- run it as: bash harness/scripts/s4e_msg.sh delete --plant"  # one-disk: not a path
 mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 w="$(mktemp -d "/tmp/s4e/$ME/delete_probe.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$w"' EXIT
@@ -27,7 +27,7 @@ printf 'junior_07\n' > "$po/claims/$t2.claim"
 bus() { env -u S4E_PID_LOCK S4E_POST="$po" S4E_SEAT=cio S4E_RECUT="$rf" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$HERE/s4e_msg.sh" "$@"; }
 why=""
 
-out1="$(printf 'grep -q delete "$S4E_HOME/harness/scripts/s4e_msg.sh"\n' | bus delete "$t1" --verdict DELETED-NOT-REAL --stdin 2>&1)"; rc1=$?
+out1="$(printf 'grep -q delete "${S4E_HARNESS:-/home/harness}/scripts/s4e_msg.sh"\n' | bus delete "$t1" --verdict DELETED-NOT-REAL --stdin 2>&1)"; rc1=$?
 [ "$rc1" = 0 ] || why="$why the delete of the free planted row returned rc $rc1 ($(printf '%s' "$out1" | tail -1));"
 printf '%s' "$out1" | grep -qx "DELETED $t1 DELETED-NOT-REAL" || why="$why the verb did not print DELETED $t1 DELETED-NOT-REAL;"
 grep -qP "^[0-9]+\t\Q$t1\E\t" "$po/QUEUE.tsv" && why="$why the row survived the delete;"
