@@ -30,6 +30,7 @@ for p in perf /usr/lib/linux-tools-*/perf; do
     "$p" stat -x, -e instructions:u -o /dev/null true >/dev/null 2>&1 && { PERF="$p"; break; }
 done
 [ -n "$PERF" ] || { echo "REFUSE(2): no perf that counts instructions:u on this kernel (perf_event_paranoid=$(cat /proc/sys/kernel/perf_event_paranoid 2>/dev/null))"; exit 2; }
+. "$HERE/lib_paths.sh" || { echo "REFUSE(2): lib_paths.sh unloadable"; exit 2; }   # S4E_SCRIP, never the sibling (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them)
 . "$HERE/lib_oracle_flags.sh" || { echo "REFUSE(2): lib_oracle_flags.sh unloadable"; exit 2; }
 . "$HERE/lib_perf_fmt.sh" || { echo "REFUSE(2): lib_perf_fmt.sh unloadable"; exit 2; }
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE(2): lib_declared_arena.sh unloadable"; exit 2; }
@@ -44,7 +45,7 @@ engine_cmd() {
         sbl) echo "$(sbl_clean_bin) $(sbl_lang_flags snobol4) $([ "$2" = "$PROG" ] && echo "$SBL_ARGS")";;
         dotnet) echo "bash $HERE/run_snobol4dotnet.sh";;
         jvm) echo "bash $HERE/run_snobol4jvm.sh";;
-        scrip) echo "$HERE/../../SCRIP/scrip $([ "$2" = "$PROG" ] && echo "$SCRIP_ARGS")";;
+        scrip) echo "$S4E_SCRIP/scrip $([ "$2" = "$PROG" ] && echo "$SCRIP_ARGS")";;
         scrip4) m4_binary "$2" || return 2; echo "$M4BIN $([ "$2" = "$PROG" ] && echo "$SCRIP_ARGS")";;
         *) return 2;;
     esac
@@ -52,7 +53,7 @@ engine_cmd() {
 m4_binary() {
     local key; key="$(printf '%s' "$1" | md5sum | cut -c1-12)"; M4BIN="$W/m4.$key"
     [ -x "$M4BIN" ] && return 0
-    ( cd "$(dirname "$1")" && "$HERE/../../SCRIP/scrip" --compile --out="$W/m4.$key.s" "$1" < /dev/null 2> "$W/m4.err" && bash "$HERE/util_cc_slot.sh" gcc "$W/m4.$key.s" -L"$HERE/../../SCRIP/out" -lscrip_rt -lm -Wl,-rpath,"$HERE/../../SCRIP/out" -o "$M4BIN" 2>> "$W/m4.err" ) || { echo "REFUSE(2): scrip4 did not build $1 in mode 4: $(head -c 200 "$W/m4.err")" >&2; return 2; }
+    ( cd "$(dirname "$1")" && "$S4E_SCRIP/scrip" --compile --out="$W/m4.$key.s" "$1" < /dev/null 2> "$W/m4.err" && bash "$HERE/util_cc_slot.sh" gcc "$W/m4.$key.s" -L"$S4E_SCRIP/out" -lscrip_rt -lm -Wl,-rpath,"$S4E_SCRIP/out" -o "$M4BIN" 2>> "$W/m4.err" ) || { echo "REFUSE(2): scrip4 did not build $1 in mode 4: $(head -c 200 "$W/m4.err")" >&2; return 2; }
 }
 count_once() {
     local cmd parg="$2"; cmd="$(engine_cmd "$1" "$2")" || { echo "REFUSE(2): unknown engine $1 (sbl dotnet jvm scrip scrip4)" >&2; return 2; }
