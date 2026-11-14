@@ -36,7 +36,7 @@
 # the staleness happens to run. A fetch failure is therefore its own UNKNOWN state, never silently
 # read as any of the four above.
 set -uo pipefail
-SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # <ws>/harness/scripts
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$SELF_DIR/lib_paths.sh"   # <ws>/harness/scripts
 # ⛔ D-17 PORTABLE-HOME (CLAUDE.md Workspace map): "every script derives paths from $0 or S4E_HOME" -- this
 # script derived WS from $0 ONLY, so a caller pointing S4E_HOME at a scratch worktree (as the DONE-WHEN for
 # task handoff-artifact-check-cannot-tell-stale-local-build-from-drift does, to sandbox the stale-binary proof
@@ -194,7 +194,7 @@ else
   fi
 fi
 echo "------------------------------------------------------------"
-echo "THE ONE LEADERBOARD (.github/SCORE.md) — row staleness — WARN-ONLY, does not affect the verdict below"
+echo "THE ONE LEADERBOARD (${S4E_GITHUB##*/}/SCORE.md) — row staleness — WARN-ONLY, does not affect the verdict below"
 # ⛔⭐ WARN-ONLY ON PURPOSE, AND THE REASON IS THE SAME ONE THE .s BLOCK LEARNED ABOVE. A stale SCORE.md row is
 # not a defect of the session that happens to be handing off -- it is usually a defect of some OTHER session
 # that measured a suite and did not rewrite its row. Blocking this seat's handoff on that would punish the
@@ -275,7 +275,7 @@ echo "ALL-LANGUAGE SLOT-KIND SWEEP (util_gc_census.py maps --zls-langs all) — 
 echo "    (R-822, 2026-09-17, on the coo's ask: the FAST THREE stay wired in make test — a 35s number that moves once a"
 echo "     day does not belong on every seat's per-landing verdict — and THE SEVEN run HERE, once, at the boundary where a"
 echo "     stale number costs something. SKIP_ZLS_ALL=1 skips it and SAYS SO: a sweep that did not run prints nothing green.)"
-_zls_root="$SELF_DIR/../../SCRIP"
+_zls_root="$S4E_SCRIP"
 if [ "${SKIP_ZLS_ALL:-0}" = "1" ]; then
   echo "  SKIPPED (SKIP_ZLS_ALL=1) — the seven-language reading is UNVERIFIED this run; make test proves the fast three only."
 elif [ ! -f "$SELF_DIR/util_gc_census.py" ]; then

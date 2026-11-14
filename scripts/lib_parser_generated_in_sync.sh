@@ -30,7 +30,7 @@
 # committed twin is RED (a generated file that was never committed builds here and nowhere else).
 # Usage: bash ../harness/scripts/test_gate_parser_generated_files_in_sync.sh      Exit: 0 in sync · 1 out of sync/uncovered · 2 cannot measure.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SCRIP="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; SCRIP="$(cd "$S4E_SCRIP" && pwd)"
 GATE_NAME=parser-generated-files-in-sync
 . "$HERE/lib_build_flags.sh"
 . "$HERE/lib_gen_parsers.sh"

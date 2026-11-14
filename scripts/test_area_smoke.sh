@@ -22,7 +22,7 @@
 set -u
 set -f   # ⛔ the map's `*` carrier is a word, never a glob: unquoted expansions of the hit list must not turn it into the checkout's top-level names (the cto, 2026-09-28, batch 2b: preflight read 65 arms 1 red on a core.c landing)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="${AREA_SMOKE_ROOT:-$(cd "$HERE/../../SCRIP" && pwd)}"
+. "$HERE/lib_paths.sh"; ROOT="${AREA_SMOKE_ROOT:-$(cd "$S4E_SCRIP" && pwd)}"
 MAP="$ROOT/../harness/scripts/area_map.tsv"; [ -f "$MAP" ] || MAP="$HERE/area_map.tsv"
 H="$HERE/corpus_suite_harness.py"
 BASE="${AREA_SMOKE_BASE:-origin/main}"

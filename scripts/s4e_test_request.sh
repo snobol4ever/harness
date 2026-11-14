@@ -25,7 +25,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REQ_DIR="${S4E_TEST_REQUEST_DIR:-/home/resources/postoffice/test_requests}"
-CORPUS="${S4E_CORPUS:-${S4E_HOME:-$(cd "$HERE/../.." && pwd)}/corpus}"
+. "$HERE/lib_paths.sh"; CORPUS="$S4E_CORPUS"
 # THE SUITES A REQUEST MAY NAME ARE THE CYCLE'S OWN (the grader 2026-11-13; skill suites-and-grading 3: a seat's request for any master or package key
 # is admitted): every master or pkg row of SUITE_RUNNERS.tsv, its table tests/<lang> for a master and its table column for a pkg, as s4e_cycle.sh
 # run_request reads them. The hand list of R-1802 wave 1 is gone. MEASURED: it refused gate_cases_raku and gate_cases_icon, pkg rows the cycle serves,

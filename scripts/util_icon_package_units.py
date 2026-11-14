@@ -5,7 +5,7 @@
    python3 ../harness/scripts/util_icon_package_units.py missing PKGDIR   # the keys with no row, one per line; rc 1 when any, 0 when none, 2 unreadable
    python3 ../harness/scripts/util_icon_package_units.py rows    PKGDIR [--apply]   # the settings row each missing key is owed; --apply appends them
 
-PKGDIR is corpus/packages/icon/{ipl,arizona_tests,jcon_tests} or a scratch package of the same shape; the package is read off its
+PKGDIR is <corpus>/packages/icon/{ipl,arizona_tests,jcon_tests} or a scratch package of the same shape; the package is read off its
 basename. THE KEYS ARE THE RUNNERS' OWN (RULES.md 8 (f), R-1281: the runner reads each unit's command line from its row):
   ipl            test_icon_ipl_suite.sh: the compile tier looks up EVERY shipped .icn as parentdir/stem (drivers, ALL.icn and
                  *.fixtures/ out), and the run tier every .ref beside its .icn, a driver's under its library's key (R-1269).

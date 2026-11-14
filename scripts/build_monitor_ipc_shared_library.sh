@@ -4,7 +4,7 @@
 # Usage: bash build/build_monitor_ipc.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SCRIP="$ROOT/SCRIP"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh"; SCRIP="$S4E_SCRIP"
 MDIR="$SCRIP/test/monitor"
 
 [ -d "$MDIR" ] || { echo "FAIL monitor dir not found: $MDIR"; exit 1; }

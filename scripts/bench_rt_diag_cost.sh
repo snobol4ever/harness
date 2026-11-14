@@ -24,7 +24,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25
 # EXIT 0 GREEN, 1 RED (the gap exceeds the bar), 2 REFUSED (no perf, a build failed, a stamp disagrees, the outputs differ).
 set -uo pipefail
 G=bench_rt_diag_cost
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 refuse() { echo "⛔ $G REFUSE(2): $*"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate "$G" || exit $?
 BAR="${1:-2}"
@@ -47,14 +47,14 @@ SHIP="$(readlink -f "$ROOT/out/libscrip_rt.so")"; D0LIB="$ROOT/out/libscrip_rt-$
 [ -r "$SHIP" ] && [ -r "$D0LIB" ] || refuse "a library is missing ($SHIP, $D0LIB)"
 grep -q -a 'ZGC-WALK' "$SHIP" || refuse "the shipped library carries no [ZGC-WALK] string, so it reads RT_DIAG=0 -- this arm would compare a build with itself"
 grep -q -a 'ZGC-WALK' "$D0LIB" && refuse "the -DRT_DIAG=0 library still carries [ZGC-WALK] -- the define did not reach the runtime"
-D="$S4E/corpus/demos/snobol4/treebank"; P="$D/treebank.sno"; IN="$D/treebank.input"
+D="$S4E_CORPUS/demos/snobol4/treebank"; P="$D/treebank.sno"; IN="$D/treebank.input"
 [ -f "$P" ] && [ -f "$IN" ] || refuse "missing $P or $IN"
 : > "$T/in"; for ((i = 0; i < 1024; i++)); do cat "$IN" >> "$T/in"; done
 "$ROOT/scrip" --compile --out="$T/d.s" "$P" < /dev/null 2> "$T/cc.err" && gcc "$T/d.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$T/d.prog" 2>> "$T/cc.err" || { head -3 "$T/cc.err"; refuse "treebank did not build in mode 4"; }
 mkdir -p "$T/ship" "$T/d0"; cp -p "$SHIP" "$T/ship/libscrip_rt.so"; cp -p "$D0LIB" "$T/d0/libscrip_rt.so"
 . "$HERE/lib_declared_arena.sh" || refuse "no lib_declared_arena.sh"
 SW="$(declared_switches_beside "$HERE/fixtures/rt_diag_cost/treebank_x1024.sno")" || refuse "the treebank x1024 unit's .heap/.stack sidecars are refused"; [ -n "$SW" ] || refuse "the treebank x1024 unit declares no size (fixtures/rt_diag_cost/treebank_x1024.heap/.stack)"
-run() { ( cd "$S4E/corpus/include" && LD_LIBRARY_PATH="$T/$1" "$PERF" stat -x, -e instructions:u -o "$T/$1.stat" "$T/d.prog" $SW < "$T/in" > "$T/$1.out" 2> /dev/null ) || return 1
+run() { ( cd "$S4E_CORPUS/include" && LD_LIBRARY_PATH="$T/$1" "$PERF" stat -x, -e instructions:u -o "$T/$1.stat" "$T/d.prog" $SW < "$T/in" > "$T/$1.out" 2> /dev/null ) || return 1
         grep -E ',instructions' "$T/$1.stat" | head -1 | cut -d, -f1; }
 s=$(run ship) || refuse "the shipped run failed"; d=$(run d0) || refuse "the -DRT_DIAG=0 run failed"
 case "$s$d" in ''|*[!0-9]*) refuse "perf printed no instruction count (shipped='$s' scouting='$d')";; esac

@@ -16,13 +16,13 @@
 
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 cd "$ROOT"
 
 # Run the normal build first to populate /tmp/si_objs with .o files.
 make -j4 scrip 2>&1 | tail -3
 
-OBJ="/tmp/si_objs$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd | tr '/' '-')"  # mirrors Makefile OBJ (per-tree, s150)
+OBJ="/tmp/si_objs$(cd "$ROOT" && pwd | tr '/' '-')"  # mirrors Makefile OBJ (per-tree, s150)
 SRC="$ROOT/src"
 
 # Compile the diag wrapper itself, with RS23_DIAG defined and the same

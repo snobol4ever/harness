@@ -10,7 +10,7 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${HERE}/../../SCRIP/scrip"
+. "$HERE/lib_paths.sh"; SCRIP="$S4E_SCRIP/scrip"
 TIMEOUT=30
 PASS=0; FAIL=0; SKIP=0
 
@@ -69,7 +69,7 @@ xcheck "concat" "$T"
 rm -f "$T"
 
 # Rebus corpus files
-RUNGS=$S4E/SCRIP/test/rebus
+RUNGS=$S4E_SCRIP/test/rebus
 for f in "$RUNGS"/*.reb; do
     [ -f "$f" ] || continue
     ref="${f%.reb}.ref"

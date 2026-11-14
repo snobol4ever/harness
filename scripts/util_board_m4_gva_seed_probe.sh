@@ -21,7 +21,7 @@
 #         scratch dir for this run; pass an explicit DIR to point at a real directory of loose .sno/.ref instead.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -u
-S="${SCRIP:-$S4E/SCRIP/scrip}"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh"; S="${SCRIP:-$S4E_SCRIP/scrip}"
 RTOUT="$(dirname "$S")/out"
 DIR="${1:-}"
 [ -x "$S" ]   || { echo "no scrip at $S"; exit 2; }
@@ -31,7 +31,7 @@ W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 # the suite into this run's own scratch dir (cleaned up by the trap above) instead.
 if [ -z "$DIR" ]; then
     DIR="$W/bb_probes"; mkdir -p "$DIR"
-    T4="$S4E/corpus/tests/snobol4"; SUITE_SNO="$T4/ALL.sno"; SUITE_REF="$T4/ALL.ref"
+    T4="$S4E_CORPUS/tests/snobol4"; SUITE_SNO="$T4/ALL.sno"; SUITE_REF="$T4/ALL.ref"
     HARNESS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/corpus_suite_harness.py"
     for nm in $(python3 -I -c 'import csv,sys
 for r in csv.DictReader(open(sys.argv[1])):

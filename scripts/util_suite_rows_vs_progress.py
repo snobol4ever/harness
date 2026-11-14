@@ -3,7 +3,7 @@
 2026-09-16, row util-suite-rows-vs-progress-the-cross-language-batch-audit-lands-as-an-instrument).
 
 After each batch every HQ's suite rows are on origin and AGREE with the progress DB; a disagreement is a row. This reads
-every .github/SUITES.tsv row against /home/resources/progress/results.tsv ON THE ROW'S OWN TREE (column `tree`), over the
+every <.github>/SUITES.tsv row against /home/resources/progress/results.tsv ON THE ROW'S OWN TREE (column `tree`), over the
 modes each program declares (its LAST outcome per mode; PASS only when every recorded mode reads PASS), and prints per row:
 
     key  row pass/total  DB pass/population  xpass  measurer  last DB reading  verdict

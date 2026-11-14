@@ -10,8 +10,9 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"
-BEAUTY="$S4E/corpus/demos/snobol4/beauty/beauty.sno"
-INC="$S4E/corpus/include"
+. "$(cd "$(dirname "$0")" && pwd)/lib_paths.sh"
+BEAUTY="$S4E_CORPUS/demos/snobol4/beauty/beauty.sno"
+INC="$S4E_CORPUS/include"
 BIN="${1:-/tmp/beauty_full_bin}"
 
 echo "=== Milestone 0: self-beautify smoke test ==="
