@@ -45,6 +45,8 @@
 #   --tables     print the generated-table registry (generated_tables.tsv) and run nothing
 #   --probe-rerun  the proof of LAND.conf's switches on scratch origins (five arms); prints LAND rerun-probe ok
 #   --probe-root-home  the proof of a landing from a seat's own root on a scratch root (two arms); prints LAND root-home-probe ok
+#   --probe-table-merge  two landings that each add a row to one container's ALL.csv and PARTITION.tsv both land (the second merges by entry key); two that change one cell
+#                differently read RED with the table named; prints LAND table-merge-probe ok
 # A SEAT LANDS FROM ITS OWN ROOT (officer_02 2026-11-13, row harness-a-worktree-is-scrip-alone-everything-else-from-the-seats-root; Lon 17:4x CST, in the coo's window,
 #   verbatim: "I want you to work in /home/claude folder. We do not NEED duplication. Nope, dups not needed."): no seat makes a worktree; the home is the seat's root,
 #   the default. The landing rebases the root's own commits onto origin, gates and pushes as for any home, and then syncs the root: each shared repo it holds
@@ -95,6 +97,7 @@ while [ $# -gt 0 ]; do
         --probe-orphan-lock) mode=probe_orphan_lock; shift ;;
         --probe-land-class) mode=probe_land_class; shift ;;
         --probe-rerun) mode=probe_rerun; shift ;;
+        --probe-table-merge) mode=probe_table_merge; shift ;;
         --probe-root-home) mode=probe_root_home; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
@@ -530,6 +533,41 @@ probe_rerun() {   # THE PROOF OF LAND.conf's SWITCHES (row the-lander-reruns-a-l
     echo "LAND rerun-probe ok arms=5 ledger_lines=$(grep -vc '^#' "$T/po/LANDINGS.tsv") (derived touches kept a gate standing over a race outside the landing's directory and skipped the table stages; tries=1 ran the one serial gate under the lease over a race inside it; touches=declared read the same race affected; width=1 held a landing out with nothing fetched and admitted it once the place was free; a ref moved under the gate by a fetch was read as a move under the lease and cost no round)"
     exit 0
 }
+probe_table_merge() {   # THE KEYED MERGE OF A CONTAINER'S TABLES, on scratch origins: (1) origin gains a row while the landing holds another, both rewrite every rank below: the landing merges and lands, origin holds both rows counted 1..N; (2) both change one cell differently: RED at the rebase, the table named, nothing pushed
+    local T log rc C R want got
+    T="$(mktemp -d "/tmp/s4e/$seat/land-tablemerge.XXXXXX")" || refuse "cannot make a scratch directory"
+    trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+    rr() { echo "LAND table-merge-probe RED: $*"; echo "    kept: $T"; trap - EXIT; exit 1; }
+    scratch_clone "$T"; C="$T/work/corpus"; R="$T/racer"
+    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$R" && git -C "$R" sparse-checkout set --cone tests/probe_race && git -C "$R" reset -q --hard HEAD || refuse "probe: cannot clone the racer"
+    git -C "$R" config user.name LCherryholmes; git -C "$R" config user.email lcherryh@yahoo.com
+    tbl() {   # <clone> <rows...>: write the container's two tables, each row "entry:cell", ranks counted from 1
+        local d="$1/tests/probe_race" n=0 e; shift; mkdir -p "$d"; printf 'rank,entry,cell\n' > "$d/ALL.csv"; printf '# shape: probe\n' > "$d/PARTITION.tsv"
+        for e in "$@"; do n=$((n + 1)); printf '%s,%s,%s\n' "$n" "${e%%:*}" "${e#*:}" >> "$d/ALL.csv"; printf '%s\tchunk:%02d\n' "${e%%:*}" "$(( (n + 1) / 2 ))" >> "$d/PARTITION.tsv"; done; }
+    put() { git -C "$1" add -A tests/probe_race && git -C "$1" commit -q -m "$2"; }
+    lander() { S4E_LAND_UNADMITTED=1 S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" "$@"; }
+    tbl "$R" a:1 b:1 c:1 && put "$R" "probe: the container is seeded" && git -C "$R" push -q origin HEAD:main || refuse "probe: cannot seed the container"
+    git -C "$C" pull -q --ff-only origin main || refuse "probe: the work clone cannot reach the seed"
+    tbl "$C" a:1 b:1 mine:1 c:1 && put "$C" "probe: the landing adds the row mine" || refuse "probe: cannot commit the landing's row"
+    tbl "$R" a:1 race:1 b:1 c:1 && put "$R" "probe: origin gains the row race" && git -C "$R" push -q origin HEAD:main || refuse "probe: cannot push the racer's row"
+    log="$T/arm1.log"; lander --gate true corpus > "$log" 2>&1; rc=$?
+    sed 's/^/    arm1| /' "$log" | grep -E 'stage=rebase|LAND ok|LAND RED|REFUSE' | cut -c1-200 | tail -4
+    want="$(printf 'rank,entry,cell\n1,a,1\n2,race,1\n3,b,1\n4,mine,1\n5,c,1\n')"; got="$(git -C "$T/origin/corpus.git" show main:tests/probe_race/ALL.csv 2>/dev/null)"
+    [ "$rc" = 0 ] && grep '^LAND ok ' "$log" > /dev/null && [ "$got" = "$want" ] || rr "arm 1 (two landings each added a row) rc=$rc: expected both rows on origin, counted 1 to 5, got: $(printf '%s' "$got" | tr '\n' ' ')"
+    got="$(git -C "$T/origin/corpus.git" show main:tests/probe_race/PARTITION.tsv 2>/dev/null | grep -c -E '^(race|mine)	')"
+    [ "$got" = 2 ] && grep 'merged by entry key' "$log" > /dev/null || rr "arm 1: origin's PARTITION.tsv holds $got of the two new rows, or the landing did not say it merged by entry key"
+    git -C "$R" pull -q --ff-only origin main || refuse "probe: the racer cannot reach origin"
+    tbl "$C" a:1 race:1 b:LANDING mine:1 c:1 && put "$C" "probe: the landing changes the cell of b" || refuse "probe: cannot commit the landing's cell"
+    tbl "$R" a:1 race:1 b:ORIGIN mine:1 c:1 && put "$R" "probe: origin changes the cell of b otherwise" && git -C "$R" push -q origin HEAD:main || refuse "probe: cannot push the racer's cell"
+    want="$(git -C "$T/origin/corpus.git" rev-parse main)"; got="$(git -C "$C" rev-parse HEAD)"
+    log="$T/arm2.log"; lander --gate true corpus > "$log" 2>&1; rc=$?
+    sed 's/^/    arm2| /' "$log" | grep -E 'stage=rebase|LAND ok|LAND RED|REFUSE' | cut -c1-220 | tail -3
+    [ "$rc" = 1 ] && grep '^LAND RED stage=rebase .*table=tests/probe_race/ALL.csv' "$log" > /dev/null && [ "$(git -C "$T/origin/corpus.git" rev-parse main)" = "$want" ] && [ "$(git -C "$C" rev-parse HEAD)" = "$got" ] && [ -z "$(git -C "$C" status --porcelain --untracked-files=no)" ] \
+        || rr "arm 2 (both changed one cell differently) rc=$rc: expected LAND RED at the rebase with the table named, origin unmoved and the tree as it was"
+    echo "LAND table-merge-probe ok arms=2 (two landings that each added a row to one container both landed, origin's ALL.csv holding both counted 1 to 5 and its PARTITION.tsv both; two that changed one cell differently read RED at the rebase with the table named, nothing pushed, the tree as it was)"
+    exit 0
+}
+[ "$mode" = probe_table_merge ] && probe_table_merge
 [ "$mode" = probe ] && probe
 [ "$mode" = probe_mail ] && { probe_mail; exit $?; }
 [ "$mode" = probe_push_refusal ] && probe_push_refusal
@@ -780,7 +818,7 @@ rebase() {
         a="$(ahead "$r")"
         if [ "$a" -gt 0 ]; then
             named "$r" || refuse "$r carries $a unlanded commit(s) and is not named: the gate would read a tree that is not pushed"
-            if ! g "$r" rebase -q origin/main > "$LOG/rebase.$r" 2>&1; then resolve_output_conflicts "$r"; fi
+            if ! g "$r" rebase -q origin/main > "$LOG/rebase.$r" 2>&1; then resolve_output_conflicts "$r"; [ "$r" = corpus ] && tables_after_merge; fi
         else
             g "$r" merge -q --ff-only origin/main > "$LOG/rebase.$r" 2>&1 || red rebase "repo=$r cannot fast-forward to origin/main: $(tail -1 "$LOG/rebase.$r")"
         fi
@@ -789,19 +827,64 @@ rebase() {
     mark rebase "$(for r in "${present[@]}"; do if is_held "$r"; then printf '%s=held+%s(%s) ' "$r" "$(ahead "$r")" "${held_from[$r]}"; else printf '%s+%s ' "$r" "$(ahead "$r")"; fi; done)${merged_names:+merged_outputs=$merged_outputs (${merged_names# }) taken from the replayed side, regenerated by the regenerate stage}"
 }
 merged_outputs=0; merged_names=""
+# A CONTAINER'S TABLES ARE MERGED BY THE ENTRY KEY (the cio 2026-11-14; MEASURED by the coo, officer_05, officer_07 and senior_04 with the whole fleet adding witnesses: 7 of 32
+# landings since 15:50Z ended red:rebase, because one new entry renumbers the rank column of every row below it and moves the partition's chunks, 391 to 959 lines of
+# tests/pascal/ALL.csv and 9 to 167 of PARTITION.tsv for one witness, so any two landings that add to one container conflicted whatever they added). A rebase conflict in a
+# container's ALL.csv or PARTITION.tsv is merged by util_table_merge.py from git's three stages: both landings' rows kept, a cell one side changed kept, the rank counted again;
+# a cell both changed differently is a real conflict and reads RED as before. A master's two tables are then regenerated from its merged container (tables_after_merge), which
+# makes them exact: MEASURED on origin's pascal master, util_build_rungs_suite.py --reindex reproduces ALL.csv byte for byte, and on real history the keyed merge of two real
+# witness additions from their common base equals the ALL.csv that landed when they went one after the other. --probe-table-merge proves it on scratch origins.
+merged_tables=""
+is_container_table() { case "$1" in tests/*/ALL.csv|tests/*/PARTITION.tsv|packages/*/ALL.csv|packages/*/PARTITION.tsv|demos/*/ALL.csv|demos/*/PARTITION.tsv) return 0 ;; esac; return 1; }
+merge_container_table() {   # <repo> <file>: git's stages 1 (base), 2 (origin, the tree rebased onto) and 3 (the landing's commit) merged into the file and added; rc 1 a real conflict
+    local d kind t; d="$(rd "$1")"; t="$LOG/tm.$(printf '%s' "$2" | tr '/' '_')"
+    case "$2" in *PARTITION.tsv) kind=partition ;; *) kind=csv ;; esac
+    git -C "$d" show ":1:$2" > "$t.base" 2>/dev/null || : > "$t.base"
+    git -C "$d" show ":2:$2" > "$t.ours" 2>/dev/null && git -C "$d" show ":3:$2" > "$t.theirs" 2>/dev/null || { echo "one side deleted $2" > "$LOG/table_merge"; return 1; }
+    python3 "$HERE/util_table_merge.py" "$kind" "$t.base" "$t.ours" "$t.theirs" "$d/$2" > "$LOG/table_merge" 2>&1 || return 1
+    git -C "$d" add -- "$2"
+}
+tables_after_merge() {   # after the rebase: each MASTER whose table was merged is regenerated from its merged container and its partition rebuilt; a change is one more commit of the landing
+    local f lang d seen="" n
+    [ -n "$merged_tables" ] || return 0
+    d="$(rd corpus)"
+    for f in $merged_tables; do
+        case "$f" in tests/*/ALL.csv|tests/*/PARTITION.tsv) lang="${f#tests/}"; lang="${lang%%/*}" ;; *) echo "LAND stage=rebase table $f merged by entry key (a package has no generator: the merge is its answer)"; continue ;; esac
+        case "$lang" in snobol4|icon|prolog|raku|snocone|rebus|pascal) ;; *) echo "LAND stage=rebase table $f merged by entry key (tests/$lang is no master the builder knows: the merge is its answer)"; continue ;; esac
+        case " $seen " in *" $lang "*) continue ;; esac; seen="$seen $lang"
+        if ( cd "$d" && S4E_CORPUS="$d" timeout -k 5 600 python3 "$HERE/util_build_rungs_suite.py" --lang "$lang" --reindex ) > "$LOG/reindex.$lang" 2>&1 \
+            && ( cd "$d/tests/$lang" && timeout -k 5 600 python3 "$HERE/util_suite_partition.py" build ALL.csv ) >> "$LOG/reindex.$lang" 2>&1; then
+            n="$(git -C "$d" status --porcelain --untracked-files=no -- "tests/$lang" | wc -l)"
+            if [ "$n" -gt 0 ]; then
+                git -C "$d" add -- "tests/$lang" && git -C "$d" commit -q -m "tests/$lang: ALL.csv and PARTITION.tsv regenerated from the merged container after two landings added to it (s4e_land.sh, the keyed merge of the rebase)" \
+                    || red rebase "repo=corpus cannot commit the regenerated tables of tests/$lang"
+            fi
+            echo "LAND stage=rebase tables of tests/$lang merged by entry key and regenerated from the merged container (files changed by the regeneration: $n)"
+        else
+            echo "LAND stage=rebase tables of tests/$lang merged by entry key; the regeneration could not run ($(tail -1 "$LOG/reindex.$lang" | cut -c1-120)), the merged tables stand and the gate reads them"
+            git -C "$d" checkout -q -- "tests/$lang" 2>/dev/null
+        fi
+    done
+    merged_tables=""
+}
 resolve_output_conflicts() {   # <repo> (step 19: generated tables merge by regeneration, never by hand): while the rebase stops on conflicts confined to registered generated
     local r="$1" f o is_out other; local -a outs u   # outputs of this repo, take the replayed side and continue; the regenerate stage then rewrites them from the merged sources. Any other conflict aborts and reads RED.
     mapfile -t outs < <(awk -F'\t' -v p="^$r/" '!/^#/ && $1 != "name" && $3 ~ p {sub(p, "", $3); print $3}' "$TSV")
     while [ -e "$(git_state "$r" rebase-merge)" ] || [ -e "$(git_state "$r" rebase-apply)" ]; do
         mapfile -t u < <(git -C "$(rd "$r")" diff --name-only --diff-filter=U)
         other=""
-        for f in "${u[@]}"; do is_out=0; for o in "${outs[@]}"; do [ "$f" = "$o" ] && is_out=1; done; [ "$is_out" = 1 ] || other="$other $f"; done
+        for f in "${u[@]}"; do is_out=0; for o in "${outs[@]}"; do [ "$f" = "$o" ] && is_out=1; done; [ "$r" = corpus ] && is_container_table "$f" && is_out=2; [ "$is_out" != 0 ] || other="$other $f"; done
         if [ -n "$other" ] || [ "${#u[@]}" = 0 ]; then
             git -C "$(rd "$r")" rebase --abort > /dev/null 2>&1
             red rebase "repo=$r conflicts=${other:-?} (not a generated output; the rebase was aborted; the tree is as it was)"
         fi
         for f in "${u[@]}"; do
-            git -C "$(rd "$r")" checkout --theirs -- "$f" > /dev/null 2>&1 && git -C "$(rd "$r")" add -- "$f" || { git -C "$(rd "$r")" rebase --abort > /dev/null 2>&1; red rebase "repo=$r cannot take the replayed side of $f"; }
+            if [ "$r" = corpus ] && is_container_table "$f"; then
+                merge_container_table "$r" "$f" || { git -C "$(rd "$r")" rebase --abort > /dev/null 2>&1; red rebase "repo=$r table=$f: $(tail -1 "$LOG/table_merge" | cut -c1-200) (a real conflict between two landings' rows; the rebase was aborted; the tree is as it was)"; }
+                merged_tables="$merged_tables $f"
+            else
+                git -C "$(rd "$r")" checkout --theirs -- "$f" > /dev/null 2>&1 && git -C "$(rd "$r")" add -- "$f" || { git -C "$(rd "$r")" rebase --abort > /dev/null 2>&1; red rebase "repo=$r cannot take the replayed side of $f"; }
+            fi
             merged_outputs=$((merged_outputs + 1)); merged_names="$merged_names $r/$f"
         done
         GIT_EDITOR=true git -C "$(rd "$r")" rebase --continue > "$LOG/rebase.$r" 2>&1 || true
