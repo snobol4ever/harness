@@ -108,3 +108,4 @@ rosetta-icon	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/rosetta-icon
 rosetta-unicon	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/rosetta-unicon
 uni_ipl	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/uni_ipl
 pcl	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/pcl
+uni_xml	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/uni_xml
