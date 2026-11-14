@@ -21,6 +21,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib_companion_closure as L
+import harness_paths   # THE ABSOLUTE MODEL: corpus() is S4E_CORPUS, else /home/corpus, else the sibling
 
 # ⛔ EXTENSIONS COME FROM THE HARNESS'S OWN TABLE, not a second list here -- a language whose ext drifts must not have two
 # answers on this box (the SNOBOL4-rungs ext is the one exception the harness itself hardcodes as the default).
@@ -30,8 +31,7 @@ EXTS = dict({lang: cfg["ext"] for lang, cfg in _csh.LANG_CONFIGS.items()}, snobo
 
 
 def _corpus_root(script_dir):
-    s4e = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(script_dir, "..", ".."))
-    return os.path.join(s4e, "corpus")
+    return str(harness_paths.corpus())
 
 
 def _entry_texts(rungs_path, lang):

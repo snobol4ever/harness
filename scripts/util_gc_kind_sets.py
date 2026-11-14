@@ -38,8 +38,11 @@ skipped in either direction.
 import re, sys, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-GC_HEAP = os.path.join(os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP"), "src", "runtime", "rt", "gc_heap.c")
-RTX_GC = os.path.join(os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP"), "src", "runtime", "rtx", "rtx_gc.s")
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+import harness_paths   # THE ABSOLUTE MODEL: scrip() is S4E_SCRIP, else the root, else the sibling
+GC_HEAP = os.path.join(str(harness_paths.scrip()), "src", "runtime", "rt", "gc_heap.c")
+RTX_GC = os.path.join(str(harness_paths.scrip()), "src", "runtime", "rtx", "rtx_gc.s")
 KIND_RX = re.compile(r"\bDT_[A-Z0-9_]+\b")
 CALL_RX = re.compile(r"\b(gc_[a-z0-9_]+)\s*\(")
 AUTHORITY = "rt_gc_mark_run"

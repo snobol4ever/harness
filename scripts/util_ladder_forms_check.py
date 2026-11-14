@@ -43,7 +43,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # only under the criterion, never under the author, and the DONE-WHEN caught it: a green shell run and a red
 # gate disagreeing is the gate doing its job, not noise to route around. Convention copied from
 # util_score_row.py:38 and lib_gate.sh:51 rather than re-derived -- they are the authority on this variable.
-S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP", ".."))
+S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(HERE, "..", ".."))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 import harness_paths   # THE ABSOLUTE MODEL: S4E_CORPUS, else /home/corpus once it is a checkout, else the sibling

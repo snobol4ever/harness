@@ -26,6 +26,7 @@ import argparse, collections, glob, os, re, shutil, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import harness_paths   # THE ABSOLUTE MODEL: scrip() is S4E_SCRIP, else the root, else the sibling
 SEP = re.compile(r'^/\*-{50,}\*/$')
 HIDDEN = '__attribute__((visibility("hidden"))) '
 LANGS = [('pl', r'^(pl|PL|plw|plc|rt_pl|dop_pl|bt_pl|pl_\w*)_?'), ('rk', r'^(rk|RK|rt_rk|bt_rk|bt___rk)_'), ('pas', r'^(pas|PAS|rt_pas)_'),
@@ -1000,7 +1001,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('verb', choices=['plan', 'apply', 'measure', 'dice'])
     ap.add_argument('src')
-    ap.add_argument('--root', default=os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP')))
+    ap.add_argument('--root', default=str(harness_paths.scrip()))
     ap.add_argument('--target', type=int, default=700)
     ap.add_argument('--since', default='60 days ago')
     ap.add_argument('--manifest')
