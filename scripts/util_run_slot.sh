@@ -53,6 +53,11 @@ fi
 # SINCE 2026-10-31 (the cto, ARCH-SHARED-DEVELOPMENT 4.3, R-2041 step 3) THE RULE LIVES IN lib_slots.sh: a seat file first (cap S4E_RUN_SEAT_CAP, default 3), then a pool slot;
 # S4E_CLASS=grader takes no seat file and may take any slot, every other taker leaves the top S4E_RUN_GRADER_RESERVED (2) slots to the grader.
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_slots.sh"
-s4e_slot_hold run; _rc=$?; [ "$_rc" = 2 ] && exit 2; [ "$_rc" = 0 ] || exec "$@"
+# THE HAND RUN LIVES IN ITS OWN MEMORY SCOPE (the coo 2026-11-14, row harness-a-hand-run-through-the-run-slot-lives-in-its-own-memory-scope; Lon, verbatim: "The limitations must be built-in to the scrip a seat runs." / "Of course I did not mean script, I meant scripts, shell scripts."):
+# MEASURED, a hand run of a 6 GB declared program ran in the seat's own 4 GB session scope and froze it. The command now execs through util_mem_scope.py's board scope under s4e-runs-<seat>.slice, the way the harness enters one: the run slot
+# on fd 8 stays open in the supervisor for the command's life, the exit code, stdin and stdout pass through, a process already inside an s4e-mem scope enters no second one, and a box whose systemd-run is unusable says so once and runs as before.
+_s4e_ms="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_mem_scope.py"
+s4e_run_scoped() { [ -f "$_s4e_ms" ] && exec python3 "$_s4e_ms" enter --kind board -- "$@"; exec "$@"; }
+s4e_slot_hold run; _rc=$?; [ "$_rc" = 2 ] && exit 2; [ "$_rc" = 0 ] || s4e_run_scoped "$@"
 s4e_slot_note run "$S4E_SLOT_T0" "$@"
-exec "$@"
+s4e_run_scoped "$@"
