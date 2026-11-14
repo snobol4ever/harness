@@ -12,7 +12,8 @@ TARBALL="${RAKUDO_PRISTINE_TARBALL:-$S4A/rakudo-2026.05.tar.gz}"
 NQP="${RAKUDO_WITH_NQP:-$S4A/rakudo-local/bin/nqp-m}"
 PRI="${RAKUDO_PRISTINE_BIN:-$S4A/rakudo-local/bin/raku}"
 DST="${1:-${RAKUDO_MON_ROOT:-$S4A/rakudo-mon}}"
-WIT="$HERE/../../SCRIP/witnesses/sync_step_raku.raku"
+. "$HERE/../../lib_paths.sh"
+WIT="$S4E_SCRIP/witnesses/sync_step_raku.raku"
 [ -f "$TARBALL" ] || { echo "REFUSE(2): pristine Rakudo release tarball not found at $TARBALL (RAKUDO_PRISTINE_TARBALL names it)"; exit 2; }
 [ -x "$NQP" ] || { echo "REFUSE(2): no installed nqp-m at $NQP (RAKUDO_WITH_NQP names it) -- the fork links against the shared oracle's MoarVM/NQP"; exit 2; }
 [ -x "$PRI" ] || { echo "REFUSE(2): no pristine raku at $PRI (RAKUDO_PRISTINE_BIN names it) -- the control arm needs it"; exit 2; }

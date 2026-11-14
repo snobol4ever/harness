@@ -42,6 +42,8 @@
 import argparse, collections, concurrent.futures, os, re, shlex, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import harness_paths
 HDR_EXT = ('.h', '.hpp', '.inc')
 SRC_EXT = ('.c', '.cpp', '.cc', '.S', '.s')
 NOT_DECL = {'__attribute__', '__declspec', 'sizeof', 'defined', '__extension__', '_Static_assert', 'static_assert', 'typeof', '__typeof__', 'alignas',
@@ -599,7 +601,7 @@ def violations(t, base, old, arm):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__ and 'per-header fan-in of the built tree (ARCH-HEADER-SPLIT.md)')
-    ap.add_argument('--root', default=os.environ.get('S4E_HOME') and os.path.join(os.environ['S4E_HOME'], 'SCRIP') or os.path.join(HERE, '..', '..', 'SCRIP'))
+    ap.add_argument('--root', default=str(harness_paths.scrip()))
     ap.add_argument('--obj', help='read the .d files under this directory and out/ instead of asking the compiler (the fixtures); implies --from-d')
     ap.add_argument('--from-d', action='store_true', help='read the .d files under the objdir and out/ (the old reader); the default asks make -B -n build-all and gcc -MM')
     ap.add_argument('--min-units', type=int, default=200)

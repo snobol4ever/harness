@@ -18,7 +18,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
+. "$HERE/lib_paths.sh"; SC="$S4E_SCRIP"
 WD="$HERE/../designs/templates_zero"
 STEPS="$WD/STEPS.tsv"
 OUT="/tmp/s4e-templates_zero-$(id -u)"
@@ -46,7 +46,7 @@ if [ "$mode" = list ]; then
     exit 0
 fi
 [ -n "$(col "$step" 1)" ] || refuse "no step $step in $STEPS (--list names them)"
-[ -d "$SC/src/templates" ] || refuse "no SCRIP/src/templates beside this harness"
+[ -d "$SC/src/templates" ] || refuse "no SCRIP/src/templates beside this harness"   # one-disk: not a path
 [ -x "$AUDIT" ] || refuse "no per-file audit at $AUDIT"
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"
 readings=""; red=0
@@ -124,7 +124,7 @@ TSV
 )
         [ -n "$ext" ] || refuse "witness $w: no extension for language $lang"
         log="$OUT/step$step/$lang.$e.log"
-        ( cd "$SC" && S4E_DONE_WHEN_RUN=1 timeout -k 5 900 python3 "$HERE/corpus_suite_harness.py" run "$ROOT/corpus/tests/$lang/ALL.$ext" "$ROOT/corpus/tests/$lang/ALL.ref" --lang "$lang" --modes m3 --partition "entry:$e" > "$log" 2>&1 )
+        ( cd "$SC" && S4E_DONE_WHEN_RUN=1 timeout -k 5 900 python3 "$HERE/corpus_suite_harness.py" run "$S4E_CORPUS/tests/$lang/ALL.$ext" "$S4E_CORPUS/tests/$lang/ALL.ref" --lang "$lang" --modes m3 --partition "entry:$e" > "$log" 2>&1 )
         board="$(grep '^SUITE_BOARD ' "$log" | tail -1)"
         [ -n "$board" ] || { reds="$reds $w(no-board)"; continue; }
         p3="$(echo "$board" | grep -o 'm3_pass=[0-9]*' | cut -d= -f2)"; p4="$(echo "$board" | grep -o 'm4_pass=[0-9]*' | cut -d= -f2)"

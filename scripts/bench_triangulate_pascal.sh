@@ -20,16 +20,16 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # DISAGREE. 2 = REFUSED -- missing scrip/oracle/corpus, loud, never a plausible table.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
-"$HERE/util_require_fresh.sh" --gate bench_triangulate_pascal "${SCRIP:-$HERE/../../SCRIP/scrip}" "$HERE/../../SCRIP/out/libscrip_rt.so" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
+"$HERE/util_require_fresh.sh" --gate bench_triangulate_pascal "${SCRIP:-$S4E_SCRIP/scrip}" "$S4E_SCRIP/out/libscrip_rt.so" || exit 2
 SCRIP="${SCRIP:-$ROOT/scrip}"
-PDIR="${PASCAL_DIR:-$S4E/corpus/benchmarks/pascal}"
+PDIR="${PASCAL_DIR:-$S4E_CORPUS/benchmarks/pascal}"
 TOL="${TOL_PCT:-10}"
 . "$HERE/lib_perf_fmt.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_perf_fmt.sh -- the ONE authority for printing a multiple (s266)." >&2; exit 2; }
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared sidecars (R-1281)." >&2; exit 2; }
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED: scrip not built ($SCRIP)." >&2; exit 2; }
 [ -d "$PDIR" ] || { echo "⛔ REFUSED: pascal corpus missing ($PDIR)." >&2; exit 2; }
-WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }
+WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }
 
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT_TSV="${OUT_TSV:-$PDIR/triangulation-$TS.tsv}"

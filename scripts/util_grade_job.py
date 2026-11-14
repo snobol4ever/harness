@@ -7,9 +7,10 @@
 #   util_grade_job.py budget --suite KEY [--cell CELL]  (no cell: core)  prints "BUDGET suite= cell= entries=N ttr_s=N declared=N"
 # rc 0 ok, 2 refuse (unknown suite, unreadable table).
 import os, sys, json, csv, re, shutil, subprocess
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import harness_paths
 S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 SUITES = "/home/resources/progress/SUITES.tsv"
-RUNNERS = os.path.join(S4E, "harness", "scripts", "SUITE_RUNNERS.tsv")
+RUNNERS = os.path.join(str(harness_paths.harness()), "scripts", "SUITE_RUNNERS.tsv")
 BAND = {"request": 100, "smoke": 200, "impact": 500, "lap": 900}
 LAUNCH_S = 120; DEFAULT_TIMEOUT_S = 60; SMALL_TTR_S = 3600
 def refuse(m, rc=2): print("REFUSE(%d) [util_grade_job]: %s" % (rc, m)); sys.exit(rc)
@@ -30,8 +31,8 @@ def runner_row(key):
     refuse("suite key %r has no row in %s" % (key, RUNNERS))
 def table_dir(key):
     kind, lang, table = runner_row(key)
-    if kind in ("master", "port"): return os.path.join(S4E, "corpus", "tests", lang)
-    if kind in ("pkg", "small"): return None if table == "-" else os.path.join(S4E, table)
+    if kind in ("master", "port"): return os.path.join(str(harness_paths.corpus()), "tests", lang)
+    if kind in ("pkg", "small"): return None if table == "-" else os.path.join(str(harness_paths.corpus()), table[7:]) if table.startswith("corpus/") else os.path.join(S4E, table)
     refuse("suite %r kind %r has no table (master|port|pkg|small)" % (key, kind))
 def cell_entries(key, cell):
     if runner_row(key)[0] == "small":

@@ -35,7 +35,8 @@
 # empty population). A report that could not run is never a zero.
 import argparse, collections, functools, itertools, os, random, re, subprocess, sys, tempfile
 S4E = os.environ.get('S4E_HOME') or os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-SCRIP_DIR = os.path.join(S4E, 'SCRIP'); SCRIP = os.path.join(SCRIP_DIR, 'scrip'); RT = os.path.join(SCRIP_DIR, 'out')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import harness_paths
+SCRIP_DIR = str(harness_paths.scrip()); SCRIP = os.path.join(SCRIP_DIR, 'scrip'); RT = os.path.join(SCRIP_DIR, 'out')
 SBL = '/home/resources/x64/bin/sbl'; SBL_FLAGS = ['-bf']
 HERE = os.path.dirname(os.path.abspath(__file__)); PORTS = ('dotnet', 'jvm')
 TREES = {'scrip': SCRIP_DIR, 'dotnet': os.path.join(S4E, 'snobol4dotnet'), 'jvm': os.path.join(S4E, 'snobol4jvm')}
@@ -264,7 +265,7 @@ def main():
     ap.add_argument('--engine', default='scrip', choices=('scrip',) + PORTS, help='scrip (once per --modes entry) or a port through run_snobol4<engine>.sh')
     ap.add_argument('--env', default='x=7,y=-3,z=2'); ap.add_argument('--modes', help='scrip only (default m3,m4)'); ap.add_argument('--batch', type=int, default=400)
     ap.add_argument('--timeout', type=int, default=20)
-    ap.add_argument('--out', help='witness folder (default SCRIP/out/enumerator for scrip, <root>/.scratch/enumerator/<engine> for a port)')
+    ap.add_argument('--out', help='witness folder (default SCRIP/out/enumerator for scrip, <root>/.scratch/enumerator/<engine> for a port)')   # one-disk: not a path
     ap.add_argument('--report', action='store_true'); ap.add_argument('--count-only', action='store_true', help='print shape and program counts per length and exit')
     ap.add_argument('--selftest', action='store_true'); ap.add_argument('--keep-batches', action='store_true')
     ap.add_argument('--grammar', default='arith', choices=('arith', 'unary', 'match'), help='arith (Expressions.py); unary adds the prefix operators on an item; match adds term ? term at the top')

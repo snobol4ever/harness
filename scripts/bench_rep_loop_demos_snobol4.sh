@@ -33,9 +33,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # the fd2 symptom -- -f1 was discarded identically. Verified in both modes on the cured build.
 set -uo pipefail
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-D="${DEMO_DIR:-$S4E/corpus/demos/snobol4}"
+D="${DEMO_DIR:-$S4E_CORPUS/demos/snobol4}"
 MK="${MKREP:-$HERE/mkrep_demo_fixture.py}"
 TARGET_MS="${TARGET_MS:-800}"     # bracket window we ramp toward
 TOL="${TOL:-8}"                   # % convergence tolerance between successive ramp steps
@@ -60,7 +60,7 @@ if [ "$STATIC" = 1 ]; then
   RT_A="$(static_rt_archive "$ROOT")" || { echo "⛔ REFUSING: STATIC=1 but out/libscrip_rt.a could not be built (make libscrip_rt_static)" >&2; exit 3; }
 fi
 WRAP="$ROOT/out/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" 2>/dev/null || { echo "⛔ REFUSING: cannot build $WRAP -- aspect 1 needs microsecond external timing, and /usr/bin/time's 10 ms tick reports these demos as 0.0" >&2; exit 3; }
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/bench_rusage.c" 2>/dev/null || { echo "⛔ REFUSING: cannot build $WRAP -- aspect 1 needs microsecond external timing, and /usr/bin/time's 10 ms tick reports these demos as 0.0" >&2; exit 3; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 RC=0
 # ---- compile+assemble+link a .sno into an m4 binary, honoring STATIC (m4-static-link-arm) ----------

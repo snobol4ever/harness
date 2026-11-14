@@ -17,8 +17,8 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
-ROOT="$(cd "$HERE/../.." && pwd)"
-INF="$ROOT/corpus/demos/scriptix/infinite_snobol4"
+ROOT="$(cd "$HERE/../.." && pwd)"; . "$HERE/lib_paths.sh"
+INF="$S4E_CORPUS/demos/scriptix/infinite_snobol4"
 STEPS="$INF/STEPS.tsv"
 GEN_MD="$INF/infinite_snobol4.md"
 DRV="$HERE/util_inf_snobol4_differential.py"
@@ -147,9 +147,9 @@ case "$inst" in
             missing=0; total=0
             while IFS=$'\t' read -r d e sc s0 b l cls origin rowname; do
                 [ -n "$origin" ] || continue; total=$((total + 1))
-                grep -q ",$origin," "$ROOT/corpus/tests/snobol4/ALL.csv" || { missing=$((missing + 1)); echo "  unharvested: $origin (batch $b line $l, $e)"; }
+                grep -q ",$origin," "$S4E_CORPUS/tests/snobol4/ALL.csv" || { missing=$((missing + 1)); echo "  unharvested: $origin (batch $b line $l, $e)"; }
             done < <(grep -v '^#' "$INF/HARVEST.tsv" | tail -n +2)
-            if python3 "$HERE/util_suite_partition.py" check "$ROOT/corpus/tests/snobol4/ALL.csv" > "$OUT/step18_partition.log" 2>&1; then part=current; else part=stale; fi
+            if python3 "$HERE/util_suite_partition.py" check "$S4E_CORPUS/tests/snobol4/ALL.csv" > "$OUT/step18_partition.log" 2>&1; then part=current; else part=stale; fi
             if [ "$missing" = 0 ] && [ "$part" = current ]; then cov="GREEN($total harvested)"; else cov="RED($missing of $total unharvested, partition $part)"; fi
         fi ;;
     *) refuse "step $step has an instrument this harness does not grade: $inst" ;;

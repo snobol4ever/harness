@@ -54,8 +54,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # boards the one runner runs every hour, so three of four boards stamped HEAD AT WRITE TIME -- which is
 # R-524 (1)'s defect in its second form. One spelling, in lib_gate.sh, set by the same call that takes
 # the baseline: a board cannot now acquire the stamp without also acquiring the refusal.
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-CORPUS="${CORPUS:-$S4E/corpus/tests/icon}"
+. "$HERE/lib_paths.sh"; SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+CORPUS="${CORPUS:-$S4E_CORPUS/tests/icon}"
 HARNESS="$HERE/corpus_suite_harness.py"
 RUNGS_ICN="$CORPUS/ALL.icn"
 RUNGS_REF="$CORPUS/ALL.ref"
@@ -194,7 +194,7 @@ fi
 if [ ! -f "$RUNGS_CSV" ]; then echo "⛔ BOARD REFUSES (rc=2): ALL.csv missing at $RUNGS_CSV — no per-entry provenance to attribute a shrink to"; exit 2; fi
 
 CSV_ENTRIES=$(( $(wc -l < "$RUNGS_CSV") - 1 ))
-echo "=== Icon RUNGS board — corpus/tests/icon/ALL.icn ==="
+echo "=== Icon RUNGS board — corpus/tests/icon/ALL.icn ==="   # one-disk: not a path
 # ⛔ `|| true` IS LOAD-BEARING, NOT SLOPPINESS: the harness exits NON-ZERO whenever any entry fails, and
 # this board is a census over a suite that is legitimately red today. Under `set -euo pipefail` the bare
 # pipeline aborted the script after printing only its header — a board that dies silently on the very
@@ -222,7 +222,7 @@ echo "=== Icon RUNGS board — corpus/tests/icon/ALL.icn ==="
 # hq_S 2026-09-06) AND NO BOARD CALLED THEM. Both artifacts are watched: ./scrip is a ~40 KB driver and the
 # emitter lives in the .so, so a scrip-only fingerprint is vacuous exactly when an emitter change is what moved.
 . "$HERE/lib_gate.sh" 2>/dev/null || { echo "⛔ BOARD REFUSES (rc=2): lib_gate.sh unloadable -- this board cannot tell whether its binary moves under it"; exit 2; }
-GATE_NAME=board_icon_rungs gate_bin_watch "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so"
+GATE_NAME=board_icon_rungs gate_bin_watch "$SCRIP" "${RT_DIR:-$S4E_SCRIP/out}/libscrip_rt.so"
 # ⛔⭐ THE TREE MOVED UNDER THIS BOARD, and the stamp that names the tree this row actually graded
 # (coo 2026-09-10, COO-54, on the coo's own witness: a pass recorded one corpus hash and a background job
 # moved corpus eight seconds later; gate_bin_watch stayed silent and was right to, because the BINARY had

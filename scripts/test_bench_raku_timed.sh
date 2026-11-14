@@ -52,9 +52,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # lane; out of scope to fix here. 32768 is comfortably under the observed threshold with margin.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-RDIR="${RAKU_DIR:-$S4E/corpus/benchmarks/raku}"
+RDIR="${RAKU_DIR:-$S4E_CORPUS/benchmarks/raku}"
 T="${TIMEOUT:-120}"; BUDGET_MS="${TIME_BUDGET_MS:-3000}"; NMAX="${NMAX:-32768}"
 KERNELS="${KERNELS:-}"   # optional allowlist, same convention as bench_prolog_fixed_iter.sh
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_oracle_flags.sh -- the ONE authority for rival binaries." >&2; exit 2; }
@@ -66,7 +66,7 @@ KERNELS="${KERNELS:-}"   # optional allowlist, same convention as bench_prolog_f
 RAKU="$(rakudo_bin)" || exit 2
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1283)"; exit 2; }
 declare -a DECL_SW=()
-WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
+WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/prelude" && cp "$RDIR/prelude_rakudo.rakumod" "$W/prelude/" || { echo "⛔ REFUSED: cannot stage the prelude." >&2; exit 2; }
 

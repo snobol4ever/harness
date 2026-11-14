@@ -26,7 +26,7 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CORPUS="$S4E/corpus"
+. "$HERE/lib_paths.sh"; CORPUS="$S4E_CORPUS"
 TIMEOUT="${TIMEOUT:-10}"
 JOBS="${JOBS:-8}"
 SBL="/home/resources/x64/bin/sbl"
@@ -70,7 +70,7 @@ trap 'rm -rf "$SCRATCH"' EXIT
 for pkg in $PKGS; do
     [ -d "$pkg" ] || { echo "⛔ REFUSE(2): no such package dir $pkg" >&2; exit 2; }
     tsv="$pkg/ORACLE_ACCEPTANCE.tsv"; tmp="$(mktemp)"
-    if [ "$pkg" = "$CORPUS/tests/snobol4" ]; then tsv="$S4E/harness/fixtures/util_snobol4_oracle_census/ORACLE_ACCEPTANCE.tsv"; mkdir -p "$(dirname "$tsv")"; fi
+    if [ "$pkg" = "$CORPUS/tests/snobol4" ]; then tsv="$S4E_HARNESS/fixtures/util_snobol4_oracle_census/ORACLE_ACCEPTANCE.tsv"; mkdir -p "$(dirname "$tsv")"; fi
     # ⛔ NEVER RUN IN THE CORPUS TREE: the first run (2026-09-08) left spitlib.idx, openo.tst, test.bin, ASMTEMP and two
     # "(121A1)" files behind -- programs write beside themselves. Each package is copied whole into scratch (so -INCLUDE
     # siblings and .in files still resolve) and every program runs in the copy; the copy dies with the trap.

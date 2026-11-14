@@ -20,7 +20,7 @@
 #        join -t$'\t' -j1 <(sort a/lines.tsv) <(sort b/lines.tsv)
 # Refuses (rc=2) rather than reporting an empty/green histogram it could not populate.
 set -u
-cd "$(dirname "$0")/../../SCRIP" || exit 2
+. "$(dirname "$0")/lib_paths.sh"; cd "$S4E_SCRIP" || exit 2
 ROOT=$(pwd)
 SCRIP="$ROOT/scrip"
 # ⛔ THE POPULATION IS RESOLVED, NOT HARDCODED -- SCRIP/refs/ was deleted org-wide 2026-09-16 and this

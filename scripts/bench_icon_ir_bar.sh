@@ -18,8 +18,8 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25
 #   cmp voids a wrong answer -- an Ir count of a program that did not do the work is not a measurement).
 # ENV   IR_TMO seconds per callgrind run (default 1200)   ICON_BENCH_DIR the kernel tree   SCRIP the scrip binary
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
-S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"; SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"; BD="${ICON_BENCH_DIR:-$S4E/corpus/benchmarks/icon}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
+S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"; SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"; BD="${ICON_BENCH_DIR:-$S4E_CORPUS/benchmarks/icon}"
 refuse() { echo "⛔ bench_icon_ir_bar REFUSE(2): $*"; exit 2; }
 for L in lib_perf_fmt lib_ir_measure lib_oracle_flags lib_icon_ipl_isolation lib_declared_arena; do . "$HERE/$L.sh" 2>/dev/null || refuse "cannot load $L.sh -- the ONE authority for its job, never a private copy"; done
 kernels() { find "$BD" -name '*.icn' ! -path '*/rate/*' | LC_ALL=C sort | while IFS= read -r f; do grep -q '^[[:space:]]*procedure[[:space:]]\+main' "$f" && echo "$f"; done; }
@@ -33,7 +33,7 @@ ICONT="$(icont_bin)" || refuse "no icont oracle"; ICONX="$(iconx_bin)" || refuse
 ir_have_valgrind || refuse "callgrind and callgrind_annotate are required (valgrind is absent)"
 if [ "$KIND" = demo ]; then
   [ "$NAME" = jtran ] || refuse "the only demo this bar knows is jtran"
-  PKG="$S4E/corpus/packages/icon/jcon-compiler"; D="$S4E/corpus/demos/icon/jcon"; T="$(mktemp -d "${TMPDIR:-/tmp}/icnirbar.XXXXXX")" || refuse "mktemp"; trap 'rm -rf "$T"' EXIT
+  PKG="$S4E_CORPUS/packages/icon/jcon-compiler"; D="$S4E_CORPUS/demos/icon/jcon"; T="$(mktemp -d "${TMPDIR:-/tmp}/icnirbar.XXXXXX")" || refuse "mktemp"; trap 'rm -rf "$T"' EXIT
   export IR_TMO="${IR_TMO:-1800}"
   MODS=$(sed -n 's/^[[:space:]]*link[[:space:]]*"\([^"]*\)".*$/\1/p' "$D/jtran.icn" | sed 's|.*/||' | sed "s|^|$PKG/|; s|$|.icn|" | tr '\n' ' ')
   ( cd "$T" && "$ICONT" -s -o "$T/jtran.oracle" $MODS ) > "$T/icont.log" 2>&1 || { tail -3 "$T/icont.log"; refuse "icont did not build the jtran oracle"; }

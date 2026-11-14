@@ -13,7 +13,7 @@
 fixture_root() {
     local _d="$1" _h _s _f
     _h="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || return 2
-    _s="$(cd "$_h/../../SCRIP" 2>/dev/null && pwd)" || return 2
+    _s="$(. "$_h/lib_paths.sh" && cd "$S4E_SCRIP" 2>/dev/null && pwd)" || return 2
     mkdir -p "$_d/harness/scripts" "$_d/SCRIP/out" || return 2
     cp -r "$_h/." "$_d/harness/scripts/" || return 2
     for _f in scrip Makefile; do [ -e "$_s/$_f" ] && { cp "$_s/$_f" "$_d/SCRIP/$_f" || return 2; }; done
@@ -22,14 +22,14 @@ fixture_root() {
 }
 fixture_root_src() {
     local _d="$1" _s
-    _s="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" 2>/dev/null && pwd)" || return 2
+    _s="$(. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh" && cd "$S4E_SCRIP" 2>/dev/null && pwd)" || return 2
     [ -d "$_s/src" ] || return 2
     cp -r "$_s/src" "$_d/SCRIP/src" || return 2
     return 0
 }
 fixture_root_corpus() {
     local _d="$1" _c
-    _c="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../corpus" 2>/dev/null && pwd)" || return 2
+    _c="$(. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh" && cd "$S4E_CORPUS" 2>/dev/null && pwd)" || return 2
     cp -r "$_c" "$_d/corpus" || return 2
     return 0
 }

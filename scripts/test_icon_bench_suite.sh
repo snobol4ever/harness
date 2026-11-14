@@ -61,7 +61,7 @@ PW="$HERE/util_progress_append.py"; [ -f "$PW" ] || refuse "the one progress-dat
 "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" >/dev/null || refuse "the binary is older than the tree -- run make (util_require_fresh.sh)"
 W="$(mktemp -d "${TMPDIR:-/tmp}/icnbench.XXXXXX")" || refuse "cannot make a work dir"; trap 'rm -rf "$W"' EXIT
 [ -n "$OUTDIR" ] || OUTDIR="$W/out"; mkdir -p "$OUTDIR" || refuse "cannot make $OUTDIR"
-RUSAGE="$W/bench_rusage"; gcc -o "$RUSAGE" "$ROOT/../harness/scripts/bench_rusage.c" 2>"$W/rusage.err" || refuse "harness/scripts/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"
+RUSAGE="$W/bench_rusage"; gcc -o "$RUSAGE" "$HERE/bench_rusage.c" 2>"$W/rusage.err" || refuse "harness/scripts/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"   # one-disk: not a path
 POP=()
 while IFS= read -r f; do grep -q '^[[:space:]]*procedure[[:space:]]\+main' "$f" || continue
   n="$(basename "$f" .icn)"; [ -n "$WANT" ] && ! grep -qw -- "$n" <<<"$WANT" && continue; POP+=("$f")
@@ -179,7 +179,7 @@ echo "$LINE"
 rr_selected && { rr_end icon-bench-ref; [ "$PASS" = "$N" ] && exit 0 || exit 1; }
 [ "$PREFUSED" = 0 ] || echo "⚠ $PREFUSED progress row(s) REFUSED (named above) -- the board stands, but it cannot be published until they are recorded"
 . "$HERE/lib_bench_write.sh" || refuse "lib_bench_write.sh unloadable -- the one rule for when a bench row publishes"
-read -r WRITE WRITE_WHY <<<"$(bench_row_writes "$(cd "$HERE/../.." && pwd)/corpus/benchmarks/icon" "$BD" "$WANT" "$NOWRITE")"
+read -r WRITE WRITE_WHY <<<"$(bench_row_writes "$S4E_CORPUS/benchmarks/icon" "$BD" "$WANT" "$NOWRITE")"
 echo "  row write: $([ "$WRITE" = 1 ] && echo yes || echo no) -- $WRITE_WHY"
 if [ "$WRITE" = 1 ]; then
   python3 "$HERE/util_score_row.py" write --lang icon --column bench-ref --measurer "${S4E_SEAT:-}" --text "$LINE" \

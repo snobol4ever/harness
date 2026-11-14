@@ -11,7 +11,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 ME="${S4E_SEAT:-probe}"
 N="${1:-}"
-SCRIP="$S4E/SCRIP/scrip"
+. "$HERE/lib_paths.sh"; SCRIP="$S4E_SCRIP/scrip"
 BG=""   # the batch-grader witnesses, staged into $T/bg by design_witness_stage_all below (they left the shared tests folder, Lon 2026-11-12)
 refuse() { echo "REFUSE(2) [run-switches probe]: $*"; exit 2; }
 [ -n "$N" ] || refuse "usage: $0 <step 1..19>"
@@ -77,7 +77,7 @@ step2() {   # the builder's road rule stages only what the container does not ho
     local out
     out="$(cd "$S4E" && python3 - "$T" <<'PY' 2>&1
 import sys, os
-sys.path.insert(0, "harness/scripts")
+sys.path.insert(0, os.path.join(os.environ["S4E_HARNESS"], "scripts"))
 import corpus_suite_harness as h
 d = sys.argv[1] + "/cont"
 os.makedirs(d)
@@ -142,7 +142,7 @@ step4() {   # one table, one accessor: the oracle's command from the language an
     case "$gnu" in *gprolog*|*gplc*) ;; *) red "prolog gnu reads '$gnu'" ;; esac
     bad="$(q pascal nosuch)"; rc=$?
     [ "$rc" = 2 ] || red "an unknown dialect exits $rc, want the refusal 2"
-    [ -f "$HERE/oracle_dialects.tsv" ] || red "no table harness/scripts/oracle_dialects.tsv"
+    [ -f "$HERE/oracle_dialects.tsv" ] || red "no table harness/scripts/oracle_dialects.tsv"   # one-disk: not a path
     for f in corpus_suite_harness.py util_build_package_suite.py util_add_ladder_witness.py; do
         [ "$(grep -c 'oracle_cmd_for' "$HERE/$f" 2>/dev/null)" -ge 1 ] 2>/dev/null || red "$f does not read the accessor"
     done
@@ -153,7 +153,8 @@ step5() {   # the dialect column is filled and the five other homes of a dialect
     local out
     out="$(cd "$S4E" && python3 - <<'PY' 2>&1
 import csv, glob, os, re
-idx = sorted(glob.glob("corpus/tests/*/ALL.csv") + glob.glob("corpus/packages/*/*/ALL.csv"))
+C = os.environ["S4E_CORPUS"] + "/"
+idx = sorted(glob.glob(C + "tests/*/ALL.csv") + glob.glob(C + "packages/*/*/ALL.csv"))
 if len(idx) < 7:
     print("REFUSE(2): %d indexes found, the corpus is not here" % len(idx)); raise SystemExit(2)
 nocol, tokens, filled, rows = [], 0, 0, 0
@@ -166,12 +167,12 @@ for f in idx:
         nocol.append(f)
     tokens += sum(1 for x in r if "--dialect=" in (x.get("compile_args") or ""))
     filled += sum(1 for x in r if (x.get("dialect") or "").strip())
-side = sorted(glob.glob("corpus/packages/*/*/ALL.dialect") + glob.glob("corpus/tests/*/ALL.dialect"))
-pre = sorted(glob.glob("corpus/packages/*/*/ALL.prelude"))
+side = sorted(glob.glob(C + "packages/*/*/ALL.dialect") + glob.glob(C + "tests/*/ALL.dialect"))
+pre = sorted(glob.glob(C + "packages/*/*/ALL.prelude"))
 keys = 0
-for c in glob.glob("corpus/packages/*/*/CONTRACT.tsv"):
+for c in glob.glob(C + "packages/*/*/CONTRACT.tsv"):
     keys += sum(1 for l in open(c) if re.match(r"(dialect|unmarked_compile_args)\t", l))
-wit = open("harness/scripts/util_add_ladder_witness.py").read()
+wit = open(os.path.join(os.environ["S4E_HARNESS"], "scripts", "util_add_ladder_witness.py")).read()
 table = 1 if re.search(r"^ORACLE = \{", wit, re.M) else 0
 red = []
 if nocol: red.append("%d of %d indexes have no dialect column (first %s)" % (len(nocol), len(idx), nocol[0]))
@@ -202,7 +203,7 @@ bg_step() {   # <batch-grader step>: that plan's own probe through its own harne
 step6() {   # batch-grader 8b re-cut: the warm compile is ONE function both list loops call (CTO-575 (6))
     local n
     bg_step 8b
-    n="$(grep -c 'scrip_warm_prolog(' "$S4E/SCRIP/src/driver/scrip.c" 2>/dev/null)"
+    n="$(grep -c 'scrip_warm_prolog(' "$S4E_SCRIP/src/driver/scrip.c" 2>/dev/null)"
     [ "${n:-0}" -ge 3 ] || red "scrip.c names scrip_warm_prolog( on ${n:-0} lines, want its definition and its two callers"
     verdict "batch-grader 8b green and one warm function with two callers"
 }
@@ -298,7 +299,7 @@ step10() {   # run-files reads the package index, NAME.in beside a program and A
 
 step11() {   # a package prelude retires into the dialect switch: swi and xsb (CTO-575 (5))
     need_scrip
-    local D="$S4E/harness/designs/run_switches" got
+    local D="$S4E_HARNESS/designs/run_switches" got
     [ -f "$D/rs11_swi_double_quotes.pl" ] && [ -f "$D/rs11_swi_double_quotes.out" ] && [ -f "$D/rs11_xsb_import.pl" ] && [ -f "$D/rs11_xsb_import.out" ] || refuse "the step 11 witnesses are not beside the table"
     cp "$D"/rs11_*.pl "$T/"
     got="$(cd "$T" && timeout -k 5 120 "$SCRIP" --dialect=swi --run rs11_swi_double_quotes.pl < /dev/null 2> "$T/e1")" || red "scrip under the swi dialect exits non-zero ($(head -1 "$T/e1" | cut -c1-100))"

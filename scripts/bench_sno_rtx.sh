@@ -37,8 +37,8 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-BENCH="${BENCH:-$S4E/corpus/benchmarks/snobol4}"
+. "$HERE/lib_paths.sh"; SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+BENCH="${BENCH:-$S4E_CORPUS/benchmarks/snobol4}"
 R="${R:-5}"; MIN_MS="${MIN_MS:-800}"; NMAX_SCALE="${NMAX_SCALE:-64}"; RT_OPT="${RT_OPT:--O0}"
 FAM="${1:?usage: bench_sno_rtx.sh <FAMILY> [program ...]}"; shift || true
 GATE="SCRIP_RTX_${FAM}"

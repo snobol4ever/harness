@@ -67,7 +67,7 @@ design_witness_stage() {
             cp -r "$d/$w".* "$st/" || return 2
             printf '%s\tloose\t%s\n' "$w" "$(cd "$d" && pwd)" >> "$st/.where"; found=1; break
         done
-        [ "$found" = 1 ] || { echo "REFUSE(2) [lib_design_witness]: witness $w of $plan is no entry ${plan}__$w of any master and no loose pair in corpus/tests/*/$plan or harness/fixtures/$plan" >&2; return 2; }
+        [ "$found" = 1 ] || { echo "REFUSE(2) [lib_design_witness]: witness $w of $plan is no entry ${plan}__$w of any master and no loose pair in corpus/tests/*/$plan or harness/fixtures/$plan" >&2; return 2; }   # one-disk: not a path
     done
     return 0
 }

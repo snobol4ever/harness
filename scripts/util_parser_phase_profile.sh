@@ -46,10 +46,10 @@
 # in flight (R-1342); PHASE_OUT=<dir> keeps the profiles, lists and maps.
 set -uo pipefail
 G=util_parser_phase_profile
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SELF="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; SELF="$(cd "$S4E_SCRIP" && pwd)"
 refuse() { echo "⛔ REFUSE(2) [$G]: $*"; exit 2; }
 W="$(cd "${PHASE_ROOT:-$SELF}" 2>/dev/null && pwd)" || refuse "PHASE_ROOT=${PHASE_ROOT:-} is not a directory"
-S4E="${S4E_HOME:-$(cd "$SELF/.." && pwd)}"; CORPUS="${CORPUS:-$S4E/corpus}"
+S4E="${S4E_HOME:-$(cd "$SELF/.." && pwd)}"; CORPUS="${CORPUS:-$S4E_CORPUS}"
 [ -d "$CORPUS/tests" ] || refuse "no corpus at $CORPUS"
 [ -x "$W/scripts/util_require_fresh.sh" ] || refuse "$W is not a SCRIP checkout (no ../harness/scripts/util_require_fresh.sh)"
 "$W/scripts/util_require_fresh.sh" --gate "$G" "$W/scrip" "$W/out/libscrip_rt.so" || exit 2

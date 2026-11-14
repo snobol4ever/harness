@@ -36,7 +36,7 @@ done
 case "$ENGINE" in
     csnobol4)
         if ! command -v snobol4 &>/dev/null; then
-            echo "ERROR: snobol4 binary not found. See harness/oracles/csnobol4/BUILD.md"
+            echo "ERROR: snobol4 binary not found. See harness/oracles/csnobol4/BUILD.md"   # one-disk: not a path
             exit 1
         fi
         ENGINE_CMD=(snobol4 -f -P256k) ;;

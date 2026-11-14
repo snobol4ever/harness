@@ -16,9 +16,9 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
+. "$HERE/lib_paths.sh"; SC="$S4E_SCRIP"
 WD=""   # the witnesses are the entries clause_source_record__<name> of the prolog master (a consulting one carries its data file as a file fence), staged into $OUT/step<N>/wit by design_witness_stage (the cfo 2026-11-12, row tests-consolidation-finish-cfo)
-STEPS="$HERE/../designs/clause_source_record/STEPS.tsv"   # moved from corpus/tests/prolog/clause_source_record with its witnesses' absorption (CIO-56)
+STEPS="$HERE/../designs/clause_source_record/STEPS.tsv"   # moved from corpus/tests/prolog/clause_source_record with its witnesses' absorption (CIO-56)   # one-disk: not a path
 OUT="/tmp/s4e-design-clause-source-record"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
@@ -35,7 +35,7 @@ done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--with-smoke] [--out DIR]"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: consulted-clause-source-record -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1' "$STEPS" | wc -l) steps (harness/designs/clause_source_record/STEPS.tsv); a witness is the entry clause_source_record__<name> of the prolog master"
+    echo "DESIGN-PLAN: consulted-clause-source-record -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1' "$STEPS" | wc -l) steps (harness/designs/clause_source_record/STEPS.tsv); a witness is the entry clause_source_record__<name> of the prolog master"   # one-disk: not a path
     printf '%-4s %-22s %-8s %-10s %s\n' step slug executor probe witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1 {print $1}' "$STEPS"); do
         printf '%-4s %-22s %-8s %-10s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 5)"

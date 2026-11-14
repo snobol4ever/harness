@@ -15,7 +15,7 @@
 set -u
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/snobol4}"
+. "$HERE/lib_paths.sh"; B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/snobol4}"
 OUT="${SCALETSV:-$B/SCALE.tsv}"
 TARGET="${1:-2.5}"
 RAW="$(bash "$HERE/test_bench_snobol4_timed.sh")" || true

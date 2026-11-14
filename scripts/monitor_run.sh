@@ -27,7 +27,7 @@
 set -u
 # THE BINARY IS THIS REPOSITORY'S OWN (the coo 2026-10-03, R-1496): SD was $S4E/SCRIP, the sibling checkout beside the root, so from a
 # worktree every run below -- and the harness it calls -- graded a different checkout's build than the one the caller stood in.
-SD="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"; SCRIP="$SD/scrip"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"; SD="$(cd "$S4E_SCRIP" && pwd)"; SCRIP="$SD/scrip"
 src="${1:-}"; [ -n "$src" ] && [ -f "$src" ] || { echo "REFUSE(2): usage: monitor_run.sh <source> [--modes|--trace|--oracle] [--input FILE]"; exit 2; }
 shift; mode=modes; input=""
 while [ $# -gt 0 ]; do case "$1" in --modes) mode=modes;; --trace) mode=trace;; --oracle) mode=oracle;; --input) input="$2"; shift;; *) echo "REFUSE(2): unknown option $1"; exit 2;; esac; shift; done

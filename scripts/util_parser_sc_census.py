@@ -2,7 +2,7 @@
 """util_parser_sc_census.py [--lang L[,L]] [--population corpus|ladder|rungs] [--declared TSV] [--jobs N (default: the fan-out ceiling of lib_fanout.py, max(2, min(4, cores - demand)), R-1333)] [--timeout S] [--list TSV]
 
 DOES EACH BOOTSTRAP PARSER WORK? (Lon 2026-09-23 15:2x, in-chat: hq_snocone "to get all the SCRIP bootstrap
-parsers working".) For every language, the Snocone-hosted parser SCRIP/bootstrap/parser_<lang>.sc -- loaded behind the
+parsers working".) For every language, the Snocone-hosted parser bootstrap/parser_<lang>.sc of SCRIP -- loaded behind the
 14-file bootstrap runtime in the order ../harness/scripts/run_scrip_parser.sh declares, BY CONCATENATION (the Snocone branch of the
 driver never reads a -L chain; util_parser_sc_census.sh's note) -- is run by ./scrip over every program of a declared
 population with the program as its stdin. POPULATION ladder (default): every entry of the language's rungs whose ALL.csv
@@ -19,7 +19,7 @@ without --timeout every program that times out is re-run alone at 300 s before i
 It prints its denominator per language as each language finishes and names the first REFUSED and first CRASH; --list TSV
 also writes EVERY member as a row (lang, corpus-relative source or rungs key, class, first line) so a class can be read whole
 (hq_snocone 2026-09-27: 66 Icon CRASHes on the SCRIP arm were one name on the board line and no list). A REFUSED
-source listed in --declared (default harness/scripts/parser_refusals.tsv, beside this census: lang, corpus-relative path, the measurement
+source listed in --declared (default parser_refusals.tsv of the harness scripts, beside this census: lang, corpus-relative path, the measurement
 that the source is not a legal program of its language, or for an EMPTY source that it holds no statement) is DECLARED, never red;
 an undeclared refusal or EMPTY is red, because a parser that declines a legal program, or prints nothing for one, is not working. rc 0 GREEN (every language: population > 0, CRASH 0, undeclared REFUSED 0),
 1 RED, 2 REFUSE (no ./scrip, no rungs, a population that could not be materialized).
@@ -39,9 +39,11 @@ import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SCRIP = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
+sys.path.insert(0, HERE)
+import harness_paths
+SCRIP = str(harness_paths.scrip())
 HOME = os.environ.get("S4E_HOME") or os.path.dirname(SCRIP)
-CORPUS = os.path.join(HOME, "corpus")
+CORPUS = str(harness_paths.corpus())
 RT = ["global", "case", "assign", "match", "counter", "stack", "tree", "ShiftReduce", "tdump", "gen", "qize", "semantic", "omega", "trace"]
 LANGS = [("snobol4", "sno"), ("icon", "icn"), ("prolog", "pl"), ("raku", "raku"), ("pascal", "pas"), ("snocone", "sc"), ("rebus", "reb")]
 SEQ = re.compile(r"^SEQ[0-9]")
@@ -59,13 +61,13 @@ import corpus_suite_harness as _harness
 
 
 def arena(lang):
-    """scrip's -d/-s switches for the chain of `lang`, from corpus/demos/snocone/parser_<lang>/parser_<lang>.heap and .stack; refuses an undeclared chain."""
+    """scrip's -d/-s switches for the chain of `lang`, from the corpus demos/snocone/parser_<lang>/parser_<lang>.heap and .stack; refuses an undeclared chain."""
     drv = os.path.join(SCRIP, "bootstrap", "parser_%s.sc" % lang)
     heap, _ = _harness.heap_declarations(drv)
     stack, _ = _harness.stack_declarations(drv)
     sw = _harness._size_switches(heap.get("parser_" + lang), stack.get("parser_" + lang))
     if not sw:
-        refuse("%s declares no heap or stack (corpus/demos/snocone/parser_%s/parser_%s.heap, .stack) -- the chain's sizes are its declaration" % (drv, lang, lang))
+        refuse("%s declares no heap or stack (corpus/demos/snocone/parser_%s/parser_%s.heap, .stack) -- the chain's sizes are its declaration" % (drv, lang, lang))   # one-disk: not a path
     return sw
 
 

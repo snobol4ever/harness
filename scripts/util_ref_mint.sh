@@ -21,8 +21,8 @@
 # ⛔ lon/ AND include/ ARE REFUSED BY CONSTRUCTION, not skipped at run time (RULES.md: lon is a CREDENTIAL rule
 # -- do not run, do not read into a transcript; include/ is under HQ's conservative interim pending Lon's boundary ruling).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SC="$(cd "$HERE/../../SCRIP" && pwd)"
-S4E="${S4E_HOME:-$(cd "$SC/.." && pwd)}"; CORPUS="${CORPUS:-$S4E/corpus}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; SC="$(cd "$S4E_SCRIP" && pwd)"
+S4E="${S4E_HOME:-$(cd "$SC/.." && pwd)}"; CORPUS="${CORPUS:-$S4E_CORPUS}"
 BOARD="$SC/../harness/scripts/scorecard_snobol4.sh"
 suite="${1:?usage: $0 <suite> <dir>... [--apply]}"; shift
 apply=""; dirs=""

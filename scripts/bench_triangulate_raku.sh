@@ -55,10 +55,10 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #       2 = REFUSED -- missing scrip / rakudo / corpus / prelude / lib, loud, never a plausible table.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
-"$HERE/util_require_fresh.sh" --gate bench_triangulate_raku "${SCRIP:-$HERE/../../SCRIP/scrip}" "$HERE/../../SCRIP/out/libscrip_rt.so" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
+"$HERE/util_require_fresh.sh" --gate bench_triangulate_raku "${SCRIP:-$S4E_SCRIP/scrip}" "$S4E_SCRIP/out/libscrip_rt.so" || exit 2
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-RDIR="${RAKU_DIR:-$S4E/corpus/benchmarks/raku}"
+RDIR="${RAKU_DIR:-$S4E_CORPUS/benchmarks/raku}"
 REPS="${REPS:-3}"; T="${TIMEOUT:-120}"; KERNELS="${KERNELS:-}"; TOL="${TOL_PCT:-10}"
 . "$HERE/lib_perf_fmt.sh"     2>/dev/null || { echo "⛔ REFUSED: cannot load lib_perf_fmt.sh -- the ONE authority for printing a multiple (s266)." >&2; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_oracle_flags.sh -- the ONE authority for rival binaries." >&2; exit 2; }
@@ -71,7 +71,7 @@ dsw_of() { local dw; dw=$(declared_switches_beside "$1") || { echo "⛔ REFUSED:
 [ -f "$RDIR/prelude_rakudo.rakumod" ] || { echo "⛔ REFUSED: $RDIR/prelude_rakudo.rakumod missing -- the Rakudo arm has no wall_us/wall_ms without it." >&2; exit 2; }
 RAKU="$(rakudo_bin)" || exit 2
 RAKU_VER="$("$RAKU" --version 2>/dev/null | sed -n 's/.*Rakudo™ v\([0-9][0-9.]*[0-9]\).*/\1/p' | head -1)"; RAKU_VER="${RAKU_VER:-unknown}"   # anchored on a digit at both ends: the banner reads "v2026.05." and a greedy [0-9.]* kept the sentence's full stop as part of the version
-WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }
+WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/prelude" && cp "$RDIR/prelude_rakudo.rakumod" "$W/prelude/" || { echo "⛔ REFUSED: cannot stage the prelude." >&2; exit 2; }
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
