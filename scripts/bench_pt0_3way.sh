@@ -31,9 +31,9 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 set -uo pipefail
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"; RT="${RT_DIR:-$HERE/../../SCRIP/out}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"; RT="${RT_DIR:-$S4E_SCRIP/out}"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255)." >&2; exit 3; }
-SBL="${SBL:-$(sbl_clean_bin)}"; CORPUS="${CORPUS:-$S4E/corpus}"; D="$CORPUS/demos"   # BENCHMARK oracle (s255)
+SBL="${SBL:-$(sbl_clean_bin)}"; CORPUS="${CORPUS:-$S4E_CORPUS}"; D="$CORPUS/demos"   # BENCHMARK oracle (s255)
 W="${W:-$(mktemp -d)}"; N="${SAMPLES:-7}"; REPS="${REPS:-2000}"; CCOST=0
 PROGS="${PROGS:-treebank-match treebank-match-fence}"
 while [ $# -gt 0 ]; do case $1 in --progs) PROGS="$2"; shift 2;; --reps) REPS="$2"; shift 2;; --samples) N="$2"; shift 2;; --compile-cost) CCOST=1; shift;; *) echo "unknown arg $1"; exit 2;; esac; done
@@ -57,7 +57,7 @@ PYEOF
 }
 med() { printf '%s\n' "$@" | sort -n | sed -n "$(( (N+1)/2 ))p"; }
 [ -x "$SBL" ] || { echo "⛔ ORACLE ABSENT: $SBL — every ratio below would be fiction. Build /home/resources/spitbol-bench-oracle (see RULES.md Oracles) -- seats do not clone x64 (s255)."; exit 3; }
-RTO=$(grep -o '\-O[0-9]' "$HERE/../../SCRIP/Makefile" 2>/dev/null | head -1)
+RTO=$(grep -o '\-O[0-9]' "$S4E_SCRIP/Makefile" 2>/dev/null | head -1)
 echo "# PT-0 3-way baseline · reps=$REPS · samples=$N · median-of-$N · RT_OPT=${RTO:-unknown} · $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 for p in $PROGS; do
   IN="$(input_of "$p")"; SRC="$D/$p.sno"

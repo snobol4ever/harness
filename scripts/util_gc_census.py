@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_gc_census.py -- THE COLLECTOR GUESSES NOTHING: the census instruments (coo, R-813/814/815, 2026-09-17;
 row gc-instruments-the-safe-point-census-the-maps-census-and-scrip-gc-coverage-words-scanned-zero-are-wired-gates;
-design .github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md, law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING).
+design .github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md, law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING).   # one-disk: not a path
 
 Five censuses, each a mechanical count printed with its population, each RED until the design lands and each proven
 to trip on a planted violation by --selftest (39 arms, the ratchet included):
@@ -45,7 +45,9 @@ Every count is printed as `CENSUS <name> ... want=...` so a reader re-derives th
 import argparse, collections, os, re, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP"))
+sys.path.insert(0, HERE)
+import harness_paths
+ROOT = os.path.abspath(str(harness_paths.scrip()))
 
 CONSERVATIVE_TOKENS = [  # (label, regex, what the design says)
     ("gc_zeta_frame_calls", r"(?<![A-Za-z0-9_])gc_zeta_frame\s*\(", "the word walker (Rule 2: DELETED, not gated)"),
@@ -1914,7 +1916,7 @@ MAPS_SYMBOLS = ("rt_gc_frame_maps_install", "rt_gc_frame_maps")   # section 6.4:
 def census_maps_slotkind(root, langs, out=print):
     """HALF A -- every word of every graded graph's zls region has a declared kind (the officer's tool, token frozen R-821).
     no_layout entries are NAMED beside the number and never folded into it (R-749's rule)."""
-    tool = os.path.join(root, "..", "harness", "scripts", ZLS_TOOL)
+    tool = os.path.join(str(harness_paths.harness()), "scripts", ZLS_TOOL)
     if not os.path.exists(tool):
         out(f"CENSUS maps/slot-kind REFUSED(2): no {ZLS_TOOL} at {tool}"); return 2
     red = 0; swept = []; nolayout = 0; graded = 0; never_emitted = 0; emitted_no_layout = 0
@@ -2557,11 +2559,11 @@ def selftest():
     fake = tempfile.mkdtemp(prefix="gc_census_stale."); __import__("atexit").register(__import__("shutil").rmtree, fake, True)
     os.makedirs(os.path.join(fake, "scripts")); os.makedirs(os.path.join(fake, "src")); os.makedirs(os.path.join(fake, "out"))
     import shutil
-    shutil.copy(os.path.join(ROOT, "..", "harness", "scripts", "lib_build_currency.sh"), os.path.join(fake, "scripts"))
+    shutil.copy(os.path.join(str(harness_paths.harness()), "scripts", "lib_build_currency.sh"), os.path.join(fake, "scripts"))
     open(os.path.join(fake, "scrip"), "w").write("x"); open(os.path.join(fake, "out", "libscrip_rt.so"), "w").write("x")
     os.utime(os.path.join(fake, "scrip"), (1000, 1000)); os.utime(os.path.join(fake, "out", "libscrip_rt.so"), (1000, 1000))
     open(os.path.join(fake, "src", "newer.c"), "w").write("int x;\n")
-    _pr = subprocess.run([sys.executable, os.path.join(ROOT, "..", "harness", "scripts", "util_gc_census.py"), "safe-points",
+    _pr = subprocess.run([sys.executable, os.path.join(str(harness_paths.harness()), "scripts", "util_gc_census.py"), "safe-points",
                           "--root", fake], capture_output=True, text=True)
     ck(_pr.returncode == 2 and "REFUSED-TO-GRADE" in (_pr.stdout + _pr.stderr),
        "safe-points: a binary OLDER than src/ REFUSES rc=2 and measures nothing -- this census derives its "
@@ -2768,7 +2770,11 @@ def selftest():
     buf.clear(); rc = census_maps_table(nogc, "/nonexistent/scrip", [], buf.append)
     ck(rc == 2 and "are not defined in gc_heap.c" in "\n".join(buf),
        "maps/table: a gc_heap.c without section 6.4's symbol REFUSES rc=2 -- an unbuilt table never reads green")
-    buf.clear(); rc = census_maps_slotkind(nogc, ["rebus"], buf.append)
+    _hs = os.environ.get("S4E_HARNESS"); os.environ["S4E_HARNESS"] = os.path.join(w, "noharness")   # the absolute model: the tool lives in the harness checkout, so the missing tool is a harness with none
+    try:
+        buf.clear(); rc = census_maps_slotkind(nogc, ["rebus"], buf.append)
+    finally:
+        os.environ.pop("S4E_HARNESS", None) if _hs is None else os.environ.__setitem__("S4E_HARNESS", _hs)
     ck(rc == 2 and "no util_zls_frame_map_census.py" in "\n".join(buf), "maps/slot-kind: a missing base tool REFUSES rc=2, never green")
     ck(decode_map_quads(".Lgcmap_x:\n  .quad 688541224282\n  .quad 4294967296\n  .quad .Lgcmap_x_s\n  .quad 0\n", ".Lgcmap_x")
        == {"magic": 0x50414D5A, "frame_bytes": 160, "header_bytes": 0, "flags": 1},

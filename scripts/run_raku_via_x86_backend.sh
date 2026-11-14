@@ -5,7 +5,8 @@
 # run_prolog_via_x86_backend.sh.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"
 LIBRT="${LIBRT:-$ROOT/out/libscrip_rt.so}"
 RK="${1:?Usage: run_raku_via_x86_backend.sh <file.raku>}"

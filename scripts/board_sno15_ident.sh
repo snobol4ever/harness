@@ -20,7 +20,7 @@
 # below turns the raw $? into HANG / CRASH(sig) / RC=<n> so the printed column carries that distinction.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 TIMEOUT_RETRY="${TIMEOUT_RETRY:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_timeout_retry.sh}"   # every graded timeout is retried once, longer (Lon 2026-10-15, in-chat to the coo: "do a retry with longer timeouts")
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY the .github, SCRIP and corpus clones); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
 set -u
 classify_rc() {  # $1 = exit code from `timeout N cmd`
   local rc=$1
@@ -28,7 +28,8 @@ classify_rc() {  # $1 = exit code from `timeout N cmd`
   elif [ "$rc" -ge 128 ]; then echo "CRASH($((rc-128)))"
   else echo "RC=$rc"; fi
 }
-SC=${SC:-$S4E/SCRIP}; D=${D:-$S4E/corpus/demos}
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+SC=${SC:-$S4E_SCRIP}; D=${D:-$S4E_CORPUS/demos}
 . "$(dirname "${BASH_SOURCE[0]}")/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255)." >&2; exit 3; }
 SBL=${SBL:-$S4A/x64/bin/sbl}   # CORRECTNESS oracle -- identity board, no timing, x64/bin/sbl stays authoritative
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT

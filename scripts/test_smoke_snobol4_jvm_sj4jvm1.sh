@@ -4,8 +4,9 @@
 # then assemble the resulting .j file with jasmin.jar (assembly success = template is valid Jasmin).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-JASMIN="${JASMIN:-$HERE/../../SCRIP/miscellaneous/jasmin.jar}"
+. "$HERE/lib_paths.sh"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+JASMIN="${JASMIN:-$S4E_SCRIP/miscellaneous/jasmin.jar}"
 PASS=0; FAIL=0
 check_jasmin() {
     local name="$1" sno="$2"

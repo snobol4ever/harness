@@ -36,7 +36,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # USAGE  bash ../harness/scripts/bench_startup_touch_ab.sh            (from any cwd)
 #        RUNS=7 WITNESS=/path/prog.sno KEEP=1 bash ../harness/scripts/bench_startup_touch_ab.sh
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 . "$HERE/lib_perf_fmt.sh" 2>/dev/null || { echo "⛔ REFUSE(2): cannot load $HERE/lib_perf_fmt.sh -- the one authority for printing a multiple"; exit 2; }
 refuse() { printf '⛔ REFUSE(2): %s\n' "$*" >&2; exit 2; }
 red()    { printf '⛔ RED(1): %s\n' "$*" >&2; exit 1; }

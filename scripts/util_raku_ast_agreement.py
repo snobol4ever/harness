@@ -7,19 +7,19 @@ dump-on-every-master-entry-and-kernel-then-the-old-parser-is-deleted (Lon 2026-0
 ../harness/scripts/util_raku_ast_agreement.sh, which the row's DONE-WHEN runs.
 
 THE POPULATION, every unit named by a durable key:
-    rungs:<entry>     every entry of corpus/tests/raku/ALL.raku, extracted alone through corpus_suite_harness.py's
+    rungs:<entry>     every entry of corpus/tests/raku/ALL.raku, extracted alone through corpus_suite_harness.py's   # one-disk: not a path
                        own suite readers (the same extraction util_raku_syntax_agreement.py uses)
-    bench:<file>       every *.raku kernel under corpus/benchmarks/raku
+    bench:<file>       every *.raku kernel under corpus/benchmarks/raku   # one-disk: not a path
 
 THE REFERENCE is the flex/bison parser's own `scrip --dump-ast` output, cut ONCE by `--cut` before the parser swap:
-    corpus/tests/raku/ALL.ast            one banner per rungs entry, `#-- <key>` then `#rc <n>` then the dump
-    corpus/benchmarks/raku/<stem>.ast    one file per kernel, `#rc <n>` then the dump
+    corpus/tests/raku/ALL.ast            one banner per rungs entry, `#-- <key>` then `#rc <n>` then the dump   # one-disk: not a path
+    corpus/benchmarks/raku/<stem>.ast    one file per kernel, `#rc <n>` then the dump   # one-disk: not a path
 each file headed by the SCRIP commit that cut it. `--cut` REFUSES rc=2 once src/parsers/raku/raku.y is gone:
 the reference is the old parser's tree, and nothing else may write it.
 
 THE SUBJECT is `scrip <flag> FILE` (default flag --dump-ast, which is the new parser once it is swapped in;
 `--flag` names another while both parsers are in the tree). Its stdout and rc must match the reference byte
-for byte. A unit whose difference is the OLD parser's defect is listed in corpus/tests/raku/ALL.ast.exceptions.tsv
+for byte. A unit whose difference is the OLD parser's defect is listed in corpus/tests/raku/ALL.ast.exceptions.tsv   # one-disk: not a path
 (key, the md5 of the subject's dump that is accepted instead, the measured reason): it counts as EXCEPTED only
 while the subject's dump still has that md5 -- an exception is a pinned answer, never a blanket pass.
 
@@ -32,9 +32,10 @@ import argparse, concurrent.futures, difflib, hashlib, os, subprocess, sys, temp
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-SCRIP_DIR = (HERE.parent.parent / "SCRIP")
-HOME = Path(os.environ.get("S4E_HOME", SCRIP_DIR.parent))
-CORPUS = HOME / "corpus"
+sys.path.insert(0, str(HERE))
+import harness_paths
+SCRIP_DIR = harness_paths.scrip()
+CORPUS = harness_paths.corpus()
 RUNGS = CORPUS / "tests" / "raku" / "ALL.raku"
 RUNGS_REF = CORPUS / "tests" / "raku" / "ALL.ref"
 RUNGS_AST = CORPUS / "tests" / "raku" / "ALL.ast"

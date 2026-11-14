@@ -21,6 +21,8 @@ whose every cell is held is printed with its words and counted by neither check 
 --owed KEY prints that row's owed programs with the builder's reason. --check: rc 1 when a selected row carries a structural word (everything but
 the lap's); --check-lap: the lap's words count too. rc 2 refused. It reads; it writes nothing and runs no program."""
 import collections, csv, os, re, subprocess, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
 
 EXT = {"snobol4": "sno", "icon": "icn", "prolog": "pl", "pascal": "pas", "raku": "raku", "rebus": "reb", "snocone": "sc"}
 DECLARED = re.compile(r"EXCLUDED\.tsv|CONTAINERS\.tsv|graded through|through its driver|\.ref beside|not a case file")
@@ -63,7 +65,7 @@ def main():
     log = opt(a, "--log") or os.path.join(prog, "CYCLE.log")
     only = set((opt(a, "--only") or "").split(",")) - {""}
     want_owed = opt(a, "--owed")
-    runners = os.path.join(root, "harness/scripts/SUITE_RUNNERS.tsv")
+    runners = os.path.join(str(harness_paths.harness(root)), "scripts", "SUITE_RUNNERS.tsv")
     if not os.path.isfile(runners):
         print("REFUSE(2) [cycle-inventory]: no %s" % runners)
         return 2
@@ -110,7 +112,7 @@ def main():
             bad += 1
             bad_lap += 1
             continue
-        d = os.path.join(root, "corpus/tests", lang) if kind == "master" else os.path.join(root, table)
+        d = os.path.join(str(harness_paths.corpus(root)), "tests", lang) if kind == "master" else (os.path.join(str(harness_paths.corpus(root)), table[len("corpus/"):]) if table.startswith("corpus/") else os.path.join(root, table))
         e = EXT.get(lang, "?")
         src, ref, cs, pt = (os.path.join(d, n) for n in ("ALL." + e, "ALL.ref", "ALL.csv", "PARTITION.tsv"))
         flags = "".join(c if os.path.isfile(p) else "." for c, p in zip("SRCP", (src, ref, cs, pt)))
@@ -127,7 +129,7 @@ def main():
         if ffm:
             flags = "F" + flags[1:]
         if (os.path.isfile(src) and os.path.isfile(ref)) or fmt2 or ffm:
-            r = subprocess.run([sys.executable, os.path.join(root, "harness/scripts/corpus_suite_harness.py"), "list", src, ref, "--lang", lang],
+            r = subprocess.run([sys.executable, os.path.join(str(harness_paths.harness(root)), "scripts", "corpus_suite_harness.py"), "list", src, ref, "--lang", lang],
                                capture_output=True, text=True, errors="replace")
             cont = set(x for x in r.stdout.split("\n") if x.strip()) if r.returncode == 0 else None
         if os.path.isfile(pt):

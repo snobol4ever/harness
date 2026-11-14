@@ -29,7 +29,8 @@
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 # PATH CORRECTED s169 (seat1, queue row gates-dead-paths): the src reorg's blind sed mapped
 # BB_templates AND XA_templates both onto src/templates (so every file was scanned TWICE and the
 # violation total printed DOUBLE) and left SM_templates dangling at a dir that no longer exists.

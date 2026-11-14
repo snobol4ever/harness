@@ -32,10 +32,11 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$HERE/../../SCRIP"
+. "$HERE/lib_paths.sh"
+ROOT="$S4E_SCRIP"
 SCRIP="${SCRIP:-$ROOT/scrip}"
-BENCH="${BENCH:-$S4E/corpus/benchmarks/snobol4}"
-SNO_LIB_DIR="${SNO_LIB_DIR:-$S4E/corpus/library}"
+BENCH="${BENCH:-$S4E_CORPUS/benchmarks/snobol4}"
+SNO_LIB_DIR="${SNO_LIB_DIR:-$S4E_CORPUS/library}"
 N="${N:-5}"
 TIMEOUT="${TIMEOUT:-180}"
 RT_OPT="${RT_OPT:--O0}"
@@ -46,8 +47,8 @@ ARM_A="${ARM_A:-}"
 ARM_B="${ARM_B:-}"
 # ⭐ V2-5 GATE HONESTY: examining nothing must exit UNPROVEN(2), never read as a pass.
 . "$(dirname "$0")/lib_gate.sh"
-gate_require_exec "${SCRIP:-${SCRIP_BIN:-$(dirname "$0")/../../SCRIP/scrip}}" "the scrip compiler"
-gate_require "${RT_DIR:-$(dirname "$0")/../../SCRIP/out}/libscrip_rt.so" "the runtime shared object out/libscrip_rt.so"
+gate_require_exec "${SCRIP:-${SCRIP_BIN:-$S4E_SCRIP/scrip}}" "the scrip compiler"
+gate_require "${RT_DIR:-$S4E_SCRIP/out}/libscrip_rt.so" "the runtime shared object out/libscrip_rt.so"
 # ASLR DEFAULTS TO **off** (s11).  RC-0(a)'s exit criterion is stated "at ASLR=off (setarch -R)", so the
 # instrument defaults to the layout its acceptance test is defined on.  The min-of-N statistic does move with
 # the layout draw (measured: min 427ms unpinned vs 448ms pinned), so the min is only a stable floor WITHIN one

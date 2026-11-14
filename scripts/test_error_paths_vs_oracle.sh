@@ -6,13 +6,14 @@
 # undiagnosed crash, or silently-accepted invalid program). WRONG is a RATCHET: the ceiling may not grow.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -u
-SCRIP="${SCRIP:-$S4E/SCRIP/scrip}"
+. "$(dirname "$0")/lib_paths.sh"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
 TIMEOUT="${TIMEOUT:-10}"
 . "$(dirname "$0")/lib_gate.sh"
 . "$(dirname "$0")/lib_oracle_flags.sh"
 RUNGS_LANG="${RUNGS_LANG:-snobol4}" . "$(dirname "$0")/lib_rungs_extract.sh"
 gate_require_exec "$SCRIP" "the scrip compiler"
-gate_require "${RT_DIR:-$(dirname "$0")/../../SCRIP/out}/libscrip_rt.so" "the runtime shared object out/libscrip_rt.so"
+gate_require "${RT_DIR:-$S4E_SCRIP/out}/libscrip_rt.so" "the runtime shared object out/libscrip_rt.so"
 SBL="$(sbl_correctness_bin)" || exit 2
 FLAGS="$(sbl_lang_flags)"
 # ⛔ WITNESS_DIR IS ASSEMBLED, NOT ONE FIXED TREE (row dead-suite-path-consumer-sweep): the old

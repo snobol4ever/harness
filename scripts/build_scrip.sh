@@ -4,7 +4,8 @@
 # Usage: bash build/build_scrip.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SCRIP="$ROOT/SCRIP"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+SCRIP="$S4E_SCRIP"
 
 [ -d "$SCRIP/.git" ] || { echo "FAIL clone snobol4ever/SCRIP to $SCRIP first"; exit 1; }
 

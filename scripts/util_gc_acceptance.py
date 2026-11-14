@@ -20,7 +20,9 @@ NOT-MEASURED and makes the verdict REFUSE(2).  It never prints 0 and never print
 that cannot tell 'clean' from 'never ran' is the thing this whole emergency is about.
 """
 import os, re, subprocess, sys, datetime
-HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
+HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
+import harness_paths
+ROOT = str(harness_paths.scrip())
 
 def sh(cmd, timeout=1800):
     try:

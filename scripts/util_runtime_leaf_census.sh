@@ -37,7 +37,7 @@
 # the callgrind timeout in seconds (default 900); VALGRIND names the valgrind binary; LEAF_CG_OUT keeps the profile (for
 # callgrind_annotate or KCachegrind) at that path.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; RT="$ROOT/out"
 refuse() { echo "⛔ REFUSED (rc=2): util_runtime_leaf_census: $*"; exit 2; }
 

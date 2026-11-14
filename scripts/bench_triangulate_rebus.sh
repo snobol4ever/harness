@@ -21,11 +21,12 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # EXIT: 0 = every kernel measured. 2 = REFUSED -- missing scrip/valgrind/corpus, loud, never a fabricated row.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-"$HERE/util_require_fresh.sh" --gate bench_triangulate_rebus "${SCRIP:-$HERE/../../SCRIP/scrip}" "$HERE/../../SCRIP/out/libscrip_rt.so" || exit 2
+. "$HERE/lib_paths.sh"
+"$HERE/util_require_fresh.sh" --gate bench_triangulate_rebus "${SCRIP:-$S4E_SCRIP/scrip}" "$S4E_SCRIP/out/libscrip_rt.so" || exit 2
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-SCRIP_BIN="${SCRIP:-$HERE/../../SCRIP/scrip}"
-RT_DIR="$HERE/../../SCRIP/out"
-KDIR="$S4E/corpus/benchmarks/rebus"
+SCRIP_BIN="${SCRIP:-$S4E_SCRIP/scrip}"
+RT_DIR="$S4E_SCRIP/out"
+KDIR="$S4E_CORPUS/benchmarks/rebus"
 KERNELS="${KERNELS:-fib_recur arith_loop string_concat}"
 
 if [ ! -x "$SCRIP_BIN" ]; then echo "⛔ REFUSED (rc=2): scrip not built at $SCRIP_BIN"; exit 2; fi
@@ -41,9 +42,9 @@ if [ ! -d "$KDIR" ]; then echo "⛔ REFUSED (rc=2): no kernel dir at $KDIR"; exi
 # binary's arguments in mode 4 (R-1353, RULES.md clause 8 (g); the coo 2026-10-03: both arms ran every kernel at the shipped size)
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED (rc=2): cannot load lib_declared_arena.sh -- the one reader of a declared heap and stack"; exit 2; }
 
-echo "REBUS_TRIANGULATE -- callgrind Ir, RT_OPT=-O0, tree $(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"
+echo "REBUS_TRIANGULATE -- callgrind Ir, RT_OPT=-O0, tree $(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"
 echo "kernel               m3_Ir(compile+run)   m4_Ir(run only)"
-SCRIP_HASH="$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+SCRIP_HASH="$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 N=0; RED=0
 for k in $KERNELS; do
   f="$KDIR/$k.reb"

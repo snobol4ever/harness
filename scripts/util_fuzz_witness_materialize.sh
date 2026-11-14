@@ -28,8 +28,8 @@
 # by a set whose membership was not what the reader believed).
 # format-2: through run, through extract, reads ALL.csv by name
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
-T="$ROOT/corpus/tests/snobol4"; HARNESS="$SD/../harness/scripts/corpus_suite_harness.py"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; SD="$S4E_SCRIP"
+T="$S4E_CORPUS/tests/snobol4"; HARNESS="$S4E_HARNESS/scripts/corpus_suite_harness.py"
 OUT="${OUT_DIR:-$(mktemp -d)}"
 say() { printf '%s\n' "$*" >&2; }
 [ -f "$T/ALL.csv" ] || { say "⛔ REFUSE(rc=2): rungs index ALL.csv missing under $T"; exit 2; }

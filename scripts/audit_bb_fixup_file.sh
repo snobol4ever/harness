@@ -19,7 +19,8 @@
 #                   Distinct from legit extern FUNCTION decls (rt_*/POWER_fn). Extend the alternation for new selectors.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 cd "$ROOT"
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <bb_*.cpp file>" >&2

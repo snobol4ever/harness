@@ -48,7 +48,7 @@ fi
 d="$PO/$seat/inbox"; u=$(ls "$d"/*.msg 2>/dev/null | wc -l)
 if [ "$u" -gt 0 ]; then
     heads="$(for f in "$d"/*.msg; do head -1 "$f" | sed 's/^FROM \([^ ]*\) TO [^ ]* RE /\1: /'; done | head -3 | paste -sd';' | cut -c1-240)"
-    reason="$seat has $u unread telegram(s) ($heads). THE LOOP step 1 before stopping: bash harness/scripts/s4e_msg.sh check, act or reply, then clear; an empty inbox is the acknowledgement."
+    reason="$seat has $u unread telegram(s) ($heads). THE LOOP step 1 before stopping: bash harness/scripts/s4e_msg.sh check, act or reply, then clear; an empty inbox is the acknowledgement."   # one-disk: not a path
     what="mail=$u"
 else
     mrow="$(grep -P "\tMEASURING:\Q$seat\E:[0-9]+\$" "$PO/QUEUE.tsv" 2>/dev/null | sort -n | head -1)"; mpid="${mrow##*:}"
@@ -61,7 +61,7 @@ else
     elif [ -n "$row" ]; then
         t="$(printf '%s' "$row" | cut -f2)"; st="$(printf '%s' "$row" | cut -f4)"
         nx="$(awk '/^## NEXT/{f=1;next} /^## /{f=0} f && NF' "$PO/tasks/$t.task.md" 2>/dev/null | head -1 | cut -c1-300)"
-        reason="$seat is stopping while row $t reads $st. Work it now (bash harness/scripts/s4e_msg.sh next; its baton NEXT: ${nx:-empty});"
+        reason="$seat is stopping while row $t reads $st. Work it now (bash harness/scripts/s4e_msg.sh next; its baton NEXT: ${nx:-empty});"   # one-disk: not a path
         reason="$reason close it by done when its DONE-WHEN is green; or park it first (park $t PARKED-AWAITING:<request-id> | BLOCKED-ON:<topic>)."
         reason="$reason A stop with a live row leaves the row to a wake by hand, which is the failure this hook removes."
         what="row=$t"
@@ -69,7 +69,7 @@ else
         # fleet-queue step 11 (the cio 2026-11-05): a job ready in the seat's own tube is work assigned to it; the gate holds the seat until next reserves it
         qr="$(awk -F'\t' -v s="QUEUED:seat-$seat" '/^[0-9]/ && $4 == s {n++} END {print n+0}' "$PO/QUEUE.tsv" 2>/dev/null)"; qr="${qr:-0}"   # bus-one-queue: the ready count is the file's
         if [ "$qr" -gt 0 ]; then
-            reason="$seat is stopping while $qr job(s) wait in its queue tube seat-$seat (a directed assign). Run bash harness/scripts/s4e_msg.sh next: it reserves the job and serves its baton."
+            reason="$seat is stopping while $qr job(s) wait in its queue tube seat-$seat (a directed assign). Run bash harness/scripts/s4e_msg.sh next: it reserves the job and serves its baton."   # one-disk: not a path
             what="seat_tube=$qr"
         else
             # fleet-control step 11 (the cio, 2026-11-07 13:5x; Lon: "get this fleet humming"; MEASURED 13:55: five of eight live workers idle with fifteen jobs ready in
@@ -88,7 +88,7 @@ else
                 tt="${S4E_TIER_TUBE_PREFIX:-tier-}$tier"
                 tr="$(awk -F'\t' -v s="QUEUED:$tt" '/^[0-9]/ && $4 == s {n++} END {print n+0}' "$PO/QUEUE.tsv" 2>/dev/null)"; tr="${tr:-0}"
                 if [ "$tr" -gt 0 ]; then
-                    reason="$seat is stopping idle while $tr job(s) wait ready in its tier tube $tt (THE LADDER, skill fleet-bus section 1: a seat works what the queue serves it; an idle seat beside ready work is the failure this arm removes). Run bash harness/scripts/s4e_msg.sh next: it reserves the first job and serves its baton; one honest try, then escalate with the measurement."
+                    reason="$seat is stopping idle while $tr job(s) wait ready in its tier tube $tt (THE LADDER, skill fleet-bus section 1: a seat works what the queue serves it; an idle seat beside ready work is the failure this arm removes). Run bash harness/scripts/s4e_msg.sh next: it reserves the first job and serves its baton; one honest try, then escalate with the measurement."   # one-disk: not a path
                     what="tier_tube=$tr"
                 else
                     # THE SMALL BREAK (Lon 2026-11-11 14:1x CST, the cio's window, verbatim: "If more seats take their ass off the tube for small breaks, it won't

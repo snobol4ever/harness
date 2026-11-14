@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/snobol4}"; CAP=200000; T="${TIMEOUT:-30}"
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/snobol4}"; CAP=200000; T="${TIMEOUT:-30}"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE scrip not built"; exit 2; }
 [ -f "$RT/libscrip_rt.so" ] || { echo "⛔ REFUSED-TO-GRADE libscrip_rt.so not built"; exit 2; }
 [ -d "$B" ] || { echo "⛔ REFUSED-TO-GRADE bench corpus missing"; exit 2; }
