@@ -1355,3 +1355,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1356	rk	__rk_dyn_notfound	1	1	bt___rk_dyn_notfound	leaf	-	-	0	rk_targets
 1357	pas	__pas_cpuid	3	3	-	inline	-	-	0	pas
 1358	pas	__pas_ucd	2	2	-	inline	-	-	0	pas
+1359	sno	SNO$EVALOK	0	0	rt_sno_eval_ok_d	leaf	-	-	0	dop_direct,rt_known
