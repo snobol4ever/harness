@@ -30,7 +30,9 @@ done
 _man="${S4E_SKILLS_MANIFEST:-$HOME/.claude/s4e-skills.manifest}"
 if [ -f "$_man" ] && [ -f "$TOP/harness/scripts/propagate_skills.sh" ]; then
     if ! S4E_PROPAGATE_FETCHED=1 bash "$TOP/harness/scripts/propagate_skills.sh" --user --check >/dev/null 2>&1; then
-        o="$(S4E_PROPAGATE_FETCHED=1 bash "$TOP/harness/scripts/propagate_skills.sh" --user 2>&1 | tail -1)" && echo "$(now) KEEP skills: $o" || { echo "$(now) LEFT skills: $o"; [ $rc = 0 ] && rc=1; }
+        # the refresh's own status, never a pipe's (no pipefail here: "$(... | tail -1)" read tail's 0, so a failed refresh printed KEEP; the grader 2026-11-13)
+        o="$(S4E_PROPAGATE_FETCHED=1 bash "$TOP/harness/scripts/propagate_skills.sh" --user 2>&1)"; prc=$?; o="${o##*$'\n'}"
+        if [ $prc = 0 ]; then echo "$(now) KEEP skills: $o"; else echo "$(now) LEFT skills: rc=$prc $o"; [ $rc = 0 ] && rc=1; fi
     fi
 fi
 exit $rc
