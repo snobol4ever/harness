@@ -250,16 +250,16 @@ def main():
             refuse(tag, "a shared node is touched and the table declares no @ shared-smokes")
         for l in names:
             if shared or os.path.isfile(os.path.join(scripts, "test_smoke_%s.sh" % l)):
-                arm("smoke", "bash harness/scripts/%s" % need_script(scripts, "test_smoke_%s.sh" % l, "the @ shared-smokes directive", tag))
+                arm("smoke", "bash ${S4E_HARNESS:-harness}/scripts/%s" % need_script(scripts, "test_smoke_%s.sh" % l, "the @ shared-smokes directive", tag))
             else:
                 nosmoke.append(l)
     if "buildgates" in owes:
         for g in directives.get("buildgates", []):
-            arm("gate", "bash harness/scripts/%s" % need_script(scripts, g, "the @ buildgates directive", tag))
+            arm("gate", "bash ${S4E_HARNESS:-harness}/scripts/%s" % need_script(scripts, g, "the @ buildgates directive", tag))
     for f, _, o in decided:
         base_name = os.path.basename(f)
         if "self" in o and os.path.isfile(os.path.join(scripts, base_name)) and f == "scripts/" + base_name:
-            arm("gate", "bash harness/scripts/%s" % base_name)
+            arm("gate", "bash ${S4E_HARNESS:-harness}/scripts/%s" % base_name)
     if any("refgates" in o or "namegates" in o for _, _, o in decided):
         wired, texts = wired_gates(scripts, tag), gate_texts(scripts)
         named = set()
@@ -270,7 +270,7 @@ def main():
                 named |= {g for g, t in texts.items() if os.path.basename(f) in t and g != os.path.basename(f)}
         unwired = len(named - wired)
         for g in sorted(named & wired):
-            arm("gate", "bash harness/scripts/%s" % g)
+            arm("gate", "bash ${S4E_HARNESS:-harness}/scripts/%s" % g)
     smokes, gates = sum(1 for k, _ in arms if k == "smoke"), sum(1 for k, _ in arms if k == "gate")
     print("PROOF arms=%d smokes=%d gates=%d owes=%s langs=%s shared=%d files=%d unwired=%d nosmoke=%s base=%s commit=%s dirty=%d"
           % (len(arms), smokes, gates, ",".join(sorted(owes)) or "-", ",".join(sorted(langs)) or "none", shared, len(files), unwired, ",".join(sorted(nosmoke)) or "-", base[:9], head[:9], dirty))

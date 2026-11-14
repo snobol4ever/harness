@@ -4,7 +4,8 @@
 # Built for PJ-9d (predicate-registry emit) — feeds rt_register_predicates_pl + rt_pl_once (post IJ-HELLO-4).
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"
 LIBRT="${LIBRT:-$ROOT/out/libscrip_rt.so}"
 PL="${1:?Usage: run_prolog_via_x86_backend.sh <file.pl>}"

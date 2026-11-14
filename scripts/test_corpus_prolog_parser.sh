@@ -3,6 +3,7 @@
 # Usage: bash run_corpus_prolog.sh [dir ...]
 # Prints pass/empty/crash counts. Exits 1 if crash rate > 5%.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
 
 TIMEOUT=${TIMEOUT:-10}
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -15,13 +16,13 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # the sibling root (same computation $S4E performs above it) -- the old "$REPO_ROOT/../corpus/..." had one extra
 # ".." that escaped the sibling root entirely, so PARSER_SRC/RECOG_SRC pointed nowhere real regardless of extension.
 # Using $S4E directly (already computed, same value) instead of re-deriving REPO_ROOT for this.
-PARSER_SRC="$S4E/corpus/demos/prolog/prolog_parser.pl"
-RECOG_SRC="$S4E/corpus/demos/prolog/prolog_recognizer.pl"
+PARSER_SRC="$S4E_CORPUS/demos/prolog/prolog_parser.pl"
+RECOG_SRC="$S4E_CORPUS/demos/prolog/prolog_recognizer.pl"
 
 DIRS=("$@")
 if [ ${#DIRS[@]} -eq 0 ]; then
   DIRS=(
-    $S4E/corpus/tests/prolog
+    $S4E_CORPUS/tests/prolog
   )
 fi
 

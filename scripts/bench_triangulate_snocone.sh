@@ -17,12 +17,13 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # EXIT: 0 = every kernel measured on both engines. 2 = REFUSED -- missing scrip/valgrind/oracle/corpus.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-"$HERE/util_require_fresh.sh" --gate bench_triangulate_snocone "${SCRIP:-$HERE/../../SCRIP/scrip}" "$HERE/../../SCRIP/out/libscrip_rt.so" || exit 2
+. "$HERE/lib_paths.sh"
+"$HERE/util_require_fresh.sh" --gate bench_triangulate_snocone "${SCRIP:-$S4E_SCRIP/scrip}" "$S4E_SCRIP/out/libscrip_rt.so" || exit 2
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-SCRIP_BIN="${SCRIP:-$HERE/../../SCRIP/scrip}"
-RT_DIR="$HERE/../../SCRIP/out"
-SC_DIR="$S4E/corpus/benchmarks/snocone"
-SNO_DIR="$S4E/corpus/benchmarks/snobol4"
+SCRIP_BIN="${SCRIP:-$S4E_SCRIP/scrip}"
+RT_DIR="$S4E_SCRIP/out"
+SC_DIR="$S4E_CORPUS/benchmarks/snocone"
+SNO_DIR="$S4E_CORPUS/benchmarks/snobol4"
 # kernel:twin-sno-basename pairs -- string_concat's SNOBOL4 twin is named _twin to avoid colliding
 # with the pre-existing string_concat.sno kernel (a different, unrelated benchmark).
 KERNELS="${KERNELS:-fib_recur:fib_recur arith_loop:arith_loop_twin string_concat:string_concat_twin}"
@@ -45,7 +46,7 @@ SBL_FLAGS="$(sbl_lang_flags)"
 # SPITBOL twin at the sizes its .oracle_args declares (R-1353, RULES.md clause 8 (g); the coo 2026-10-03: all three arms ran bare)
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED (rc=2): cannot load lib_declared_arena.sh -- the one reader of a declared heap and stack"; exit 2; }
 
-echo "SNOCONE_TRIANGULATE -- callgrind Ir vs SPITBOL (clean oracle $SBL_FLAGS), RT_OPT=-O0, tree $(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"
+echo "SNOCONE_TRIANGULATE -- callgrind Ir vs SPITBOL (clean oracle $SBL_FLAGS), RT_OPT=-O0, tree $(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"
 echo "kernel               m3_Ir(compile+run)   m4_Ir(run only)      SPITBOL_Ir      × (m4 vs SPITBOL)"
 N=0; RED=0
 for pair in $KERNELS; do

@@ -16,7 +16,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # 2026-10-03: readings before ran sbl -s16m on the kernels and -d512m -i64m -s256m on treebank under ulimit -s 262144, and SCRIP's treebank
 # under SCRIP_HEAP_KB=524288, a 512 MB WINDOW.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 . "$HERE/lib_oracle_flags.sh"
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSED(2): cannot load lib_declared_arena.sh"; exit 2; }
 BAR=2.0; BUD=300; SCALE=256
@@ -24,7 +24,7 @@ while [ $# -gt 0 ]; do case "$1" in --bar) BAR="$2"; shift 2;; --bud-ms) BUD="$2
 SBL="$(sbl_clean_bin)"; [ -x "$SBL" ] || { echo "REFUSED(2): clean SPITBOL oracle missing ($SBL)"; exit 2; }
 [ -x "$ROOT/scrip" ] || { echo "REFUSED(2): $ROOT/scrip not built"; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
-K="$S4E/corpus/benchmarks/snobol4"; D="$S4E/corpus/demos/snobol4/treebank"
+K="$S4E_CORPUS/benchmarks/snobol4"; D="$S4E_CORPUS/demos/snobol4/treebank"
 [ -d "$K" ] && [ -f "$D/treebank.sno" ] || { echo "REFUSED(2): corpus kernels or the treebank demo missing"; exit 2; }
 usrep() { grep -o 'BENCH mode=time.*' "$1" | head -1 | awk '{it=0; ns=0; mm=1; for(i=1;i<=NF;i++){split($i,a,"="); if(a[1]=="iters")it=a[2]; if(a[1]=="ns")ns=a[2]; if(a[1]=="mismatched")mm=a[2]} if(it>0 && mm==0) printf "%.3f", ns/it/1000; else print "REFUSE"}'; }
 elapsed_ms() { grep -o 'elapsed_ns=[0-9]*' "$1" | head -1 | cut -d= -f2 | awk '{printf "%.3f", $1/1e6}'; }

@@ -6,9 +6,10 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -euo pipefail
 
 SNO="${1:?Usage: build_snobol4_x86.sh <file.sno>}"
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+DIR="$(cd "$S4E_SCRIP" && pwd)"
 RT="$DIR/src/runtime"
-INC="${INC:-$S4E/corpus/include}"
+INC="${INC:-$S4E_CORPUS/include}"
 SCRIP_CC="${SCRIP_CC:-$DIR/scrip}"
 WORK=$(mktemp -d /tmp/snobol4_asm_XXXXXX)
 trap 'rm -rf "$WORK"' EXIT

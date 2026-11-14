@@ -32,15 +32,16 @@
 # measured nothing never prints the success shape).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 GATE_NAME=util_icon_ref_provenance
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || true
 ICONT="$(command -v icont_bin >/dev/null 2>&1 && icont_bin || echo /home/resources/icon-master/bin/icont)"
 ICONX="$(command -v iconx_bin >/dev/null 2>&1 && iconx_bin || echo /home/resources/icon-master/bin/iconx)"
 PKGNAME="${1:-}"; NAMES=0; [ "${2:-}" = "--names" ] && NAMES=1
-[ -n "$PKGNAME" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: name a package under corpus/packages/icon/ (e.g. jcon_tests)"; exit 2; }
-PK="$S4E/corpus/packages/icon/$PKGNAME"
+[ -n "$PKGNAME" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: name a package under ${S4E_CORPUS##*/}/packages/icon/ (e.g. jcon_tests)"; exit 2; }
+PK="$S4E_CORPUS/packages/icon/$PKGNAME"
 [ -d "$PK" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: no package at $PK"; exit 2; }
 for b in "$ICONT" "$ICONX"; do [ -x "$b" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: no Arizona oracle at $b -- a missing oracle does not blank a board, it prints a full plausible false one"; exit 2; }; done
 W="$(mktemp -d "${TMPDIR:-/tmp}/icnrefprov.XXXXXX")" || exit 2; trap 'rm -rf "$W"' EXIT

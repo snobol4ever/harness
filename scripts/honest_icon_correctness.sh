@@ -5,15 +5,16 @@
 # "*** Benchmarking with output ***" and the "<name> elapsed time =" line.
 # We extract exactly that window from both engines and diff it.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY the .github, SCRIP and corpus clones); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255), Icon-aware since row icon-oracle-accessors-shared." >&2; exit 3; }
-SCRIPDIR="${SCRIPDIR:-$S4E/SCRIP}"
+SCRIPDIR="${SCRIPDIR:-$S4E_SCRIP}"
 SCRIP="$SCRIPDIR/scrip"; RTDIR="$SCRIPDIR/out"
 ICONT="${ICONT:-$(icont_bin)}" || exit 2
 ICONX="${ICONX:-$(iconx_bin)}" || exit 2
-CORPUS_SRC="${CORPUS_SRC:-$S4E/corpus/benchmarks/icon}"
+CORPUS_SRC="${CORPUS_SRC:-$S4E_CORPUS/benchmarks/icon}"
 [ -d "$CORPUS_SRC" ] || { echo "FATAL: no benchmark corpus at $CORPUS_SRC. Set CORPUS_SRC=." >&2; exit 2; }
 # ⛔ SCRATCH LIVES UNDER THE SEAT ROOT ON /home, NEVER BARE /tmp (row icon-sweep-scratch-hardening, after the 2026-08-23 s267 outage).
 # /tmp is on the 125G ROOT partition; /home is a separate 503G partition. This script used to `mktemp -d /tmp/icn_corr_XXXXXX`

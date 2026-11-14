@@ -40,11 +40,12 @@ set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once, util_timeout_retry.sh
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 . "$HERE/lib_icn_rundir.sh" || { echo "⛔ REFUSES rc=2: cannot load lib_icn_rundir.sh" >&2; exit 2; }
 SCRIP="${SCRIP:-$ROOT/scrip}"
 RT_SO="${RT_SO:-$ROOT/out/libscrip_rt.so}"
-CORPUS="${CORPUS:-$S4E/corpus/tests/icon}"
+CORPUS="${CORPUS:-$S4E_CORPUS/tests/icon}"
 RUNG=""
 MODE="all"                              # DEFAULT: run all three modes
 SMX_SIG='\[SMX\]'                       # the loud-refuse banner — same token Prolog uses
@@ -73,10 +74,10 @@ fi
 # does, the officer -> hq_T 2026-09-04). Existence is not currency: a binary that IS there can still predate the tree
 # whose SHA the board stamps on the verdict. NO LOGIC HERE -- util_require_fresh.sh sources gate_require_fresh
 # from lib_gate.sh, the ONE authority (hq_B 4c7253e99), never a second copy.
-"$HERE/util_require_fresh.sh" --gate test_icon_rung_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
+"$HERE/util_require_fresh.sh" --gate test_icon_rung_suite "$SCRIP" "${RT_DIR:-$S4E_SCRIP/out}/libscrip_rt.so" || exit 2
 if [ ! -d "$CORPUS" ]; then
     echo "⛔ REFUSED TO GRADE: no corpus at $CORPUS" >&2
-    echo "   clone snobol4ever/corpus to $S4E/corpus to run this suite" >&2
+    echo "   clone snobol4ever/corpus to $S4E_CORPUS to run this suite" >&2
     exit 2
 fi
 

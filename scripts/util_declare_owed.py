@@ -16,6 +16,8 @@ usage: util_declare_owed.py KEY [--root S4E_HOME] [--skip CLASS[,CLASS...]] [--r
   FILE lists it, one name a line (the ones ruled out by measurement), and leaves the rest. One line per program, DECLARE or LEFT, then OWED-DECLARE key=K declared=N left=M (rc 0), or REFUSE(2) when it cannot read the row.
 """
 import os, re, subprocess, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
 
 # the builder's class word (the reason's first word, or a phrase of the older builder's prose) -> the vocabulary of lib_excluded.sh
 CLOSED = [
@@ -71,14 +73,14 @@ def main():
             print("REFUSE(2) [declare-owed]: cannot read --names %s: %s" % (opt("--names"), e))
             return 2
     d = None
-    for l in open(os.path.join(root, "harness/scripts/SUITE_RUNNERS.tsv"), encoding="utf-8"):
+    for l in open(os.path.join(str(harness_paths.harness(root)), "scripts", "SUITE_RUNNERS.tsv"), encoding="utf-8"):
         c = l.rstrip("\n").split("\t")
         if not l.startswith("#") and len(c) >= 5 and c[0] == key and c[1] == "pkg":
             d = os.path.join(root, c[4])
     if not d or not os.path.isdir(d):
         print("REFUSE(2) [declare-owed]: %s is no pkg row of SUITE_RUNNERS.tsv with a directory under %s" % (key, root))
         return 2
-    r = subprocess.run([sys.executable, "-I", os.path.join(root, "harness/scripts/util_cycle_inventory.py"), "--root", root, "--owed", key],
+    r = subprocess.run([sys.executable, "-I", os.path.join(str(harness_paths.harness(root)), "scripts", "util_cycle_inventory.py"), "--root", root, "--owed", key],
                        capture_output=True, text=True, errors="replace")
     lines = r.stdout.rstrip("\n").split("\n")
     if r.returncode != 0 or not lines or not lines[-1].startswith("OWED %s n=" % key):

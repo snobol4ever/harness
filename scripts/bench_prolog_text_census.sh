@@ -8,9 +8,10 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25
 # (a corpus moved or an S4E_CORPUS pointing elsewhere must never read as a vacuous GREEN).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-SCRIP="${SCRIP_BIN:-$HERE/../../SCRIP/scrip}"
-B="${S4E_CORPUS:-$ROOT/corpus}/benchmarks/prolog/bench"
+SCRIP="${SCRIP_BIN:-$S4E_SCRIP/scrip}"
+B="$S4E_CORPUS/benchmarks/prolog/bench"
 RE="${1:-}"; [ -n "$RE" ] || { echo "usage: bench_prolog_text_census.sh '<extended regex>'" >&2; exit 2; }
 [ -x "$SCRIP" ] || { echo "REFUSED(2): no scrip binary at $SCRIP" >&2; exit 2; }
 TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT

@@ -11,7 +11,7 @@
 # "compiling ..." lines to STDOUT before the program runs, so that arm read 606 lines against a correct 600 and could never go green (cfo 2026-09-23).
 set -u
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_oracle_flags.sh"
-HERE=$(cd "$(dirname "$0")" && pwd); cd "$HERE/../../SCRIP" || exit 2
+HERE=$(cd "$(dirname "$0")" && pwd); . "$HERE/lib_paths.sh"; cd "$S4E_SCRIP" || exit 2
 [ -n "${S4E_BATCH_HELD:-}" ] || [ ! -f "$HERE/util_batch.sh" ] || exec bash "$HERE/util_batch.sh" bash "$HERE/util_dyn_caps_witness.sh" "$@"
 mode=${1:-}; [ -n "$mode" ] || { echo "REFUSE(2): usage: util_dyn_caps_witness.sh compile|runtime|census|witness"; exit 2; }
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
