@@ -377,7 +377,7 @@ s4e_file_expire_one() {   # <topic> [named]: a hand claim (no RESERVED line) is 
     mkdir -p "$PO/claims/expired"; _ts="$(date -u +%FT%TZ)"; mv "$_c" "$PO/claims/expired/$_t.claim.$_ts"
     _erl="$(awk '/^## RESUME/{f=1;next} /^## /{f=0} f && /^RESUME /{print; exit}' "$PO/tasks/$_t.task.md" 2>/dev/null | cut -c1-200)"
     s4e_ledger_prepend "$_t" "- [$ME·$_ts] LEASE expired holder=$_own pid=${_pid:-none} tube=$_tube: the holder's pid is dead or not in its seat scope, so the row is back in $_tube; the next seat resumes at ${_erl:+the RESUME line: $_erl}${_erl:-NEXT (no RESUME line)}" 2>/dev/null || true
-    s4e_set_row_state "$_t" "QUEUED:$_tube" || true
+    if s4e_tube_has_seat "QUEUED:$_tube"; then s4e_set_row_state "$_t" "QUEUED:$_tube" || true; else s4e_set_row_state "$_t" FREE || true; _tube="FREE (its tube $_tube has no seat)"; fi
     echo "EXPIRE $_t pid=${_pid:-none} tube=$_tube holder=$_own claim_archived=1 (file road)"; return 0; }
 s4e_sweep_retire_jobs() {   # bus-one-queue step 8: with the daemon gone, every baton's QUEUE-JOB line goes and every live claim's RESERVED job= line becomes the file form; prints RETIRE-JOBS batons=B claims=C
     local _b _c _nb=0 _nc=0 _own _tube _ts _pid _ses _tmp

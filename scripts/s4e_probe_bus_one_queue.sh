@@ -380,6 +380,9 @@ wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operatin
     row 2 "$k" "$O" "BLOCKED-ON:$b"; baton "$k"; printf 'RESTORE-STATE: QUEUED:tier-haiku\n' | cat - "$w/tasks/$k.task.md" > "$w/k.tmp" && mv "$w/k.tmp" "$w/tasks/$k.task.md"
     bus "$O" claim "$b" > "$w/c17.log" 2>&1; bus "$O" done "$b" > "$w/d17.log" 2>&1
     [ "$(st "$k")" = FREE ] || why="$why a blocked row whose RESTORE-STATE is the seatless tier-haiku came back $(st "$k"), not FREE [$(grep -m1 -E 'REFUSE|⛔' "$w/d17.log" | cut -c1-90)];"
-    verdict "haiku_refused sonnet_refused opus=$(st "$q") mint_haiku_refused restored=$(st "$k")";;
+    x="busq17-expire-$$"; row 2 "$x" "$O" "CLAIMED:$O"; baton "$x"; printf '%s\nRESERVED file tube=tier-haiku session=PO97 pid=%s 2026-11-08T00:00:00Z\n' "$O" "$(dead_pid)" > "$w/claims/$x.claim"
+    bus "$O" expire "$x" > "$w/x17.log" 2>&1
+    [ "$(st "$x")" = FREE ] || why="$why an expired claim whose tube is the seatless tier-haiku came back $(st "$x"), not FREE [$(head -1 "$w/x17.log" | cut -c1-90)];"
+    verdict "haiku_refused sonnet_refused opus=$(st "$q") mint_haiku_refused restored=$(st "$k") expired=$(st "$x")";;
 *) refuse "no step $N (1..17)";;
 esac
