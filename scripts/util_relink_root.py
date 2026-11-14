@@ -140,8 +140,19 @@ def relink(seat, pri, check, verify):
     if todo:
         subprocess.run(["git", "-C", seat, "update-index", "-q", "--refresh"], capture_output=True, timeout=1800)
     left = dirty(seat)
-    if left - sd:
-        refuse(f"{seat}: {len(left - sd)} file(s) read dirty after the relink that were clean before it, the first {sorted(left - sd)[0]!r}")
+    sus = sorted(left - sd)
+    if sus:
+        # A REFRESH THAT LOST index.lock READS EVERY LINKED FILE MODIFIED (the coo 2026-11-13 20:3x CST, on senior_01's refusal "11 file(s) read dirty after the
+        # relink", the files clean a moment later, the same blob in index and pristine): the refresh's status is ignored, so a git status of a hook or the banner
+        # holding the seat's index.lock leaves the stat cache stale and diff-files names each file whose inode just moved. Only content is dirt: each suspect is
+        # hashed as git would store it and kept dirty only when that differs from its index blob.
+        h = subprocess.run(["git", "-C", seat, "hash-object", "--stdin-paths"], input=b"\n".join(x.encode("utf-8", "surrogateescape") for x in sus) + b"\n", capture_output=True, timeout=1800)
+        hs = h.stdout.split() if h.returncode == 0 else []
+        real = [x for x, hb in zip(sus, hs) if x not in si or hb != si[x][1]] if len(hs) == len(sus) else sus
+        if real:
+            refuse(f"{seat}: {len(real)} file(s) read dirty after the relink that were clean before it, the first {real[0]!r}")
+        print(f"  {len(sus)} file(s) read stat-dirty after the relink and hash to their index blobs (a refresh lost the index lock): clean")
+        subprocess.run(["git", "-C", seat, "update-index", "-q", "--refresh"], capture_output=True, timeout=1800)
     git(seat, "config", "s4e.shared", "true")   # the mark util_sync_root.sh reads: this repo shares its files, so its sync links them again
     git(seat, "config", "core.trustctime", "false")   # a link or unlink in another root moves the shared inode's ctime (the cto, measured)
     print(f"RELINK root={seat} pristine={pri} " + " ".join(f"{k}={v}" for k, v in n.items()) + f" freed_mb={n['freed'] // 1048576}")
