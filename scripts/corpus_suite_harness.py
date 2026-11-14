@@ -4473,12 +4473,14 @@ def batch_m3_verdicts(paths, entries, tmp_root, ext, companion_dir):
         heap, stack = getattr(e, "heap_kb", None), getattr(e, "stack_kb", None)
         rows.append(_batch_row(e.name, cand.name, stdin_p, str(outd / f"{i}.out"), str(outd / f"{i}.err"), heap, stack, t))
         meta[e.name] = (i, expected, want, t, _ex)
-    if not rows:
+    _prl = shutil.which("prlimit")
+    if not rows or not _prl:
+        shutil.rmtree(work, ignore_errors=True)
         return {}
     (work / "list.tsv").write_text("\n".join(rows) + "\n")
     rec = work / "record.tsv"
     env = dict(os.environ, SNO_LIB=str(paths["inc"]))
-    _bounded_run([str(paths["scrip_bin"]), "--harness", str(work / "list.tsv"), "--record", str(rec)],
+    _bounded_run([_prl, "--fsize=%d" % _OUTPUT_CAP, str(paths["scrip_bin"]), "--harness", str(work / "list.tsv"), "--record", str(rec)],
                  sum(m[3] for m in meta.values()) + 60, str(prog), env, None, False)
     got = {}
     for ln in (rec.read_text().splitlines() if rec.is_file() else []):
@@ -4490,10 +4492,16 @@ def batch_m3_verdicts(paths, entries, tmp_root, ext, companion_dir):
         if name not in got:
             continue
         rc, kind, secs = got[name]
+        def _cap(p):
+            with open(p, "rb") as fh:
+                return fh.read(_OUTPUT_CAP)
         if kind == "RAN" and rc != 127:
-            v = _grade_output((outd / f"{i}.out").read_bytes(), (outd / f"{i}.err").read_bytes(), rc, expected, want_rc=want)
+            v = _grade_output(_cap(outd / f"{i}.out"), _cap(outd / f"{i}.err"), rc, expected, want_rc=want)
+        elif kind == "CRASH" and rc - 128 == 25:
+            v = Verdict("FAIL", _cap(outd / f"{i}.out"), _cap(outd / f"{i}.err"), None,
+                        detail="output passed the S4E_OUTPUT_CAP_MB bound; the kernel stopped the child (SIGXFSZ)")
         elif kind == "CRASH" and rc - 128 not in (9, 127):
-            v = Verdict("ABORT" if rc - 128 == 6 else "CRASH", (outd / f"{i}.out").read_bytes(), (outd / f"{i}.err").read_bytes(), -(rc - 128),
+            v = Verdict("ABORT" if rc - 128 == 6 else "CRASH", _cap(outd / f"{i}.out"), _cap(outd / f"{i}.err"), -(rc - 128),
                         detail=f"signal {rc - 128}")
         else:
             continue   # HANG (the per-process timeout retry), REFUSED, a child that never opened its files, or an OOM-style kill: per-process
