@@ -31,6 +31,9 @@ HEADER = ["seat", "name", "root", "model", "effort", "color", "tier", "role"]
 TIER_MODEL = {"1": "claude-opus-5-5","2": "claude-opus-5-5", "3": "claude-sonnet-5-5", "4": "claude-haiku-5-5"}
 SEAT_MODEL = {"cto": "claude-fable-5-2", "cio": "claude-fable-5-2", "cfo": "claude-fable-5-2"}
 EFFORTS = {"xhigh", "high", "medium"}
+BANNED_TIERS = {"3", "4"}
+BANNED_MODELS = ("haiku", "sonnet")
+BANNED_ROLES = {"junior", "senior", "worker"}
 COLORS = {"red", "green", "yellow", "purple", "cyan"}
 CLASS_GLOBS = ["hq_*", "worker_[0-9]"]
 
@@ -66,6 +69,8 @@ def load():
             problems.append("name %s listed twice (line %d)" % (r["name"], r["line"]))
         seen_seat.add(r["seat"])
         seen_name.add(r["name"])
+        if r["tier"] in BANNED_TIERS or any(w in r["model"] for w in BANNED_MODELS) or r["role"] in BANNED_ROLES:
+            problems.append("seat %s: tier %s, model %s, role %s: the fleet has no junior and no senior seat and no Haiku and no Sonnet model, EVER AGAIN (Lon 2026-11-14 16:0x CST) (line %d)" % (r["seat"], r["tier"], r["model"], r["role"], r["line"]))
         if r["tier"] not in TIER_MODEL:
             problems.append("seat %s: tier %r is not 1-4 (line %d)" % (r["seat"], r["tier"], r["line"]))
         elif r["model"] != SEAT_MODEL.get(r["seat"], TIER_MODEL[r["tier"]]):

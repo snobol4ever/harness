@@ -159,6 +159,10 @@ s4e_mint_ts() { grep -m1 'minted via `mint`' "$PO/tasks/$1.task.md" 2>/dev/null 
 S4E_TIERS="${S4E_TIERS:-$S4E_GITHUB/TIERS.tsv}"
 s4e_tier_name() { case "$1" in 1|fable) echo fable;; 2|opus) echo opus;; 3|sonnet) echo sonnet;; 4|haiku) echo haiku;; *) return 1;; esac; }
 s4e_tier_of() { local _t; _t="$(awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $7; exit}' "$S4E_TIERS" 2>/dev/null)"; [ -n "$_t" ] && s4e_tier_name "$_t"; }
+s4e_tier_has_seat() {   # <tier name>: rc 0 when TIERS.tsv names a seat of that tier. THE FLEET IS THE BOSSES ALONE (Lon 2026-11-14 16:0x CST, in the coo's window, verbatim: "Make whatever adjustments are needed to remove the concept of a JUNIOR or SENIOR fleet seat. No more Haiku nor Sonnet will be apart of this team EVERY AGAIN!!!"): a tier with no seat has no tube, so no row is queued, minted or restored to it
+    local _x; for _x in $(awk -F'\t' '!/^#/ && $7!="tier" {print $7}' "$S4E_TIERS" 2>/dev/null); do [ "$(s4e_tier_name "$_x" 2>/dev/null)" = "$1" ] && return 0; done; return 1; }
+s4e_tube_has_seat() {   # <state>: rc 1 when the state is QUEUED to a tier tube with no seat (s4e_tier_has_seat) or to the tube of a seat that does not exist here (s4e_restore_seat_ok); rc 0 otherwise
+    case "$1" in QUEUED:tier-*) s4e_tier_has_seat "${1#QUEUED:tier-}";; QUEUED:seat-*) s4e_restore_seat_ok "${1#QUEUED:seat-}";; *) return 0;; esac; }
 s4e_watch_of() { local _t _r; _t="$(s4e_tier_of "$1")" || return 1; _r="$(awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $8; exit}' "$S4E_TIERS" 2>/dev/null)"; if [ "$_r" = designer ]; then echo "seat-$1,ask-$_t"; else echo "seat-$1,ask-$_t,tier-$_t"; fi; }   # officers design only (Lon 2026-11-08): an officer is served its seat tube and its ask tube, never a tier tube
 s4e_tier_ttr() { case "$1" in fable|opus) echo 14400;; sonnet) echo 7200;; haiku) echo 3600;; *) echo 3600;; esac; }
 s4e_row_budget_ttr() { local _b; _b="$(grep -m1 '^BUDGET:' "$PO/tasks/$1.task.md" 2>/dev/null | grep -oE '[0-9]+' | head -1)"; [ -n "$_b" ] && echo "$_b"; }
@@ -1204,6 +1208,8 @@ s4e_dw_names_program() {   # <DONE-WHEN text>: rc 0 when it names one failing pr
     printf '%s' "$1" | sed -E 's#(^|[[:space:]/"'"'"'=])(ALL|ONE-LINERS|MULTI-LINERS)\.[A-Za-z0-9]+##g' | grep -qE '(^|[[:space:]/"'"'"'=])[A-Za-z0-9_][A-Za-z0-9_.-]*\.(sno|sc|icn|pl|pas|pp|raku|rakumod|reb|unicon)([[:space:]"'"'"';|&)]|$)'; }
 s4e_tier_takes() {   # <tier> <DONE-WHEN text> <topic or ''>: rc 0 the tier takes this row; else rc 1 and one line of why on stdout
     local _prog=0 _esc=0
+    s4e_tier_has_seat "$1" || { echo "no seat of tier $1 is in TIERS.tsv: the fleet is the bosses alone, no junior and no senior seat, no Haiku and no Sonnet (Lon 2026-11-14); queue it --to a seat or leave it FREE"; return 1; }
+    s4e_tier_has_seat haiku || return 0
     s4e_dw_names_program "$2" && _prog=1
     [ -n "${3:-}" ] && grep -q '^## ESCALATION' "$PO/tasks/$3.task.md" 2>/dev/null && _esc=1
     case "$1" in
@@ -1405,14 +1411,15 @@ s4e_restore_resolve() {   # <topic> -> "<label><TAB><state><TAB><stale seat>": t
     if [ -n "$_r" ]; then _state="$_r"; elif [ -n "$_o" ]; then _state="ASSIGNED:$_o"; else _state="FREE"; fi
     # A RECORDED FREE ON A TIER'S ROW IS THAT TIER'S TUBE (the cio 2026-11-14, MEASURED under the re-cut: the officers mint a chain step to a tier, owner @tier and state FREE, and park it
     # BLOCKED-ON its predecessor before any queue; park records FREE, and 29 of 210 blocked rows stood to come back FREE, where no tier serves them). A boss's or a seat's own row keeps FREE.
-    if [ "$_state" = FREE ]; then case "$_o" in @fable|@opus|@sonnet|@haiku) printf 'tier\tQUEUED:tier-%s\t\n' "${_o#@}"; return 0;; esac; fi
+    if [ "$_state" = FREE ]; then case "$_o" in @fable|@opus|@sonnet|@haiku) s4e_tier_has_seat "${_o#@}" && { printf 'tier\tQUEUED:tier-%s\t\n' "${_o#@}"; return 0; };; esac; fi
+    s4e_tube_has_seat "$_state" || { printf 'free\tFREE\t%s\n' "${_state#QUEUED:}"; return 0; }
     case "$_state" in ASSIGNED:?*|CLAIMED:?*) _s="${_state#*:}";; *) _s="";; esac
     if [ -z "$_s" ] || s4e_restore_seat_ok "$_s"; then
         if [ -n "$_r" ]; then printf 'record\t%s\t\n' "$_state"; else printf 'derived\t%s\t\n' "$_state"; fi; return 0
     fi
     _stale="$_s"
     if [ -n "$_o" ] && s4e_restore_seat_ok "$_o"; then printf 'owner\tASSIGNED:%s\t%s\n' "$_o" "$_stale"; return 0; fi
-    case "$_o" in @*) _tier="${_o#@}"; case "$_tier" in fable|opus|sonnet|haiku) printf 'tier\tQUEUED:tier-%s\t%s\n' "$_tier" "$_stale"; return 0;; esac;; esac
+    case "$_o" in @*) _tier="${_o#@}"; case "$_tier" in fable|opus|sonnet|haiku) s4e_tier_has_seat "$_tier" && { printf 'tier\tQUEUED:tier-%s\t%s\n' "$_tier" "$_stale"; return 0; };; esac;; esac
     _d="$(sed -n 's/^DESIGNER: *//p' "$_b" 2>/dev/null | head -1)"
     if [ -n "$_d" ] && s4e_restore_seat_ok "$_d"; then printf 'designer\tASSIGNED:%s\t%s\n' "$_d" "$_stale"; return 0; fi
     printf 'free\tFREE\t%s\n' "$_stale"; return 0; }

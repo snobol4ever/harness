@@ -358,5 +358,28 @@ wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operatin
     out="$(xb "$O" expire "$m")"; rc=$?; { [ "$rc" = 1 ] && [ -e "$w/claims/$m.claim" ]; } || why="$why the caller's own hand claim was lifted (rc $rc);"
     out="$(xb "$O" claim "$d")"; [ "$(head -1 "$w/claims/$d.claim" 2>/dev/null)" = "$O" ] || why="$why the finisher could not claim the lifted row [$(printf '%s' "$out" | grep -m1 -E 'REFUSED|CLAIMED' | cut -c1-90)];"
     verdict "dead=lifted,row=FREE scope_alive=kept hand_window_alive=kept own=kept park_stands=1 walk_lifts_none=1 finisher_claims=1";;
-*) refuse "no step $N (1..16)";;
+17) # NO JUNIOR AND NO SENIOR SEAT, NO HAIKU AND NO SONNET (Lon 2026-11-14 16:0x CST, in the coo's window: "Make whatever adjustments are needed to remove the concept of a JUNIOR or
+    # SENIOR fleet seat. No more Haiku nor Sonnet will be apart of this team EVERY AGAIN!!!"): with TIERS.tsv naming no haiku and no sonnet seat, queue and mint to those tiers
+    # are refused rc 2 with nothing written, a row still goes to the opus tier, and a blocked row whose RESTORE-STATE is a seatless tube comes back FREE when its blocker closes
+    printf 'seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\n%s\tPO97\t/tmp\tclaude-opus-5-5\txhigh\tblue\t2\tofficer\n' "$O" > "$w/TIERS.tsv"
+    sed -i "s/^ROSTER: .*/ROSTER: $O/" "$w/MODE"; live_claude "$O" >/dev/null
+    q="busq17-q-$$"; row 2 "$q" "$O" FREE; baton "$q"
+    out="$(bus "$O" queue "$q" --tier haiku)"; rc=$?
+    [ "$rc" = 2 ] || why="$why queue --tier haiku with no haiku seat exited $rc, not 2;"
+    [ "$(st "$q")" = FREE ] || why="$why the refused queue moved the row to $(st "$q");"
+    out="$(bus "$O" queue "$q" --tier sonnet)"; rc=$?
+    [ "$rc" = 2 ] || why="$why queue --tier sonnet with no sonnet seat exited $rc, not 2;"
+    out="$(bus "$O" queue "$q" --tier opus)"; rc=$?
+    [ "$rc" = 0 ] && [ "$(st "$q")" = QUEUED:tier-opus ] || why="$why queue --tier opus to the seated opus tier failed (rc $rc, reads $(st "$q")) [$(printf '%s' "$out" | grep -m1 -E '⛔|REFUSE' | cut -c1-90)];"
+    m="busq17-m-$$"
+    out="$(printf 'GOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && test -f "/nonexistent/entry:busq17"\nPREMISE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && true\n## NEXT\nplant\n' | bus "$O" mint "$m" 2 --tier haiku --stdin)"; rc=$?
+    [ "$rc" = 2 ] || why="$why mint --tier haiku with no haiku seat exited $rc, not 2;"
+    [ -z "$(st "$m")" ] || why="$why the refused mint wrote a row ($(st "$m"));"
+    b="busq17-blocker-$$"; k="busq17-kept-$$"
+    row 2 "$b" "$O" FREE; baton "$b" 2026-11-01T00:00:00Z true 'test -f "$S4E_HARNESS/scripts/s4e_msg.sh"'
+    row 2 "$k" "$O" "BLOCKED-ON:$b"; baton "$k"; printf 'RESTORE-STATE: QUEUED:tier-haiku\n' | cat - "$w/tasks/$k.task.md" > "$w/k.tmp" && mv "$w/k.tmp" "$w/tasks/$k.task.md"
+    bus "$O" claim "$b" > "$w/c17.log" 2>&1; bus "$O" done "$b" > "$w/d17.log" 2>&1
+    [ "$(st "$k")" = FREE ] || why="$why a blocked row whose RESTORE-STATE is the seatless tier-haiku came back $(st "$k"), not FREE [$(grep -m1 -E 'REFUSE|⛔' "$w/d17.log" | cut -c1-90)];"
+    verdict "haiku_refused sonnet_refused opus=$(st "$q") mint_haiku_refused restored=$(st "$k")";;
+*) refuse "no step $N (1..17)";;
 esac
