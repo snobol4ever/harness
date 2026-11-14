@@ -48,6 +48,19 @@ if [ -f "$root/.claude/banner_compact.py" ]; then cmp="$(printf '%s' "$out" | py
 # ONE WORD AND A HUGE ICON (Lon 2026-11-11 13:0x CST, in officer_04's window, verbatim: "I just want one word and a huge icon so I can see from a distance. All those words are NEVER read."):
 # the hook shows the verdict word under a block icon and nothing else; the coo's suite grid (CIO-129) stays under it. The full text still goes to BOARD.md and the cache.
 word="$(printf '%s\n' "$out" | grep -xE 'SUCCESS|IN-PROGRESS|DRAIN|STOP|FAILURE' | tail -1)"; grid="$(printf '%s\n' "$out" | grep -E '│|^[0-9]+ suites, ')"   # the grid and its closing summary line ("73 suites, 44 at 100%; ..."), which carries no │ (MEASURED 2026-11-13: the filter dropped it, Lon: "It does not show the summary at the end.")
+# THE CYCLE LINE, THE BUG COUNTDOWN AND A FRESH GRID FOR A SEAT WHOSE BANNER CARRIES THE GRID (the grader 2026-11-13, row one-banner-script-seat-aware-run-from-each-seats-own-root; Lon, in the
+# grader's window, verbatim: "do not reach into another's root folder and run a script." / "All seats should be running the SAME banner script with code that know WHO the HELL you ARE."): the
+# coo's own Stop script printed these for the coo alone, so the fleet ran two banners. This one script prints them for every seat whose banner carries the grid (s4e_msg.sh banner chooses by
+# seat: the coo and the grader), from util_cycle_countdown.py, and renders that grid fresh by util_suite_banner.py (MEASURED 2026-11-13: 0.46 s at load 53, while the cached grid is up to 240 s
+# old and read a different SUITES.tsv than the fresh one). Each part is bounded; the countdown's last good render waits in /tmp/s4e/<seat>/countdown.cache for a read that runs over.
+extra=""
+if [ -n "$grid" ]; then
+    gf="$(timeout -k 2 10 python3 -I "$root/harness/scripts/util_suite_banner.py" < /dev/null 2>/dev/null | grep -E '│|^[0-9]+ suites, ')"; [ -n "$gf" ] && grid="$gf"
+    cc="/tmp/s4e/$seat/countdown.cache"; extra="$(timeout -k 2 8 python3 -I "$root/harness/scripts/util_cycle_countdown.py" < /dev/null 2>/dev/null)"
+    if [ -n "$extra" ]; then printf '%s\n' "$extra" > "$cc"
+    elif [ -s "$cc" ]; then extra="$(cat "$cc")
+(the cycle line and the countdown above were rendered at $(date -r "$cc" +%H:%M); the live read did not finish in 8 s)"; fi
+fi
 # COLOUR AND A FIRST NEW LINE (Lon 2026-11-11 13:1x CST, in officer_04's window, verbatim: "Notice the Stop says: forgot the new line and the color is gray not green."): the client prints hook text
 # gray after "Stop says:", so the icon is drawn in coloured emoji squares, which keep their colour, and it starts on its own line. Each "#" is a square, each "." two spaces (an emoji is two columns).
 case "$word" in
@@ -76,7 +89,8 @@ art="$(printf '%s\n' "$pat" | sed "s/#/$sq/g; s/\./  /g")"
 out="
 $art
 
-$ic  $word"; [ -n "$grid" ] && out="$out
+$ic  $word"; [ -n "$extra" ] && out="$out
+$extra"; [ -n "$grid" ] && out="$out
 $grid"
 # THE ROWS THE CYCLE COULD NOT WRITE ARE NAMED UNDER THE GRID (the grader 2026-11-12, s4e_cycle.sh record_row): a row the score writer refused keeps
 # its old reading, so the grid alone looks current while it is not; one line a refusal class names its held rows (the grader 2026-11-13, Lon: "You banner ends with </persisted-output> and isUSELESS!" MEASURED: the Stop message was 10,146 characters, over Claude Code's 10,000 for a hook message, and 24 held rows at one 180-character line each were 4,300 of them; CYCLE.refused keeps each refusal in full).

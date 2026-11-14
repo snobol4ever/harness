@@ -3,7 +3,8 @@
 # 2026-11-13; Lon 18:0x CST, in the coo's window, verbatim: "So I'm creating /home/corpus and /home/harness for the ENTIRE FLEET to share. So get those
 # scripts fixed. And GRADER is in charge and gets a /loop too."; 18:1x: .github leaves the roots too, at /home/.github). Each is a full clone of
 # origin that borrows its objects from the coo root (git clone --reference /home/claude_coo/<repo>), made by the grader that day. A cron line runs this
-# every minute and the grader's loop each tick; one run at a time (flock). A change lands through s4e_land.sh, never here: a tree that holds a tracked
+# every minute and the grader's loop each tick; one run at a time (flock). This never clones: a tree that is missing refuses rc 2, and a re-clone goes to a
+# temp name beside the tree and is renamed into place, so no reader sees half a tree (the coo 2026-11-13 18:3x CST, on officer_02's red re-gate). A change lands through s4e_land.sh, never here: a tree that holds a tracked
 # change or a commit origin lacks is NAMED and left as it is, never reset, stashed or discarded (skill seat-conduct 2). Quiet when nothing moved.
 #   bash util_keep_home_trees.sh            rc 0 every tree at origin; 1 a tree left as it is (named); 2 cannot measure (not a clone, fetch failed)
 set -u
