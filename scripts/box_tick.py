@@ -158,6 +158,78 @@ def enforce_one_limit():
     return "one_limit=%d acts=%d%s" % (n, len(acts), " failed=%d" % bad if bad else "")
 
 
+# THE MEMORY HALF OF THE ONE LIMIT (the cio 2026-11-14; Lon 10:2x CST, in the coo's window, relayed by the coo, verbatim: "oh, did you think that telling a JUNIOR will work. The
+# limitations must be built-in to the scrip a seat runs." and before it "Right, so since there is the one limit, then we are not overloaded. correct?"; the coo's answer: CPU yes,
+# memory no). MEASURED 10:23 to 10:27 CST with the whole fleet awake: s4e.slice held its 1400% of CPU but had NO memory bound (memory.max and memory.high both max); s4e-seats.slice
+# stood at 20771 MB against a MemoryHigh of 20 GB, so every seat was throttled at once by four runs declared at 6 GB; 4.1 GB of swap in use, 3.9 GB available, memory pressure 84%.
+# THE LAW: mem=N of CORES.conf, in GB, is the fleet's memory, and the kernel holds it: every tick sets s4e.slice to MemoryMax=N and clears every MemoryHigh on a SLICE of the fleet
+# (a high on a shared level throttles every seat under it at once; a scope keeps its own caps, since a leaf's cap is what kills a runaway in its own cgroup). mem_seats=S, in GB,
+# is the part reclaim leaves to the sessions: s4e-seats.slice gets MemoryLow=S, so when the fleet stands at its bound the kernel takes from the runs, the grader and batch first.
+# At the bound the kernel's victim is a run, never a session: util_mem_scope.py enter raises its own oom_score_adj and every run inherits it. With no mem line nothing is set or
+# cleared (the box of before): the bound is turned on, tuned and off by one line, as cores is.
+SEATS_SLICE = "s4e-seats.slice"
+
+
+def mem_conf(path=None):
+    """(N, S): the last mem=N and mem_seats=S lines of CORES.conf, whole GB; None for an absent line, and S is None unless 1 <= S < N"""
+    v = {}
+    try:
+        for line in open(path or CORES_CONF):
+            m = re.match(r"^(mem|mem_seats)=(\d+)\s*$", line)
+            if m: v[m.group(1)] = int(m.group(2))
+    except OSError:
+        return None, None
+    n = v.get("mem") if v.get("mem") and v["mem"] >= 1 else None
+    sv = v.get("mem_seats")
+    return n, (sv if n and sv and 1 <= sv < n else None)
+
+
+def _membytes(cg, name):
+    """a cgroup's memory.max, memory.high or memory.low in bytes; None for max; '?' when unreadable"""
+    try:
+        t = open(os.path.join(cg, name)).read().strip()
+    except OSError:
+        return "?"
+    return None if t == "max" else int(t)
+
+
+def mem_limit_actions(top, n, sv):
+    """what the tick must change so that ONE number bounds the fleet's memory: [(unit, property, value)]. The fleet slice to MemoryMax=N; MemoryHigh cleared on the fleet slice
+    and on every slice below it (never on a scope); the seats slice to MemoryLow=S when S is given. n None asks nothing."""
+    acts = []
+    if not n:
+        return acts
+    fleet = os.path.join(top, FLEET_SLICE)
+    if _membytes(fleet, "memory.max") not in (n << 30, "?"):
+        acts.append((FLEET_SLICE, "MemoryMax", "%dG" % n))
+    for d, subs, _ in os.walk(fleet):
+        subs[:] = sorted(x for x in subs if x.endswith(".slice"))
+        if _membytes(d, "memory.high") not in (None, "?"):
+            acts.append((os.path.basename(d), "MemoryHigh", "infinity"))
+    seats = os.path.join(fleet, SEATS_SLICE)
+    if sv and os.path.isdir(seats) and _membytes(seats, "memory.low") not in (sv << 30, "?"):
+        acts.append((SEATS_SLICE, "MemoryLow", "%dG" % sv))
+    return acts
+
+
+def enforce_mem_limit():
+    """the tick's memory act: the fleet slice to mem=N, every shared MemoryHigh below it cleared, the sessions' part protected; returns the TICK line's word"""
+    n, sv = mem_conf()
+    if not n:
+        return "mem_limit=none"
+    acts = mem_limit_actions(U, n, sv)
+    if DRY:
+        return "mem_limit=%dG dry_acts=%d" % (n, len(acts))
+    bad = 0
+    for unit, prop, val in acts:
+        try:
+            r = subprocess.run(["systemctl", "--user", "set-property", "--runtime", unit, "%s=%s" % (prop, val)], capture_output=True, text=True, timeout=30)
+            bad += int(r.returncode != 0)
+        except (OSError, subprocess.TimeoutExpired):
+            bad += 1
+    return "mem_limit=%dG seats_low=%s acts=%d%s" % (n, "%dG" % sv if sv else "none", len(acts), " failed=%d" % bad if bad else "")
+
+
 def systemctl(*args):
     if DRY:
         return ""
@@ -632,7 +704,7 @@ def tick():
     open(TICK_DIR + "/tick.count", "w").write("%d\n" % n)
     mode = mode_text()
     s = sense(dict(cpu10=4.0, cpu60=4.0, cpu300=4.0, gcpu10=1.0, mem_rise=0) if DRY else None)
-    one = enforce_one_limit()
+    one = enforce_one_limit() + " " + enforce_mem_limit()
     grader = "retired (CIO-82: the cycle is the one grading road)"
     expired = expire_leases() if n % 5 == 0 else 0
     fed = "retired (CIO-82: the cycle serves test requests)"
@@ -692,6 +764,21 @@ def probe_one_limit(scratch=False):
         conf = os.path.join(T, "CORES.conf")
         open(conf, "w").write("# planted\ncores=4\ngrader=1\nseat=2\n")
         arm("number", cores_conf(conf) == 4 and cores_conf(os.path.join(T, "absent")) is None, "cores_conf misread the planted file")
+        def mplant(rel, mx=None, hi=None, lo=0):
+            d = os.path.join(T, "m", rel); os.makedirs(d, exist_ok=True)
+            for f, v in (("memory.max", mx), ("memory.high", hi)): open(os.path.join(d, f), "w").write(("max" if v is None else str(v << 30)) + "\n")
+            open(os.path.join(d, "memory.low"), "w").write("%d\n" % (lo << 30))
+        mplant("s4e.slice"); mplant("s4e.slice/s4e-seats.slice", 24, 20); mplant("s4e.slice/s4e-seats.slice/s4e-seat-x.scope", 8, 4)
+        mplant("s4e.slice/s4e-runs.slice"); mplant("s4e.slice/s4e-grader.slice", 10); mplant("app.slice/app-gnome.slice", 6, 5)
+        mgot = sorted(mem_limit_actions(os.path.join(T, "m"), 26, 16))
+        mwant = sorted([("s4e.slice", "MemoryMax", "26G"), ("s4e-seats.slice", "MemoryHigh", "infinity"), ("s4e-seats.slice", "MemoryLow", "16G")])
+        arm("mem_law", mgot == mwant, "memory actions %s, want %s (a scope's own caps and a slice outside the fleet are never touched)" % (mgot, mwant))
+        mplant("s4e.slice", 26); mplant("s4e.slice/s4e-seats.slice", 24, None, 16)
+        arm("mem_settled", mem_limit_actions(os.path.join(T, "m"), 26, 16) == [], "a tree already at the memory limit still asks for acts")
+        arm("mem_noconf", mem_limit_actions(os.path.join(T, "m"), None, None) == [], "no mem line must change nothing")
+        mc = os.path.join(T, "MEM.conf"); open(mc, "w").write("cores=4\nmem=26\nmem_seats=16\n")
+        mb = os.path.join(T, "MEMBAD.conf"); open(mb, "w").write("mem=8\nmem_seats=9\n")
+        arm("mem_number", mem_conf(mc) == (26, 16) and mem_conf(conf) == (None, None) and mem_conf(mb) == (8, None), "mem_conf misread a planted file: %s %s %s" % (mem_conf(mc), mem_conf(conf), mem_conf(mb)))
         gone = [x for x in ("decide", "write_awake", "write_live_set", "current_width", "current_awake", "wmax") if x in globals()]
         arm("chooses_nothing", not gone, "the tick still defines " + ",".join(gone))
         try:
@@ -724,6 +811,10 @@ def probe_one_limit(scratch=False):
             arm("kernel", q == n * 100, "%s cpu.max is %s percent, cores=%d" % (FLEET_SLICE, q, n))
             acts = [u for u, v in one_limit_actions(U, n) if u != FLEET_SLICE]
             arm("nested", not acts, "%d other quota(s): %s" % (len(acts), ",".join(acts[:6])))
+            mn, msv = mem_conf()
+            if mn:
+                macts = mem_limit_actions(U, mn, msv)
+                arm("mem_kernel", not macts, "mem=%d is not what the kernel holds: %s" % (mn, ",".join("%s:%s=%s" % a for a in macts[:6])))
             outside = 0
             for d, _, fs in os.walk(os.path.join(U, "app.slice/app-s4e.slice")):
                 if "cgroup.procs" in fs:
@@ -763,7 +854,7 @@ def probe_one_limit(scratch=False):
                 o = str(e)
             arm("spawn", re.search(r"^SCOPE .* cpu=none ", o, re.M) is not None, "%s --probe-scope gives a seat scope a quota: %s" % (sp, o.strip()[:120]))
     n = cores_conf()
-    print("ONE_LIMIT %s cores=%s %s%s" % ("red" if red else "ok", n if n else "none", " ".join(arms), " RED: " + "; ".join(red) if red else ""))
+    print("ONE_LIMIT %s cores=%s mem=%s %s%s" % ("red" if red else "ok", n if n else "none", ("%dG" % mem_conf()[0]) if mem_conf()[0] else "none", " ".join(arms), " RED: " + "; ".join(red) if red else ""))
     return 1 if red else 0
 
 

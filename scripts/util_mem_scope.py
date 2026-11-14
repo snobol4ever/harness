@@ -232,6 +232,21 @@ def enter(kind, argv, slice_name=None):
                              + list(argv))
 
 
+RUN_OOM_SCORE_ADJ = 900
+
+
+def _run_is_the_victim():
+    """AT THE FLEET'S MEMORY BOUND THE KERNEL KILLS A RUN, NEVER A SESSION (the cio 2026-11-14, the memory half of THE ONE LIMIT, box_tick.py mem=N; Lon: "The limitations must
+    be built-in to the scrip a seat runs."). The bound is MemoryMax on s4e.slice, which holds the sessions and the runs alike, and the kernel's victim there is the task of the
+    highest badness. The run, and everything it starts, raises its own oom_score_adj (any process may raise it; none may lower it) so a session at its default is never
+    chosen while a run lives. The supervisor keeps its own score: it must outlive the kill to read the scope's oom_kill count and answer rc 2, a refusal and never a red."""
+    try:
+        with open("/proc/self/oom_score_adj", "w") as f:
+            f.write("%d\n" % RUN_OOM_SCORE_ADJ)
+    except OSError:
+        pass
+
+
 def supervise(kind, argv):
     """INSIDE the scope: run argv as a child, then read the scope's peak and kill count and classify. Exit: the
     child's own rc (128+N for a signal), or 2 when the cgroup killed anything under this run."""
@@ -240,7 +255,7 @@ def supervise(kind, argv):
     t0 = time.monotonic()
     signal.signal(signal.SIGINT, lambda s, f: None)   # the terminal's ^C reaches the child's group itself
     try:
-        child = subprocess.Popen(argv)
+        child = subprocess.Popen(argv, preexec_fn=_run_is_the_victim)
     except OSError as e:
         sys.stderr.write("REFUSE(2) [mem_scope]: could not start %r inside the scope: %s\n" % (argv[:2], e))
         return 2

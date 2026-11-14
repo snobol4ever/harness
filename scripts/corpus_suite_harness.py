@@ -929,14 +929,137 @@ def _run_slot():
         return _SlotHold(seat_f, pool_f)
     except OSError:
         return None
+# THE BIG-MEMORY DOOR (the cio 2026-11-14, the memory half of THE ONE LIMIT; Lon 10:2x CST: "The limitations must be built-in to the scrip a seat runs."; MEASURED by the coo
+# 10:1x: four juniors each ran the entry packed_arrays__pa08_wide, declared heap 6291456 KB, at once, and the box fell to 3.9 GB available at 84% memory pressure). A run whose
+# declared sizes (its -d<kb>k and -s<kb>k switches) reach _BIG_MEM_KB takes the ONE big-memory place of the box before it takes its core token, and then starts only when the
+# fleet has room for it under mem=N of CORES.conf: N GB less what s4e.slice holds that is not file cache. It waits, holding no token; after wait= seconds (1800) it starts
+# anyway, since the kernel holds the same bound (box_tick.py) and a kill there reads a refusal through the run's memory scope. With no mem line there is no door.
+_BIG_MEM_KB = 2 * 1024 * 1024
+def _declared_kb(argv):
+    kb = 0
+    for a in argv:
+        m = re.match(r"^-[ds](\d+)k$", str(a))
+        if m:
+            kb += int(m.group(1))
+    return kb
+def _mem_conf():
+    """(N, wait): mem=N in GB and wait=S of CORES.conf (S4E_CORES_CONF the seam); N None when there is no mem line"""
+    c = {}
+    try:
+        for line in open(os.environ.get("S4E_CORES_CONF") or "/home/resources/postoffice/CORES.conf"):
+            m = re.match(r"^(mem|wait)=(\d+)\s*$", line)
+            if m:
+                c[m.group(1)] = int(m.group(2))
+    except OSError:
+        return None, 1800
+    return (c["mem"] if c.get("mem", 0) >= 1 else None), c.get("wait", 1800)
+def _fleet_room_kb(n):
+    """the KB the fleet may still take under mem=N: N GB less s4e.slice's memory.current, its file cache given back (the kernel drops cache before it refuses); None when unread"""
+    cg = os.environ.get("S4E_FLEET_CGROUP") or "/sys/fs/cgroup/user.slice/user-%d.slice/user@%d.service/s4e.slice" % (os.getuid(), os.getuid())
+    try:
+        cur = int(open(os.path.join(cg, "memory.current")).read())
+        cache = 0
+        for line in open(os.path.join(cg, "memory.stat")):
+            k, _, v = line.partition(" ")
+            if k in ("inactive_file", "active_file"):
+                cache += int(v)
+    except (OSError, ValueError):
+        return None
+    return ((n << 30) - (cur - cache)) // 1024
+def _big_mem_wait(n, kb, wait_s, sleep=None, clock=None):
+    """wait until the fleet has room for kb; rc 0 room, 1 the wait ran out (the caller starts anyway), 2 the room cannot be read (no door)"""
+    import time
+    sleep = sleep or time.sleep; clock = clock or time.monotonic
+    t0 = clock(); said = False
+    while True:
+        room = _fleet_room_kb(n)
+        if room is None:
+            return 2
+        if room >= kb:
+            return 0
+        if clock() - t0 >= wait_s:
+            return 1
+        if not said:
+            sys.stderr.write("BIG-MEM: a run declared at %d MB waits for room under mem=%dG (the fleet has %d MB left); it holds no core token while it waits\n" % (kb // 1024, n, max(0, room) // 1024)); said = True
+        sleep(2)
+def _big_mem_door(argv):
+    """the open file that holds the box's one big-memory place for the caller's life, or None when this run is not big, there is no mem line, or a parent already holds it"""
+    kb = _declared_kb(argv)
+    if kb < _BIG_MEM_KB or os.environ.get("S4E_BIG_MEM_HELD"):
+        return None
+    n, wait_s = _mem_conf()
+    if not n:
+        return None
+    import fcntl
+    try:
+        d = os.environ.get("S4E_RUN_SLOT_DIR") or "/tmp/s4e-run-slots"; os.makedirs(d, exist_ok=True)
+        f = open(os.path.join(d, "bigmem"), "a")
+        fcntl.flock(f, fcntl.LOCK_EX)
+    except OSError:
+        return None
+    if _big_mem_wait(n, kb, wait_s) == 1:
+        sys.stderr.write("BIG-MEM: no room for %d MB under mem=%dG after %d s; the run starts and the kernel's bound decides\n" % (kb // 1024, n, wait_s))
+    return f
 def _bounded_run(argv, timeout, cwd, env, stdin_bytes, merge_stderr):
     """(rc, stdout, stderr, why): why is None, "HANG" (the timeout passed, or a pipe stayed open past it) or "OVERFLOW"."""
+    big = _big_mem_door(argv)
+    if big is not None:
+        env = dict(env if env is not None else os.environ, S4E_BIG_MEM_HELD="1")
     slot = _run_slot()
     try:
         return _bounded_run_in_slot(argv, timeout, cwd, dict(env if env is not None else os.environ, S4E_RUN_SLOT_HELD="1") if slot else env, stdin_bytes, merge_stderr)
     finally:
         if slot:
             slot.close()
+        if big is not None:
+            big.close()
+def big_mem_probe():
+    """--probe-big-mem: the door's law on planted files (a scratch CORES.conf, a planted fleet cgroup, a scratch slot folder). BIG_MEM ok|RED; rc 0 or 1."""
+    import fcntl
+    t = tempfile.mkdtemp(prefix="s4e-big-mem."); why = []
+    keep = {k: os.environ.get(k) for k in ("S4E_CORES_CONF", "S4E_FLEET_CGROUP", "S4E_RUN_SLOT_DIR", "S4E_BIG_MEM_HELD")}
+    try:
+        os.environ.pop("S4E_BIG_MEM_HELD", None)
+        os.environ["S4E_CORES_CONF"] = t + "/CORES.conf"; os.environ["S4E_FLEET_CGROUP"] = t + "/cg"; os.environ["S4E_RUN_SLOT_DIR"] = t + "/slots"; os.makedirs(t + "/cg")
+        def plant(cur_mb, cache_mb):
+            open(t + "/cg/memory.current", "w").write("%d\n" % (cur_mb << 20)); open(t + "/cg/memory.stat", "w").write("anon 1\ninactive_file %d\nactive_file 0\n" % (cache_mb << 20))
+        big = ["scrip", "--run", "-d3145728k", "-s4096k", "p.x"]; small = ["scrip", "--run", "-d131072k", "-s4096k", "p.x"]
+        if _declared_kb(big) != 3145728 + 4096 or _declared_kb(small) != 131072 + 4096: why.append("arm 1: the declared sizes read %d and %d" % (_declared_kb(big), _declared_kb(small)))
+        open(t + "/CORES.conf", "w").write("cores=4\n"); plant(1000, 0)
+        if _big_mem_door(big) is not None: why.append("arm 2: with no mem line a big run met a door")
+        open(t + "/CORES.conf", "w").write("cores=4\nmem=8\nwait=30\n")
+        if _big_mem_door(small) is not None: why.append("arm 3: a run under the bar met the door")
+        plant(6000, 2000)   # 8 GB less (6000 - 2000) MB held: 4192 MB of room, the cache counted as room
+        if _fleet_room_kb(8) != (8 << 20) - (4000 << 10): why.append("arm 4: the room reads %s KB" % _fleet_room_kb(8))
+        f = _big_mem_door(big)
+        if f is None: why.append("arm 5: a big run with room took no place")
+        else:
+            g = open(t + "/slots/bigmem", "a")
+            try:
+                fcntl.flock(g, fcntl.LOCK_EX | fcntl.LOCK_NB); why.append("arm 5: a second big run took the place while the first held it")
+            except OSError:
+                pass
+            f.close()
+            try:
+                fcntl.flock(g, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                why.append("arm 5: the place was not free after its holder closed")
+            g.close()
+        plant(7000, 0); calls = []   # 1192 MB of room: a 3 GB run waits; the room appears at the first sleep (an order of events, no clock)
+        def nap(_s):
+            calls.append(1); plant(2000, 0)
+        if _big_mem_wait(8, _declared_kb(big), 30, sleep=nap, clock=lambda: 0.0) != 0 or len(calls) != 1: why.append("arm 6: a run with no room did not wait once and then start (sleeps=%d)" % len(calls))
+        plant(7000, 0); ticks = iter([0.0, 31.0, 62.0])
+        if _big_mem_wait(8, _declared_kb(big), 30, sleep=lambda _s: None, clock=lambda: next(ticks)) != 1: why.append("arm 7: a wait past wait= did not end")
+        os.environ["S4E_BIG_MEM_HELD"] = "1"
+        if _big_mem_door(big) is not None: why.append("arm 8: a run under a held place took a second")
+    finally:
+        for k, v in keep.items():
+            if v is None: os.environ.pop(k, None)
+            else: os.environ[k] = v
+        shutil.rmtree(t, ignore_errors=True)
+    print("BIG_MEM ok arms=8 (the declared sizes are read from the run's own switches; no mem line and a small run meet no door; cache counts as room; one big run holds the place; a run without room waits and starts when room appears; the wait ends at wait=; a nested run takes no second place)" if not why else "BIG_MEM RED: " + " ".join(why))
+    return 0 if not why else 1
 def _bounded_run_in_slot(argv, timeout, cwd, env, stdin_bytes, merge_stderr):
     p = subprocess.Popen(([_SETPRIV, "--pdeathsig", "KILL", "--"] if _SETPRIV else []) + list(argv), cwd=cwd, env=env,
                          stdin=subprocess.DEVNULL if stdin_bytes is None else subprocess.PIPE, stdout=subprocess.PIPE,
@@ -8048,6 +8171,8 @@ def own_clone_probe():
 
 
 def main():
+    if sys.argv[1:] == ["--probe-big-mem"]:
+        sys.exit(big_mem_probe())
     if sys.argv[1:] == ["--probe-own-clone"]:
         sys.exit(own_clone_probe())
     own_clone_args(sys.argv)
