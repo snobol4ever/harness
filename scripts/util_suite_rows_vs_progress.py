@@ -30,6 +30,8 @@ env: S4E_SUITES_TSV, S4E_PROGRESS_DB, S4E_CORPUS_ROOT redirect the three inputs 
 import sys, os, re, collections, tempfile, shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import harness_paths
 CRITERION_NOTE_RX = re.compile(r"^(?!xfail$)[a-z]+(-[a-z]+)+$")   # a criterion label in the note column, e.g. outcome-class; hashes and xfail never match
 DBNAME = {"sno-rungs": "snobol4-rungs", "icn-rungs": "icon-rungs", "pl-rungs": "prolog-rungs", "pas-rungs": "pascal-rungs",
           "raku-rungs": "raku-rungs", "snc-rungs": "snocone-rungs", "reb-rungs": "rebus-rungs", "x64tests": "spitbol_x64", "x32tests": "spitbol_x32"}
@@ -302,7 +304,7 @@ def audit(suites, db, corpus, out=print):
 def selftest():
     w = tempfile.mkdtemp(prefix="suite_rows_vs_progress.")
     try:
-        os.makedirs(os.path.join(w, "corpus", "tests", "snobol4"))
+        os.makedirs(os.path.join(w, "corpus", "tests", "snobol4"))  # one-disk: not a path
         suites = os.path.join(w, "SUITES.tsv")
         db = os.path.join(w, "results.tsv")
         hdr = "key\tnick\temoji\tlang\tfirst_date\tfirst_pass\tfirst_total\ttoday_date\ttoday_pass\ttoday_total\ttree\tcriterion_changed\n"
@@ -314,7 +316,7 @@ def selftest():
                 "inria\tINRIA\tx\tprolog\t2026-09-05\t1\t3\t2026-09-16\t2\t3\tfeedbeef1\tfixture\n",           # DB 3 PASS all noted outcome-class: an upper bound, row 2 <= 3 AGREE-BOUNDED
                 "swi\tSWI\tx\tprolog\t2026-09-05\t1\t3\t2026-09-16\t3\t3\tfeedbeef1\tfixture\n"]              # DB 2 PASS noted outcome-class: row 3 EXCEEDS the bound -> DISAGREE
         open(suites, "w").write("# fixture\n" + hdr + "".join(rows))
-        open(os.path.join(w, "corpus", "tests", "snobol4", "ALL.outside.tsv"), "w").write("p_out\tORACLE_REFUSES\tfixture\n")
+        open(os.path.join(w, "corpus", "tests", "snobol4", "ALL.outside.tsv"), "w").write("p_out\tORACLE_REFUSES\tfixture\n")  # one-disk: not a path
         def row(tree, suite, prog, mode, out, note=""):
             return f"2026-09-16T00:00:00\t{tree}\tc\tfixture\trungs\t{suite}\tsnobol4\t{prog}\t{mode}\t{out}\t0\t{note}\n"
         lines = ["ts_utc\tscrip\tcorpus\tmeasurer\tclass\tsuite\tlang\tprogram\tmode\toutcome\tsecs\tnote\n"]
@@ -333,7 +335,7 @@ def selftest():
             if not ok:
                 fails += 1
         buf = []
-        rc = audit(suites, db, os.path.join(w, "corpus"), out=buf.append)
+        rc = audit(suites, db, os.path.join(w, "corpus"), out=buf.append)  # one-disk: not a path
         txt = "\n".join(buf)
         ck(rc == 1 and "sno-rungs" in txt and re.search(r"sno-rungs .*AGREE", txt) and re.search(r"snc-rungs .*DISAGREE: numerator row 1 vs DB 2 \(\+1\) = xpass: STALE MARKERS", txt) and
            re.search(r"gimpel .*DISAGREE: denominator row 2 vs DB population 3", txt) and re.search(r"roast .*UNPROVEN", txt) and re.search(r"gnu_fd .*DEFERRED", txt),
@@ -343,20 +345,20 @@ def selftest():
            "(a2) a DB whose every row carries a criterion label bounds the row from above: row <= bound reads AGREE-BOUNDED with the label, row > bound DISAGREEs as EXCEEDS (hq_prolog 2026-09-17)")
         open(suites, "w").write("# fixture\n" + hdr + rows[0] + rows[3] + rows[4])
         buf = []
-        rc = audit(suites, db, os.path.join(w, "corpus"), out=buf.append)
+        rc = audit(suites, db, os.path.join(w, "corpus"), out=buf.append)  # one-disk: not a path
         ck(rc == 0 and "1 agree" in "\n".join(buf), "(b) rc=0 once the planted rows are removed (the agreeing, UNPROVEN and DEFERRED rows remain)")
         open(db, "w").write(lines[0])
         buf = []
-        rc = audit(suites, db, os.path.join(w, "corpus"), out=buf.append)
+        rc = audit(suites, db, os.path.join(w, "corpus"), out=buf.append)  # one-disk: not a path
         ck(rc == 2, "(c) rc=2 REFUSES on an empty DB (zero rows gradable)")
         # (d) THE THREE POPULATION RULES OF 2026-09-25 (coo): a driver-named sidecar row and its library-named DB row are ONE program
         # (R-1269); a CONTAINERS.tsv name is no program even with a stale DB row on the tree (R-1272); and a package with no outside
         # file folds its sidecars BY PATH, so two files sharing a basename count twice (IPL). Each row reads AGREE only with all three.
-        dn = os.path.join(w, "corpus", "packages", "snobol4", "dotnet"); os.makedirs(dn)
+        dn = os.path.join(w, "corpus", "packages", "snobol4", "dotnet"); os.makedirs(dn)  # one-disk: not a path
         open(os.path.join(dn, "OUTSIDE_SPITBOL_BASELINE.tsv"), "w").write("X_driver.sno\tORACLE_REFUSES\tfixture\nq_lib_driver.sno\tORACLE_REFUSES\tthe library of a twice-shipped stem (fixture)\n")
         open(os.path.join(dn, "UNGRADABLE.tsv"), "w").write("X_driver.sno\tORACLE_REFUSES\tfixture\nY.INC\tORACLE_REFUSES\tan include library, keyed Y.sno in the DB (fixture)\n")
         open(os.path.join(dn, "CONTAINERS.tsv"), "w").write("chap.sno\tMULTI_PROGRAM\t2 top-level END statements (fixture)\n")
-        ip = os.path.join(w, "corpus", "packages", "icon", "ipl"); os.makedirs(ip)
+        ip = os.path.join(w, "corpus", "packages", "icon", "ipl"); os.makedirs(ip)  # one-disk: not a path
         open(os.path.join(ip, "UNGRADED.tsv"), "w").write("procs/dup.icn\tNEEDS_DRIVER\tfixture\ngprocs/dup.icn\tNEEDS_DRIVER\tfixture\n")
         open(os.path.join(ip, "EXCLUDED.tsv"), "w").write("gprogs/a1.icn\tNEEDS_GRAPHICS_FACILITY\tthe namesake of the graded gprocs/a1 (fixture)\n")
         open(suites, "w").write("# fixture\n" + hdr + "dotnet\tDotnet\tx\tsnobol4\t2026-09-25\t2\t5\t2026-09-25\t2\t5\tfeedbeef1\tfixture\n"
@@ -367,7 +369,7 @@ def selftest():
                    row("feedbeef1", "ipl", "gprocs/a1", m, "PASS")]
         open(db, "w").write("".join(dl))
         buf = []
-        rc = audit(suites, db, os.path.join(w, "corpus"), out=buf.append)
+        rc = audit(suites, db, os.path.join(w, "corpus"), out=buf.append)  # one-disk: not a path
         txt = "\n".join(buf)
         ck(rc == 0 and re.search(r"dotnet .*AGREE", txt) and re.search(r"ipl .*AGREE", txt),
            "(d) a driver-named sidecar row is its library's DB row, a NAME.INC sidecar row is its NAME.sno DB row, q_lib_driver's OUTSIDE row is the library q.inc beside the program q.spt, a container's stale DB row is no program, IPL's two same-basename sidecar files count twice and its EXCLUDED gprogs/a1 leaves the graded gprocs/a1 in -- both rows AGREE" + ("" if rc == 0 else " :: " + " | ".join(l for l in buf if "DISAGREE" in l)[:300]))
@@ -384,10 +386,10 @@ def main(argv):
     if any(a.startswith("-") for a in argv):
         sys.stderr.write("usage: util_suite_rows_vs_progress.py [--selftest]   (env: S4E_SUITES_TSV S4E_PROGRESS_DB S4E_CORPUS_ROOT)\n")
         return 2
-    _root = os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP", ".."))
-    suites = os.environ.get("S4E_SUITES_TSV") or ("/home/resources/progress/SUITES.tsv" if re.fullmatch(r"/home/claude_[A-Za-z0-9_]+", os.path.realpath(_root)) else os.path.join(_root, ".github", "SUITES.tsv"))
+    _root = os.path.abspath(os.environ.get("S4E_HOME") or os.path.join(HERE, "..", ".."))
+    suites = os.environ.get("S4E_SUITES_TSV") or ("/home/resources/progress/SUITES.tsv" if re.fullmatch(r"/home/claude_[A-Za-z0-9_]+", os.path.realpath(_root)) else os.path.join(str(harness_paths.github()), "SUITES.tsv"))
     db = os.environ.get("S4E_PROGRESS_DB") or "/home/resources/progress/results.tsv"
-    corpus = os.environ.get("S4E_CORPUS_ROOT") or os.path.join(HERE, "..", "..", "SCRIP", "..", "corpus")
+    corpus = os.environ.get("S4E_CORPUS_ROOT") or str(harness_paths.corpus())
     for f, what in ((suites, "SUITES.tsv"), (db, "the progress DB")):
         if not os.path.exists(f):
             print(f"⛔ REFUSES (rc=2): cannot read {what} at {f}")

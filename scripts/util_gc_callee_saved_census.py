@@ -66,7 +66,9 @@ import os, re, sys, subprocess, importlib.util
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
+sys.path.insert(0, HERE)
+import harness_paths
+ROOT = str(harness_paths.scrip())
 
 CS = ("rbx", "rbp", "r12", "r13", "r14", "r15")
 ALIAS = {}
@@ -705,7 +707,7 @@ def main(argv):
         d = tempfile.mkdtemp(prefix="gc_callee_saved."); __import__("atexit").register(__import__("shutil").rmtree, d, True)
         srcs = []
         for ext in ("sno", "sc", "icn", "pl", "reb", "raku", "pas"):
-            srcs += sorted(glob.glob(os.path.join(ROOT, "..", "corpus", "benchmarks", "*", "*." + ext)))
+            srcs += sorted(glob.glob(os.path.join(str(harness_paths.corpus()), "benchmarks", "*", "*." + ext)))
         if limit: srcs = srcs[:limit]
         for s in srcs:
             o = os.path.join(d, os.path.basename(s) + ".s")

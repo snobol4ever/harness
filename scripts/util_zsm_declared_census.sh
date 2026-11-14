@@ -56,7 +56,8 @@ import collections, concurrent.futures, os, re, subprocess, sys, tempfile
 HERE = sys.argv[1]
 sys.path.insert(0, HERE)
 import corpus_suite_harness as h
-SC = os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP'))
+import harness_paths
+SC = str(harness_paths.scrip())
 SCRIP = os.path.join(SC, 'scrip')
 OUT = os.path.join(SC, 'out')
 ZSM = {'SCRIP_ZSM': '1', 'SCRIP_ZSM_ALL': '1', 'SCRIP_ZSM_DECL': '1', 'SCRIP_ZSM_AEXP': '0'}

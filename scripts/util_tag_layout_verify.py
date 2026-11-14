@@ -3,7 +3,9 @@
 the emitted BBs depend on. Reads the TREE, never a hardcoded table (s229).
 Exit 0 = all predicates hold. Exit 1 = a renumber broke an inline form."""
 import re, sys, os
-ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
+ROOT = str(harness_paths.scrip())
 h = open(os.path.join(ROOT, 'src/ir/descr.h')).read()
 T = {m[0]: int(m[1], 16) for m in re.findall(r'\b(DT_[A-Z0-9_]+)\s*=\s*(0x[0-9A-Fa-f]+)', h)}
 NUMBIT, CHARS, REALBIT = 0x01, 0x02, 0x04
