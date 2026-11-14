@@ -15,10 +15,15 @@ set -u
 # harness-every-seats-hooks-and-claude-md-name-the-three-home-repos): every sibling this banner runs is read beside this script (HERE), never under <root>/harness, so a
 # root that has dropped its harness keeps its banner; S4E_HOME is the root, exported for the bus verbs it runs.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# A REFRESH IS KEPT ONLY WHEN IT IS WHOLE (the cio 2026-11-14, on junior_01's measurement for Lon, who asked why its banner said NO VERDICT: banner.cache held 144 bytes, the
+# BOX line alone, a refresh the load cut short; every non-empty refresh was written over the last good cache, so the hook found no verdict word). A banner is whole when it
+# carries its bare verdict word on a line of its own; a refresh without one is dropped and the last good cache stands. With no cache yet, the partial text is still shown.
+WORDS='SUCCESS|IN-PROGRESS|DRAIN|STOP|FAILURE|EMPTY'
+whole() { printf '%s\n' "$1" | grep -qxE "$WORDS"; }
 if [ "${1:-}" = "--refresh" ]; then
     root="$2"; seat="$3"; export S4E_HOME="${S4E_HOME:-$root}"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"; : > "$c.lock"; start=$(date +%s)
     timeout -k 5 600 bash "$HERE/s4e_msg.sh" banner > "$c.tmp" 2>&1
-    [ -s "$c.tmp" ] && mv -f "$c.tmp" "$c" && touch -d "@$start" "$c"   # the cache is dated by its SNAPSHOT, not by the write: a bus action after the start makes it stale
+    if [ -s "$c.tmp" ] && { whole "$(cat "$c.tmp")" || [ ! -s "$c" ]; }; then mv -f "$c.tmp" "$c" && touch -d "@$start" "$c"; else rm -f "$c.tmp"; fi   # the cache is dated by its SNAPSHOT, not by the write: a bus action after the start makes it stale
     rm -f "$c.lock" "$c.tmp"; exit 0
 fi
 root="${1:?root}"; seat="${S4E_SEAT:-${2:?seat}}"; export S4E_HOME="${S4E_HOME:-$root}"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"
@@ -35,7 +40,7 @@ stamp="/tmp/s4e/$seat/bus.stamp"; stale=0
 [ -f "$c" ] && [ -f "$stamp" ] && [ "$(stat -c %Y "$stamp")" -ge "$(stat -c %Y "$c")" ] && stale=1
 if [ "$stale" = 1 ] && [ ! -f "$c.lock" ]; then
     start=$now; fresh="$(timeout -k 5 100 bash "$HERE/s4e_msg.sh" banner 2>&1)"
-    if [ -n "$fresh" ]; then printf '%s' "$fresh" > "$c"; touch -d "@$start" "$c"; stale=0; fi
+    if [ -n "$fresh" ] && whole "$fresh"; then printf '%s' "$fresh" > "$c"; touch -d "@$start" "$c"; stale=0; fi
 fi
 if [ -f "$c" ]; then
     age=$(( now - $(stat -c %Y "$c") )); out="$(cat "$c")"
@@ -51,7 +56,7 @@ fi
 if [ -f "$root/.claude/banner_compact.py" ]; then cmp="$(printf '%s' "$out" | python3 -I "$root/.claude/banner_compact.py" 2>/dev/null)" && [ -n "$cmp" ] && out="$cmp"; fi
 # ONE WORD AND A HUGE ICON (Lon 2026-11-11 13:0x CST, in officer_04's window, verbatim: "I just want one word and a huge icon so I can see from a distance. All those words are NEVER read."):
 # the hook shows the verdict word under a block icon and nothing else; the coo's suite grid (CIO-129) stays under it. The full text still goes to BOARD.md and the cache.
-word="$(printf '%s\n' "$out" | grep -xE 'SUCCESS|IN-PROGRESS|DRAIN|STOP|FAILURE' | tail -1)"; grid="$(printf '%s\n' "$out" | grep -E '│|^[0-9]+ suites, ')"   # the grid and its closing summary line ("73 suites, 44 at 100%; ..."), which carries no │ (MEASURED 2026-11-13: the filter dropped it, Lon: "It does not show the summary at the end.")
+word="$(printf '%s\n' "$out" | grep -xE "$WORDS" | tail -1)"; grid="$(printf '%s\n' "$out" | grep -E '│|^[0-9]+ suites, ')"   # the grid and its closing summary line ("73 suites, 44 at 100%; ..."), which carries no │ (MEASURED 2026-11-13: the filter dropped it, Lon: "It does not show the summary at the end.")
 # THE CYCLE LINE, THE BUG COUNTDOWN AND A FRESH GRID FOR A SEAT WHOSE BANNER CARRIES THE GRID (the grader 2026-11-13, row one-banner-script-seat-aware-run-from-each-seats-own-root; Lon, in the
 # grader's window, verbatim: "do not reach into another's root folder and run a script." / "All seats should be running the SAME banner script with code that know WHO the HELL you ARE."): the
 # coo's own Stop script printed these for the coo alone, so the fleet ran two banners. This one script prints them for every seat whose banner carries the grid (s4e_msg.sh banner chooses by
@@ -77,6 +82,11 @@ case "$word" in
 .###.
 ..#..
 .###.
+#####' ;;
+  EMPTY)       ic='⚠'; sq='🟧'; pat='#####
+#...#
+#...#
+#...#
 #####' ;;
   DRAIN)       ic='📬'; sq='🟦'; pat='..#..
 ..#..

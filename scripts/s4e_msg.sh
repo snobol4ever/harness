@@ -5653,6 +5653,9 @@ TASKEOF
          # ⛔ SUCCESS IS THE CLEAN TREE ONLY (worker_10, 2026-11-06, Lon's "You say you are finished. It says different."): a clone with
          # uncommitted or unpushed work prints IN-PROGRESS whatever the handoff check said. The old test was `hrc -eq 0 || onlyhere -eq 0`,
          # so a handoff that measured clean printed SUCCESS over unpushed work. rc is unchanged (see the exit line below).
+         # AN EMPTY SESSION IS NOT SUCCESS (the cio 2026-11-14, on junior_01's measurement for Lon: the headline read NOTHING LANDED, "that is not success; it is an empty
+         # session", and the one word under it read SUCCESS, the word Lon clears on). The word follows the headline: EMPTY when the headline is the NOTHING LANDED one.
+         elif [ "$onlyhere" -eq 0 ] && [ "${line#⚠ NOTHING LANDED}" != "$line" ]; then printf '%s\n' "EMPTY"
          elif [ "$onlyhere" -eq 0 ]; then printf '%s\n' "SUCCESS"
          else printf '%s\n' "IN-PROGRESS"; fi
          # THE STOP-TURN BANNER IS THE STATUS AND THE TEST SUITE GRID (Lon 2026-11-10 22:3x CST, in the cio's window, verbatim: "add the stop turn banner, status and test suite."; CIO-114;
