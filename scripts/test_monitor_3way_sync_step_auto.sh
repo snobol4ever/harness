@@ -137,11 +137,11 @@ done
 [[ "$want_spl" = "1" ]] && [[ ! -x "$SPITBOL" ]]  && { echo "FAIL spitbol not built: $SPITBOL"; exit 2; }
 [[ "$want_dot" = "1" ]] && [[ ! -f "$SNO4_DLL" ]] && { echo "FAIL snobol4dotnet not built: $SNO4_DLL — dotnet build Snobol4/Snobol4.csproj -c Release -p:EnableWindowsTargeting=true"; exit 2; }
 [[ "$want_dot" = "1" ]] && ! command -v dotnet >/dev/null 2>&1 && { echo "FAIL dotnet command missing — apt-get install -y dotnet-sdk-10.0"; exit 2; }
-[[ "$want_rkx" = "1" ]] && [[ ! -x "$RAKUDO_MON/bin/raku" ]] && { echo "FAIL instrumented Rakudo fork not built at $RAKUDO_MON/bin/raku -- bash ../harness/scripts/monitor/oracles/build_rakudo_mon.sh <prefix> (RAKUDO_MON_ROOT names the prefix)"; exit 2; }
-[[ "$want_icx" = "1" ]] && { [[ ! -x "$ICON_MON/bin/icont" ]] || [[ ! -x "$ICON_MON/bin/iconx" ]]; } && { echo "FAIL instrumented Icon fork not built at $ICON_MON/bin/{icont,iconx} -- bash ../harness/scripts/monitor/oracles/build_icon_mon.sh <prefix> (ICON_MON_ROOT names the prefix)"; exit 2; }
-[[ "$want_gpx" = "1" ]] && [[ ! -x "$GPROLOG_MON/bin/gplc" ]] && { echo "FAIL instrumented GNU Prolog fork not built at $GPROLOG_MON/bin/gplc -- bash ../harness/scripts/monitor/oracles/build_gprolog_mon.sh <prefix> (GPROLOG_MON_ROOT names the prefix)"; exit 2; }
-[[ "$want_swx" = "1" ]] && [[ ! -x "$SWIPL_MON/bin/swipl" ]] && { echo "FAIL instrumented SWI-Prolog fork not built at $SWIPL_MON/bin/swipl -- bash ../harness/scripts/monitor/oracles/build_swipl_mon.sh <prefix> (SWIPL_MON_ROOT names the prefix)"; exit 2; }
-[[ "$want_fpx" = "1" ]] && [[ ! -x "$FPC_MON/bin/fpc" ]] && { echo "FAIL instrumented Free Pascal fork not built at $FPC_MON/bin/fpc -- bash ../harness/scripts/monitor/oracles/build_fpc_mon.sh <prefix> (FPC_MON_ROOT names the prefix)"; exit 2; }
+[[ "$want_rkx" = "1" ]] && [[ ! -x "$RAKUDO_MON/bin/raku" ]] && { echo "FAIL instrumented Rakudo fork not built at $RAKUDO_MON/bin/raku -- bash ../harness/scripts/monitor/oracles/build_rakudo_mon.sh <prefix> (RAKUDO_MON_ROOT names the prefix)"; exit 2; }   # one-disk: not a path
+[[ "$want_icx" = "1" ]] && { [[ ! -x "$ICON_MON/bin/icont" ]] || [[ ! -x "$ICON_MON/bin/iconx" ]]; } && { echo "FAIL instrumented Icon fork not built at $ICON_MON/bin/{icont,iconx} -- bash ../harness/scripts/monitor/oracles/build_icon_mon.sh <prefix> (ICON_MON_ROOT names the prefix)"; exit 2; }   # one-disk: not a path
+[[ "$want_gpx" = "1" ]] && [[ ! -x "$GPROLOG_MON/bin/gplc" ]] && { echo "FAIL instrumented GNU Prolog fork not built at $GPROLOG_MON/bin/gplc -- bash ../harness/scripts/monitor/oracles/build_gprolog_mon.sh <prefix> (GPROLOG_MON_ROOT names the prefix)"; exit 2; }   # one-disk: not a path
+[[ "$want_swx" = "1" ]] && [[ ! -x "$SWIPL_MON/bin/swipl" ]] && { echo "FAIL instrumented SWI-Prolog fork not built at $SWIPL_MON/bin/swipl -- bash ../harness/scripts/monitor/oracles/build_swipl_mon.sh <prefix> (SWIPL_MON_ROOT names the prefix)"; exit 2; }   # one-disk: not a path
+[[ "$want_fpx" = "1" ]] && [[ ! -x "$FPC_MON/bin/fpc" ]] && { echo "FAIL instrumented Free Pascal fork not built at $FPC_MON/bin/fpc -- bash ../harness/scripts/monitor/oracles/build_fpc_mon.sh <prefix> (FPC_MON_ROOT names the prefix)"; exit 2; }   # one-disk: not a path
 :
 
 # ⛔ SCRATCH ON /home, NOT BARE /tmp, WITH CLEANUP THAT SURVIVES A KILL (row icon-sweep-scratch-hardening, s267).
@@ -348,7 +348,7 @@ if [[ "${want_icx:-0}" = "1" ]]; then
     # run the same library source, and nothing is written beside the program. Measured on the 24 linked Arizona programs: icx
     # builds all 24 and each answers as SCRIP does, under the IPATH the runner gives a driver.
     ICX_LIB="$TMP/icxlib"; mkdir -p "$ICX_LIB"
-    ICX_PROCS="$(cd "$(dirname "$(realpath "$SCRIP")")" && pwd)/../corpus/packages/icon/ipl/procs"
+    ICX_PROCS="$S4E_CORPUS/packages/icon/ipl/procs"
     icx_links() { sed -E 's/#.*//' "$1" | grep -E '^[[:space:]]*link[[:space:]]' | sed -E 's/^[[:space:]]*link[[:space:]]+//; s/[;,"]/ /g' | tr -s ' \t' '\n' | sed '/^$/d'; }
     icx_find() { local nm="$1" from="$2" d; local IFS=':'
         for d in ${IPATH:-} ${ICONPATH:-}; do [ -n "$d" ] && [ -f "$d/$nm.icn" ] && { realpath "$d/$nm.icn"; return; }; done

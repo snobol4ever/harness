@@ -6,7 +6,7 @@ bracket-and-check walk, kept separate so it stays independently testable
 
 MERGED DESIGN (seat02 2026-08-29, per hq_P's task-LEDGER ruling "SEAT11 COLLISION ADJUDICATED ... THE
 RULING: MERGE, DO NOT PICK"): bracketing/ownership-tracking below is seat11's classify() (recovered at
-`git show 57ecf03e:../harness/scripts/test_gate_bb_block_label_prefix.sh`) -- it treats a bareword Greek-suffixed
+`git -C $S4E_HARNESS show 57ecf03e:scripts/test_gate_bb_block_label_prefix.sh`) -- it treats a bareword Greek-suffixed
 landing pad with no "n<uid>_" prefix (PATTERN_BT_α, a DEFINE'd proc's own by-name entry point,
 bb_define.cpp) as PRESERVING the enclosing box's identity rather than opening a new block. seat05's
 original bracketing here treated any "<word>_<greek>" as a new owner and false-flagged 7 labels on the

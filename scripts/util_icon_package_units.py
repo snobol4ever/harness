@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """util_icon_package_units.py -- the units the three Icon package runners look up in their ALL.csv, and the rows they lack.
 
-   python3 ../harness/scripts/util_icon_package_units.py keys    PKGDIR   # every key the runner looks up, one per line: key<TAB>unit source<TAB>graded executable
-   python3 ../harness/scripts/util_icon_package_units.py missing PKGDIR   # the keys with no row, one per line; rc 1 when any, 0 when none, 2 unreadable
-   python3 ../harness/scripts/util_icon_package_units.py rows    PKGDIR [--apply]   # the settings row each missing key is owed; --apply appends them
+   python3 $S4E_HARNESS/scripts/util_icon_package_units.py keys    PKGDIR   # every key the runner looks up, one per line: key<TAB>unit source<TAB>graded executable
+   python3 $S4E_HARNESS/scripts/util_icon_package_units.py missing PKGDIR   # the keys with no row, one per line; rc 1 when any, 0 when none, 2 unreadable
+   python3 $S4E_HARNESS/scripts/util_icon_package_units.py rows    PKGDIR [--apply]   # the settings row each missing key is owed; --apply appends them
 
 PKGDIR is <corpus>/packages/icon/{ipl,arizona_tests,jcon_tests} or a scratch package of the same shape; the package is read off its
 basename. THE KEYS ARE THE RUNNERS' OWN (RULES.md 8 (f), R-1281: the runner reads each unit's command line from its row):

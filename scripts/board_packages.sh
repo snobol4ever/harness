@@ -40,8 +40,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 set -uo pipefail   # NOT -e: one suite's nonzero rc must never abort the board surveying all of them (board_icon_rungs.sh, same reasoning)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-SCRIP_BIN="${SCRIP:-$HERE/../../SCRIP/scrip}"
-PKGROOT="${PKGROOT:-$S4E/corpus/packages}"
+. "$HERE/lib_paths.sh"; SCRIP_BIN="${SCRIP:-$S4E_SCRIP/scrip}"
+PKGROOT="${PKGROOT:-$S4E_CORPUS/packages}"
 PER_SUITE_TIMEOUT="${PER_SUITE_TIMEOUT:-600}"
 # ⭐ A SUITE WHOSE HONEST WALL IS LONGER THAN THE BOARD'S CEILING GETS ITS OWN (the coo 2026-09-28: the IPL runner -- 851 units, both
 # modes -- hit 600 s on the loop's packages stage and read UNPROVEN rc 124 with nothing measured). The ceiling is named per suite, never
@@ -106,9 +106,9 @@ for pkg in "${ALL_PKGS[@]}"; do
     UNPROVEN=$((UNPROVEN+1)); DETAIL+=("UNPROVEN $pkg -- $(unproven_reason_for "$pkg")"); continue
   fi
   if [ ! -f "$HERE/$runner" ]; then
-    UNPROVEN=$((UNPROVEN+1)); DETAIL+=("UNPROVEN $pkg -- mapped runner $runner is missing from ../harness/scripts/"); continue
+    UNPROVEN=$((UNPROVEN+1)); DETAIL+=("UNPROVEN $pkg -- mapped runner $runner is missing from ../harness/scripts/"); continue   # one-disk: not a path
   fi
-  _to="$(suite_timeout_for "$pkg")"; out=$(cd "$S4E/SCRIP" && timeout -k 5 "$_to" bash "../harness/scripts/$runner" 2>&1); rc=$?  # timeout-retry: exempt -- a whole-suite cap per runner, not a graded unit
+  _to="$(suite_timeout_for "$pkg")"; out=$(cd "$S4E_SCRIP" && timeout -k 5 "$_to" bash "$S4E_HARNESS/scripts/$runner" 2>&1); rc=$?  # timeout-retry: exempt -- a whole-suite cap per runner, not a graded unit
   # Cosmetic preview only -- the authoritative per-suite numbers already live in each runner's own
   # SCORE.md vendor-cell write, not here; this line just saves a reader one extra terminal round trip.
   line="$(printf '%s\n' "$out" | grep -E '_BOARD |Suite totals:|^mode-4' | tail -1)"
@@ -138,11 +138,11 @@ for pkg in "${ALL_PKGS[@]}"; do
   fi
 done
 
-echo "=== packages board — corpus/packages/<lang>/* vendored/third-party suites ==="
-echo "denominator: every immediate subdirectory of corpus/packages/<lang>/ is one vendored package, walked from the live tree each run (not a hardcoded count); a package with no mapped runner counts UNPROVEN rather than being silently dropped"
+echo "=== packages board — corpus/packages/<lang>/* vendored/third-party suites ==="   # one-disk: not a path
+echo "denominator: every immediate subdirectory of corpus/packages/<lang>/ is one vendored package, walked from the live tree each run (not a hardcoded count); a package with no mapped runner counts UNPROVEN rather than being silently dropped"   # one-disk: not a path
 for d in "${DETAIL[@]}"; do echo "  $d"; done
 echo "PACKAGES_BOARD suites=$SUITES graded=$GRADED unproven=$UNPROVEN red=$RED clean=$((GRADED-RED))"
-echo "full per-suite detail: each graded suite's own SCORE.md vendor-cell write (.github/SCORE.md); rerun a single suite: bash ../harness/scripts/<runner-name-above>"
+echo "full per-suite detail: each graded suite's own SCORE.md vendor-cell write (.github/SCORE.md); rerun a single suite: bash ../harness/scripts/<runner-name-above>"   # one-disk: not a path
 if [ "$RED" -gt 0 ]; then
   echo "⚠ $RED of $GRADED graded suite(s) are RED -- REPORTED only at this stage (D1), not a board failure; D5 turns this into a floor (see the task's own GOAL)"
 fi

@@ -80,7 +80,7 @@ command -v swipl   >/dev/null 2>&1 || { echo "⛔ REFUSED-TO-GRADE swipl absent"
 # ⛔ THE ONE loop_check, shared with angles 1 and 2: a rule with two copies proves the copies agree, never that either is right.
 . "$HERE/lib_prolog_bench.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot source lib_prolog_bench.sh -- the ONE loop-output check"; exit 2; }
 WRAP="$ROOT/out/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED-TO-GRADE: bench_rusage failed to build -- basis (B) has no external instrument"; exit 2; }
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/bench_rusage.c" || { echo "⛔ REFUSED-TO-GRADE: bench_rusage failed to build -- basis (B) has no external instrument"; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 now_ms() { echo $(( $(date +%s%N) / 1000000 )); }
 # median_ms <cmd...> : run N times, print median wall ms (captures stdout to $W/last.out)

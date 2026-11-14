@@ -19,7 +19,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25
 # ENV   IR_TMO seconds per callgrind run (default 1200)   ICON_BENCH_DIR the kernel tree   SCRIP the scrip binary
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
-S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"; SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"; BD="${ICON_BENCH_DIR:-$S4E_CORPUS/benchmarks/icon}"
+SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"; BD="${ICON_BENCH_DIR:-$S4E_CORPUS/benchmarks/icon}"
 refuse() { echo "⛔ bench_icon_ir_bar REFUSE(2): $*"; exit 2; }
 for L in lib_perf_fmt lib_ir_measure lib_oracle_flags lib_icon_ipl_isolation lib_declared_arena; do . "$HERE/$L.sh" 2>/dev/null || refuse "cannot load $L.sh -- the ONE authority for its job, never a private copy"; done
 kernels() { find "$BD" -name '*.icn' ! -path '*/rate/*' | LC_ALL=C sort | while IFS= read -r f; do grep -q '^[[:space:]]*procedure[[:space:]]\+main' "$f" && echo "$f"; done; }

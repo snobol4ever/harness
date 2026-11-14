@@ -5,8 +5,8 @@ The units a program names in a uses clause and no file beside it supplies -- sys
 Pascal, one file each under src/parsers/pascal/prelude/, and the driver (pascal_driver.c) parses one only when a program names it,
 exactly as a unit beside the program. This writes src/parsers/pascal/pascal_prelude_units.inc, a committed table of the sources, the
 way util_gen_prolog_prelude_libs.py writes the Prolog prelude libraries' (R-1473): { name, source } pairs ending in { 0, 0 }.
-  python3 ../harness/scripts/util_gen_pascal_prelude_units.py            write the .inc
-  python3 ../harness/scripts/util_gen_pascal_prelude_units.py --check    rc 1 when the committed .inc differs from a fresh generation, 0 when equal
+  python3 $S4E_HARNESS/scripts/util_gen_pascal_prelude_units.py            write the .inc
+  python3 $S4E_HARNESS/scripts/util_gen_pascal_prelude_units.py --check    rc 1 when the committed .inc differs from a fresh generation, 0 when equal
   --dir D and --out F read the units from D and write or check F (the sync gate's self-test plants on scratch copies); rc 2 refuses.
 """
 import os, sys
@@ -52,7 +52,7 @@ def main():
     if "--check" in av:
         cur = open(out, encoding="utf-8").read() if os.path.isfile(out) else ""
         if cur != txt:
-            print("STALE: %s differs from a fresh generation from %s -- run python3 ../harness/scripts/util_gen_pascal_prelude_units.py" % (out, pre))
+            print("STALE: %s differs from a fresh generation from %s -- run python3 ../harness/scripts/util_gen_pascal_prelude_units.py" % (out, pre))   # one-disk: not a path
             return 1
         print("GREEN: %s matches its %d prelude unit(s)" % (os.path.relpath(out, ROOT), txt.count("PAS_PRELUDE_UNIT_") // 2))
         return 0

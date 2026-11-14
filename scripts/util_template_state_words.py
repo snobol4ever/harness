@@ -40,7 +40,9 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-SC = os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP'))
+import harness_paths
+sys.path.insert(0, HERE)
+SC = str(harness_paths.scrip())
 TPL_DIR = os.path.join(SC, 'src', 'templates', 'bb')
 X86_DIR = os.path.join(SC, 'src', 'templates', 'x86')
 EMIT_DIR = os.path.join(SC, 'src', 'emitter')

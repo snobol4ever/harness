@@ -20,7 +20,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
+. "$HERE/lib_paths.sh"; SC="$S4E_SCRIP"
 STEPS="$HERE/../designs/planner_finish/STEPS.tsv"   # moved from the snobol4 corpus folder (the coo 2026-11-10, CIO-33/36: a language folder is its container and config alone)
 CENSUS="$HERE/util_emitter_memory_model_census.py"
 NMGATE="$HERE/test_gate_planner_objects_leave_no_emitter_symbol_undefined.sh"
@@ -40,7 +40,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default planner_finish; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: planner-finish -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/planner_finish/STEPS.tsv); a witness is the entry planner_finish__<name> of its language's master, or the loose pair corpus/tests/<lang>/planner_finish/<name> its language row has not absorbed"
+    echo "DESIGN-PLAN: planner-finish -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/planner_finish/STEPS.tsv); a witness is the entry planner_finish__<name> of its language's master, or the loose pair corpus/tests/<lang>/planner_finish/<name> its language row has not absorbed"   # one-disk: not a path
     printf '%-4s %-38s %-32s %-14s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-38s %-32s %-14s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -67,14 +67,14 @@ witness() {
         dir="$OUT/step$step/wit"; design_witness_extract "$lang" "planner_finish__$name" "$dir" > /dev/null 2>&1 || refuse "witness $lang/$name: its entry planner_finish__$name did not extract"
         src="planner_finish__$name.$ext"; ref="$dir/planner_finish__$name.ref"; is_entry=1
     else
-        dir="$ROOT/corpus/tests/$lang/planner_finish"; src="$name.$ext"; ref="$dir/$name.ref"
+        dir="$S4E_CORPUS/tests/$lang/planner_finish"; src="$name.$ext"; ref="$dir/$name.ref"
     fi
 }
 m3p=0; m4p=0; n=0; reds=""; first_src=""; first_dir=""
 for w in $wits; do
     lang="${w%%/*}"; name="${w#*/}"; ext="$(ext_of "$lang")"; [ -n "$ext" ] || refuse "witness $w names no known language"
     witness "$lang" "$name"; o="$OUT/step$step/$name"
-    [ -f "$dir/$src" ] && [ -f "$ref" ] || refuse "witness $w has no entry planner_finish__$name in corpus/tests/$lang and no .$ext and .ref in corpus/tests/$lang/planner_finish"
+    [ -f "$dir/$src" ] && [ -f "$ref" ] || refuse "witness $w has no entry planner_finish__$name in corpus/tests/$lang and no .$ext and .ref in corpus/tests/$lang/planner_finish"   # one-disk: not a path
     [ -n "$first_src" ] || { first_src="$src"; first_dir="$dir"; }
     n=$((n + 1))
     if [ "$is_entry" = 1 ]; then

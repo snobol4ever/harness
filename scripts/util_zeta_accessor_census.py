@@ -25,7 +25,9 @@
 # EXIT: 0 total <= N; 1 total > N (a direct form came back, or N is below what is left); 2 could not measure (no SCRIP, no such REV, no source read).
 import os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
-SCRIP = os.path.normpath(os.path.join(HERE, "..", "..", "SCRIP"))
+sys.path.insert(0, HERE)
+import harness_paths
+SCRIP = str(harness_paths.scrip())
 DIRS = ("src/templates", "src/emitter")
 EXTS = (".c", ".cpp", ".h", ".inc")
 FORMS = [("x86_zop(", r"\bx86_zop\("), ("x86_zref(", r"\bx86_zref\("), ("ZRES(", r"\bZRES\("), ("ZRES_SPINE(", r"\bZRES_SPINE\("), ("ZOPQ(", r"\bZOPQ\("),

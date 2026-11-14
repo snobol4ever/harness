@@ -3,7 +3,7 @@
 REFUSAL, NEVER A RED (row instrument-698-runners-bound-the-clock-and-zero-bound-memory-one-cgroup-scope-bounds-
 resident-pages-and-a-cgroup-kill-is-a-refusal-not-a-red, the ruling on the cfo's measurement; the coo 2026-09-23).
 
-THE ASYMMETRY IT CLOSES: 698 files under ../harness/scripts/ bounded the WALL CLOCK and zero bounded MEMORY, on one box shared by
+THE ASYMMETRY IT CLOSES: 698 files under $S4E_HARNESS/scripts/ bounded the WALL CLOCK and zero bounded MEMORY, on one box shared by
 ten seats. The cfo measured one process at 23,343 MB RSS eighteen seconds in, with 1 GB left on a 30 GB box, and three
 of their background jobs were reaped as a direct consequence -- the cost of an unbounded runaway is ANOTHER SEAT'S JOBS.
 

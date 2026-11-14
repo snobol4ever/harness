@@ -7,13 +7,12 @@
 # the output equals the ref, and `[CHAIN-CHECK] SUMMARY` reads mismatch=0 (the chain's first mapped frame is the marker scan's, or the marker scan's is a dead sibling's: ghost=N, counted apart).
 # The tree's own marker scan reads a dead sibling's frame (ghost) in about a third of the stressed collections; that is the marker scan's defect, retired with it at STEP B, and not graded here.
 set -u
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
-HOME_DIR="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
-C="$HOME_DIR/corpus"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
+C="$S4E_CORPUS"
 SCRIP="$ROOT/scrip"
 [ -x "$SCRIP" ] && [ -f "$ROOT/out/libscrip_rt.so" ] || { echo "REFUSE(2): no scrip binary or runtime library under $ROOT"; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
-python3 "$ROOT/../harness/scripts/corpus_suite_harness.py" extract "$C/tests/snobol4/ALL.sno" "$C/tests/snobol4/ALL.ref" demo_porter "$W/w.sno" --out-ref "$W/w.ref" --out-in "$W/w.in" > /dev/null 2>&1 || { echo "REFUSE(2): demo_porter is not extractable from $C"; exit 2; }
+python3 "$S4E_HARNESS/scripts/corpus_suite_harness.py" extract "$C/tests/snobol4/ALL.sno" "$C/tests/snobol4/ALL.ref" demo_porter "$W/w.sno" --out-ref "$W/w.ref" --out-in "$W/w.in" > /dev/null 2>&1 || { echo "REFUSE(2): demo_porter is not extractable from $C"; exit 2; }
 head -300 "$W/w.in" > "$W/w.small.in"
 ( cd "$W" && "$SCRIP" --compile --out=w.s w.sno > /dev/null 2>&1 < /dev/null && gcc w.s -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o w4 2> /dev/null ) || { echo "REFUSE(2): mode 4 could not build demo_porter"; exit 2; }
 num() { printf '%s\n' "$1" | sed -n "s/.* $2=\([0-9]*\).*/\1/p"; }

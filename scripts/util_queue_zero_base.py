@@ -33,7 +33,7 @@ re-minted from a current red (mint refuses a placeholder DONE-WHEN since this ru
             quiet sweep measures it), and the salvage log names the class LOAD-GUARD-kept. A plain rc 2 (no oracle, no binary,
             a wrong answer, a refusal on a quiet box) stays CANNOT MEASURE and retires. Before this rule, the sweeps of 10-07
             20:16 and 10-08 15:18 and 19:17 retired fourteen live performance rows under the fleet's builds, each re-minted by hand.
-            The gate is SCRIP ../harness/scripts/test_gate_sweep_keeps_a_load_guard_refusal_and_retires_a_cannot_measure_one.sh.
+            The gate is SCRIP $S4E_HARNESS/scripts/test_gate_sweep_keeps_a_load_guard_refusal_and_retires_a_cannot_measure_one.sh.
   KNIT      (ceo CEO-1574, 2026-10-08 23:0x, measured on the first sweep under the load guard): every criterion runs in the ceo's
             root, and a criterion that BUILDS there and is killed at the timeout leaves the tree half-built, so every later
             criterion that runs the binary refuses rc 2 -- nine rows were retired as cannot-measure after the 88th criterion's make

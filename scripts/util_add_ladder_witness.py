@@ -663,7 +663,7 @@ def main():
                    "positionally and the writers print it back out), and corpus a6646f04c's 620-entry removal "
                    "left it behind in five of seven rung suites.\n"
                    "   CURE, run by this rung suite's own lane owner:  "
-                   "python3 ../harness/scripts/util_renumber_rungs_banners.py --lang %s --apply\n"
+                   "python3 ../harness/scripts/util_renumber_rungs_banners.py --lang %s --apply\n"   # one-disk: not a path
                    "   (it renumbers ALL.<ext>, ALL.ref AND ALL.in together, proves every graded field and "
                    "every non-banner byte unmoved first, and refuses rc=2 rather than write on any arm.)"
                    % (stale, lang))
@@ -682,7 +682,7 @@ def main():
         _i = next(i for i, (x, y) in enumerate(zip(_have, _want)) if x != y)
         refuse("the %s rungs is not in the builder's order (%d of %d positions differ; first at index %d: committed %r, builder %r) -- a mint "
                "places its entry by the builder's key and does not fold a reorder into the same commit.\n"
-               "   CURE, run first by this rung suite's lane owner:  python3 ../harness/scripts/util_build_rungs_suite.py --lang %s --resort "
+               "   CURE, run first by this rung suite's lane owner:  python3 ../harness/scripts/util_build_rungs_suite.py --lang %s --resort "   # one-disk: not a path
                "(it names any loose family it wants acknowledged with --absorb-only), then push, then mint"
                % (lang, sum(1 for x, y in zip(_have, _want) if x != y), len(_have), _i, _have[_i], _want[_i], lang))
 

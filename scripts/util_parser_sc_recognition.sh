@@ -10,7 +10,7 @@
 # that is the tree gate's question); rc 1 otherwise; rc 2 could not measure. Population and dumps are cached under OUTDIR
 # (default: the scratchpad) and rebuilt when the master or the C parser binary is newer.
 set -u
-L="${1:-}"; here=$(cd "$(dirname "$0")" && pwd); W=$(cd "$here/.." && pwd); C=$(cd "$W/../corpus" 2>/dev/null && pwd)
+L="${1:-}"; here=$(cd "$(dirname "$0")" && pwd); . "$here/lib_paths.sh"; W=$(cd "$S4E_SCRIP" && pwd); C=$(cd "$S4E_CORPUS" 2>/dev/null && pwd)
 OUT="${2:-${TMPDIR:-/tmp}/parser_sc_recognition_$(id -u)/$L}"; mkdir -p "$OUT/master" || exit 2
 declare -A EXT=([snobol4]=sno [snocone]=sc [icon]=icn [prolog]=pl [rebus]=reb [raku]=raku [pascal]=pas)
 [ -n "$L" ] && [ -n "${EXT[$L]:-}" ] || { echo "PARSER-SC-RECOGNITION ⛔ REFUSE(2): lang must be one of ${!EXT[*]}"; exit 2; }

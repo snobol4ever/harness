@@ -38,10 +38,10 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-ROOT="$HERE/../../SCRIP"
+. "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"
 SCRIP_BIN="${SCRIP:-$ROOT/scrip}"
 RTDIR="$ROOT/out"
-CORPUS_SRC="${CORPUS_SRC:-$S4E/corpus/benchmarks/icon}"
+CORPUS_SRC="${CORPUS_SRC:-$S4E_CORPUS/benchmarks/icon}"
 REPS="${REPS:-5}"          # R-494: at least five timed runs, median reported
 WARMUP="${WARMUP:-2}"      # R-494: warm-up runs discarded (the JVM needs them; everyone else pays nothing)
 RUN_TMO="${RUN_TMO:-120}"
@@ -162,7 +162,7 @@ ov_probe() {  # $1 = engine
 for eng in iconx jcont m3 m4; do [ "$eng" = jcont ] && [ "$HAVE_JCON" != 1 ] && continue; ov_probe "$eng"; done
 
 TREE="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo '?')"
-CTREE="$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
+CTREE="$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo '?')"
 echo "ICON_CLASSIC_SET tree=SCRIP $TREE corpus $CTREE RT_OPT=-O0 date=$(date -u +%Y-%m-%dT%H:%MZ) reps=$REPS warmup=$WARMUP"
 echo "  ⛔ SHARED AXES (RULES.md § FACT RULES, APPLES TO APPLES) -- every row below shares ALL of these:"
 echo "     instrument = WALL ms and CPU ms (user+sys) from /usr/bin/time, MEDIAN of $REPS runs after $WARMUP discarded warm-ups"

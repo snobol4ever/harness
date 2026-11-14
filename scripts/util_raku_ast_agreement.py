@@ -4,7 +4,7 @@
 THE INSTRUMENT of row raku-the-new-parser-builds-the-tree-its-dump-ast-byte-identical-to-the-flex-bison-parsers-
 dump-on-every-master-entry-and-kernel-then-the-old-parser-is-deleted (Lon 2026-09-26 16:0x CDT, R-1289:
 "Then add the tree building code from the current parsers --dump-ast output."). Entry point:
-../harness/scripts/util_raku_ast_agreement.sh, which the row's DONE-WHEN runs.
+$S4E_HARNESS/scripts/util_raku_ast_agreement.sh, which the row's DONE-WHEN runs.
 
 THE POPULATION, every unit named by a durable key:
     rungs:<entry>     every entry of corpus/tests/raku/ALL.raku, extracted alone through corpus_suite_harness.py's   # one-disk: not a path
@@ -101,7 +101,7 @@ def cut(units, jobs, timeout):
     if commit.endswith("-dirty"):
         refuse("SCRIP has uncommitted changes -- a reference must name a tree someone else can check out")
     got = run_all(units, "--dump-ast", jobs, timeout)
-    head = f"# cut by ../harness/scripts/util_raku_ast_agreement.py --cut from SCRIP {commit}: the flex/bison parser's `scrip --dump-ast`\n"
+    head = f"# cut by ../harness/scripts/util_raku_ast_agreement.py --cut from SCRIP {commit}: the flex/bison parser's `scrip --dump-ast`\n"   # one-disk: not a path
     with open(RUNGS_AST, "wb") as f:
         f.write(("# ALL.ast -- the reference Raku AST of every entry of ALL.raku (row raku-the-new-parser-builds-the-tree, R-1289)\n" + head).encode())
         for k, _ in units:

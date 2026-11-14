@@ -16,7 +16,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # 2026-10-03: readings before ran sbl -s16m on the kernels and -d512m -i64m -s256m on treebank under ulimit -s 262144, and SCRIP's treebank
 # under SCRIP_HEAP_KB=524288, a 512 MB WINDOW.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 . "$HERE/lib_oracle_flags.sh"
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSED(2): cannot load lib_declared_arena.sh"; exit 2; }
 BAR=2.0; BUD=300; SCALE=256
@@ -28,7 +28,7 @@ K="$S4E_CORPUS/benchmarks/snobol4"; D="$S4E_CORPUS/demos/snobol4/treebank"
 [ -d "$K" ] && [ -f "$D/treebank.sno" ] || { echo "REFUSED(2): corpus kernels or the treebank demo missing"; exit 2; }
 usrep() { grep -o 'BENCH mode=time.*' "$1" | head -1 | awk '{it=0; ns=0; mm=1; for(i=1;i<=NF;i++){split($i,a,"="); if(a[1]=="iters")it=a[2]; if(a[1]=="ns")ns=a[2]; if(a[1]=="mismatched")mm=a[2]} if(it>0 && mm==0) printf "%.3f", ns/it/1000; else print "REFUSE"}'; }
 elapsed_ms() { grep -o 'elapsed_ns=[0-9]*' "$1" | head -1 | cut -d= -f2 | awk '{printf "%.3f", $1/1e6}'; }
-WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "REFUSED(2): bench_rusage failed to build"; exit 2; }
+WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/bench_rusage.c" || { echo "REFUSED(2): bench_rusage failed to build"; exit 2; }
 echo "sizes: each unit's declaration over each engine's defaults (R-1485) -- CRITERION CHANGED 2026-10-03; earlier readings ran typed sbl sizes and a 512 MB SCRIP window"
 printf "%-16s %12s %12s %8s\n" program "sbl" "scrip m4" multiple
 LOGS=""

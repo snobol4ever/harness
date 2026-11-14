@@ -44,7 +44,7 @@ THE DECISION PROCEDURE, and every term in it is read from the tree rather than a
     NO LONGER lost: gc_cell_visit was missing DT_X while gc_visit_one had it, and the cfo landed DT_X into the
     recognizer and into three further spellings of the same fact on 2026-09-20 (measured: a 17-point stress band
     out to 50 in both modes at SCRIP_HEAP_MB=1, base 6 red, head 0, nothing traded).  DT_SNUL is NOT part of that
-    cure and must not be added -- see the frozen exclusion in ../harness/scripts/util_gc_kind_sets.py, and the falsifier that
+    cure and must not be added -- see the frozen exclusion in $S4E_HARNESS/scripts/util_gc_kind_sets.py, and the falsifier that
     measured it: DT_SNUL planted beside DT_X leaves 218 of 218 outputs byte-identical, so it buys nothing and it
     would make a speculative recognizer admit the zero tag.  ⛔ THE POINT FOR THIS CENSUS IS THAT ITS MEMBERS DID
     NOT MOVE: the witness now answers its oracle at every stress point WITH ITS STORE STILL OUTSIDE THE MAP, which
@@ -1241,7 +1241,7 @@ def report(scrip, progs, workdir, out=print):
         "shielded stores at safe points went unread.")
     out("CENSUS unmapped-store WHY THE PER-WITNESS LINES EXIST (hq_snobol4 2026-09-20, measured against this "
         "census before landing rather than discovered afterwards): the ratchet's population is a DIRECTORY GLOB "
-        "over ../harness/scripts/gc_witnesses, so a colleague landing nine oracle-cut witnesses of their own would move a "
+        "over ../harness/scripts/gc_witnesses, so a colleague landing nine oracle-cut witnesses of their own would move a "   # one-disk: not a path
         "TOTAL from 162 to 192 and the arm would print THE CLASS GREW and name a cause it never measured -- a "
         "well-formed answer to a question nobody asked. A total cannot tell a compiler regression from a file "
         "arriving. These lines are the name set the arm ratchets, one per witness, which is this row's own "
