@@ -12,8 +12,13 @@
 #   fleet_health.py --sleeping F    the sleeping list F (default V/sleeping, the census's file; a missing file means nobody sleeps)
 import os, re, sys, glob, time, subprocess, json
 S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths   # THE ABSOLUTE MODEL (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover): a root is its SCRIP clone alone, so TIERS.tsv, the design plans and the
+# landings are read where harness_paths.py says each repo lives; MEASURED 08:27 CST, the day of the cut: this tool read 0 seats in every tier, 0/0 plan steps and 0 landings
+# (LANDINGS.tsv held two that hour) from S4E_HOME/.github, S4E_HOME/harness and S4E_HOME/<repo>, folders the cutover removed.
+REPO = {"SCRIP": str(harness_paths.scrip()), "harness": str(harness_paths.harness()), "corpus": str(harness_paths.corpus()), ".github": str(harness_paths.github())}
 PO = os.environ.get("S4E_POST", "/home/resources/postoffice"); P = os.environ.get("S4E_PROGRESS", "/home/resources/progress")
-V = os.environ.get("S4E_BOX_S", "/home/claude_coo/.scratch/verifier"); T = os.environ.get("S4E_TICK_DIR", "/tmp/s4e/cio/tick"); TIERS = os.environ.get("S4E_TIERS", S4E + "/.github/TIERS.tsv")
+V = os.environ.get("S4E_BOX_S", "/home/claude_coo/.scratch/verifier"); T = os.environ.get("S4E_TICK_DIR", "/tmp/s4e/cio/tick"); TIERS = os.environ.get("S4E_TIERS", REPO[".github"] + "/TIERS.tsv")
 W = 64   # column width of one quadrant (the seats line with asleep counts runs to 63)
 SLEEPING = os.path.join(V, "sleeping")   # one seat per line; util_suite_row_owner_census.py's sleepers() reads the same file
 
@@ -173,13 +178,13 @@ def work():
         return "%d/%d steps closed" % (done, len(rows))
     landings = 0
     for repo in ("SCRIP", "harness", "corpus", ".github"):
-        try: landings += int(subprocess.run(["git", "-C", S4E + "/" + repo, "rev-list", "--count", "--since=1 hour ago", "origin/main"], capture_output=True, text=True, timeout=5).stdout.strip() or 0)
+        try: landings += int(subprocess.run(["git", "-C", REPO[repo], "rev-list", "--count", "--since=1 hour ago", "origin/main"], capture_output=True, text=True, timeout=5).stdout.strip() or 0)
         except Exception: pass
     verdict = "OK" if below <= 10 and fails == 0 else "REDS" if fails else "OK"
     return "THE WORK (COO-481)", verdict, [
         "suites at 100: %d of %d; ports %d of %d; worst %s" % (at100, at100 + below, p100, p100 + pbelow, ", ".join(w for _, w in worst[:2]) or "-"),
-        "test-cycle %s; batch-grader %s" % (steps(S4E + "/harness/designs/test_cycle/STEPS.tsv", "test-cycle-step-"), steps(S4E + "/harness/designs/batch_grader/STEPS.tsv", "batch-grader-step-")),
-        "fleet-queue %s; fleet rows in the haiku tube %d" % (steps(S4E + "/harness/designs/fleet_queue/STEPS.tsv", "fleet-queue-step-"), sum(1 for r in queue_rows() if r[2] == "@haiku" and re.match(r"(bus|tick|census|fleet|test-cycle|sitting|law|spawn)", r[1]))),
+        "test-cycle %s; batch-grader %s" % (steps(REPO["harness"] + "/designs/test_cycle/STEPS.tsv", "test-cycle-step-"), steps(REPO["harness"] + "/designs/batch_grader/STEPS.tsv", "batch-grader-step-")),
+        "fleet-queue %s; fleet rows in the haiku tube %d" % (steps(REPO["harness"] + "/designs/fleet_queue/STEPS.tsv", "fleet-queue-step-"), sum(1 for r in queue_rows() if r[2] == "@haiku" and re.match(r"(bus|tick|census|fleet|test-cycle|sitting|law|spawn)", r[1]))),
         "last hour: %d landings, %d readings, %d FAIL" % (landings, len(recent), fails),
     ]
 
