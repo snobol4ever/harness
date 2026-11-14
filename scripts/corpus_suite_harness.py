@@ -107,6 +107,25 @@ HARNESS_SCRIPTS = Path(__file__).resolve().parent
 # is NEEDS_DISPLAY, never graded.
 for _dv in ("DISPLAY", "WAYLAND_DISPLAY"):
     os.environ.pop(_dv, None)
+def _stage_own(p):
+    """A STAGED COPY IS THE RUN'S OWN: OWNER-WRITABLE WHATEVER THE SOURCE'S MODE (the cio 2026-11-14, MEASURED: a seat's taken corpus
+    clone holds its clean files as read-only hard links to the pristine (skill seat-conduct 2), shutil.copy and copytree carry that mode
+    into the run directory, and util_build_package_suite.py --only on ipl died EACCES rewriting procs/usage_driver.icn, a companion
+    staged read-only a moment before; a program that writes or appends a staged companion or fixture would read a false red the same way)."""
+    try:
+        if not os.path.islink(p):
+            os.chmod(p, os.stat(p).st_mode | 0o200)
+    except OSError:
+        pass
+
+
+def _copy2_own(src, dst, *, follow_symlinks=True):
+    """shutil.copy2 for a staging copytree (its copy_function), the copy made owner-writable (_stage_own)."""
+    d = shutil.copy2(src, dst, follow_symlinks=follow_symlinks)
+    _stage_own(d)
+    return d
+
+
 # ONE SCRATCH DIRECTORY PER SEAT (ARCH-SHARED-DEVELOPMENT 6, shared-dev step 8, R-2041): every tempfile this harness makes and every child's
 # mktemp land in /tmp/s4e/<seat>, so the census measures a seat's harness debris. THE SEAT IS THE ROOT'S (the cto, R-2106, 2026-11-01): it
 # derives from this harness's root path by util_score_row.derive_measurer, and S4E_SEAT only overrides it.
@@ -663,7 +682,7 @@ def run_xsb_gentest(xsb_bin, upstream, run, timeout):
         refuse(f"ORACLE_RUNS.tsv names {run['dir']!r}, and {src} is no directory -- the upstream tree the package's CONTRACT.tsv names is not there")
     with tempfile.TemporaryDirectory(prefix="xsb_gentest_") as t:
         dst = Path(t) / top
-        shutil.copytree(src, dst, ignore=shutil.ignore_patterns("*.xwam", "*_new", "temp"))
+        shutil.copytree(src, dst, ignore=shutil.ignore_patterns("*.xwam", "*_new", "temp"), copy_function=_copy2_own)
         cwd = Path(t) / run["dir"]
         stdin = (f"[{run['file']}].\ntell(temp).\n{run['cmd']}\ntold.\n" if run["kind"] == "gentest" else f"[wfs_test].\n{run['cmd']}\ntold.\n")
         kind, out, err, rc = _run_raw([xsb_bin] + shlex.split(run["emu_args"]), timeout, cwd=str(cwd), stdin_text=stdin)
@@ -3558,7 +3577,7 @@ def unpack_dir(d, dry_run=False):
             e.stage_name = _sn
     work = Path(tempfile.mkdtemp(prefix="unpack_", dir=os.environ.get("TMPDIR") or None))
     try:
-        shutil.copytree(d, work, dirs_exist_ok=True)
+        shutil.copytree(d, work, dirs_exist_ok=True, copy_function=_copy2_own)
         counts = write_package_dir(old, work, ext, path_of)
         for n in PKG_OLD:
             (work / n.format(ext=ext)).unlink(missing_ok=True)
@@ -3719,7 +3738,7 @@ def cmd_regroup(args):
     work = d
     if args.dry_run:
         work = Path(tempfile.mkdtemp(prefix="regroup_dry_", dir=os.environ.get("TMPDIR") or None))
-        shutil.copytree(d, work, dirs_exist_ok=True)
+        shutil.copytree(d, work, dirs_exist_ok=True, copy_function=_copy2_own)
         old = _fmt2_old_read(work / src.name, lang)
     csv_bytes = (work / "ALL.csv").read_bytes()
     roads = {e.name: fmt2_road(e, work, ext) for e in old}
@@ -4020,7 +4039,7 @@ def _copy_companions(text, companion_dir, dest_dir):
                 src_companion = _cd / (name + ".pl"); dst_companion = Path(dest_dir) / (name + ".pl")
             if src_companion.is_file() and not (dst_companion.exists() and src_companion.samefile(dst_companion)):
                 dst_companion.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy(src_companion, dst_companion)
+                shutil.copy(src_companion, dst_companion); _stage_own(dst_companion)
                 try:
                     queue.extend(_companion_files(src_companion.read_text()))
                 except (OSError, UnicodeDecodeError):
@@ -4043,7 +4062,7 @@ def stage_fixtures(src_dir, stem, dest):
     for q in d.rglob("*"):
         if q.is_symlink() or not (q.is_file() or q.is_dir()):
             refuse(f"{q} is not a plain regular file or directory: a fixture tree never carries a symlink or a special file")
-    shutil.copytree(d, Path(dest), dirs_exist_ok=True)
+    shutil.copytree(d, Path(dest), dirs_exist_ok=True, copy_function=_copy2_own)
     return True
 
 
@@ -4069,7 +4088,7 @@ def stage_folder(src_dir, stem, dest):
             t.mkdir(parents=True, exist_ok=True)
         elif not t.exists():
             t.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(q, t)
+            _copy2_own(q, t)
             n += 1
     return n
 
@@ -4218,7 +4237,7 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
             # MEASURED need: Logtalk's stream cases create and delete files in their working directory; run in place they would leave the
             # package, and so the cycle's tree, dirty. A swi-cases entry keeps its place: its launch names the origin file by its real path.
             _scratch = Path(td) / "cwd_copy"
-            shutil.copytree(_rc_dir, _scratch)
+            shutil.copytree(_rc_dir, _scratch, copy_function=_copy2_own)
             _rc_dir, _origin = _scratch, None
         _src = str(_origin.resolve()) if (_origin is not None and _origin.is_file()) else None
         _sf = None
@@ -6233,7 +6252,7 @@ def cmd_extension_ref(args):
             if e is None:
                 for x in prog.parent.iterdir():
                     if x.is_file():
-                        shutil.copy2(x, t / x.name)
+                        _copy2_own(x, t / x.name)
             one = t / (stem + ext)
             one.write_text(prog_text, encoding="latin-1")
             answers[who] = run_oracle(b, f, one, paths["timeout"], stdin_text=stdin_text)

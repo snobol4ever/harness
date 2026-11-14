@@ -1691,7 +1691,7 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=
     key = (threading.get_ident(), str(folder))
     if key not in MINE_SCRATCH:
         work = Path(tempfile.mkdtemp(prefix="mine_", dir=os.environ.get("TMPDIR") or None))
-        shutil.copytree(folder, work / "f", symlinks=True)
+        shutil.copytree(folder, work / "f", symlinks=True, copy_function=h._copy2_own)
         MINE_SCRATCH[key] = (work, _mine_snap(work / "f"))
     work, snap = MINE_SCRATCH[key]
     files = [name]
