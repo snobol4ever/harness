@@ -1066,6 +1066,7 @@ note_origins() { local r; for r in "${present[@]}"; do origin_seen[$r]="$(git -C
 # A LANDING OF TEXT BUILDS NOTHING UNDER THE LEASE (the cio 2026-11-14, on the cfo's measurement: a landing of ONE commit under .github, its gate two greps, held the box-wide
 # lease 343 s because origin's SCRIP had moved: the lander rebuilt SCRIP and ran the serial gate). A landing whose own commits change nothing under SCRIP, corpus or harness
 # takes no mover under the SCRIP runtime or a generated output as a hit, and builds nothing in its serial round: nothing it lands can depend on the binary.
+nothing_ahead() { local r; for r in "${present[@]}"; do is_held "$r" && continue; [ "$(ahead "$r")" = 0 ] || return 1; done; return 0; }
 text_only() { local r; for r in "${present[@]}"; do [ "$r" = .github ] && continue; is_held "$r" && continue; [ "$(ahead "$r")" = 0 ] || return 1; done; return 0; }
 affected_since() {   # -> prints "reason=affected|unaffected files=N"; rc 0 affected
     local r f old new n=0 hit=0 t p txt=0; local -a outs
@@ -1122,6 +1123,10 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
     for r in "${present[@]}"; do [ "${origin_seen[$r]}" = "$(git -C "$(rd "$r")" rev-parse origin/main)" ] || moved=1; done
     if [ "$moved" = 1 ]; then
         rebase
+        # NOTHING LEFT TO PUSH LETS GO AT ONCE (the cio 2026-11-14, MEASURED: senior_10's landing, its commits already on origin, held the box-wide lease 564 s to run
+        # its serial gate and then pushed nothing, while officer_07's landing waited 1800 s for the lease and was refused): when the rebase leaves no repo ahead of origin
+        # there is nothing a gate could prove and nothing to push.
+        if nothing_ahead; then mark "regate:lease" "nothing left to push: every commit of this landing is on origin already"; drop_lease "(nothing left to push)"; return 0; fi
         if a="$(affected_since)"; then
             moved_rounds=$((moved_rounds + 1))
             if [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then [ "$mode" = push ] || text_only || { build serial; mark build:serial "${binfo:-built}"; }; gate_run_serial "$a"; note_origins
