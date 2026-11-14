@@ -246,7 +246,7 @@ def main():
         a = area_impact(root, corpus, base, tag)
         langs, shared = a["langs"], a["shared"]
         if a["langs"] or a["feats"] or a["shared"]:
-            arm("area", "cd SCRIP && bash ../harness/scripts/test_area_smoke.sh")
+            arm("area", "cd SCRIP && bash " + os.path.join(str(harness_paths.harness()), "scripts", "test_area_smoke.sh"))
         names = directives.get("shared-smokes", []) if shared else sorted(langs)
         if shared and not names:
             refuse(tag, "a shared node is touched and the table declares no @ shared-smokes")

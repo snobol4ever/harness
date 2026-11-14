@@ -61,6 +61,8 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
   --loop-dir D --pop-cache F           the loop's directory (loop8.sh's ROT, idle_units) and the population cache, for --lap's fixtures
 """
 import os, re, sys, time, glob, subprocess
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths   # THE ABSOLUTE MODEL (lib_paths.sh): corpus() and harness() of a root
 CG = "/sys/fs/cgroup/user.slice/user-1000.slice"
 LOAD = "/home/resources/progress/LOAD.tsv"
 SEATS = "/home/resources/progress/SEATS.tsv"
@@ -1270,7 +1272,7 @@ def tc_cell_instr(root, suite, cell):
     SUITE_RUNNERS.tsv runs util_run_slot.sh python3 corpus_suite_harness.py run ALL.<ext> ALL.ref --lang L --modes m3,m4 --partition CELL;
     a pkg row runs S4E_CHUNK=CELL util_run_slot.sh bash <runner>. Returns (instructions per entry, kind, entries, why); the entries are the
     table's PARTITION.tsv rows of that part. A launch that did not grade (rc not 0 or 1) or printed no count is (None, kind, n, why)."""
-    sc = os.path.join(root, "harness", "scripts")
+    sc = os.path.join(str(harness_paths.harness(root)), "scripts")
     row = next((l.rstrip("\n").split("\t") for l in rd(os.path.join(sc, "SUITE_RUNNERS.tsv")).splitlines() if l.split("\t")[0] == suite and len(l.split("\t")) == 5), None)
     if row is None or row[1] not in ("master", "pkg"):
         return None, "-", 0, "%s is not a master or pkg row of SUITE_RUNNERS.tsv" % suite
@@ -1282,7 +1284,7 @@ def tc_cell_instr(root, suite, cell):
     env = dict(os.environ, S4E_HOME=root, S4E_PROGRESS_OFF="1", S4E_SEAT="grader", S4E_CLASS="grader")   # the cycle's identity (s4e_cycle.sh exports S4E_SEAT=grader S4E_CLASS=grader)
     # the cycle): the runners admit a board only to the coo's instrument (lib_one_runner.sh); S4E_PROGRESS_OFF=1 writes no reading (the cio's 07:1x measurement)
     if kind == "master":
-        alls = [os.path.join(root, "corpus", "tests", lang, "ALL." + TC_EXT.get(lang, "-"))]   # s4e_cycle.sh's ext_of table
+        alls = [os.path.join(str(harness_paths.corpus(root)), "tests", lang, "ALL." + TC_EXT.get(lang, "-"))]   # s4e_cycle.sh's ext_of table
         if not os.path.isfile(alls[0]):
             return None, kind, n, "no container %s" % alls[0]
         cmd = ["bash", os.path.join(sc, "util_run_slot.sh"), "python3", os.path.join(sc, "corpus_suite_harness.py"), "run", alls[0],

@@ -144,7 +144,7 @@ for arm in armA armB0 armB; do M["$arm.m3"]="$(measure "$arm.m3" "$T/$arm/scrip"
 # ---- the report: every number labelled with its tree, RT_OPT, RT_TAG, witness, mode and instrument -----------------
 rev() { git -C "$1" rev-parse --short HEAD 2>/dev/null || echo "?"; }; dirty() { [ -z "$(git -C "$1" status --porcelain 2>/dev/null)" ] || echo "+dirty"; }
 echo "# bench_startup_touch_ab.sh -- startup-touch A/B, row rtx-startup-linker-ordering"
-echo "# box=$(hostname) date=$(date -u +%Y-%m-%dT%H:%MZ) tree: SCRIP $(rev "$ROOT")$(dirty "$ROOT") corpus $(rev "$ROOT/../corpus")$(dirty "$ROOT/../corpus")"
+echo "# box=$(hostname) date=$(date -u +%Y-%m-%dT%H:%MZ) tree: SCRIP $(rev "$ROOT")$(dirty "$ROOT") corpus $(rev "$S4E_CORPUS")$(dirty "$S4E_CORPUS")"
 echo "# instrument: /usr/bin/time -f '%R %M' (minor faults, max RSS kB) ${SETARCH:+under $SETARCH }runs=$RUNS per cell; witness: $WLABEL"
 echo "# executed set: $NHOT functions callgrind saw run inside libscrip_rt.so on arm A ($(awk '/^summary:/{print $2}' "$T/cg.out") Ir); all $NHOT named in order.ld"
 printf '# arm A : RT_OPT=%s RT_TAG=%s %s size=%s .text=%s\n' "'$OPT_A'" "$TAG_A" "$SO_A" "$(stat -c %s "$SO_A")" "$(textsz "$SO_A")"

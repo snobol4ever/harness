@@ -13,7 +13,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 [ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$HERE/util_batch.sh" bash "$0" "$@"
-ROOT="${S4E_HOME:+$S4E_HOME/SCRIP}"; [ -n "$ROOT" ] || ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"
 MATCH='\.(c|cc|cpp)$'; OUT=""; JOBS=2
 while [ $# -gt 0 ]; do
     case "$1" in

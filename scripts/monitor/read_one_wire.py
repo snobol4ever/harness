@@ -2,7 +2,7 @@
 """
 read_one_wire.py — minimal single-participant wire reader for smoke testing
 the SN-26-csn-bridge runtime.  Not intended for production sync-step work
-(use ../harness/scripts/monitor/monitor_sync_bin.py for that).
+(use ../harness/scripts/monitor/monitor_sync_bin.py for that).  # one-disk: not a path
 
 Spec:  READY GO
 

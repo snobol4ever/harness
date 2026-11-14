@@ -8,7 +8,8 @@
 # Usage: bash ../harness/scripts/audit_bb_fixup_rank.sh [--dirty-only]
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 cd "$ROOT"
 dirty_only=0
 [ "${1:-}" = "--dirty-only" ] && dirty_only=1

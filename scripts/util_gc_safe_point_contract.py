@@ -650,7 +650,7 @@ FLOOR_HEADER = (
     "# ⛔ IT IS A NAME SET AND NOT A TOTAL, and the reason is the coo's rule of 2026-09-21, taken in the cto's\n"
     "# words and sharpened in theirs: A GATE WHOSE POPULATION IS A DIRECTORY GLOB CANNOT CARRY A BLOCKING VERDICT\n"
     "# WHEN THE DIRECTORY IS SHARED -- either the population is a DECLARED NAME SET or the verdict is REPORTED.\n"
-    "# ../harness/scripts/gc_witnesses/ is written by five seats; a witness ARRIVING is a file addition and must never be\n"
+    "# ../harness/scripts/gc_witnesses/ is written by five seats; a witness ARRIVING is a file addition and must never be\n"  # one-disk: not a path
     "# read as this tree getting worse, while a NAMED witness's own numbers MOVING is the whole thing this gate\n"
     "# exists to catch.  A witness not named here is REPORTED and never blocking.\n"
     "# 2026-09-22 cto: hb_coexpr_genp_scan.icn undecidable 8 -> 14, spine_cell 8 -> 16.  The cfo's bc1092d8f put\n"

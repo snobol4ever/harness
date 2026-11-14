@@ -67,7 +67,7 @@ done
 # ran nothing and said nothing was wrong. ⭐ rc=2 means REFUSED-TO-GRADE and is distinct from rc=1 FAILED:
 # a caller can tell 'I could not measure' from 'I measured and it is broken'. Silence could say neither.
 if [ ! -x "$SCRIP" ]; then
-    echo "⛔ REFUSED TO GRADE: no scrip binary at $SCRIP — run ../harness/scripts/build_scrip.sh" >&2
+    echo "⛔ REFUSED TO GRADE: no scrip binary at $SCRIP — run ../harness/scripts/build_scrip.sh" >&2  # one-disk: not a path
     exit 2
 fi
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-

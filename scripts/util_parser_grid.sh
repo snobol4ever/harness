@@ -58,10 +58,10 @@
 # (R-1342): the whole grid is one heavy run and prints the load at its start and end.
 set -uo pipefail
 G=util_parser_grid
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SELF="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; SELF="$(cd "$S4E_SCRIP" && pwd)"
 refuse() { echo "⛔ REFUSE(2) [$G]: $*"; exit 2; }
 W="$(cd "${GRID_ROOT:-$SELF}" 2>/dev/null && pwd)" || refuse "GRID_ROOT=${GRID_ROOT:-} is not a directory"
-S4E="${S4E_HOME:-$(cd "$SELF/.." && pwd)}"; CORPUS="${CORPUS:-$S4E/corpus}"
+S4E="${S4E_HOME:-$(dirname "$SELF")}"; CORPUS="${CORPUS:-$S4E_CORPUS}"
 [ -d "$CORPUS/tests" ] || refuse "no corpus at $CORPUS"
 [ -x "$HERE/util_require_fresh.sh" ] || refuse "no $HERE/util_require_fresh.sh"
 [ -x "$W/scrip" ] || refuse "$W is not a built SCRIP checkout (no $W/scrip)"

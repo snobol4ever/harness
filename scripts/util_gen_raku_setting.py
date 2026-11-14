@@ -7,8 +7,8 @@ module road (import_module in rk_syntax.c) reads when no file on the program's l
 units (util_gen_pascal_prelude_units.py) and the Prolog prelude libraries are embedded: { name, source, exports } triples ending in { 0, 0, 0 }.
 exports is the space-padded list of the sub and proto names the module declares (CTO-517 step 1: an undeclared routine used by a program is
 imported from the module that exports it, CORE for the core prelude; rk_syntax.c core_export_has reads this column).
-  python3 ../harness/scripts/util_gen_raku_setting.py            write the .inc
-  python3 ../harness/scripts/util_gen_raku_setting.py --check    rc 1 when the committed .inc differs from a fresh generation, 0 when equal
+  python3 ../harness/scripts/util_gen_raku_setting.py            write the .inc  # one-disk: not a path
+  python3 ../harness/scripts/util_gen_raku_setting.py --check    rc 1 when the committed .inc differs from a fresh generation, 0 when equal  # one-disk: not a path
   --dir D and --out F read the setting from D and write or check F (a gate's plant on scratch copies); rc 2 refuses.
 """
 import os, re, sys
@@ -78,7 +78,7 @@ def main():
     if "--check" in av:
         cur = open(out, encoding="utf-8").read() if os.path.isfile(out) else ""
         if cur != txt:
-            print("STALE: %s differs from a fresh generation from %s -- run python3 ../harness/scripts/util_gen_raku_setting.py" % (out, d))
+            print("STALE: %s differs from a fresh generation from %s -- run python3 ../harness/scripts/util_gen_raku_setting.py" % (out, d))  # one-disk: not a path
             return 1
         print("GREEN: %s matches its %d setting module(s)" % (os.path.relpath(out, ROOT), len(modules(d))))
         return 0

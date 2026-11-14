@@ -270,7 +270,7 @@ except Exception as _e:
     _xc_note = f" (the exemption census could not be read: {type(_e).__name__}: {_e})"
 print(f"DONE-WHEN RUNS A BOARD (cannot close through done, R-1342 clause 5): {len(DB)}{_xc_note}")
 for r in sorted(DB, key=lambda r: (r.get('owner', ''), r.get('topic', ''))):
-    print(f"    {r.get('topic')}  [owner {r.get('owner')}, {r.get('state')}, {r.get('class')} <- {', '.join(sorted(set(r.get('mechanism') or [])))[:120]}] -> rewrite to read the coo's row: ../harness/scripts/util_suite_row_at_or_after.sh <key> <tree>")
+    print(f"    {r.get('topic')}  [owner {r.get('owner')}, {r.get('state')}, {r.get('class')} <- {', '.join(sorted(set(r.get('mechanism') or [])))[:120]}] -> rewrite to read the coo's row: ../harness/scripts/util_suite_row_at_or_after.sh <key> <tree>")  # one-disk: not a path
 findings += len(DB)
 if findings == 0: print("CENSUS CLEAN: every minted row is pickable, closable, and owned."); sys.exit(0)
 print(f"TOTAL FINDINGS: {findings}"); sys.exit(1)

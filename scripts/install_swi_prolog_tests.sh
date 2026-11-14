@@ -7,8 +7,9 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 
-TARGET=$S4E/corpus/tests/prolog/swi_tests
+TARGET=$S4E_CORPUS/tests/prolog/swi_tests
 UPSTREAM=https://github.com/SWI-Prolog/swipl-devel.git
 TMPDIR_BASE=/tmp/swi_install_$$
 

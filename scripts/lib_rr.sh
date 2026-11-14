@@ -31,7 +31,7 @@ rr_load() {
   RR_T0=$SECONDS
   [ -n "${S4E_CHUNK:-}" ] || return 0
   p="$d/PARTITION.tsv"
-  if [ ! -f "$p" ]; then case "$S4E_CHUNK" in entry:*) ;; *) echo "⛔ REFUSE(rc=2): S4E_CHUNK=$S4E_CHUNK but no $p -- build it: python3 ../harness/scripts/util_suite_partition.py build $d/ALL.csv (a table with no partition takes entry: selections only)"; return 2;; esac; fi
+  if [ ! -f "$p" ]; then case "$S4E_CHUNK" in entry:*) ;; *) echo "⛔ REFUSE(rc=2): S4E_CHUNK=$S4E_CHUNK but no $p -- build it: python3 ../harness/scripts/util_suite_partition.py build $d/ALL.csv (a table with no partition takes entry: selections only)"; return 2;; esac; fi  # one-disk: not a path
   part="${S4E_CHUNK%%@*}"; RR_FROM=""; [ "$part" != "$S4E_CHUNK" ] && RR_FROM="${S4E_CHUNK#*@}"
   case "$part" in
     core)   # the core is in no chunk, so the round robin gives it a turn of its own

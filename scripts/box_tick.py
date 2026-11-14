@@ -220,7 +220,7 @@ def parse_area(rc, out):
     return widen, (m.group(1).split() if m else [])
 def probe_area_refusal():
     """--probe-area-refusal: parse_area on three canned readings, never a live range: an unmapped file widens, another refusal raises, a listed range names its features"""
-    w, f = parse_area(2, "AREA_SMOKE REFUSE(2): touched src/ file(s) with NO ROW in ../harness/scripts/area_map.tsv: src/lower/lower_pascal_types.c")
+    w, f = parse_area(2, "AREA_SMOKE REFUSE(2): touched src/ file(s) with NO ROW in ../harness/scripts/area_map.tsv: src/lower/lower_pascal_types.c")  # one-disk: not a path
     unmapped = "widen" if w is True and f == [] else "wrong"
     try:
         parse_area(2, "AREA_SMOKE REFUSE(2): cannot read the range")

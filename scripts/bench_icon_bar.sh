@@ -14,7 +14,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #                      the in-process compile).
 # EXIT 0 at or above the bar (GREEN), 1 below it (RED, the row is open), 2 REFUSED (no binary, no oracle, no citable reading).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 . "$HERE/lib_perf_fmt.sh"
 refuse() { echo "⛔ bench_icon_bar REFUSE(2): $*"; exit 2; }
 refuse_timing() { local g; if g="$(perf_load_guard)"; then echo "⛔ bench_icon_bar REFUSE(2) $g: $*"; else echo "⛔ bench_icon_bar REFUSE(2): $* ($g)"; fi; exit 2; }
@@ -23,8 +23,8 @@ KIND=$1; NAME=$2; BAR=$3; [ -x "$ROOT/scrip" ] || refuse "no ./scrip (make first
 T=$(mktemp -d) || refuse "mktemp"; trap 'rm -rf "$T"' EXIT
 if [ "$KIND" = demo ]; then
   [ "$NAME" = jtran ] || refuse "the only demo this criterion knows is jtran"
-  export SCRIP_DIAG=0; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"; PKG="$S4E/corpus/packages/icon/jcon-compiler"; D="$S4E/corpus/demos/icon/jcon"
-  ICONT=/home/resources/icon-master/bin/icont; [ -x "$ICONT" ] || refuse "no icont at $ICONT"; WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || refuse "bench_rusage did not build"
+  export SCRIP_DIAG=0; PKG="$S4E_CORPUS/packages/icon/jcon-compiler"; D="$S4E_CORPUS/demos/icon/jcon"
+  ICONT=/home/resources/icon-master/bin/icont; [ -x "$ICONT" ] || refuse "no icont at $ICONT"; WRAP="$ROOT/out/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || refuse "bench_rusage did not build"
   MODS=$(sed -n 's/^[[:space:]]*link[[:space:]]*"\([^"]*\)".*$/\1/p' "$D/jtran.icn" | sed 's|.*/||' | sed "s|^|$PKG/|; s|$|.icn|" | tr '\n' ' ')
   ( cd "$T" && "$ICONT" -s -o "$T/jtran.oracle" $MODS ) > "$T/icont.log" 2>&1 || refuse "icont did not build the oracle"
   ( cd "$D" && "$ROOT/scrip" --compile --out="$T/jtran.s" jtran.icn < /dev/null ) > "$T/m4c.log" 2>&1 && gcc "$T/jtran.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$T/jtran.m4" 2>> "$T/m4c.log" || refuse "jtran did not build in mode 4"
@@ -37,7 +37,7 @@ if [ "$KIND" = demo ]; then
   awk -v st="$(perf_build_stamp)" -v s="$so" -v m="$sm" -v bar="$BAR" -v mode="$MODE" 'BEGIN{x=s/m; printf "demo jtran (preproc gen_bc.icn, best of %s): iconx %.1f ms, %s %.1f ms; reads %.2fx iconx in mode %s (bar %.2fx): %s · %s\n", "'"${BAR_REPS:-5}"'", s/1e6, mode, m/1e6, x, substr(mode,2), bar, (x>=bar)?"GREEN":"RED", st; exit (x>=bar)?0:1}'
   exit $?
 fi
-( cd "$ROOT" && BUDGET_MS="${BAR_BUD_MS:-500}" BENCH_N_DEFAULT="${BAR_N:-5}" bash ../harness/scripts/bench_triangulate_icon.sh --out "$T/t.tsv" "$NAME" ) > "$T/log" 2>&1
+( cd "$ROOT" && BUDGET_MS="${BAR_BUD_MS:-500}" BENCH_N_DEFAULT="${BAR_N:-5}" bash "$S4E_HARNESS/scripts/bench_triangulate_icon.sh" --out "$T/t.tsv" "$NAME" ) > "$T/log" 2>&1
 [ -s "$T/t.tsv" ] || { tail -5 "$T/log"; refuse_timing "the harness wrote no TSV for $NAME"; }
 read -r ix m4 loop <<<"$(awk -F'\t' -v k="$NAME" 'NR>1 && $1==k && $2=="iconx" && $13=="PASS" && $12 ~ /^AGREE/ {ix=$9*1000/$8} NR>1 && $1==k && $2=="m4" && $13=="PASS" && $12 ~ /^AGREE/ {m4=$9*1000/$8} NR>1 && $1==k {loop=$3} END{print ix+0, m4+0, loop}' "$T/t.tsv")"
 BASIS="fixed-time twins, in-process work"

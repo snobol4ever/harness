@@ -30,7 +30,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #        BUDGET_MS=2000 BENCH_N_DEFAULT=3 TOL_PCT=15 ENGINES="iconx m3 m4" RUN_TIMEOUT=600
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
-S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+S4E="${S4E_HOME:-$(dirname "$ROOT")}"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"
 BD="${ICON_BENCH_DIR:-$S4E_CORPUS/benchmarks/icon}"
 BUDGET_MS="${BUDGET_MS:-2000}"; NDEF="${BENCH_N_DEFAULT:-3}"; TOL="${TOL_PCT:-15}"; ENGINES="${ENGINES:-iconx m3 m4}"

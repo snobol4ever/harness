@@ -44,9 +44,9 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP at $S4E_SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; S4E="${S4E_HOME:-$(dirname "$ROOT")}"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
-CORPUS="${CORPUS:-$S4E/corpus}"; [ -d "$CORPUS/tests" ] || { echo "⛔ GATE REFUSE(2) [$G]: no corpus at $CORPUS"; exit 2; }
+CORPUS="${CORPUS:-$S4E_CORPUS}"; [ -d "$CORPUS/tests" ] || { echo "⛔ GATE REFUSE(2) [$G]: no corpus at $CORPUS"; exit 2; }
 B="$ROOT/bootstrap"; CHAIN="$B/global.sc $B/case.sc $B/assign.sc $B/match.sc $B/counter.sc $B/stack.sc $B/tree.sc $B/ShiftReduce.sc $B/tdump.sc $B/gen.sc $B/qize.sc $B/semantic.sc $B/omega.sc $B/trace.sc"
 for f in $CHAIN; do [ -f "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: chain file missing: $f"; exit 2; }; done
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ GATE REFUSE(2) [$G]: cannot load lib_declared_arena.sh"; exit 2; }
@@ -72,16 +72,16 @@ export LPATH="$CORPUS/packages/icon/ipl/procs"
 export SNO_LIB="$CORPUS/include:$CORPUS/library:$CORPUS/packages/snobol4/gimpel:$CORPUS/packages/snobol4/snoflake_suite/gimpel"
 pp_twin() { case "$1" in
     icon) LPATH="$CORPUS/packages/icon/ipl/procs" "$ROOT/out/scrip-ipp" "$2" > "$T/pp.icn" 2>/dev/null || return 1; echo "$T/pp.icn" ;;
-    snobol4) ( cd "$(dirname "$2")" && python3 "$ROOT/../harness/scripts/util_sno_include_twin.py" "$2" ) > "$T/pp.sno" 2>/dev/null || return 1; echo "$T/pp.sno" ;;
+    snobol4) ( cd "$(dirname "$2")" && python3 "$S4E_HARNESS/scripts/util_sno_include_twin.py" "$2" ) > "$T/pp.sno" 2>/dev/null || return 1; echo "$T/pp.sno" ;;
     *) echo "$2" ;; esac; }
 sc_run() { local f="$1"; shift; ( [ "$L" = snobol4 ] && cd "$(dirname "$f")"; "$@" < "$f" ); }
 red() { [ -n "${GATE_REDS:-}" ] && printf '%s\t%s\t%s\n' "$L" "$1" "${f#$CORPUS/}" >> "$GATE_REDS"; true; }
 RC=0; GRADED=0; GREEN=0
-echo "TREE-FOR-TREE [$G]: population=$POP, EACH FILE ALONE through out/parser_<lang> and the .sc chain compiled once to a mode-4 binary at the chain's declared heap and stack (corpus/demos/snocone/parser_<lang>/parser_<lang>.heap, .stack), one tree hash per file per side (PARSER_TREE_HASH=1), timeout ${TMO}s per run"
+echo "TREE-FOR-TREE [$G]: population=$POP, EACH FILE ALONE through out/parser_<lang> and the .sc chain compiled once to a mode-4 binary at the chain's declared heap and stack (corpus/demos/snocone/parser_<lang>/parser_<lang>.heap, .stack), one tree hash per file per side (PARSER_TREE_HASH=1), timeout ${TMO}s per run"  # one-disk: not a path
 for L in ${GATE_LANGS:-snobol4 snocone icon prolog rebus pascal raku}; do
     ext=${EXT[$L]}; exe="$ROOT/out/parser_$L"
     ( . "$HERE/lib_build_currency.sh" && assert_parser_current "$L" "$ROOT" ) || { echo "  $L: ⛔ REFUSE(2) $exe is missing or older than a source it was compiled from (named above) -- make parsers"; RC=2; continue; }
-    SW="$(declared_switches_beside "$CORPUS/demos/snocone/parser_$L/parser_$L.sc")" && [ -n "$SW" ] || { echo "  $L: ⛔ REFUSE(2) corpus/demos/snocone/parser_$L/parser_$L.sc declares no heap or stack, or the declaration is refused"; RC=2; continue; }
+    SW="$(declared_switches_beside "$CORPUS/demos/snocone/parser_$L/parser_$L.sc")" && [ -n "$SW" ] || { echo "  $L: ⛔ REFUSE(2) corpus/demos/snocone/parser_$L/parser_$L.sc declares no heap or stack, or the declaration is refused"; RC=2; continue; }  # one-disk: not a path
     if [ "$POP" = corpus ]; then { find "$CORPUS" -type f -name "*.$ext" -not -name 'ALL.*' -not -name 'ONE-LINERS.*' -not -path '*/.git/*' -not -path "$CORPUS/library/*"; ls "$HERE/../fixtures/parser_$L"/*."$ext" 2>/dev/null; } | sort > "$T/$L.files"
     elif [ "$POP" = fixtures ]; then ls "$HERE/../fixtures/parser_$L"/*."$ext" 2>/dev/null | sort > "$T/$L.files"
     else ls "$CORPUS/benchmarks/$L"/*."$ext" 2>/dev/null | sort > "$T/$L.files"; fi
@@ -90,7 +90,7 @@ for L in ${GATE_LANGS:-snobol4 snocone icon prolog rebus pascal raku}; do
     "$SCRIP" --compile "$T/$L.chain.sc" --out="$T/$L.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/$L.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$T/$L.bin" 2>/dev/null \
         || { echo "  $L: ⛔ REFUSE(2) the .sc chain did not compile or link to a mode-4 binary"; RC=2; continue; }
     case "$L" in icon) [ -x "$ROOT/out/scrip-ipp" ] || { echo "  $L: ⛔ REFUSE(2) no pre-step $ROOT/out/scrip-ipp -- make"; RC=2; continue; } ;;
-        snobol4) [ -f "$ROOT/../harness/scripts/util_sno_include_twin.py" ] || { echo "  $L: ⛔ REFUSE(2) no pre-step harness/scripts/util_sno_include_twin.py"; RC=2; continue; } ;; esac
+        snobol4) [ -f "$S4E_HARNESS/scripts/util_sno_include_twin.py" ] || { echo "  $L: ⛔ REFUSE(2) no pre-step harness/scripts/util_sno_include_twin.py"; RC=2; continue; } ;; esac  # one-disk: not a path
     m=0; d=0; rc_=0; rs=0; rb=0; u=0; hc=0; kc=0; ks=0; pf=0; first=""; firstf=""; canary=""
     while IFS= read -r f; do
         g=$(pp_twin "$L" "$f") || { pf=$((pf + 1)); red PRE-STEP; [ -n "$first" ] || first="the pre-step refused ${f#$CORPUS/}"; continue; }

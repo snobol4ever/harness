@@ -67,10 +67,10 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP_BIN="${SCRIP:-$ROOT/scrip}"
 SCRIP_RT="${SCRIP_RT:-$ROOT/out/libscrip_rt.so}"   # overridable so the gate can drive the .so arm on a fixture, never the live build
-REAL_CORPUS="${CORPUS:-$S4E/corpus}"
+REAL_CORPUS="${CORPUS:-$S4E_CORPUS}"
 SKIP_PRISTINE=0
 WANT_PRISTINE=0
 for _a in "$@"; do
@@ -213,7 +213,7 @@ echo "--- benchmark (util_regen_benchmark_s_artifacts.sh) ---"
 out="$WORK/benchmark.out"
 pre="$(git -C "$SCRATCH_CORPUS" rev-parse HEAD)"
 CORPUS="$SCRATCH_CORPUS" SCRIP="$SCRIP_BIN" \
-  bash "$ROOT/../harness/scripts/util_regen_benchmark_s_artifacts.sh" "verify-dry-run-discard" > "$out" 2>&1
+  bash "$S4E_HARNESS/scripts/util_regen_benchmark_s_artifacts.sh" "verify-dry-run-discard" > "$out" 2>&1
 bench_rc=$?
 post="$(git -C "$SCRATCH_CORPUS" rev-parse HEAD)"
 sed 's/^/    /' "$out"
@@ -237,7 +237,7 @@ echo "--- demo (util_regen_demo_s_artifacts.sh) ---"
 out="$WORK/demo.out"
 pre="$(git -C "$SCRATCH_CORPUS" rev-parse HEAD)"
 CORPUS="$SCRATCH_CORPUS" SCRIP="$SCRIP_BIN" \
-  bash "$ROOT/../harness/scripts/util_regen_demo_s_artifacts.sh" "verify-dry-run-discard" > "$out" 2>&1
+  bash "$S4E_HARNESS/scripts/util_regen_demo_s_artifacts.sh" "verify-dry-run-discard" > "$out" 2>&1
 demo_rc=$?
 post="$(git -C "$SCRATCH_CORPUS" rev-parse HEAD)"
 sed 's/^/    /' "$out"
@@ -252,7 +252,7 @@ fi
 demo_missing="$(grep -c 'no \.sno$' "$out" || true)"
 if [ "$demo_missing" -gt 0 ]; then
   trouble_total=$((trouble_total + demo_missing))
-  report+=("demo: $demo_missing source(s) NOT FOUND at the expected flat path — corpus/demos was reorganized into per-family subfolders (commit db20f3cf) and this script was not updated to match; its 'No changes' verdict is NOT trustworthy, it never found the sources to compare. This is a script-repair item, not something a regen run can fix — flagged, not fixed, by this row.")
+  report+=("demo: $demo_missing source(s) NOT FOUND at the expected flat path — corpus/demos was reorganized into per-family subfolders (commit db20f3cf) and this script was not updated to match; its 'No changes' verdict is NOT trustworthy, it never found the sources to compare. This is a script-repair item, not something a regen run can fix — flagged, not fixed, by this row.")  # one-disk: not a path
 fi
 demo_trouble="$(grep -cE 'compile failed|empty emit|assembler-rejected' "$out" || true)"
 if [ "$demo_trouble" -gt 0 ]; then
@@ -266,7 +266,7 @@ echo "--- prolog_bench (util_regen_prolog_bench_s_artifacts.sh) ---"
 out="$WORK/prolog_bench.out"
 pre="$(git -C "$SCRATCH_CORPUS" rev-parse HEAD)"
 CORPUS="$SCRATCH_CORPUS" SCRIP="$SCRIP_BIN" BENCH_DIR="$SCRATCH_CORPUS/benchmarks/prolog/bench" \
-  bash "$ROOT/../harness/scripts/util_regen_prolog_bench_s_artifacts.sh" "verify-dry-run-discard" > "$out" 2>&1
+  bash "$S4E_HARNESS/scripts/util_regen_prolog_bench_s_artifacts.sh" "verify-dry-run-discard" > "$out" 2>&1
 pb_rc=$?
 post="$(git -C "$SCRATCH_CORPUS" rev-parse HEAD)"
 sed 's/^/    /' "$out"
@@ -288,7 +288,7 @@ echo "    [prolog_bench] rc=$pb_rc owed=$pb_owed trouble=$pb_trouble"
 echo "------------------------------------------------------------"
 echo "--- icon_bench (update_icon_bench_asm.sh CHECK=1 — native dry-run, no clone needed) ---"
 out="$WORK/icon_bench.out"
-CHECK=1 ICON_CORPUS="$REAL_CORPUS/benchmarks/icon" bash "$ROOT/../harness/scripts/update_icon_bench_asm.sh" > "$out" 2>&1
+CHECK=1 ICON_CORPUS="$REAL_CORPUS/benchmarks/icon" bash "$S4E_HARNESS/scripts/update_icon_bench_asm.sh" > "$out" 2>&1
 icon_rc=$?
 sed 's/^/    /' "$out"
 icon_owed="$(grep -c '^WOULD-' "$out" || true)"
@@ -318,7 +318,7 @@ echo "    [icon_bench] rc=$icon_rc owed=$icon_owed trouble=$icon_trouble"
 echo "============================================================"
 # ⛔ THE OWED SET BY LANE (coo 2026-09-16; row handoff-status-artifact-check-blocks-every-seat-for-one-lanes-debt-...): every owed
 # artifact by repo-relative path, so handoff_status.sh can block ONLY the seat whose lane owes it and name the owner of the rest.
-. "$ROOT/../harness/scripts/lib_handoff_verdict.sh"
+. "$S4E_HARNESS/scripts/lib_handoff_verdict.sh"
 # an EMPTY list must not become an empty token: each list is filtered for non-empty lines BEFORE its lane prefix is applied (hq_prolog
 # 2026-09-16: 'S-ARTIFACTS-OWED-FILE: prolog_bench:' counted as prolog=1 on a CLEAN run)
 _owed_paths="$( { printf '%s\n' "${bench_files:-}" | grep .; printf '%s\n' "${demo_files:-}" | grep .; printf '%s\n' "${pb_files:-}" | grep . | sed 's#^#prolog_bench:#'; for _n in ${icon_names:-}; do printf 'icon_bench:%s\n' "$_n"; done; } | grep . )"
@@ -336,7 +336,7 @@ else
   echo "VERDICT: OWED — $((owed_total + trouble_total)) item(s) need attention before this counts as current:"
   printf '  - %s\n' "${report[@]}"
   echo ""
-  echo "  Regen (real tree, not this scratch check): bash ../harness/scripts/util_regen_benchmark_s_artifacts.sh \"<rung>\" && bash ../harness/scripts/util_regen_demo_s_artifacts.sh \"<rung>\" && bash ../harness/scripts/util_regen_prolog_bench_s_artifacts.sh \"<rung>\""
-  echo "  Icon emitter/lowerer touched this session? also: bash ../harness/scripts/update_icon_bench_asm.sh"
+  echo "  Regen (real tree, not this scratch check): bash ../harness/scripts/util_regen_benchmark_s_artifacts.sh \"<rung>\" && bash ../harness/scripts/util_regen_demo_s_artifacts.sh \"<rung>\" && bash ../harness/scripts/util_regen_prolog_bench_s_artifacts.sh \"<rung>\""  # one-disk: not a path
+  echo "  Icon emitter/lowerer touched this session? also: bash ../harness/scripts/update_icon_bench_asm.sh"  # one-disk: not a path
   exit 1
 fi

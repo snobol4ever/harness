@@ -177,7 +177,7 @@ n=$(printf '%s\n' $ents | grep -c .)
 # re-filings are not capped here.
 REQUEST_CAP=8
 if [ "$who" != coo ] && [ "$n" -gt "$REQUEST_CAP" ]; then
-  refuse "$n programs is not a handful: a seat's request names at most $REQUEST_CAP (the feature's representatives: bash ../harness/scripts/test_feature_reps.sh <lang> <feature> --list, or your row's witnesses); a whole ${part:-set} is the coo's round robin (R-1891)"
+  refuse "$n programs is not a handful: a seat's request names at most $REQUEST_CAP (the feature's representatives: bash ../harness/scripts/test_feature_reps.sh <lang> <feature> --list, or your row's witnesses); a whole ${part:-set} is the coo's round robin (R-1891)"  # one-disk: not a path
 fi
 mkdir -p "$REQ_DIR" || refuse "cannot create $REQ_DIR"
 id="$(date -u +%Y%m%dT%H%M%S)-$who-$key-$$"

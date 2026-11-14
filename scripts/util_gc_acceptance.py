@@ -19,10 +19,12 @@ INSTRUMENT LAW, held here rather than quoted: a metric that CANNOT BE MEASURED p
 NOT-MEASURED and makes the verdict REFUSE(2).  It never prints 0 and never prints 100.  A display
 that cannot tell 'clean' from 'never ran' is the thing this whole emergency is about.
 """
-import os, re, subprocess, sys, datetime
+import os, re, shlex, subprocess, sys, datetime
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import harness_paths
 ROOT = str(harness_paths.scrip())
+HARNESS = str(harness_paths.harness())
+CORPUS = str(harness_paths.corpus())
 
 def sh(cmd, timeout=1800):
     try:
@@ -63,7 +65,7 @@ def reason_of(rc, txt, fallback):
 
 def main():
     tree = sh("git rev-parse --short HEAD")[1].strip()
-    corpus = sh("git -C ../corpus rev-parse --short HEAD")[1].strip()
+    corpus = sh("git -C " + shlex.quote(CORPUS) + " rev-parse --short HEAD")[1].strip()
     when = datetime.datetime.now().strftime("%Y-%m-%d %H:%M %Z")
     load = open("/proc/loadavg").read().split()[0]
     print("=" * 118)
@@ -73,7 +75,7 @@ def main():
     refuse, fails = [], []
 
     # ---- 1 INSTRUMENTED -------------------------------------------------------------------------
-    rc_cen, cen = sh("SCRIP_GC_CENSUS_LIST_ALL=1 python3 ../harness/scripts/util_gc_census.py")
+    rc_cen, cen = sh("SCRIP_GC_CENSUS_LIST_ALL=1 python3 " + shlex.quote(os.path.join(HARNESS, "scripts", "util_gc_census.py")))
     polled   = num(r"allocating_call_sites=(\d+)", cen); pol_ok = num(r"\bpolled=(\d+)", cen)
     sp_part  = num(r"partially_polled=(\d+)", cen); sp_unp = num(r"\bunpolled=(\d+)", cen)
     inb      = num(r"INBOUND call_back_sites=(\d+)", cen); inb_w = num(r"INBOUND call_back_sites=\d+ wrapped_in_\w+=(\d+)", cen)
@@ -85,7 +87,7 @@ def main():
     # two different populations, with the 11 real hooks in rt/rt.c excluded by construction, so the fraction read
     # zero and meant nothing (R-1041/1071).  util_c2bb_coverage.py answers it against the denominator
     # test_gate_no_c_to_bb.sh itself prints, per site, by the proximity rule, and it is proven to fail once.
-    rc_cov, cov = sh("python3 ../harness/scripts/util_c2bb_coverage.py")
+    rc_cov, cov = sh("python3 " + shlex.quote(os.path.join(HARNESS, "scripts", "util_c2bb_coverage.py")))
     c2bb_cov_n = num(r"C2BB_COVERAGE hooked=(\d+)", cov)
     c2bb_cov_d = num(r"C2BB_COVERAGE hooked=\d+ sites=(\d+)", cov)
     cov_why = reason_of(rc_cov, cov, "util_c2bb_coverage.py exited 2 without naming a reason")
@@ -164,7 +166,7 @@ def main():
         if cons: fails.append("INSTRUMENTED/conservative %d remain" % cons)
 
     # ---- 2 VISIBILITY ---------------------------------------------------------------------------
-    rc_ev, ev = sh("python3 ../harness/scripts/util_gc_event_coverage.py")
+    rc_ev, ev = sh("python3 " + shlex.quote(os.path.join(HARNESS, "scripts", "util_gc_event_coverage.py")))
     ex  = num(r"EXERCISED (\d+)", ev); obs = num(r"OBSERVABLE (\d+)", ev)
     owed = num(r"OWED -- real events this collector cannot distinguish \((\d+)\)", ev)
     print("\n  2 VISIBILITY")

@@ -129,7 +129,7 @@ def main():
     if not rows:
         refuse("coercion_surface_sites.tsv declares zero sites -- a census that cannot see its population must never print 0")
 
-    print("== coercion surface census -- declared sites from ../harness/scripts/coercion_surface_sites.tsv")
+    print("== coercion surface census -- declared sites from ../harness/scripts/coercion_surface_sites.tsv")  # one-disk: not a path
     bad = 0
     cache = {}
     checked_tags = 0

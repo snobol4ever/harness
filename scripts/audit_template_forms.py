@@ -25,7 +25,7 @@ THE UNIT is the box entry a dispatch site names (bb_emit_x86(bb_X()) anywhere in
 file that defines std::string bb_X(); every bb_*.cpp and xa_*.cpp file is listed in the population, and a file
 whose entry no site names is counted as undispatched (a helper or an xa emission piece).
 
-Usage: python3 ../harness/scripts/audit_template_forms.py [--root DIR] [--tsv] [--top N]
+Usage: python3 ../harness/scripts/audit_template_forms.py [--root DIR] [--tsv] [--top N]  # one-disk: not a path
   rc 0  no box carries more than one live form and no kind case picks among boxes
         (a DECLARED TWIN, template_twins.tsv beside this script, is a second box a case emits BESIDE the kind's own box,
         never instead of it: the kind's own box must be the first named and every further box a declared twin of it)

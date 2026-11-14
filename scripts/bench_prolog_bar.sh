@@ -13,7 +13,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # EXIT 0 at or above the bar (GREEN), 1 below it (RED, the row is open), 2 REFUSED (no binary, no rival, no citable reading).
 set -u
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_oracle_flags.sh"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 refuse() { echo "⛔ bench_prolog_bar REFUSE(2): $*"; exit 2; }
 . "$HERE/lib_perf_fmt.sh" 2>/dev/null || refuse "cannot load lib_perf_fmt.sh -- the one authority for a load stamp and the load guard"
 refuse_timing() { local g; if g="$(perf_load_guard)"; then echo "⛔ bench_prolog_bar REFUSE(2) $g: $*"; else echo "⛔ bench_prolog_bar REFUSE(2): $* ($g)"; fi; exit 2; }
@@ -22,7 +22,7 @@ NAME=$2; BAR=$3; RIVAL="${4:-swi}"; MODE="${BAR_MODE:-m4}"
 case "$RIVAL" in swi|gnu|gplc) ;; *) refuse "rival must be swi, gnu ("$(gprolog_bin)" --consult-file, the byte-code WAM) or gplc (GNU Prolog compiled native)";; esac
 [ -x "$ROOT/scrip" ] || refuse "no ./scrip (make first)"; command -v swipl > /dev/null || refuse "swipl absent"; gprolog_bin >/dev/null || exit 2
 T=$(mktemp -d) || refuse "mktemp"; trap 'rm -rf "$T"' EXIT
-( cd "$ROOT" && KERNELS="$NAME" TIME_BUDGET_MS="${BAR_BUD_MS:-500}" bash ../harness/scripts/test_bench_prolog_timed.sh ) > "$T/log" 2>&1
+( cd "$ROOT" && KERNELS="$NAME" TIME_BUDGET_MS="${BAR_BUD_MS:-500}" bash "$S4E_HARNESS/scripts/test_bench_prolog_timed.sh" ) > "$T/log" 2>&1
 row=$(grep -E "^$NAME[[:space:]]" "$T/log" | head -1); [ -n "$row" ] || { tail -4 "$T/log" | cut -c1-160; refuse_timing "angle 1 printed no row for $NAME"; }   # the FIRST row is the rates table (SKIP / ok is read there)
 read -r _k _g _gp _s _m3 _m4 check <<<"$row"
 # ⭐ THE WORK BASIS (R-1281): the multiple is read from angle 1's THIRD dashed block -- SELF-MEASURED WORK PER ITERATION (us/it) inside the
