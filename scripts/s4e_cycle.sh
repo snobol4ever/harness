@@ -55,10 +55,14 @@ state_get() { sed -n "s/^$1=//p" "$STATE" 2>/dev/null | head -1; }
 state_put() {   # lap idx total suite cell status
     printf 'lap=%s\nidx=%s\ntotal=%s\nsuite=%s\ncell=%s\nstatus=%s\nsince=%s\npid=%s\n' "$1" "$2" "$3" "$4" "$5" "$6" "$(now)" "$$" > "$STATE.tmp" && mv "$STATE.tmp" "$STATE"; }
 cells() {   # one line per cell: key kind lang dir cell (dir: the suite's container directory; for a small row the runner's own command words, its cell the one name all); core first, then chunk:NN in order, per the row order of SUITE_RUNNERS.tsv
-    awk -F'\t' -v S="$S4E" '
+    # THE PARTITION IS READ WHERE THE CORPUS LIVES; THE CELL KEEPS THE ROOT'S SPELLING (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover; MEASURED 08:30 CST: with the
+    # grader's root cut the first lap read cells=8 where the lap before read 1092, since every PARTITION.tsv was looked for under S4E/corpus, a folder the root no longer holds,
+    # and only the small rows were left). dir stays S4E/corpus/... (not a path: tp respells it for the tree a chunk runs on); the file is read from S4E_CORPUS.
+    awk -F'\t' -v S="$S4E" -v C="$S4E_CORPUS" '
         !/^#/ && NF >= 5 && ($2 == "master" || $2 == "pkg") {
             row++; dir = ($2 == "master") ? S "/corpus/tests/" $3 : S "/" $5
-            f = dir "/PARTITION.tsv"; ip = 0; delete seen
+            real = ($2 == "master") ? C "/tests/" $3 : S "/" $5; if ($2 == "pkg" && $5 ~ /^corpus\//) real = C "/" substr($5, 8)
+            f = real "/PARTITION.tsv"; ip = 0; delete seen
             while ((getline line < f) > 0) {
                 if (line ~ /^#/) continue
                 nc = split(line, c, "\t")

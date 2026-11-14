@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-S4E_ONE_RUNNER_SINGLE_FILE=""; _sf_prev=""; for _sf_a in "$@"; do [ "$_sf_prev" = --driver ] && S4E_ONE_RUNNER_SINGLE_FILE="$_sf_a"; _sf_prev="$_sf_a"; done; source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "${GNU_PROLOG_SUITE:=${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}/corpus/packages/prolog/gnu_prolog}" || exit 2
+S4E_ONE_RUNNER_SINGLE_FILE=""; _sf_prev=""; for _sf_a in "$@"; do [ "$_sf_prev" = --driver ] && S4E_ONE_RUNNER_SINGLE_FILE="$_sf_a"; _sf_prev="$_sf_a"; done; source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "${GNU_PROLOG_SUITE:=$(. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"; printf %s "$S4E_CORPUS")/packages/prolog/gnu_prolog}" || exit 2
 # test_prolog_gnu_suite.sh -- grades corpus/packages/prolog/gnu_prolog: GNU Prolog's OWN vendored
 # compiler/library source (62 .pl files -- BipsPl/ = the built-in-predicates library, Pl2Wam/ = the
 # Prolog-to-WAM compiler), NOT test programs. There is no external .ref oracle for these files; the

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "${WIRTH76_SUITE:=${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}/corpus/packages/pascal/wirth1976}" || exit 2
+source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "${WIRTH76_SUITE:=$(. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"; printf %s "$S4E_CORPUS")/packages/pascal/wirth1976}" || exit 2
 # test_pascal_wirth76_suite.sh -- THE Wirth76 SUITE ROW: Niklaus Wirth's Algorithms + Data Structures = Programs (1976), each program
 # transcribed to ISO 7185 with its driver (corpus/packages/pascal/wirth1976/, hq_pascal's row), graded in both SCRIP modes against
 # refs cut from fpc -Miso. Lon 2026-10-09 17:0x CDT, in-chat, verbatim: "Have drivers created for the Wirth 1976 and make it
