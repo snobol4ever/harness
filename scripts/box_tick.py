@@ -293,7 +293,7 @@ def expire_leases():
         topic = os.path.basename(c)[:-6]
         if DRY:
             n += 1; continue
-        r = subprocess.run(["timeout", "60", "bash", ROOT + "/harness/scripts/s4e_msg.sh", "expire", topic],
+        r = subprocess.run(["timeout", "60", "bash", os.path.join(str(HP.harness(ROOT)), "scripts", "s4e_msg.sh"), "expire", topic],
                            capture_output=True, text=True, env=dict(os.environ, S4E_NO_BANNER="1"), stdin=subprocess.DEVNULL)
         if r.returncode == 0:
             n += 1
@@ -323,7 +323,7 @@ def regenerate_view():
         last = ""
     if stamp == last:
         return "view=kept"
-    r = subprocess.run(["python3", ROOT + "/harness/scripts/util_queue_view.py", "--regenerate"], capture_output=True, text=True, timeout=120)
+    r = subprocess.run(["python3", os.path.join(str(HP.harness(ROOT)), "scripts", "util_queue_view.py"), "--regenerate"], capture_output=True, text=True, timeout=120)
     if r.returncode == 0:
         open(TICK_DIR + "/view.stamp", "w").write(stamp)
         return "view=regenerated"
