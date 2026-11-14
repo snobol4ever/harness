@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import re, subprocess, sys, os
-ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths as HP
+ROOT = str(HP.scrip())
 def run(args):
     p = subprocess.run(args, capture_output=True, text=True, errors="replace", cwd=ROOT, timeout=120)
     return p.stdout

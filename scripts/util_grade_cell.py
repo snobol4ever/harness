@@ -12,6 +12,9 @@ import os
 import sys
 from pathlib import Path
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths as HP
+
 DAY_S = 300
 NIGHT_S = 3600
 MASTERS = ("snobol4", "icon", "prolog", "pascal", "raku", "snocone", "rebus")
@@ -23,14 +26,14 @@ def refuse(msg):
     sys.exit(2)
 
 
-def tables(s4e):
+def tables(corpus):
     out = []
     for lang in MASTERS:
-        p = s4e / "corpus" / "tests" / lang / "ALL.csv"
+        p = corpus / "tests" / lang / "ALL.csv"
         if not p.is_file():
             refuse(f"no master table {p}")
         out.append((lang, p))
-    for p in sorted((s4e / "corpus" / "packages").glob("*/*/ALL.csv")):
+    for p in sorted((corpus / "packages").glob("*/*/ALL.csv")):
         out.append((p.parent.parent.name, p))
     if len(out) != 32:
         refuse(f"expected 7 masters and 25 package tables, found {len(out)}")
@@ -63,11 +66,11 @@ def read_table(p):
         return list(csv.reader(f))
 
 
-def report(s4e, progress):
+def report(corpus, progress):
     night = night_set(last_readings(progress))
     m = 0
     k = []
-    for lang, p in tables(s4e):
+    for lang, p in tables(corpus):
         rows = read_table(p)
         head = rows[0]
         if "entry" not in head:
@@ -76,18 +79,18 @@ def report(s4e, progress):
         for r in rows[1:]:
             m += 1
             if (lang, r[ei]) in night:
-                k.append(f"NIGHT_ONLY_ENTRY {lang} {p.parent.relative_to(s4e / 'corpus')} {r[ei]}")
+                k.append(f"NIGHT_ONLY_ENTRY {lang} {p.parent.relative_to(corpus)} {r[ei]}")
     print(f"NIGHT_ONLY over_s={DAY_S} programs={len(k)} of {m}")
     for line in k:
         print(line)
     return 0
 
 
-def stamp(s4e, progress):
+def stamp(corpus, progress):
     night = night_set(last_readings(progress))
     plan = []
     stamped_night = []
-    for lang, p in tables(s4e):
+    for lang, p in tables(corpus):
         rows = read_table(p)
         head = rows[0]
         if "entry" not in head:
@@ -127,13 +130,12 @@ def stamp(s4e, progress):
 
 
 def main(argv):
-    here = Path(__file__).resolve().parent
-    s4e = Path(os.environ.get("S4E_HOME") or here.parents[1])
+    corpus = HP.corpus()
     progress = Path(os.environ.get("S4E_PROGRESS_RESULTS", "/home/resources/progress/results.tsv"))
     if "--night-only" in argv:
-        return report(s4e, progress)
+        return report(corpus, progress)
     if "--stamp" in argv:
-        return stamp(s4e, progress)
+        return stamp(corpus, progress)
     print("usage: util_grade_cell.py --night-only | --stamp", file=sys.stderr)
     return 2
 

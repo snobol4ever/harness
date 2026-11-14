@@ -42,10 +42,11 @@ env: S4E_PROGRESS_DB, S4E_POSTOFFICE, S4E_SWI_TESTS redirect the three inputs, S
 import csv, os, re, sys, collections, tempfile, shutil, subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-S4E = os.environ.get('S4E_HOME') or os.path.normpath(os.path.join(HERE, '..', '..'))
-DB = os.environ.get('S4E_PROGRESS_DB', '/home/resources/progress/results.tsv')
+sys.path.insert(0, HERE)
+import harness_paths as HP
+DB =os.environ.get('S4E_PROGRESS_DB', '/home/resources/progress/results.tsv')
 PO = os.environ.get('S4E_POSTOFFICE', '/home/resources/postoffice')
-SWIT = os.environ.get('S4E_SWI_TESTS', os.path.join(S4E, 'corpus', 'packages', 'prolog', 'swi_tests'))
+SWIT = os.environ.get('S4E_SWI_TESTS', os.path.join(str(HP.corpus()), 'packages', 'prolog', 'swi_tests'))
 SUITE = 'swi'
 LIVE = ('FREE', 'CLAIMED', 'ASSIGNED', 'BLOCKED-ON', 'GRANT-NEEDED', 'PARKED-LON-HOLD', 'PARKED-CHAIRMAN', 'PARKED-UMBRELLA', 'PARKED-AWAITING')
 EXCL_CLASSES = ('SCRIP_EXCEEDS_ORACLE', 'NO_ORACLE_ANSWER', 'THREADS_EXCLUDED_BY_LON', 'SWIPL_VM_INTERNAL', 'XSB_EXCLUDED_BY_LON')

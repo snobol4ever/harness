@@ -18,6 +18,9 @@ is not counted.
 rc 2 refused: no git repository, no gate on disk. It reads; it writes nothing outside its own scratch directory."""
 import os, re, shutil, subprocess, sys, tempfile
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths as HP
+
 NAME = re.compile(r"\b[A-Za-z0-9_][A-Za-z0-9_.-]*\.(?:sh|py)\b")
 
 
@@ -36,7 +39,7 @@ def deleted_scripts(scripts):
     if log.returncode != 0:
         refuse(f"git log failed in {top}")
     here = set(os.listdir(scripts))
-    other = os.path.join(os.path.dirname(top), ".github", "scripts")
+    other = os.path.join(str(HP.github()), "scripts")
     if os.path.isdir(other):
         here |= set(os.listdir(other))
     gone = set()
@@ -92,11 +95,11 @@ def gate_verdict(scripts, name):
 def probe():
     t = tempfile.mkdtemp(prefix="dead_script_gates_probe_", dir=os.environ.get("TMPDIR") or None)
     try:
-        s = os.path.join(t, "harness", "scripts")
+        s = os.path.join(t, "harness", "scripts")  # one-disk: not a path
         os.makedirs(s)
 
         def git(*a):
-            r = subprocess.run(["git", "-C", os.path.join(t, "harness"), "-c", "user.name=probe", "-c", "user.email=probe@invalid", "-c", "commit.gpgsign=false"] + list(a),
+            r = subprocess.run(["git", "-C", os.path.join(t, "harness"), "-c", "user.name=probe", "-c", "user.email=probe@invalid", "-c", "commit.gpgsign=false"] + list(a),  # one-disk: not a path
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             if r.returncode != 0:
                 refuse(f"probe: git {' '.join(a)} failed: {r.stdout.strip()[:160]}")

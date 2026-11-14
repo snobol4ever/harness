@@ -15,6 +15,8 @@
 import argparse, collections, concurrent.futures, glob, os, shlex, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import harness_paths as HP
 
 
 def compile_lines(root):
@@ -78,7 +80,7 @@ def graph(root, from_d):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--cost', required=True)
-    ap.add_argument('--root', default=os.path.join(os.environ['S4E_HOME'], 'SCRIP') if os.environ.get('S4E_HOME') else os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP')))
+    ap.add_argument('--root', default=str(HP.scrip()))
     ap.add_argument('--since', default='30 days ago')
     ap.add_argument('--top', type=int, default=40)
     ap.add_argument('--deps-from-d', action='store_true')

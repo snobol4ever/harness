@@ -95,8 +95,9 @@ sites it cannot place are NAMED and ratcheted rather than counted green.
 import sys, os, re, tempfile, collections, subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
 sys.path.insert(0, HERE)
+import harness_paths as HP
+ROOT = str(HP.scrip())
 import util_gc_unmapped_store_census as UC
 
 CS = UC.CS
