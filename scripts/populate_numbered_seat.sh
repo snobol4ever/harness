@@ -41,8 +41,17 @@ python3 -c 'import json,sys; [json.load(open(f)) for f in sys.argv[1:]]' "$root/
 [ -f "$FROM/.claude/banner_compact.py" ] && cp "$FROM/.claude/banner_compact.py" "$root/.claude/"
 # THE SKILLS ARE BORN WITH THE ROOT (Lon 2026-11-08 07:3x through officer_01: "Tell CIO his failure and get him to fix ALL."; the nine roots of 11-07 15:51 had no .claude/skills and
 # every skill load there failed): every skill of the source root's committed .github/skills is copied in (never a symlink); propagate_skills.sh keeps them current after each landing.
+# ONE COPY OF THE SKILLS (row harness-the-skills-live-once-in-the-users-claude-skills; the grader's proposal 2026-11-13 20:3x CST): once the user-level copy is installed
+# (its manifest exists, propagate_skills.sh --user) every session reads it, so a new root gets no copy of its own, which nothing would keep current (senior_09 to 12 went
+# stale that way); the root is refused instead if the user-level copy lacks a skill of the source. With no manifest the root copy is made as before.
+_uskills="${S4E_SKILLS_USER:-$HOME/.claude/skills}"; _uman="${S4E_SKILLS_MANIFEST:-$(dirname "$_uskills")/s4e-skills.manifest}"
+if [ -f "$_uman" ]; then
+    for s in "$FROM/.github/skills"/*/; do n="$(basename "$s")"; [ -f "$_uskills/$n/SKILL.md" ] || { echo "REFUSE(1): the user-level skills $_uskills lack $n (run propagate_skills.sh --user); no root copy is made once $_uman exists"; exit 1; }; done
+    echo "SKILLS user-level: $_uskills serves $(wc -l < "$_uman") skills; no root copy"
+else
 mkdir -p "$root/.claude/skills" && for s in "$FROM/.github/skills"/*/; do n="$(basename "$s")"; rm -rf "$root/.claude/skills/$n"; cp -r "$s" "$root/.claude/skills/$n"; done
 [ "$(ls -d "$root/.claude/skills"/*/ 2>/dev/null | wc -l)" -ge 1 ] || { echo "REFUSE(1): no skill was installed into $root/.claude/skills (source $FROM/.github/skills)"; exit 1; }
+fi
 python3 "$root/harness/scripts/propagate_seat_digests_cto_484.py" --apply "--root=$seat" | tail -1
 echo "POPULATED $seat at $root: $(du -sh "$root" | cut -f1) (full corpus; S4E_SEAT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["env"]["S4E_SEAT"])' "$root/.claude/settings.local.json"))"
 echo "NEXT, BY HAND: add $seat to ROSTER and FLEET: IDLE EXCEPT on MODE; reown the retired HQ's open rows to $seat; (cd $root/SCRIP && make -j4) under a run slot"
