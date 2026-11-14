@@ -49,13 +49,13 @@ APPEND="${APPEND:-0}"; NOHUGE="${NOHUGE:-1}"
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "REFUSING: lib_declared_arena.sh unloadable -- the one reader of a unit's declared heap and stack (R-1353)" >&2; exit 3; }
 OUT="${OUT:-$B/NOISE-FLOOR.tsv}"
 WRAP="$ROOT/out/bench_rusage"   # row bench-external-cpu-and-elapsed-clock: the external stopwatch, built on demand (not tracked -- see .gitignore)
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
 NIVCSW_FLAG="${BENCH_NIVCSW_THRESHOLD:-20}"   # same knob/default as util_bench_snobol4_engines.sh -- one instrument, one threshold
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 if [ "$APPEND" != 1 ]; then
 {
   echo "# TIME-based SNOBOL4 benchmarks -- MEASURED run-to-run noise floor"
-  echo "# baked $(date -u +%Y-%m-%dT%H:%M:%SZ) by ../harness/scripts/$(basename "$0")  reps=$REPS  nivcsw_flag=$NIVCSW_FLAG"
+  echo "# baked $(date -u +%Y-%m-%dT%H:%M:%SZ) by ../harness/scripts/$(basename "$0")  reps=$REPS  nivcsw_flag=$NIVCSW_FLAG"  # one-disk: not a path
 echo "#   MACHINE LOAD AT BAKE: nproc=$(nproc) loadavg=$(cut -d' ' -f1-3 /proc/loadavg)"
 echo "#   ORACLE IDENTITY AT BAKE: $(sbl_oracle_fingerprint "$SBL")"
 echo "#   ⛔ THE sbl ROWS BELOW ARE A PROPERTY OF THAT EXACT BINARY.  A rebuilt or repaired oracle makes them"

@@ -13,15 +13,15 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; cd "$ROOT" || exit 2
 LANGS="snobol4 icon prolog snocone rebus raku pascal polyglot"
 RECORD="${S4E_SMOKE_RECORD:-/home/resources/progress/SMOKE.tsv}"
-if [ "${1:-}" = --list ]; then for l in $LANGS; do echo "../harness/scripts/test_smoke_$l.sh"; done; exit 0; fi
+if [ "${1:-}" = --list ]; then for l in $LANGS; do echo "$S4E_HARNESS/scripts/test_smoke_$l.sh"; done; exit 0; fi
 seat="$(bash "$HERE/lib_one_runner.sh" --seat 2>/dev/null)"
 # R-1893 (Lon 2026-10-22: "whatever bottleneck we put in place to save CPU, release it"): every seat may run this; the R-1671 coo-only refusal is released.
 [ -x ./scrip ] || { echo "FLEET_SMOKE REFUSE(2): ./scrip is not built"; exit 2; }
-for l in $LANGS; do [ -f "../harness/scripts/test_smoke_$l.sh" ] || { echo "FLEET_SMOKE REFUSE(2): ../harness/scripts/test_smoke_$l.sh is missing"; exit 2; }; done
-tree="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo UNKNOWN)"; ctree="$(git -C "$ROOT/../corpus" rev-parse --short HEAD 2>/dev/null || echo UNKNOWN)"
+for l in $LANGS; do [ -f "$S4E_HARNESS/scripts/test_smoke_$l.sh" ] || { echo "FLEET_SMOKE REFUSE(2): $S4E_HARNESS/scripts/test_smoke_$l.sh is missing"; exit 2; }; done
+tree="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo UNKNOWN)"; ctree="$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo UNKNOWN)"
 T0=$(date +%s.%N); green=0; red=0; refused=0; pass=0; fail=0; reds=""; W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 for l in $LANGS; do
-  t0=$(date +%s.%N); timeout -k 5 300 bash "../harness/scripts/test_smoke_$l.sh" </dev/null >"$W/$l.out" 2>&1; rc=$?; t1=$(date +%s.%N)
+  t0=$(date +%s.%N); timeout -k 5 300 bash "$S4E_HARNESS/scripts/test_smoke_$l.sh" </dev/null >"$W/$l.out" 2>&1; rc=$?; t1=$(date +%s.%N)
   # the smoke's own summary lines start at column 0; the indented was:/now: lines are a score receipt's echo and count nothing (COO-422: rebus read 20 for 4)
   p=$(grep -E '^[^[:space:]]' "$W/$l.out" | grep -oE 'PASS=[0-9]+' | sed 's/PASS=//' | awk '{s+=$1} END{print s+0}'); f=$(grep -E '^[^[:space:]]' "$W/$l.out" | grep -oE 'FAIL=[0-9]+' | sed 's/FAIL=//' | awk '{s+=$1} END{print s+0}')
   pass=$((pass + p)); fail=$((fail + f))
@@ -32,7 +32,7 @@ done
 secs="$(echo "$(date +%s.%N) - $T0" | bc | sed 's/^\./0./')"
 printf 'FLEET_SMOKE total: langs=8 green=%s red=%s refused=%s pass=%s fail=%s wall=%ss tree=%s corpus=%s%s\n' "$green" "$red" "$refused" "$pass" "$fail" "$secs" "$tree" "$ctree" "${reds:+ reds:$reds}"
 if [ "$seat" = coo ]; then
-  [ -f "$RECORD" ] || printf '# THE FLEET SMOKE RECORD (R-1673): one line per coo run of ../harness/scripts/test_fleet_smoke.sh -- tier 1 of the verifier loop, run after every origin landing.\nat_utc\tscrip\tcorpus\tgreen\tred\trefused\tpass\tfail\tsecs\treds\n' > "$RECORD"
+  [ -f "$RECORD" ] || printf '# THE FLEET SMOKE RECORD (R-1673): one line per coo run of ../harness/scripts/test_fleet_smoke.sh -- tier 1 of the verifier loop, run after every origin landing.\nat_utc\tscrip\tcorpus\tgreen\tred\trefused\tpass\tfail\tsecs\treds\n' > "$RECORD"  # one-disk: not a path
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$tree" "$ctree" "$green" "$red" "$refused" "$pass" "$fail" "$secs" "${reds# }" >> "$RECORD"
 fi
 [ "$refused" = 0 ] || exit 2

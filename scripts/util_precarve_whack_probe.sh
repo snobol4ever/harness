@@ -16,7 +16,7 @@
 # becomes a LANDING by the seat's own hand, with the smokes and the handful before the push (R-1928) and its row marked in PRECARVE-WHACK-LIST.md.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; SCRIP="$S4E_SCRIP"; PAT="$HERE/util_precarve_whack_patches.py"
-LOG="${PROBE_LOG:-/home/resources/progress/PRECARVE-PROBE.tsv}"; TEST="${PROBE_TEST:-bash ../harness/scripts/test_fleet_smoke.sh}"
+LOG="${PROBE_LOG:-/home/resources/progress/PRECARVE-PROBE.tsv}"; TEST="${PROBE_TEST:-bash $S4E_HARNESS/scripts/test_fleet_smoke.sh}"
 SEAT="$(cat "$HERE/../../HQ" 2>/dev/null || basename "$(cd "$HERE/../.." && pwd)")"
 [ $# -ge 1 ] || { echo "usage: util_precarve_whack_probe.sh <site>...   (python3 $PAT --list names the sites)"; exit 2; }
 cd "$SCRIP" || { echo "REFUSE(2): no SCRIP at $SCRIP"; exit 2; }

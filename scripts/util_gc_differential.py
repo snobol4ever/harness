@@ -47,12 +47,12 @@ a .ref would otherwise pick whichever configuration it happened to run. The DEFE
 text and by the gate's ratchet; the rc reports measurability, per RULES.md THE INSTRUMENT LAWS.
 
 ⛔ THE POPULATION EXCLUDES A PROGRAM THAT READS THE GC CONFIGURATION, because such a program diverges
-legitimately and is not evidence about the collector. Measured 2026-09-21: no program in corpus/tests or
-../harness/scripts/gc_witnesses calls getenv on a SCRIP_GC_*/SCRIP_HEAP_MB name (three witnesses MENTION a knob in a
+legitimately and is not evidence about the collector. Measured 2026-09-21: no program in corpus/tests or  # one-disk: not a path
+../harness/scripts/gc_witnesses calls getenv on a SCRIP_GC_*/SCRIP_HEAP_MB name (three witnesses MENTION a knob in a  # one-disk: not a path
 comment, which is not a read). The check is kept because the day one appears it must be named, not graded.
 
 ⛔ SPELLING IS HELD CONSTANT AND THAT IS LOAD-BEARING (COO-127): the source path is itself a heap block, so
-its length shifts every block after it, and one witness reaches interior=1 as ../harness/scripts/x and interior=0 as
+its length shifts every block after it, and one witness reaches interior=1 as ../harness/scripts/x and interior=0 as  # one-disk: not a path
 ./scripts/x. Every configuration of one program is therefore invoked with the IDENTICAL path string; the
 differential is immune to that variable only because it never varies it, and it is stamped on the report line.
 
@@ -75,7 +75,9 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
+sys.path.insert(0, HERE)
+import harness_paths   # THE ABSOLUTE MODEL: scrip() is S4E_SCRIP, else the root, else the sibling
+ROOT = str(harness_paths.scrip())
 
 # Collector telemetry tags. SCRIP_ZETA_TELEM=1 is held constant across every configuration, so it is not a
 # variable of the differential; arm "telemetry does not change the answer" in the gate proves that.

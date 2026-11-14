@@ -10,10 +10,11 @@
 set -uo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/lib_wake.sh"   # THE WAKE LINE (the cio 2026-11-08): ask and answer end by naming the session to SendMessage
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 PO="${S4E_POST:-/home/resources/postoffice}"
 ME="${S4E_SEAT:-}"
-TIERS="${S4E_TIERS:-$S4E/.github/TIERS.tsv}"
+TIERS="${S4E_TIERS:-$S4E_GITHUB/TIERS.tsv}"
 BUS="$HERE/s4e_msg.sh"
 VERB="${1:-}"; shift || true
 
@@ -59,7 +60,7 @@ ask_queue() {   # <asker-topic> <question text>
         printf 'GOAL: question from %s for %s: %s\n' "$ME" "$topic" "$(printf '%s' "$body" | head -1 | cut -c1-200)"
         printf 'DONE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && grep -q "^ANSWER: " "%s"\n' "$base"
         printf 'PREMISE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && ! grep -q "^ANSWER: " "%s"\n' "$base"
-        printf 'SKILLS: fleet-bus\nTOUCHES: harness/scripts/s4e_ask.sh\nBUDGET: 7200\n'
+        printf 'SKILLS: fleet-bus\nTOUCHES: harness/scripts/s4e_ask.sh\nBUDGET: 7200\n'  # one-disk: not a path
         printf 'LINKS: asked by %s for %s (fleet-queue step 8)\nASKED-BY: %s\nASKED-ROW: %s\n' "$ME" "$topic" "$ME" "$topic"; [ -n "$j" ] && printf 'QUEUE-JOB: %s tube=%s\n' "$j" "$tube"
         printf '## NEXT\nAnswer it: s4e_msg.sh answer %s --stdin (the answer unblocks %s).\n## QA\n' "$qt" "$topic"
         printf '%s\n' "$body" | sed 's/^/> /'

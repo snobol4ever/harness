@@ -257,7 +257,7 @@ if [ "$TWO_NUMBER" -eq 1 ]; then two_number_board; exit $?; fi
 [ -n "$RULECHECK" ] || [ "$TWO_NUMBER" -eq 1 ] || {
     echo "⛔ REFUSED (rc=2): the legacy per-iteration board is RETIRED (R-567) -- it wrote the checked-in wrapped form."
     echo "   Use one of the generating angles instead:"
-    echo "     angle 1  bash ../harness/scripts/test_bench_prolog_timed.sh      (live doubling search for N)"
+    echo "     angle 1  bash ../harness/scripts/test_bench_prolog_timed.sh      (live doubling search for N)"  # one-disk: not a path
     echo "     angle 2  bash ../harness/scripts/bench_prolog_fixed_iter.sh      (committed N, corpus/benchmarks/prolog/fixed-iter-n.tsv)"   # one-disk: not a path
     echo "   This script still serves --two-number (the bucket board) and --measured-from <tri.tsv> (the rule check)."
     exit 2; }

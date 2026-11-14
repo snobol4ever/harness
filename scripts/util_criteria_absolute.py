@@ -174,14 +174,14 @@ def selftest():
         (P + 'o="$(SCRIP/scrip corpus/x.icn)"; [ "$o" = 1 ]', P + S + 'o="$($S4E_SCRIP/scrip $S4E_CORPUS/x.icn)"; [ "$o" = 1 ]'),   # one-disk: not a path
         (P + "grep -q 'corpus/tests' f", P + "grep -q 'corpus/tests' f"),   # one-disk: not a path
         (P + 'test -f /home/claude_cio/harness/scripts/x', P + 'test -f /home/claude_cio/harness/scripts/x'),
-        (PFXS + 'P=../corpus/packages/icon && ./scrip $P/a.icn', P + S + 'cd "$S4E_SCRIP" && P=$S4E_CORPUS/packages/icon && ./scrip $P/a.icn'),
+        (PFXS + 'P=../corpus/packages/icon && ./scrip $P/a.icn', P + S + 'cd "$S4E_SCRIP" && P=$S4E_CORPUS/packages/icon && ./scrip $P/a.icn'),  # one-disk: not a path
         (P + 'cd "$S4E_HOME/SCRIP" && make', P + S + 'cd "$S4E_SCRIP" && make'),   # one-disk: not a path
         (P + 'test -x "$S4E_HOME"/SCRIP/scrip', P + S + 'test -x "$S4E_SCRIP"/scrip'),
         (P + 'git -C corpus log -1', P + S + 'git -C "$S4E_CORPUS" log -1'),
         (P + 'echo "no harness here"', P + 'echo "no harness here"'),
         (P + 'grep -c x .github/skills/a.md', P + S + 'grep -c x $S4E_GITHUB/skills/a.md'),   # one-disk: not a path
         (P + 'o="$(cd corpus/a/b/c && ../../../../SCRIP/scrip t.icn)"', P + S + 'o="$(cd $S4E_CORPUS/a/b/c && $S4E_SCRIP/scrip t.icn)"'),   # one-disk: not a path
-        (P + 'cd corpus && ../SCRIP/scrip t.sno', P + S + 'cd "$S4E_CORPUS" && $S4E_SCRIP/scrip t.sno'),
+        (P + 'cd corpus && ../SCRIP/scrip t.sno', P + S + 'cd "$S4E_CORPUS" && $S4E_SCRIP/scrip t.sno'),  # one-disk: not a path
     ]
     why = [f'{a!r} -> {rewrite(a)[0]!r}, want {b!r}' for a, b in T if rewrite(a)[0] != b]
     if why: print('CRITERIA_ABSOLUTE RED:\n  ' + '\n  '.join(why)); return 1

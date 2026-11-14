@@ -32,7 +32,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # Usage: [REPS=3] [WARM=500] [BUD=1500] bash ../harness/scripts/bench_icon_rate_3way.sh
 # Oracles: icont_bin()/iconx_bin() and jcon_path_export() -- all three from lib_oracle_flags.sh, the ONE authority.
 # ⛔ RETIRED 2026-09-23 -- see the refusal on the next line; the header below is kept as the record of what this measured.
-echo "⛔ RETIRED(2) bench_icon_rate_3way.sh: superseded 2026-09-23 by ../harness/scripts/bench_triangulate_icon.sh (hq_icon, R-567 THE KERNEL CONVENTION, R-1221). It read timing the KERNEL printed itself -- rate/*.icn self-timed with &time, rtx/*.icn wrote ms: -- and every Icon benchmark is now a pristine kernel with a .ref and no clock in its source; the harness generates the wrapper and times it (fixed iterations, fixed time, out/bench_rusage)." >&2; exit 2
+echo "⛔ RETIRED(2) bench_icon_rate_3way.sh: superseded 2026-09-23 by ../harness/scripts/bench_triangulate_icon.sh (hq_icon, R-567 THE KERNEL CONVENTION, R-1221). It read timing the KERNEL printed itself -- rate/*.icn self-timed with &time, rtx/*.icn wrote ms: -- and every Icon benchmark is now a pristine kernel with a .ref and no clock in its source; the harness generates the wrapper and times it (fixed iterations, fixed time, out/bench_rusage)." >&2; exit 2  # one-disk: not a path
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255), Icon-aware since row icon-oracle-accessors-shared." >&2; exit 3; }

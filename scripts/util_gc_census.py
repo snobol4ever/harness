@@ -2861,9 +2861,9 @@ def main(argv):
     # --built-from (this file's selftest plants one with 1970 mtimes beside a newer src/) is asked about itself and refuses.
     _owner = os.path.abspath(a.built_from) if a.built_from else R
     bc = subprocess.run(["bash", "-c",
-                         'set -e; . "$1/../harness/scripts/lib_build_currency.sh"; '
+                         'set -e; . "$2/scripts/lib_build_currency.sh"; '
                          'assert_binary_current "$1/scrip" "$1"; assert_so_current "$1/out/libscrip_rt.so" "$1"',
-                         "_", _owner], capture_output=True, text=True)
+                         "_", _owner, str(harness_paths.harness())], capture_output=True, text=True)
     if bc.returncode != 0:
         sys.stdout.write(bc.stdout)
         sys.stderr.write(bc.stderr)

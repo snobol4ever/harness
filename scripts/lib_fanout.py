@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""lib_fanout.py -- the python mirror of ../harness/scripts/lib_fanout.sh (R-1333, R-1394): fanout_width() is
+"""lib_fanout.py -- the python mirror of ../harness/scripts/lib_fanout.sh (R-1333, R-1394): fanout_width() is  # one-disk: not a path
 max(2, min(4, cores - demand)), where the demand is the machine's CPU demand in CPUs -- /proc/pressure/cpu "some avg10" times
 cores / 100, or /proc/stat procs_running less the reader on a kernel without PSI -- and NEVER load1 (load1 read 1219 at 3 percent
 PSI on 2026-10-01 when co-expression pthreads filled the run queue's count). FANOUT_TEST_LOAD plants the demand and FANOUT_PROC
 plants the /proc root. A python runner that fans out (util_parser_sc_census.py's --jobs default) takes its width from here;
 test_gate_fanout_ceiling.sh and test_gate_fanout_width_reads_cpu_pressure_not_load1.sh hold the two mirrors in agreement.
-Run it for the number: python3 ../harness/scripts/lib_fanout.py"""
+Run it for the number: python3 ../harness/scripts/lib_fanout.py"""  # one-disk: not a path
 import os, sys
 
 def _proc():

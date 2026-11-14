@@ -13,7 +13,7 @@ sub_tests and prolog_tests test_cleanup, uwoc, sub_tests test_answer_abstraction
   --apply [PKGDIR]   move the driver in each such vendored file AND each such ALL.pl entry (the container is the files' text, entry for entry, so
                      the two change together and ALL.csv, ALL.ref and PARTITION.tsv do not: no entry is added, renamed or re-cut)
 
-PKGDIR defaults to the sibling corpus: <harness>/../corpus/packages/prolog/xsb_tests.
+PKGDIR defaults to the sibling corpus: <harness>/../corpus/packages/prolog/xsb_tests.  # one-disk: not a path
 """
 import argparse, csv, re, sys
 from pathlib import Path

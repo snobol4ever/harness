@@ -11,7 +11,7 @@ tell which. Each exposed baton is printed with its QUEUE.tsv owner and state, th
 
   GUARD   the criterion runs the one-runner guard itself (lib_one_runner.sh, one_runner_guard) and reads its answer -- under the
           exemption the guard admits everyone, so the verdict IS the exemption. The owner must rewrite it.
-  BOARD   the criterion runs a guarded board or runner (a name in ../harness/scripts/one_runner_boards.txt, corpus_suite_harness.py run, or any
+  BOARD   the criterion runs a guarded board or runner (a name in ../harness/scripts/one_runner_boards.txt, corpus_suite_harness.py run, or any  # one-disk: not a path
           test_*_suite.sh / board_*.sh / scorecard_*.sh) and reads its rc or output -- the exemption ADMITS the run; the owner says
           whether admitting it is what the criterion means.
   SMOKE   every guarded runner it names runs as an AREA SMOKE the guard admits for every seat (R-1505, row instruments-the-

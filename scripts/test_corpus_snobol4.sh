@@ -22,9 +22,10 @@ export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a grade
 # boards the one runner runs every hour, so three of four boards stamped HEAD AT WRITE TIME -- which is
 # R-524 (1)'s defect in its second form. One spelling, in lib_gate.sh, set by the same call that takes
 # the baseline: a board cannot now acquire the stamp without also acquiring the refusal.
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"
-CORPUS="$S4E/corpus"
+. "$HERE/lib_paths.sh"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+RT_DIR="${RT_DIR:-$S4E_SCRIP/out}"
+CORPUS="$S4E_CORPUS"
 # ⛔⭐⭐ THE BINARY MAY NOT MOVE UNDER A RUNNING BOARD. Measured here 2026-09-06 (hq_S): a board was started and
 # an incremental `make` was run while it was still grading. The harness happened to try to exec ./scrip during
 # the relink, died with PermissionError, and REFUSED -- which is the honest outcome and the ONLY reason it was
@@ -160,7 +161,7 @@ if ! . "$HERE/lib_gate.sh" 2>/dev/null || ! command -v gate_require_fresh >/dev/
     echo "⛔ REFUSED TO GRADE: lib_gate.sh unavailable or missing gate_require_fresh -- cannot verify binary freshness" >&2
     exit 2
 fi
-gate_require_fresh "$HERE/../../SCRIP" src "$SCRIP" "$RT_DIR/libscrip_rt.so"
+gate_require_fresh "$S4E_SCRIP" src "$SCRIP" "$RT_DIR/libscrip_rt.so"
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED TO GRADE rc=2: lib_declared_arena.sh unloadable -- the one reader of a program's declared command line" >&2; exit 2; }
 # ⛔⛔ REFUSE ON A MISSING SUBTREE -- DO NOT SILENTLY DISCOVER FEWER PROGRAMS (hq_C s271). This board read
 # "PASS=342 FAIL=0" for a whole session because $DEMO pointed at a path that did not exist: every visible signal
@@ -195,7 +196,7 @@ compile_mode4() {
     local sno="$1" out="$2" ca="${3:-}"   # ca: the program's declared compile_args (run_test reads them), after --compile
     local tmp; tmp="$(mktemp -d)"
     SNO_LIB="$INC" "$SCRIP" --compile $ca "$sno" > "$tmp/p.s" 2>/dev/null || { rm -rf "$tmp"; return 1; }
-    (cd "$HERE/../../SCRIP" && gcc -c "$tmp/p.s" -o "$tmp/p.o" 2>/dev/null) || { rm -rf "$tmp"; return 1; }
+    (cd "$S4E_SCRIP" && gcc -c "$tmp/p.s" -o "$tmp/p.o" 2>/dev/null) || { rm -rf "$tmp"; return 1; }
     # ⛔ -no-pie is NOT applied here, deliberately -- RULED, not blocked: row
     # `m4-pie-vs-no-pie-changes-behaviour-not-just-signal` (seat10 2026-08-28), full analysis in
     # .github/ARCH-ENGINE.md § "Mode-4 Link Mode". gdb on the faulting RSP showed -no-pie is the broken arm, not
@@ -631,7 +632,7 @@ if [ "$((TMOUT3+TMOUT4))" -gt 0 ]; then
     printf "$TMOUT_LIST"
     echo "   These are NOT failures and NOT passes. The board is SMALLER than its PASS counts suggest."
     echo "   ⛔ Do NOT read this as a regression. Re-run on a quieter box, or raise the bound:"
-    echo "      TIMEOUT=600 bash ../harness/scripts/test_corpus_snobol4.sh"
+    echo "      TIMEOUT=600 bash ../harness/scripts/test_corpus_snobol4.sh"  # one-disk: not a path
     echo "   ⭐ A program killed even on an idle box at a generous bound is a real hang and wants a row."
     exit 2
 fi
@@ -735,7 +736,7 @@ _sn4_board="rungs both-modes $m_all/$_sn4_shipped EXCLUDED=$_sn4_excluded OUTSID
 # published pair is printed beside it so the board everyone quotes and the terminal cannot silently disagree.
 echo "sno-rungs ROW PUBLISHED: $m_all/$_sn4_shipped EXCLUDED=$_sn4_excluded OUTSIDE=$_sn4_outside EXTENSION=$_sn4_extension (graded $mt)  (rungs only; m3 xfail=$m3x xpass=$m3xp · m4 xfail=$m4x xpass=$m4xp — xfails counted in the denominator, not the numerator; a nonzero XPASS is a stale marker and is as actionable as a failure, in the opposite direction)"
 echo "runner-wide population (rungs + loop, NOT the published row): $BOTH/$TOTAL"
-echo "ONE LEADERBOARD: recording this board into .github/SCORE.md (test_corpus_snobol4.sh; skipped with a notice if the tree is dirty)"
+echo "ONE LEADERBOARD: recording this board into .github/SCORE.md (test_corpus_snobol4.sh; skipped with a notice if the tree is dirty)"  # one-disk: not a path
 # ⛔⭐ THE SUITE ROW'S PAIR IS DECLARED, NEVER PARSED OUT OF THE LINE ABOVE (hq_T 2026-09-06, R-363).
 # This board line carries FOUR fractions -- the AND, m3, m4 and the ast fixtures -- over TWO different
 # populations, so any rule that reads a pair out of it is choosing between them silently, and the ast pair

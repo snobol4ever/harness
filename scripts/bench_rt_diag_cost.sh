@@ -24,7 +24,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25
 # EXIT 0 GREEN, 1 RED (the gap exceeds the bar), 2 REFUSED (no perf, a build failed, a stamp disagrees, the outputs differ).
 set -uo pipefail
 G=bench_rt_diag_cost
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 refuse() { echo "⛔ $G REFUSE(2): $*"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate "$G" || exit $?
 BAR="${1:-2}"

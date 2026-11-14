@@ -34,10 +34,10 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_oracle_flags.sh"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/prolog/bench}"
-PRO="${PROLOG_DIR:-$S4E/corpus/benchmarks/prolog}"
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/prolog/bench}"
+PRO="${PROLOG_DIR:-$S4E_CORPUS/benchmarks/prolog}"
 NTSV="${NTSV:-$PRO/fixed-iter-n.tsv}"
 GEN="${GEN:-$HERE/bench_prolog_wrap.sh}"
 T="${TIMEOUT:-60}"
@@ -71,7 +71,7 @@ gplc_bin >/dev/null || exit 2
 #   switches on every m3 and m4 command line (lib_declared_arena.sh, the suite runner's reader; R-1225; tak: -s65536k).
 declare -a DECL_SW=(); declare -A DECLW=()
 WRAP="$ROOT/out/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 # ⛔ timeout -k 5 EVERYWHERE (hq_P 2026-09-02, measured): swipl ignores timeout's SIGTERM -- angle 2 sat 648 s on vanroy/queens.pl
 # under `timeout 60` with the whole triangulation behind it. A bound that the bounded process can decline is not a bound; -k makes
 # the kill unconditional five seconds after the deadline, and the run then reads CRASH(signal 9), never a rate (the exit= gate).

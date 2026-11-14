@@ -140,9 +140,9 @@ donewhen_selftest() {
     }
     # ⭐ ARM 1 IS hq_S's EXACT INPUT, verbatim from their 2026-09-11 message, and it is the reason this file
     # exists. The old extractor answered `-d)` here and called two live rows PERMANENTLY UNCLOSEABLE.
-    _t 'D=$(mktemp -d) && bash ../harness/scripts/test_x.sh' bash
+    _t 'D=$(mktemp -d) && bash ../harness/scripts/test_x.sh' bash  # one-disk: not a path
     _t 'D=$(mktemp -d); cd "$D" && ./x' cd
-    _t 'bash ../harness/scripts/test_y.sh' bash
+    _t 'bash ../harness/scripts/test_y.sh' bash  # one-disk: not a path
     _t 'RT_OPT=-O0 make test' make
     _t 'A=1 B="two words" C=$(echo a b) python3 x.py' python3
     _t 'out=$(bash a.sh 2>&1); printf "%s" "$out" | grep -q x' printf

@@ -3,7 +3,7 @@
 
 DOES EACH BOOTSTRAP PARSER WORK? (Lon 2026-09-23 15:2x, in-chat: hq_snocone "to get all the SCRIP bootstrap
 parsers working".) For every language, the Snocone-hosted parser bootstrap/parser_<lang>.sc of SCRIP -- loaded behind the
-14-file bootstrap runtime in the order ../harness/scripts/run_scrip_parser.sh declares, BY CONCATENATION (the Snocone branch of the
+14-file bootstrap runtime in the order ../harness/scripts/run_scrip_parser.sh declares, BY CONCATENATION (the Snocone branch of the  # one-disk: not a path
 driver never reads a -L chain; util_parser_sc_census.sh's note) -- is run by ./scrip over every program of a declared
 population with the program as its stdin. POPULATION ladder (default): every entry of the language's rungs whose ALL.csv
 origin is ladder__* -- the construct ladder, one construct per rung, cut from the public reference; POPULATION rungs:

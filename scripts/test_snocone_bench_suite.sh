@@ -39,7 +39,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # EXIT 0 every program PASS; 1 any program not PASS; 2 REFUSED (no binary, no population, a tool that cannot be built).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
-S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SCRIP="$ROOT/scrip"; RT="$ROOT/out"; BD="$S4E_CORPUS/benchmarks/snocone"; GEN="$HERE/bench_wrap_snocone.py"
 OUTDIR=""; NITER=""; BUD=200; TMO=300; NOWRITE=0
 MODES="$(printf "%s" "${S4E_MODES:-m3}" | tr "," " ")"

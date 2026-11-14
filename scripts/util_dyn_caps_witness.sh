@@ -15,13 +15,13 @@ HERE=$(cd "$(dirname "$0")" && pwd); . "$HERE/lib_paths.sh"; cd "$S4E_SCRIP" || 
 [ -n "${S4E_BATCH_HELD:-}" ] || [ ! -f "$HERE/util_batch.sh" ] || exec bash "$HERE/util_batch.sh" bash "$HERE/util_dyn_caps_witness.sh" "$@"
 mode=${1:-}; [ -n "$mode" ] || { echo "REFUSE(2): usage: util_dyn_caps_witness.sh compile|runtime|census|witness"; exit 2; }
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
-python3 ../harness/scripts/audit_fixed_caps_census.py --tsv "$T/c.tsv" --no-report > "$T/census.txt" 2>&1 || { echo "REFUSE(2): the census refused -- $(tail -2 "$T/census.txt" | tr '\n' ' ')"; exit 2; }
+python3 "$S4E_HARNESS/scripts/audit_fixed_caps_census.py" --tsv "$T/c.tsv" --no-report > "$T/census.txt" 2>&1 || { echo "REFUSE(2): the census refused -- $(tail -2 "$T/census.txt" | tr '\n' ' ')"; exit 2; }
 red=0
 # ⭐ NOT SHIPPED (R-1235 (3)): ../harness/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv names the compilation units no program's run reaches (unit
 # tests, tools, demos); their rows leave $T/c.tsv before any line below reads it. THE LINK IS THE EVIDENCE: each row is checked against
 # make's own RT_PIC_SRCS (what `$(CC) -shared` links into libscrip_rt) and src/driver/scrip.c (the scrip link). A linked file, a header
 # or a file the tree no longer has sets nothing aside and reads RED by name, in every verb. DYN_CAPS_NOT_SHIPPED overrides the path.
-NS="${DYN_CAPS_NOT_SHIPPED:-../harness/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv}"; [ -f "$NS" ] || { echo "REFUSE(2): no not-shipped declaration at $NS"; exit 2; }
+NS="${DYN_CAPS_NOT_SHIPPED:-$S4E_HARNESS/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv}"; [ -f "$NS" ] || { echo "REFUSE(2): no not-shipped declaration at $NS"; exit 2; }
 nsbad=$(awk -F'\t' '!/^#/ && NF && (NF < 2 || $1 == "" || $2 == "")' "$NS")
 [ -z "$nsbad" ] || { echo "REFUSE(2): $NS rows that are not file<TAB>reason:"; printf '%s\n' "$nsbad" | cut -c1-160; exit 2; }
 [ -f Makefile ] || { echo "REFUSE(2): no Makefile -- the not-shipped rows are checked against its link lines"; exit 2; }
@@ -46,7 +46,7 @@ awk -F'\t' 'FILENAME==ARGV[1] {ok[$1] = 1; next} FNR==1 || !($1 in ok)' "$T/ns.o
 # count of predicates fills) could never leave its list and the umbrella's DONE-WHEN stayed red over a declared row. count_caps now
 # drops a (file, name) CLASS_AB.tsv declares, exactly as the census verb drops it from the no-guard line; count_caps_declared names what
 # was set aside, so the line reads "still bound: n (k declared class A/B, set aside)" and the ratchet counts are untouched.
-_ab_file() { printf '%s' "${DYN_CAPS_CLASS_AB:-../harness/scripts/fixtures/dyn_caps/CLASS_AB.tsv}"; }
+_ab_file() { printf '%s' "${DYN_CAPS_CLASS_AB:-$S4E_HARNESS/scripts/fixtures/dyn_caps/CLASS_AB.tsv}"; }
 count_caps() { awk -F'\t' -v dirs="$1" -v caps="$2" 'FILENAME==ARGV[1] { if ($0 !~ /^#/ && NF>=3) ab[$1 "\t" $2]=1; next } FNR>1 && ($3=="file"||$3=="static"||$3=="field"||$3=="arena") && $1 ~ dirs && $5 ~ caps && !(($1 "\t" $4) in ab) {print "  " $1 ":" $2 " " $4 "[" $5 "]"}' "$(_ab_file)" "$T/c.tsv"; }
 count_caps_declared() { awk -F'\t' -v dirs="$1" -v caps="$2" 'FILENAME==ARGV[1] { if ($0 !~ /^#/ && NF>=3) ab[$1 "\t" $2]=$3; next } FNR>1 && ($3=="file"||$3=="static"||$3=="field"||$3=="arena") && $1 ~ dirs && $5 ~ caps && (($1 "\t" $4) in ab) {print "  " $1 ":" $2 " " $4 "[" $5 "] class " ab[$1 "\t" $4]}' "$(_ab_file)" "$T/c.tsv"; }
 COMPILE_CAPS='^(SNO_DEF_MAX|SNO_PAT_MAX|SNO_EXPR_MAX|SNO_FZW_MAX|SNO_LOOP_STACK_MAX|MAX_PREDS|PL_BB_TABLE_MAX|PL_INIT_GOALS_MAX|PL_CONSULT_FILES_MAX|FL_MAX_ENTRIES|FL_MAX_FIELDS|FL_MAX_SCOPES|FL_MAX_GRAPHS|ZDP_CAP|BB_PATCH_MAX|SMX_STRTAB_CAP|SMX_CSETTAB_CAP|AB_FNCELL_MAX|XA_BB_EMIT_PAIR_MAX|ZD_NOPS_MAX|FLAT_CHAIN_SET_MAX|FLAT_DATA_LBL_MAX|WASM_STRTAB_MAX|WASM_USERFNS_MAX|STAGE2_LABEL_MAX|STAGE2_PROC_TABLE_MAX|STAGE2_PL_PRED_TABLE_SIZE|STAGE2_FRAME_SLOT_MAX|STAGE2_MOD_MAX|MAX_STATES|MAX_GROUPS|MAX_CAPLOG|RK_GRAM_MAX|SC_DAT_MAX_TYPES|INIT_MAX|SHADOW_MAX|CALL_STACK_MAX)$'
@@ -54,7 +54,7 @@ RUNTIME_CAPS='^(CALL_ARGS_MAX|RT_FRAME_STACK_MAX|RT_FRAME_SLOT_MAX|FH_MAX|GLOBAL
 case "$mode" in
 compile)
   [ -x ./scrip ] || { echo "REFUSE(2): no ./scrip"; exit 2; }
-  python3 ../harness/scripts/util_dyn_caps_gen.py "$T/w" || exit 2
+  python3 "$S4E_HARNESS/scripts/util_dyn_caps_gen.py" "$T/w" || exit 2
   SBL=/home/resources/x64/bin/sbl; [ -x "$SBL" ] || { echo "REFUSE(2): no SPITBOL oracle at $SBL"; exit 2; }
   "$SBL" -bf "$T/w/defines200.sno" < /dev/null > "$T/a.ref" 2>&1; timeout -k 5 60 ./scrip --run "$T/w/defines200.sno" < /dev/null > "$T/a.out" 2> "$T/a.err"
   if cmp -s "$T/a.ref" "$T/a.out"; then echo "PASS defines200.sno: 200 DEFINEs read $(tr -d '\n' < "$T/a.ref") in both"; else echo "RED defines200.sno: sbl -bf prints $(head -c 40 "$T/a.ref" | tr -d '\n'), scrip prints '$(head -c 40 "$T/a.out" | tr -d '\n')' -- $(head -c 140 "$T/a.err" | tr '\n' ' ')"; red=1; fi
@@ -68,7 +68,7 @@ compile)
   ;;
 runtime)
   [ -x ./scrip ] || { echo "REFUSE(2): no ./scrip"; exit 2; }
-  python3 ../harness/scripts/util_dyn_caps_gen.py "$T/w" || exit 2
+  python3 "$S4E_HARNESS/scripts/util_dyn_caps_gen.py" "$T/w" || exit 2
   ICONT=/home/resources/icon-master/bin/icont; [ -x "$ICONT" ] || { echo "REFUSE(2): no icont oracle at $ICONT"; exit 2; }
   ( cd "$T/w" && "$ICONT" -s -o args70x args70.icn > /dev/null 2>&1 && PATH=/home/resources/icon-master/bin:$PATH ./args70x > "$T/c.ref" 2>&1 ) || { echo "REFUSE(2): the oracle could not run args70.icn"; exit 2; }
   timeout -k 5 60 ./scrip --run "$T/w/args70.icn" < /dev/null > "$T/c.out" 2> "$T/c.err"
@@ -89,8 +89,8 @@ runtime)
   L=$(count_caps '^src/runtime/' "$RUNTIME_CAPS"); n=$(printf '%s' "$L" | grep -c .); D=$(count_caps_declared '^src/runtime/' "$RUNTIME_CAPS"); d=$(printf '%s' "$D" | grep -c .); echo "runtime tables still bound by a population cap: $n ($d declared class A/B in $(_ab_file), set aside)"; [ "$d" = 0 ] || printf '%s\n' "$D"; [ "$n" = 0 ] || { printf '%s\n' "$L"; red=1; }
   ;;
 census)
-  B=../harness/scripts/fixtures/dyn_caps/BASELINE; [ -f "$B" ] || { echo "REFUSE(2): no baseline at $B"; exit 2; }
-  BF=../harness/scripts/fixtures/dyn_caps/BASELINE_FUNCTION_SCOPE; [ -f "$BF" ] || { echo "REFUSE(2): no function-scope baseline at $BF"; exit 2; }
+  B=$S4E_HARNESS/scripts/fixtures/dyn_caps/BASELINE; [ -f "$B" ] || { echo "REFUSE(2): no baseline at $B"; exit 2; }
+  BF=$S4E_HARNESS/scripts/fixtures/dyn_caps/BASELINE_FUNCTION_SCOPE; [ -f "$BF" ] || { echo "REFUSE(2): no function-scope baseline at $BF"; exit 2; }
   # ⭐ THE GUARD LINES READ THE CLASSIFIER (audit_fixed_caps_census.py, R-1231): u is every file/static/field table, macro OR literal
   # bound, with no capacity guard at a fill (never compared, or compared only as an index or an iteration) and not read-only; d is
   # every such table whose guard DROPS -- skips, truncates, clamps or fails silently at the cap. A const table is class A by rule and in
@@ -102,7 +102,7 @@ census)
   # ⭐ THE CLASS A/B DECLARATION IS A FIXTURE (R-1234 (1)): a table CLASS_AB.tsv names, with the measurement that earned its class,
   # leaves the no-guard and drop lines as a const table does by rule; the ratchet COUNT is unchanged; a row naming a table the tree no
   # longer declares is RED (a stale keep-list is one nobody notices has stopped applying).
-  AB="${DYN_CAPS_CLASS_AB:-../harness/scripts/fixtures/dyn_caps/CLASS_AB.tsv}"; [ -f "$AB" ] || { echo "REFUSE(2): no class A/B declaration at $AB"; exit 2; }
+  AB="${DYN_CAPS_CLASS_AB:-$S4E_HARNESS/scripts/fixtures/dyn_caps/CLASS_AB.tsv}"; [ -f "$AB" ] || { echo "REFUSE(2): no class A/B declaration at $AB"; exit 2; }
   abad=$(awk -F'\t' '!/^#/ && NF && (NF < 4 || ($3 != "A" && $3 != "B") || $4 == "") {print "  line " FNR ": " substr($0, 1, 100)}' "$AB")
   [ -z "$abad" ] || { echo "REFUSE(2): $AB rows that are not file<TAB>name<TAB>A|B<TAB>reason:"; printf '%s\n' "$abad"; exit 2; }
   base=$(cat "$B"); n=$(awk -F'\t' 'NR>1 && ($3=="file"||$3=="static"||$3=="field"||$3=="arena")' "$T/c.tsv" | wc -l)
@@ -132,7 +132,7 @@ census)
   echo "function-scope arrays a program fills: $fn (baseline $bf) -- guarded by a loud refusal or a growth $fl, dropping at the cap $fd, with no guard $fx, declared class A or B by $AB $fa; fixed by construction and out (class B, read by machine): $fk"
   echo "function-scope arrays a program fills, unguarded: $((fd + fx))"
   if [ "$n" -gt "$base" ]; then echo "RED: the population of fixed tables grew from $base to $n -- a new fixed limit landed; make it dynamic or declare it class A/B on the page and lower nothing"; red=1; elif [ "$n" -lt "$base" ]; then echo "NOTE: $n is below the baseline $base -- lower BASELINE in the same landing (the ratchet only tightens)"; fi
-  if [ "$fn" -gt "$bf" ]; then echo "RED: the function-scope population grew from $bf to $fn -- a new fixed local that a program fills landed; make it grow, and list it: python3 ../harness/scripts/audit_fixed_caps_census.py --tsv FILE (column fill)"; red=1; elif [ "$fn" -lt "$bf" ]; then echo "NOTE: the function-scope population $fn is below its baseline $bf -- lower BASELINE_FUNCTION_SCOPE in the same landing"; fi
+  if [ "$fn" -gt "$bf" ]; then echo "RED: the function-scope population grew from $bf to $fn -- a new fixed local that a program fills landed; make it grow, and list it: python3 ../harness/scripts/audit_fixed_caps_census.py --tsv FILE (column fill)"; red=1; elif [ "$fn" -lt "$bf" ]; then echo "NOTE: the function-scope population $fn is below its baseline $bf -- lower BASELINE_FUNCTION_SCOPE in the same landing"; fi  # one-disk: not a path
   ;;
 witness)
   # ⭐ THE WITNESS VERB (R-1231: the refusal read at cap+1). N = the census's LOUD guards (tables, arenas and the locals a program
@@ -142,8 +142,8 @@ witness)
   # (1): a guard need not remain; every cap converted to growth is the row's end state), so an N of 0 is read only from a census that
   # classified guards at all: a census TSV whose guard column is empty everywhere REFUSES rather than reading a vacuous 0 of 0.
   SB="${SCRIP_BIN:-./scrip}"; [ -x "$SB" ] || { echo "REFUSE(2): no scrip binary at $SB"; exit 2; }
-  WT="${DYN_CAPS_WITNESSES:-../harness/scripts/fixtures/dyn_caps/WITNESSES.tsv}"; [ -f "$WT" ] || { echo "REFUSE(2): no witness table at $WT"; exit 2; }
-  AB="${DYN_CAPS_CLASS_AB:-../harness/scripts/fixtures/dyn_caps/CLASS_AB.tsv}"; [ -f "$AB" ] || { echo "REFUSE(2): no class A/B declaration at $AB"; exit 2; }
+  WT="${DYN_CAPS_WITNESSES:-$S4E_HARNESS/scripts/fixtures/dyn_caps/WITNESSES.tsv}"; [ -f "$WT" ] || { echo "REFUSE(2): no witness table at $WT"; exit 2; }
+  AB="${DYN_CAPS_CLASS_AB:-$S4E_HARNESS/scripts/fixtures/dyn_caps/CLASS_AB.tsv}"; [ -f "$AB" ] || { echo "REFUSE(2): no class A/B declaration at $AB"; exit 2; }
   [ "$(awk -F'\t' 'NR>1 && ($8=="LOUD"||$8=="GROW"||$8=="DROP"||$8=="NONE")' "$T/c.tsv" | wc -l)" -gt 0 ] || { echo "REFUSE(2): the census classified no guard at all -- a 0 of 0 read from it would be vacuous"; exit 2; }
   wbad=$(awk -F'\t' '!/^#/ && NF && (NF < 6 || $5 !~ /^[0-9]+$/ || $6 == "")' "$WT")
   [ -z "$wbad" ] || { echo "REFUSE(2): $WT rows that are not file<TAB>name<TAB>program<TAB>switches<TAB>rc<TAB>refusal:"; printf '%s\n' "$wbad" | cut -c1-160; exit 2; }

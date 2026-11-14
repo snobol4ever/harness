@@ -23,10 +23,10 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_oracle_flags.sh"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/prolog/bench}"
-PRO="${PROLOG_DIR:-$S4E/corpus/benchmarks/prolog}"
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/prolog/bench}"
+PRO="${PROLOG_DIR:-$S4E_CORPUS/benchmarks/prolog}"
 # ⛔ NMAX WAS 65536 UNTIL R-1281 (2026-09-26) AND THAT CAP WAS THE GPROLOG DISAGREEMENT: gprolog's wall_us is real_time/1 x 1000, a
 #   1 ms tick, and a kernel like cal (0.38 us/it on gprolog) reached the cap at 25 ms of work -- 25 ticks -- so its self-measured WORK
 #   per iteration read 0.38 on one angle and 0.44 on the other (1.16x, DISAGREE) while its CPU rates agreed. The search now runs on to
@@ -51,7 +51,7 @@ gplc_bin >/dev/null || exit 2
 [ -f "$PRO/prelude_gplc.pl" ] && [ -f "$PRO/prelude_swipl.pl" ] || { echo "⛔ REFUSED-TO-GRADE rival preludes missing under $PRO (prelude_gplc.pl / prelude_swipl.pl)"; exit 2; }
 . "$HERE/lib_prolog_bench.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE (rc=2): cannot source lib_prolog_bench.sh -- the ONE loop-output check"; exit 2; }
 WRAP="$ROOT/out/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 # ⛔⭐ THE GENERATOR IS THE SOLE PRODUCER OF THE WRAPPED FORM (R-567 DONE-WHEN, verbatim: "the harness
 #   is the sole producer of the wrapped self-timing self-counting form").  Until 2026-09-13 THIS SCRIPT
 #   WAS A SECOND PRODUCER: a local mkwrap() that sed'd `main :-` into `bench__main :-` and wrapped it in

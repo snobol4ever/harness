@@ -37,14 +37,15 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #
 # Exit: 0 always (this is a report, not a gate) — read the PASS/FAIL counts in the final line.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY the .github, SCRIP and corpus clones); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255), Icon-aware since row icon-oracle-accessors-shared." >&2; exit 3; }
-ROOT="$HERE/../../SCRIP"                                    # .../SCRIP
+. "$HERE/lib_paths.sh"
+ROOT="$S4E_SCRIP"                                           # .../SCRIP
 SCRIP="$ROOT/scrip"
 RTDIR="$ROOT/out"
-CORPUS_SRC="${CORPUS_SRC:-$S4E/corpus/benchmarks/icon}"
+CORPUS_SRC="${CORPUS_SRC:-$S4E_CORPUS/benchmarks/icon}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 WORK="$(mktemp -d /tmp/icon_bench_corpus_XXXXXX)"
 trap 'rm -rf "$WORK"' EXIT
@@ -57,7 +58,7 @@ trap 'rm -rf "$WORK"' EXIT
 # never a silent from-source rebuild.
 if [ "$SKIP_BUILD" != "1" ]; then
   if [ ! -x "$SCRIP" ]; then
-    echo "building scrip ..."; bash "$ROOT/../harness/scripts/build_scrip.sh" || { echo "FATAL: scrip build failed"; exit 2; }
+    echo "building scrip ..."; bash "$S4E_HARNESS/scripts/build_scrip.sh" || { echo "FATAL: scrip build failed"; exit 2; }
   fi
   if [ ! -f "$RTDIR/libscrip_rt.so" ]; then
     echo "building libscrip_rt ..."; ( cd "$ROOT" && make libscrip_rt ) || { echo "FATAL: libscrip_rt build failed"; exit 2; }
