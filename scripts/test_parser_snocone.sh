@@ -4,8 +4,9 @@
 # AUTHORS: Lon Jones Cherryholmes · Claude Sonnet 4.6  DATE: 2026-05-19
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"   # ⭐ was "$HERE/scrip" (../harness/scripts/scrip, a dead symlink to a nonexistent /home/claude/one4all/scrip) -- every other caller in this tree uses ../scrip; the binary lives at the SCRIP root, not inside ../harness/scripts/
-SD="${SD:-$S4E/SCRIP/bootstrap}"
+. "$HERE/lib_paths.sh"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"   # ⭐ was "$HERE/scrip" (../harness/scripts/scrip, a dead symlink to a nonexistent /home/claude/one4all/scrip) -- every other caller in this tree uses ../scrip; the binary lives at the SCRIP root, not inside ../harness/scripts/
+SD="${SD:-$S4E_SCRIP/bootstrap}"
 
 if [ ! -f "$SCRIP" ]; then echo "SKIP scrip not found: $SCRIP"; exit 0; fi
 
@@ -26,7 +27,7 @@ else
     # source time into RUNGS_SNO/RUNGS_REF/RUNGS_CSV, not live on each call (learned the hard way:
     # setting them as a prefix on the rungs_extract_family call below silently extracted against the
     # SNOBOL4 rungs instead and produced an empty dir).
-    RUNGS_DIR="$S4E/corpus/tests/snocone"
+    RUNGS_DIR="$S4E_CORPUS/tests/snocone"
     RUNGS_EXT=.sc
     . "$HERE/lib_rungs_extract.sh"
     FIX=$(mktemp -d /tmp/parser_snocone_fix_XXXXXX) || { echo "⛔ REFUSE(2): mktemp failed" >&2; exit 2; }

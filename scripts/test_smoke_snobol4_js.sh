@@ -14,5 +14,5 @@
 # reads as A FAILING TEST rather than AN ABSENT ONE (RULES.md § an instrument must distinguish "measured and
 # clean" from "never ran"; a test that cannot measure REFUSES rc=2). Anyone reviving the JS backend should
 # restore this script from git history alongside it — `git log --follow -- ../harness/scripts/test_smoke_snobol4_js.sh`.
-echo "⛔ REFUSE(2): the SNOBOL4→JavaScript smoke cannot measure — the driver removed --target=js (Stack-Machine codegen removed, src/driver/scrip.c), and corpus/tests/snobol4/smoke/ no longer exists. Not a failing test: an absent one. x86 is the only live backend." >&2
+echo "⛔ REFUSE(2): the SNOBOL4→JavaScript smoke cannot measure — the driver removed --target=js (Stack-Machine codegen removed, src/driver/scrip.c), and corpus/tests/snobol4/smoke/ no longer exists. Not a failing test: an absent one. x86 is the only live backend." >&2   # one-disk: not a path
 exit 2

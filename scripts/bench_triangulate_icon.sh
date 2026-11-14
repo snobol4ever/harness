@@ -29,10 +29,10 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # USAGE: bash ../harness/scripts/bench_triangulate_icon.sh [--quick] [--out FILE.tsv] [kernel ...]
 #        BUDGET_MS=2000 BENCH_N_DEFAULT=3 TOL_PCT=15 ENGINES="iconx m3 m4" RUN_TIMEOUT=600
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"
-BD="${ICON_BENCH_DIR:-$S4E/corpus/benchmarks/icon}"
+BD="${ICON_BENCH_DIR:-$S4E_CORPUS/benchmarks/icon}"
 BUDGET_MS="${BUDGET_MS:-2000}"; NDEF="${BENCH_N_DEFAULT:-3}"; TOL="${TOL_PCT:-15}"; ENGINES="${ENGINES:-iconx m3 m4}"
 RTO="${RUN_TIMEOUT:-600}"; OUT=""; WANT=""
 while [ $# -gt 0 ]; do case "$1" in --quick) BUDGET_MS=200; NDEF=2;; --out) OUT="$2"; shift;; *) WANT="$WANT $1";; esac; shift; done
@@ -45,7 +45,7 @@ ICONT="$(icont_bin)" || refuse "the Arizona icont oracle is missing (not a comma
 [ -d "$BD" ] || refuse "no Icon benchmark tree at $BD"
 W="$(mktemp -d "${TMPDIR:-/tmp}/icnbench.XXXXXX")" || refuse "cannot make a work dir"; trap 'rm -rf "$W"' EXIT
 # built fresh into the work dir, plain gcc: never an -O2 build, and never a binary written into the tree
-WRAP="$W/bench_rusage"; gcc -o "$WRAP" "$ROOT/../harness/scripts/bench_rusage.c" 2>"$W/rusage.err" || refuse "harness/scripts/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"
+WRAP="$W/bench_rusage"; gcc -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" 2>"$W/rusage.err" || refuse "harness/scripts/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"   # one-disk: not a path
 POP=()
 while IFS= read -r f; do grep -q '^[[:space:]]*procedure[[:space:]]\+main' "$f" || continue
   n="$(basename "$f" .icn)"; [ -n "$WANT" ] && ! grep -qw -- "$n" <<<"$WANT" && continue; POP+=("$f")

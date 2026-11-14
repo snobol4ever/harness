@@ -19,9 +19,10 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
-WD="$ROOT/harness/fixtures/unicon"   # the six package witnesses left corpus/tests/icon/unicon 2026-11-12; they enter the master once the oracle compiles a package first
-STEPS="$ROOT/harness/designs/unicon/STEPS.tsv"   # moved from corpus/tests/icon/unicon (the coo 2026-11-12, the tests/icon consolidation; CIO-56: a design table lives in harness/designs)
+. "$HERE/lib_paths.sh"
+SC="$S4E_SCRIP"
+WD="$S4E_HARNESS/fixtures/unicon"   # the six package witnesses left corpus/tests/icon/unicon 2026-11-12; they enter the master once the oracle compiles a package first   # one-disk: not a path
+STEPS="$S4E_HARNESS/designs/unicon/STEPS.tsv"   # moved from corpus/tests/icon/unicon (the coo 2026-11-12, the tests/icon consolidation; CIO-56: a design table lives in harness/designs)   # one-disk: not a path
 OUT="/tmp/s4e-design-unicon"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 . "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
@@ -60,7 +61,7 @@ done
 nm=$((do3 + do4)); [ "$nm" -gt 0 ] || refuse "S4E_MODES=${S4E_MODES:-} names no mode"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: unicon -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1' "$STEPS" | wc -l) steps (harness/designs/unicon/STEPS.tsv); a witness is the entry unicon__<name> of the icon master, or a loose pair in the folder"
+    echo "DESIGN-PLAN: unicon -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1' "$STEPS" | wc -l) steps (harness/designs/unicon/STEPS.tsv); a witness is the entry unicon__<name> of the icon master, or a loose pair in the folder"   # one-disk: not a path
     printf '%-4s %-24s %-8s %-10s %s\n' step slug executor probe witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1 {print $1}' "$STEPS"); do
         printf '%-4s %-24s %-8s %-10s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 5)"
@@ -78,7 +79,7 @@ fi
 m3p=0; m4p=0; n=0; reds=""
 for w in $wits; do
     n=$((n + 1)); witness "$w"; src="$wdir/$wsrc"; ref="$wref"; o="$OUT/step$step/$w"
-    [ -f "$src" ] && [ -f "$ref" ] || refuse "witness $w has no entry unicon__$w in corpus/tests/icon and no .icn and .ref in $WD"
+    [ -f "$src" ] && [ -f "$ref" ] || refuse "witness $w has no entry unicon__$w in corpus/tests/icon and no .icn and .ref in $WD"   # one-disk: not a path
     if [ "$do3" = 1 ]; then
     ( cd "$wdir" && timeout -k 5 60 "$SC/scrip" "$w.icn" < /dev/null > "$o.m3.out" 2> "$o.m3.err" ); rc=$?
     if [ "$rc" = 0 ] && cmp -s "$o.m3.out" "$ref"; then m3p=$((m3p + 1)); else reds="$reds m3:$w(rc$rc)"; fi
@@ -96,7 +97,7 @@ pv="witnesses=$((m3p + m4p))/$((nm * n))"; pr=RED
 f3="m3=$m3p/$n"; [ "$do3" = 1 ] || f3="m3=skip"; f4="m4=$m4p/$n"; [ "$do4" = 1 ] || f4="m4=skip"
 if [ "$probe" = markers ]; then
     pa=0; na=0
-    for b in $( { for f in "$WD"/uni_*.icn; do [ -f "$f" ] && basename "$f" .icn; done; python3 "$HERE/corpus_suite_harness.py" list "$ROOT/corpus/tests/icon/ALL.icn" "$ROOT/corpus/tests/icon/ALL.ref" --lang icon 2> /dev/null | sed -n 's/^unicon__\(uni_.*\)$/\1/p'; } | LC_ALL=C sort -u); do
+    for b in $( { for f in "$WD"/uni_*.icn; do [ -f "$f" ] && basename "$f" .icn; done; python3 "$HERE/corpus_suite_harness.py" list "$S4E_CORPUS/tests/icon/ALL.icn" "$S4E_CORPUS/tests/icon/ALL.ref" --lang icon 2> /dev/null | sed -n 's/^unicon__\(uni_.*\)$/\1/p'; } | LC_ALL=C sort -u); do
         witness "$b"; f="$wdir/$wsrc"
         grep -qE '^[[:space:]]*(class|package|import)[[:space:]]' "$f" || continue
         na=$((na + 1))

@@ -23,7 +23,7 @@
 set -u
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 # The oracle cuts each ref at the size the kernel declares for it, <stem>.oracle_args (R-1353, RULES.md clause 8 (g)(3)), never a size
 # typed here: MEASURED 2026-10-03 (the coo, sbl fd9b552b) every corpus/benchmarks/snobol4 kernel answers its ref at sbl's own defaults, two readings.
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }
@@ -35,7 +35,7 @@ while [ $# -gt 0 ]; do case "$1" in
   --dir)   DIRS="$DIRS $2"; shift 2 ;;
   *) echo "usage: util_mint_bench_refs.sh [--write] [--dir <d>]" >&2; exit 2 ;;
 esac; done
-[ -n "$DIRS" ] || DIRS="$S4E/corpus/benchmarks/snobol4 $S4E/corpus/benchmarks/demo"
+[ -n "$DIRS" ] || DIRS="$S4E_CORPUS/benchmarks/snobol4 $S4E_CORPUS/benchmarks/demo"
 [ -x "$SBL" ] || { echo "⛔ ORACLE MISSING: $SBL -- refusing to mint or grade (absent-oracle false-FAIL class)." >&2; exit 3; }
 [ -x "$SCRIP" ] || { echo "⛔ scrip not built at $SCRIP" >&2; exit 3; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT

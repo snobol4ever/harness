@@ -23,8 +23,8 @@
 # as TSV lines prefixed BENCH_TSV, with the load stamped at its start and end; the caller keeps it where it keeps its evidence.
 # rc 0 = every kernel PASS · 1 = a kernel not PASS · 2 = refused.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../.." && pwd)"
-B="$ROOT/corpus/benchmarks/snobol4"; SBL=/home/resources/spitbol-bench-oracle/sbl; RUN="$HERE/run_snobol4jvm.sh"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"
+B="$S4E_CORPUS/benchmarks/snobol4"; SBL=/home/resources/spitbol-bench-oracle/sbl; RUN="$HERE/run_snobol4jvm.sh"
 [ $# -eq 0 ] || { echo "⛔ REFUSE(rc=2): bench_snobol4jvm.sh takes no arguments"; exit 2; }
 [ -d "$B" ] || { echo "⛔ REFUSE(rc=2): no benchmark tree at $B"; exit 2; }
 [ -x "$SBL" ] || { echo "⛔ REFUSE(rc=2): no official SPITBOL at $SBL"; exit 2; }

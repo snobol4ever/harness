@@ -27,7 +27,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/lib_oracle_flags.sh"
 SWIPL="$(swipl_bin)" || exit 2
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-D="$S4E/corpus/packages/prolog/swi_tests"
+. "$HERE/lib_paths.sh"
+D="$S4E_CORPUS/packages/prolog/swi_tests"
 [ -d "$D" ] || { echo "⛔ REFUSE(2): $D missing -- the corpus moved; re-pin rather than reinterpret" >&2; exit 2; }
 WRITE=0; JOBS=8; FILES=()
 while [ $# -gt 0 ]; do

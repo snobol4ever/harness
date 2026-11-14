@@ -11,7 +11,7 @@ S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 ME="${S4E_SEAT:-}"
 crit="${S4E_PROBE_CRIT_S:-10}"
 refuse() { echo "REFUSE(2) [done --probe-lock]: $*"; exit 2; }
-[ -n "$ME" ] || refuse "S4E_SEAT unset -- run it as: bash harness/scripts/s4e_msg.sh done --probe-lock"
+[ -n "$ME" ] || refuse "S4E_SEAT unset -- run it as: bash harness/scripts/s4e_msg.sh done --probe-lock"   # one-disk: not a path
 case "$crit" in ''|*[!0-9]*) refuse "S4E_PROBE_CRIT_S takes whole seconds" ;; esac
 mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 w="$(mktemp -d "/tmp/s4e/$ME/done_lock_probe.XXXXXX")" || refuse "mktemp failed"
@@ -21,7 +21,7 @@ trap cleanup EXIT
 t="done-lock-probe-$$"; now="$(date -u +%FT%TZ)"
 mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" "$w/probe_peer/inbox"
 printf '# plant queue (box-scheduler step 28, CTO-496)\n2\t%s\t%s\tASSIGNED:%s\n' "$t" "$ME" "$ME" > "$w/QUEUE.tsv"
-printf '# TASK %s\nGOAL: plant\nDONE-WHEN: sleep %s && test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: minted via mint by %s, %s\n## NEXT\n## QA\n## LEDGER\n' \
+printf '# TASK %s\nGOAL: plant\nDONE-WHEN: sleep %s && test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\nLINKS: minted via mint by %s, %s\n## NEXT\n## QA\n## LEDGER\n' \
     "$t" "$crit" "$ME" "$now" > "$w/tasks/$t.task.md"
 printf '%s\nASSIGNED-BY plant %s\nRUNNING\n' "$ME" "$now" > "$w/claims/$t.claim"
 bus() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$HERE/s4e_msg.sh" "$@"; }

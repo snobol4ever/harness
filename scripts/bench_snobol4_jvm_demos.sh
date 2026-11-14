@@ -10,7 +10,7 @@
 # USE: bash harness/scripts/bench_snobol4_jvm_demos.sh [demo-stem ...]      all 24 by default (the jar needs about 10 minutes for them: treebank alone takes 400 s)
 # EXIT: 0 printed; 2 could not measure (no perf, no oracle, a demo with a refused sidecar).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../.." && pwd)"; DEMOS="$ROOT/corpus/demos/snobol4"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; DEMOS="$S4E_CORPUS/demos/snobol4"
 . "$HERE/lib_oracle_flags.sh" || { echo "REFUSE(2): lib_oracle_flags.sh unloadable"; exit 2; }
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE(2): lib_declared_arena.sh unloadable"; exit 2; }
 SBL="$(sbl_clean_bin)" || exit 2; SBLF="$(sbl_lang_flags snobol4)"; CSN="$(csnobol4_bin)" || exit 2
@@ -34,10 +34,10 @@ for s in "${STEMS[@]}"; do
     wh="$(cd "$DEMOS" && find . -name "$s.workhorse" | head -1)"; [ -n "$wh" ] || { echo "REFUSE(2): no workhorse sidecar for $s"; exit 2; }
     d="$(dirname "$wh")"; src="$DEMOS/$d/$s.sno"
     stdin="$(awk -F'\t' '$1=="stdin" {print $2}' "$DEMOS/$wh")"; scale="$(awk -F'\t' '$1=="scale" {print $2}' "$DEMOS/$wh")"
-    rm -rf "$W/d"; cp -r "$DEMOS/$d" "$W/d"; cp -n "$ROOT"/corpus/include/* "$W/d/" 2>/dev/null; : > "$W/in"
+    rm -rf "$W/d"; cp -r "$DEMOS/$d" "$W/d"; cp -n "$S4E_CORPUS"/include/* "$W/d/" 2>/dev/null; : > "$W/in"
     [ "$stdin" = - ] || for i in $(seq 1 "$scale"); do cat "$DEMOS/$d/$stdin" >> "$W/in"; done
     oa="$(declared_oracle_args_beside "$src")" || exit 2; sw="$(declared_switches_beside "$src")" || exit 2
-    export SNO_LIB="$W/d:$ROOT/corpus/include" SNOPATH="$W/d:$ROOT/corpus/include"
+    export SNO_LIB="$W/d:$S4E_CORPUS/include" SNOPATH="$W/d:$S4E_CORPUS/include"
     ( cd "$W/d" || exit 2
       run sbl "$SBL" $SBLF $oa "$s.sno"; sI=$INSTR; sW=$WALL
       run csn "$CSN" "$s.sno"; cI=$INSTR; cW=$WALL

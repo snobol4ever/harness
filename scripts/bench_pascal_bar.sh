@@ -9,7 +9,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #                      default (the one legitimate -O2 on this box, RULES.md § NO -O2 BUILDS).
 # EXIT 0 at or above the bar (GREEN), 1 below it (RED, the row is open), 2 REFUSED (no binary, no fpc, no citable reading).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 refuse() { echo "⛔ bench_pascal_bar REFUSE(2): $*"; exit 2; }
 . "$HERE/lib_perf_fmt.sh" 2>/dev/null || refuse "cannot load lib_perf_fmt.sh -- the one authority for a load stamp and the load guard"
 refuse_timing() { local g; if g="$(perf_load_guard)"; then echo "⛔ bench_pascal_bar REFUSE(2) $g: $*"; else echo "⛔ bench_pascal_bar REFUSE(2): $* ($g)"; fi; exit 2; }

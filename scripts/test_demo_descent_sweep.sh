@@ -9,14 +9,15 @@
 # falling back to a live oracle run with the same stdin.  Classification vocabulary is IDENTICAL to
 # test_rsp_descent_sweep.sh so the two boards concatenate.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
-cd "$(dirname "$0")/../../SCRIP"
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY the .github, SCRIP and corpus clones); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+. "$(dirname "$0")/lib_paths.sh"
+cd "$S4E_SCRIP"
 ROOT=$PWD
 OUT=${1:-/tmp/demo_sweep.txt}; : > "$OUT"
 . "$(dirname "${BASH_SOURCE[0]}")/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255)." >&2; exit 3; }
 : "${SWEEP_ORACLE:=$S4A/x64/bin/sbl}"   # CORRECTNESS oracle -- generates/verifies .ref, not timing
 # the beauty drivers no longer stand as files (they are entries of corpus/tests/snobol4/ALL.sno, family beauty_suite, graded there); the default names only the demos, and DEMO_DIRS still takes any directory.
-: "${DEMO_DIRS:=$S4E/corpus/demos}"
+: "${DEMO_DIRS:=$S4E_CORPUS/demos}"
 : "${DEMO_TIMEOUT:=60}"
 for src in $(find $DEMO_DIRS -name '*.sno' 2>/dev/null | sort); do
   d=$(dirname "$src"); b=${src%.sno}

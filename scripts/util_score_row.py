@@ -36,11 +36,16 @@ import datetime
 import difflib
 import importlib.util
 import os, re, subprocess, sys, time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-SCORE_MD = os.environ.get("S4E_SCORE_MD") or os.path.join(S4E, ".github", "SCORE.md")
+GITHUB_DIR = str(harness_paths.github(S4E))
+SCORE_MD = os.environ.get("S4E_SCORE_MD") or os.path.join(GITHUB_DIR, "SCORE.md")
 REPOS = ["SCRIP", "corpus"]
+def _repo_dir(repo):
+    return str({"SCRIP": harness_paths.scrip, "corpus": harness_paths.corpus, "harness": harness_paths.harness, ".github": harness_paths.github}[repo](S4E)) if repo in ("SCRIP", "corpus", "harness", ".github") else os.path.join(S4E, repo)
 
 # The grid's columns, keyed by the short name a runner passes to --column.  Index is the cell position
 # in the markdown row.  These are READ BACK from the live header line and cross-checked (see
@@ -320,7 +325,7 @@ def _write_score_md(lines, seeding=False):
 
 
 def git(repo, *args):
-    p = os.path.join(S4E, repo)
+    p = _repo_dir(repo)
     if not os.path.exists(os.path.join(p, ".git")):
         return None
     try:
@@ -382,7 +387,7 @@ def git_rc(repo, *args):
     # 1 no, >1 broken), so asking it through git() would make "these two trees are unrelated" and
     # "there is no SCRIP repo here" the same answer -- and the safe default is OPPOSITE for the two:
     # the first is a real finding, the second means the question was never asked.
-    p = os.path.join(S4E, repo)
+    p = _repo_dir(repo)
     if not os.path.exists(os.path.join(p, ".git")):
         return None
     try:
@@ -460,7 +465,7 @@ def rt_opt():
     # exactly one line -- but this file quoting "-O0" from memory is precisely the transcription defect
     # RULES.md names (a second stale RT_OPT was deleted from the Makefile so a grep could not land on
     # the wrong one; a hardcoded copy here would put it back, one directory over).
-    mk = os.path.join(S4E, "SCRIP", "Makefile")
+    mk = os.path.join(str(harness_paths.scrip(S4E)), "Makefile")
     try:
         for line in open(mk, encoding="utf-8"):
             m = re.match(r"\s*RT_OPT\s*\??=\s*(\S+)", line)
@@ -1146,7 +1151,7 @@ def write_grid_direct(a):
         die("--text for the grid %s column carries no N/M fraction (%r); the ladder cell states PASS p/t over the graded population" % (gkey, text))
     if "\n" in text:
         die("--text spans lines; a markdown table row is one line")
-    if os.path.abspath(SCORE_MD) == os.path.abspath(os.path.join(S4E, ".github", "SCORE.md")):
+    if os.path.abspath(SCORE_MD) == os.path.abspath(os.path.join(GITHUB_DIR, "SCORE.md")):
         dirty = tree_is_dirty()
         if dirty:
             print("⚠ SCORE.md ROW SKIPPED — %s %s uncommitted; this run measured a tree nobody else can check out."
@@ -1193,7 +1198,7 @@ def write_grid_direct(a):
         print(_un)
     lines = mark_grid_stamp(lines)
     _write_score_md(lines)
-    print("⛔ NOT DONE UNTIL PUSHED: commit .github/SCORE.md with the landing that carried this measurement.")
+    print("⛔ NOT DONE UNTIL PUSHED: commit .github/SCORE.md with the landing that carried this measurement.")   # one-disk: not a path
     return 0
 
 
@@ -1217,7 +1222,7 @@ REAL_SUITES_TSV = "/home/resources/progress/SUITES.tsv"
 def _root_suites_tsv():
     if re.fullmatch(r"/home/claude_[A-Za-z0-9_]+", os.path.realpath(S4E)):
         return REAL_SUITES_TSV
-    return os.path.join(S4E, ".github", "SUITES.tsv")
+    return os.path.join(GITHUB_DIR, "SUITES.tsv")
 SUITES_TSV = os.environ.get("S4E_SUITES_TSV") or _root_suites_tsv()
 # ⛔⭐ ONE WRITER AT A TIME ON THE SUITE TABLE (coo 2026-09-25, hq_pascal's report: parallel runners of one lane lost each other's
 # SCORE.md line -- SUITES.tsv read fpc 158/181 while SCORE.md's FPC line read 156, twice, the last writer putting back what it had
@@ -1242,7 +1247,7 @@ def _suite_table_lock():
             time.sleep(0.05)
     _SUITE_TABLE_LOCK_FD = fd
     os.environ["S4E_SUITE_TABLE_LOCKED"] = str(os.getpid())
-SUITE_BANNER = os.path.join(S4E, "harness", "scripts", "util_suite_banner.py")
+SUITE_BANNER = os.path.join(str(harness_paths.harness(S4E)), "scripts", "util_suite_banner.py")
 SUITE_SYNC_ROW = "suite-table-row-rewritten-by-the-runner-through-util-suite-banner-set"
 # ⭐⭐ A COLUMN THAT IS A SUITE-TABLE ROW AND NO GRID CELL (Lon 2026-09-23 17:2x, in-chat, verbatim: "You messed up and
 # forgot to have the benchmarks in the test suite grid." -- "The reason to force a benchmark to also be a test is to guarantee it is
@@ -1432,7 +1437,7 @@ def _fraction_from_text(text, p_override, t_override):
 # verbatim SUITE_BOARD line it was handed, and when it was handed none it SAYS SO in a greppable line rather than
 # leaving the reader to assume one was kept.
 BOARD_LINE_RX = re.compile(r"(?m)^.*?\b([A-Z0-9_]*SUITE_BOARD\b.*)$")
-BOARD_LINES_DIR = os.path.join(S4E, ".github")
+BOARD_LINES_DIR = GITHUB_DIR
 BOARD_LINES_HEADER = (
     "# THE LATEST VERBATIM RUNNER BOARD LINE OF EACH SUITE, the now state only (Lon 2026-11-11: \"We do not need track the\n"
     "# time element anymore just the now state of the test suites.\"). Each write replaces its suite's line. Each line is\n"
@@ -1571,7 +1576,7 @@ def db_crosscheck(key, p, t):
     d = _c.defaultdict(dict)
     for (_s, _t, prog, m), (o, note, _who, _ts) in last.items():
         d[prog][m] = (o, note)
-    corpus = os.environ.get("S4E_CORPUS_ROOT") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "corpus")
+    corpus = os.environ.get("S4E_CORPUS_ROOT") or str(harness_paths.corpus(S4E))
     d, side, s_ungradable, s_ungraded = _aud.population_inputs(corpus, key, d)   # containers out of the population (R-1272), as the batch audit counts it
     cnt, pop, _xpass, labels, bounded, shards = _aud.tally(d, side, s_ungradable, s_ungraded)
     p, t = int(p), int(t)
@@ -1626,7 +1631,7 @@ for _l in ("icon", "prolog", "snobol4", "snocone", "scriptix", "pascal", "raku",
 
 
 def _demos_container(corpus, key):
-    """corpus/demos/<lang> when the key is <lang>-demos and that folder is a files-form container (its ALL.csv has a path column), else None (the
+    """corpus/demos/<lang> when the key is <lang>-demos and that folder is a files-form container (its ALL.csv has a path column), else None (the   # one-disk: not a path
     grader 2026-11-13; MEASURED by the coo 12:3x: corpus_suite_harness.py files the demos' readings under the container's entry names, porter/porter,
     while the old runner's enumeration still named demos/snocone/porter/porter.sc, so the row counted that name's last reading, a CRASH, after the cure
     read PASS). Such a key is read as a package: its population is ALL.csv's entries. A port key (@dotnet, @jvm) still runs the old runner and keeps it."""
@@ -1648,7 +1653,7 @@ def _runner_population(key):
     argv = ["bash", os.path.join(here, FROM_PROGRESS_RUNNER_POP[key][1][0])] + FROM_PROGRESS_RUNNER_POP[key][1][1:]
     env = {k: v for k, v in os.environ.items() if k not in ("S4E_CHUNK", "S4E_RR")}
     env["S4E_LIST"] = "1"
-    r = subprocess.run(argv, cwd=os.path.join(here, "..", "..", "SCRIP"), env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=300)
+    r = subprocess.run(argv, cwd=str(harness_paths.scrip(S4E)), env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=300)
     pop = [l[7:].strip() for l in r.stdout.splitlines() if l.startswith("RR_POP ")]
     exc = [l[8:].strip() for l in r.stdout.splitlines() if l.startswith("RR_EXCL ")]
     if r.returncode != 0 or not pop:
@@ -1863,7 +1868,7 @@ def cmd_from_progress(a):
     # MODE 3 ONLY (Lon 2026-11-08: "We will test mode 3 only until further notice"; the coo 11:29: the UniTests headline read the blended 105 while m3 read 110):
     # with S4E_MODES=m3 in the environment (the cycle exports it; a hand write sets it) the row is graded in m3 alone, the headline today_pass the m3 count.
     modes = ("m3",) if (port or os.environ.get("S4E_MODES", "").strip() == "m3") else ("m3", "m4")
-    corpus = os.environ.get("S4E_CORPUS_ROOT") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "corpus")
+    corpus = os.environ.get("S4E_CORPUS_ROOT") or str(harness_paths.corpus(S4E))
     tdir, dbsuite = from_progress_table(corpus, full_key)
     if not tdir:
         if getattr(a, "wall_only", False):
@@ -2381,8 +2386,8 @@ def write_suite_row_only(a):
         return 0
     print(suite_sync(a, tree, False, decided))
     _arch = archive_board_line(a.text, key, a.measurer, tree)
-    print("⛔ NOT DONE UNTIL PUSHED: commit .github/SCORE.md (its suite-table line, re-rendered in this call; SUITES.tsv is %s, written in place)" % SUITES_TSV
-          + (" AND %s" % os.path.relpath(_arch, os.path.join(S4E, ".github")) if _arch else "")
+    print("⛔ NOT DONE UNTIL PUSHED: commit .github/SCORE.md (its suite-table line, re-rendered in this call; SUITES.tsv is %s, written in place)" % SUITES_TSV   # one-disk: not a path
+          + (" AND %s" % os.path.relpath(_arch, GITHUB_DIR) if _arch else "")
           + " with the landing that carried this measurement.")
     return 0
 
@@ -2500,7 +2505,7 @@ def cmd_write(a):
     # The clean-tree condition guards the REAL leaderboard only. selftest writes to a scratch copy, whose
     # whole purpose is to be written while the working tree is mid-change; applying it there would make the
     # gate fail for every seat who ran it during a landing, i.e. exactly when it matters.
-    if os.path.abspath(SCORE_MD) == os.path.abspath(os.path.join(S4E, ".github", "SCORE.md")):
+    if os.path.abspath(SCORE_MD) == os.path.abspath(os.path.join(GITHUB_DIR, "SCORE.md")):
         dirty = tree_is_dirty()
         if dirty:
             print("⚠ SCORE.md ROW SKIPPED — %s %s uncommitted; this run measured a tree nobody else can check out."
@@ -2959,8 +2964,8 @@ def cmd_write(a):
         print(gnote)
     print(suite_sync(a, suite_tree_stamp(), False, _decided))
     _arch = archive_board_line(a.text, _decided[0], a.measurer, suite_tree_stamp())
-    print("⛔ NOT DONE UNTIL PUSHED: commit .github/SCORE.md (SUITES.tsv is %s, written in place)" % SUITES_TSV
-          + (" AND %s" % os.path.relpath(_arch, os.path.join(S4E, ".github")) if _arch else "")
+    print("⛔ NOT DONE UNTIL PUSHED: commit .github/SCORE.md (SUITES.tsv is %s, written in place)" % SUITES_TSV   # one-disk: not a path
+          + (" AND %s" % os.path.relpath(_arch, GITHUB_DIR) if _arch else "")
           + " with the landing that carried this measurement.")
     return 0
 
@@ -5120,7 +5125,7 @@ def cell_ambiguous(fr):
 
 def ladder_score(lang):
     # (built, declared) from corpus/tests/<lang>/LADDER.tsv, or None when there is no census.
-    path = os.path.join(S4E, "corpus", "tests", lang, "LADDER.tsv")
+    path = os.path.join(str(harness_paths.corpus(S4E)), "tests", lang, "LADDER.tsv")
     if not os.path.isfile(path):
         return None
     built = declared = 0
@@ -5141,7 +5146,7 @@ def forms_score(lang):
                                                                         "util_ladder_forms_check.py"))
         m = importlib.util.module_from_spec(sp)
         sp.loader.exec_module(m)
-        m.CORPUS = os.path.join(S4E, "corpus")
+        m.CORPUS = str(harness_paths.corpus(S4E))
         st, d, w, miss = m.check_lang(lang, "isolation", verbose=False)
         # ⛔⭐ A PARTIALLY-ENUMERATED STANDARD HAS NO SCORE, exactly as an unwritten one has none. Measured
         # here the moment L entered the percent: rebus declares FORMS for 2 rungs of 12, both fully

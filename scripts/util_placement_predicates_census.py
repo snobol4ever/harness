@@ -9,7 +9,9 @@
 # EXIT: 0 alive <= N; 1 alive > N (a predicate came back, or the bar is lower than what is deleted); 2 could not measure (no SCRIP/src).
 import os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.normpath(os.path.join(HERE, "..", "..", "SCRIP", "src"))
+sys.path.insert(0, HERE)
+import harness_paths
+SRC = os.path.normpath(os.path.join(str(harness_paths.scrip()), "src"))
 GROUPS = [
     ("snobol4 capture and match frame", ["earn_hazard_in", "alt_arm_member", "cap_in_alt_arm", "cap_in_repeat_body", "alt_branch_has_nested_alt",
                                          "alt_arms_push", "cap_save_cond_gap_has_alt", "fence_frame_candidate", "frame_need_of"]),
@@ -24,7 +26,7 @@ at_most = FLOOR
 if "--at-most" in args:
     try: at_most = int(args[args.index("--at-most") + 1])
     except (IndexError, ValueError): print("REFUSE(2): --at-most takes a whole number"); sys.exit(2)
-if not os.path.isdir(SRC): print("REFUSE(2): no SCRIP/src at %s" % SRC); sys.exit(2)
+if not os.path.isdir(SRC): print("REFUSE(2): no SCRIP/src at %s" % SRC); sys.exit(2)   # one-disk: not a path
 texts = {}
 for root, _, files in os.walk(SRC):
     for f in files:
