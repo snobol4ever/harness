@@ -1,0 +1,5 @@
+import pk
+procedure main();
+  write(A().hi());
+  write("done");
+end

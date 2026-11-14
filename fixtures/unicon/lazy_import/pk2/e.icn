@@ -1,0 +1,5 @@
+package pk2
+procedure e()
+  write("e")
+  write("never")
+end

@@ -1,4 +1,4 @@
-# harness/fixtures/unicon -- the six Unicon package witnesses the icon master cannot hold yet (the coo 2026-11-12)
+# harness/fixtures/unicon -- the seven Unicon package witnesses the icon master cannot hold yet (the coo 2026-11-12)
 
 Moved here from corpus/tests/icon/unicon (Lon 2026-11-12 10:2x CST: "I'm not liking #/corpus/tests/icon/{config,rung36_bullshit,unicon}
 folders."). Every other witness of DESIGN-PLAN unicon is an entry `unicon__<name>` of the icon master; the plan is
@@ -14,5 +14,6 @@ test's package files (the cio's item), and this folder leaves with them.
 - `uni_pkg_invocable_before_header.icn` (`import pkinv`: `pkinv.icn`, `pkinv_more.icn`)
 - `uni_pkg_two_files.icn` (`import pktwo`: `pktwo.icn`, `pktwo_more.icn`)
 - `pkself/uni_pkg_named_like_the_program.icn` (`import uni_pkg_named_like_the_program`: `pkself/lib/pkself_lib.icn`)
+- `lazy_import/m.icn` (`import pk`: `pk/a.icn`, `pk/c.icn`, `pk2/d.icn` are reached; `pk/b.icn` and `pk2/e.icn` carry no semicolons and are never parsed; run with IPATH=pk:pk2; row unicon-an-import-parses-only-the-package-files-the-program-reaches)
 
 Each ref is cut from unicon 13.3 (`unicon_bin()`, twice, identical); the package files carry no ref, being no program of their own.

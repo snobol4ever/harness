@@ -1,0 +1,6 @@
+package pk2
+class D()
+  method who();
+    return "D";
+  end
+end

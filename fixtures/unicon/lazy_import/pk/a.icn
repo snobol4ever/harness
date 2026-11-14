@@ -1,0 +1,6 @@
+package pk
+class A()
+  method hi();
+    return "A says " || C().name();
+  end
+end

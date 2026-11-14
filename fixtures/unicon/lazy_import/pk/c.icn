@@ -1,0 +1,7 @@
+package pk
+import pk2
+class C()
+  method name();
+    return "C and " || D().who();
+  end
+end
