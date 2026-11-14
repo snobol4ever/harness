@@ -24,8 +24,10 @@ objects and their objdump -s -d -r internals, classifying a difference that is o
 identical with nops dropped and targets rebased by containing instruction, every data section identical) as nops-only.
 """
 import os, re, sys, subprocess
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
 
-ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP")
+ROOT = str(harness_paths.scrip())
 EXTS = (".c", ".h", ".cpp", ".hpp", ".inc")
 NEVER = re.compile(r"(/parsers/|gc_allocating_table\.inc|\.reflow_tmp\.)")
 SEP_RX = re.compile(r"^\s*/\*([-=])\1{3,}\*/\s*$")

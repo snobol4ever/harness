@@ -53,7 +53,7 @@ for f in sorted(glob.glob(os.path.join(GP, '*.pl'))):
         per_file[os.path.basename(f)].add((nm, int(m.group(2))))
 gp_all = set().union(*per_file.values()) if per_file else set()
 # ---- side B: SCRIP admitted set (four real admission sites) ------------------------------------
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(ROOT)), 'harness', 'scripts')); import lib_split_units; bnd = lib_split_units.unit_text(os.path.join(ROOT, 'src'), 'runtime/by_name_dispatch.c') or ''
+sys.path.insert(0, os.path.join(os.environ['S4E_HARNESS'], 'scripts')); import lib_split_units; bnd = lib_split_units.unit_text(os.path.join(ROOT, 'src'), 'runtime/by_name_dispatch.c') or ''
 low = lib_split_units.unit_text(os.path.join(ROOT, 'src'), 'lower/lower_prolog.c') or ''
 pbl = rd(os.path.join(ROOT, 'src/parsers/prolog/prolog_lower.c'))
 def unesc(s): return s.replace('\\\\', '\\').replace('\\"', '"')

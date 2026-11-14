@@ -10,7 +10,9 @@ way util_gen_prolog_prelude_libs.py writes the Prolog prelude libraries' (R-1473
   --dir D and --out F read the units from D and write or check F (the sync gate's self-test plants on scratch copies); rc 2 refuses.
 """
 import os, sys
-ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
+ROOT = str(harness_paths.scrip())
 PRE = os.path.join(ROOT, "src", "parsers", "pascal", "prelude")
 OUT = os.path.join(ROOT, "src", "parsers", "pascal", "pascal_prelude_units.inc")
 

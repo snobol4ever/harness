@@ -27,9 +27,11 @@ read from telemetry that is already in the tree, and every OWED event is a one-l
 the collector, not a change made here.
 """
 import argparse, io, os, re, subprocess, sys, time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
+ROOT = str(harness_paths.scrip())
 GCHEAP = os.path.join(ROOT, "src", "runtime", "rt", "gc_heap.c")
 
 # ---------------------------------------------------------------------------------------------------------
@@ -227,7 +229,7 @@ def marker_liveness(events):
     FELL -- which reads as a collector regression and is a completely different verdict. Returns the list of
     (key, missing-literal) so the caller can REFUSE(2) and name it."""
     src = ""
-    for root, _d, fs in os.walk(os.path.join(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP"), "src", "runtime")):
+    for root, _d, fs in os.walk(os.path.join(ROOT, "src", "runtime")):
         for f in fs:
             if f.endswith((".c", ".h")):
                 try:

@@ -18,9 +18,11 @@ DIFFERENT resolvable classes make the row UNKNOWN and name the symbol.
 derive(so) -> {symbol: class} for every symbol of the allocating set, or None (it printed why; the caller refuses rc 2).
 """
 import collections, importlib.util, os, re, subprocess, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
+ROOT = str(harness_paths.scrip())
 DEFAULT_SO = os.path.join(ROOT, "out", "libscrip_rt.so")
 
 RC_VOID, RC_DESCR, RC_OTHER, RC_UNKNOWN = "VOID", "DESCR", "OTHER", "UNKNOWN"

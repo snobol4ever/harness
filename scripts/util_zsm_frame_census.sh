@@ -39,7 +39,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 exec python3 - "$HERE" "$@" <<'PY'
 import collections, concurrent.futures, os, re, subprocess, sys
 HERE = sys.argv[1]
-SC = os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP'))
+sys.path.insert(0, HERE); import harness_paths
+SC = str(harness_paths.scrip())
 SCRIP = os.path.join(SC, 'scrip')
 # THE LINE BY ITS FIELD NAMES, NOT BY ONE REGEX OVER ADJACENT FIELDS (the arm util_board_field_matcher_census.py's own message: a field read by name
 # survives an insertion or a reorder; one regex over adjacent fields breaks on either). Every name once, the graph as written, every count a whole
