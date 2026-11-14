@@ -44,15 +44,24 @@ SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$SELF_DIR/lib_paths
 # that DONE-WHEN (seat15 2026-09-04); cured to match util_verify_s_artifacts_owed.sh's existing S4E_HOME pattern.
 WS="${S4E_HOME:-$(dirname "$(dirname "$SELF_DIR")")}"       # <ws> (parent of the SCRIP repo), S4E_HOME overrides
 REPOS=("$@") ; src="given on command line"
+# ⛔ THE SEAT'S REPOS ARE ITS CLONE AND THE THREE ABSOLUTE ONES (row harness-the-bus-banner-and-handoff-read-the-three-home-repos, officer_05 2026-11-13; officer_06 MEASURED 19:5x: a
+# root holding only its SCRIP clone has no repo under it, so "$WS"/*/ found nothing). Discovery reads the root itself when it is a clone, its sibling clones, and S4E_SCRIP, S4E_CORPUS,
+# S4E_HARNESS and S4E_GITHUB (lib_paths.sh), each once. A checkout outside the root is SHARED (the grader's /home ones): it is not fetched, its dirty files are no seat's, and only a
+# commit not on its upstream whose message names this seat blocks.
+declare -A SHARED=(); _hs_seat="${S4E_SEAT:-$(basename "$WS" | sed 's/^claude_//')}"
 if [ ${#REPOS[@]} -eq 0 ]; then
-  src="auto-discovered under $WS"
+  src="auto-discovered: $WS, its clones and the absolute repos"
   shopt -s nullglob dotglob
-  for d in "$WS"/*/; do
-    d="${d%/}"; base="$(basename "$d")"
+  _ws_p="$(cd -P "$WS" 2>/dev/null && pwd)"; _seen=" "
+  for d in "$WS" "$WS"/*/ "${S4E_SCRIP:-}" "${S4E_CORPUS:-}" "${S4E_HARNESS:-}" "${S4E_GITHUB:-}"; do
+    d="${d%/}"; [ -n "$d" ] || continue; base="$(basename "$d")"
     { [ "$base" = "." ] || [ "$base" = ".." ]; } && continue
     [ -e "$d/.git" ] || continue                              # is a git repo (worktree: .git is a FILE, not a dir)
     git -C "$d" remote get-url origin >/dev/null 2>&1 || continue   # has an origin to push to
-    REPOS+=("$d")
+    p="$(cd -P "$d" 2>/dev/null && pwd)" || continue
+    case "$_seen" in *" $p "*) continue;; esac; _seen="$_seen$p "
+    case "$p/" in "$_ws_p"/*) ;; *) SHARED["$p"]=1;; esac
+    REPOS+=("$p")
   done
   IFS=$'\n' REPOS=($(printf '%s\n' "${REPOS[@]}" | sort)); unset IFS
 fi
@@ -75,6 +84,13 @@ for r in "${REPOS[@]}"; do
   # origin/<branch> at all, and grading it against that phantom made a fully-pushed tree read as unfinished.
   up=$(git -C "$r" rev-parse --abbrev-ref --symbolic-full-name "@{u}" 2>/dev/null); [ -n "$up" ] || up="origin/$br"
   dirty=$(git -C "$r" status --porcelain 2>/dev/null | wc -l)
+  if [ -n "${SHARED[$r]:-}" ]; then   # a shared checkout: this seat's commits only, as the grader last fetched it
+    name="$r"   # named by its path: the root may still hold a sibling of the same name
+    mine=$(git -C "$r" log --format=%H -i --grep="$_hs_seat" "$up..HEAD" 2>/dev/null | grep -c . || true)
+    if [ "${mine:-0}" -gt 0 ]; then st="UNPUSHED"; reasons+=("$name: ${mine} commit(s) of $_hs_seat not on $up in this shared checkout — land them"); blocked=1; else st="SHARED"; fi
+    printf "  %-22s %-10s local=%s origin=%s\n" "$name [$br]" "$st" "$(git -C "$r" rev-parse --short=9 HEAD 2>/dev/null)" "$(git -C "$r" rev-parse --short=9 "$up" 2>/dev/null)"
+    continue
+  fi
   if ! git -C "$r" fetch --quiet origin 2>/dev/null; then
     unknown_reasons+=("$name: fetch failed — origin unreachable or no credential; push-state UNKNOWABLE from here, not assumed BLOCKED or COMPLETE")
     unknown=1

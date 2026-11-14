@@ -1554,6 +1554,41 @@ s4e_banner_probe_verdict() {   # banner --probe-verdict: the readings on a scrat
     [ "$(rd red)" = FAILURE ] && [ "$(rd unpushed)" = FAILURE ] && [ "$(rd redafter)" = FAILURE ] && f=1 || why="$why FAILURE rows read [red=$(rd red) unpushed=$(rd unpushed) redafter=$(rd redafter)];"
     [ "$s$n$f" = 111 ] && ok=1
     echo "BANNER_VERDICT success=$s nothing=$n failure=$f ok=$ok"; [ "$ok" = 1 ] || { echo "BANNER PROBE RED:$why"; exit 1; }; exit 0; }
+s4e_seat_repos() {   # one "<dir><TAB>own|shared" line per repo of this seat, each once (row harness-the-bus-banner-and-handoff-read-the-three-home-repos): the root when it is a clone, its sibling clones, S4E_SCRIP, and S4E_CORPUS, S4E_HARNESS, S4E_GITHUB; "shared" is a checkout outside the root (the grader's /home ones)
+    local _d _p _seen=" " _rp; _rp="$(cd -P "$S4E" 2>/dev/null && pwd)" || return 0
+    for _d in "$S4E" "$S4E"/*/ "${S4E_SCRIP:-}" "${S4E_CORPUS:-}" "${S4E_HARNESS:-}" "${S4E_GITHUB:-}"; do
+        _d="${_d%/}"; [ -n "$_d" ] && [ -e "$_d/.git" ] || continue
+        _p="$(cd -P "$_d" 2>/dev/null && pwd)" || continue
+        case "$_seen" in *" $_p "*) continue;; esac; _seen="$_seen$_p "
+        case "$_p/" in "$_rp"/*) printf '%s\town\n' "$_p";; *) printf '%s\tshared\n' "$_p";; esac
+    done; }
+s4e_banner_probe_absolute() {   # banner --probe-absolute: a scratch root that is only its SCRIP clone, one unpushed commit in it, one of this seat's in a scratch /home-style harness, and another seat's commit and a dirty file in a scratch /home-style corpus; the banner reads IN-PROGRESS naming the root and the harness, never the corpus, and handoff_status.sh names the same two
+    local w top root o hout hrc why="" g="-c user.email=p@p -c user.name=p"
+    [ -n "$ME" ] || { echo "REFUSE(2) [banner --probe-absolute]: S4E_SEAT unset"; exit 2; }
+    mkdir -p "/tmp/s4e/$ME" && w="$(mktemp -d "/tmp/s4e/$ME/banner_abs.XXXXXX")" || { echo "REFUSE(2) [banner --probe-absolute]: mktemp failed"; exit 2; }
+    trap 'rm -rf "$w"' EXIT; top="$w/top"; root="$w/root"; mkdir -p "$top" "$w/po/$ME/inbox" "$w/po/tasks" "$w/po/claims"; printf '# plant\n' > "$w/po/QUEUE.tsv"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/po/MODE"
+    [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/po/PROTOCOL-VERSION"
+    mkrepo() {   # <dir> <name>: a clone of a scratch origin, one commit pushed
+        git init -q --bare -b main "$w/$2.git" && git init -q -b main "$1" && git -C "$1" remote add origin "$w/$2.git" && echo 1 > "$1/f" && git -C "$1" add f \
+        && git -C "$1" $g commit -q --no-verify -m base && git -C "$1" push -q --no-verify -u origin main 2>/dev/null; }
+    { mkrepo "$root" root && mkdir -p "$root/src" && : > "$root/Makefile" && git -C "$root" add Makefile && git -C "$root" $g commit -q --no-verify -m "an unpushed commit of the clone" \
+      && mkrepo "$top/harness" harness && echo 2 > "$top/harness/f" && git -C "$top/harness" $g commit -q --no-verify -a -m "$ME: an unpushed commit of this seat in the shared harness" \
+      && mkrepo "$top/corpus" corpus && echo 2 > "$top/corpus/f" && git -C "$top/corpus" $g commit -q --no-verify -a -m "other_seat: another seat's unpushed commit" && echo 3 > "$top/corpus/f"; } >/dev/null 2>&1 \
+      || { echo "REFUSE(2) [banner --probe-absolute]: the scratch repos could not be built"; exit 2; }
+    o="$(env -u S4E_PID_LOCK -u S4E_SCRIP -u S4E_CORPUS -u S4E_HARNESS -u S4E_GITHUB S4E_ONE_DISK_TOP="$top" S4E_POST="$w/po" S4E_SEAT="$ME" S4E_HOME="$root" \
+        S4E_HANDOFF_SH="$(cd "$(dirname "$0")" && pwd)/handoff_status.sh" bash "$0" banner 2>&1)"
+    o="$(printf '%s\n' "$o" | grep -a -m1 -E 'SUCCESS|IN-PROGRESS|NOTHING|FAILURE|STOP|DRAIN')"
+    printf '%s' "$o" | grep -q 'IN-PROGRESS' || why="$why the banner did not read IN-PROGRESS [$(printf '%s' "$o" | cut -c1-140)];"
+    printf '%s' "$o" | grep -qE 'work is only here \((root harness|harness root)\)' || why="$why the banner did not name the root and the harness, and only those [$(printf '%s' "$o" | grep -oE 'only here \([^)]*\)')];"
+    hout="$(env -u S4E_SCRIP -u S4E_CORPUS -u S4E_HARNESS -u S4E_GITHUB S4E_ONE_DISK_TOP="$top" S4E_SEAT="$ME" S4E_HOME="$root" SKIP_ZLS_ALL=1 SKIP_GC_ACCEPTANCE=1 \
+        timeout -k 5 120 bash "$(cd "$(dirname "$0")" && pwd)/handoff_status.sh" 2>&1)"; hrc=$?
+    printf '%s\n' "$hout" | grep -qE '^ *root \[main\] +UNPUSHED' || why="$why handoff_status.sh did not read the root UNPUSHED;"
+    printf '%s\n' "$hout" | grep -qE '^ *[^ ]*/top/harness \[main\] +UNPUSHED' || why="$why handoff_status.sh did not read this seat's commit in the shared harness UNPUSHED;"
+    printf '%s\n' "$hout" | grep -qE '^ *[^ ]*/top/corpus \[main\] +SHARED' || why="$why handoff_status.sh charged the shared corpus (another seat's commit and a dirty file) to this seat;"
+    [ "$hrc" = 0 ] && why="$why handoff_status.sh read rc 0 with work only here;"
+    [ -z "$why" ] && { echo "BANNER_ABSOLUTE_PROBE ok banner=IN-PROGRESS where=root,harness handoff_rc=$hrc (probe: a root that is only its SCRIP clone, one unpushed commit there and one of $ME in a /home-style harness; another seat's commit and a dirty file in a /home-style corpus charged to nobody)"; exit 0; }
+    echo "BANNER_ABSOLUTE_PROBE RED:$why"; exit 1; }
 s4e_sweep_verdicts() {   # step 31: for every row PARKED-AWAITING a test request whose done/<id>.req exists, state -> QUEUED:seat-<the request's seat>, one telegram and one WAKE line
     # ⭐ THE ROW GOES BACK INTO ITS SEAT'S TUBE (the coo 2026-11-12 22:18 CST, MEASURED: restored as ASSIGNED:<seat> through park, which writes no claim, all 13 rows
     # of a hand sweep were reset to FREE by the same sweep's s4e_sweep_repair_columns, and no worker takes a FREE row): a row whose claim file names the seat keeps
@@ -5150,6 +5185,7 @@ TASKEOF
          [ -n "$_gw" ] && { echo "   ⭐ NOT empty of WORK — these rows are GOVERNANCE-GATED, waiting on a grant, not on a seat:"; printf '%s\n' "$_gw"; echo "   Chase the grant (route via your HQ to the cto), do not re-park these to FREE."; }
          exit 1;;
   banner) [ "${2:-}" = --probe-once ] && s4e_banner_plant_once
+         [ "${2:-}" = --probe-absolute ] && s4e_banner_probe_absolute
          [ "${2:-}" = --probe-verdict ] && s4e_banner_probe_verdict
          # ⛔ FACTS ONLY -- NO PREDICTIONS (Lon 2026-08-22: "Why are you trying to predict the future. Quit saying
          # ⛔ FIRST THING IN THIS CASE, BEFORE ANY EXIT: the first placement was after the verdict line, which always `exit`s
@@ -5252,7 +5288,7 @@ TASKEOF
              _cns="$(python3 "$S4E_HARNESS/scripts/util_queue_visibility_census.py" 2>&1 | tail -1)"
              :
          fi
-         hs="$S4E_HARNESS/scripts/handoff_status.sh"
+         hs="${S4E_HANDOFF_SH:-$S4E_HARNESS/scripts/handoff_status.sh}"   # S4E_HANDOFF_SH: banner --probe-absolute runs the real one against a scratch harness
          [ -f "$hs" ] || hs="$(cd "$(dirname "$0")" && pwd)/handoff_status.sh"
          # ⛔ SKIP_S_ARTIFACT_CHECK=1 (2026-08-27, Lon's "go fix it" — the missing-banners defect, seat09/hq_P diagnosis):
          # the .s-artifact verifier runs `make pristine` (minutes; races and WIPES live builds), so every banner that reached
@@ -5308,13 +5344,16 @@ TASKEOF
          # A clone predating the 2026-08-21 filter-repo rewrite shares no recent history with origin. Must FETCH
          # first: an unfetched pre-rewrite clone has a stale origin/* ref and reads as pristine.
          diverged=""
-         for r in "$S4E"/*/; do [ -d "$r/.git" ] || continue
+         # ⛔ THE SEAT'S REPOS ARE ITS CLONE AND THE THREE ABSOLUTE ONES (row harness-the-bus-banner-and-handoff-read-the-three-home-repos, officer_05 2026-11-13; officer_06 MEASURED 19:5x:
+         # a root with no harness or .github read "$S4E"/*/ as nothing and printed SUCCESS). s4e_seat_repos names each once, "own" under the root and "shared" for a /home
+         # checkout the grader keeps at origin: a shared repo is never fetched here, its dirty files are no seat's, and only a commit naming this seat or its row is this seat's.
+         while IFS=$'\t' read -r r rk; do [ "$rk" = own ] || continue
            br=$(git -C "$r" rev-parse --abbrev-ref HEAD 2>/dev/null) || continue
            git -C "$r" fetch -q origin 2>/dev/null || continue
            git -C "$r" rev-parse --verify -q "origin/$br" >/dev/null 2>&1 || continue
            if ! git -C "$r" merge-base --is-ancestor HEAD "origin/$br" 2>/dev/null; then
              bh=$(git -C "$r" rev-list --count "HEAD..origin/$br" 2>/dev/null || echo 0)
-             [ "${bh:-0}" -gt 50 ] && diverged="$diverged $(basename "$r")"; fi; done
+             [ "${bh:-0}" -gt 50 ] && diverged="$diverged $(basename "$r")"; fi; done < <(s4e_seat_repos)
          pline="$(printf '%s\n' "$hout" | grep -aiE 'HANDOFF (COMPLETE|BLOCKED)|COMPLETE|BLOCKED:' | head -1)"; [ -n "$pline" ] || pline="$(printf '%s\n' "$hout" | tail -1)"
          # ⛔ IT IS A BANNER, NOT A REPORT (Lon 2026-08-22: "You turned a banner into a TL;DR"). ONE line, glanced at.
          # SUCCESS and safe-to-/clear are the SAME fact -- both are handoff_status.sh rc=0 -- so there is one thing
@@ -5387,11 +5426,13 @@ TASKEOF
          # is a false NEGATIVE, and the fallback's own population ("commits made in this clone inside
          # the window") is this seat's work by definition. A repo with no reflog degrades to the old
          # behaviour silently.
-         cmts=0; for r in "$S4E"/*/; do [ -d "$r/.git" ] || continue
-           n=$(git -C "$r" log --since="$since" -i --grep="$ME" ${row1:+--grep="$row1"} --oneline 2>/dev/null | wc -l)
-           n2=$(git -C "$r" reflog show --since="$since" --format='%gs' 2>/dev/null | sed -n 's/^commit[^:]*: //p' | sort -u | grep -c . 2>/dev/null || true); n2="${n2:-0}"
-           [ "$n2" -gt "$n" ] 2>/dev/null && n="$n2"
-           cmts=$((cmts+n)); done
+         cmts=0; seen_h=" "; while IFS=$'\t' read -r r rk; do
+           hs_r="$(git -C "$r" log --since="$since" -i --grep="$ME" ${row1:+--grep="$row1"} --format=%H 2>/dev/null)"; n=0
+           for bh_h in $hs_r; do case "$seen_h" in *" $bh_h "*) ;; *) seen_h="$seen_h$bh_h "; n=$((n+1));; esac; done   # a commit a shared checkout also holds counts once
+           if [ "$rk" = own ]; then   # the reflog is this clone's own; a shared checkout's reflog holds every seat's commits
+             n2=$(git -C "$r" reflog show --since="$since" --format='%gs' 2>/dev/null | sed -n 's/^commit[^:]*: //p' | sort -u | grep -c . 2>/dev/null || true); n2="${n2:-0}"
+             [ "$n2" -gt "$n" ] 2>/dev/null && n="$n2"; fi
+           cmts=$((cmts+n)); done < <(s4e_seat_repos)
          # seat8 2026-08-22: every FINDING-*.md ever written (202/202 checked) names the seat the OLD,
          # unpadded way ("seat8"), because s255's zero-padding change touched $ME fleet-wide but no seat's
          # file-naming habit. Matching $ME alone ("seat08") against the corpus finds ZERO files, always,
@@ -5408,7 +5449,7 @@ TASKEOF
          # digest's own class wearing new clothes: a guard keyed on a NAME is a coincidence, not a guard -- here keyed
          # on a PATH PREFIX. Matched at a path BOUNDARY now, so it counts findings/ and any historical root-level one.
          fnd=$(git -C "$S4E_GITHUB" log --since="$since" --diff-filter=A --name-only --format= 2>/dev/null | grep -E '(^|/)FINDING-' | grep -ci -e "$ME" -e "$mealt" ${row1:+-e "$row1"} || true); fnd="${fnd:-0}"
-         vd="NOTHING LANDED"; [ -z "$row1" ] || vd="$(s4e_banner_verdict "$row1" "$S4E"/*/)"   # the row's own reading from the claim, the LEDGER and origin: a landing through a worktree or a green done is not a commit this clone made
+         vd="NOTHING LANDED"; [ -z "$row1" ] || vd="$(s4e_banner_verdict "$row1" $(s4e_seat_repos | cut -f1))"   # the row's own reading from the claim, the LEDGER and origin: a landing through a worktree or a green done is not a commit this clone made
          if [ "$vd" = SUCCESS ]; then lvl="row ${rowst} ${row1} · landed on origin (the LEDGER's hashes or the closed claim) · ${cmts} commit(s) · ${fnd} FINDING(s), attributed since ${since}"
          elif [ "$cmts" -eq 0 ] && [ "$fnd" -eq 0 ]; then lvl="⚠ NOTHING ATTRIBUTABLE LANDED"
          else lvl="row ${rowst}${row1:+ ${row1}} · ${cmts} commit(s) · ${fnd} FINDING(s), attributed since ${since}"; fi
@@ -5416,12 +5457,13 @@ TASKEOF
          # NARROWER question -- does anything of value live ONLY in this session. A clone merely BEHIND origin (clean
          # tree, nothing unpushed) loses nothing on /clear; it just pulls next time. Measured directly per repo, since
          # calling that FAILURE would have flagged both fireable seats red for something neither seat did.
-         onlyhere=0
-         for r in "$S4E"/*/; do [ -d "$r/.git" ] || continue
-           d=$(git -C "$r" status --porcelain 2>/dev/null | wc -l)
+         onlyhere=0; onlywhere=""
+         while IFS=$'\t' read -r r rk; do
            br=$(git -C "$r" rev-parse --abbrev-ref HEAD 2>/dev/null)
-           u=$(git -C "$r" rev-list --count "origin/$br..$br" 2>/dev/null || echo 0)
-           onlyhere=$((onlyhere + d + ${u:-0})); done
+           if [ "$rk" = own ]; then d=$(git -C "$r" status --porcelain 2>/dev/null | wc -l); u=$(git -C "$r" rev-list --count "origin/$br..$br" 2>/dev/null || echo 0)
+           else d=0; u=$(git -C "$r" log --format=%H -i --grep="$ME" ${row1:+--grep="$row1"} "origin/$br..$br" 2>/dev/null | grep -c . || true); fi
+           [ $((d + ${u:-0})) -gt 0 ] && onlywhere="$onlywhere $(basename "$r")"
+           onlyhere=$((onlyhere + d + ${u:-0})); done < <(s4e_seat_repos)
          # ONE WORD, AND SUCCESS IS SAFE TO /clear (Lon 2026-11-11 13:0x CST, in officer_04's window, verbatim: "Delete one of the banners, and keep just one." / "I just want one word and a huge icon so I can
          # see from a distance." / "The status needs to represent what might be done when I /clear which I do at any prompt that has SUCCESS."): the unlanded census of CIO-125 no longer prints a line
          # beside the verdict; a saved patch or a branch is on disk and survives a /clear, so it never changes the word. handoff_status.sh still names it.
@@ -5457,7 +5499,7 @@ TASKEOF
          # keeps. A rename that quietly flipped rc would turn thirteen seats' handoff checks into something
          # else. The real failure states keep their own words and are ABOVE this branch: STOP for a
          # pre-rewrite clone, DRAIN FIRST for unread mail.
-         else                        line="⏳ IN-PROGRESS — $ME — do NOT /clear, work is only here — $lvl — $(printf '%s' "$pline" | sed 's/^ *-* *//')"
+         else                        line="⏳ IN-PROGRESS — $ME — do NOT /clear, work is only here (${onlywhere# }) — $lvl — $(printf '%s' "$pline" | sed 's/^ *-* *//')"
            fi
          # ⭐ V2-3, second half: the BOARD LINE carries the oldest-unanswered age and the row topic. BOARD.md is what
          # `fleet` renders and what Lon reads when he is not reading a banner, and in v1 it could not show either --
