@@ -82,7 +82,7 @@ def load_readings():
                 continue
             key = (f[5], f[7], f[8])
             if key not in latest or f[0] >= latest[key][0]:
-                latest[key] = (f[0], f[1], f[9])
+                latest[key] = (f[0], f[1] + ('-dirty' if f[2].endswith('-dirty') and not f[1].endswith('-dirty') else ''), f[9])   # a dirty corpus reads unread too
     return latest
 
 

@@ -219,15 +219,15 @@ def _progress_by_suite():
     groups={}
     with fh:
         head=fh.readline().rstrip('\n').split('\t')
-        try: i_ts,i_scrip,i_suite,i_prog,i_mode,i_out=(head.index(c) for c in
-            ('ts_utc','scrip','suite','program','mode','outcome'))
+        try: i_ts,i_scrip,i_corp,i_suite,i_prog,i_mode,i_out=(head.index(c) for c in
+            ('ts_utc','scrip','corpus','suite','program','mode','outcome'))
         except ValueError:
             _LFL_CACHE={}; return _LFL_CACHE
         for l in fh:
             f=l.split('\t')
             if len(f)<=i_out: continue
             if f[i_mode] not in ('m3','m4'): continue
-            if '-dirty' in f[i_scrip]: continue
+            if '-dirty' in f[i_scrip] or '-dirty' in f[i_corp]: continue   # scrip, then corpus: both dirty-tree stamps are unread
             prog=f[i_prog].rsplit('/',1)[-1]
             if '.' in prog: prog=prog.rsplit('.',1)[0]
             ts=f[i_ts]; g=groups.get(f[i_suite])

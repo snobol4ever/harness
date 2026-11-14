@@ -165,6 +165,21 @@ def migrate_header(path):
             f"was written into every row but named by nothing, so every csv.DictReader dropped it); {n} data rows preserved")
 
 
+# ⛔⭐ A READING ON A DIRTY CORPUS OR HARNESS TREE IS NEVER RECORDED (the grader 2026-11-14, on the coo's telegram 10:2x CST and two seats'
+# measurements; CEO-2060, skill suites-and-grading: "a dirty tree's readings simply never enter the progress store"). MEASURED: from-progress read
+# a row unread only when its scrip column ended -dirty, so the cfo's reading of 15:13:24Z on corpus 7c260f9b0-dirty became newest_tree and turned
+# gate_cases_prolog's ...report_mode_append..._iso green over its only clean reading, a FAIL; 554 rows of the store carry a dirty corpus, 62 of them
+# written that day, and the harness tree was recorded nowhere. Since the cutover a seat root holds taken corpus and harness clones, so the road is
+# wide. So the record step reads the corpus tree and the harness tree this script runs from, and a dirty one (a tracked file changed) writes
+# NOTHING and says so, as S4E_PROGRESS_OFF does: commit, then grade. HARNESS_TREE is the harness this file sits in (the selftest points it at a
+# scratch repository). A SCRIP tree that is dirty is still written with its -dirty stamp, which every reader skips.
+HARNESS_TREE = os.path.dirname(HERE)
+
+
+def dirty_trees(ctx):
+    return [k for k in ("corpus", "harness") if str(ctx.get(k, "")).endswith("-dirty")]
+
+
 def recording_off():
     return os.environ.get("S4E_PROGRESS_OFF", "") == "1"
 
@@ -189,6 +204,7 @@ def context():
         return _CTX
     _CTX["scrip"] = _git_short(_tree_default())
     _CTX["corpus"] = _git_short(str(harness_paths.corpus(S4E)))
+    _CTX["harness"] = _git_short(HARNESS_TREE)
     # ⛔ S4E_SEAT WINS OVER THE ROOT PATH (coo 2026-09-16; hq_raku via the cfo: base-vs-head boards graded on two DETACHED WORKTREES
     # were attributed to root:base and root:head -- a pseudo-seat no LANES: line names -- so a batch audit keyed on measurer could not
     # see 1854 sound rows). The seat that set S4E_SEAT is the measurer; the path map is the fallback for a seat that set nothing.
@@ -584,6 +600,11 @@ def append_rows(rows, db=None):
     path = db or db_path()
     assert_ground_unmoved()
     ctx = context()
+    _dt = dirty_trees(ctx)
+    if _dt:
+        print(f"progress: UNREAD -- {len(rows)} row(s) NOT recorded in {path}: the {' and the '.join(_dt)} tree{'s are' if len(_dt) > 1 else ' is'} "
+              f"dirty ({', '.join(k + ' ' + ctx[k] for k in _dt)}); a reading on a dirty tree never enters the store (CEO-2060): commit, then grade", file=sys.stderr)
+        return 0
     ts = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
     lines = []
     for r in rows:
@@ -803,8 +824,42 @@ def selftest():
         try: assert_ground_unmoved()
         except ProgressGroundMoved: a2 = True
         print("ARM 2 OK: a new commit after the pin is refused" if a2 else "ARM 2 FAIL: a new commit after the pin was not refused")
-        print(f"PROGRESS_PIN_SELFTEST arms=2 {'OK' if a1 and a2 else 'FAIL'}")
-        return 0 if a1 and a2 else 1
+        # ARMS 3 TO 5: a dirty corpus, then a dirty harness, writes no row; both clean writes one (the grader 2026-11-14)
+        global HARNESS_TREE
+        H_ = "harness_repo"
+        subprocess.run(["git", "-c", "init.defaultBranch=main", "init", "-q", os.path.join(t, H_)], check=True, capture_output=True)
+        for k, v in (("user.email", "selftest@example.invalid"), ("user.name", "selftest")): git(H_, "config", k, v)
+        with open(os.path.join(t, H_, "tool"), "w") as f: f.write("tool\n")
+        git(H_, "add", "tool"); git(H_, "commit", "-q", "-m", H_)
+        old_ht, HARNESS_TREE = HARNESS_TREE, os.path.join(t, H_)
+        db = os.path.join(t, "results.tsv")
+        row = {"class": "package", "suite": "selftest", "lang": "icon", "program": "p", "mode": "m3", "outcome": "PASS", "secs": "0.1", "note": ""}
+        def written():
+            if not os.path.exists(db): return 0
+            return max(0, sum(1 for _ in open(db)) - 1)
+        try:
+            pin_context(os.path.join(t, S_, "scrip"), os.path.join(t, S_, "out"))
+            with open(os.path.join(t, C_, ".gitignore"), "a") as f: f.write("dirt\n")
+            pin_context(os.path.join(t, S_, "scrip"), os.path.join(t, S_, "out"))
+            n3 = append_rows([dict(row)], db=db)
+            a3 = n3 == 0 and written() == 0
+            print("ARM 3 OK: a dirty corpus wrote no row" if a3 else f"ARM 3 FAIL: a dirty corpus wrote {written()} row(s)")
+            git(C_, "checkout", "-q", "--", ".gitignore")
+            with open(os.path.join(t, H_, "tool"), "a") as f: f.write("dirt\n")
+            pin_context(os.path.join(t, S_, "scrip"), os.path.join(t, S_, "out"))
+            n4 = append_rows([dict(row)], db=db)
+            a4 = n4 == 0 and written() == 0
+            print("ARM 4 OK: a dirty harness wrote no row" if a4 else f"ARM 4 FAIL: a dirty harness wrote {written()} row(s)")
+            git(H_, "checkout", "-q", "--", "tool")
+            pin_context(os.path.join(t, S_, "scrip"), os.path.join(t, S_, "out"))
+            n5 = append_rows([dict(row)], db=db)
+            a5 = n5 == 1 and written() == 1
+            print("ARM 5 OK: clean trees wrote the row" if a5 else f"ARM 5 FAIL: clean trees wrote {written()} row(s)")
+        finally:
+            HARNESS_TREE = old_ht
+        ok = a1 and a2 and a3 and a4 and a5
+        print(f"PROGRESS_PIN_SELFTEST arms=5 {'OK' if ok else 'FAIL'}")
+        return 0 if ok else 1
     except (OSError, subprocess.CalledProcessError) as e:
         print(f"REFUSE(2): the scratch repositories could not be made: {e}"); return 2
     finally:

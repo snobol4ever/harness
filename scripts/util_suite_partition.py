@@ -78,7 +78,7 @@ def read_secs(path, key):
                 s = float(row[10] or 0)
             except ValueError:
                 s = 0.0
-            if s > 0 and row[8] in ("m3", "m4") and not row[1].lower().endswith("-dirty"):   # the FASTEST clean reading: a loaded box only slows a program
+            if s > 0 and row[8] in ("m3", "m4") and not row[1].lower().endswith("-dirty") and not row[2].lower().endswith("-dirty"):   # the FASTEST clean reading: a loaded box only slows a program
                 secs[row[7]] = min(secs.get(row[7], s), s)          # (the coo 2026-11-12, on Lon's 18:2x: each update about every 1 MINUTE)
     return secs
 

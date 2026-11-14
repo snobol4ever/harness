@@ -38,7 +38,7 @@ def load(path):
     for ln in raw.split("\n"):
         f = ln.split("\t")
         if len(f) < 10 or f[0] == "ts_utc": continue
-        if f[1].endswith("-dirty") or not f[1]: continue
+        if f[1].endswith("-dirty") or f[2].endswith("-dirty") or not f[1]: continue
         rows.append(f)
     return rows
 def graded_hash(d, ref, hashes):

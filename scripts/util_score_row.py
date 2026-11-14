@@ -1825,7 +1825,7 @@ def _wall_only_without_a_table(full_key, _aud):
             fl = line.rstrip("\n").split("\t")
             if len(fl) >= 10 and fl[5] == dbs and fl[8] in ("m3", "m4"):
                 present.add((fl[7], fl[8]))
-                if fl[8] in _rm and not fl[1].lower().endswith("-dirty") and fl[0] > latest.get((fl[7], fl[8]), ""):
+                if fl[8] in _rm and not fl[1].lower().endswith("-dirty") and not fl[2].lower().endswith("-dirty") and fl[0] > latest.get((fl[7], fl[8]), ""):
                     latest[(fl[7], fl[8])] = fl[0]
     _wm = [mn.get((dbs, p, m), 0.0) for (p, m) in present]
     wall = int(round(sum(_wm))); wall_text = wall_cell(_wm)
@@ -1998,7 +1998,7 @@ def cmd_from_progress(a):
             fl = line.rstrip("\n").split("\t")
             if len(fl) < 10 or fl[5] != dbsuite or fl[8] not in modes:
                 continue
-            if fl[1].lower().endswith("-dirty"):
+            if fl[1].lower().endswith("-dirty") or fl[2].lower().endswith("-dirty"):   # a dirty SCRIP or corpus tree (the grader 2026-11-14)
                 dirty_keys.add((fl[7], fl[8]))
                 continue
             if key == "swi":   # SWI's rows name a CASE of a table file, file.pl:unit:test#k (its table lists files)
