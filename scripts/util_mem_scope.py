@@ -194,7 +194,11 @@ def seat_slice():
     the ledger attributes the seat's short runs (a graded entry lives seconds) to the seat (the fleet test, 2026-11-01: app.slice read 5.9 cores
     of which 2.1 had a line)."""
     who = re.sub(r"[^a-z0-9_]", "_", (os.environ.get("S4E_SEAT", "").strip() or HERE.parent.parent.name).lower())
-    return "s4e-runs-%s.slice" % who
+    # THE CYCLE'S SHARE CANNOT BE DILUTED BY THE ROSTER (the cio 2026-11-14, on the coo's measurement 10:48 CST: under s4e-runs.slice stood 40 siblings, 39 seats' run slices at
+    # weight 100 and the grader's at 300, so the grader held 7% of the runs' weight, 116% of a core of 462, and wrote 428 readings in 30 minutes against about 5,900 with the fleet
+    # asleep; a weight compares siblings only). Every seat's runs live under ONE sibling, s4e-runs-seats.slice (systemd nests by the dashes), beside s4e-runs-grader.slice: the
+    # grader holds 300 of 400 of the runs' weight whatever the seat count. box_tick.py holds the weights.
+    return "s4e-runs-grader.slice" if who == "grader" else "s4e-runs-seats-%s.slice" % who
 
 
 def _unit_name(argv):

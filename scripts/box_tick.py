@@ -230,6 +230,55 @@ def enforce_mem_limit():
     return "mem_limit=%dG seats_low=%s acts=%d%s" % (n, "%dG" % sv if sv else "none", len(acts), " failed=%d" % bad if bad else "")
 
 
+# THE WEIGHTS OF THE GRADING ROAD (the cio 2026-11-14, with util_mem_scope.seat_slice): a weight shares and never limits, and it compares siblings only. s4e-runs.slice stands at
+# RUNS_WEIGHT beside the sessions' slice at 100, so graded and seat runs together are owed the larger part of the one limit when the box is full; inside it the grader's slice
+# stands at GRADER_RUNS_WEIGHT beside ONE sibling for all the seats. While a seat's old flat run slice (s4e-runs-<seat>.slice, before this row) still holds a run, each is a
+# sibling of the grader at 100, so the grader's weight is raised by 100 for each until they are gone: the share cannot drift with the roster or with the transition.
+RUNS_SLICE = "s4e-runs.slice"; GRADER_RUNS_SLICE = "s4e-runs-grader.slice"; SEATS_RUNS_SLICE = "s4e-runs-seats.slice"
+RUNS_WEIGHT = 300; GRADER_RUNS_WEIGHT = 300
+
+
+def _weight(cg):
+    try:
+        return int(open(os.path.join(cg, "cpu.weight")).read().split()[0])
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def weight_actions(top):
+    """[(unit, weight)]: s4e-runs.slice to RUNS_WEIGHT; the grader's run slice to GRADER_RUNS_WEIGHT plus 100 for each old flat seat run slice still standing beside it"""
+    acts = []
+    runs = os.path.join(top, FLEET_SLICE, RUNS_SLICE)
+    if not os.path.isdir(runs):
+        return acts
+    if _weight(runs) not in (RUNS_WEIGHT, None):
+        acts.append((RUNS_SLICE, RUNS_WEIGHT))
+    g = os.path.join(runs, GRADER_RUNS_SLICE)
+    if os.path.isdir(g):
+        try:
+            flat = [x for x in os.listdir(runs) if x.endswith(".slice") and x not in (GRADER_RUNS_SLICE, SEATS_RUNS_SLICE)]
+        except OSError:
+            flat = []
+        want = min(10000, GRADER_RUNS_WEIGHT + 100 * len(flat))
+        if _weight(g) not in (want, None):
+            acts.append((GRADER_RUNS_SLICE, want))
+    return acts
+
+
+def enforce_weights():
+    acts = weight_actions(U)
+    if DRY:
+        return "weights dry_acts=%d" % len(acts)
+    bad = 0
+    for unit, w in acts:
+        try:
+            r = subprocess.run(["systemctl", "--user", "set-property", "--runtime", unit, "CPUWeight=%d" % w], capture_output=True, text=True, timeout=30)
+            bad += int(r.returncode != 0)
+        except (OSError, subprocess.TimeoutExpired):
+            bad += 1
+    return "weights acts=%d%s" % (len(acts), " failed=%d" % bad if bad else "")
+
+
 def systemctl(*args):
     if DRY:
         return ""
@@ -704,7 +753,7 @@ def tick():
     open(TICK_DIR + "/tick.count", "w").write("%d\n" % n)
     mode = mode_text()
     s = sense(dict(cpu10=4.0, cpu60=4.0, cpu300=4.0, gcpu10=1.0, mem_rise=0) if DRY else None)
-    one = enforce_one_limit() + " " + enforce_mem_limit()
+    one = enforce_one_limit() + " " + enforce_mem_limit() + " " + enforce_weights()
     grader = "retired (CIO-82: the cycle is the one grading road)"
     expired = expire_leases() if n % 5 == 0 else 0
     fed = "retired (CIO-82: the cycle serves test requests)"
@@ -778,6 +827,16 @@ def probe_one_limit(scratch=False):
         arm("mem_noconf", mem_limit_actions(os.path.join(T, "m"), None, None) == [], "no mem line must change nothing")
         mc = os.path.join(T, "MEM.conf"); open(mc, "w").write("cores=4\nmem=26\nmem_seats=16\n")
         mb = os.path.join(T, "MEMBAD.conf"); open(mb, "w").write("mem=8\nmem_seats=9\n")
+        def wplant(rel, w):
+            d = os.path.join(T, "w", rel); os.makedirs(d, exist_ok=True); open(os.path.join(d, "cpu.weight"), "w").write("%d\n" % w)
+        wplant("s4e.slice/s4e-runs.slice", 100); wplant("s4e.slice/s4e-runs.slice/s4e-runs-grader.slice", 300); wplant("s4e.slice/s4e-runs.slice/s4e-runs-seats.slice", 100)
+        wplant("s4e.slice/s4e-runs.slice/s4e-runs-junior_01.slice", 100); wplant("s4e.slice/s4e-runs.slice/s4e-runs-junior_02.slice", 100)
+        wgot = sorted(weight_actions(os.path.join(T, "w")))
+        arm("weights_law", wgot == sorted([("s4e-runs.slice", 300), ("s4e-runs-grader.slice", 500)]), "weight actions %s: the runs slice goes to 300 and the grader to 300 plus 100 for each old flat seat slice" % wgot)
+        import shutil as _sh
+        _sh.rmtree(os.path.join(T, "w", "s4e.slice/s4e-runs.slice/s4e-runs-junior_01.slice")); _sh.rmtree(os.path.join(T, "w", "s4e.slice/s4e-runs.slice/s4e-runs-junior_02.slice"))
+        wplant("s4e.slice/s4e-runs.slice", 300); wplant("s4e.slice/s4e-runs.slice/s4e-runs-grader.slice", 500)
+        arm("weights_settle", weight_actions(os.path.join(T, "w")) == [("s4e-runs-grader.slice", 300)], "with the flat seat slices gone the grader returns to 300: %s" % weight_actions(os.path.join(T, "w")))
         arm("mem_number", mem_conf(mc) == (26, 16) and mem_conf(conf) == (None, None) and mem_conf(mb) == (8, None), "mem_conf misread a planted file: %s %s %s" % (mem_conf(mc), mem_conf(conf), mem_conf(mb)))
         gone = [x for x in ("decide", "write_awake", "write_live_set", "current_width", "current_awake", "wmax") if x in globals()]
         arm("chooses_nothing", not gone, "the tick still defines " + ",".join(gone))
@@ -787,6 +846,13 @@ def probe_one_limit(scratch=False):
         except Exception as e:
             sl = "error:%s" % e
         arm("runs_inside", sl.startswith("s4e-runs-"), "seat_slice() is %s, outside s4e.slice" % sl)
+        try:
+            _was = os.environ.get("S4E_SEAT"); os.environ["S4E_SEAT"] = "junior_01"; s1 = util_mem_scope.seat_slice(); os.environ["S4E_SEAT"] = "grader"; s2 = util_mem_scope.seat_slice()
+            if _was is None: os.environ.pop("S4E_SEAT", None)
+            else: os.environ["S4E_SEAT"] = _was
+        except Exception as e:
+            s1 = s2 = "error:%s" % e
+        arm("runs_nested", s1 == "s4e-runs-seats-junior_01.slice" and s2 == "s4e-runs-grader.slice", "a seat's run slice is %s and the grader's %s" % (s1, s2))
         noc = os.path.join(T, "NOCORES.conf"); open(noc, "w").write("grader=1\n")
         def sh(script, conf_path, extra=None):
             env = dict(os.environ, S4E_CORES_CONF=conf_path, S4E_SEM=os.path.join(T, "no-sem"), S4E_SEM_HOME=os.path.join(T, "sem"), S4E_SLOT_WAITS=os.path.join(T, "waits.tsv"), **(extra or {}))

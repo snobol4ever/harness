@@ -1156,6 +1156,16 @@ s4e_telegram() {   # <seat> <topic> <text> -- a telegram written straight into t
 # s4e_queue_swap puts it in place only when it is whole (as many lines as the file it replaces): a reader that takes no lock sees the old file or the new, never a torn or
 # an empty one, as `cat tmp > QUEUE.tsv` showed it. s4e_probe_bus_one_queue.sh 10 proves it with twelve writers and an unlocked reader.
 s4e_queue_tmp() { mktemp "$PO/.QUEUE.tsv.XXXXXX"; }
+# EVERY BATON GOES TO A JUNIOR FIRST (Lon 2026-11-14 10:4x CST, in the coo's window, relayed by the coo, verbatim: "So the ratioreally should be more JUNIORS, that is a good thing.
+# Ultimately we would have all BATONS go to JUNIORS, and they would escalate only when needed versus us guessing."; built in by the cio, since a limit is built into what a seat
+# runs). mint takes --tier haiku only; queue --tier sonnet, opus or fable takes only a row whose baton carries an ESCALATION section, the record that a seat below tried it and
+# measured why it could not land. The road up is escalate, which carries the measurement. --to a named seat stays free: a boss's or a designer's own row is not a guess at a tier.
+s4e_junior_first_ok() {   # <tier> <topic or ''>: rc 0 the tier may be named for this row; rc 1 it may not (the caller refuses)
+    [ "$1" = haiku ] && return 0
+    [ -n "${2:-}" ] && grep -q '^## ESCALATION' "$PO/tasks/$2.task.md" 2>/dev/null && return 0
+    return 1; }
+s4e_junior_first_refuse() {   # <verb> <tier> <topic>
+    printf '⛔ REFUSED (rc 2): every baton goes to a junior first (Lon 2026-11-14). %s --tier %s is a guess at the tier: %s has never been escalated.\n   Send it to the juniors: --tier haiku. A higher tier sees a row only through escalate, which carries the measurement of the seat that tried it.\n' "$1" "$2" "$3" >&2; }
 s4e_queue_swap() {   # <tmp>: rc 0 the copy replaced QUEUE.tsv; rc 1 it was not whole and is removed, the file untouched
     local _q="$PO/QUEUE.tsv"
     if [ -s "$1" ] && [ "$(wc -l < "$1")" -eq "$(wc -l < "$_q")" ]; then chmod 664 "$1" 2>/dev/null; mv -f "$1" "$_q"; else rm -f "$1"; return 1; fi; }
@@ -2904,7 +2914,10 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
     # not others. A verdict that depends on the grader's environment is not a verdict.
     # ⭐ fleet-queue step 19: the identity is never held across a PREMISE run. A holder releases it for the run and takes it back for its write.
     _pl_was="${_S4E_FD_OWNER:-}"; [ "$_pl_was" = "$$" ] && s4e_pid_unhold
-    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_PREMISE_WHEN_RUN=1 s4e_bounded "$to" bash -c "$pw" ) >"$log" 2>&1; rc=$?
+    # THE BUS'S OWN CHECK TAKES NO CORE TOKEN (the cio 2026-11-14, on the cto's and junior_13's measurement relayed by the coo: at load 65 to 98 a PREMISE-WHEN that runs one harness
+    # entry waited minutes for a run slot, its 120 s budget ran out at every next, and the row went round to the same junior again and again). The budget counts the run, never
+    # the wait in the run line: the premise runs under S4E_CORE_HELD, so a harness inside it takes no token (one short run a seat; the kernel's one limit still bounds it).
+    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_PREMISE_WHEN_RUN=1 S4E_CORE_HELD=1 S4E_RUN_SLOT_HELD=1 s4e_bounded "$to" bash -c "$pw" ) >"$log" 2>&1; rc=$?
     [ "$_pl_was" = "$$" ] && s4e_pid_retake
     el="$(( $(date +%s) - t0 ))"
     case "$rc" in
@@ -3526,6 +3539,7 @@ case "$cmd" in
          esac
          row="$(grep -P "^[0-9]+\t\Q$topic\E\t" "$PO/QUEUE.tsv" 2>/dev/null | head -1)"; [ -n "$row" ] || { echo "⛔ REFUSED: no QUEUE.tsv row named '$topic'" >&2; exit 2; }
          _qst="$(printf '%s' "$row" | cut -f4)"; case "$_qst" in FREE|QUEUED:*) ;; *) echo "⛔ REFUSED: $topic reads $_qst; queue takes a FREE or QUEUED row (park, done or unclaim it first)" >&2; exit 2;; esac
+         case "$q_tube" in tier-*) s4e_junior_first_ok "$q_tier" "$topic" || { s4e_junior_first_refuse queue "$q_tier" "$topic"; exit 2; };; esac
          s4e_skills_required_ok "$q_tier" "$(sed -n '1,/^## NEXT/p' "$PO/tasks/$topic.task.md")" || { echo "⛔ REFUSED: a $q_tier row carries a SKILLS: line in its baton head naming the skills its executor loads first; add it and queue again" >&2; exit 2; }
          _oldjob="$(s4e_baton_job_get "$topic" | cut -d' ' -f1)"; s4e_queue_retire "$_oldjob"
          s4e_queue_enqueue_row "$topic" "$q_tube" "$(qrank "$topic")" "$q_tier" || exit 1
@@ -4523,6 +4537,7 @@ case "$cmd" in
          # it there, once, is cheaper than another blank cell nobody catches until a seat wanders into it.
          owner=""; q_tube=""; q_tier=""
          if [ "${1:-}" = "--tier" ]; then q_tier="$(s4e_tier_name "${2:?--tier needs fable|opus|sonnet|haiku}")" || { echo "⛔ REFUSED: --tier must be fable, opus, sonnet or haiku, not '$2'." >&2; exit 2; }
+           s4e_junior_first_ok "$q_tier" "" || { s4e_junior_first_refuse mint "$q_tier" "$topic"; exit 2; }
            owner="@$q_tier"; q_tube="tier-$q_tier"; shift 2
          elif [ "${1:-}" = "--to" ]; then q_tier="$(s4e_tier_of "${2:?--to needs a seat}")" || { echo "⛔ REFUSED: --to must name a seat of $S4E_TIERS, not '$2'." >&2; exit 2; }
            owner="$2"; q_tube="seat-$2"; shift 2

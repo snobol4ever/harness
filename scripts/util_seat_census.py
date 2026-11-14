@@ -131,8 +131,10 @@ def scopes(root):
     for d in sorted(glob.glob(os.path.join(app, "s4e-mem-*.scope"))):
         m = re.match(r"s4e-mem-([a-z0-9_]+)-", os.path.basename(d))
         out.append((os.path.relpath(d, root), "BOARD", m.group(1) if m else "unknown"))
-    for d in sorted(glob.glob(os.path.join(app, "app-s4e.slice", "app-s4e-*.slice")) + glob.glob(os.path.join(svc, "s4e.slice", "s4e-runs.slice", "s4e-runs-*.slice"))):   # the seat's runs: s4e-runs-<seat>.slice inside the fleet's one slice since 2026-11-13 (util_mem_scope.seat_slice), app-s4e-<seat>.slice before
-        m = re.match(r"(?:app-s4e|s4e-runs)-([a-z0-9_]+)\.slice", os.path.basename(d))
+    for d in sorted(glob.glob(os.path.join(app, "app-s4e.slice", "app-s4e-*.slice")) + glob.glob(os.path.join(svc, "s4e.slice", "s4e-runs.slice", "s4e-runs-*.slice")) + glob.glob(os.path.join(svc, "s4e.slice", "s4e-runs.slice", "s4e-runs-seats.slice", "s4e-runs-seats-*.slice"))):   # the seat's runs: s4e-runs-<seat>.slice inside the fleet's one slice since 2026-11-13 (util_mem_scope.seat_slice), app-s4e-<seat>.slice before
+        if os.path.basename(d) == "s4e-runs-seats.slice":   # the parent of every seat's run slice since 2026-11-14 (util_mem_scope.seat_slice); its children are read by the glob above
+            continue
+        m = re.match(r"(?:app-s4e|s4e-runs-seats|s4e-runs)-([a-z0-9_]+)\.slice", os.path.basename(d))
         out.append((os.path.relpath(d, root), "BOARD", m.group(1) if m else "unknown"))
     for d in sorted(glob.glob(os.path.join(app, "*.scope")) + glob.glob(os.path.join(app, "*.slice"))):
         b = os.path.basename(d)
