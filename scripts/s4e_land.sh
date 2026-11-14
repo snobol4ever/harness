@@ -43,7 +43,7 @@
 #   --probe-orphan-lock  the stopped lander's proof on scratch origins: a landing is sent TERM mid-gate (its gate a 120 s child); once it has exited no
 #                process of it remains, its gate held neither lock descriptor, and a second landing from the same home lands; prints LAND probe-orphan-lock second=landed orphans=0.
 #   --tables     print the generated-table registry (generated_tables.tsv) and run nothing
-#   --probe-rerun  the proof of LAND.conf's switches on scratch origins (four arms); prints LAND rerun-probe ok
+#   --probe-rerun  the proof of LAND.conf's switches on scratch origins (five arms); prints LAND rerun-probe ok
 #   --probe-root-home  the proof of a landing from a seat's own root on a scratch root (two arms); prints LAND root-home-probe ok
 # A SEAT LANDS FROM ITS OWN ROOT (officer_02 2026-11-13, row harness-a-worktree-is-scrip-alone-everything-else-from-the-seats-root; Lon 17:4x CST, in the coo's window,
 #   verbatim: "I want you to work in /home/claude folder. We do not NEED duplication. Nope, dups not needed."): no seat makes a worktree; the home is the seat's root,
@@ -124,7 +124,7 @@ home="$(cd "$home" 2>/dev/null && pwd)" || refuse "no root at $home"
 . "$HERE/lib_paths.sh"
 rd() { case "$1" in SCRIP) if [ -d "$home/src" ] && [ -f "$home/Makefile" ] && [ -e "$home/.git" ]; then printf '%s' "$home"; else printf '%s/SCRIP' "$home"; fi ;; *) printf '%s/%s' "$home" "$1" ;; esac; }
 if [ -e "$home/harness/.git" ]; then TH="$home/harness"; else TH="$S4E_HARNESS"; fi
-genv=(env S4E_HOME="$home" S4E_SCRIP="$(rd SCRIP)")
+genv=(env -u S4E_LAND_SELF S4E_HOME="$home" S4E_SCRIP="$(rd SCRIP)")   # NO GATE, CHECK OR TABLE WRITER INHERITS S4E_LAND_SELF (the cio 2026-11-14, row the-lander-reads-origin-moved-from-what-its-tree-holds; MEASURED: a lander probe run as a gate read the outer lander as its SELF and drove the outer text on its scratch origins, so the cured tree read RED at its own landing 2026-11-13 13:5x CST): a lander started inside a gate copies and names itself
 [ -e "$home/corpus/.git" ] && genv+=(S4E_CORPUS="$home/corpus")
 [ -e "$home/harness/.git" ] && genv+=(S4E_HARNESS="$home/harness")
 [ -e "$home/.github/.git" ] && genv+=(S4E_GITHUB="$home/.github")
@@ -519,7 +519,15 @@ probe_rerun() {   # THE PROOF OF LAND.conf's SWITCHES (row the-lander-reruns-a-l
     lander --gate "echo g >> $T/gates4" > "$log" 2>&1; rc=$?
     [ "$rc" = 0 ] && grep '^LAND stage=line place=1 of 1' "$log" > /dev/null && [ "$(wc -l < "$T/gates4")" = 1 ] && [ "$(git -C "$T/origin/harness.git" rev-parse main)" != "$was" ] \
         || rr "arm 4 (the place free) rc=$rc: expected the place taken and the landing on origin"
-    echo "LAND rerun-probe ok arms=4 ledger_lines=$(grep -vc '^#' "$T/po/LANDINGS.tsv") (derived touches kept a gate standing over a race outside the landing's directory and skipped the table stages; tries=1 ran the one serial gate under the lease over a race inside it; touches=declared read the same race affected; width=1 held a landing out with nothing fetched and admitted it once the place was free)"
+    printf 'tries=1\ntouches=derived\ntables=affected\n' > "$T/po/LAND.conf"
+    racer race5.sh raced5 "probe-rerun5-$$.txt"; printf 'git -C "%s" fetch -q origin\n' "$T/work/corpus" >> "$T/race5.sh"   # the ref moves under the gate, as a root's sync moves it under a landing in its gate
+    own_change harness "probe_own/e-$$.txt"; log="$T/arm5.log"
+    lander --gate "echo g >> $T/gates5 && bash $T/race5.sh && printf '%s' \"\${S4E_LAND_SELF:-}\" > $T/self5" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm5| /' "$log" | grep -E 'regate|REJECTED|LAND ok|LAND RED|REFUSE' | cut -c1-220 | tail -4
+    [ "$rc" = 0 ] && grep '^LAND stage=regate:lease reason=unaffected files=1' "$log" > /dev/null && ! grep 'REJECTED' "$log" > /dev/null && grep '^LAND ok .* rounds=0 .* attempts=1 ' "$log" > /dev/null && [ "$(wc -l < "$T/gates5")" = 1 ] \
+        || rr "arm 5 (the ref moved under the gate by a fetch in the work clone) rc=$rc: expected the move read under the lease, the tree rebased, one push and no REJECTED line"
+    [ -e "$T/self5" ] && [ ! -s "$T/self5" ] || rr "arm 5: the gate's environment carried S4E_LAND_SELF=$(cat "$T/self5" 2>/dev/null): a lander run inside a gate (a probe as a DONE-WHEN) would drive the OUTER lander's text, never the tree under test"
+    echo "LAND rerun-probe ok arms=5 ledger_lines=$(grep -vc '^#' "$T/po/LANDINGS.tsv") (derived touches kept a gate standing over a race outside the landing's directory and skipped the table stages; tries=1 ran the one serial gate under the lease over a race inside it; touches=declared read the same race affected; width=1 held a landing out with nothing fetched and admitted it once the place was free; a ref moved under the gate by a fetch was read as a move under the lease and cost no round)"
     exit 0
 }
 [ "$mode" = probe ] && probe
@@ -754,7 +762,7 @@ held_views() {   # after every fetch: point each held repo's view at the home's 
 }
 declare -A held_from=()
 set_genv() {
-    genv=(env S4E_HOME="$(vhome)" S4E_SCRIP="$(rv SCRIP)")
+    genv=(env -u S4E_LAND_SELF S4E_HOME="$(vhome)" S4E_SCRIP="$(rv SCRIP)")
     [ -e "$(rd corpus)/.git" ] && genv+=(S4E_CORPUS="$(rv corpus)")
     [ -e "$(rd harness)/.git" ] && genv+=(S4E_HARNESS="$(rv harness)")
     [ -e "$(rd .github)/.git" ] && genv+=(S4E_GITHUB="$(rv .github)")
@@ -932,7 +940,7 @@ push_one() {
 # change every program). After a rejected push the gate is re-run only when the rebase brought in a commit under SCRIP/src/runtime, SCRIP/src/templates,
 # SCRIP/Makefile, a generated table's output, or one of the row's TOUCHES: prefixes; a landing with no TOUCHES re-gates on any change at all.
 declare -A origin_seen
-note_origins() { local r; for r in "${present[@]}"; do origin_seen[$r]="$(git -C "$(rd "$r")" rev-parse origin/main)"; done; }
+note_origins() { local r; for r in "${present[@]}"; do origin_seen[$r]="$(git -C "$(rd "$r")" merge-base HEAD origin/main)"; done; }   # WHAT THE TREE HOLDS, NEVER THE REF'S VALUE (row the-lander-reads-origin-moved-from-what-its-tree-holds, the cio 2026-11-13, MEASURED landing harness f45ef5b94: a fetch in the root moved origin/main under the gate, the ref was remembered as seen, the fetch under the lease read no move, and the push went non-fast-forward: one whole round more). After a rebase the base and the ref are one commit; when the ref moved under the gate the tree's base is the older, so the lease's fetch reads moved and the tree is rebased.
 affected_since() {   # -> prints "reason=affected|unaffected files=N"; rc 0 affected
     local r f old new n=0 hit=0 t p; local -a outs
     mapfile -t outs < <(awk -F'\t' '!/^#/ && $1 != "name" {print $3}' "$TSV")
