@@ -45,6 +45,8 @@
 #   --tables     print the generated-table registry (generated_tables.tsv) and run nothing
 #   --probe-rerun  the proof of LAND.conf's switches on scratch origins (five arms); prints LAND rerun-probe ok
 #   --probe-root-home  the proof of a landing from a seat's own root on a scratch root (two arms); prints LAND root-home-probe ok
+#   --probe-no-lease  LAND.conf lease=none on scratch origins (three arms): no seat takes the lease; after its last gate an overtaken landing yields only to movers in its own
+#                directories; prints LAND no-lease-probe ok
 #   --probe-finish  a landing of two repos whose second push is overtaken after its one serial round is spent finishes under its lease; prints LAND finish-probe ok
 #   --probe-table-merge  two landings that each add a row to one container's ALL.csv and PARTITION.tsv both land (the second merges by entry key); two that change one cell
 #                differently read RED with the table named; prints LAND table-merge-probe ok
@@ -108,6 +110,7 @@ while [ $# -gt 0 ]; do
         --probe-rerun) mode=probe_rerun; shift ;;
         --probe-table-merge) mode=probe_table_merge; shift ;;
         --probe-finish) mode=probe_finish; shift ;;
+        --probe-no-lease) mode=probe_no_lease; shift ;;
         --probe-root-home) mode=probe_root_home; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
@@ -123,6 +126,7 @@ PROBE_GREEN="${S4E_LAND_PROBE_GREEN:-/home/resources/progress/LAND_PROBE_GREEN.t
 PO_LAND="${S4E_POSTOFFICE:-/home/resources/postoffice}"; CONF="$PO_LAND/LAND.conf"   # the switches of the header's LAND.conf block; a scratch postoffice has its own file, so a probe never reads the live one
 conf() { local v; v="$(awk -F= -v k="$1" '!/^#/ && $1 == k { v = $2 } END { print v }' "$CONF" 2>/dev/null)"; printf '%s' "${v:-$2}"; }
 tries="${tries:-$(conf tries 3)}"; touches_mode="$(conf touches declared)"; tables_mode="$(conf tables all)"; width="$(conf width 0)"; line_wait="$(conf line_wait 10800)"
+lease_mode="$(conf lease flock)"   # lease=none: NO SEAT TAKES THE PUSH LEASE (below, lease_boss); lease=flock, or no line: the lease of before
 for _v in "$tries" "$width" "$line_wait"; do case "$_v" in ''|*[!0-9]*) refuse "LAND.conf or --tries carries a value that is no count ($_v): tries, width and line_wait are whole numbers ($CONF)" ;; esac; done
 [ "$tries" -ge 1 ] || refuse "tries is $tries: a landing has one round at least"
 if [ "$PO_LAND" = /home/resources/postoffice ]; then LEDGER="${S4E_LAND_LEDGER:-/home/resources/progress/LANDINGS.tsv}"; else LEDGER="${S4E_LAND_LEDGER:-$PO_LAND/LANDINGS.tsv}"; fi
@@ -605,6 +609,41 @@ probe_finish() {   # A LANDING THAT HAS PUSHED ONE REPO FINISHES, on scratch ori
     echo "LAND finish-probe ok (a landing of harness and corpus whose corpus push was overtaken after its serial round was spent rebased, gated once more under its lease and pushed corpus: both halves on origin, no half-landed line, three gate runs)"
     exit 0
 }
+probe_no_lease() {   # LAND.conf lease=none, three landings by a seat that is no boss, on scratch origins. (1) nothing races: it lands and never takes the lease. (2) origin moves in ANOTHER directory after the lease's fetch (the plant) and again during the gate that follows: the last gate has run, so the landing rebases and pushes with no third gate. (3) the second mover lands in the landing's OWN directory: it gates once more, then pushes
+    local T log rc R n
+    T="$(mktemp -d "/tmp/s4e/$seat/land-nolease.XXXXXX")" || refuse "cannot make a scratch directory"
+    trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+    rr() { echo "LAND no-lease-probe RED: $*"; echo "    kept: $T"; trap - EXIT; exit 1; }
+    scratch_clone "$T"; R="$T/racer"
+    git clone -q --shared "$T/origin/harness.git" "$R" || refuse "probe: cannot clone the racer"
+    git -C "$R" config user.name LCherryholmes; git -C "$R" config user.email lcherryh@yahoo.com
+    sed -i '/^BOSSES:/d' "$T/po/MODE" 2>/dev/null; printf 'tries=1\ntouches=derived\ntables=affected\nlease=none\n' > "$T/po/LAND.conf"
+    racer() {   # <script> <marker> <dir> <file>: once, land harness/<dir>/<file> on the scratch origin
+        printf '#!/usr/bin/env bash\n[ -e "%s" ] && exit 0\n: > "%s"\ncd "%s" && git pull -q --rebase origin main && mkdir -p "%s" && echo race > "%s/%s" && git add -A && git commit -q -m "probe: a racer lands %s/%s" && git push -q origin HEAD:main\n' "$T/$2" "$T/$2" "$R" "$3" "$3" "$4" "$3" "$4" > "$T/$1"; }
+    own() { mkdir -p "$T/work/harness/probe_own" && echo own > "$T/work/harness/probe_own/$1" && git -C "$T/work/harness" add -A && git -C "$T/work/harness" commit -q -m "probe: the landing changes harness/probe_own/$1" || refuse "probe: cannot commit $1"; }
+    lander() { S4E_LAND_UNADMITTED=1 S4E_POSTOFFICE="$T/po" S4E_SEAT=probe_worker bash "$SELF" --home "$T/work" "$@"; }
+    mkdir -p /tmp/s4e/probe_worker
+    own "a-$$.txt"; log="$T/arm1.log"; lander --gate "echo g >> $T/gates1" > "$log" 2>&1; rc=$?
+    [ "$rc" = 0 ] && grep '^LAND stage=lease none' "$log" > /dev/null && ! grep '^LAND stage=lease held' "$log" > /dev/null && grep '^LAND ok ' "$log" > /dev/null || rr "arm 1 (nothing races) rc=$rc: expected LAND ok with the lease never taken"
+    racer raceB.sh racedB probe_other "b-$$.txt"; racer raceC.sh racedC probe_other "c-$$.txt"
+    printf '#!/usr/bin/env bash\necho g >> "%s"\n[ "$(wc -l < "%s")" = 2 ] && bash "%s"\nexit 0\n' "$T/gates2" "$T/gates2" "$T/raceC.sh" > "$T/gate2.sh"
+    own "b-$$.txt"; log="$T/arm2.log"; S4E_LAND_PLANT="bash $T/raceB.sh" lander --gate "bash $T/gate2.sh" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm2| /' "$log" | grep -E 'stage=finish|REJECTED|regate|LAND ok|LAND RED|REFUSE' | cut -c1-190 | tail -6
+    n="$(wc -l < "$T/gates2")"
+    [ "$rc" = 0 ] && grep '^LAND stage=finish attempt=1: the last gate has run' "$log" > /dev/null && grep '^LAND ok ' "$log" > /dev/null && ! grep '^LAND stage=lease held' "$log" > /dev/null && [ "$n" = 2 ] \
+        || rr "arm 2 (movers in another directory, the second during the last gate) rc=$rc gates=$n: expected one finish attempt with no third gate, and LAND ok"
+    git -C "$T/origin/harness.git" log --format=%s main | grep -c -E "^probe: (the landing changes harness/probe_own/b-|a racer lands probe_other/[bc]-)" | grep -qx 3 || rr "arm 2: origin does not hold the landing and both racers"
+    racer raceD.sh racedD probe_other "d-$$.txt"; racer raceE.sh racedE probe_own "e-$$.txt"
+    printf '#!/usr/bin/env bash\necho g >> "%s"\n[ "$(wc -l < "%s")" = 2 ] && bash "%s"\nexit 0\n' "$T/gates3" "$T/gates3" "$T/raceE.sh" > "$T/gate3.sh"
+    own "c-$$.txt"; log="$T/arm3.log"; S4E_LAND_PLANT="bash $T/raceD.sh" lander --gate "bash $T/gate3.sh" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm3| /' "$log" | grep -E 'stage=finish|regate|LAND ok|LAND RED|REFUSE' | cut -c1-190 | tail -5
+    n="$(wc -l < "$T/gates3")"
+    [ "$rc" = 0 ] && grep '^LAND stage=finish attempt=1: the last gate has run' "$log" > /dev/null && grep '^LAND ok ' "$log" > /dev/null && [ "$n" = 3 ] \
+        || rr "arm 3 (the second mover lands in the landing's own directory) rc=$rc gates=$n: expected the gate run once more (three runs) and LAND ok"
+    echo "LAND no-lease-probe ok arms=3 (a seat that is no boss landed with the lease never taken; overtaken twice by movers in another directory it pushed after its last gate with no third gate; overtaken in its own directory it gated once more and pushed)"
+    exit 0
+}
+[ "$mode" = probe_no_lease ] && probe_no_lease
 [ "$mode" = probe_finish ] && probe_finish
 [ "$mode" = probe_table_merge ] && probe_table_merge
 [ "$mode" = probe ] && probe
@@ -668,12 +707,20 @@ lease="${S4E_POSTOFFICE:-/home/resources/postoffice}/.land.lease"; lw="${S4E_LAN
 # outside the lease and goes round again from fetch, re-gating only for what the boss's commits touch (the affected set below), so the boss costs a worker a round,
 # never a wrong push. A first cut that queued the boss first behind the flock could not beat landers already blocked in flock -w (MEASURED 17:0x: both coo landers
 # waited 25 minutes behind cio, senior_05 and officer_02).
-lease_boss() { local b; b="$(sed -n 's/^BOSSES: *//p' "${S4E_POSTOFFICE:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1)"; case " $b " in *" $seat "*) return 0 ;; esac; return 1; }
+# THE PUSH LEASE IS OFF FOR EVERY SEAT UNDER lease=none (the cio 2026-11-14; Lon, in the coo's window, relayed by the coo, verbatim: "Well fix the DAMN PUSH LEASE then.").
+# MEASURED from LANDINGS.tsv since 17:00Z, the whole fleet landing: 95 landings, 22 ok at a mean of 1323 s each, 17 of those 22 with their gate run again UNDER the lease, 24
+# refused after waiting 1800 s for it; juniors about 3 landings an hour; one landing held it 564 s and pushed nothing. THE CAUSE: an overtaken landing ran its whole gate under
+# the one box-wide lock, so the fleet's gates ran one at a time. THE LAW: git's own push is the one serializer. A landing fetches, rebases and pushes; a push that origin
+# refuses, because another landing got there first, goes round. A gate never runs under a lock. After its last gate a landing yields only to movers in its OWN directories
+# (finish loop, below): what other landings change elsewhere is read by the cycle, which grades origin every chunk and routes a regression at rank 0. With lease=flock, or no
+# line, the lease of before stands, so the switch is one line of LAND.conf. --probe-no-lease proves it on scratch origins.
+lease_boss() { [ "${lease_mode:-flock}" = none ] && return 0; local b; b="$(sed -n 's/^BOSSES: *//p' "${S4E_POSTOFFICE:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1)"; case " $b " in *" $seat "*) return 0 ;; esac; return 1; }
 lease_skipped=0
 take_lease() {
     if lease_boss; then
         lease_since="$(date +%s)"; lease_skipped=1
-        echo "LAND stage=lease skipped: seat $seat is a boss and never waits for the push lease (Lon 2026-11-13); a worker's push it overtakes is rejected and goes round"
+        if [ "${lease_mode:-flock}" = none ]; then echo "LAND stage=lease none: no seat takes the push lease (LAND.conf lease=none, Lon 2026-11-14); a push origin refuses goes round"
+        else echo "LAND stage=lease skipped: seat $seat is a boss and never waits for the push lease (Lon 2026-11-13); a worker's push it overtakes is rejected and goes round"; fi
         return 0
     fi
     if ! flock -n 8; then
@@ -1013,7 +1060,7 @@ gate_run() {
 serial_cap="${S4E_LAND_SERIAL_GATE_S:-900}"; serial_round=0
 gate_run_serial() {   # <label>: the last round's ONE gate, run UNDER the lease (fleet-queue step 20); capped at S4E_LAND_SERIAL_GATE_S; a gate past the cap drops the lease and reads RED, nothing pushed
     local rc sgt="$gt"
-    [ "$sgt" -gt "$serial_cap" ] && sgt="$serial_cap"
+    [ "${lease_mode:-flock}" = none ] || { [ "$sgt" -gt "$serial_cap" ] && sgt="$serial_cap"; }   # the cap bounds a gate run UNDER the lease; with lease=none nothing is held and the gate has its whole budget
     serial_round=1
     spawn "$LOG/gate.log" "$(vhome)" "${genv[@]}" S4E_CORE_HELD=1 S4E_RUN_SLOT_HELD=1 timeout -k 5 "$sgt" bash -c "$gate"; rc=$?
     tail -5 "$LOG/gate.log" | sed 's/^/    gate| /'
@@ -1068,9 +1115,10 @@ note_origins() { local r; for r in "${present[@]}"; do origin_seen[$r]="$(git -C
 # takes no mover under the SCRIP runtime or a generated output as a hit, and builds nothing in its serial round: nothing it lands can depend on the binary.
 nothing_ahead() { local r; for r in "${present[@]}"; do is_held "$r" && continue; [ "$(ahead "$r")" = 0 ] || return 1; done; return 0; }
 text_only() { local r; for r in "${present[@]}"; do [ "$r" = .github ] && continue; is_held "$r" && continue; [ "$(ahead "$r")" = 0 ] || return 1; done; return 0; }
-affected_since() {   # -> prints "reason=affected|unaffected files=N"; rc 0 affected
+affected_since() {   # [own] -> prints "reason=affected|unaffected files=N"; rc 0 affected. With `own`, only a mover in the landing's own directories (its touches) is a hit: the runtime and generated-output rules are not asked
     local r f old new n=0 hit=0 t p txt=0; local -a outs
     text_only && txt=1
+    [ "${1:-}" = own ] && txt=1
     mapfile -t outs < <(awk -F'\t' '!/^#/ && $1 != "name" {print $3}' "$TSV")
     for r in "${present[@]}"; do
         old="${origin_seen[$r]:-}"; new="$(git -C "$(rd "$r")" rev-parse origin/main)"; [ -n "$old" ] && [ "$old" != "$new" ] || continue
@@ -1147,12 +1195,15 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
     # rt_pl_dop_acyclic_term while origin's builtins.tsv still named the old leaf, every seat's table check reading stale, until the cio landed the harness half by hand).
     # The pushes go repo by repo and cannot be one act; so once any repo of the landing is on origin, an overtaken push is fetched, rebased, gated again under the lease when the
     # movers touch the landing's population, and pushed again, up to six times, the lease never dropped between. --probe-finish proves it on scratch origins.
-    local fin=0
-    while [ "$rc" = 3 ] && [ "${#pushed[@]}" -gt 0 ] && [ "$fin" -lt 6 ]; do
-        fin=$((fin + 1)); half_open=1
-        echo "LAND stage=finish attempt=$fin: ${pushed[*]} is on origin and a later push was overtaken; the rest is rebased and pushed now, the lease kept"
+    # AFTER ITS LAST GATE A LANDING YIELDS ONLY TO ITS OWN DIRECTORIES (lease=none, above): a landing whose serial round has run and whose push origin refused is rebased
+    # and pushed again, gated once more only when the movers touch what it changes; a landing with part of it on origin is finished the same way under either lease mode.
+    local fin=0 own=""
+    while [ "$rc" = 3 ] && [ "$fin" -lt 6 ] && { [ "${#pushed[@]}" -gt 0 ] || { [ "${lease_mode:-flock}" = none ] && [ "$serial_round" = 1 ]; }; }; do
+        fin=$((fin + 1)); own=""; [ "${#pushed[@]}" -gt 0 ] && half_open=1 || own=own
+        echo "LAND stage=finish attempt=$fin: $([ "${#pushed[@]}" -gt 0 ] && echo "${pushed[*]} is on origin and a later push was overtaken" || echo "the last gate has run and origin refused the push"); the rest is rebased and pushed now"
         note_origins; fetch; rebase
-        if a="$(affected_since)"; then [ "$mode" = push ] || text_only || { build serial; mark build:serial "${binfo:-built}"; }; [ -z "$gate" ] || gate_run_serial "$a (finishing a landing already partly on origin)"; fi
+        if nothing_ahead; then rc=0; break; fi
+        if a="$(affected_since $own)"; then [ "$mode" = push ] || text_only || { build serial; mark build:serial "${binfo:-built}"; }; [ -z "$gate" ] || gate_run_serial "$a (finishing: the movers touch what this landing changes)"; fi
         note_origins
         pushes; rc=$?
     done
