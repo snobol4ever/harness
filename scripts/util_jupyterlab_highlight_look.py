@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_jupyterlab_highlight_look.py -- THE LOOK A MACHINE CAN TAKE AT THE HIGHLIGHTER: A REAL JUPYTERLAB, A REAL BROWSER, ONE CELL A LANGUAGE (CIO-81, CTO-597).
 
-  util_jupyterlab_highlight_look.py LABEXTENSION_DIR     (the built folder, corpus/editor_configs/jupyterlab/labextension)
+  util_jupyterlab_highlight_look.py LABEXTENSION_DIR     (the built folder, the corpus's editor_configs/jupyterlab/labextension)
 
 For each of the four languages a one-cell notebook is written whose metadata names the language (language_info with the editor mode the extension registers), and
 for the ONE KERNEL, scrip, a notebook of three cells: one with no tag (SNOBOL4), one tagged icon, one tagged prolog, each to be coloured by its own language. JupyterLab is started twice in scratch on a free port with a token, once with the extension copied into its data directory and once

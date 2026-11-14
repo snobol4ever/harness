@@ -6,7 +6,8 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -euo pipefail
 
 SNO="${1:?Usage: build_snobol4_net.sh <file.sno>}"
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"   # the absolute model
+DIR="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP_CC="${SCRIP_CC_NET:-$S4E/scrip-cc_net}"
 NET_CACHE="${NET_CACHE:-/tmp/scrip_cc_net_cache}"
 RUNTIME_NET="$DIR/src/runtime/net"

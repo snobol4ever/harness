@@ -51,7 +51,8 @@
 # and a shim whose callers may not is the wrong place to inherit that assumption.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"   # the absolute model
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 _gate=""
 _behaviour=1
 while [ $# -gt 0 ]; do

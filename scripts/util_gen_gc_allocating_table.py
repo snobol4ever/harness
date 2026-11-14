@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_gen_gc_allocating_table.py -- THE ALLOCATING SET AS A GENERATED TABLE THE EMITTER CAN READ, DERIVED FROM
 THE RUNTIME BINARY AND GATED AGAINST IT (cto 2026-09-18, row gc-the-emitter-emits-the-poll-not-the-template,
-R-898 proposal; design .github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 6.5d; law RULES.md FACT
+R-898 proposal; design ARCH-GC-COMPILE-TIME-FRAME-MAPS.md of the .github repo, section 6.5d; law RULES.md FACT
 RULE THE COLLECTOR GUESSES NOTHING, R-812).
 
 WHY THIS FILE EXISTS.  The poll is placed by hand at 97 remaining call sites, one judgement each, and that method

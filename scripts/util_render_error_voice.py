@@ -16,12 +16,12 @@ THE SCRIP VOICE (src/runtime/core/core.c core_error_voice):
                                                     builtin frames at that level and the operator in flight)
 
 THE LISTS (each row is what the oracle prints for the SCRIP field, measured on the oracle named):
-  icon     Arizona icont/iconx 9.5.25a (corpus/packages/icon/jcon_tests/errors.ref, loadfunc.ref are the receipts):
+  icon     Arizona icont/iconx 9.5.25a (the corpus's packages/icon/jcon_tests/errors.ref, loadfunc.ref are the receipts):
              "\\nRun-time error <code>\\nFile <basename(file)>; Line <line>\\n<text>\\n"
              "offending value: <image>\\n"                      when present
              "Traceback:\\n" then each frame on its own line, verbatim
              startup: "\\nRun-time error <code> in startup code\\n<text>\\n"
-  unicon   unicon 13.3 through unicon_bin() (corpus/packages/icon/unicon_tests/ALL.ref, thread/error and mt/loaderr, are the receipts): the icon list, each traceback frame indented three spaces.
+  unicon   unicon 13.3 through unicon_bin() (the corpus's packages/icon/unicon_tests/ALL.ref, thread/error and mt/loaderr, are the receipts): the icon list, each traceback frame indented three spaces.
   spitbol  SPITBOL x64 fork /home/resources/x64/bin/sbl -bf (RULES.md § Oracles):
              code 216 (no END line; measured 2026-11-10 on sbl -bf: the one line on stderr, exit status 1, no file, no line):
              "No END statement found in source file(s).\\n"

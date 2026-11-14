@@ -3,7 +3,8 @@
 # Gate: exits 0 in < 2s on a clean build.
 # AUTHORS: Lon Jones Cherryholmes · Claude Sonnet 4.6  DATE: 2026-04-14
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${HERE}/../../SCRIP/scrip"
+. "$HERE/lib_paths.sh"   # the absolute model
+SCRIP="$S4E_SCRIP/scrip"
 . "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 PASS=0; FAIL=0
 
@@ -45,8 +46,8 @@ EOF
 
 # CORE ARM (R-1952; Lon 2026-10-24: "Let's get better smoke tests for SNOBOL4, it keeps missing a lot."): the hand cases missed two Snocone core
 # crashes that day (521c5afcd). The arm grades the Snocone PARTITION core in BOTH modes through the one extraction authority, HARD in both, progress off.
-CT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../corpus/tests/snocone"
-COUT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && S4E_PROGRESS_OFF=1 SUITE_LIST_ALL=1 S4E_SMOKE_CORE_ARM="test_smoke_snocone.sh (R-1952)" timeout -k 5 300 python3 ../harness/scripts/corpus_suite_harness.py run "$CT/ALL.sc" "$CT/ALL.ref" --lang snocone --modes m3,m4 --partition core 2>&1)"
+CT="$S4E_CORPUS/tests/snocone"
+COUT="$(cd "$S4E_SCRIP" && S4E_PROGRESS_OFF=1 SUITE_LIST_ALL=1 S4E_SMOKE_CORE_ARM="test_smoke_snocone.sh (R-1952)" timeout -k 5 300 python3 "$S4E_HARNESS/scripts/corpus_suite_harness.py" run "$CT/ALL.sc" "$CT/ALL.ref" --lang snocone --modes m3,m4 --partition core 2>&1)"
 CB="$(printf '%s\n' "$COUT" | grep -m1 '^SUITE_BOARD')"
 [ -n "$CB" ] || { printf '%s\n' "$COUT" | tail -3 | sed 's/^/  /'; echo "core arm REFUSE(2): the harness printed no SUITE_BOARD line"; exit 2; }
 cv() { printf '%s\n' "$CB" | grep -oE " $1=[0-9]+" | head -1 | cut -d= -f2; }

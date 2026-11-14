@@ -3,7 +3,8 @@
 # Every RTX family owes one of these: same inputs, both implementations, bit-identical results.
 # Usage: bash ../harness/scripts/test_rtx_unit.sh
 set -uo pipefail
-cd "$(dirname "$0")/../../SCRIP"
+. "$(dirname "$0")/lib_paths.sh"   # the absolute model
+cd "$S4E_SCRIP"
 RC=0
 for T in src/runtime/rtx/rtx_plunify_test.c src/runtime/rtx/rtx_unit_test.c src/runtime/rtx/rtx_alloc_test.c src/runtime/rtx/rtx_str_test.c src/runtime/rtx/rtx_varval_test.c src/runtime/rtx/rtx_arith_test.c src/runtime/rtx/rtx_misc_test.c src/runtime/rtx/rtx_sname_test.c src/runtime/rtx/rtx_tins_test.c src/runtime/rtx/rtx_sval_test.c src/runtime/rtx/rtx_relop_test.c src/runtime/rtx/rtx_direct_test.c; do
   [ -f "$T" ] || continue
@@ -23,7 +24,7 @@ done
 [ $RC -eq 0 ] && echo "RTX UNIT: ALL PASS" || echo "RTX UNIT: FAILURES"
 exit $RC
 
-D="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)/src/ir/descr.h"
+D="$S4E_SCRIP/src/ir/descr.h"
 body="$(awk '/^typedef struct DESCR_t \{/{f=1;next} f&&/^\} DESCR_t;/{exit} f' "$D")"
 [ -n "$body" ] || { echo "RTX DESCR SHAPE: REFUSES rc=2 -- could not extract the DESCR_t body from $D"; exit 2; }
 if printf '%s\n' "$body" | grep -q '\['; then

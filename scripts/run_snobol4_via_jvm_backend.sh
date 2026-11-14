@@ -6,7 +6,8 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -euo pipefail
 
 SNO="${1:?Usage: build_snobol4_jvm.sh <file.sno>}"
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"   # the absolute model
+DIR="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP_CC="${SCRIP_CC_JVM:-$S4E/scrip-cc_jvm}"
 JASMIN="${JASMIN:-$DIR/miscellaneous/jasmin.jar}"
 JVM_CACHE="${JVM_CACHE:-/tmp/scrip_cc_jvm_cache}"

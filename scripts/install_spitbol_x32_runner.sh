@@ -35,7 +35,8 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"         # $S4E/SCRIP
+. "$HERE/lib_paths.sh"   # the absolute model: S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, S4E_GITHUB
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 HOME_ROOT="$(cd "$ROOT/.." && pwd)"    # $S4E
 
 X32_DIR="$HOME_ROOT/x32"

@@ -22,6 +22,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import harness_paths   # the absolute model: corpus() is $S4E_CORPUS, else /home/corpus, else the sibling
 MARK = "\n% DRIVER (appended by the vendoring"
 DRIVER_FILE = "wfs_tests_wfs_test.pl"
 
@@ -59,7 +60,7 @@ def main():
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--check", action="store_true")
     g.add_argument("--apply", action="store_true")
-    ap.add_argument("pkgdir", nargs="?", default=str(HERE.parent.parent / "corpus" / "packages" / "prolog" / "xsb_tests"))
+    ap.add_argument("pkgdir", nargs="?", default=str(harness_paths.corpus() / "packages" / "prolog" / "xsb_tests"))
     a = ap.parse_args()
     pkg = Path(a.pkgdir)
     try:

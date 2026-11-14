@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """util_add_ladder_witness.py -- THE SANCTIONED ADD-A-WITNESS PATH for a language's `ladder__rungNN_*`
-family in corpus/tests/<lang>/ALL.{csv,<ext>,ref,wantrc} (task icon-witness-audit-passes-for-the-wrong-
+family in the corpus's tests/<lang>/ALL.{csv,<ext>,ref,wantrc} (task icon-witness-audit-passes-for-the-wrong-
 reason, hq_B mail 2026-09-06 "next-is-the-missing-add-a-witness-path"). Before this script, none existed:
 corpus_suite_harness.py has convert/convert-blocks/run/extract/extract-family/pin-ref/list and NOTHING that
 appends one new entry to an existing rungs -- three prior sessions on that task file hit this exact wall
@@ -392,7 +392,7 @@ def main():
     ap.add_argument("--dialect", default="", help="pascal: the fpc mode that cuts the answer (iso, fpc, objfpc, delphi, tp); prolog: gnu, cut by GNU Prolog 1.6.0 (gprolog_oracle_run.sh); written to the row's dialect cell, which the reader turns into scrip --dialect=D in both modes (the cfo 2026-11-12, the tests/pascal consolidation; prolog the cto 2026-11-12)")
     ap.add_argument("--file", action="append", default=[], dest="files", help="a companion beside --source the program reads or uses, carried as a file fence of the entry's MULTI-LINERS.md section (CIO-55); format 2 only, repeatable (the cfo 2026-11-12)")
     ap.add_argument("--apply", action="store_true", help="write the files; omit for a dry-run report")
-    ap.add_argument("--rungs-dir", default="", help="the rungs' directory (default corpus/tests/<lang>); a gate points it at a scratch copy")
+    ap.add_argument("--rungs-dir", default="", help="the rungs' directory (default the corpus's tests/<lang>); a gate points it at a scratch copy")
     for _a in ATTR_COLUMNS:
         ap.add_argument("--" + _a.replace("_", "-"), default=None, dest="attr_" + _a,
                         help="the new row's %s; omitted, the rungs' own ladder convention is READ from its ladder rows" % _a)

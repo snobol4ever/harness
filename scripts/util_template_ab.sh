@@ -20,7 +20,8 @@
 # runs in the batch class (util_batch.sh, shared-dev step 4); AB_JOBS overrides. At width 2 a side takes about ten minutes.
 # The binary is ./scrip of the tree this script lives in, as built: build before each side.
 set -uo pipefail
-here=$(cd "$(dirname "$0")/../../SCRIP" && pwd)
+. "$(dirname "$0")/lib_paths.sh"   # the absolute model
+here=$(cd "$S4E_SCRIP" && pwd)
 root=$(cd "$here/.." && pwd)
 verb=${1:-}
 case "$verb" in
