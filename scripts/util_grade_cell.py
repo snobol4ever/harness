@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 # util_grade_cell.py -- THE DECLARED BUDGET OF A GRADING CELL (DESIGN-PLAN test-cycle step 6; CTO-522; skill suites-and-grading section 7).
-# --night-only  reads the seven masters and the 25 package tables and the LAST reading of every (lang, program, mode) in the progress
-#               store, then prints  NIGHT_ONLY over_s=300 programs=K of M  (M the entries of every table, K those whose last reading in
+# THE TABLES are the ones the cycle launches: each distinct table of a master or pkg row of SUITE_RUNNERS.tsv (beside this file), its
+#               ALL.csv under the corpus, its language the row's lang column; a row naming a table with no ALL.csv refuses rc 2. The count is
+#               read, never typed (the coo 2026-11-13, senior_05 MEASURED: the typed 32 refused once the corpus held 60 package tables).
+# --night-only  reads those tables and the LAST reading of every (lang, program, mode) in the progress
+#               store, then prints  NIGHT_ONLY over_s=300 programs=K of M tables=T  (M the entries of every table, K those whose last reading in
 #               either mode took over 300 s) and one NIGHT_ONLY_ENTRY line per night-only entry. rc 0 measured; rc 2 cannot read.
 # --stamp       writes the timeout_s column, the third declared size beside heap_kb and stack_kb: 3600 for a night-only entry, 300 for
 #               every other. A table that already carries the column has its values replaced; every other cell is read back and compared
@@ -14,10 +17,11 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import harness_paths as HP
+import util_suite_runners as SR
 
 DAY_S = 300
 NIGHT_S = 3600
-MASTERS = ("snobol4", "icon", "prolog", "pascal", "raku", "snocone", "rebus")
+KINDS = ("master", "pkg")
 MODES = ("m3", "m4")
 
 
@@ -27,16 +31,20 @@ def refuse(msg):
 
 
 def tables(corpus):
-    out = []
-    for lang in MASTERS:
-        p = corpus / "tests" / lang / "ALL.csv"
+    out, seen, kinds = [], set(), set()
+    for row in SR.read_table(SR.TABLE):
+        if row["kind"] not in KINDS or row["table"] in seen:
+            continue
+        seen.add(row["table"])
+        kinds.add(row["kind"])
+        if not row["table"].startswith("corpus/"):
+            refuse(f"{SR.TABLE}: row {row['key']} names a table outside the corpus: {row['table']}")
+        p = corpus / row["table"][len("corpus/"):] / "ALL.csv"
         if not p.is_file():
-            refuse(f"no master table {p}")
-        out.append((lang, p))
-    for p in sorted((corpus / "packages").glob("*/*/ALL.csv")):
-        out.append((p.parent.parent.name, p))
-    if len(out) != 32:
-        refuse(f"expected 7 masters and 25 package tables, found {len(out)}")
+            refuse(f"{SR.TABLE}: row {row['key']} names {row['table']}, which holds no ALL.csv ({p})")
+        out.append((row["lang"], p))
+    if kinds != set(KINDS):
+        refuse(f"{SR.TABLE}: no {' or '.join(sorted(set(KINDS) - kinds))} row, so the tables cannot be read")
     return out
 
 
@@ -70,7 +78,8 @@ def report(corpus, progress):
     night = night_set(last_readings(progress))
     m = 0
     k = []
-    for lang, p in tables(corpus):
+    ts = tables(corpus)
+    for lang, p in ts:
         rows = read_table(p)
         head = rows[0]
         if "entry" not in head:
@@ -80,7 +89,7 @@ def report(corpus, progress):
             m += 1
             if (lang, r[ei]) in night:
                 k.append(f"NIGHT_ONLY_ENTRY {lang} {p.parent.relative_to(corpus)} {r[ei]}")
-    print(f"NIGHT_ONLY over_s={DAY_S} programs={len(k)} of {m}")
+    print(f"NIGHT_ONLY over_s={DAY_S} programs={len(k)} of {m} tables={len(ts)}")
     for line in k:
         print(line)
     return 0
