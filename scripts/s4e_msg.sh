@@ -270,6 +270,11 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
         _by="$(sed -n 's/^ASSIGNED-BY \([^ ]*\).*/\1/p' "$_c" | head -1)"; _des="$(sed -n 's/^DESIGNER:[[:space:]]*\([^ ]*\).*/\1/p' "$PO/tasks/$_t.task.md" 2>/dev/null | head -1)"; _iso="$(date -u +%FT%TZ)"
         if _above="$(s4e_escalate_above "$_tube")"; then _top=0; else _top=1; _above=""; fi
         _rung="$(s4e_escalate_rung_set "$_t")"; mkdir -p "$PO/escalations"; _mf="$PO/escalations/$_t.rung$_rung.md"; printf '%s\n' "$_body" > "$_mf"
+        # THE BUS SAVES WHAT AN ESCALATION NAMES UNDER /tmp (the cio 2026-11-14; Lon: "quit using /tmp COMPLETELY for anything important."; MEASURED: all 62 patch and diff
+        # files the escalations named under /tmp/s4e were gone, swept or lost at a reboot). Every /tmp path in the measurement is copied to PO/escalations/files/<topic>/
+        # rung<N>/ at the escalation, and the measurement file says where each went, or that it was absent; no seat has to remember to commit it (util_scratch_rescue.py).
+        _sv="$(printf '%s\n' "$_body" | python3 -I "$S4E_HARNESS/scripts/util_scratch_rescue.py" --names "$PO/escalations/files/$_t/rung$_rung" 2>/dev/null)"
+        [ -z "$_sv" ] || printf '\nSAVED BY THE BUS at %s (every /tmp path this escalation names, copied to durable disk; /tmp is swept and is cleared at a reboot):\n%s\n' "$(date -u +%FT%TZ)" "$_sv" >> "$_mf"
         if [ "$_top" = 1 ]; then
             s4e_escalate_ledger "$_t" "$_rung" "$_tube" chairman "$_iso" "$_mf"; rm -f "$_c"; s4e_set_row_state "$_t" "PARKED-CHAIRMAN:escalated" || true
             s4e_escalate_tell cio "$_t" "$_rung" "$_tube" chairman "$_mf" && _tg=$((_tg+1))

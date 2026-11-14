@@ -318,5 +318,21 @@ wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operatin
     [ "$rc" = 0 ] || why="$why escalate after the seat's own red:gate (another seat's red:rebase newer) exited $rc [$(printf '%s' "$out" | grep -m1 -E '⛔|REFUSE' | cut -c1-90)];"
     [ "$(st "$e")" = QUEUED:tier-sonnet ] || why="$why the row escalated after red:gate reads $(st "$e");"
     verdict "lander_outcomes_refused=$refused/4 after_red_gate=$(st "$e")";;
-*) refuse "no step $N (1..14)";;
+15) # THE BUS SAVES WHAT AN ESCALATION NAMES UNDER /tmp (the cio 2026-11-14; Lon: "quit using /tmp COMPLETELY for anything important."; MEASURED: all 62 patch and diff files
+    # the escalations named under /tmp/s4e were gone). A junior escalates naming a patch file, a folder and a file that is not there: the bus copies the file whole and the
+    # folder's hand-made files under PO/escalations/files/<topic>/rung<N>/, and the measurement says where each went and which was absent.
+    r="busq15-row-$$"; row 2 "$r" "$J" "CLAIMED:$J"; baton "$r"; p="$(live_claude "$J")"
+    printf '%s\nRESERVED file tube=tier-haiku session=probe pid=%s %s\n' "$J" "$p" "$(date -u +%FT%TZ)" > "$w/claims/$r.claim"
+    mkdir -p "$w/scratch/try"; printf -- '--- a\n+++ b\n@@ the cure\n' > "$w/scratch/cure.patch"; printf 'note\n' > "$w/scratch/try/note.md"
+    out="$(printf 'One honest try. The cure in hand is %s and my attempt is in %s ; the old diff %s is gone.\n' "$w/scratch/cure.patch" "$w/scratch/try" "$w/scratch/gone.diff" | bus "$J" escalate "$r" --stdin)"
+    mf="$(ls "$w/escalations/$r".rung*.md 2>/dev/null | head -1)"
+    cp1="$(ls "$w/escalations/files/$r"/rung*/*cure.patch 2>/dev/null | head -1)"
+    [ -n "$mf" ] || why="$why the escalation wrote no measurement file [$(printf '%s' "$out" | grep -m1 -E 'REFUSED' | cut -c1-90)];"
+    [ -n "$cp1" ] && cmp -s "$cp1" "$w/scratch/cure.patch" || why="$why the patch file the escalation named was not copied whole to the postoffice;"
+    ls "$w/escalations/files/$r"/rung*/*try/note.md > /dev/null 2>&1 || why="$why the folder the escalation named was not saved;"
+    grep -q '^SAVED BY THE BUS' "${mf:-/dev/null}" && grep -q "^SAVED $w/scratch/cure.patch -> " "${mf:-/dev/null}" && grep -q "^ABSENT $w/scratch/gone.diff" "${mf:-/dev/null}" || why="$why the measurement does not say where the files went and which was absent;"
+    rm -f "$w/scratch/cure.patch"
+    [ -s "$cp1" ] || why="$why the copy did not outlive the scratch file;"
+    verdict "named_file=copied named_folder=saved absent=reported copy_outlives_scratch=$([ -s "${cp1:-/x}" ] && echo yes || echo no)";;
+*) refuse "no step $N (1..15)";;
 esac

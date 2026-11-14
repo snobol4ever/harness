@@ -58,7 +58,7 @@ fi
 LEDGER=/home/resources/progress/TMP-SWEEP.tsv
 PO=/home/resources/postoffice
 ROSTER="$(grep -m1 '^ROSTER:' "$PO/MODE" 2>/dev/null | sed 's/^ROSTER://')"
-python3 - "$HOURS" "$DEAD_H" "$APPLY" "$LEDGER" "$ROSTER" "$SCR_H" "$PRESS" "$BULK_MB" "$IDLE_MIN" <<'PYEOF'
+S4E_SWEEP_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" python3 - "$HOURS" "$DEAD_H" "$APPLY" "$LEDGER" "$ROSTER" "$SCR_H" "$PRESS" "$BULK_MB" "$IDLE_MIN" <<'PYEOF'
 import os, sys, time, shutil, subprocess, datetime
 hours = float(sys.argv[1]); dead_h = float(sys.argv[2]); apply = sys.argv[3] == "1"; ledger = sys.argv[4]; roster = set(sys.argv[5].split()); scr_h = float(sys.argv[6])
 press = float(sys.argv[7]); bulk_kb = float(sys.argv[8]) * 1024; idle_s = float(sys.argv[9]) * 60
@@ -158,11 +158,24 @@ if os.path.isdir(root):
             if down and dead_h > 0: lim = max(lim, now - dead_h * 3600)
             if newest_in(p) >= lim: continue
             sessions.append(("session", p, size_kb(p))); owner[p] = seat_name
+# THE SWEEP SAVES WHAT A SEAT MADE BEFORE IT DELETES (the cio 2026-11-14; Lon: "quit using /tmp COMPLETELY for anything important."; MEASURED: 62 patch and diff files the
+# seats' escalations named under /tmp/s4e were gone): every entry about to be removed is read by util_scratch_rescue.py first, which copies its hand-made files (patches,
+# diffs, notes, scripts, tables, programs, small logs; a checkout as one patch of its edits and one mailbox of its unlanded commits) to /home/resources/saved-scratch/<date>/.
+def rescue(pth):
+    try:
+        sys.path.insert(0, os.environ.get("S4E_SWEEP_HERE", ""))
+        import util_scratch_rescue as _r
+        n, sz, dst = _r.sweep_rescue(pth)
+        if n: print("   rescued %d hand-made file(s), %d bytes -> %s" % (n, sz, dst))
+        return True
+    except Exception as e:
+        print("   rescue failed (%s); the entry is KEPT, nothing deleted" % e); return False
 freed = 0; sfreed = 0; scr_n = 0; scr_kb = 0
 for kind, path, kb in victims + sessions:
     age_h = (now - newest_in(path)) / 3600
     print("%-8s %8.1fM %6.1fh %s%s" % (kind, kb / 1024, age_h, path, "  [%s]" % owner[path] if path in owner else ""))
     if apply:
+        if not rescue(path): continue
         try:
             if os.path.isdir(path) and not os.path.islink(path): shutil.rmtree(path, ignore_errors=True)
             else: os.unlink(path)
@@ -207,6 +220,7 @@ if est >= press:
         if est < low: break
         print("%-8s %8.1fM %6.1fh %s" % ("bulk", kb / 1024, (now - newest_in(p)) / 3600, p))
         if apply:
+            if not rescue(p): continue
             try:
                 if os.path.isdir(p) and not os.path.islink(p): shutil.rmtree(p, ignore_errors=True)
                 else: os.unlink(p)
