@@ -344,10 +344,29 @@ s4e_seat_claude_pid() {   # <seat>: the pid in the seat's s4e-seat-<seat>.scope/
 s4e_reserve_line() {   # <job> <tube>: the claim's RESERVED line; on the file road (job is the word file) RESERVED file tube=<tube> session=<SESSION> pid=<pid> <ts> (bus-one-queue step 2)
     if [ "$1" = file ]; then printf 'RESERVED file tube=%s session=%s pid=%s %s\n' "$2" "$(s4e_session_name_of "$ME")" "$(s4e_seat_claude_pid "$ME")" "$(date -u +%FT%TZ)"
     else printf 'RESERVED job=%s tube=%s %s\n' "$1" "$2" "$(date -u +%FT%TZ)"; fi; }
-s4e_file_expire_one() {   # <topic>: bus-one-queue step 5: a claim whose RESERVED file pid is dead, or not in its owner's seat scope, is archived and its row goes back to its tube (rc 0); a live holder, or no file reserve, is kept (rc 1)
+s4e_seat_session_lives() {   # <seat>: rc 0 when a claude session of the seat lives: in its seat scope, or, since a window opened by hand sits in no seat scope (the grader's of 2026-11-14 14:29, resumed in its terminal tab), a process whose comm reads claude and whose working directory is the seat's root or below it, read from /proc, never a pgrep. S4E_SEAT_ROOTS names the directory that holds the roots (/home)
+    local _b="${S4E_SEAT_ROOTS:-/home}" _p _c _r
+    s4e_seat_claude_pid "$1" >/dev/null 2>&1 && return 0
+    for _r in "$_b/claude_$1" "$_b/$1"; do [ -d "$_r" ] || continue
+        for _p in /proc/[0-9]*; do [ "$(cat "$_p/comm" 2>/dev/null)" = claude ] || continue; _c="$(readlink "$_p/cwd" 2>/dev/null)"; case "$_c" in "$_r"|"$_r"/*) return 0;; esac; done
+    done
+    return 1; }
+s4e_hand_expire_one() {   # <topic>: A HAND CLAIM OF A SEAT WITH NO SESSION IS LIFTED WHEN IT IS NAMED (the cio 2026-11-14; Lon, relayed by the coo, verbatim: "tell them all to stop cold. And you, CIO, CTO, and CFO will finish ALL their work."; MEASURED 14:34 CST: the workers gone, five claims held by hand (no RESERVED line) by seats with no session, `expire` answering "the claim holds no file reserve" and `assign` refusing a row "held by" the dead seat, so no finisher could take one but by speaking as the dead seat). The claim is archived as the file road archives one; a row that reads CLAIMED or ASSIGNED to the holder goes FREE for its finisher's `claim`, any other state (a park) stands. Kept, rc 1: the caller's own claim (unclaim releases it), and a holder with a live session. Only a NAMED topic reaches here: the tick's walk of every claim never lifts a hand claim, which is a seat's deliberate lock across its own sleep.
+    local _t="$1" _c="$PO/claims/$1.claim" _own _ts _st _row=kept
+    _own="$(head -1 "$_c" | tr -d '[:space:]')"
+    [ -n "$_own" ] || { echo "EXPIRE $_t: the claim names no holder"; return 1; }
+    [ "$_own" != "$ME" ] || { echo "EXPIRE $_t: the hand claim is your own; unclaim releases it"; return 1; }
+    if s4e_seat_session_lives "$_own"; then echo "EXPIRE $_t: a hand claim (no file reserve) whose holder $_own has a live session; kept"; return 1; fi
+    mkdir -p "$PO/claims/expired"; _ts="$(date -u +%FT%TZ)"; mv "$_c" "$PO/claims/expired/$_t.claim.$_ts"
+    _st="$(awk -F'\t' -v t="$_t" '$2 == t { print $4; exit }' "$PO/QUEUE.tsv" 2>/dev/null)"
+    case "$_st" in "CLAIMED:$_own"|"ASSIGNED:$_own") s4e_set_row_state "$_t" FREE && _row=FREE;; esac
+    s4e_ledger_prepend "$_t" "- [$ME·$_ts] HAND CLAIM expired holder=$_own: the holder has no live session (no claude process in its seat scope or in its root), so its claim is archived and the row reads ${_st:-no live row}$([ "$_row" = FREE ] && echo ' -> FREE'); the finisher claims it" 2>/dev/null || true
+    echo "EXPIRE $_t holder=$_own claim_archived=1 row=$_row (hand claim, the holder has no live session)"; return 0; }
+s4e_file_expire_one() {   # <topic> [named]: a hand claim (no RESERVED line) is lifted only when its topic was NAMED and its holder has no live session (s4e_hand_expire_one). bus-one-queue step 5: a claim whose RESERVED file pid is dead, or not in its owner's seat scope, is archived and its row goes back to its tube (rc 0); a live holder, or no file reserve, is kept (rc 1)
     local _t="$1" _c="$PO/claims/$1.claim" _l _tube _pid _own _d _ts _erl
     [ -f "$_c" ] || { echo "EXPIRE $_t: no claim"; return 1; }
-    _l="$(grep '^RESERVED file ' "$_c" | tail -1)"; [ -n "$_l" ] || { echo "EXPIRE $_t: the claim holds no file reserve"; return 1; }
+    _l="$(grep '^RESERVED file ' "$_c" | tail -1)"
+    if [ -z "$_l" ]; then [ "${2:-}" = named ] && { s4e_hand_expire_one "$_t"; return $?; }; echo "EXPIRE $_t: the claim holds no file reserve"; return 1; fi
     _tube="$(printf '%s' "$_l" | sed -n 's/.* tube=\([^ ]*\).*/\1/p')"; _pid="$(printf '%s' "$_l" | sed -n 's/.* pid=\([0-9]*\).*/\1/p')"; _own="$(head -1 "$_c")"
     _d="${S4E_SEAT_SCOPES:-/sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/s4e.slice/s4e-seats.slice}/s4e-seat-$_own.scope/cgroup.procs"
     if [ -n "$_pid" ] && kill -0 "$_pid" 2>/dev/null && grep -qx "$_pid" "$_d" 2>/dev/null; then echo "EXPIRE $_t: holder $_own pid $_pid lives in its seat scope; kept"; return 1; fi
@@ -3626,7 +3645,7 @@ case "$cmd" in
          # connection closed, or its TTR ran out); the tick calls this for every claim whose RESERVED job reads ready: the claim is archived, the LEDGER
          # says so, the row reads QUEUED:<tube>, and the next seat that reserves it resumes at the baton's RESUME line. Nothing is deleted or re-put.
          if s4e_file_road; then   # bus-one-queue step 5: on the file road a claim's holder is its pid; no topic walks every claim
-           if [ -n "${2:-}" ]; then s4e_file_expire_one "$2"; exit $?; fi
+           if [ -n "${2:-}" ]; then s4e_file_expire_one "$2" named; exit $?; fi
            _en=0; for _ec in "$PO"/claims/*.claim; do [ -f "$_ec" ] || continue; s4e_file_expire_one "$(basename "$_ec" .claim)" && _en=$((_en+1)); done
            echo "EXPIRE walked the claims: $_en expired"; exit 0
          fi;;

@@ -13,7 +13,7 @@ S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 ME="${S4E_SEAT:-probe}"
 N="${1:-}"
 refuse() { echo "REFUSE(2) [bus-one-queue probe]: $*"; exit 2; }
-[ -n "$N" ] || refuse "usage: $0 <step 1..13>"
+[ -n "$N" ] || refuse "usage: $0 <step 1..16>"
 mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 w="$(mktemp -d "/tmp/s4e/$ME/busq_probe.XXXXXX")" || refuse "mktemp failed"
 PIDS=""
@@ -334,5 +334,29 @@ wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operatin
     rm -f "$w/scratch/cure.patch"
     [ -s "$cp1" ] || why="$why the copy did not outlive the scratch file;"
     verdict "named_file=copied named_folder=saved absent=reported copy_outlives_scratch=$([ -s "${cp1:-/x}" ] && echo yes || echo no)";;
-*) refuse "no step $N (1..15)";;
+16) # A HAND CLAIM OF A SEAT WITH NO SESSION IS LIFTED WHEN NAMED (the cio 2026-11-14; MEASURED: five hand claims of seats that had exited, `expire` answering "the claim
+    # holds no file reserve" and `assign` refusing the row). Four hand claims (no RESERVED line): a dead seat's, a seat's alive in its scope, a seat's alive only in a window
+    # opened by hand (a process named claude whose working directory is its root, in no scope), and the caller's own. Only the first is lifted, and its row goes FREE.
+    d=busq16-dead-$$; l=busq16-scope-$$; h=busq16-hand-$$; m=busq16-mine-$$; pk=busq16-park-$$
+    row 2 "$d" "$O" "CLAIMED:$J"; row 2 "$l" "$O" "CLAIMED:$S"; row 2 "$h" "$O" "CLAIMED:grader_97"; row 2 "$m" "$O" "CLAIMED:$O"; row 2 "$pk" "$O" "BLOCKED-ON:$l"
+    for t_ in "$d" "$l" "$h" "$m" "$pk"; do baton "$t_"; done
+    printf '%s\n' "$J" > "$w/claims/$d.claim"; printf '%s\n' "$S" > "$w/claims/$l.claim"; printf 'grader_97\n' > "$w/claims/$h.claim"; printf '%s\n' "$O" > "$w/claims/$m.claim"; printf '%s\n' "$J" > "$w/claims/$pk.claim"
+    live_claude "$S" >/dev/null; live_claude "$O" >/dev/null
+    mkdir -p "$w/roots/claude_grader_97"; ( cd "$w/roots/claude_grader_97" && exec "$w/claude" 600 >/dev/null 2>&1 </dev/null ) & echo $! >> "$w/pids"
+    for i_ in 1 2 3 4 5 6 7 8 9 10; do [ "$(readlink "/proc/$(tail -1 "$w/pids")/cwd" 2>/dev/null)" = "$w/roots/claude_grader_97" ] && [ "$(cat "/proc/$(tail -1 "$w/pids")/comm" 2>/dev/null)" = claude ] && break; read -r -t 0.2 _ < <(:) || true; done
+    xb() { S4E_SEAT_ROOTS="$w/roots" bus "$@"; }
+    out="$(S4E_SEAT_ROOTS="$w/roots" bus "$O" expire)"; [ -e "$w/claims/$d.claim" ] || why="$why the walk of every claim lifted a hand claim;"
+    out="$(xb "$O" expire "$pk")"; rc=$?; { [ "$rc" = 0 ] && [ ! -e "$w/claims/$pk.claim" ] && [ "$(st "$pk")" = "BLOCKED-ON:$l" ]; } || why="$why a parked row's dead hand claim: rc $rc, row $(st "$pk") (the park must stand, the claim go);"
+    out="$(xb "$O" expire "$d")"; rc=$?
+    [ "$rc" = 0 ] || why="$why expire of a dead seat's hand claim exited $rc [$(printf '%s' "$out" | head -1 | cut -c1-90)];"
+    [ -e "$w/claims/$d.claim" ] && why="$why the dead seat's hand claim was not archived;"
+    ls "$w/claims/expired/$d.claim."* >/dev/null 2>&1 || why="$why no claims/expired receipt;"
+    [ "$(st "$d")" = FREE ] || why="$why the lifted row reads $(st "$d"), not FREE;"
+    grep -q 'HAND CLAIM expired' "$w/tasks/$d.task.md" || why="$why no HAND CLAIM expired LEDGER line;"
+    out="$(xb "$O" expire "$l")"; rc=$?; { [ "$rc" = 1 ] && [ -e "$w/claims/$l.claim" ] && [ "$(st "$l")" = "CLAIMED:$S" ]; } || why="$why a hand claim of a seat alive in its scope was lifted (rc $rc);"
+    out="$(xb "$O" expire "$h")"; rc=$?; { [ "$rc" = 1 ] && [ -e "$w/claims/$h.claim" ] && [ "$(st "$h")" = "CLAIMED:grader_97" ]; } || why="$why a hand claim of a seat alive in a window opened by hand was lifted (rc $rc) [$(printf '%s' "$out" | head -1 | cut -c1-90)];"
+    out="$(xb "$O" expire "$m")"; rc=$?; { [ "$rc" = 1 ] && [ -e "$w/claims/$m.claim" ]; } || why="$why the caller's own hand claim was lifted (rc $rc);"
+    out="$(xb "$O" claim "$d")"; [ "$(head -1 "$w/claims/$d.claim" 2>/dev/null)" = "$O" ] || why="$why the finisher could not claim the lifted row [$(printf '%s' "$out" | grep -m1 -E 'REFUSED|CLAIMED' | cut -c1-90)];"
+    verdict "dead=lifted,row=FREE scope_alive=kept hand_window_alive=kept own=kept park_stands=1 walk_lifts_none=1 finisher_claims=1";;
+*) refuse "no step $N (1..16)";;
 esac
