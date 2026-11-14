@@ -72,11 +72,12 @@ kill_ledger_append() {  # kill_ledger_append <pid> <signal> <target-cwd> <target
     echo "  ⚠ COULD NOT RECORD this kill in $KILL_LEDGER -- the signal was still sent, and its victim will read 'no ledger entry'" >&2
   fi
 }
-me_seat="${S4E_SEAT:-$(printf '%s' "$S4E" | sed -n 's|^/home/claude_\(.*\)$|\1|p')}"; bgdir="/tmp/s4e/${me_seat:-seat}/bg"
+me_seat="${S4E_SEAT:-$(printf '%s' "$S4E" | sed -n 's|^/home/claude_\(.*\)$|\1|p')}"; bgdir="${S4E_KEEP:-/home/resources/keep}/${me_seat:-seat}/bg"; oldbg="/tmp/s4e/${me_seat:-seat}/bg"   # the handles live on /home (util_run_slot.sh --bg, Lon 2026-11-14); oldbg is where a run started before that wrote its handle
+hfile() { if [ -f "$bgdir/$1.handle" ]; then printf '%s' "$bgdir/$1.handle"; else printf '%s' "$oldbg/$1.handle"; fi; }
 mine_pid() {  # mine_pid <pid> -> 0 when the pid carries one of this seat's handles or runs under this root; prints why
   local env h cwd; [ -d "/proc/$1" ] || { echo "pid $1 is not alive"; return 1; }
   h="$(tr '\0' '\n' < "/proc/$1/environ" 2>/dev/null | sed -n 's/^S4E_BG_HANDLE=//p')"
-  [ -n "$h" ] && [ -f "$bgdir/$h.handle" ] && { echo "handle $h of $me_seat"; return 0; }
+  [ -n "$h" ] && [ -f "$(hfile "$h")" ] && { echo "handle $h of $me_seat"; return 0; }
   cwd=$(readlink -f "/proc/$1/cwd" 2>/dev/null); case "$cwd" in "$S4E"|"$S4E"/*) echo "cwd $cwd under $S4E"; return 0 ;; esac
   # THE SEAT'S OWN SCOPE (the coo 2026-11-14, on officer_05's measurement: a seat's sandbox cannot read /proc/<pid>/environ or cwd, so all 6 of its orphaned reduce runs read
   # "not mine" and were killed by hand; /proc/<pid>/cgroup is world-readable there): a pid in s4e-seat-<seat>.scope or in one of the seat's s4e-mem-<seat>-* scopes is the seat's
@@ -95,7 +96,7 @@ probe() {
   [ -n "$id" ] && [ -n "$pid" ] || { echo "KILL-MINE PROBE RED: no BG handle line [$o]"; exit 1; }
   o="$(bash "${BASH_SOURCE[0]}" --handle "$id" 2>&1)"; printf '%s\n' "$o" | grep -q "^KILL-MINE pid=$pid " || why="$why --handle did not kill its own run [$o];"
   [ -d "/proc/$pid" ] && why="$why pid $pid is still alive after --handle;"
-  [ -f "$bgdir/$id.handle" ] && why="$why the handle file was not retired;"
+  [ -f "$(hfile "$id")" ] && why="$why the handle file was not retired;"
   o="$(bash "${BASH_SOURCE[0]}" --pid 1 2>&1)"; [ $? = 2 ] && [ -d /proc/1 ] || why="$why --pid 1 was not refused rc 2 [$o];"
   other="$(for f in /proc/[0-9]*/cwd; do c=$(readlink -f "$f" 2>/dev/null) || continue
     case "$c" in /home/claude_*) case "$c" in "$S4E"|"$S4E"/*) ;; *) echo "${f#/proc/}" | cut -d/ -f1; break ;; esac ;; esac; done)"
@@ -117,10 +118,10 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --probe) probe ;;
     --handle) h="${2:-}"; [ -n "$h" ] || { echo "refuse: --handle needs the id a BG line printed -- rc=2" >&2; exit 2; }
-      [ -f "$bgdir/$h.handle" ] || { echo "refuse: no handle $h under $bgdir (not this seat's background run) -- rc=2, nothing signalled" >&2; exit 2; }
-      hp="$(sed -n 's/^pid=\([0-9]*\) .*/\1/p' "$bgdir/$h.handle")"
-      if ! w="$(mine_pid "$hp")"; then rm -f "$bgdir/$h.handle"; echo "refuse: handle $h: $w (the handle is retired) -- rc=2, nothing signalled" >&2; exit 2; fi
-      kill_one "$hp" "handle=$h ($w)"; rm -f "$bgdir/$h.handle"; exit 0 ;;
+      [ -f "$(hfile "$h")" ] || { echo "refuse: no handle $h under $bgdir (not this seat's background run) -- rc=2, nothing signalled" >&2; exit 2; }
+      hp="$(sed -n 's/^pid=\([0-9]*\) .*/\1/p' "$(hfile "$h")")"
+      if ! w="$(mine_pid "$hp")"; then rm -f "$(hfile "$h")"; echo "refuse: handle $h: $w (the handle is retired) -- rc=2, nothing signalled" >&2; exit 2; fi
+      kill_one "$hp" "handle=$h ($w)"; rm -f "$(hfile "$h")"; exit 0 ;;
     --pid) hp="${2:-}"; [[ "$hp" =~ ^[0-9]+$ ]] || { echo "refuse: --pid needs a number -- rc=2" >&2; exit 2; }
       w="$(mine_pid "$hp")" || { echo "refuse: pid $hp: $w -- rc=2, nothing signalled" >&2; exit 2; }
       kill_one "$hp" "pid=$hp ($w)"; exit 0 ;;

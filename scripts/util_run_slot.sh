@@ -13,13 +13,14 @@
 [ "$#" -gt 0 ] || { echo "usage: util_run_slot.sh <command> <args>... | util_run_slot.sh --bg [--probe] <command> <args>... | util_run_slot.sh --admit <compile|run> <command>... | util_run_slot.sh --probe-sem" >&2; exit 2; }
 # --probe-sem (fleet-queue step 18): util_slot_probe.sh proves the sem pools on a scratch home through the real takers, then prints one `SLOT by=sem class=... id=... cap=... timeout_s=...` line per pool class of SLOTS.tsv.
 [ "$1" = --probe-sem ] && exec bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_slot_probe.sh"
-# --bg (box-scheduler step 22): the command runs under setsid with S4E_BG_HANDLE=<id> in its environment, stdout and stderr in /tmp/s4e/<seat>/bg/<id>.log, and
+# --bg (box-scheduler step 22): the command runs under setsid with S4E_BG_HANDLE=<id> in its environment, stdout and stderr in /home/resources/keep/<seat>/bg/<id>.log (never under /tmp: a baton cites that log, Lon 2026-11-14; S4E_KEEP names another top; a log or handle older than 30 days is pruned when a new run starts), and
 # a handle file <id>.handle beside it (pid, seat, start, cwd, command); it prints `BG handle=<id> pid=<pid> log=<path>`. s4e_kill_mine.sh --handle <id> stops it.
 if [ "$1" = --bg ]; then
-    shift; . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_slots.sh"; _seat="$(s4e_slot_seat)"; _d="/tmp/s4e/$_seat/bg"; _probe=""
+    shift; . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_slots.sh"; _seat="$(s4e_slot_seat)"; _d="${S4E_KEEP:-/home/resources/keep}/$_seat/bg"; _probe=""
     [ "${1:-}" = --probe ] && { _probe=1; shift; set -- sleep 300; }
     [ "$#" -gt 0 ] || { echo "usage: util_run_slot.sh --bg [--probe] <command> <args>... (DESIGN-PLAN box-scheduler step 22: a background run has a handle)" >&2; exit 2; }
     mkdir -p "$_d" || { echo "REFUSE(2) [run_slot --bg]: cannot make $_d"; exit 2; }
+    find "$_d" -maxdepth 1 -type f \( -name '*.log' -o -name '*.handle' \) -mtime +30 -delete 2>/dev/null
     _id="$(date -u +%Y%m%dT%H%M%SZ)-$$"; _log="$_d/$_id.log"; _h="$_d/$_id.handle"
     S4E_BG_HANDLE="$_id" setsid bash "${BASH_SOURCE[0]}" "$@" > "$_log" 2>&1 < /dev/null & _pid=$!
     printf 'pid=%s seat=%s started=%s cwd=%s cmd=%s\n' "$_pid" "$_seat" "$(date -u +%FT%TZ)" "$PWD" "$*" > "$_h"
