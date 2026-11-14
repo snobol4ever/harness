@@ -13,7 +13,7 @@ S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 ME="${S4E_SEAT:-probe}"
 N="${1:-}"
 refuse() { echo "REFUSE(2) [bus-one-queue probe]: $*"; exit 2; }
-[ -n "$N" ] || refuse "usage: $0 <step 1..12>"
+[ -n "$N" ] || refuse "usage: $0 <step 1..13>"
 mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 w="$(mktemp -d "/tmp/s4e/$ME/busq_probe.XXXXXX")" || refuse "mktemp failed"
 PIDS=""
@@ -269,5 +269,35 @@ wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operatin
     o6="$(NOPC=0 bus "$O" claim "$pr")"
     [ "$(st "$pr")" = "CLAIMED:$O" ] || why="$why a premise that reads S4E_CORE_HELD=1 did not hold: the row reads $(st "$pr") [$(printf '%s' "$o6" | grep -m1 -E 'PREMISE|REFUSE' | cut -c1-90)];"
     verdict "haiku=program-rows-only sonnet=escalated-program-rows opus=no-program-or-escalated mints=$r1,$r2,$r3,$r4,$r5 queues=$a1,$a2,$a3,$a4,$a5,$a6,$a7 to_seat=$b1,$b2,$b3 premise_token=none";;
-*) refuse "no step $N (1..12)";;
+13) # A MINT IS ONE LOCKED WRITE, and A CURED ROW IS ADMITTED TO BE CLOSED (the cio 2026-11-14, on the coo's two measurements: 5 of 39 rows the feeder minted --to a junior stood
+    # FREE with no tube, their second write having lost its lock; and a junior's cured row came back to its tube and claim refused it, its premise being red because the red was
+    # gone). Six seats mint to a tube while six queue other rows, all at once: every minted row stands QUEUED in its tube, none FREE and none lost, and every queued row moved.
+    PD='cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && test -f "/nonexistent/entry:busq13"'
+    mk() { printf 'GOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: %s\nPREMISE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && true\n## NEXT\nplant\n' "$PD"; }
+    K=12; seats=""
+    for i in $(seq 1 "$K"); do q="officer_$((80 + i))"; seats="$seats $q"; mkdir -p "$w/$q/inbox"; printf '%s\tPO%s\t/tmp\tclaude-opus-5-5\txhigh\tblue\t2\tofficer\n' "$q" "$((80 + i))" >> "$w/TIERS.tsv"; done
+    sed -i "s/^ROSTER: .*/ROSTER: $J $S $O$seats/" "$w/MODE"
+    for i in 7 8 9 10 11 12; do row 2 "busq13-q-$i-$$" "officer_$((80 + i))" FREE; baton "busq13-q-$i-$$"; done
+    pp=""
+    for i in 1 2 3 4 5 6; do ( mk | bus "officer_$((80 + i))" mint "busq13-m-$i-$$" 2 --to "$J" --stdin > "$w/m13.$i.log" 2>&1 ) & pp="$pp $!"; done
+    for i in 7 8 9 10 11 12; do bus "officer_$((80 + i))" queue "busq13-q-$i-$$" --tier haiku > "$w/q13.$i.log" 2>&1 & pp="$pp $!"; done
+    for x in $pp; do wait "$x"; done
+    free=0; lost=0; notq=0
+    for i in 1 2 3 4 5 6; do v="$(st "busq13-m-$i-$$")"; [ -n "$v" ] || lost=$((lost + 1)); [ "$v" = FREE ] && free=$((free + 1)); [ "$v" = "QUEUED:seat-$J" ] || notq=$((notq + 1)); done
+    for i in 7 8 9 10 11 12; do [ "$(st "busq13-q-$i-$$")" = QUEUED:tier-haiku ] || notq=$((notq + 1)); done
+    [ "$lost" = 0 ] || why="$why $lost of 6 minted rows are not in the queue file;"
+    [ "$free" = 0 ] || why="$why $free of 6 rows minted --to a junior stand FREE;"
+    [ "$notq" = 0 ] || why="$why $notq of 12 rows do not stand in their tube [$(cat "$w"/m13.*.log "$w"/q13.*.log | grep -m1 -E 'REFUSED|NOT updated' | cut -c1-100)];"
+    grep -q '^STATE: QUEUED:seat-' "$w/tasks/busq13-m-1-$$.task.md" 2>/dev/null || why="$why a minted baton's STATE line does not read its tube;"
+    red="$w/busq13.red"; : > "$red"
+    c1="busq13-cured-$$"; c2="busq13-open-$$"
+    row 2 "$c1" "$O" FREE; baton "$c1" 2026-11-01T00:00:00Z "test -f $red.gone" "test -f $red"       # premise red (the red is gone), criterion green: cured
+    row 2 "$c2" "$O" FREE; baton "$c2" 2026-11-01T00:00:00Z "test -f $red.gone" "test -f $red.gone"  # premise red, criterion red: the premise is simply false
+    live_claude "$O" >/dev/null
+    NOPC=0 bus "$O" claim "$c1" > "$w/c1.log" 2>&1; NOPC=0 bus "$O" claim "$c2" > "$w/c2.log" 2>&1
+    [ "$(st "$c1")" = "CLAIMED:$O" ] || why="$why a cured row (premise red, DONE-WHEN green) was not admitted: it reads $(st "$c1") [$(grep -m1 -E 'REFUSED|PREMISE' "$w/c1.log" | cut -c1-90)];"
+    grep -q 'ADMITTED WITH A RED PREMISE, COMPUTED' "$w/tasks/$c1.task.md" || why="$why the cured row's LEDGER carries no computed admission line;"
+    [ "$(st "$c2")" = FREE ] || why="$why a row whose premise and criterion are both red was taken: it reads $(st "$c2");"
+    verdict "minted=6 queued=6 free=$free lost=$lost not_in_tube=$notq cured_row=$(st "$c1") open_row=$(st "$c2")";;
+*) refuse "no step $N (1..13)";;
 esac

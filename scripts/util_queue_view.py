@@ -100,6 +100,33 @@ def regenerate():
             except OSError: pass
     tubes = tubes_of(r[4] for r in out)
     print("VIEW rows=%d tubes=%d healed=%d adopted=%d signed_before=%d lock=%d" % (len(out), len(tubes), healed, adopted, int(signed), int(got))); return 0
+def regenerate_locked():
+    """THE REBUILD HOLDS THE QUEUE'S FLOCK FROM ITS FIRST READ TO ITS WRITE (the cio 2026-11-14, on the coo's measurement: of 39 rows the feeder minted to a junior, 5 stood FREE
+    with no tube). regenerate() reads every baton, builds the whole of QUEUE.tsv and replaces the file; run with no lock, a rebuild that read a baton a moment before another
+    writer updated it put the OLD state back over that writer's change, and a row just queued read FREE again. Every column writer and mint hold PO/.queue.flock (s4e_msg.sh);
+    the rebuild takes the same lock, unless its caller already holds it (S4E_QFLOCK_HELD=1, passed by s4e_queue_view). A lock that cannot be had in 120 s rebuilds nothing,
+    rc 3: the next writer's rebuild brings the view up to date."""
+    if os.environ.get("S4E_QFLOCK_HELD") == "1":
+        return regenerate()
+    import fcntl
+    try:
+        f = open(os.path.join(PO, ".queue.flock"), "a")
+    except OSError:
+        return regenerate()
+    t0 = time.monotonic()
+    while True:
+        try:
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB); break
+        except OSError:
+            if time.monotonic() - t0 > 120:
+                sys.stderr.write("REFUSE(3) [queue_view]: PO/.queue.flock busy 120 s; nothing rebuilt\n"); return 3
+            time.sleep(0.05)
+    try:
+        return regenerate()
+    finally:
+        f.close()
+
+
 def check():
     try: sig = open(SIG).read().strip(); age = int(time.time() - os.stat(SIG).st_mtime); gen = 1
     except OSError: sig = ""; age = 10**6; gen = 0
@@ -131,7 +158,7 @@ def probe_retire():
     print("RETIRE_PROBE rc1=%d rc2=%d live_stays=%d dead_out=%d landed_once=%d idempotent=%d closed_stays_closed=%d ok=%d" % (r1.returncode, r2.returncode, live_stays, dead_out, landed_once, idempotent, closed_once, ok)); return 0 if ok else 1
 if __name__ == "__main__":
     a = sys.argv[1:]
-    if a[:1] == ["--regenerate"]: sys.exit(regenerate())
+    if a[:1] == ["--regenerate"]: sys.exit(regenerate_locked())
     if a[:1] == ["--check"]: sys.exit(check())
     if a[:1] == ["--probe-retire"]: sys.exit(probe_retire())
     print("usage: util_queue_view.py --regenerate | --check | --probe-retire"); sys.exit(2)

@@ -207,7 +207,7 @@ s4e_baton_head_set() {   # <topic> <KEY> <value>: one KEY: line in the baton hea
     else sed -i "0,/^LINKS:/{/^LINKS:/a\\
 $2: $3
 }" "$_b"; fi; }
-s4e_queue_view() { mkdir -p "/tmp/s4e/$ME" 2>/dev/null; python3 "$S4E_HARNESS/scripts/util_queue_view.py" --regenerate >>"/tmp/s4e/$ME/view.log" 2>&1 || echo "$(date -u +%FT%TZ) view regenerate rc=$? from $0 $*" >> "/tmp/s4e/$ME/view.err"; }   # fleet-queue step 12: QUEUE.tsv is regenerated after every state, owner or mint write
+s4e_queue_view() { mkdir -p "/tmp/s4e/$ME" 2>/dev/null; S4E_QFLOCK_HELD="${S4E_QFLOCK_HELD:-0}" python3 "$S4E_HARNESS/scripts/util_queue_view.py" --regenerate >>"/tmp/s4e/$ME/view.log" 2>&1 || echo "$(date -u +%FT%TZ) view regenerate rc=$? from $0 $*" >> "/tmp/s4e/$ME/view.err"; }   # fleet-queue step 12: QUEUE.tsv is regenerated after every state, owner or mint write
 s4e_skills_required_ok() {   # <tier> <goal text>: a sonnet or haiku row carries a SKILLS: line (Lon: "given the proper SKILL FIRST")
     case "$1" in sonnet|haiku) printf '%s\n' "$2" | grep -q '^SKILLS:[[:space:]]*[^[:space:]]';; *) return 0;; esac; }
 s4e_queue_pri() { case "$1" in seat-*) echo $((100 + $2));; ask-*) echo 50;; *) echo $((1000 + $2));; esac; }   # <tube> <rank>: a directed job outranks tier work, an ask outranks both
@@ -2956,6 +2956,20 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
          [ -s "$log" ] && sed -e 's/^/  | /' "$log" | tail -8 >&2
          rm -f "$log"; return 0;;
     esac
+    # A ROW WHOSE RED IS GONE BECAUSE THE ROW IS DONE IS ADMITTED TO BE CLOSED (the cio 2026-11-14, on the coo's measurement: junior_12's cure landed, the coo served the reading,
+    # the row came back to its tube, and claim refused it because its PREMISE-WHEN now exits 1, the red being gone; every cured row does this, and it was closed by an override
+    # typed by hand). The premise says the problem is gone; the DONE-WHEN says whether that is because the work is done. rc 0 there admits the row, with a computed LEDGER line.
+    local _dwt _drc; _dwt="$(s4e_donewhen_text "$b" 2>/dev/null)"
+    if [ -n "$_dwt" ] && ! s4e_donewhen_is_placeholder "$_dwt" 2>/dev/null; then
+        ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_CORE_HELD=1 S4E_RUN_SLOT_HELD=1 s4e_bounded "$to" bash -c "$_dwt" ) > "$log.dw" 2>&1; _drc=$?
+        rm -f "$log.dw"
+        if [ "$_drc" = 0 ]; then
+            printf '  ✅ THE PREMISE IS RED BECAUSE THE ROW IS DONE: its DONE-WHEN exits 0 on this tree. The row is admitted to be closed: run done %s.\n' "$t" >&2
+            printf '\n- [%s·%s] ADMITTED WITH A RED PREMISE, COMPUTED: the PREMISE-WHEN exited %s and the DONE-WHEN exits 0 on tree %s, so the red is gone because the row is done; the taker closes it by done.\n' \
+                "$(date -u +%Y-%m-%dT%H:%MZ)" "$ME" "$rc" "$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null || echo '(no tree)')" >> "$b"
+            rm -f "$log"; return 0
+        fi
+    fi
     # RED, AND MEASURED. This is the only outcome that stops the lock.
     if [ -n "${S4E_PREMISE_OVERRIDE:-}" ]; then
         printf '⚠ PREMISE-WHEN IS RED AND WAS OVERRIDDEN by %s -- reason recorded in the baton LEDGER: %s\n' "$ME" "$S4E_PREMISE_OVERRIDE" >&2
@@ -4682,6 +4696,11 @@ MINTED-WITHOUT-CRITERION: ${S4E_MINT_NO_CRITERION} (S4E_MINT_NO_CRITERION; R-138
          # claim (one file per topic, where the `ln` hard-link trick above is already atomic per-target) — so
          # the lock is a DIRECTORY, not the row: mkdir is atomic on every POSIX filesystem, same guarantee
          # `ln` leans on, just scoped to the whole file instead of one name in it.
+         # THE QUEUE'S FLOCK FIRST, THEN THE MINT LOCK, AS EVERY COLUMN WRITER TAKES THEM (the cio 2026-11-14): a mint holds PO/.queue.flock from here to its row's append, so
+         # a mint waits its turn (120 s) where it used to refuse after 5 s (MEASURED on a scratch postoffice: of six mints at once five refused on the mint lock), and no
+         # writer that replaces the file by a rename can run between a mint's read and its append. Under the flock the mint lock is free unless a crashed mint left it.
+         exec 8>>"$PO/.queue.flock"; flock -w 120 8 || { echo "⛔ REFUSED (rc 3): the queue lock ($PO/.queue.flock) was busy 120 s; nothing was minted. Mint $topic again." >&2; exit 3; }
+         _mint_qf="${S4E_QFLOCK_HELD:-0}"; S4E_QFLOCK_HELD=1
          lock="$PO/.mint.lock"; got=0
          for _i in $(seq 1 50); do mkdir "$lock" 2>/dev/null && { got=1; break; }; sleep 0.1; done
          [ "$got" = 1 ] || { echo "⛔ REFUSED: could not acquire the mint lock ($lock) after 5s — another mint is stuck or crashed holding it. Investigate before removing it by hand; do not rm -rf blindly." >&2; exit 3; }
@@ -4749,13 +4768,19 @@ TASKEOF
            printf '   Icon batons scrambled 3-1-2-5-4 on a LIVE rank-1 row (2026-08-29), which is this rule\x27s origin.\n' >&2
            exit 2
          fi
-         printf '%s\t%s\t%s\tFREE\n' "$rank" "$topic" "$owner" >> "$q"
-         rmdir "$lock" 2>/dev/null; trap 's4e_pid_release' EXIT
-         echo "minted $topic (rank $rank, owner $owner, state FREE) -> $b"
+         # THE ROW IS WRITTEN ONCE, WITH THE STATE IT IS MINTED TO, UNDER THE QUEUE'S FLOCK (the cio 2026-11-14, on the coo's measurement: of 39 rows the feeder minted --to a
+         # junior in three runs, 5 stood FREE with their owner and no tube; mint wrote the row FREE and then set QUEUED in a second write whose lock wait, 2 s, ran out under
+         # load, and that refusal was swallowed. And the append took no flock, while every column writer replaces the file by a rename under it, so an append could land in
+         # the file a writer was replacing). One append, under PO/.queue.flock (held since the mint lock was taken, above), carrying QUEUED:<tube> when a tube is named.
+         _mst=FREE; [ -n "$q_tube" ] && s4e_file_road && _mst="QUEUED:$q_tube"
+         printf '%s\t%s\t%s\t%s\n' "$rank" "$topic" "$owner" "$_mst" >> "$q"
+         [ "$_mst" = FREE ] || s4e_baton_head_set "$topic" STATE "$_mst" 2>/dev/null
+         rmdir "$lock" 2>/dev/null; flock -u 8 2>/dev/null; exec 8>&-; S4E_QFLOCK_HELD="$_mint_qf"; trap 's4e_pid_release' EXIT
+         echo "minted $topic (rank $rank, owner $owner, state $_mst) -> $b"
          [ -n "${q_tube:-}" ] && s4e_wake_hint "$q_tube" "$topic" mint   # a mint with --tier or --to puts a job in a tube: it wakes its taker like queue (officer_03, 2026-11-08 11:03)
          s4e_queue_view
          [ -n "$q_tube" ] && s4e_queue_enqueue_row "$topic" "$q_tube" "$rank" "$q_tier"
-         [ -n "$q_tube" ] && s4e_file_road && { s4e_set_row_state "$topic" "QUEUED:$q_tube" || true; }   # bus-one-queue step 3: on the file road the minted row's column is its tube
+         [ -n "$q_tube" ] && s4e_file_road && [ "$(s4e_row_state "$topic")" != "QUEUED:$q_tube" ] && { s4e_set_row_state "$topic" "QUEUED:$q_tube" || { echo "⛔ REFUSED (rc 2): $topic is minted but its state could not be written QUEUED:$q_tube; queue it: s4e_msg.sh queue $topic ..." >&2; exit 2; }; }   # bus-one-queue step 3: the column is the tube; written with the row above, this line only repairs
          [ -n "$pw_block" ] && {
            printf '⚠ NO PREMISE-WHEN — you are the one reader who knows what this row ASSUMES, and you are looking at\n' >&2
            printf '  it right now. Write the one cheap command that proves that assumption still holds, into %s:\n' "$b" >&2
