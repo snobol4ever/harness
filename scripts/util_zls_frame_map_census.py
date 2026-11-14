@@ -80,7 +80,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-FRAME_LAYOUT_H = (HERE.parent.parent / "SCRIP") / "src" / "planner" / "frame_layout.h"
+import harness_paths
+FRAME_LAYOUT_H = harness_paths.scrip() / "src" / "planner" / "frame_layout.h"
 
 
 def kinds_of_the_enum():
@@ -223,7 +224,7 @@ def wantrc_sidecar(lang, s4e_home):
     TOTAL and the real defects stay counted as defects.
     Returns (map name->wantrc, note).  A sidecar that EXISTS and cannot be read REFUSES (raises); an ABSENT one is itself
     data -- the rungs declares no non-zero-rc entry -- and says so on its own line rather than defaulting silently."""
-    d = Path(s4e_home) / "corpus" / "tests" / lang
+    d = harness_paths.corpus(s4e_home) / "tests" / lang
     f = d / "ALL.rc"
     if not f.is_file():
         return {}, f"no ALL.rc beside {d} -- no entry can be DECLARED here, so every no_layout entry printed here is counted a defect; this is a measured zero, not a default"
@@ -244,7 +245,7 @@ def wantrc_sidecar(lang, s4e_home):
 def rungs_entries(lang, s4e_home):
     import corpus_suite_harness as H
     cfg = H.LANG_CONFIGS.get(lang) or (H.LANG_CONFIGS.get("") if lang == "snobol4" else None) or {"ext": ".sno", "comment_open": "*", "comment_close": ""}
-    d = Path(s4e_home) / "corpus" / "tests" / lang
+    d = harness_paths.corpus(s4e_home) / "tests" / lang
     src = d / ("ALL" + cfg["ext"]); ref = d / "ALL.ref"
     if not src.is_file() or not ref.is_file():
         return None, cfg["ext"], f"rungs {src} or {ref} missing", []
@@ -253,20 +254,20 @@ def rungs_entries(lang, s4e_home):
         entries = H.read_block_suite(str(src), str(ref), banner_re, in_path=H.sidecar_in_path(str(src)), x_path=H.sidecar_xfail_path(str(src)))
     except Exception:
         entries = H.read_suite(str(src), str(ref), in_path=H.sidecar_in_path(str(src)), x_path=H.sidecar_xfail_path(str(src)))
-    inc = Path(os.environ.get("INC", str(Path(s4e_home) / "corpus" / "include")))
+    inc = Path(os.environ.get("INC", str(harness_paths.corpus(s4e_home) / "include")))
     return entries, cfg["ext"], "", [d, inc]
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--lang", default="", help="census this language's rungs suite (corpus/tests/<lang>/ALL.<ext>)")
+    ap.add_argument("--lang", default="", help="census this language's rungs suite (tests/<lang>/ALL.<ext> of the corpus)")
     ap.add_argument("--files", nargs="*", default=[], help="census these programs instead of a rung suite")
     ap.add_argument("--dumps", nargs="*", default=[], help="census these saved `scrip --dump-zeta` texts instead of running scrip (the gates' detector arm corrupts one)")
     ap.add_argument("--timeout", type=float, default=8.0)
     ap.add_argument("--wantrc", dest="rc_file", default="", help="grade DECLARED against this ALL.rc instead of the rungs' own (the gate fixture seam; --files has no rungs)")
     a = ap.parse_args()
     s4e_home = os.environ.get("S4E_HOME", str(HERE.parent.parent))
-    scrip = Path(os.environ.get("SCRIP", str((HERE.parent.parent / "SCRIP") / "scrip")))
+    scrip = Path(os.environ.get("SCRIP", str(harness_paths.scrip() / "scrip")))
     label = a.lang or ("dumps" if a.dumps else "files")
     if not scrip.is_file():
         print(f"zls-frame-map-census[{label}]: REFUSE(2): {scrip} is not a file"); return 2

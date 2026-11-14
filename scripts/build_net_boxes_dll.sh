@@ -11,7 +11,8 @@
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude Sonnet 4.6
 
 set -e
-SCRIPT_DIR="$(cd "$(dirname "$0")/../../SCRIP" && pwd)/src/runtime/net"
+. "$(cd "$(dirname "$0")" && pwd)/lib_paths.sh"
+SCRIPT_DIR="$(cd "$S4E_SCRIP" && pwd)/src/runtime/net"
 OUT="${1:-$SCRIPT_DIR/boxes.dll}"
 
 IL="$SCRIPT_DIR/bb_boxes.il"

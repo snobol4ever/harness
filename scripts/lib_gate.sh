@@ -57,16 +57,21 @@ gate_parse_args() {
 # produces a wrong answer WEARING A CORRECT-LOOKING CITATION, and every downstream reader inherits it.
 # The SIBLINGS (corpus, .github) still resolve through the root, because they genuinely are siblings and going
 # up to reach them is the D-17 PORTABLE-HOME rule working as intended.  Only the hop BACK DOWN was ever wrong.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh"
 gate_stamp() {
     local _root _r _p _h _dirty _self
-    _self="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" 2>/dev/null && pwd)"
+    _self="$(cd "$S4E_SCRIP" 2>/dev/null && pwd)"
     _root="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd 2>/dev/null)}"
     printf '    tree:'
     for _r in SCRIP corpus .github; do
         # ⭐ This helper lives at <SCRIP-repo>/scripts/lib_gate.sh BY CONSTRUCTION, so `_self` IS the SCRIP
         # repo being run -- worktree or main checkout, whatever it is named on disk.  That is the whole fix:
         # the SCRIP row is stamped from where this file actually is, the sibling rows from the root above it.
-        if [ "$_r" = SCRIP ] && [ -n "$_self" ]; then _p="$_self"; else _p="$_root/$_r"; fi
+        case "$_r" in
+            SCRIP) if [ -n "$_self" ]; then _p="$_self"; else _p="$_root/$_r"; fi;;
+            corpus) _p="$S4E_CORPUS";;
+            *) _p="$S4E_GITHUB";;
+        esac
         # ⛔ -e NOT -d: in a git WORKTREE `.git` is a FILE, not a directory, so `-d` skipped every repo and the
         # stamp printed a bare `tree:` with NOTHING after it — the exact unactionable verdict this helper
         # exists to prevent, and it fired precisely where fail-once proofs are required to run (rungs say
@@ -415,7 +420,7 @@ _gate_tree_repo() { case "$2" in
     SCRIP) if [ "${S4E_ENGINE:-scrip}" != scrip ]; then
              local _drv; _drv="$(bash "$(dirname "${BASH_SOURCE[0]}")/run_snobol4${S4E_ENGINE}.sh" --paths 2>/dev/null | head -1)"
              git -C "$(dirname "${_drv:-/nonexistent}")" rev-parse --show-toplevel 2>/dev/null
-           else (cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd); fi;;
+           else (cd "$S4E_SCRIP" && pwd); fi;;
     *) printf '%s/%s\n' "$1" "$2";; esac; }
 gate_tree_watch() {
     local _root="$1" _r _h _d _fp="" _p

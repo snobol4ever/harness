@@ -10,8 +10,9 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 TIMEOUT_RETRY="${TIMEOUT_RETRY:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_timeout_retry.sh}"   # every graded timeout is retried once, longer (Lon 2026-10-15, in-chat to the coo: "do a retry with longer timeouts")
 
-DEMO="$S4E/corpus/demos"
-SCRIP="$S4E/SCRIP/scrip"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh"
+DEMO="$S4E_CORPUS/demos"
+SCRIP="$S4E_SCRIP/scrip"
 TIMEOUT="${TIMEOUT:-30}"
 MODE="${1:-m3}"
 SNAPDIR="/tmp/demo_board"

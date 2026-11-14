@@ -30,7 +30,8 @@
 #               ⛔ NOT PUBLISHING: FILE is a path the OPERATOR names, never a SCORE cell.
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
-cd "$HERE/../../SCRIP" || exit 2
+. "$HERE/lib_paths.sh"
+cd "$S4E_SCRIP" || exit 2
 ROOT=$(pwd)
 SCRIP="$ROOT/scrip"
 # ⛔ THE POPULATION AND THE CONSTRUCT KEY ARE SOURCED, NEVER COPIED (lib_ladder.sh / lib_port_trace.sh

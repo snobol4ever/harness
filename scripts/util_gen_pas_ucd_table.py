@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""util_gen_pas_ucd_table.py -- THE GENERATOR of SCRIP/src/runtime/pas_ucd_table.inc, the Unicode property table the Pascal builtin __pas_ucd reads.
+"""util_gen_pas_ucd_table.py -- THE GENERATOR of src/runtime/pas_ucd_table.inc of the SCRIP clone, the Unicode property table the Pascal builtin __pas_ucd reads.
 
 The data is cut from the oracle, never from Unicode files (the cto 2026-11-13, row fpc-ucd-table-generator-and-the-pas-ucd-builtin): a Pascal program
 over fpc 3.2.2's own unicodedata unit asks GetProps for every code point 0 to $10FFFF and prints what it reads; this script compiles it with the oracle
 (fpc_bin() of lib_oracle_flags.sh, never a bare path), runs it, and writes the include. So the table is exactly 3.2.2's Unicode version, whatever that is.
 
-  (no argument)   regenerate and write SCRIP/src/runtime/pas_ucd_table.inc
+  (no argument)   regenerate and write src/runtime/pas_ucd_table.inc of the SCRIP clone
   --check         regenerate in memory and compare with the file: rc 0 equal, rc 1 differs or missing, rc 2 the oracle is absent
-The include is regenerated, never edited (harness/scripts/generated_tables.tsv).
+The include is regenerated, never edited (generated_tables.tsv beside this script).
 """
 import os
 import subprocess
@@ -15,8 +15,9 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(os.path.dirname(HERE))
-OUT = os.path.join(ROOT, "SCRIP", "src", "runtime", "pas_ucd_table.inc")
+sys.path.insert(0, HERE)
+import harness_paths
+OUT = os.path.join(str(harness_paths.scrip()), "src", "runtime", "pas_ucd_table.inc")
 LIB = os.path.join(HERE, "lib_oracle_flags.sh")
 
 SWEEP = """program ucdsweep;
@@ -108,7 +109,7 @@ def main(argv):
         if have == want:
             print("PAS_UCD_TABLE CURRENT: %s" % OUT)
             return 0
-        print("PAS_UCD_TABLE STALE: %s differs from a regeneration -- run: python3 harness/scripts/util_gen_pas_ucd_table.py" % OUT)
+        print("PAS_UCD_TABLE STALE: %s differs from a regeneration -- run: python3 %s/util_gen_pas_ucd_table.py" % (OUT, HERE))
         return 1
     with open(OUT, "w") as f:
         f.write(want)

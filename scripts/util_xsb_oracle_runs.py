@@ -16,14 +16,16 @@ FILE and CMD, the cd's and loops of its script included -- is the one XSB's own 
                                    or a script's own run (DIR/SCRIPT (its own run of ...)): the measurement a CONTAINERS.tsv LOADED_BY row
                                    of an oracle=xsb-gentest package re-derives from (util_container_or_library.py verify)
 
-The upstream tree is the package's CONTRACT.tsv `upstream` (corpus/packages/prolog/xsb_tests); SOURCES.tsv maps each vendored name to its file.
+The upstream tree is the package's CONTRACT.tsv `upstream` (packages/prolog/xsb_tests in the corpus); SOURCES.tsv maps each vendored name to its file.
 """
 import hashlib, os, re, shutil, subprocess, sys
 from collections import defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-GEN = re.compile(r"^\[([^\]]+)\]\.\ntell\(temp\)\.\n(.*)\ntold\.\n?$", re.S)
+sys.path.insert(0, str(HERE))
+import harness_paths
+GEN =re.compile(r"^\[([^\]]+)\]\.\ntell\(temp\)\.\n(.*)\ntold\.\n?$", re.S)
 WFS = re.compile(r"^\[wfs_test\]\.\n(test\((\w+)\)\.)\ntold\.\n?$", re.S)
 OPEN = re.compile(r'open(?:at)?\((?:AT_FDCWD, |-?\d+, )?"([^"]+)"')
 OPTIONS = "-e segfault_handler(warn)."   # testall.sh: ./test.sh "$XEMU" "-e segfault_handler(warn). $options"
@@ -215,7 +217,7 @@ def main():
         os.execvp("bash", ["bash", os.path.join(os.path.dirname(os.path.abspath(__file__)), "util_batch.sh"), sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
     a = sys.argv[1:]
     if a[:1] == ["record"] and len(a) in (2, 3):
-        pkg = HERE.parent.parent / "corpus" / "packages" / "prolog" / "xsb_tests"
+        pkg = harness_paths.corpus() / "packages" / "prolog" / "xsb_tests"
         cmd_record(a[1], a[2:] == ["--strace"], contract_upstream(pkg))
     elif a[:1] == ["runs"] and len(a) == 4:
         cmd_runs(a[1], a[2], a[3])

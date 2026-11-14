@@ -26,9 +26,10 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "${HERE}/../../SCRIP" && pwd)"
+. "${HERE}/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 if [ -n "${GPROLOG_SRC:-}" ]; then GP="$GPROLOG_SRC"; elif [ -d "${ROOT}/refs/gprolog-master/src/BipsPl" ]; then GP="${ROOT}/refs/gprolog-master/src/BipsPl"; else GP=/home/resources/gprolog-master/src/BipsPl; fi
-OUT="${OUT:-$S4E/.github/PROLOG-ISO-TRACKER.md}"
+OUT="${OUT:-$S4E_GITHUB/PROLOG-ISO-TRACKER.md}"
 MODE="${1:-}"
 if [ ! -d "$GP" ]; then
     echo "audit_prolog_iso_coverage: MISSING canonical source: $GP" >&2

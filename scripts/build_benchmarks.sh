@@ -1,6 +1,7 @@
 #!/bin/bash
 # build_bench.sh — build SCRIP benchmarks
 set -e
-ROOT="$(cd "$(dirname "$0")/../../SCRIP" && pwd)"
+. "$(cd "$(dirname "$0")" && pwd)/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 cd "$ROOT/bench" && make
 echo "Built: bench"

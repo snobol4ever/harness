@@ -43,7 +43,8 @@
 # Print the next tick's BASE from the last line: "NEXT TICK BASE: <sha>".
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 . "$HERE/lib_fanout.sh" || { echo "REFUSE(2): ../harness/scripts/lib_fanout.sh is missing -- the fan-out ceiling (R-1333) has no instrument"; exit 2; }
 AUDIT="$HERE/audit_bb_fixup_file.sh"
 PO="${S4E_POST:-/home/resources/postoffice}"

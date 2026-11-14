@@ -15,7 +15,7 @@
 # Usage: bash ../harness/scripts/util_style200_oracle.sh <file>...
 #        git diff --name-only 46db4457 922cfaf4 | STYLE200_BASE=46db4457 xargs bash ../harness/scripts/util_style200_oracle.sh   # re-prove R5
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 . "$HERE/lib_build_flags.sh"
 build_flags_load "$ROOT" || exit 2
 BASE="${STYLE200_BASE:-HEAD}"
