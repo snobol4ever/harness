@@ -13,6 +13,8 @@
 import os, re, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE); import harness_paths   # THE ABSOLUTE MODEL (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them): the SCRIP this checks is S4E_SCRIP, never the harness's sibling
+SCRIP_DIR = str(harness_paths.scrip())
 COLS = ['name', 'fn', 'min', 'max']
 
 
@@ -123,7 +125,7 @@ def styled(c):
 
 def main(argv):
     tsv = os.path.join(HERE, 'core_fns.tsv')
-    out = os.path.join(HERE, '..', '..', 'SCRIP', 'src', 'runtime', 'core')
+    out = os.path.join(SCRIP_DIR, 'src', 'runtime', 'core')
     if '--tsv' in argv:
         tsv = argv[argv.index('--tsv') + 1]
     if '--out' in argv:

@@ -24,6 +24,8 @@
 import os, re, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE); import harness_paths   # THE ABSOLUTE MODEL (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them): the SCRIP this checks is S4E_SCRIP, never the harness's sibling
+SCRIP_DIR = str(harness_paths.scrip())
 COLS = ['sym', 'conv', 'rc', 'allocates', 'clobbers', 'transfers', 'src']
 CONVS = ['leaf', 'gen', 'open', 'asm']
 RCS = ['DESCR', 'OTHER', 'VOID', 'UNKNOWN']
@@ -302,7 +304,7 @@ def styled(text):
 
 def main(argv):
     tsv = os.path.join(HERE, 'rt_entries.tsv')
-    out = os.path.join(HERE, '..', '..', 'SCRIP', 'src', 'runtime')
+    out = os.path.join(SCRIP_DIR, 'src', 'runtime')
     if '--tsv' in argv:
         tsv = argv[argv.index('--tsv') + 1]
     if '--out' in argv:
@@ -311,11 +313,11 @@ def main(argv):
         print('util_gen_rt_entry_table: no table at %s' % tsv, file=sys.stderr)
         return 2
     if '--sync-decls' in argv:
-        src = os.path.join(HERE, '..', '..', 'SCRIP', 'src')
+        src = os.path.join(SCRIP_DIR, 'src')
         n = sync_decls(tsv, find_decls(src))
         print('synced %d row(s) of %s from the RT_ENTRY_DECL statements under %s; now run --write' % (n, tsv, os.path.abspath(src)))
         return 0
-    scrip = os.path.abspath(os.path.join(HERE, '..', '..', 'SCRIP'))
+    scrip = os.path.abspath(SCRIP_DIR)
     if '--walker-table' in argv:
         try:
             text = walker_table(validate(load(tsv)))

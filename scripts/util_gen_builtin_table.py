@@ -19,6 +19,8 @@
 import os, re, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE); import harness_paths   # THE ABSOLUTE MODEL (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them): the SCRIP this checks is S4E_SCRIP, never the harness's sibling
+SCRIP_DIR = str(harness_paths.scrip())
 VOCABS = ['sno', 'icn', 'pas', 'rk', 'rkm', 'pl']
 CONVS = ['leaf', 'gen', 'open', 'inline']
 FLAGS = {'scan': 1, 'mut': 2, 'visible': 4}
@@ -271,7 +273,7 @@ def styled(*texts):
 
 def main(argv):
     tsv = os.path.join(HERE, 'builtins.tsv')
-    out = os.path.join(HERE, '..', '..', 'SCRIP', 'src', 'runtime')
+    out = os.path.join(SCRIP_DIR, 'src', 'runtime')
     if '--tsv' in argv:
         tsv = argv[argv.index('--tsv') + 1]
     if '--out' in argv:
