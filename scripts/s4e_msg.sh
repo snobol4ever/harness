@@ -1156,16 +1156,35 @@ s4e_telegram() {   # <seat> <topic> <text> -- a telegram written straight into t
 # s4e_queue_swap puts it in place only when it is whole (as many lines as the file it replaces): a reader that takes no lock sees the old file or the new, never a torn or
 # an empty one, as `cat tmp > QUEUE.tsv` showed it. s4e_probe_bus_one_queue.sh 10 proves it with twelve writers and an unlocked reader.
 s4e_queue_tmp() { mktemp "$PO/.QUEUE.tsv.XXXXXX"; }
-# EVERY BATON GOES TO A JUNIOR FIRST (Lon 2026-11-14 10:4x CST, in the coo's window, relayed by the coo, verbatim: "So the ratioreally should be more JUNIORS, that is a good thing.
-# Ultimately we would have all BATONS go to JUNIORS, and they would escalate only when needed versus us guessing."; built in by the cio, since a limit is built into what a seat
-# runs). mint takes --tier haiku only; queue --tier sonnet, opus or fable takes only a row whose baton carries an ESCALATION section, the record that a seat below tried it and
-# measured why it could not land. The road up is escalate, which carries the measurement. --to a named seat stays free: a boss's or a designer's own row is not a guess at a tier.
-s4e_junior_first_ok() {   # <tier> <topic or ''>: rc 0 the tier may be named for this row; rc 1 it may not (the caller refuses)
-    [ "$1" = haiku ] && return 0
-    [ -n "${2:-}" ] && grep -q '^## ESCALATION' "$PO/tasks/$2.task.md" 2>/dev/null && return 0
-    return 1; }
-s4e_junior_first_refuse() {   # <verb> <tier> <topic>
-    printf '⛔ REFUSED (rc 2): every baton goes to a junior first (Lon 2026-11-14). %s --tier %s is a guess at the tier: %s has never been escalated.\n   Send it to the juniors: --tier haiku. A higher tier sees a row only through escalate, which carries the measurement of the seat that tried it.\n' "$1" "$2" "$3" >&2; }
+# A ROW GOES WHERE ITS PROGRAM SAYS (Lon 2026-11-14, in the coo's window, relayed by the coo, verbatim, 10:4x CST: "So the ratioreally should be more JUNIORS, that is a good
+# thing. Ultimately we would have all BATONS go to JUNIORS, and they would escalate only when needed versus us guessing." and, on the first reading of it, 10:5x: "Hey stupid,
+# that goes AGAINST my RULING. All BAONS going to JUNIORS or SENIORS requires a program." / "Go fix ALL those"). Built in by the cio, since a limit is built into what a seat runs.
+# A PROGRAM ROW is one whose DONE-WHEN names ONE failing program: an entry:NAME partition, a SUITE_ROW_RED entry, or a program file the criterion runs.
+#   tier-haiku   takes a program row, and only a program row.
+#   tier-sonnet  takes a program row that was escalated (its baton carries an ESCALATION section): the climb is by escalate, never a guess.
+#   tier-opus and tier-fable take a row with NO program (a design, a census, a harness or tool row: an officer cuts it into program rows), or an escalated row.
+# --to a named seat stays free: a boss's or a designer's own row is not a guess at a tier.
+s4e_dw_names_program() {   # <DONE-WHEN text>: rc 0 when it names one failing program
+    printf '%s' "$1" | grep -qE 'entry:[^[:space:]]|SUITE_ROW_RED[^|]*[A-Za-z0-9_]|(^|[[:space:]/"'"'"'=])[A-Za-z0-9_][A-Za-z0-9_.-]*\.(sno|sc|icn|pl|pas|pp|raku|rakumod|reb|unicon)([[:space:]"'"'"';|&)]|$)' || return 1
+    # a container named whole is a suite, never one program: ALL.<ext> counts only beside an entry: or a red entry, which the first two arms already matched
+    printf '%s' "$1" | grep -qE 'entry:[^[:space:]]|SUITE_ROW_RED[^|]*[A-Za-z0-9_]' && return 0
+    printf '%s' "$1" | sed -E 's#(^|[[:space:]/"'"'"'=])(ALL|ONE-LINERS|MULTI-LINERS)\.[A-Za-z0-9]+##g' | grep -qE '(^|[[:space:]/"'"'"'=])[A-Za-z0-9_][A-Za-z0-9_.-]*\.(sno|sc|icn|pl|pas|pp|raku|rakumod|reb|unicon)([[:space:]"'"'"';|&)]|$)'; }
+s4e_tier_takes() {   # <tier> <DONE-WHEN text> <topic or ''>: rc 0 the tier takes this row; else rc 1 and one line of why on stdout
+    local _prog=0 _esc=0
+    s4e_dw_names_program "$2" && _prog=1
+    [ -n "${3:-}" ] && grep -q '^## ESCALATION' "$PO/tasks/$3.task.md" 2>/dev/null && _esc=1
+    case "$1" in
+      haiku) [ "$_prog" = 1 ] && return 0; echo "its DONE-WHEN names no failing program (an entry:NAME partition, a SUITE_ROW_RED entry, or a program file): a row with no program goes to --tier opus, where an officer cuts it into program rows"; return 1;;
+      sonnet) [ "$_prog" = 1 ] && [ "$_esc" = 1 ] && return 0
+              if [ "$_prog" = 1 ]; then echo "it has never been escalated: a program row starts at --tier haiku and climbs only through escalate, which carries the measurement"; else echo "its DONE-WHEN names no failing program: a row with no program goes to --tier opus, where an officer cuts it into program rows"; fi; return 1;;
+      *) [ "$_prog" = 0 ] && return 0; [ "$_esc" = 1 ] && return 0; echo "it is a program row that has never been escalated: it starts at --tier haiku and climbs only through escalate"; return 1;;
+    esac; }
+s4e_seat_takes() {   # <seat> <DONE-WHEN text>: rc 0 unless the seat is a junior or a senior and the row names no program (a named seat is no guess at a tier, so no escalation is asked)
+    local _t; _t="$(s4e_tier_of "$1" 2>/dev/null)" || return 0
+    case "$_t" in haiku|sonnet) s4e_dw_names_program "$2" || { echo "its DONE-WHEN names no failing program, and $1 is a ${_t} seat: a row with no program goes to --tier opus, where an officer cuts it into program rows"; return 1; };; esac
+    return 0; }
+s4e_tier_refuse() {   # <verb> <tier> <topic> <why>
+    printf '⛔ REFUSED (rc 2): %s --tier %s does not take %s: %s (Lon 2026-11-14: every baton to a junior or a senior carries its program).\n' "$1" "$2" "$3" "$4" >&2; }
 s4e_queue_swap() {   # <tmp>: rc 0 the copy replaced QUEUE.tsv; rc 1 it was not whole and is removed, the file untouched
     local _q="$PO/QUEUE.tsv"
     if [ -s "$1" ] && [ "$(wc -l < "$1")" -eq "$(wc -l < "$_q")" ]; then chmod 664 "$1" 2>/dev/null; mv -f "$1" "$_q"; else rm -f "$1"; return 1; fi; }
@@ -3539,7 +3558,8 @@ case "$cmd" in
          esac
          row="$(grep -P "^[0-9]+\t\Q$topic\E\t" "$PO/QUEUE.tsv" 2>/dev/null | head -1)"; [ -n "$row" ] || { echo "⛔ REFUSED: no QUEUE.tsv row named '$topic'" >&2; exit 2; }
          _qst="$(printf '%s' "$row" | cut -f4)"; case "$_qst" in FREE|QUEUED:*) ;; *) echo "⛔ REFUSED: $topic reads $_qst; queue takes a FREE or QUEUED row (park, done or unclaim it first)" >&2; exit 2;; esac
-         case "$q_tube" in tier-*) s4e_junior_first_ok "$q_tier" "$topic" || { s4e_junior_first_refuse queue "$q_tier" "$topic"; exit 2; };; esac
+         case "$q_tube" in tier-*) _tw="$(s4e_tier_takes "$q_tier" "$(s4e_donewhen_text "$PO/tasks/$topic.task.md")" "$topic")" || { s4e_tier_refuse queue "$q_tier" "$topic" "$_tw"; exit 2; };;
+                           seat-*) _tw="$(s4e_seat_takes "${q_tube#seat-}" "$(s4e_donewhen_text "$PO/tasks/$topic.task.md")")" || { s4e_tier_refuse queue "$q_tier (--to ${q_tube#seat-})" "$topic" "$_tw"; exit 2; };; esac
          s4e_skills_required_ok "$q_tier" "$(sed -n '1,/^## NEXT/p' "$PO/tasks/$topic.task.md")" || { echo "⛔ REFUSED: a $q_tier row carries a SKILLS: line in its baton head naming the skills its executor loads first; add it and queue again" >&2; exit 2; }
          _oldjob="$(s4e_baton_job_get "$topic" | cut -d' ' -f1)"; s4e_queue_retire "$_oldjob"
          s4e_queue_enqueue_row "$topic" "$q_tube" "$(qrank "$topic")" "$q_tier" || exit 1
@@ -4411,6 +4431,7 @@ case "$cmd" in
          # ⛔ LAW 6 IDENTITY IS ASSERTED, NEVER GLOBBED: refuse a seat with no mailbox, and NEVER create one on the fly --
          # auto-creation is exactly how phantom claude01/ was born, and it marooned two HQ messages where nobody looked.
          [ -d "$PO/$seat/inbox" ] || { printf '⛔ REFUSED: seat "%s" has NO postoffice mailbox (%s). assign never creates one (LAW 6).\n   mailboxes that exist: %s\n' "$seat" "$PO/$seat/inbox" "$(cd "$PO" && ls -d */inbox 2>/dev/null | sed 's|/inbox||' | tr '\n' ' ')" >&2; exit 2; }
+         [ -f "$PO/tasks/$topic.task.md" ] && { _tw="$(s4e_seat_takes "$seat" "$(s4e_donewhen_text "$PO/tasks/$topic.task.md")")" || { s4e_tier_refuse assign "$(s4e_tier_of "$seat" 2>/dev/null) (seat $seat)" "$topic" "$_tw"; exit 2; }; }
          # ⛔ AND REFUSE WORK THAT DOES NOT EXIST OR IS ALREADY LANDED -- v1 re-dispatched finished rows because nothing checked.
          row="$(grep -P "^[0-9]+\t\Q$topic\E\t" "$q" 2>/dev/null | head -1)"
          [ -n "$row" ] || { echo "⛔ REFUSED: no QUEUE.tsv row named '$topic'. You cannot assign work that has no row." >&2; exit 2; }
@@ -4537,7 +4558,6 @@ case "$cmd" in
          # it there, once, is cheaper than another blank cell nobody catches until a seat wanders into it.
          owner=""; q_tube=""; q_tier=""
          if [ "${1:-}" = "--tier" ]; then q_tier="$(s4e_tier_name "${2:?--tier needs fable|opus|sonnet|haiku}")" || { echo "⛔ REFUSED: --tier must be fable, opus, sonnet or haiku, not '$2'." >&2; exit 2; }
-           s4e_junior_first_ok "$q_tier" "" || { s4e_junior_first_refuse mint "$q_tier" "$topic"; exit 2; }
            owner="@$q_tier"; q_tube="tier-$q_tier"; shift 2
          elif [ "${1:-}" = "--to" ]; then q_tier="$(s4e_tier_of "${2:?--to needs a seat}")" || { echo "⛔ REFUSED: --to must name a seat of $S4E_TIERS, not '$2'." >&2; exit 2; }
            owner="$2"; q_tube="seat-$2"; shift 2
@@ -4636,6 +4656,8 @@ MINTED-WITHOUT-CRITERION: ${S4E_MINT_NO_CRITERION} (S4E_MINT_NO_CRITERION; R-138
          if [ -n "$_pw_mint" ] && s4e_premise_is_bare_inversion "$(printf '%s\n' "$dw_block" | sed -n '1s/^DONE-WHEN:[[:space:]]*//p')" "$_pw_mint"; then
              printf '⛔ REFUSED(2): the PREMISE-WHEN of %s is its DONE-WHEN behind a leading ! (%s). A bare inversion reads rc 0 when the criterion refuses rc 2, so a row whose probe cannot run reads open and is served. Nothing was written: no QUEUE.tsv row, no baton. The lawful shape: PREMISE-WHEN: %s\n' "$topic" "$_pw_mint" "$S4E_PREMISE_LAWFUL" >&2
              exit 2; fi
+         case "$q_tube" in tier-*) _tw="$(s4e_tier_takes "$q_tier" "$(printf '%s\n' "$dw_block" | sed '1s/^DONE-WHEN:[[:space:]]*//')" "")" || { s4e_tier_refuse mint "$q_tier" "$topic" "$_tw"; exit 2; };;
+                           seat-*) _tw="$(s4e_seat_takes "${q_tube#seat-}" "$(printf '%s\n' "$dw_block" | sed '1s/^DONE-WHEN:[[:space:]]*//')")" || { s4e_tier_refuse mint "$q_tier (--to ${q_tube#seat-})" "$topic" "$_tw"; exit 2; };; esac
          if [ -n "$q_tube" ] && ! s4e_skills_required_ok "$q_tier" "$goal"; then
            printf '⛔ REFUSED (rc=2): a %s row carries a "SKILLS: <skill> ..." line naming the skills its executor loads first (Lon 2026-11-05: "given the proper SKILL FIRST"); none in the GOAL text. Nothing was written.\n' "$q_tier" >&2; exit 2; fi
          [ -n "$owner" ] || owner="$(s4e_topic_lane "$topic")"

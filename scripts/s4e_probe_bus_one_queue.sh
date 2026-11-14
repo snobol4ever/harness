@@ -31,7 +31,7 @@ dead_pid() { sh -c 'echo $$'; }
 row() { printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$w/QUEUE.tsv"; }   # rank topic owner state
 baton() {   # <topic> [minted-ts] [premise] [done-when]
     printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: %s\nPREMISE-WHEN: %s\nLINKS: minted via `mint` by probe, %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [probe] minted\n' \
-        "$1" "${4:-false}" "${3:-true}" "${2:-2026-11-01T00:00:00Z}" > "$w/tasks/$1.task.md"; }
+        "$1" "${4:-test -f /nonexistent/entry:probe}" "${3:-true}" "${2:-2026-11-01T00:00:00Z}" > "$w/tasks/$1.task.md"; }   # the default criterion is red and names a program (entry:), as a tier-haiku row must (Lon 2026-11-14)
 st() { awk -F'\t' -v t="$1" '$2 == t { print $4; exit }' "$w/QUEUE.tsv"; }
 bus() { local s="$1"; shift; env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$s" S4E_HOME="$S4E" S4E_TIERS="$w/TIERS.tsv" S4E_SEAT_SCOPES="$w/scopes" \
     S4E_NO_BANNER=1 S4E_NO_PREMISE_CHECK="${NOPC:-1}" S4E_LAND_IGNORE_MAIL=probe timeout -k 5 120 bash "$HERE/s4e_msg.sh" "$@" 2>&1; }
@@ -87,7 +87,7 @@ case "$N" in
     [ "$(st "$a")" = "ASSIGNED:$J" ] || why="$why the assigned row reads $(st "$a");"
     printf '%s\n' "$out" | grep -q '^WAKE: SendMessage to PJ97 ' || why="$why assign printed no WAKE line for PJ97;"
     m=busq3-mint-$$
-    out="$(printf 'GOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && test -f /nonexistent-busq3\nPREMISE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && true\n## NEXT\nplant\n' | bus "$O" mint "$m" 2 --tier haiku --stdin)"; rc=$?
+    out="$(printf 'GOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && test -f "/nonexistent/entry:busq3"\nPREMISE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && true\n## NEXT\nplant\n' | bus "$O" mint "$m" 2 --tier haiku --stdin)"; rc=$?
     [ "$rc" = 0 ] || why="$why mint --tier exited $rc [$(printf '%s' "$out" | grep -m1 -E '⚠|⛔|REFUSE' | cut -c1-90)];"
     [ "$(st "$m")" = QUEUED:tier-haiku ] || why="$why the minted row reads $(st "$m"), not QUEUED:tier-haiku (today mint --tier leaves FREE beside its job);"
     printf '%s\n' "$out" | grep -q '^WAKE: SendMessage to PJ97 ' || why="$why mint printed no WAKE line for PJ97;"
@@ -234,26 +234,40 @@ wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operatin
     [ "$(st "$f")" = "FREE" ] || why="$why after its blocker closed the FREE row reads $(st "$f");"
     [ "$(st "$c")" = "QUEUED:tier-haiku" ] || why="$why after its blocker closed the tier's FREE chain step reads $(st "$c"), not QUEUED:tier-haiku;"
     verdict "recorded=${rec:-none} returned=$(st "$r") free_row=$(st "$f") chain_step=$(st "$c")";;
-12) # EVERY BATON GOES TO A JUNIOR FIRST, and the bus's own premise check takes no core token (the cio 2026-11-14; Lon: "Ultimately we would have all BATONS go to JUNIORS, and they
-    # would escalate only when needed versus us guessing."): mint --tier above haiku refuses and writes no row; queue --tier above haiku refuses a row never escalated and
-    # leaves it as it stood; a row whose baton carries an ESCALATION section is queued up; a premise reads S4E_CORE_HELD=1.
-    body='GOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && test -f /nonexistent-busq12\nPREMISE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && true\n## NEXT\nplant\n'
-    up="busq12-up-$$"; dn="busq12-down-$$"; fr="busq12-fresh-$$"; es="busq12-escalated-$$"; pr="busq12-premise-$$"
-    o1="$(printf "$body" | bus "$O" mint "$up" 2 --tier sonnet --stdin)"; r1=$?
-    [ "$r1" = 2 ] && printf '%s' "$o1" | grep -q 'every baton goes to a junior first' || why="$why mint --tier sonnet exited $r1 without the refusal [$(printf '%s' "$o1" | tail -1 | cut -c1-90)];"
-    [ -z "$(st "$up")" ] && [ ! -e "$w/tasks/$up.task.md" ] || why="$why the refused mint left a row or a baton;"
-    o2="$(printf "$body" | bus "$O" mint "$dn" 2 --tier haiku --stdin)"; r2=$?
-    [ "$r2" = 0 ] && [ "$(st "$dn")" = QUEUED:tier-haiku ] || why="$why mint --tier haiku exited $r2 and the row reads '$(st "$dn")';"
-    row 2 "$fr" "$O" FREE; baton "$fr"; row 2 "$es" "$O" FREE; baton "$es"; printf '## ESCALATION\n\n- probe: a junior tried it and measured\n' >> "$w/tasks/$es.task.md"
-    o3="$(bus "$O" queue "$fr" --tier opus)"; r3=$?
-    [ "$r3" = 2 ] && [ "$(st "$fr")" = FREE ] || why="$why queue --tier opus of a row never escalated exited $r3 and the row reads $(st "$fr");"
-    o4="$(bus "$O" queue "$es" --tier sonnet)"; r4=$?
-    [ "$r4" = 0 ] && [ "$(st "$es")" = QUEUED:tier-sonnet ] || why="$why queue --tier sonnet of an escalated row exited $r4 and the row reads $(st "$es") [$(printf '%s' "$o4" | grep -m1 -E 'REFUSED' | cut -c1-80)];"
-    o5="$(bus "$O" queue "$fr" --tier haiku)"; r5=$?
-    [ "$r5" = 0 ] && [ "$(st "$fr")" = QUEUED:tier-haiku ] || why="$why queue --tier haiku exited $r5 and the row reads $(st "$fr");"
-    row 2 "$pr" "$O" FREE; baton "$pr" 2026-11-01T00:00:00Z 'cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && test "${S4E_CORE_HELD:-0}" = 1'; live_claude "$O" >/dev/null
+12) # A ROW GOES WHERE ITS PROGRAM SAYS, and the bus's own premise check takes no core token (the cio 2026-11-14; Lon: "Ultimately we would have all BATONS go to JUNIORS, and they
+    # would escalate only when needed versus us guessing." / "All BAONS going to JUNIORS or SENIORS requires a program."): tier-haiku takes a program row only; tier-sonnet a
+    # program row that was escalated; tier-opus a row with no program, or an escalated one. A refused mint writes no row; a refused queue leaves the row as it stood.
+    PD='cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && test -f "/nonexistent/entry:busq12"'; ND='cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && test -f /nonexistent-busq12'
+    mk() { printf 'GOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: %s\nPREMISE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && true\n## NEXT\nplant\n' "$1"; }
+    m1="busq12-prog-haiku-$$"; m2="busq12-prog-sonnet-$$"; m3="busq12-noprog-haiku-$$"; m4="busq12-noprog-opus-$$"; m5="busq12-prog-opus-$$"
+    mk "$PD" | bus "$O" mint "$m1" 2 --tier haiku --stdin > "$w/m1.log" 2>&1; r1=$?
+    mk "$PD" | bus "$O" mint "$m2" 2 --tier sonnet --stdin > "$w/m2.log" 2>&1; r2=$?
+    mk "$ND" | bus "$O" mint "$m3" 2 --tier haiku --stdin > "$w/m3.log" 2>&1; r3=$?
+    mk "$ND" | bus "$O" mint "$m4" 2 --tier opus --stdin > "$w/m4.log" 2>&1; r4=$?
+    mk "$PD" | bus "$O" mint "$m5" 2 --tier opus --stdin > "$w/m5.log" 2>&1; r5=$?
+    [ "$r1" = 0 ] && [ "$(st "$m1")" = QUEUED:tier-haiku ] || why="$why mint of a program row to tier-haiku exited $r1, the row reads '$(st "$m1")' [$(grep -m1 REFUSED "$w/m1.log" | cut -c1-90)];"
+    [ "$r2" = 2 ] && [ -z "$(st "$m2")" ] && [ ! -e "$w/tasks/$m2.task.md" ] || why="$why mint of a never-escalated program row to tier-sonnet exited $r2 (row '$(st "$m2")');"
+    [ "$r3" = 2 ] && [ -z "$(st "$m3")" ] && [ ! -e "$w/tasks/$m3.task.md" ] || why="$why mint of a row with no program to tier-haiku exited $r3 (row '$(st "$m3")');"
+    [ "$r4" = 0 ] && [ "$(st "$m4")" = QUEUED:tier-opus ] || why="$why mint of a row with no program to tier-opus exited $r4, the row reads '$(st "$m4")' [$(grep -m1 REFUSED "$w/m4.log" | cut -c1-90)];"
+    [ "$r5" = 2 ] && [ -z "$(st "$m5")" ] || why="$why mint of a never-escalated program row to tier-opus exited $r5 (row '$(st "$m5")');"
+    q1="busq12-q-prog-$$"; q2="busq12-q-prog-esc-$$"; q3="busq12-q-noprog-$$"
+    row 2 "$q1" "$O" FREE; baton "$q1" 2026-11-01T00:00:00Z true "$PD"
+    row 2 "$q2" "$O" FREE; baton "$q2" 2026-11-01T00:00:00Z true "$PD"; printf '## ESCALATION\n\n- probe: a junior tried it and measured\n' >> "$w/tasks/$q2.task.md"
+    row 2 "$q3" "$O" FREE; baton "$q3" 2026-11-01T00:00:00Z true "$ND"
+    bus "$O" queue "$q1" --tier opus > "$w/q1.log" 2>&1; a1=$?; [ "$a1" = 2 ] && [ "$(st "$q1")" = FREE ] || why="$why queue of a never-escalated program row to tier-opus exited $a1, the row reads $(st "$q1");"
+    bus "$O" queue "$q1" --tier sonnet > "$w/q1.log" 2>&1; a2=$?; [ "$a2" = 2 ] && [ "$(st "$q1")" = FREE ] || why="$why queue of a never-escalated program row to tier-sonnet exited $a2, the row reads $(st "$q1");"
+    bus "$O" queue "$q1" --tier haiku > "$w/q1.log" 2>&1; a3=$?; [ "$a3" = 0 ] && [ "$(st "$q1")" = QUEUED:tier-haiku ] || why="$why queue of a program row to tier-haiku exited $a3, the row reads $(st "$q1");"
+    bus "$O" queue "$q2" --tier sonnet > "$w/q2.log" 2>&1; a4=$?; [ "$a4" = 0 ] && [ "$(st "$q2")" = QUEUED:tier-sonnet ] || why="$why queue of an escalated program row to tier-sonnet exited $a4, the row reads $(st "$q2");"
+    bus "$O" queue "$q3" --tier haiku > "$w/q3.log" 2>&1; a5=$?; [ "$a5" = 2 ] && [ "$(st "$q3")" = FREE ] || why="$why queue of a row with no program to tier-haiku exited $a5, the row reads $(st "$q3");"
+    bus "$O" queue "$q3" --tier sonnet > "$w/q3.log" 2>&1; a6=$?; [ "$a6" = 2 ] && [ "$(st "$q3")" = FREE ] || why="$why queue of a row with no program to tier-sonnet exited $a6, the row reads $(st "$q3");"
+    bus "$O" queue "$q3" --tier opus > "$w/q3.log" 2>&1; a7=$?; [ "$a7" = 0 ] && [ "$(st "$q3")" = QUEUED:tier-opus ] || why="$why queue of a row with no program to tier-opus exited $a7, the row reads $(st "$q3") [$(grep -m1 REFUSED "$w/q3.log" | cut -c1-90)];"
+    t1="busq12-to-junior-$$"; t2="busq12-to-officer-$$"; row 2 "$t1" "$O" FREE; baton "$t1" 2026-11-01T00:00:00Z true "$ND"; row 2 "$t2" "$O" FREE; baton "$t2" 2026-11-01T00:00:00Z true "$ND"
+    bus "$O" queue "$t1" --to "$J" > "$w/t1.log" 2>&1; b1=$?; [ "$b1" = 2 ] && [ "$(st "$t1")" = FREE ] || why="$why queue --to a junior of a row with no program exited $b1, the row reads $(st "$t1");"
+    bus "$O" assign "$J" "$t1" > "$w/t1.log" 2>&1; b2=$?; [ "$b2" = 2 ] && [ "$(st "$t1")" = FREE ] || why="$why assign to a junior of a row with no program exited $b2, the row reads $(st "$t1");"
+    bus "$O" queue "$t2" --to "$O" > "$w/t2.log" 2>&1; b3=$?; [ "$b3" = 0 ] && [ "$(st "$t2")" = "QUEUED:seat-$O" ] || why="$why queue --to an officer of a row with no program exited $b3, the row reads $(st "$t2") [$(grep -m1 REFUSED "$w/t2.log" | cut -c1-90)];"
+    pr="busq12-premise-$$"; row 2 "$pr" "$O" FREE; baton "$pr" 2026-11-01T00:00:00Z 'cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && test "${S4E_CORE_HELD:-0}" = 1'; live_claude "$O" >/dev/null
     o6="$(NOPC=0 bus "$O" claim "$pr")"
     [ "$(st "$pr")" = "CLAIMED:$O" ] || why="$why a premise that reads S4E_CORE_HELD=1 did not hold: the row reads $(st "$pr") [$(printf '%s' "$o6" | grep -m1 -E 'PREMISE|REFUSE' | cut -c1-90)];"
-    verdict "mint_up=refused mint_haiku=$(st "$dn") queue_up_fresh=$(st "$fr") queue_up_escalated=$(st "$es") premise_token=none";;
+    verdict "haiku=program-rows-only sonnet=escalated-program-rows opus=no-program-or-escalated mints=$r1,$r2,$r3,$r4,$r5 queues=$a1,$a2,$a3,$a4,$a5,$a6,$a7 to_seat=$b1,$b2,$b3 premise_token=none";;
 *) refuse "no step $N (1..12)";;
 esac
