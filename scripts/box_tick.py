@@ -699,6 +699,35 @@ def stock_juniors(n, active=None, run=None):
     return "feed=started" if r.returncode == 0 else "feed=rc%d" % r.returncode
 
 
+# THE SUITE TABLE FOLLOWS THE STORE ON THE CLOCK (the cio 2026-11-14, on the coo's ask; Lon, in the coo's window, relayed by the coo, verbatim: "get these process automated
+# into the shell scripts. quit depending on your feeble mind to do things."). util_suite_rows_follow.sh (the coo, harness 251bf0d35) writes every suite row the progress store
+# has moved past; MEASURED by the coo at its first pass: read=73 moved=4 wrote=1 (ipl 586 to 594) left=3, rows that had waited on the coo's hand for an hour. Every
+# FEED_EVERY-th tick, two ticks after the feeder's, it runs as the transient unit s4e-follow in the batch slice, never two at once, under the cycle's identity and root (the
+# grader's: a suite row is written only by the cycle and the coo, util_score_row.py), its lines appended to TICK_DIR/follow.log. The tick waits on nothing.
+FOLLOW_UNIT = "s4e-follow"
+FOLLOW_ROOT = os.environ.get("S4E_TICK_FOLLOW_ROOT", "/home/claude_grader")
+def follow_cmd():
+    return ["systemd-run", "--user", "--quiet", "--collect", "--unit=" + FOLLOW_UNIT, "--slice=s4e-batch.slice", "-p", "RuntimeMaxSec=1500",
+            "--setenv=S4E_HOME=" + FOLLOW_ROOT, "--setenv=S4E_POST=" + POST, "--setenv=S4E_SEAT=grader", "--setenv=S4E_CLASS=grader",
+            "-p", "StandardOutput=append:" + TICK_DIR + "/follow.log", "-p", "StandardError=append:" + TICK_DIR + "/follow.log",
+            "bash", os.path.join(str(HP.harness(ROOT)), "scripts/util_suite_rows_follow.sh")]
+
+
+def follow_rows(n, active=None, run=None):
+    """every FEED_EVERY-th tick, offset by two: the follower as the transient unit s4e-follow, never two; returns the TICK line's follow= text"""
+    if DRY or PROBING or (n - 2) % FEED_EVERY:
+        return "follow=skipped"
+    if active is None:
+        active = systemctl("is-active", FOLLOW_UNIT).strip() in ("active", "activating")
+    if active:
+        return "follow=busy"
+    try:
+        r = (run or (lambda c: subprocess.run(c, capture_output=True, text=True, timeout=30, stdin=subprocess.DEVNULL)))(follow_cmd())
+    except Exception as e:
+        return "follow=failed:%s" % type(e).__name__
+    return "follow=started" if r.returncode == 0 else "follow=rc%d" % r.returncode
+
+
 def probe_feed():
     """the stock wiring on planted state: a skipped tick runs nothing, an active unit is left, a due tick runs the one command; FEED_TICK_PROBE ... ok=1"""
     ran = []
@@ -710,8 +739,16 @@ def probe_feed():
     cmd = ran[0] if ran else []
     ok = (a == "feed=skipped" and b == "feed=busy" and c == "feed=started" and len(ran) == 1 and "--unit=" + FEED_UNIT in cmd and "--stock" in cmd and "--apply" in cmd
           and any(x.startswith("--setenv=S4E_FEED_WAKES=") and x.endswith("/wake.pending") for x in cmd)) if not DRY else False
-    print("FEED_TICK_PROBE skipped=%s busy=%s due=%s runs=%d ok=%d" % (a, b, c, len(ran), int(ok)))
-    return 0 if ok else 1
+    ran2 = []
+    run2 = lambda c: ran2.append(c) or R()
+    fa = follow_rows(FEED_EVERY, active=False, run=run2)
+    fb = follow_rows(FEED_EVERY + 2, active=True, run=run2)
+    fc = follow_rows(FEED_EVERY + 2, active=False, run=run2)
+    fcmd = ran2[0] if ran2 else []
+    fok = (fa == "follow=skipped" and fb == "follow=busy" and fc == "follow=started" and len(ran2) == 1 and "--unit=" + FOLLOW_UNIT in fcmd
+           and any(x.endswith("/util_suite_rows_follow.sh") for x in fcmd) and "--setenv=S4E_CLASS=grader" in fcmd) if not DRY else False
+    print("FEED_TICK_PROBE skipped=%s busy=%s due=%s runs=%d follow=%s,%s,%s follow_runs=%d ok=%d" % (a, b, c, len(ran), fa, fb, fc, len(ran2), int(ok and fok)))
+    return 0 if ok and fok else 1
 
 
 def log_tick(n, gq):
@@ -760,7 +797,7 @@ def tick():
     st = {"alarm": 0, "line": "stall=retired"}   # the grade tube's stall watch retired with the tube (CIO-82); the BOX.state and TICK line keys keep their shape
     view = regenerate_view()
     sweep = live_sweep(n)
-    feedst = stock_juniors(n)
+    feedst = stock_juniors(n) + " " + follow_rows(n)
     with open(TICK_DIR + "/decide.last", "w") as f:
         f.write(json.dumps(dict(tick=n, sensors=s, one_limit=one, grader=grader, expired=expired, fed=fed, view=view)) + "\n")
     # BOX.state: the controller is its writer (the coo 2026-11-07 15:29: the retired box_controller's file had no writer and its readers, the coo's OPS line, opswatch and

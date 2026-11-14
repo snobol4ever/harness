@@ -5520,7 +5520,7 @@ def cmd_run(args):
         _mem_scope().enter("board", sys.orig_argv)
     if not os.environ.get("S4E_MEM_OOM_AT_START", "").strip():
         os.environ["S4E_MEM_OOM_AT_START"] = str(_mem_scope().oom_kills() or 0)
-    _progress_pin(paths)
+    _progress_pin(paths, getattr(args, "sno", None))
     _pl = _one_runner_lang(args.sno, None)   # the board's language: --lang, else its corpus path, else this harness's default, snobol4
     paths["lang"] = getattr(args, "lang", None) or (_pl if _pl != "unknown" else "snobol4")
     check_scrip(paths)
@@ -6133,7 +6133,7 @@ def progress_suite_for(sno_path, paths):
     return None
 
 
-def _progress_pin(paths):
+def _progress_pin(paths, suite=None):
     """Read the tree hashes and the scrip+libscrip_rt.so digest BEFORE the first program is graded, so the rows this
     run appends name the ground it ACTUALLY graded. ⛔ util_progress_append.context() used to run rev-parse at APPEND
     time: seat10's board pulled twice and rebuilt once under a 79-minute run and its 3736 rows were stamped with the
@@ -6145,10 +6145,20 @@ def _progress_pin(paths):
         # under a port engine the graded binary is the driver its runner names (R-1822): its own checkout's git toplevel is the port's
         # (snobol4dotnet), so the rows' tree column names the port commit that graded them, never a SCRIP one
         _bins = engine_binaries(paths["engine"]) if paths["engine"] != "scrip" else []
+        # THE RUN'S SCOPE IN THE CORPUS: the suite's own folder and include/ (the cio 2026-11-14). The store reads a corpus move as a move of the ground only when the
+        # commits between touched one of them (util_progress_append.assert_ground_unmoved), so a landing in another suite no longer throws this run's readings away.
+        _scope = None
+        try:
+            if suite:
+                _c = os.path.realpath(str(paths["corpus"])); _rel = os.path.relpath(os.path.dirname(os.path.realpath(str(suite))), _c)
+                if not _rel.startswith(".."):
+                    _scope = [_rel, "include"]
+        except Exception:
+            _scope = None
         if _bins:
-            _pa.pin_context(_bins[0], os.path.dirname(_bins[0]))
+            _pa.pin_context(_bins[0], os.path.dirname(_bins[0]), scope=_scope)
         else:
-            _pa.pin_context(str(paths["scrip_bin"]), str(paths["rt_dir"]))
+            _pa.pin_context(str(paths["scrip_bin"]), str(paths["rt_dir"]), scope=_scope)
     except Exception as e:
         print(f"⛔ PROGRESS PIN FAILED ({e.__class__.__name__}: {e}) -- this run's rows cannot be proven to name the "
               f"tree they graded, so the append will not be guarded. Fix the pin; never silence it.", file=sys.stderr)

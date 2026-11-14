@@ -308,14 +308,26 @@ _PINNED = {}
 _PINNED_BIN = {}
 
 
-def pin_context(scrip_bin=None, rt_dir=None):
+def _corpus_scope_stood(old, new, scope):
+    """True when the corpus commits old and new hold the SAME files under every path of scope (git diff --quiet): the population a run read did not move, whatever else
+    landed in the corpus meanwhile. Only two clean commit ids are compared; a dirty tree, an unknown id or a git that cannot answer reads as moved."""
+    if not (scope and re.fullmatch(r"[0-9a-f]{40}", old or "") and re.fullmatch(r"[0-9a-f]{40}", new or "")):
+        return False
+    try:
+        r = subprocess.run(["git", "-C", str(harness_paths.corpus(S4E)), "diff", "--quiet", old, new, "--"] + list(scope), capture_output=True, timeout=60)
+    except Exception:
+        return False
+    return r.returncode == 0
+
+
+def pin_context(scrip_bin=None, rt_dir=None, scope=None):
     """Read the tree hashes and the binary digest BEFORE the first program is graded, and make context() serve
     THOSE. ⛔ Without this, _git_short runs at APPEND time -- after a mid-run pull -- so rows name a tree the
     programs were never graded against (seat10, 3736 rows stamped 3377cf43e, R-338). The binary it names is remembered, so the
     append-time check re-reads THAT binary and THAT tree (assert_ground_unmoved)."""
     g = _ground(scrip_bin, rt_dir)
     _PINNED_BIN.clear()
-    _PINNED_BIN.update({"scrip_bin": scrip_bin, "rt_dir": rt_dir})
+    _PINNED_BIN.update({"scrip_bin": scrip_bin, "rt_dir": rt_dir, "scope": list(scope) if scope else None})
     _PINNED.clear()
     _PINNED.update(g)
     _CTX.clear()
@@ -333,6 +345,12 @@ def assert_ground_unmoved():
         return
     now = _ground(_PINNED_BIN.get("scrip_bin"), _PINNED_BIN.get("rt_dir"))
     moved = [k for k, c in (("scrip", "scrip_id"), ("corpus", "corpus_id"), ("fp", "fp")) if _PINNED.get(c) != now.get(c)]
+    # THE CORPUS MOVED ONLY IF THE RUN'S OWN POPULATION MOVED (the cio 2026-11-14, on the coo's measurement: with 40 seats landing witnesses the keeper fast-forwards
+    # /home/corpus every few minutes, and a grade of one suite appended NOTHING, m3_pass=1 and all, because a commit to ANOTHER suite landed during it; juniors' reproduces,
+    # landers' gates and the coo's serves were thrown away). A run pinned with a scope (the suite's own folder and include/) stands when the two corpus commits hold the same
+    # files under that scope; its rows carry the pinned commit, whose files are the ones it graded. A commit that touched the scope is a move, as before.
+    if "corpus" in moved and _corpus_scope_stood(_PINNED.get("corpus_id"), now.get("corpus_id"), _PINNED_BIN.get("scope")):
+        moved.remove("corpus")
     if moved:
         what = ", ".join("%s %s -> %s" % (k, _PINNED.get(k), now.get(k)) for k in moved)
         raise ProgressGroundMoved(
@@ -855,10 +873,28 @@ def selftest():
             n5 = append_rows([dict(row)], db=db)
             a5 = n5 == 1 and written() == 1
             print("ARM 5 OK: clean trees wrote the row" if a5 else f"ARM 5 FAIL: clean trees wrote {written()} row(s)")
+            # ARMS 6 AND 7: a pin with a scope stands over a corpus commit outside the scope and refuses one inside it (the cio 2026-11-14)
+            for d_ in ("tests/x", "tests/y"):
+                os.makedirs(os.path.join(t, C_, d_))
+                with open(os.path.join(t, C_, d_, "f"), "w") as f: f.write("seed\n")
+            git(C_, "add", "tests"); git(C_, "commit", "-q", "-m", "seed the two suites")
+            pin_context(os.path.join(t, S_, "scrip"), os.path.join(t, S_, "out"), scope=["tests/x", "include"])
+            with open(os.path.join(t, C_, "tests/y/f"), "w") as f: f.write("another suite moved\n")
+            git(C_, "commit", "-q", "-am", "a landing in another suite")
+            a6 = True
+            try: assert_ground_unmoved()
+            except ProgressGroundMoved: a6 = False
+            print("ARM 6 OK: a corpus commit outside the run's scope is no move" if a6 else "ARM 6 FAIL: a corpus commit to another suite read as a move")
+            with open(os.path.join(t, C_, "tests/x/f"), "w") as f: f.write("this suite moved\n")
+            git(C_, "commit", "-q", "-am", "a landing in the run's own suite")
+            a7 = False
+            try: assert_ground_unmoved()
+            except ProgressGroundMoved: a7 = True
+            print("ARM 7 OK: a corpus commit inside the run's scope is refused" if a7 else "ARM 7 FAIL: a corpus commit inside the scope was not refused")
         finally:
             HARNESS_TREE = old_ht
-        ok = a1 and a2 and a3 and a4 and a5
-        print(f"PROGRESS_PIN_SELFTEST arms=5 {'OK' if ok else 'FAIL'}")
+        ok = a1 and a2 and a3 and a4 and a5 and a6 and a7
+        print(f"PROGRESS_PIN_SELFTEST arms=7 {'OK' if ok else 'FAIL'}")
         return 0 if ok else 1
     except (OSError, subprocess.CalledProcessError) as e:
         print(f"REFUSE(2): the scratch repositories could not be made: {e}"); return 2
