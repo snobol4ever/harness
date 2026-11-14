@@ -229,13 +229,17 @@ def _engine():
 
 def resolve_paths():
     here = Path(__file__).resolve().parent            # harness/scripts
-    scrip_root = (here.parent.parent / "SCRIP")                           # SCRIP/
-    s4e_home = Path(os.environ.get("S4E_HOME", str(scrip_root.parent)))
+    s4e_home = Path(os.environ.get("S4E_HOME", str(here.parent.parent)))
+    if str(here) not in sys.path:
+        sys.path.insert(0, str(here))
+    import harness_paths   # THE ABSOLUTE MODEL (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them): S4E_SCRIP and S4E_CORPUS, else the root as the clone and /home/corpus once each stands, else the siblings
+    scrip_root = harness_paths.scrip(s4e_home)
+    corpus = harness_paths.corpus(s4e_home)
     return {
         "scrip_bin": Path(os.environ.get("SCRIP", str(scrip_root / "scrip"))),
         "rt_dir": Path(os.environ.get("RT_DIR", str(scrip_root / "out"))),
-        "corpus": s4e_home / "corpus",
-        "inc": Path(os.environ.get("INC", str(s4e_home / "corpus" / "include"))),
+        "corpus": corpus,
+        "inc": Path(os.environ.get("INC", str(corpus / "include"))),
         "scrip_root": scrip_root,
         "engine": _engine(),
         "timeout": float(os.environ.get("TIMEOUT", "120")),
@@ -4221,7 +4225,7 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         if getattr(entry, "grader", None) == "swi-cases":
             # ⭐ CIO-21 (three files): a swi-cases entry runs under the one launch as THREE FILES, the plunit shim, the entry's origin file and a
             # wrapper beside them, exactly as the deleted runner ran it; the container's entry text is the test file alone, with no --source-path.
-            _shim = Path(paths["scrip_root"]).parent / "corpus" / "packages" / "prolog" / "swi_tests" / "plunit.pl"   # moved from corpus/tests/prolog (the coo's ruling 2026-11-12, row tests-folder-consolidation-cto)
+            _shim = Path(paths["corpus"]) / "packages" / "prolog" / "swi_tests" / "plunit.pl"   # moved from corpus/tests/prolog (the coo's ruling 2026-11-12, row tests-folder-consolidation-cto)
             _org = (Path(companion_dir) / entry.cwd / (Path(entry.name).name + ext)) if (companion_dir is not None and getattr(entry, "cwd", None)) else None
             if not _shim.is_file(): refuse(f"{entry.name}: swi-cases needs the plunit shim {_shim} (the root corpus has none)")
             if _org is None or not _org.is_file(): refuse(f"{entry.name}: swi-cases entry has no origin file {_org}")
