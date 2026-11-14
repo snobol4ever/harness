@@ -7,14 +7,15 @@
 # AUTHORS: Lon Jones Cherryholmes · Claude Sonnet 4.6  DATE: 2026-05-12
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-SD="${SD:-$S4E/SCRIP/bootstrap}"
+. "$HERE/lib_paths.sh"
+SCRIP="${SCRIP:-$S4E_SCRIP/scrip}"
+SD="${SD:-$S4E_SCRIP/bootstrap}"
 
 LANG="${1:-snobol4}"
 SRC="${2:-}"
 
 if [ ! -f "$SCRIP" ]; then echo "REFUSE scrip not found: $SCRIP" >&2; exit 2; fi
-if [ ! -d "$SD" ];   then echo "REFUSE SCRIP/bootstrap not found: $SD" >&2; exit 2; fi
+if [ ! -d "$SD" ];   then echo "REFUSE SCRIP/bootstrap not found: $SD" >&2; exit 2; fi  # one-disk: not a path
 
 # Shared runtime — beauty.sno INCLUDE order:
 #   global, case, assign, match, counter, stack, tree, ShiftReduce,
@@ -64,7 +65,7 @@ fi
 # runner passes the unit's declaration and types no size of its own), read by lib_declared_arena.sh -- an undeclared chain is refused.
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE cannot load lib_declared_arena.sh" >&2; exit 2; }
 SW="$(declared_switches_beside "$DRIVER")" || exit 2
-[ -n "$SW" ] || { echo "REFUSE $DRIVER declares no heap or stack (corpus/demos/snocone/parser_${LANG}/parser_${LANG}.heap, .stack)" >&2; exit 2; }
+[ -n "$SW" ] || { echo "REFUSE $DRIVER declares no heap or stack (corpus/demos/snocone/parser_${LANG}/parser_${LANG}.heap, .stack)" >&2; exit 2; }  # one-disk: not a path
 ONE="$(mktemp "${TMPDIR:-/tmp}/run_scrip_parser.${LANG}.XXXXXX.sc")"
 trap 'rm -f "$ONE"' EXIT
 cat "${RUNTIME[@]}" "${LOWER[@]}" "${HELPERS[@]}" "$DRIVER" > "$ONE"

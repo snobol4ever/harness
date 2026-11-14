@@ -150,7 +150,7 @@ case "$N" in
     [ "$rc" = 0 ] || why="$why recut of the superseded row exited $rc [$(printf '%s' "$out" | grep -m1 -E '⛔|REFUSE' | cut -c1-90)];"
     [ "$(st "$s")" = FREE ] || why="$why the superseded row reads $(st "$s") after recut, not FREE;"
     grep -q 'state SUPERSEDED:premise-red-at-dispatch-2026-11-08T10:00:00Z -> FREE' "$w/tasks/$s.task.md" || why="$why the RE-CUT LEDGER line does not record SUPERSEDED -> FREE;"
-    out="$(printf '%s\n' 'test -d "$S4E_HOME/harness"' | bus "$O" recut "$k" --stdin)"
+    out="$(printf '%s\n' 'test -d "$S4E_HOME/harness"' | bus "$O" recut "$k" --stdin)"  # one-disk: not a path
     [ "$(st "$k")" = PARKED-AWAITING:probe ] || why="$why a PARKED-AWAITING row moved to $(st "$k") on recut;"
     verdict "superseded=FREE parked=kept";;
 7)  # a premise read on a stale binary is a refusal, never red: LANDED by the cio (CIO-9, harness d825b3811), so this probe is the receipt of that cure

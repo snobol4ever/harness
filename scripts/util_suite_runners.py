@@ -17,6 +17,8 @@ import os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, "..", ".."))
+sys.path.insert(0, HERE)
+import harness_paths   # THE ABSOLUTE MODEL: corpus() is S4E_CORPUS, else /home/corpus once it is a checkout, else the root's sibling
 TABLE = os.path.join(HERE, "SUITE_RUNNERS.tsv")
 SUITES = os.environ.get("S4E_SUITES_TSV", "/home/resources/progress/SUITES.tsv")
 RUNGS = {"snobol4": "sno-rungs", "icon": "icn-rungs", "prolog": "pl-rungs", "pascal": "pas-rungs", "raku": "raku-rungs", "snocone": "snc-rungs", "rebus": "reb-rungs"}
@@ -59,9 +61,9 @@ def rot_rows(entries):
     for e in entries:
         p = e.split("|")
         if p[0] == "master" and len(p) == 2 and p[1] in RUNGS:
-            rows[RUNGS[p[1]]] = ("master", p[1], "corpus_suite_harness.py", "corpus/tests/" + p[1])
+            rows[RUNGS[p[1]]] = ("master", p[1], "corpus_suite_harness.py", "corpus/tests/" + p[1])  # one-disk: not a path
         elif p[0] == "pkg" and len(p) == 6:
-            rows[p[4]] = ("pkg", p[2], p[3], "corpus/packages/" + p[5])
+            rows[p[4]] = ("pkg", p[2], p[3], "corpus/packages/" + p[5])  # one-disk: not a path
         elif p[0] == "small" and len(p) == 4:
             rows[p[2]] = ("small", None, p[3], "-")
     return rows
@@ -74,8 +76,8 @@ def build(suites, rot):
         if key in rot:
             kind, rlang, runner, table = rot[key]
             row[key] = (kind, rlang or lang, runner, table)
-        elif os.path.isfile(os.path.join(ROOT, "corpus", "tests", lang or "-", "PARTITION.tsv")):
-            row[key] = ("master", lang, "corpus_suite_harness.py", "corpus/tests/" + lang)
+        elif os.path.isfile(os.path.join(str(harness_paths.corpus(ROOT)), "tests", lang or "-", "PARTITION.tsv")):
+            row[key] = ("master", lang, "corpus_suite_harness.py", "corpus/tests/" + lang)  # one-disk: not a path
         else:
             row[key] = ("none", lang, "-", "-")
     out = []
@@ -96,7 +98,7 @@ def write_from_loop(loop_path):
         "# SUITE_RUNNERS.tsv -- THE RUNNER TABLE (DESIGN-PLAN test-cycle step 9; skill suites-and-grading reference.md section 7). Written once by",
         "# util_suite_runners.py --write-from-loop from the coo loop's ROT array and SUITES.tsv; kept by util_suite_runners.py --check (the gate).",
         "# Columns: key kind lang runner table. kind master|pkg|small|port|none (see util_suite_runners.py). The grade worker reads it: a master or pkg row",
-        "# launches; a package cell runs S4E_CHUNK=<cell> bash harness/scripts/<runner> under util_run_slot.sh. SUITES.tsv itself gains no column.",
+        "# launches; a package cell runs S4E_CHUNK=<cell> bash harness/scripts/<runner> under util_run_slot.sh. SUITES.tsv itself gains no column.",  # one-disk: not a path
     ]
     with open(TABLE, "w", encoding="utf-8") as f:
         f.write("\n".join(head) + "\n")

@@ -154,7 +154,7 @@ main() {
     fi
     for t in "$TREE_A" "$TREE_B"; do
         if [ ! -x "$t/SCRIP/scrip" ] || [ ! -d "$t/corpus" ]; then
-            echo "ab: $t has no executable SCRIP/scrip and corpus/ (rc 2: cannot measure)" >&2
+            echo "ab: $t has no executable SCRIP/scrip and corpus/ (rc 2: cannot measure)" >&2  # one-disk: not a path
             exit 2
         fi
     done

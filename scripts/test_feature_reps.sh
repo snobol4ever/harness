@@ -10,7 +10,7 @@
 # usage: bash ../harness/scripts/test_feature_reps.sh <lang> <feature>... [--list] [--modes m3,m4]      REPS_CAP=N caps the handful.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"; cd "$ROOT" || exit 2
-C="${S4E_CORPUS:-${S4E_HOME:-$(cd "$ROOT/.." && pwd)}/corpus}"
+C="$S4E_CORPUS"
 [ $# -ge 2 ] || { echo "usage: test_feature_reps.sh <lang> <feature>... [--list] [--modes m3,m4]"; exit 2; }
 lang="$1"; shift; LIST=""; MODES="m3,m4"; FEATS=()
 while [ $# -gt 0 ]; do case "$1" in --list) LIST=1;; --modes) MODES="$2"; shift;; -*) echo "FEATURE_REPS REFUSE(2): unknown switch $1"; exit 2;; *) FEATS+=("$1");; esac; shift; done

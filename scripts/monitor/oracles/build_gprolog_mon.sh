@@ -6,7 +6,8 @@ S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"
 SRC="${GPROLOG_PRISTINE:-$S4A/gprolog-master}"
 DST="${1:-${GPROLOG_MON_ROOT:-$S4A/gprolog-mon}}"
 PRI="${GPROLOG_PRISTINE_BIN:-$DST/pristine/bin}"
-WIT="$HERE/../../SCRIP/witnesses/sync_step_prolog.pl"
+. "$HERE/../../scripts/lib_paths.sh"
+WIT="$S4E_SCRIP/witnesses/sync_step_prolog.pl"
 [ -d "$SRC/src/EnginePl" ] && [ -d "$SRC/src/Pl2Wam" ] || { echo "REFUSE(2): pristine GNU Prolog drop not found at $SRC (GPROLOG_PRISTINE names it)"; exit 2; }
 for t in rsync patch make gcc; do command -v "$t" >/dev/null || { echo "REFUSE(2): $t missing"; exit 2; }; done
 [ -f "$WIT" ] || { echo "REFUSE(2): witness missing at $WIT"; exit 2; }

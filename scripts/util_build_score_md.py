@@ -21,9 +21,11 @@
 import csv, os, re, subprocess, sys, time
 
 S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-SCRIP_ROOT = os.path.join(S4E, "SCRIP")
-CORPUS_ROOT = os.path.join(S4E, "corpus")
-GITHUB_ROOT = os.path.join(S4E, ".github")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths   # THE ABSOLUTE MODEL: scrip(), corpus() and github() are S4E_SCRIP, S4E_CORPUS and S4E_GITHUB, else the one-disk checkout, else the root's sibling
+SCRIP_ROOT = str(harness_paths.scrip(S4E))
+CORPUS_ROOT = str(harness_paths.corpus(S4E))
+GITHUB_ROOT = str(harness_paths.github(S4E))
 GATE_TIMEOUT = int(os.environ.get("SCORE_GATE_TIMEOUT", "570"))
 
 LANGS = ["snobol4", "icon", "prolog", "raku", "pascal", "snocone", "rebus"]
@@ -108,7 +110,7 @@ def run_rungs(lang):
         return "UNPROVEN(2): no rungs instrument wired in this generator for %r" % lang
     prog = os.path.join(CORPUS_ROOT, "tests", lang, "ALL" + ext); ref = os.path.join(CORPUS_ROOT, "tests", lang, "ALL.ref")
     if not (os.path.isfile(prog) and os.path.isfile(ref)):
-        return "RUNGS PENDING (no ALL%s + ALL.ref under corpus/tests/%s)" % (ext, lang)
+        return "RUNGS PENDING (no ALL%s + ALL.ref under corpus/tests/%s)" % (ext, lang)  # one-disk: not a path
     cmd = ["python3", os.path.join("scripts", "corpus_suite_harness.py"), "run", prog, ref, "--modes", "m3,m4"] + (["--lang", harness_lang] if harness_lang else [])
     try:
         p = subprocess.run(cmd, cwd=SCRIP_ROOT, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=RUNGS_TIMEOUT)

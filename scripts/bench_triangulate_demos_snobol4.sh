@@ -40,11 +40,11 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # USAGE: bash ../harness/scripts/bench_triangulate_demos_snobol4.sh [--check-shape] [--out FILE]
 #        BUDGET_MS=3000 REPS_A2=5 TOL_PCT=15 ENGINES="sbl m3 m4" DEMOS="claws5 json" ...
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
-"$HERE/util_require_fresh.sh" --gate bench_triangulate_demos_snobol4 "${SCRIP:-$HERE/../../SCRIP/scrip}" "$HERE/../../SCRIP/out/libscrip_rt.so" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
+"$HERE/util_require_fresh.sh" --gate bench_triangulate_demos_snobol4 "${SCRIP:-$S4E_SCRIP/scrip}" "$S4E_SCRIP/out/libscrip_rt.so" || exit 2
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP:-$ROOT/scrip}"
-D="${DEMO_DIR:-$S4E/corpus/demos/snobol4}"
+D="${DEMO_DIR:-$S4E_CORPUS/demos/snobol4}"
 SCALETSV="${DEMO_SCALE:-$D/DEMO-SCALE.tsv}"
 TOL="${TOL_PCT:-15}"
 BUDGET_MS="${BUDGET_MS:-3000}"
@@ -80,7 +80,7 @@ trap 'rm -rf "$W"' EXIT
 # directory holding a copy of corpus/include/*.inc -- run from anywhere else beauty's sixteen -INCLUDEs fail, SPITBOL prints a compile
 # listing at rc 1, and the grid graded SCRIP's right answer against it (R-1987, 2026-10-26: from that directory sbl and m3 both
 # print beauty.sno back byte for byte, its fixed point; the 2026-10-25 grid's "beauty wrong answer" was this)
-SBLCWD="$W/sbl-cwd"; mkdir -p "$SBLCWD" && cp -p "$S4E/corpus/include/"*.inc "$SBLCWD/" || { echo "⛔ REFUSED: cannot stage corpus/include for SPITBOL's -INCLUDE ($SBLCWD)." >&2; exit 2; }
+SBLCWD="$W/sbl-cwd"; mkdir -p "$SBLCWD" && cp -p "$S4E_CORPUS/include/"*.inc "$SBLCWD/" || { echo "⛔ REFUSED: cannot stage corpus/include for SPITBOL's -INCLUDE ($SBLCWD)." >&2; exit 2; }  # one-disk: not a path
 # ---- scaled input, built once and cached by (name,scale) -------------------------------------
 scaled_input() {                       # $1=name $2=srcfile $3=scale ; echoes path
   local f="$W/$1.x$3"
@@ -144,7 +144,7 @@ echo "   startup AND compile -- NOT a kernel slope. Never share a column with be
 echo "instrument: out/bench_rusage external cpu(user+sys); engines: $ENGINES; budget(a1)=${BUDGET_MS}ms; reps(a2)=$REPS_A2; tol=${TOL}%"
 RT_OPT_READ=$(readelf --debug-dump=info "$(dirname "$SCRIP")/out/libscrip_rt.so" 2>/dev/null | grep -m1 -o ' -O[0-3sg]' | tr -d ' '); RT_OPT_READ="${RT_OPT_READ:-?}"
 echo "oracle: $SBL $(sbl_lang_flags); RT_OPT=$RT_OPT_READ (read from libscrip_rt.so's DWARF); sizes: each program's own .oracle_args (sbl) and .heap/.stack (SCRIP -d/-s) over each engine's defaults -- CRITERION CHANGED 2026-10-03 (R-1485): earlier readings ran sbl -d512m -i64m -s256m, ulimit -s 262144 on all three engines and a 4 GB SCRIP window"
-echo "trees: SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)  corpus $(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)"
+echo "trees: SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)  corpus $(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null)"
 # ⛔ THE GRID OPENS HERE so no multiple below can print without the load it ran under, and so a cell that
 # REFUSES is counted in THIS shell (perf_row is called directly, never inside $( ) -- arm G of the dark-cell gate).
 perf_grid_begin "demo vs SPITBOL -- x on the FASTER axis (SPITBOL/ours) · TOTAL basis, whole-program run incl startup+compile · instrument out/bench_rusage cpu(user+sys) · RT_OPT=$RT_OPT_READ"

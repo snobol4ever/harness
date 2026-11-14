@@ -18,11 +18,12 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
+. "$HERE/lib_paths.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/icon/scanning_asm"
-BENCH="$ROOT/corpus/benchmarks/icon"
-STEPS="$HERE/../designs/scanning_asm/STEPS.tsv"   # moved from corpus/tests/icon/scanning_asm (the coo 2026-11-11, CIO-56: a language folder is its container and config alone)
+SC="$S4E_SCRIP"
+WD="$S4E_CORPUS/tests/icon/scanning_asm"
+BENCH="$S4E_CORPUS/benchmarks/icon"
+STEPS="$HERE/../designs/scanning_asm/STEPS.tsv"   # moved from corpus/tests/icon/scanning_asm (the coo 2026-11-11, CIO-56: a language folder is its container and config alone)  # one-disk: not a path
 OUT=""
 SUITES=/home/resources/progress/SUITES.tsv
 ICONT=/home/resources/icon-master/bin/icont
@@ -55,7 +56,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default icon_scanning_asm; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: icon-scanning-asm -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/scanning_asm/STEPS.tsv); a witness is the entry scanning_asm__<name> of the icon master (refs from Arizona Icon)"
+    echo "DESIGN-PLAN: icon-scanning-asm -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/scanning_asm/STEPS.tsv); a witness is the entry scanning_asm__<name> of the icon master (refs from Arizona Icon)"  # one-disk: not a path
     printf '%-4s %-48s %-11s %-11s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-48s %-11s %-11s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -83,7 +84,7 @@ m3p=0; m4p=0; n=0; reds=""
 [ "$wits" = "-" ] && wits=""
 for w in $wits; do
     witness "$w"; ref="$wref"
-    [ -f "$wsrc" ] && [ -f "$ref" ] || refuse "witness $w has no entry scanning_asm__$w in corpus/tests/icon and no .icn and .ref in $WD"
+    [ -f "$wsrc" ] && [ -f "$ref" ] || refuse "witness $w has no entry scanning_asm__$w in corpus/tests/icon and no .icn and .ref in $WD"  # one-disk: not a path
     n=$((n + 1))
     for m in m3 $([ "${S4E_MODE4:-0}" = 1 ] && echo m4); do
         d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$wsrc" "$d/$w.icn"

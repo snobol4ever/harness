@@ -55,15 +55,15 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_oracle_flags.sh"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/prolog/bench}"
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/prolog/bench}"
 # ⛔ THE TSV LIVES AT THE LANGUAGE ROOT, NOT IN bench/ -- test_gate_bench_rivals_coverage.sh globs
 # "$CORPUS/benchmarks/$lang"/triangulation-*.tsv (non-recursive; DIR is corpus/benchmarks/prolog, one
 # level above $B). A TSV written into $B would be invisible to the gate the moment a real AGREE row
 # needs it (found live, this row, before it could bite -- both dirs happened to be interchangeable for
 # an EXCLUDED-everything run, which is why it didn't fail loudly the first time).
-PDIR="${PROLOG_DIR:-$S4E/corpus/benchmarks/prolog}"
+PDIR="${PROLOG_DIR:-$S4E_CORPUS/benchmarks/prolog}"
 TOL="${TOL_PCT:-10}"
 . "$HERE/lib_perf_fmt.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_perf_fmt.sh -- the ONE authority for printing a multiple (s266)." >&2; exit 2; }
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1281)." >&2; exit 2; }

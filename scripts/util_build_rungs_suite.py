@@ -6,7 +6,7 @@ You could create as many as 30 attributes, for instance the one word primitive f
 combinations like PATTERN . tz . *function(tz) would be a named construct. And there should be one big *.sno and one big *.ref
 file. Not 10's of folders and 100's of files.")
 
-Builds corpus/tests/snobol4/{ALL.sno, ALL.ref, ALL.csv} from EVERY suite pair under corpus/tests/snobol4/.
+Builds corpus/tests/snobol4/{ALL.sno, ALL.ref, ALL.csv} from EVERY suite pair under corpus/tests/snobol4/.  # one-disk: not a path
  - Entry names are prefixed with their source family (probe_kw__kw_defaults) so the flat namespace cannot collide; a collision REFUSES.
  - ALL.csv is the attribute database: one row per entry, ~30 columns of 0/1 feature flags scanned from the entry's own source text
    (primitives by exact UPPER name; constructs by syntax shape; combination columns for named constructs like capture_plus_defer,
@@ -28,7 +28,7 @@ rebuild yields TWO entries where 1576 stood, because only 2 loose pairs remain a
 success. hq_P's phrasing is the one to remember: CLOBBER-BY-GUARD-REBUILD IS CLOBBER WEARING THE LAW AS COVER.
 
   HOW TO RE-VERIFY A GUARD CHANGE ON A CUT-OVER LANGUAGE:
-    1. cp -r corpus/tests/<lang> into a scratch tree; point S4E_HOME at its parent.
+    1. cp -r corpus/tests/<lang> into a scratch tree; point S4E_HOME at its parent.  # one-disk: not a path
     2. Rebuild THERE. The real rungs is never opened for writing.
     3. ⛔ DIFF WITH util_rungs_content_diff.py -- NOT with `diff`. See the correction below.
     4. Bring differences across SURGICALLY, by the language owner. Never adopt a scratch tree wholesale.
@@ -72,6 +72,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import corpus_suite_harness as h  # noqa: E402
+import harness_paths  # noqa: E402   THE ABSOLUTE MODEL: corpus() is S4E_CORPUS, else /home/corpus once it is a checkout, else the root's sibling
 # ⛔⭐ EVERY ENTRY CARRIES ITS SETTINGS (Lon 2026-09-25, in-chat, verbatim: "Ensure that all the test suite programs have the
 # stack size and heap size setting placed into the per-program attribute files."; R-1261): a row the builder writes with no heap_kb
 # or stack_kb of its own gets SPITBOL's defaults, read from the harness constants test_gate_suite_runners_honour_the_tests_declared_memory.sh
@@ -177,7 +178,7 @@ def _stdin_text_for_absorption(src_path):
     pair ships `ALL.in`, write_stdin_sidecar() emits it, read_suite/read_block_suite attach it BY NAME, and
     run_suite_entry() feeds it. MEASURED BEFORE THIS CHANGE, in the tree it governs: the icon rungs' ALL.in
     already carries 20 stdin-fed entries. The extension is not pending; it shipped, and the park outlived it.
-    ⭐ THIS IS THE MISSING-CAPABILITY CLASS corpus/tests/icon/KEEP.md NAMES IN ITS OWN WORDS -- *a rationale
+    ⭐ THIS IS THE MISSING-CAPABILITY CLASS corpus/tests/icon/KEEP.md NAMES IN ITS OWN WORDS -- *a rationale  # one-disk: not a path
     that names a MISSING CAPABILITY needs a RE-MEASURE date, not just an author date* -- and it is the second
     time this month the same shape turned seats away from work that was already possible.
     ⛔ IT DOES NOT WEAKEN THE GUARD THE PARK WAS PROTECTING, WHICH IS REAL AND STAYS: absorbing a stdin-reading
@@ -195,6 +196,11 @@ def _stdin_text_for_absorption(src_path):
 
 
 S4E = os.environ.get("S4E_HOME", os.path.dirname(os.path.dirname(HERE)))
+CORPUS = str(harness_paths.corpus(S4E))
+
+
+def corpus_of(root):
+    return CORPUS if os.path.abspath(root) == os.path.abspath(S4E) else os.path.join(root, "corpus")   # one-disk: not a path (a scratch root, the selftests', is its own corpus)
 PO = os.environ.get("S4E_POST", "/home/resources/postoffice")   # the fleet queue, for PENDING.md row-state
 
 # -- ⭐ LANGUAGE PARAMETERISATION (hq_B 2026-08-29, officer/Lon: rung suites for the other six languages).
@@ -836,10 +842,10 @@ def split_write(OUTDIR, EXT, lang, _CO, _CC, do_write):
 def _build_arg_parser():
     p = argparse.ArgumentParser(
         prog="util_build_rungs_suite.py",
-        description="Builds corpus/tests/<lang>/{ALL.<ext>, ALL.ref, ALL.csv} from every absorbable loose "
-                     "suite pair under corpus/tests/<lang>/, merging into any existing rungs (merge-never-"
+        description="Builds corpus/tests/<lang>/{ALL.<ext>, ALL.ref, ALL.csv} from every absorbable loose "  # one-disk: not a path
+                     "suite pair under corpus/tests/<lang>/, merging into any existing rungs (merge-never-"  # one-disk: not a path
                      "replace). Never absorbs a file a KEEP.md declares a permanent keeper, or that a "
-                     "PENDING.md defers to another row -- see corpus/tests/<lang>/**/{KEEP,PENDING}.md.")
+                     "PENDING.md defers to another row -- see corpus/tests/<lang>/**/{KEEP,PENDING}.md.")  # one-disk: not a path
     p.add_argument("--lang", default="snobol4", help="snobol4 (default) | icon | prolog | raku | snocone | rebus | pascal")
     p.add_argument("--absorb-only", default=None, metavar="F1,F2,...",
                     help="only ABSORB these families this run; every other absorbable family stays loose, "
@@ -868,7 +874,7 @@ def _build_arg_parser():
     # rungs ADDITIVELY -- unlike every mode above, the source file and any committed .s artifact are
     # NEVER deleted or moved. See additive_absorb()'s own docstring for the full contract.
     p.add_argument("--additive", action="store_true",
-                    help="absorb corpus/demos/<lang>/ and corpus/benchmarks/<lang>/ into ALL.<ext>/ALL.ref/ALL.csv "
+                    help="absorb corpus/demos/<lang>/ and corpus/benchmarks/<lang>/ into ALL.<ext>/ALL.ref/ALL.csv "  # one-disk: not a path
                          "ADDITIVELY (see --from): sources and any committed .s artifacts are never touched or "
                          "deleted, unlike --delete-absorbed which is the ordinary loose-pair path's own verb. Each "
                          "candidate runs a small, sub-second, deterministic recipe; a pre-existing loose .ref is "
@@ -881,18 +887,18 @@ def _build_arg_parser():
     p.add_argument("--from", dest="from_cats", default="demos,benchmarks", metavar="CAT1,CAT2,...",
                     help="with --additive: which source trees to absorb from this run -- demos, benchmarks, "
                          "programs, tests (comma list; default demos,benchmarks). `programs` is a real category "
-                         "name but corpus/programs/ absorbs NOTHING yet: Lon 2026-09-04 excluded it from the "
+                         "name but corpus/programs/ absorbs NOTHING yet: Lon 2026-09-04 excluded it from the "  # one-disk: not a path
                          "unabsorbed census (util_unabsorbed_census.py, verbatim 'Go ahead and exclude programs/* "
                          "folders'), and this builder honours the same ruling by recording it in ALL.omit "
                          "rather than walking it -- naming it here is truthful, not silently ignored. `tests` "
-                         "absorbs corpus/tests/<lang>/'s OWN loose-noref/fixture sources (the ones "
+                         "absorbs corpus/tests/<lang>/'s OWN loose-noref/fixture sources (the ones "  # one-disk: not a path
                          "util_unabsorbed_census.py calls 'fixture'/'loose no-ref') -- unlike demos/benchmarks "
                          "this walks the rungs' own home directory, so it skips anything discover_pairs "
                          "already owns (a .ref/.expected/.std sibling) or that lives under config/. "
                          "`scrip_test`/`snocone_ladder` are the same tests-shaped walk pointed at "
-                         "corpus/tests/scrip_test/ and corpus/tests/snocone/ladder/ respectively -- fixed "
-                         "trees outside corpus/tests/<lang>/ that still carry stray runnable sources by "
-                         "extension (e.g. corpus/tests/snocone/ladder/prog/*.sno).")
+                         "corpus/tests/scrip_test/ and corpus/tests/snocone/ladder/ respectively -- fixed "  # one-disk: not a path
+                         "trees outside corpus/tests/<lang>/ that still carry stray runnable sources by "  # one-disk: not a path
+                         "extension (e.g. corpus/tests/snocone/ladder/prog/*.sno).")  # one-disk: not a path
     p.add_argument("--recipe-timeout", type=float, default=3.0, metavar="SECONDS",
                     help="with --additive: per-entry wall-clock budget for the oracle/m3/m4 recipe run; a program "
                          "still running past this is 'over budget' and excluded, never absorbed on a truncated result")
@@ -1183,7 +1189,7 @@ def _additive_walk(src_dir, ext):
 
 
 def _additive_walk_tests(src_dir, ext, skip_loose_pairs=True):
-    """Like _additive_walk, but for the "tests" category ONLY: src_dir here IS corpus/tests/<lang>, the same
+    """Like _additive_walk, but for the "tests" category ONLY: src_dir here IS corpus/tests/<lang>, the same  # one-disk: not a path
     directory the base (non-additive) loose-pair path (discover_pairs) already owns, and the same directory
     ALL.<ext>/ALL.ref/ALL.csv themselves live in -- so this walk must not re-offer a file that path already
     handles or that IS the rungs. Skipped, in addition to _additive_walk's ALL*/dotfile exclusions: anything
@@ -1198,10 +1204,10 @@ def _additive_walk_tests(src_dir, ext, skip_loose_pairs=True):
 
     ⛔⭐⭐ skip_loose_pairs IS TRUE ONLY WHEN discover_pairs ACTUALLY OWNS THIS DIRECTORY (hq_S 2026-09-12, row
     raku-absorb-every-owed-source). The skip above is a DEFERRAL -- "not mine, the other path has it" -- and it
-    is correct for the `tests` category, whose src_dir IS corpus/tests/<lang>/, the one tree discover_pairs
+    is correct for the `tests` category, whose src_dir IS corpus/tests/<lang>/, the one tree discover_pairs  # one-disk: not a path
     walks. It was ALSO being applied to the _EXTRA_TEST_TREES categories (scrip_test, snocone_ladder), which
     discover_pairs NEVER walks -- so for those trees the deferral handed the file to nobody and every loose
-    pair under corpus/tests/scrip_test/<lang>/ stayed owed permanently, deferred to a path that does not go
+    pair under corpus/tests/scrip_test/<lang>/ stayed owed permanently, deferred to a path that does not go  # one-disk: not a path
     there. ⭐ THE TELL WAS IN THE CENSUS ALL ALONG AND READ AS A BACKLOG INSTEAD OF A BUG: raku 15, prolog 4,
     snobol4 and icon their own share -- a residue that no number of absorption runs could ever move, because
     running the tool again re-made the same deferral. A file skipped by both halves of a two-part walk is
@@ -1227,7 +1233,7 @@ def _additive_walk_tests(src_dir, ext, skip_loose_pairs=True):
 
 def _additive_stdin_for(stem):
     """Declared recipe stdin, nearest-convention-first: a demo's own pre-existing .input/.in (the real
-    convention already in use -- corpus/demos/snobol4/claws5/claws5.input) wins over a purpose-built
+    convention already in use -- corpus/demos/snobol4/claws5/claws5.input) wins over a purpose-built  # one-disk: not a path
     .recipe.in, so absorption re-uses whatever stdin a demo already runs with rather than inventing a
     second, competing convention. Returns None (i.e. /dev/null) if neither exists -- the correct default
     for the common no-input demo/benchmark, and safe: /dev/null is immediate EOF, never a hang."""
@@ -1548,8 +1554,8 @@ def _additive_write_excluded(outdir, absorbed, excluded_rows):
 
 
 def additive_absorb(lang, categories, root, timeout, write, cols):
-    """Run THE BUILDER EXTENSION for one language: absorb corpus/demos/<lang> and corpus/benchmarks/<lang>
-    additively into corpus/tests/<lang>/ALL.*. Returns (absorbed, excluded_rows, programs_named) where
+    """Run THE BUILDER EXTENSION for one language: absorb corpus/demos/<lang> and corpus/benchmarks/<lang>  # one-disk: not a path
+    additively into corpus/tests/<lang>/ALL.*. Returns (absorbed, excluded_rows, programs_named) where  # one-disk: not a path
     absorbed is [(name, cat, kind, body_lines, ref_or_ast_text), ...] and excluded_rows is [(name, cat,
     reason), ...]. write=False computes and reports without touching disk (used by nothing today, kept
     because every other mode in this file offers the same dry-run shape for free). A write verifies the
@@ -1565,7 +1571,7 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
         # the one NO_RIVAL_LANGS set in corpus_suite_harness rather than spelling the membership twice.
         h.refuse("--additive --lang %r: no rival: refs are derived, see KEEP.md -- %s has no independent rival "
                  "implementation, so ABSORPTION WITH AN ORACLE-CUT REF IS NOT PENDING, IT IS IMPOSSIBLE. Its "
-                 "kernels stay in corpus/benchmarks/%s (R-609: a kernel tree never enters a rung suite) carrying a "
+                 "kernels stay in corpus/benchmarks/%s (R-609: a kernel tree never enters a rung suite) carrying a "  # one-disk: not a path
                  "ref DERIVED from a rival program in another language under THAT language's oracle, the "
                  "derivation recorded in a .derivation beside the ref and re-performed on every run by "
                  "test_gate_rebus_derived_refs_match_their_rival_oracle.sh" % (lang, lang, lang))
@@ -1574,16 +1580,16 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
                  "then-widen means widening THAT function first, never skipping the oracle cut"
                  % (lang, ", ".join(sorted(ADDITIVE_ORACLE_LANGS))))
     EXT = LANG_EXT[lang]
-    OUTDIR = os.path.join(root, "corpus", "tests", lang)
+    OUTDIR = os.path.join(corpus_of(root), "tests", lang)
     global _ADDITIVE_MASKS
     _ADDITIVE_MASKS = h.read_mask_sidecar(os.path.join(OUTDIR, "ALL.ref"))
     os.makedirs(OUTDIR, exist_ok=True)
     _CO = h.LANG_CONFIGS[lang]["comment_open"] if lang in h.LANG_CONFIGS else "*"
     _CC = h.LANG_CONFIGS[lang].get("comment_close", "") if lang in h.LANG_CONFIGS else ""
     paths = h.resolve_paths()
-    if str(paths["corpus"]) != os.path.join(root, "corpus"):
+    if str(paths["corpus"]) != corpus_of(root):
         paths = dict(paths)
-        paths["corpus"] = __import__("pathlib").Path(root) / "corpus"   # scratch-tree override for --selftest
+        paths["corpus"] = __import__("pathlib").Path(corpus_of(root))   # scratch-tree override for --selftest
     h.check_scrip(paths)
     oracle_bin, flags = h.resolve_oracle_bin(paths, lang)
 
@@ -1591,7 +1597,7 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
     for cat in categories:
         if cat == "programs":
             programs_named = True
-            excluded_rows.append(("*", "programs", "corpus/programs/ out of scope this run (Lon 2026-09-04 "
+            excluded_rows.append(("*", "programs", "corpus/programs/ out of scope this run (Lon 2026-09-04 "  # one-disk: not a path
                                                      "excluded it from util_unabsorbed_census.py's OWED count; "
                                                      "this builder honours the same ruling) -- named, not walked"))
             continue
@@ -1608,11 +1614,11 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
         # fine with real output but live under corpus/tests/scrip_test/ and corpus/tests/snocone/ladder/,
         # which nothing else walks).
         if cat in _EXTRA_TEST_TREES:
-            src_dir = os.path.join(root, "corpus", "tests", _EXTRA_TEST_TREES[cat])
+            src_dir = os.path.join(corpus_of(root), "tests", _EXTRA_TEST_TREES[cat])
         elif cat == "tests":
-            src_dir = os.path.join(root, "corpus", "tests", lang)
+            src_dir = os.path.join(corpus_of(root), "tests", lang)
         else:
-            src_dir = os.path.join(root, "corpus", cat, lang)
+            src_dir = os.path.join(corpus_of(root), cat, lang)
         if cat in ("demos", "benchmarks"):
             walker = _additive_walk
         elif cat in _EXTRA_TEST_TREES:
@@ -1784,7 +1790,7 @@ def run_additive_selftest(timeout):
       - demo_hello        no stdin, deterministic OUTPUT -- the common case.
       - bench_count       reads one value via INPUT; a .input sidecar supplies a small deterministic count
                           -- proves the stdin-recipe path (and the pre-existing .input convention, reused
-                          from corpus/demos/snobol4/claws5/claws5.input rather than invented fresh).
+                          from corpus/demos/snobol4/claws5/claws5.input rather than invented fresh).  # one-disk: not a path
       - parser_fixture_x  a sibling .ast-only marker -- absorbed via --dump-ast, never executed -- proves
                           requirement 3 (an --dump-ast ref).
       - hangs_forever     an unconditional backward branch that computes but never prints -- proves the
@@ -1799,11 +1805,11 @@ def run_additive_selftest(timeout):
     import tempfile as _tempfile
     scratch = _tempfile.mkdtemp(prefix="additive_selftest_")
     try:
-        demos = os.path.join(scratch, "corpus", "demos", "snobol4")
-        benches = os.path.join(scratch, "corpus", "benchmarks", "snobol4")
+        demos = os.path.join(scratch, "corpus", "demos", "snobol4")  # one-disk: not a path
+        benches = os.path.join(scratch, "corpus", "benchmarks", "snobol4")  # one-disk: not a path
         os.makedirs(demos)
         os.makedirs(benches)
-        os.makedirs(os.path.join(scratch, "corpus", "tests", "snobol4"))
+        os.makedirs(os.path.join(scratch, "corpus", "tests", "snobol4"))  # one-disk: not a path
         with open(os.path.join(demos, "demo_hello.sno"), "w") as f:
             f.write("      OUTPUT = \"HELLO FROM DEMO\"\nEND\n")
         with open(os.path.join(benches, "bench_count.sno"), "w") as f:
@@ -1822,7 +1828,7 @@ def run_additive_selftest(timeout):
         absorbed_names = {a[0] for a in absorbed}
         excluded_names = {e[0] for e in excluded_rows}
 
-        rungs_csv = os.path.join(scratch, "corpus", "tests", "snobol4", "ALL.csv")
+        rungs_csv = os.path.join(scratch, "corpus", "tests", "snobol4", "ALL.csv")  # one-disk: not a path
         ast_row_ok = False
         if os.path.isfile(rungs_csv):
             for row in csv.DictReader(open(rungs_csv)):
@@ -1837,8 +1843,8 @@ def run_additive_selftest(timeout):
         # at absorption time, but with no stdin at all recorded anywhere a later reader could find. Close the
         # loop for real: read back what's actually on disk, the same way a grading run would, and require the
         # recipe to have survived.
-        rungs_sno = os.path.join(scratch, "corpus", "tests", "snobol4", "ALL.sno")
-        rungs_ref = os.path.join(scratch, "corpus", "tests", "snobol4", "ALL.ref")
+        rungs_sno = os.path.join(scratch, "corpus", "tests", "snobol4", "ALL.sno")  # one-disk: not a path
+        rungs_ref = os.path.join(scratch, "corpus", "tests", "snobol4", "ALL.ref")  # one-disk: not a path
         stdin_roundtrip_ok = False
         if os.path.isfile(rungs_sno) and os.path.isfile(rungs_ref) and os.path.isfile(rungs_csv):
             reread = h.read_suite(rungs_sno, rungs_ref, in_path=h.sidecar_in_path(rungs_sno))
@@ -1885,7 +1891,7 @@ def main():
     EXT = LANG_EXT[lang]
     _CO = h.LANG_CONFIGS[lang]["comment_open"] if lang in h.LANG_CONFIGS else "*"
     _CC = h.LANG_CONFIGS[lang].get("comment_close", "") if lang in h.LANG_CONFIGS else ""
-    ROOT = os.path.join(S4E, "corpus", "tests", lang)
+    ROOT = os.path.join(CORPUS, "tests", lang)
     OUTDIR = ROOT   # ⭐ ZERO SUBFOLDERS (Lon 2026-08-29): the rungs lives FLAT beside the residue -- ALL.* side by side, no rungs/ dir
     if not os.path.isdir(ROOT):
         sys.stderr.write("REFUSED: no corpus tree at %s -- nothing to build from.\n" % ROOT)
@@ -2093,7 +2099,7 @@ def main():
     _omit_p = os.path.join(OUTDIR, "ALL.omit")
     if not pairs and base_entries and os.path.isfile(_omit_p):
         _ok = [l.split("\t", 1)[0] for l in open(_omit_p, encoding="utf-8", errors="replace").read().split("\n") if l and not l.startswith("#") and "\t" in l]
-        _omit_stale = _no_source_keys(_ok, lang, os.path.join(S4E, "corpus"))
+        _omit_stale = _no_source_keys(_ok, lang, CORPUS)
     if not pairs and not _omit_stale and not _transpile_removed:
         if base_entries:
             print("RUNGS CURRENT: %d entries, zero new absorbable pairs under %s -- nothing to do." % (len(base_entries), ROOT), file=sys.stderr)
@@ -2113,9 +2119,9 @@ def main():
     # ⛔⭐ THE PAIR ROAD CUTS FROM THE ORACLE (CIO-58): resolved once here, used for every family that would enter the master below. The masks
     # are the master's own, as on the additive road; a scratch tree (S4E_HOME) is its own corpus.
     _paths = h.resolve_paths()
-    if str(_paths["corpus"]) != os.path.join(S4E, "corpus"):
+    if str(_paths["corpus"]) != CORPUS:
         _paths = dict(_paths)
-        _paths["corpus"] = pathlib.Path(S4E) / "corpus"
+        _paths["corpus"] = pathlib.Path(CORPUS)
     _ora_bin, _ora_flags = _builder_oracle(_paths, lang)
     _ADDITIVE_MASKS = h.read_mask_sidecar(os.path.join(OUTDIR, "ALL.ref"))
     _cut_refs = {}   # origin -> the ref the oracle gave this run, which the BYTE-EQUAL check below compares against
@@ -2608,7 +2614,7 @@ def main():
         for _k in _retracted:
             del _excl_existing[_k]
         # ⛔ CIO-58: a line this run did not emit and whose key names no file under the corpus is retracted, the count printed.
-        _gone = _no_source_keys([k for k in _excl_existing if k not in _live_excl], lang, os.path.join(S4E, "corpus"))
+        _gone = _no_source_keys([k for k in _excl_existing if k not in _live_excl], lang, CORPUS)
         for _k in _gone:
             del _excl_existing[_k]
         _print_no_source(_gone)
@@ -2697,7 +2703,7 @@ def main():
     try:
         sys.path.insert(0, HERE)
         import lib_companion_closure as _lcc
-        _clo = _lcc.closure(["\n".join(e.sno_lines) for e in all_entries], OUTDIR, os.path.join(S4E, "corpus"))
+        _clo = _lcc.closure(["\n".join(e.sno_lines) for e in all_entries], OUTDIR, CORPUS)
         for _n, _a, _b in _clo["ambiguous"]:
             print("⛔ COMPANION AMBIGUOUS, NOT COPIED: %s resolves to %s and %s (different content) -- declare a "
                   "narrower dir in %s" % (_n, _a, _b, _lcc.PATH_DECL_BASENAME), file=sys.stderr)

@@ -12,7 +12,7 @@ key="${1:-}"; tree="${2:-}"
 [ -n "$key" ] && [ -n "$tree" ] || { echo "REFUSE(rc=2): usage: util_suite_row_at_or_after.sh <suite-key> <tree>  (keys: column 1 of SUITES.tsv, e.g. sno-rungs icn-rungs arizona gimpel)"; exit 2; }
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
-. "$HERE/lib_suites_tsv.sh"; T="$(suites_tsv "$S4E")"; R="$S4E/SCRIP"
+. "$HERE/lib_paths.sh"; . "$HERE/lib_suites_tsv.sh"; T="$(suites_tsv "$S4E")"; R="$S4E_SCRIP"
 [ -f "$T" ] || { echo "REFUSE(rc=2): no suite table at $T"; exit 2; }
 git -C "$R" rev-parse --verify -q "$tree^{commit}" >/dev/null 2>&1 || { echo "REFUSE(rc=2): $tree is not a commit in $R (fetch origin, or name the landing's hash)"; exit 2; }
 row="$(awk -F'\t' -v k="$key" 'NR==2 {for (i=1;i<=NF;i++) c[$i]=i} NR>2 && $1==k {print $1 "\t" $(c["today_pass"]) "\t" $(c["today_total"]) "\t" $(c["today_date"]) "\t" $(c["tree"])}' "$T")"

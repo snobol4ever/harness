@@ -18,10 +18,11 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
+. "$HERE/lib_paths.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/pascal/front_end"
-STEPS="$HERE/../designs/front_end/STEPS.tsv"   # moved from corpus/tests/pascal/front_end (the coo 2026-11-10, CIO-24 c, CIO-56)
+SC="$S4E_SCRIP"
+WD="$S4E_CORPUS/tests/pascal/front_end"
+STEPS="$HERE/../designs/front_end/STEPS.tsv"   # moved from corpus/tests/pascal/front_end (the coo 2026-11-10, CIO-24 c, CIO-56)  # one-disk: not a path
 . "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
 # ⭐ A WITNESS IS THE ENTRY front_end__NAME OF THE PASCAL MASTER (CIO-24 c, the coo 2026-11-10; the last three, pf20d and pf20e by the dialect
 # column and pf30 with its unit as a file fence, the cfo 2026-11-12, so corpus/tests/pascal/front_end is gone and a witness with no entry REFUSES):
@@ -54,7 +55,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default pascal_front_end; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: pascal-front-end -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/front_end/STEPS.tsv); a witness is the entry front_end__<name> of the pascal master, or its loose pair (refs from fpc 3.2.2)"
+    echo "DESIGN-PLAN: pascal-front-end -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/front_end/STEPS.tsv); a witness is the entry front_end__<name> of the pascal master, or its loose pair (refs from fpc 3.2.2)"  # one-disk: not a path
     printf '%-4s %-50s %-10s %-14s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-50s %-10s %-14s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
@@ -62,7 +63,7 @@ if [ "$mode" = list ]; then
     exit 0
 fi
 if [ "$mode" = cut ]; then
-    refuse "--cut retired: a witness is an entry of corpus/tests/pascal, its ref cut from fpc twice by util_add_ladder_witness.py --lang pascal --family front_end (CIO-37)"
+    refuse "--cut retired: a witness is an entry of corpus/tests/pascal, its ref cut from fpc twice by util_add_ladder_witness.py --lang pascal --family front_end (CIO-37)"  # one-disk: not a path
 fi
 [ -n "$(col "$step" 1)" ] || refuse "no step $step in $STEPS (--list names them)"
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"

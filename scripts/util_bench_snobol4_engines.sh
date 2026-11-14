@@ -23,11 +23,12 @@
 # stays for continuity but is never again the cross-engine authority.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -uo pipefail
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/snobol4}"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/snobol4}"
 [ $# -ge 4 ] || { sed -n '2,12p' "$0"; exit 2; }
 L="$1"; T="$2"; DIV="$3"; shift 3
-WRAP="$S4E/SCRIP/out/bench_rusage"
-[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$S4E/harness/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
+WRAP="$S4E_SCRIP/out/bench_rusage"
+[ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
 NIVCSW_FLAG="${BENCH_NIVCSW_THRESHOLD:-20}"
 printf "%-22s %-7s %11s %9s %10s %9s %7s %5s\n" "BENCH($L)" STATUS "elapsed(ms)" "cpu(ms)" "self(ms)" "rss(kb)" "nivcsw" "flag"
 ok=0; fail=0; crash=0; loaded=0

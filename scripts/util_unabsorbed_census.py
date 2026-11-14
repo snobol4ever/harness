@@ -18,10 +18,12 @@
 # contract cannot be read. A DONE-WHEN reads its rc, never a pinned count.
 import argparse, collections, csv, os, re, sys
 S4E = os.environ.get('S4E_HOME') or os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-C = os.path.join(S4E, 'corpus')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths   # THE ABSOLUTE MODEL: corpus() is S4E_CORPUS, else /home/corpus once it is a checkout, else the root's sibling
+C = str(harness_paths.corpus(S4E))
 EXT = {'sno': 'snobol4', 'sc': 'snocone', 'icn': 'icon', 'pl': 'prolog', 'reb': 'rebus', 'raku': 'raku', 'pas': 'pascal'}
 ap = argparse.ArgumentParser(); ap.add_argument('--lang', default=''); ap.add_argument('--list', action='store_true'); A = ap.parse_args()
-if not os.path.isdir(os.path.join(C, 'tests')): print('REFUSE(2): no corpus/tests under %s' % C); sys.exit(2)
+if not os.path.isdir(os.path.join(C, 'tests')): print('REFUSE(2): no corpus/tests under %s' % C); sys.exit(2)  # one-disk: not a path
 excluded = collections.defaultdict(set)
 additive_excluded = collections.defaultdict(set)   # {lang: {(name, category), ...}} from "name[category]" keys
 for lang in set(EXT.values()):
@@ -103,7 +105,7 @@ _BC_CACHE = {}
 def _basename_counts(lang):
     """The uniqueness population for the builder's bare-basename fallback (a bare `foo.sc` in a KEEP.md
     declares a file only when that basename is unambiguous), computed over THIS census's candidates under
-    corpus/tests/<lang>/ -- every source by extension, not only the ones carrying a ref.
+    corpus/tests/<lang>/ -- every source by extension, not only the ones carrying a ref.  # one-disk: not a path
     ⛔ Deliberately WIDER than the builder's own population (loose candidates WITH a matching ref), and wider
     is the safe direction by construction: a larger count can only make the bare-basename fallback fire LESS
     often, so this census waves a file through on a bare name only where the builder would too, never in a
@@ -123,7 +125,7 @@ def _declared_keeper_of(abspath, lang):
     test_gate_suite_conversion_complete.sh's PBAD bucket says a deferral whose row has landed has outlived its
     reason and must CONVERT. An expired deferral that still read as a keeper here would make that prescribed
     fix invisible to the instrument that measures it.
-    ⛔ Scoped to corpus/tests/<lang>/ because that is the builder's own ROOT and therefore the only tree whose
+    ⛔ Scoped to corpus/tests/<lang>/ because that is the builder's own ROOT and therefore the only tree whose  # one-disk: not a path
     KEEP.md/PENDING.md either instrument reads. (benchmarks/rebus/KEEP.md exists and is read by NOTHING; it
     describes a kernel tree, which R-609 already places outside absorption debt, so nothing turns on it --
     but do not mistake its presence for a contract this census honours.)"""
@@ -169,7 +171,7 @@ def _own_ref(root, base, files):
     """The .ref/.expected/.std beside `base` that BELONGS TO IT, or None.
     ⛔⭐ A REF IS CLAIMED BY BASENAME, AND A BASENAME IS NOT UNIQUE ACROSS LANGUAGES IN ONE DIRECTORY
     (hq_B 2026-09-12, measured while landing R-609 and caught by reading the very first run of the new
-    counter, not by a test). corpus/demos/snobol4/claws5/ holds claws5.sno AND claws5.sc beside ONE
+    counter, not by a test). corpus/demos/snobol4/claws5/ holds claws5.sno AND claws5.sc beside ONE  # one-disk: not a path
     claws5.ref cut for the SNOBOL4 program -- so a plain "does base + '.ref' exist" credited the SNOCONE
     source with another language's pinned output and reported it as kernel-with-ref, OWING NOTHING. Same
     shape at porter/. That is a wrong exclusion, and a wrong exclusion costs more than a wrong cure: a red

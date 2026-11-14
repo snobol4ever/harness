@@ -9,7 +9,7 @@
 set -u
 L="${1:-}"; LIST="${2:-}"; CDUMP="${3:-}"; OUT="${4:-/tmp/s4e/${S4E_SEAT:-$USER}/scgrade}"
 SHOW="${SHOW:-6}"
-here=$(cd "$(dirname "$0")" && pwd); W=$(cd "$here/../../SCRIP" && pwd); CORPUS=$(cd "$W/../corpus" 2>/dev/null && pwd); B="$W/bootstrap"
+here=$(cd "$(dirname "$0")" && pwd); . "$here/lib_paths.sh"; W=$(cd "$S4E_SCRIP" && pwd); CORPUS=$(cd "$S4E_CORPUS" 2>/dev/null && pwd); B="$W/bootstrap"
 [ -n "$L" ] && [ -f "$B/parser_$L.sc" ] || { echo "PARSER-SC ⛔ REFUSE(2): no bootstrap/parser_$L.sc"; exit 2; }
 [ -f "$LIST" ] && [ -f "$CDUMP" ] || { echo "PARSER-SC ⛔ REFUSE(2): LIST and CDUMP must be files"; exit 2; }
 mkdir -p "$OUT" || exit 2

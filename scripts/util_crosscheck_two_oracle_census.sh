@@ -25,13 +25,14 @@
 # usage: bash ../harness/scripts/util_crosscheck_two_oracle_census.sh [out.tsv]
 set -u
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: sibling root
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
-. "$S4E/harness/scripts/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255)." >&2; exit 3; }
-CC="$S4E/corpus/crosscheck"; SBL="${SBL:-$S4A/x64/bin/sbl}"; CSN="${CSNOBOL4:-/usr/local/bin/snobol4}"; SCRIP="$S4E/SCRIP/scrip"
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY the .github, SCRIP and corpus clones); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+. "$S4E_HARNESS/scripts/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255)." >&2; exit 3; }
+CC="$S4E_CORPUS/crosscheck"; SBL="${SBL:-$S4A/x64/bin/sbl}"; CSN="${CSNOBOL4:-/usr/local/bin/snobol4}"; SCRIP="$S4E_SCRIP/scrip"
 out="${1:-/tmp/crosscheck_two_oracle_census.tsv}"
 for r in "$SBL" "$CSN" "$SCRIP"; do [ -x "$r" ] || { echo "MISSING: $r"; echo "⛔ without both oracles this prints a plausible all-FAIL table — refusing"; exit 2; }; done
 [ -d "$CC" ] || { echo "MISSING: $CC"; exit 2; }
-cd "$S4E/corpus" || exit 2
+cd "$S4E_CORPUS" || exit 2
 : > "$out"
 while IFS= read -r f; do
     rel="${f#./}"; ref="${f%.sno}.ref"; inp="${f%.sno}.input"; [ -f "$inp" ] || inp=/dev/null
@@ -44,7 +45,7 @@ while IFS= read -r f; do
     [ "$s" = "$c" ] && tag="${tag}=" || tag="${tag}x"
     printf '%s\t%s\n' "$tag" "${rel#crosscheck/}" >> "$out"
 done < <(find ./crosscheck -name '*.sno' | sort)
-echo "== census: $out  (SCRIP $(git -C "$S4E/SCRIP" rev-parse --short HEAD 2>/dev/null), corpus $(git rev-parse --short HEAD 2>/dev/null)) =="
+echo "== census: $out  (SCRIP $(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null), corpus $(git rev-parse --short HEAD 2>/dev/null)) =="
 cut -f1 "$out" | sort | uniq -c | sort -rn
 echo "== rows needing attention =="
 grep -P '^S\.\.x|^\.\.\.=|^\.\.\.x|^\.\.-x' "$out" || echo "  (none)"

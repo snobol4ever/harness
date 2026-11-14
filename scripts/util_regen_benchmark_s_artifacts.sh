@@ -15,9 +15,10 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"
-CORPUS="${CORPUS:-$S4E/corpus}"
+CORPUS="${CORPUS:-$S4E_CORPUS}"
 BENCH="${BENCH_DIR:-$CORPUS/benchmarks/snobol4}"
 
 if [ ! -x "$SCRIP" ];  then echo "SKIP  scrip not built: $SCRIP"; exit 0; fi

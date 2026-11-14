@@ -15,7 +15,8 @@ cp "$HERE/monitor_ipc_lib.c" "$HERE/monitor_ipc_lib.h" "$HERE/monitor_icx.c" "$D
 ( cd "$DST" && make Icont > "$DST/build_icon_mon.log" 2>&1 ) || { echo "REFUSE(2): make Icont failed -- $(grep -m2 -iE 'error' "$DST/build_icon_mon.log" | head -2)"; exit 2; }
 [ -x "$DST/bin/icont" ] && [ -x "$DST/bin/iconx" ] || { echo "REFUSE(2): build left no bin/icont or bin/iconx under $DST"; exit 2; }
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT
-cp "$HERE/../../SCRIP/witnesses/sync_step_icon.icn" "$W/w.icn"
+. "$HERE/../../scripts/lib_paths.sh"
+cp "$S4E_SCRIP/witnesses/sync_step_icon.icn" "$W/w.icn"
 ( cd "$W" && "$DST/bin/icont" -s -o f.bin w.icn && "$DST/bin/iconx" f.bin > f.out 2> f.err; echo $? > f.rc; "$SRC/bin/icont" -s -o p.bin w.icn && "$SRC/bin/iconx" p.bin > p.out 2> p.err; echo $? > p.rc )
 if cmp -s "$W/f.out" "$W/p.out" && cmp -s "$W/f.rc" "$W/p.rc"; then
     echo "build_icon_mon: OK -- $DST/bin/{icont,iconx} built; CONTROL: with the pipes unset the fork's output and rc equal the pristine oracle's on sync_step_icon.icn"

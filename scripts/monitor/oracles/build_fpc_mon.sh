@@ -26,7 +26,8 @@ SRC="${FPC_PRISTINE:-$S4A/FPCSource}"
 DST="${1:-${FPC_MON_ROOT:-$S4A/fpc-mon}}"
 PRI="${FPC_PRISTINE_BIN:-$DST/pristine/bin}"
 START="${FPC_START:-/usr/bin/fpc}"
-WIT="$HERE/../../SCRIP/witnesses/sync_step_pascal.pas"
+. "$HERE/../../scripts/lib_paths.sh"
+WIT="$S4E_SCRIP/witnesses/sync_step_pascal.pas"
 [ -f "$SRC/compiler/pp.pas" ] && [ -f "$SRC/rtl/inc/system.inc" ] || { echo "REFUSE(2): pristine Free Pascal drop not found at $SRC (FPC_PRISTINE names it)"; exit 2; }
 [ -x "$START" ] || { echo "REFUSE(2): no starting compiler at $START (FPC_START names it; the recorded oracle /usr/bin/fpc 3.2.2 is the default)"; exit 2; }
 for t in rsync patch make objdump; do command -v "$t" >/dev/null || { echo "REFUSE(2): $t missing"; exit 2; }; done

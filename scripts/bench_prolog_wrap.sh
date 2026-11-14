@@ -89,8 +89,9 @@ ROOT="$(cd "$SELF/../.." && pwd)"
 # lives in the checkout -- `$ROOT/scrip` does not exist, and a probe that cannot find the binary answers
 # "no clock" in exactly the same voice as a binary that has none.  (Measured here: the first cut of the
 # probe used $ROOT and reported no-clock on a binary that had just answered the witness by hand.)
-STREE="$(cd "$SELF/../../SCRIP" && pwd)"
-PRO="$ROOT/corpus/benchmarks/prolog"
+. "$SELF/lib_paths.sh"
+STREE="$(cd "$S4E_SCRIP" && pwd)"
+PRO="$S4E_CORPUS/benchmarks/prolog"
 MODE=single; N=""; BUD=1000; OUT=""; ENGINE=scrip; KPL=""
 for a in "$@"; do
   case "$a" in

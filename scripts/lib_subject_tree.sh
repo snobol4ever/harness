@@ -41,7 +41,7 @@
 # census tool can ask the question about a script it is not running.
 s4e_subject_repo() {
     local _src="${1:-${BASH_SOURCE[1]}}"
-    ( cd "$(dirname "$_src")/../../SCRIP" 2>/dev/null && pwd )
+    ( . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh" && cd "$S4E_SCRIP" 2>/dev/null && pwd )   # THE ABSOLUTE MODEL: the subject SCRIP is S4E_SCRIP (env, else the root itself when it is a SCRIP clone, else the sibling)
 }
 
 # s4e_subject_root [<repo>] -- the sibling root ABOVE a repo.  Use this, and only this, to reach corpus/.github

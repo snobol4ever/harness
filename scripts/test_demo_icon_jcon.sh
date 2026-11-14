@@ -30,11 +30,11 @@
 #       2 = REFUSED/UNPROVEN: could not build or could not measure.
 # USAGE: bash ../harness/scripts/test_demo_icon_jcon.sh [name ...]      (default: every entry in the demo dir)
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"
-D="${JCON_DEMO_DIR:-$S4E/corpus/demos/icon/jcon}"
-PKG="${JCON_PKG_DIR:-$S4E/corpus/packages/icon/jcon-compiler}"
+D="${JCON_DEMO_DIR:-$S4E_CORPUS/demos/icon/jcon}"
+PKG="${JCON_PKG_DIR:-$S4E_CORPUS/packages/icon/jcon-compiler}"
 TMO="${JCON_TIMEOUT:-600}"
 
 refuse() { echo "⛔ JCON DEMO GATE UNPROVEN(2): $*"; echo "    This is NOT a pass -- the gate could not measure, so it certifies nothing."; exit 2; }

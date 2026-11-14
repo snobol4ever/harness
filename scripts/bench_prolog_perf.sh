@@ -54,10 +54,10 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # Only programs whose 4-way CORRECTNESS is consensus-green are timed; a FAIL in any engine prints SKIP
 # for that row (timing wrong answers is meaningless).
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/prolog/bench}"; T="${TIMEOUT:-60}"; N="${RUNS:-3}"
-PRO="${PROLOG_DIR:-$S4E/corpus/benchmarks/prolog}"
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/prolog/bench}"; T="${TIMEOUT:-60}"; N="${RUNS:-3}"
+PRO="${PROLOG_DIR:-$S4E_CORPUS/benchmarks/prolog}"
 GEN="${GEN:-$HERE/bench_prolog_wrap.sh}"
 FLOOR_TICKS="${FLOOR_TICKS:-10}"
 # THE SCRIP ARMS RUN AT EACH KERNEL'S DECLARED HEAP AND STACK (lib_declared_arena.sh's -d<kb>k -s<kb>k, after --run and at the head of

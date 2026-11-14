@@ -28,7 +28,7 @@ export SCRIP_DIAG=0
 # PIS_FULL=1 adds the whole-process Ir of both with the dump (C with PARSER_TREE_HASH=1, SC from the unmodified chain) as a second block.
 # EXIT: 0 measured; 1 a line read NONLINEAR; 2 could not measure (named). RT_OPT is read back from the build, never assumed; no -O2 (RULES.md).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; W="$HERE/../../SCRIP"; CORPUS="${CORPUS:-$HERE/../../corpus}"; G=bench_parser_ir_slope
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; W="$S4E_SCRIP"; CORPUS="${CORPUS:-$S4E_CORPUS}"; G=bench_parser_ir_slope
 refuse() { echo "⛔ PARSER Ir SLOPE REFUSED (rc=2) [$G]: $*" >&2; exit 2; }
 L="${1:-snocone}"; BYTES="${PIS_BYTES:-60000}"; TOL="${PIS_LIN_TOL:-10}"; TMO="${PIS_IR_TIMEOUT:-1800}"; FULL="${PIS_FULL:-0}"; TMO1="${PIS_ONE_TIMEOUT:-20}"; TREES="${PIS_TREES:-1}"
 SNO_LIB_BASE="${SNO_LIB:-$CORPUS/include:$CORPUS/library}"

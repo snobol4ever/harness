@@ -19,10 +19,11 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
+. "$HERE/lib_paths.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
-SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/packages/prolog/xsb_witnesses/xsb_wfs"
-PKG="$ROOT/corpus/packages/prolog/xsb_tests"
+SC="$S4E_SCRIP"
+WD="$S4E_CORPUS/packages/prolog/xsb_witnesses/xsb_wfs"
+PKG="$S4E_CORPUS/packages/prolog/xsb_tests"
 STEPS="$HERE/../designs/xsb_tabling_wfs/STEPS.tsv"   # moved from the witnesses folder (CIO-56; the cfo 2026-11-12, row tests-consolidation-finish-cfo)
 OUT=""
 RESULTS=/home/resources/progress/results.tsv
@@ -43,7 +44,7 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default xsb_wfs; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: xsb-tabling-wfs -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/packages/prolog/xsb_witnesses/xsb_wfs (XSB syntax, refs from XSB 5.0.0)"
+    echo "DESIGN-PLAN: xsb-tabling-wfs -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/packages/prolog/xsb_witnesses/xsb_wfs (XSB syntax, refs from XSB 5.0.0)"  # one-disk: not a path
     printf '%-4s %-36s %-12s %-22s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-36s %-12s %-22s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"

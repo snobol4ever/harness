@@ -13,9 +13,9 @@
 # scrip --compile is deterministic, so an unchanged compiler yields no change.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/prolog/bench}"
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/prolog/bench}"
 RUNG="${1:-prolog-bench-regen}"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE scrip not built"; exit 2; }
 [ -d "$B" ] || { echo "⛔ REFUSED-TO-GRADE bench corpus missing: $B"; exit 2; }
@@ -72,7 +72,7 @@ fi
 # committed none, so any seat that ran it and then filtered `git status` to its own lane left them unstaged — a silent
 # contributor to the five-week drift on this very tree. Pathspec is DERIVED from $B, not hardcoded, so a BENCH_DIR
 # override outside the corpus repo declines to commit instead of committing the wrong tree.
-CORPUS="${CORPUS:-$S4E/corpus}"
+CORPUS="${CORPUS:-$S4E_CORPUS}"
 REL="${B#"$CORPUS"/}"
 if [ "$REL" = "$B" ] || ! git -C "$CORPUS" rev-parse --git-dir >/dev/null 2>&1; then
   echo "  SKIP commit — $B is not inside the corpus git repo ($CORPUS); regenerated .s left in the worktree."

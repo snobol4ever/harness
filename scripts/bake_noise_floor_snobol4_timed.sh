@@ -33,15 +33,15 @@
 # min_detectable_pct = 3*cv, the difference below which a single-run delta on
 # that row must NOT be called real.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
+S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY the .github, SCRIP and corpus clones); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200). A private fallback would time a DIFFERENT LANGUAGE (s189: -bf is the only correct arm). Fix the checkout; do not work around this." >&2; exit 3; }
 
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
 SBL="${SBL:-$(sbl_clean_bin)}"   # BENCHMARK oracle (s255) -- x64/bin/sbl carries a monitor-IPC bridge, ~2.2-3.5x slower
 case " ${ENGINES:-sbl m3 m4} " in *" sbl "*) [ -x "$SBL" ] || { echo "⛔ ORACLE ABSENT: $SBL — the sbl rows of the noise floor would be fiction, not a benign gap. Build /home/resources/spitbol-bench-oracle (see RULES.md Oracles) -- seats do not clone x64 (s255). Or run with ENGINES=\"m3 m4\" to skip sbl entirely." >&2; exit 3; };; esac
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/snobol4}"  # BM-ONE (s153): promoted, see test_bench_snobol4_timed.sh
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/snobol4}"  # BM-ONE (s153): promoted, see test_bench_snobol4_timed.sh
 REPS="${REPS:-5}"; T="${TIMEOUT:-60}"; ENGINES="${ENGINES:-sbl m3 m4}"
 APPEND="${APPEND:-0}"; NOHUGE="${NOHUGE:-1}"
 # ⛔ SUPERSEDED 2026-09-28 (Lon, R-1353, RULES.md hard-cap clause 8 (g)(4)): no typed SCRIP_HEAP_MB window. Each unit runs at the
