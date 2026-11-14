@@ -117,7 +117,7 @@ hook() {   # <name> <event> <stdin json> <check>: runs the hook command; <check>
         step "$name" "$RC" "$SECS" "$W/$name.log" "refused the unloaded-skill edit, rc 2"; return; fi
     [ "$RC" = 0 ] && { grep -aqE "$want" "$W/$name.log" && ! grep -aqE 'No such file|NOT FOUND' "$W/$name.log"; } || { [ "$RC" = 0 ] && RC=1; grep -aqE "$want" "$W/$name.log" || echo "the hook's output does not match: $want" >> "$W/$name.log"; }
     step "$name" "$RC" "$SECS" "$W/$name.log" "rc 0, $(grep -aoE "$want" "$W/$name.log" | head -1 | grep -oE '\[[a-z_0-9]+\]|SUCCESS|IN-PROGRESS|NOTHING|FAILURE|STOP|DRAIN' | head -1)"; }
-hook hook:inbox UserPromptSubmit '{"hook_event_name":"UserPromptSubmit","prompt":"sitting check"}' "POSTOFFICE \\[$SEAT\\]"
+hook hook:inbox UserPromptSubmit '{"hook_event_name":"UserPromptSubmit","prompt":"sitting check"}' "POSTOFFICE \\[$SEAT\\]|\\[$SEAT\\] [0-9]+ read, not cleared"   # the inbox hook's three forms: unread, empty (both POSTOFFICE [seat]), read and not cleared ([seat] N read, not cleared)
 hook hook:banner Stop '{"hook_event_name":"Stop","stop_hook_active":false}' 'systemMessage.*(SUCCESS|IN-PROGRESS|NOTHING|FAILURE|STOP|DRAIN)'
 hook hook:gate PreToolUse "{\"hook_event_name\":\"PreToolUse\",\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"$P_SCRIP/src/lower/lower_icon.c\",\"old_string\":\"a\",\"new_string\":\"b\"},\"transcript_path\":\"$W/transcript.jsonl\",\"cwd\":\"$ROOT\"}" .
 # 6. the landing from the root, on its own scratch
