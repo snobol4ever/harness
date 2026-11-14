@@ -69,6 +69,7 @@ ORACLE = {
     "pascal": [str(HERE / "fpc_oracle_run.sh"), "-Miso"],
     "rebus": [str(HERE / "snocone_oracle_run.sh")],  # the coo 2026-11-10 (CIO-24 b): scrip --transpile carries the statements to SNOBOL4 text in a private tmpdir and sbl -bf RUNS it; the answer is SPITBOL's (the harness's own rebus road, corpus_suite_harness.py cmd_expect)
     "gprolog": [str(HERE / "gprolog_oracle_run.sh")],  # the cto 2026-11-12 (row tests-folder-consolidation-cto): a GNU-dialect Prolog witness (--lang prolog --dialect gnu) is cut by GNU Prolog 1.6.0 through gprolog_bin(), its stdout filtered by gprolog_output_filter
+    "xsb": [str(HERE / "xsb_oracle_run.sh")],  # senior_05 2026-11-14: an XSB-dialect Prolog witness (--lang prolog --dialect xsb) is cut by XSB 5.0.0 through xsb_bin()
     "unicon": [str(HERE / "unicon_oracle_run.sh")],  # the coo 2026-11-04 (Lon: "do the RUNGS for Unicon"): a Unicon rung's ref is cut by the Unicon translator through unicon_bin() (icon skill R2); selected by --oracle unicon on an icon witness  # fpc 3.2.2 -Miso through the one-step wrapper corpus_suite_harness.py's resolver names (compile to a tmpdir, run); a witness needing an FPC dialect says {$mode objfpc} in its own source, which fpc honours over -Miso as scrip does
 }
 # ⛔⭐ `-bf` IS NOT OPTIONAL AND NOT A PER-PROGRAM WORKAROUND (RULES sec Oracles, s189): SPITBOL case-folds
@@ -124,7 +125,7 @@ FIXED = ["rank", "entry", "origin", "family", "kind", "xfail", "n_lines"]
 # rows (the convention every ladder row carries, 131072 / 4096 / --stlimit / empty run_args on the SNOBOL4-family rung suites),
 # an explicit --heap-kb/--stack-kb/--compile-args/--run-args overrides, and a column the ladder rows disagree on REFUSES.
 ATTR_COLUMNS = ["heap_kb", "stack_kb", "compile_args", "run_args"]
-PROLOG_DIALECT_ORACLE = {"gnu": "gprolog"}   # the dialect cell -> the oracle that cuts its answer (the cto 2026-11-12; skill prolog section 1: GNU answers as gprolog 1.6.0; swi is the master's default and xsb's gentest protocol is the XSB package's)
+PROLOG_DIALECT_ORACLE = {"gnu": "gprolog", "xsb": "xsb"}   # the dialect cell -> the oracle that cuts its answer (the cto 2026-11-12; skill prolog section 1: GNU answers as gprolog 1.6.0; swi is the master's default and xsb's gentest protocol is the XSB package's)
 PASCAL_DIALECT_MODE = {"iso": "-Miso", "fpc": "-Mfpc", "objfpc": "-Mobjfpc", "delphi": "-Mdelphi", "tp": "-Mtp"}   # the dialect cell -> fpc's mode switch (CEO-1624; corpus_suite_harness.DIALECT_CELLS' Pascal five)
 
 
