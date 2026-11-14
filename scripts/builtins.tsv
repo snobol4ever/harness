@@ -1357,3 +1357,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1358	pas	__pas_ucd	2	2	-	inline	-	-	0	pas
 1359	rk	__rk_bool_pre	-	-	bt___rk_bool_pre	open	-	-	0	fn_arms,rk_targets
 1360	rk	__rk_defined_pre	-	-	bt___rk_defined_pre	open	-	-	0	fn_arms,rk_targets
+1361	rk	__rk_proc_spawn	-	-	bt___rk_proc_spawn	leaf	-	-	0	fn_arms,rt_known
