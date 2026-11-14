@@ -1025,6 +1025,23 @@ relink_root() {   # THEN SYNC: a root's shared repos are linked to the pristine 
     else echo "LAND stage=sync relink rc=$? (pushed all the same; run util_sync_root.sh): $(tail -1 "$LOG/relink" | cut -c1-160)"; fi
 }
 relink_root
+keep_home_trees() {   # THEN THE FLEET'S TREES: a push of corpus, harness or .github brings /home/<repo> to it now, not at the keeper's next minute, so a done run
+    # right after the landing reads the landed tree (the coo 2026-11-13 20:3x CST, on senior_05's and senior_09's done that read the old /home/harness). Only a push to
+    # the origin the /home tree itself follows (a probe's scratch origin never moves the real trees); the keeper's own flock -n skips while its cron run holds the
+    # lock, so it is asked again for up to 30 s; never a reason to fail a pushed landing.
+    local x r sha d kp i
+    kp="$TH/scripts/util_keep_home_trees.sh"; [ -f "$kp" ] || return 0
+    for x in "${pushed[@]}"; do
+        r="${x%@*}"; case "$r" in corpus|harness|.github) ;; *) continue ;; esac
+        d="${S4E_HOME_TREES_TOP:-/home}/$r"; [ -d "$d/.git" ] || continue
+        [ "$(git -C "$d" remote get-url origin 2>/dev/null)" = "$(git -C "$(rd "$r")" remote get-url origin 2>/dev/null)" ] || continue
+        sha="$(git -C "$(rd "$r")" rev-parse HEAD)"; i=0
+        until git -C "$d" merge-base --is-ancestor "$sha" HEAD 2>/dev/null || [ "$i" -ge 30 ]; do bash "$kp" > /dev/null 2>&1 7>&- 8>&- 9>&-; git -C "$d" merge-base --is-ancestor "$sha" HEAD 2>/dev/null && break; sleep 2; i=$((i + 2)); done
+        if git -C "$d" merge-base --is-ancestor "$sha" HEAD 2>/dev/null; then mark "keep:$r" "$d holds ${sha:0:9}"
+        else echo "LAND stage=keep:$r $d does not hold ${sha:0:9} after ${i}s (pushed all the same; the keeper's minute brings it)"; fi
+    done
+}
+keep_home_trees
 if [ "$mode" = push ]; then
     for x in "${pushed[@]}"; do record_hand_push "${x%@*}" "${x#*@}"; done
     ledger ok; rm -rf "$LOG"; echo "LAND ok mode=push stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt hand_push=leased push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds serial_round=$serial_round ($(date -u +%Y-%m-%dT%H:%M:%SZ))"; exit 0
