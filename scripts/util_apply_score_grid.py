@@ -154,7 +154,7 @@ def apply_grid(score_md, grid_text, stamp, dry_run=False):
         return 1 if prose_at_risk else 0
     open(score_md, "w", encoding="utf-8").write("\n".join(lines))
     print("merged %d row(s) in place: %s" % (len(changed), "; ".join(changed)))
-    print("⛔ NOT DONE UNTIL PUSHED: commit %s/SCORE.md with the landing that carried this measurement." % ".github")
+    print("⛔ NOT DONE UNTIL PUSHED: commit %s/SCORE.md with the landing that carried this measurement." % ".github")  # one-disk: not a path
     return 1 if prose_at_risk else 0
 
 

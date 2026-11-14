@@ -36,7 +36,7 @@ VERB_RE = re.compile(r"s4e_msg\.sh\s+([a-z][a-z_-]*)\b")
 FLAG_RE = re.compile(r"([A-Za-z0-9_./\-]+\.(?:sh|py))((?:\s+[^\s`]+){0,6}?)\s+(--[a-z][a-z0-9-]*)")
 REPOS = ("SCRIP", "corpus", "harness", ".github")
 REPO_FLAGS = {"SCRIP": "--scrip", "corpus": "--corpus", "harness": "--harness", ".github": "--github"}
-SEARCH = [("", ""), ("harness", "scripts"), (".github", "scripts"), (".github", ""), ("SCRIP", ""), ("corpus", ""), ("harness", ""), ("SCRIP", "src"), ("SCRIP", "src/runtime/rt"), ("SCRIP", "src/runtime/rtx"), ("corpus", "tests"), ("corpus", "packages")]
+SEARCH = [("", ""), ("harness", "scripts"), (".github", "scripts"), (".github", ""), ("SCRIP", ""), ("corpus", ""), ("harness", ""), ("SCRIP", "src"), ("SCRIP", "src/runtime/rt"), ("SCRIP", "src/runtime/rtx"), ("corpus", "tests"), ("corpus", "packages")]  # one-disk: not a path
 SKIP_WORDS = {"ALL.sh", "e.g.", "i.e.", "vs.", "etc.", "x86_64.s", "s4e.sh", "v2.0"}
 
 
@@ -170,7 +170,7 @@ class Census:
                     body = open(sp, errors="replace").read()
                     ok = flag in body
                     if not ok and os.path.basename(sp) == "s4e_msg.sh":
-                        ok = any(flag in open(h, errors="replace").read() for h in glob.glob(os.path.join(self.dirs["harness"], "scripts", "s4e_*.sh")))
+                        ok = any(flag in open(h, errors="replace").read() for h in glob.glob(os.path.join(self.dirs["harness"], "scripts", "s4e_*.sh")))  # one-disk: not a path
                     out.append((skill, scr + " " + flag, "flag", "ok" if ok else "missing-flag", i))
         return out, len(paths)
 
@@ -222,9 +222,9 @@ def descriptions(c, cap):
 
 def tables(c):
     plans = []
-    for st in glob.glob(os.path.join(c.dirs["corpus"], "**", "STEPS.tsv"), recursive=True):
+    for st in glob.glob(os.path.join(c.dirs["corpus"], "**", "STEPS.tsv"), recursive=True):  # one-disk: not a path
         d = os.path.basename(os.path.dirname(st))
-        if glob.glob(os.path.join(c.dirs["harness"], "scripts", "test_design_%s_steps.sh" % d)):
+        if glob.glob(os.path.join(c.dirs["harness"], "scripts", "test_design_%s_steps.sh" % d)):  # one-disk: not a path
             plans.append(d)
     dp = os.path.join(c.skills_dir, "design-plans", "SKILL.md")
     body = open(dp, errors="replace").read() if os.path.isfile(dp) else ""
@@ -247,7 +247,7 @@ def self_test():
     dirs = {r: os.path.join(d, "repo-" + r.strip(".")) for r in REPOS}
     for p in dirs.values():
         os.makedirs(p)
-    scripts = os.path.join(dirs["harness"], "scripts"); os.makedirs(scripts); os.makedirs(os.path.join(d, "skills/one")); os.makedirs(os.path.join(d, "skills/clean"))
+    scripts = os.path.join(dirs["harness"], "scripts"); os.makedirs(scripts); os.makedirs(os.path.join(d, "skills/one")); os.makedirs(os.path.join(d, "skills/clean"))  # one-disk: not a path
     open(os.path.join(scripts, "live.sh"), "w").write("#!/bin/bash\ncase $1 in --real) ;; esac\n")
     open(os.path.join(scripts, "s4e_msg.sh"), "w").write("case $1 in\n  send) ;;\n  next) ;;\nesac\n")
     open(os.path.join(d, "skills/one/SKILL.md"), "w").write("---\ndescription: x\n---\nrun `live.sh --real` then `live.sh --gone`; `gone.sh`; `s4e_msg.sh send`; `s4e_msg.sh fly`; `prog_steps.sh`\n")
@@ -269,10 +269,10 @@ def main(argv):
         return self_test()
     root = root_of(argv)
     dirs = dirs_of(argv, root)
-    skills_dir = os.path.join(dirs[".github"], "skills"); bus = os.path.join(dirs["harness"], "scripts", "s4e_msg.sh")
+    skills_dir = os.path.join(dirs[".github"], "skills"); bus = os.path.join(dirs["harness"], "scripts", "s4e_msg.sh")  # one-disk: not a path
     if not os.path.isdir(skills_dir) or not os.path.isfile(bus):
         print("REFUSE(2) [util_skill_refs_census]: no skills dir at %s or no bus at %s" % (skills_dir, bus), file=sys.stderr); return 2
-    allow_path = argv[argv.index("--allow") + 1] if "--allow" in argv else os.path.join(dirs["harness"], "scripts", "SKILL_REFS_ALLOW.tsv")
+    allow_path = argv[argv.index("--allow") + 1] if "--allow" in argv else os.path.join(dirs["harness"], "scripts", "SKILL_REFS_ALLOW.tsv")  # one-disk: not a path
     c = Census(dirs, root, skills_dir, bus, read_allow(allow_path))
     if "--descriptions" in argv:
         return descriptions(c, int(argv[argv.index("--desc-cap") + 1]) if "--desc-cap" in argv else 240)
