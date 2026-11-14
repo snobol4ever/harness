@@ -88,8 +88,8 @@ def plan(suite, reds, areas, topics, dw):
 
 
 def body(suite, e, o, reading):
-    q = '"${S4E_HOME:?REFUSE(2): S4E_HOME unset}"'
-    rd = 'o="$(S4E_MODES=m3 python3 -I harness/scripts/util_score_row.py from-progress --suite %s --reds --dry-run 2>&1)"' % suite
+    q = '"${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && . "${S4E_HARNESS:-/home/harness}/scripts/lib_paths.sh"'   # the absolute model (row harness-one-disk-step-5-every-criterion-names-the-absolute-paths)
+    rd = 'o="$(S4E_MODES=m3 python3 -I \"$S4E_HARNESS/scripts/util_score_row.py\" from-progress --suite %s --reds --dry-run 2>&1)"' % suite
     have = "printf '%%s\\n' \"$o\" | grep -q '^SUITE_ROW suite=%s '" % suite
     red = "printf '%%s\\n' \"$o\" | grep -qE '^SUITE_ROW_RED %s '" % re.escape(e)
     return ("GOAL: DESIGN JOB, MADE BY ITSELF (COO-488): the %s entry %s reads red (%s) and no live row reads it. %s (its area officer by the area table) "

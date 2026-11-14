@@ -109,8 +109,8 @@ def load(po, juniors):
 
 def body(key, lang, entry, reading, rows):
     rep, ext, ora = reproduce(key, lang, entry, rows)
-    q = '"${S4E_HOME:?REFUSE(2): S4E_HOME unset}"'
-    rd = 'o="$(S4E_MODES=m3 python3 -I harness/scripts/util_score_row.py from-progress --suite %s --reds --dry-run 2>&1)"' % key
+    q = '"${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && . "${S4E_HARNESS:-/home/harness}/scripts/lib_paths.sh"'   # the absolute model (row harness-one-disk-step-5-every-criterion-names-the-absolute-paths)
+    rd = 'o="$(S4E_MODES=m3 python3 -I \"$S4E_HARNESS/scripts/util_score_row.py\" from-progress --suite %s --reds --dry-run 2>&1)"' % key
     have = "printf '%%s\\n' \"$o\" | grep -q '^SUITE_ROW suite=%s '" % key
     red = "printf '%%s\\n' \"$o\" | grep -qE '^SUITE_ROW_RED %s '" % re.escape(entry)
     # the decisive lines are printed before the test, so done and next show what they measured (the cio 2026-11-12 23:2x)
