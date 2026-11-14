@@ -1,0 +1,11 @@
+* append_400000 -- grows one string a character at a time, 400000 times, and prints its length.
+* The witness of row snobol4-under-the-linked-parser-an-append-costs-what-it-costs-under-the-c-parser
+* (the cto 2026-11-14): the run's instruction count under SCRIP_PARSE_STAGE=sc less the count under
+* SCRIP_PARSE_STAGE=c is the parser module's fixed cost alone, never a cost per append.
+        I = 0
+        S =
+LOOP    S = S 'x'
+        I = I + 1
+        LT(I,400000)                         :S(LOOP)
+        OUTPUT = SIZE(S)
+END
