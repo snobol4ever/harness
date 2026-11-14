@@ -10,7 +10,9 @@ src/runtime/core/g_runtime_abi.inc: one `#define G_RT_OFF_<MEMBER> <n>` per memb
 Run it from SCRIP after adding or reordering a member of g_abi_t.
 """
 import os, re, subprocess, sys, tempfile
-ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "SCRIP"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness_paths
+ROOT = os.path.normpath(str(harness_paths.scrip()))
 H = os.path.join(ROOT, "src/runtime/core/g_runtime_abi.h")
 INC = os.path.join(ROOT, "src/runtime/core/g_runtime_abi.inc")
 CHK = os.path.join(ROOT, "src/runtime/core/g_runtime_abi_check.inc")
