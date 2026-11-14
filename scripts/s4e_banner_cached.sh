@@ -51,12 +51,12 @@ $out"
 $out"   # first section, never the end (Lon 2026-11-06: "Remove the verbaiage \"(banner cahced ... blah)\" from the end of the banner. Put it in the first section instead.")
 else
     out="$(timeout -k 5 100 bash "$HERE/s4e_msg.sh" banner 2>&1)"
-    if [ -n "$out" ]; then printf '%s' "$out" > "$c"; else out="banner: the verb printed nothing within 100 s at load $load; the first refresh runs in the background and the next turn shows it"; [ -f "$c.lock" ] || spawn; fi
+    if whole "$out"; then printf '%s' "$out" > "$c"; else [ -n "$out" ] || out="banner: the verb printed nothing within 100 s at load $load; the first refresh runs in the background and the next turn shows it"; [ -f "$c.lock" ] || spawn; fi
 fi
 if [ -f "$root/.claude/banner_compact.py" ]; then cmp="$(printf '%s' "$out" | python3 -I "$root/.claude/banner_compact.py" 2>/dev/null)" && [ -n "$cmp" ] && out="$cmp"; fi
 # ONE WORD AND A HUGE ICON (Lon 2026-11-11 13:0x CST, in officer_04's window, verbatim: "I just want one word and a huge icon so I can see from a distance. All those words are NEVER read."):
 # the hook shows the verdict word under a block icon and nothing else; the coo's suite grid (CIO-129) stays under it. The full text still goes to BOARD.md and the cache.
-word="$(printf '%s\n' "$out" | grep -xE "$WORDS" | tail -1)"; grid="$(printf '%s\n' "$out" | grep -E '│|^[0-9]+ suites, ')"   # the grid and its closing summary line ("73 suites, 44 at 100%; ..."), which carries no │ (MEASURED 2026-11-13: the filter dropped it, Lon: "It does not show the summary at the end.")
+word="$(printf '%s\n' "$out" | grep -xE "$WORDS" | tail -1)"; [ -n "$word" ] || word="$(grep -xE "$WORDS" "$c" 2>/dev/null | tail -1)"; [ -n "$word" ] || word="IN-PROGRESS"; grid="$(printf '%s\n' "$out" | grep -E '│|^[0-9]+ suites, ')"   # the grid and its closing summary line ("73 suites, 44 at 100%; ..."), which carries no │ (MEASURED 2026-11-13: the filter dropped it, Lon: "It does not show the summary at the end.")
 # THE CYCLE LINE, THE BUG COUNTDOWN AND A FRESH GRID FOR A SEAT WHOSE BANNER CARRIES THE GRID (the grader 2026-11-13, row one-banner-script-seat-aware-run-from-each-seats-own-root; Lon, in the
 # grader's window, verbatim: "do not reach into another's root folder and run a script." / "All seats should be running the SAME banner script with code that know WHO the HELL you ARE."): the
 # coo's own Stop script printed these for the coo alone, so the fleet ran two banners. This one script prints them for every seat whose banner carries the grid (s4e_msg.sh banner chooses by
@@ -93,7 +93,7 @@ case "$word" in
 ..#..
 .....
 ..#..' ;;
-  *)           ic='⛔'; sq='🟥'; [ -n "$word" ] || word="NO VERDICT"; pat='#...#
+  *)           ic='⛔'; sq='🟥'; pat='#...#
 .#.#.
 ..#..
 .#.#.
