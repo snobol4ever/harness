@@ -27,6 +27,7 @@
 # byte its dump would print (C: ir_dump_tree into a hashing stream, src/parsers/parser_main.c; .sc: TreeDumpPut/TreeDumpEnd,
 # bootstrap/tdump.sc) -- and the gate compares the numbers. THE CANARY: the first compared file of each language is also dumped in full on
 # both sides and each number is re-derived from its dump here, so a hash that stopped folding cannot read as MATCH (rc 2).
+# GATE_FILES="<path> ..." grades those files alone (each of the language's extension), the criterion of a class row cut from a whole population.
 # GATE_DETAIL=1 dumps the first DIFF file of each language in full and prints its first differing line pair. GATE_REDS=<file> appends one
 # line per file that is not a MATCH or a both-refused (language, kind, path under the corpus) -- the list a whole-corpus run owes the lane that cures it. GATE_LANGS="snobol4 icon"
 # grades those languages alone (a landing's own arm; the closure run grades all seven).
@@ -51,6 +52,7 @@ B="$ROOT/bootstrap"; CHAIN="$B/global.sc $B/case.sc $B/assign.sc $B/match.sc $B/
 for f in $CHAIN; do [ -f "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: chain file missing: $f"; exit 2; }; done
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ GATE REFUSE(2) [$G]: cannot load lib_declared_arena.sh"; exit 2; }
 POP="${GATE_POPULATION:-sample}"; [ "${S4E_DONE_WHEN_RUN:-}" = 1 ] && POP=corpus
+[ -n "${GATE_FILES:-}" ] && POP=files  # GATE_FILES="f1 f2": grade those files alone, each against both parsers (officer_08 2026-11-14: one fixture a class row, the criterion its own cure alone turns green)
 TMO="${GATE_TIMEOUT:-300}"
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 declare -A EXT=([snobol4]=sno [snocone]=sc [icon]=icn [prolog]=pl [rebus]=reb [pascal]=pas [raku]=raku)
@@ -82,7 +84,8 @@ for L in ${GATE_LANGS:-snobol4 snocone icon prolog rebus pascal raku}; do
     ext=${EXT[$L]}; exe="$ROOT/out/parser_$L"
     ( . "$HERE/lib_build_currency.sh" && assert_parser_current "$L" "$ROOT" ) || { echo "  $L: ⛔ REFUSE(2) $exe is missing or older than a source it was compiled from (named above) -- make parsers"; RC=2; continue; }
     SW="$(declared_switches_beside "$CORPUS/demos/snocone/parser_$L/parser_$L.sc")" && [ -n "$SW" ] || { echo "  $L: ⛔ REFUSE(2) corpus/demos/snocone/parser_$L/parser_$L.sc declares no heap or stack, or the declaration is refused"; RC=2; continue; }  # one-disk: not a path
-    if [ "$POP" = corpus ]; then { find "$CORPUS" -type f -name "*.$ext" -not -name 'ALL.*' -not -name 'ONE-LINERS.*' -not -path '*/.git/*' -not -path "$CORPUS/library/*"; ls "$HERE/../fixtures/parser_$L"/*."$ext" 2>/dev/null; } | sort > "$T/$L.files"
+    if [ "$POP" = files ]; then for gf in $GATE_FILES; do [ -f "$gf" ] && case "$gf" in *."$ext") echo "$gf" ;; esac; done | sort > "$T/$L.files"
+    elif [ "$POP" = corpus ]; then { find "$CORPUS" -type f -name "*.$ext" -not -name 'ALL.*' -not -name 'ONE-LINERS.*' -not -path '*/.git/*' -not -path "$CORPUS/library/*"; ls "$HERE/../fixtures/parser_$L"/*."$ext" 2>/dev/null; } | sort > "$T/$L.files"
     elif [ "$POP" = fixtures ]; then ls "$HERE/../fixtures/parser_$L"/*."$ext" 2>/dev/null | sort > "$T/$L.files"
     else ls "$CORPUS/benchmarks/$L"/*."$ext" 2>/dev/null | sort > "$T/$L.files"; fi
     nf=$(wc -l < "$T/$L.files"); [ "$nf" -gt 0 ] || { echo "  $L: ⛔ REFUSE(2) empty population ($POP)"; RC=2; continue; }
