@@ -1151,10 +1151,21 @@ s4e_row_last_touch() {   # <topic> -> epoch seconds of the newest LEDGER date on
         _e="$(date -d "$_d" +%s 2>/dev/null)" || continue; [ "$_e" -gt "$_m" ] && _m="$_e"; done; echo "$_m"; }
 s4e_telegram() {   # <seat> <topic> <text> -- a telegram written straight into the inbox (the sweep holds no identity across its rows)
     [ -d "$PO/$1/inbox" ] || return 1; { printf 'FROM %s TO %s RE %s\n%s\n' "$ME" "$1" "$2" "$3"; } > "$PO/$1/inbox/$(date +%s%N)-$ME-$2.msg"; }
-s4e_reown_cell() {   # <topic> <seat> -- the owner cell only, under the mint lock, as reown does
+# QUEUE.tsv IS REPLACED IN ONE RENAME, UNDER THE FLOCK (the cio 2026-11-14, on the coo's and officer_02's measurement under the re-cut's concurrent writers: of 10 queue moves
+# 4 lost the owner and one read saw an empty QUEUE.tsv). Every column writer builds its copy beside the file (s4e_queue_tmp, the same filesystem, so the mv is a rename) and
+# s4e_queue_swap puts it in place only when it is whole (as many lines as the file it replaces): a reader that takes no lock sees the old file or the new, never a torn or
+# an empty one, as `cat tmp > QUEUE.tsv` showed it. s4e_probe_bus_one_queue.sh 10 proves it with twelve writers and an unlocked reader.
+s4e_queue_tmp() { mktemp "$PO/.QUEUE.tsv.XXXXXX"; }
+s4e_queue_swap() {   # <tmp>: rc 0 the copy replaced QUEUE.tsv; rc 1 it was not whole and is removed, the file untouched
+    local _q="$PO/QUEUE.tsv"
+    if [ -s "$1" ] && [ "$(wc -l < "$1")" -eq "$(wc -l < "$_q")" ]; then chmod 664 "$1" 2>/dev/null; mv -f "$1" "$_q"; else rm -f "$1"; return 1; fi; }
+s4e_reown_cell() {   # <topic> <seat> -- the owner cell only, under PO/.queue.flock (a caller that holds it, S4E_QFLOCK_HELD=1, does not take it twice) and the mint lock, as reown does
+    if [ "${S4E_QFLOCK_HELD:-0}" != 1 ]; then
+        ( exec 8>>"$PO/.queue.flock" && flock -w 60 8 || { printf '⚠ QUEUE.tsv owner column NOT updated for %s (PO/.queue.flock busy 60 s).\n' "$1" >&2; exit 1; }; S4E_QFLOCK_HELD=1 s4e_reown_cell "$1" "$2" ); return $?
+    fi
     local _q="$PO/QUEUE.tsv" _tmp _lk="$PO/.mint.lock" _i _got=0; for _i in $(seq 1 20); do mkdir "$_lk" 2>/dev/null && { _got=1; break; }; sleep 0.1; done
-    _tmp="$(mktemp)"; TOPIC="$1" NEW="$2" awk -F'\t' -v OFS='\t' '$2==ENVIRON["TOPIC"] && /^[0-9]/ {$3=ENVIRON["NEW"]} {print}' "$_q" > "$_tmp"
-    if [ "$(wc -l < "$_tmp")" -eq "$(wc -l < "$_q")" ] && grep -qP "^[0-9]+\t\Q$1\E\t\Q$2\E\t" "$_tmp"; then mv "$_tmp" "$_q"; chmod 664 "$_q"; else rm -f "$_tmp"; fi
+    _tmp="$(s4e_queue_tmp)"; TOPIC="$1" NEW="$2" awk -F'\t' -v OFS='\t' '$2==ENVIRON["TOPIC"] && /^[0-9]/ {$3=ENVIRON["NEW"]} {print}' "$_q" > "$_tmp"
+    if grep -qP "^[0-9]+\t\Q$1\E\t\Q$2\E\t" "$_tmp"; then s4e_queue_swap "$_tmp"; else rm -f "$_tmp"; fi
     [ "$_got" = 1 ] && rmdir "$_lk" 2>/dev/null; grep -qP "^[0-9]+\t\Q$1\E\t\Q$2\E\t" "$_q"; }
 s4e_sweep_close_green() {   # CTO-496 box-scheduler step 8: a row whose DONE-WHEN reads green closes itself in the sweep, through done and every guard done carries
   local _only="" _to="${S4E_SWEEP_TIMEOUT:-600}" _q="$PO/QUEUE.tsv" _l _t _st _ow _c _sv _had _r _t0 _el _log _tree _nc=0 _nk=0 _nl=0 _nr=0 _ne=0 _stale="${S4E_SWEEP_STALE_H:-48}" _off _age _rf="$PO/sweep.refusals.tsv" _rk
@@ -3030,12 +3041,12 @@ s4e_set_row_state() {   # <topic> <state>  -- no-op (rc 1) when the topic has no
   grep -qP "^[0-9]+\t\Q$_t\E\t" "$_q" 2>/dev/null || return 1
   # bus-one-queue step 2 (Q2): the read and the one write of the column hold PO/.queue.flock (flock -w 10); a caller that already holds it (S4E_QFLOCK_HELD=1) does not take it twice
   if [ "${S4E_QFLOCK_HELD:-0}" != 1 ]; then
-    ( exec 8>>"$PO/.queue.flock" && flock -w 10 8 || { printf '⚠ QUEUE.tsv state column NOT updated for %s (PO/.queue.flock busy 10 s).\n' "$_t" >&2; exit 1; }; S4E_QFLOCK_HELD=1 s4e_set_row_state "$_t" "$_s" ); return $?
+    ( exec 8>>"$PO/.queue.flock" && flock -w 60 8 || { printf '⚠ QUEUE.tsv state column NOT updated for %s (PO/.queue.flock busy 60 s).\n' "$_t" >&2; exit 1; }; S4E_QFLOCK_HELD=1 s4e_set_row_state "$_t" "$_s" ); return $?
   fi
   for _i in $(seq 1 20); do mkdir "$_lk" 2>/dev/null && { _got=1; break; }; sleep 0.1; done
   [ "$_got" = 1 ] || { printf '⚠ QUEUE.tsv state column NOT updated for %s (lock busy 2s). The CLAIM is the authority and dispatch is unaffected; only its readable twin is stale.\n' "$_t" >&2; return 1; }
-  _tmp="$(mktemp)"
-  if awk -F'\t' -v OFS='\t' -v t="$_t" -v s="$_s" '$2==t&&NF>3{$4=s} {print}' "$_q" > "$_tmp"; then cat "$_tmp" > "$_q" || _rc=1; else _rc=1; fi
+  _tmp="$(s4e_queue_tmp)"
+  if awk -F'\t' -v OFS='\t' -v t="$_t" -v s="$_s" '$2==t&&NF>3{$4=s} {print}' "$_q" > "$_tmp"; then s4e_queue_swap "$_tmp" || _rc=1; else _rc=1; fi
   rm -f "$_tmp"; rmdir "$_lk" 2>/dev/null
   s4e_baton_head_set "$_t" STATE "$_s" 2>/dev/null; s4e_queue_view   # fleet-queue step 12: the baton is the record, QUEUE.tsv the view
   return $_rc
@@ -3137,7 +3148,7 @@ s4e_recut_write() {   # <topic> --stdin  |  <topic> <body words...>
     && mv "$_tmp.l" "$_tmp" && mv "$_tmp" "$_b" \
         || { rm -f "$_tmp" "$_tmp.l"; rmdir "$_lk" 2>/dev/null; printf '⛔ REFUSED (rc=3): the baton %s could not be rewritten. Nothing written.\n' "$_b" >&2; return 3; }
     if [ "$_to" != "$_st" ]; then
-        { _qt="$(mktemp "$_q.recut.XXXXXX")" && awk -F'\t' -v OFS='\t' -v t="$_t" -v s="$_to" '$2 == t && NF > 3 && ($4 ~ /^RETIRED:/ || $4 ~ /^SUPERSEDED/) { $4 = s } { print }' "$_q" > "$_qt" && cat "$_qt" > "$_q"; } \
+        { _qt="$(s4e_queue_tmp)" && awk -F'\t' -v OFS='\t' -v t="$_t" -v s="$_to" '$2 == t && NF > 3 && ($4 ~ /^RETIRED:/ || $4 ~ /^SUPERSEDED/) { $4 = s } { print }' "$_q" > "$_qt" && s4e_queue_swap "$_qt"; } \
             || { rm -f "${_qt:-}"; rmdir "$_lk" 2>/dev/null; printf '⛔ RECUT PARTIAL (rc=3): the baton %s is re-cut, but the QUEUE.tsv state of %s could not be reopened to FREE; reopen it by hand.\n' "$_b" "$_t" >&2; return 3; }
         rm -f "$_qt"
     fi
@@ -3167,8 +3178,8 @@ s4e_backfill_owner_lane() {
   local _lk="$PO/.mint.lock" _got=0 _i _tmp
   for _i in $(seq 1 20); do mkdir "$_lk" 2>/dev/null && { _got=1; break; }; sleep 0.1; done
   [ "$_got" = 1 ] || return 1
-  _tmp="$(mktemp)"
-  awk -F'\t' -v OFS='\t' -v t="$_t" -v o="$_lane" '$2==t&&NF>3&&($3==""||$3=="unassigned"){$3=o} {print}' "$_q" > "$_tmp" && cat "$_tmp" > "$_q"
+  _tmp="$(s4e_queue_tmp)"
+  awk -F'\t' -v OFS='\t' -v t="$_t" -v o="$_lane" '$2==t&&NF>3&&($3==""||$3=="unassigned"){$3=o} {print}' "$_q" > "$_tmp" && s4e_queue_swap "$_tmp"
   s4e_baton_head_set "$_t" OWNER "$_lane" 2>/dev/null; s4e_queue_view   # fleet-queue step 12
   rm -f "$_tmp"; rmdir "$_lk" 2>/dev/null
 }
@@ -3515,8 +3526,11 @@ case "$cmd" in
          s4e_skills_required_ok "$q_tier" "$(sed -n '1,/^## NEXT/p' "$PO/tasks/$topic.task.md")" || { echo "⛔ REFUSED: a $q_tier row carries a SKILLS: line in its baton head naming the skills its executor loads first; add it and queue again" >&2; exit 2; }
          _oldjob="$(s4e_baton_job_get "$topic" | cut -d' ' -f1)"; s4e_queue_retire "$_oldjob"
          s4e_queue_enqueue_row "$topic" "$q_tube" "$(qrank "$topic")" "$q_tier" || exit 1
-         s4e_baton_head_set "$topic" OWNER "$q_owner"; _tmp="$(mktemp)"; TOPIC="$topic" NEW="$q_owner" awk -F'\t' -v OFS='\t' '$2==ENVIRON["TOPIC"] && /^[0-9]/ {$3=ENVIRON["NEW"]} {print}' "$PO/QUEUE.tsv" > "$_tmp" && cat "$_tmp" > "$PO/QUEUE.tsv"; rm -f "$_tmp"
-         s4e_set_row_state "$topic" "QUEUED:$q_tube" || true
+         # THE OWNER AND THE STATE ARE EACH ONE LOCKED, WHOLE-FILE RENAME (s4e_queue_swap above): this verb used to rewrite the owner column outside every lock, by truncating the file in place
+         s4e_reown_cell "$topic" "$q_owner" || { echo "⛔ REFUSED (rc 2): the owner cell of $topic could not be written (the queue lock was busy, or the row is gone); nothing moved, queue it again" >&2; exit 2; }
+         s4e_baton_head_set "$topic" OWNER "$q_owner"
+         s4e_set_row_state "$topic" "QUEUED:$q_tube" || { echo "⛔ REFUSED (rc 2): $topic has its owner $q_owner but its state could not be written (the queue lock was busy); queue it again" >&2; exit 2; }
+         _tmp="$(mktemp)"
          printf -- '- [%s·%s] QUEUED into %s by %s (owner %s).\n' "$ME" "$(date -u +%F)" "$q_tube" "$ME" "$q_owner" > "$_tmp" 2>/dev/null; _tmp2="$(mktemp)"; awk -v l="$(cat "$_tmp" 2>/dev/null)" '{print} /^## LEDGER$/ && !d {print l; d=1}' "$PO/tasks/$topic.task.md" > "$_tmp2" && cat "$_tmp2" > "$PO/tasks/$topic.task.md"; rm -f "$_tmp" "$_tmp2"
          echo "queued $topic -> $q_tube (owner $q_owner, state QUEUED:$q_tube)"; s4e_wake_hint "$q_tube" "$topic" queue; exit 0;;
   flush) # flush step 1 (the cio 2026-11-11 on Lon): archive every dead claim and every .bak or .release leftover older than S4E_FLUSH_GRACE_S (default 600, by mtime) into claims/archive/flush-<ts>-<seat>/; a move, never an rm
@@ -3827,6 +3841,7 @@ case "$cmd" in
              _cur_st="$(s4e_row_state "$topic")"
              case "$_cur_st" in   # step 35: remember where the row returns when the blocker closes
                CLAIMED:?*|ASSIGNED:?*) _restore="ASSIGNED:${_cur_st#*:}";;
+               QUEUED:?*) _restore="$_cur_st";;   # a row parked while it waits in a tube returns to that tube (the cio 2026-11-14, on the coo's and officer_02's measurement: it was recorded FREE, and no tier serves a FREE row; probe s4e_probe_bus_one_queue.sh 11)
                BLOCKED-ON:*|PARKED-AWAITING:*) ;;
                *) if [ -f "$PO/claims/$topic.claim" ] && [ "$(head -1 "$PO/claims/$topic.claim")" = "$ME" ] && ! grep -q '^DONE$' "$PO/claims/$topic.claim"; then _restore="ASSIGNED:$ME"; else _restore="FREE"; fi;;
              esac

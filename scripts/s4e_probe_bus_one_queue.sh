@@ -13,7 +13,7 @@ S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 ME="${S4E_SEAT:-probe}"
 N="${1:-}"
 refuse() { echo "REFUSE(2) [bus-one-queue probe]: $*"; exit 2; }
-[ -n "$N" ] || refuse "usage: $0 <step 1..9>"
+[ -n "$N" ] || refuse "usage: $0 <step 1..11>"
 mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 w="$(mktemp -d "/tmp/s4e/$ME/busq_probe.XXXXXX")" || refuse "mktemp failed"
 PIDS=""
@@ -188,5 +188,49 @@ wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operatin
     [ "$as_" = coo ] || why="$why the asleep cto does not name the operating boss coo (wake reads '${as:-none}');"
     if [ -z "$why" ]; then echo "WAKE_LIVE_BOSS live=$ls_ asleep=$as_"; exit 0; fi
     echo "WAKE_LIVE_BOSS live=${ls_:-none} asleep=${as_:-none} RED:$why"; exit 1;;
-*) refuse "no step $N (1..9)";;
+10) # CONCURRENT WRITERS (the cio 2026-11-14, on the coo's and officer_02's measurement under the re-cut: of 10 queue moves 4 lost the owner and one read saw an empty QUEUE.tsv; the queue verb
+    # rewrote the owner column outside every lock and each writer truncated the file in place): K queue verbs at once move K rows while a reader reads the file without a lock.
+    # Every row ends owner @haiku and state QUEUED:tier-haiku, the file keeps its line count, and no read sees a file shorter than it stood (an order of events, no clock).
+    # Twelve SEATS, since one identity is one process on the bus: each writer is its own officer of the scratch table.
+    K=12; ts=""; seats=""
+    for i in $(seq 1 "$K"); do
+        t="busq10-$i-$$"; q="officer_$((80 + i))"; ts="$ts $t"; seats="$seats $q"; row 2 "$t" "$q" FREE; baton "$t"; mkdir -p "$w/$q/inbox"
+        printf '%s\tPO%s\t/tmp\tclaude-opus-5-5\txhigh\tblue\t2\tofficer\n' "$q" "$((80 + i))" >> "$w/TIERS.tsv"
+    done
+    sed -i "s/^ROSTER: .*/ROSTER: $J $S $O$seats/" "$w/MODE"
+    lines="$(wc -l < "$w/QUEUE.tsv")"
+    ( n=0; torn=0; while [ ! -e "$w/stop" ]; do c="$(wc -l < "$w/QUEUE.tsv" 2>/dev/null)"; n=$((n+1)); [ "${c:-0}" = "$lines" ] || torn=$((torn+1)); done; echo "$n $torn" > "$w/reads" ) & rp=$!; PIDS="$PIDS $rp"
+    qp=""; i=0; for t in $ts; do i=$((i + 1)); bus "officer_$((80 + i))" queue "$t" --tier haiku > "$w/q.$t.log" 2>&1 & qp="$qp $!"; done
+    for q in $qp; do wait "$q"; done
+    : > "$w/stop"; wait "$rp"; read -r reads torn < "$w/reads"
+    lost=0; unq=0
+    for t in $ts; do
+        [ "$(awk -F'\t' -v t="$t" '$2 == t { print $3; exit }' "$w/QUEUE.tsv")" = "@haiku" ] || lost=$((lost+1))
+        [ "$(st "$t")" = "QUEUED:tier-haiku" ] || unq=$((unq+1))
+    done
+    [ "$(wc -l < "$w/QUEUE.tsv")" = "$lines" ] || why="$why the file ends with $(wc -l < "$w/QUEUE.tsv") lines, it stood at $lines;"
+    said="$(cat "$w"/q.busq10-*.log 2>/dev/null | grep -c '^queued busq10-')"
+    [ "$said" = "$K" ] || why="$why only $said of $K queue verbs said queued [$(cat "$w"/q.busq10-*.log | grep -m1 -E 'REFUSE|⛔' | cut -c1-110)];"
+    [ "$lost" = 0 ] || why="$why $lost of $K rows lost their owner;"
+    [ "$unq" = 0 ] || why="$why $unq of $K rows are not QUEUED:tier-haiku;"
+    [ "${torn:-1}" = 0 ] || why="$why $torn of ${reads:-0} unlocked reads saw a file shorter than $lines lines;"
+    [ "${reads:-0}" -gt 0 ] || refuse "the reader read nothing"
+    ls "$w"/.QUEUE.tsv.* > /dev/null 2>&1 && why="$why a writer left its scratch copy in the postoffice;"
+    verdict "writers=$K said_queued=$said rows_owner_lost=$lost rows_not_queued=$unq reads=$reads torn_reads=$torn";;
+11) # A QUEUED ROW PARKED BLOCKED-ON RETURNS TO ITS OWN TUBE (the cio 2026-11-14, on the coo's and officer_02's measurement: park recorded RESTORE-STATE: FREE for a row that stood
+    # QUEUED:tier-X, so a chained step came back FREE when its blocker landed, and no tier serves a FREE row; 43 of 133 blocked rows stood so)
+    blk="busq11-blocker-$$"; r="busq11-row-$$"; f="busq11-free-$$"
+    row 2 "$blk" "$O" FREE; row 2 "$r" @sonnet QUEUED:tier-sonnet; row 2 "$f" "$O" FREE
+    baton "$blk" 2026-11-01T00:00:00Z true 'test -f "$S4E_HARNESS/scripts/s4e_msg.sh"'; baton "$r"; baton "$f"; live_claude "$O" >/dev/null
+    bus "$O" park "$r" "BLOCKED-ON:$blk" > "$w/park.log" 2>&1; bus "$O" park "$f" "BLOCKED-ON:$blk" >> "$w/park.log" 2>&1
+    rec="$(sed -n 's/^RESTORE-STATE: //p' "$w/tasks/$r.task.md" | head -1)"; recf="$(sed -n 's/^RESTORE-STATE: //p' "$w/tasks/$f.task.md" | head -1)"
+    [ "$(st "$r")" = "BLOCKED-ON:$blk" ] || why="$why the park did not take: $r reads $(st "$r") [$(tail -1 "$w/park.log" | cut -c1-90)];"
+    [ "$rec" = "QUEUED:tier-sonnet" ] || why="$why park recorded RESTORE-STATE '${rec:-none}' for a row that stood QUEUED:tier-sonnet;"
+    [ "$recf" = "FREE" ] || why="$why park recorded RESTORE-STATE '${recf:-none}' for a row that stood FREE;"
+    bus "$O" claim "$blk" > "$w/done.log" 2>&1; bus "$O" done "$blk" >> "$w/done.log" 2>&1
+    grep -q "^done $blk" "$w/done.log" || why="$why the blocker did not close: it reads $(st "$blk") [$(grep -m1 -E 'REFUSED' "$w/done.log" | cut -c1-90)];"
+    [ "$(st "$r")" = "QUEUED:tier-sonnet" ] || why="$why after its blocker closed the row reads $(st "$r"), not QUEUED:tier-sonnet;"
+    [ "$(st "$f")" = "FREE" ] || why="$why after its blocker closed the FREE row reads $(st "$f");"
+    verdict "recorded=${rec:-none} returned=$(st "$r") free_row=$(st "$f")";;
+*) refuse "no step $N (1..11)";;
 esac
