@@ -1341,6 +1341,9 @@ s4e_restore_resolve() {   # <topic> -> "<label><TAB><state><TAB><stale seat>": t
     [ -f "$_b" ] && _r="$(sed -n 's/^RESTORE-STATE: //p' "$_b" | head -1)"
     _o="$(s4e_row_owner_named "$_t")"
     if [ -n "$_r" ]; then _state="$_r"; elif [ -n "$_o" ]; then _state="ASSIGNED:$_o"; else _state="FREE"; fi
+    # A RECORDED FREE ON A TIER'S ROW IS THAT TIER'S TUBE (the cio 2026-11-14, MEASURED under the re-cut: the officers mint a chain step to a tier, owner @tier and state FREE, and park it
+    # BLOCKED-ON its predecessor before any queue; park records FREE, and 29 of 210 blocked rows stood to come back FREE, where no tier serves them). A boss's or a seat's own row keeps FREE.
+    if [ "$_state" = FREE ]; then case "$_o" in @fable|@opus|@sonnet|@haiku) printf 'tier\tQUEUED:tier-%s\t\n' "${_o#@}"; return 0;; esac; fi
     case "$_state" in ASSIGNED:?*|CLAIMED:?*) _s="${_state#*:}";; *) _s="";; esac
     if [ -z "$_s" ] || s4e_restore_seat_ok "$_s"; then
         if [ -n "$_r" ]; then printf 'record\t%s\t\n' "$_state"; else printf 'derived\t%s\t\n' "$_state"; fi; return 0

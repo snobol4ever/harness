@@ -219,10 +219,11 @@ wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operatin
     verdict "writers=$K said_queued=$said rows_owner_lost=$lost rows_not_queued=$unq reads=$reads torn_reads=$torn";;
 11) # A QUEUED ROW PARKED BLOCKED-ON RETURNS TO ITS OWN TUBE (the cio 2026-11-14, on the coo's and officer_02's measurement: park recorded RESTORE-STATE: FREE for a row that stood
     # QUEUED:tier-X, so a chained step came back FREE when its blocker landed, and no tier serves a FREE row; 43 of 133 blocked rows stood so)
-    blk="busq11-blocker-$$"; r="busq11-row-$$"; f="busq11-free-$$"
-    row 2 "$blk" "$O" FREE; row 2 "$r" @sonnet QUEUED:tier-sonnet; row 2 "$f" "$O" FREE
+    # A row minted to a tier and parked before any queue (owner @haiku, state FREE) records FREE and returns to tier-haiku; a seat's own FREE row returns FREE.
+    blk="busq11-blocker-$$"; r="busq11-row-$$"; f="busq11-free-$$"; c="busq11-chain-$$"
+    row 2 "$blk" "$O" FREE; row 2 "$r" @sonnet QUEUED:tier-sonnet; row 2 "$f" "$O" FREE; row 2 "$c" @haiku FREE; baton "$c"
     baton "$blk" 2026-11-01T00:00:00Z true 'test -f "$S4E_HARNESS/scripts/s4e_msg.sh"'; baton "$r"; baton "$f"; live_claude "$O" >/dev/null
-    bus "$O" park "$r" "BLOCKED-ON:$blk" > "$w/park.log" 2>&1; bus "$O" park "$f" "BLOCKED-ON:$blk" >> "$w/park.log" 2>&1
+    bus "$O" park "$r" "BLOCKED-ON:$blk" > "$w/park.log" 2>&1; bus "$O" park "$f" "BLOCKED-ON:$blk" >> "$w/park.log" 2>&1; bus "$O" park "$c" "BLOCKED-ON:$blk" >> "$w/park.log" 2>&1
     rec="$(sed -n 's/^RESTORE-STATE: //p' "$w/tasks/$r.task.md" | head -1)"; recf="$(sed -n 's/^RESTORE-STATE: //p' "$w/tasks/$f.task.md" | head -1)"
     [ "$(st "$r")" = "BLOCKED-ON:$blk" ] || why="$why the park did not take: $r reads $(st "$r") [$(tail -1 "$w/park.log" | cut -c1-90)];"
     [ "$rec" = "QUEUED:tier-sonnet" ] || why="$why park recorded RESTORE-STATE '${rec:-none}' for a row that stood QUEUED:tier-sonnet;"
@@ -231,6 +232,7 @@ wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operatin
     grep -q "^done $blk" "$w/done.log" || why="$why the blocker did not close: it reads $(st "$blk") [$(grep -m1 -E 'REFUSED' "$w/done.log" | cut -c1-90)];"
     [ "$(st "$r")" = "QUEUED:tier-sonnet" ] || why="$why after its blocker closed the row reads $(st "$r"), not QUEUED:tier-sonnet;"
     [ "$(st "$f")" = "FREE" ] || why="$why after its blocker closed the FREE row reads $(st "$f");"
-    verdict "recorded=${rec:-none} returned=$(st "$r") free_row=$(st "$f")";;
+    [ "$(st "$c")" = "QUEUED:tier-haiku" ] || why="$why after its blocker closed the tier's FREE chain step reads $(st "$c"), not QUEUED:tier-haiku;"
+    verdict "recorded=${rec:-none} returned=$(st "$r") free_row=$(st "$f") chain_step=$(st "$c")";;
 *) refuse "no step $N (1..11)";;
 esac
