@@ -164,7 +164,7 @@ next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && request_ready 
 # THE BASE MOVES FORWARD EVERY CHUNK (the grader 2026-11-13; Lon, via the coo 12:1x, verbatim: "The cycle runner should be running chunks through and
 # updating the code continuously every turn."; skill suites-and-grading section 9). MEASURED that noon by the coo: the lap cells graded on the grader root,
 # which syncs only at a lap start, and lap 28 ran 1083 cells over about 11 hours, so 3273 of 3277 grader readings since 17:00Z were on SCRIP 530c2543b5,
-# 34 commits behind origin, and no cure landed that day showed in a lap reading. THE BASES are up to S4E_CYCLE_BASES (2) worktrees wt-base<N> of the four
+# 34 commits behind origin, and no cure landed that day showed in a lap reading. THE BASES are up to S4E_CYCLE_BASES (4; 2 until 2026-11-14) worktrees wt-base<N> of the four
 # repositories (s4e_worktree.sh, sparse with demos/ added, named for the row so no sweep takes them). MEASURED 2026-11-13 by the probe: a base is 1542 MB (SCRIP and its
 # fetched build 374, the corpus 1148), and it cannot share the pristine's files (util_relink_root.py refuses: /tmp and /home/resources are two
 # filesystems, and a hard link cannot join them), so two fit the seat's 4 GB of /tmp. Every cell, request and row write picks one at its start,
@@ -178,8 +178,15 @@ next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && request_ready 
 # hard-linked to the pristine (a base only checks out and reads), so the base top is that script's own top (--show-top), else /tmp/s4e. A forward's checkout writes
 # each changed file as a new inode, a copy, so a base drifts from its links only by what origin changed since the base was made. A base on /tmp keeps serving until
 # it is removed (S4E_WT_TOP=/tmp/s4e S4E_SEAT=grader s4e_worktree.sh rm base<N>), and base_new then makes it anew on /home.
-BASE_TOP="${S4E_WT_TOP:-$(S4E_SEAT=grader bash "$S4E_HARNESS/scripts/s4e_worktree.sh" --show-top 2>/dev/null | sed -n 's/^WT top=\([^ ]*\) .*/\1/p')}"; BASE_TOP="${BASE_TOP:-/tmp/s4e}/grader"; NBASES="${S4E_CYCLE_BASES:-2}"; FETCH_SECS="${S4E_CYCLE_FETCH_SECS:-20}"
-case "$NBASES" in ''|*[!0-9]*|0) NBASES=2;; esac; case "$FETCH_SECS" in ''|*[!0-9]*) FETCH_SECS=20;; esac
+BASE_TOP="${S4E_WT_TOP:-$(S4E_SEAT=grader bash "$S4E_HARNESS/scripts/s4e_worktree.sh" --show-top 2>/dev/null | sed -n 's/^WT top=\([^ ]*\) .*/\1/p')}"; BASE_TOP="${BASE_TOP:-/tmp/s4e}/grader"; NBASES="${S4E_CYCLE_BASES:-4}"; FETCH_SECS="${S4E_CYCLE_FETCH_SECS:-20}"
+case "$NBASES" in ''|*[!0-9]*|0) NBASES=4;; esac
+# FOUR BASES, SO A LONG CHUNK NEVER FREEZES THE BASE (the grader 2026-11-14, on the cfo's telegram 10:4x CST; MEASURED: from 15:28Z no base moved,
+# all 639 readings since 16:00Z were stamped SCRIP 83c939215d and corpus 7c260f9b0 while origin's corpus moved at 15:46Z and SCRIP twice, and the cfo's
+# 17 gate_cases_prolog requests read RED where seniors on current trees read PASS). The cause: a forward never moves the current base, and takes any
+# other base only exclusive and without waiting; one slow-lane cell (a 5 h budget) held wt-base2 shared for 78 minutes, so with two bases no forward
+# could happen and every chunk fell back to the stale current one. A base is held for a chunk's life, so the bases needed are the slow lanes, each of
+# which may pin one for hours, plus the current, plus one free to forward: S4E_CYCLE_SLOW (2) + 2 = 4. Since the one-disk cutover the bases live on
+# /home/resources/worktrees, not the 4 GB /tmp the count of two was sized for (1.5 GB a base; /home 161 GB free that hour).; case "$FETCH_SECS" in ''|*[!0-9]*) FETCH_SECS=20;; esac
 heads_of() { local r; for r in SCRIP harness corpus .github; do git -C "$(td "$1" "$r")" rev-parse "${2:-HEAD}" 2>/dev/null || echo -; done | tr '\n' ' '; }
 base_bin() {   # base -> "SCRIP_BIN RT_DIR": the base's OWN SCRIP/scrip and SCRIP/out, one build of its SCRIP tree; rc 2 (a line on stderr) when it cannot be had   # one-disk: not a path (a comment: the base's own clone)
     # THE BASE RUNS ITS OWN BINARY, NEVER THE CACHE'S FILES IN PLACE (the coo and officer_08 2026-11-13 17:4x CST, MEASURED: scrip resolves a linked
