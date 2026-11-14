@@ -67,12 +67,13 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+import harness_paths as HP  # noqa: E402
 import corpus_suite_harness as csh  # noqa: E402  -- the ONE authority for the suite grammar
 
 # ⛔ THE TESTS ROOT IS OVERRIDABLE FOR ONE REASON ONLY: the gate must exercise the APPLY path, and a
 # gate that can only dry-run proves nothing about the write. S4E_TESTS_ROOT is read by the gate and by
 # nothing else -- it is not a way to point this tool at a second corpus.
-TESTS = Path(os.environ.get("S4E_TESTS_ROOT") or (HERE.parent.parent / "corpus" / "tests"))
+TESTS = Path(os.environ.get("S4E_TESTS_ROOT") or (HP.corpus() / "tests"))
 EXT = {"snobol4": "sno", "icon": "icn", "prolog": "pl", "raku": "raku",
        "pascal": "pas", "rebus": "reb", "snocone": "sc"}
 GRADED_FIELDS = ["kind", "name", "sno_lines", "ref", "stdin", "xfail", "argv", "mask", "want_rc", "xfail_reason"]

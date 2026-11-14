@@ -7,7 +7,8 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # Usage: bash ../harness/scripts/bench_prolog_ix_ab.sh [--n N] [bench ...]   (default: qsort nrev deriv tak fib)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$S4E_SCRIP"
 SCRIP="$ROOT/scrip"
 LIBRT="$ROOT/out/libscrip_rt.so"
 VR=/tmp/ixsrc
@@ -15,8 +16,8 @@ OUT=/tmp/ixab; mkdir -p "$OUT"
 BENCHES=("$@"); [ ${#BENCHES[@]} -eq 0 ] && BENCHES=(qsort nrev deriv tak fib)
 # ⭐ V2-5 GATE HONESTY: examining nothing must exit UNPROVEN(2), never read as a pass.
 . "$(dirname "$0")/lib_gate.sh"
-gate_require_exec "${SCRIP:-${SCRIP_BIN:-$(dirname "$0")/../../SCRIP/scrip}}" "the scrip compiler"
-gate_require "${RT_DIR:-$(dirname "$0")/../../SCRIP/out}/libscrip_rt.so" "the runtime shared object out/libscrip_rt.so"
+gate_require_exec "${SCRIP:-${SCRIP_BIN:-$S4E_SCRIP/scrip}}" "the scrip compiler"
+gate_require "${RT_DIR:-$S4E_SCRIP/out}/libscrip_rt.so" "the runtime shared object out/libscrip_rt.so"
 build_one() { # $1=src $2=outbin $3=env(0/1 SCRIP_NO_IX)
     if [ -x "$2" ] && [ "$2" -nt "$SCRIP" ]; then return 0; fi
     local W; W=$(mktemp -d /tmp/ixb_XXXXXX)

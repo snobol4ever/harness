@@ -17,7 +17,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # EXIT 0 at or above the bar (GREEN), 1 below it (RED, the row is open), 2 REFUSED (no binary, no oracle, no twin printed, outputs differ).
 # The oracle is the clean SPITBOL benchmark oracle, sbl_clean_bin (lib_oracle_flags.sh), never the monitor-hooked correctness fork.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 . "$HERE/lib_oracle_flags.sh"
 refuse() { echo "⛔ bench_snobol4_bar REFUSE(2): $*"; exit 2; }
 [ $# -ge 3 ] || { echo "usage: $0 kernel <name> <bar> | demo <name> <bar>"; exit 2; }
@@ -31,7 +31,7 @@ refuse_timing() { local g; if g="$(perf_load_guard)"; then echo "⛔ bench_snobo
 verdict() { awk -v x="$1" -v bar="$BAR" -v what="$2" -v st="$(perf_build_stamp)" 'BEGIN{printf "%s reads %.2fx SPITBOL in mode 4 (bar %.2fx): %s · %s\n", what, x, bar, (x>=bar)?"GREEN":"RED", st; exit (x>=bar)?0:1}'; }
 case "$KIND" in
   kernel)
-    BD="$S4E/corpus/benchmarks/snobol4"; [ -f "$BD/$NAME.sno" ] || refuse "no kernel $BD/$NAME.sno"
+    BD="$S4E_CORPUS/benchmarks/snobol4"; [ -f "$BD/$NAME.sno" ] || refuse "no kernel $BD/$NAME.sno"
     cp "$BD/$NAME.sno" "$T/"; [ -f "$BD/$NAME.ref" ] && cp "$BD/$NAME.ref" "$T/"; [ -f "$BD/harness.inc" ] && cp "$BD/harness.inc" "$T/"
     ( cd "$ROOT" && BENCH_SNOBOL4_DIR="$T" BENCH_ORACLE_ARM=1 BENCH_ITER_N="${BAR_ITER_N:-3}" BENCH_BUD_MS="${BAR_BUD_MS:-500}" bash ../harness/scripts/test_snobol4_bench_suite.sh ) > "$T/log" 2>&1
     s=$(grep -E "scouting $NAME sbl: BENCH mode=time" "$T/log" | sed -E 's/.*iters=([0-9]+) ns=([0-9]+).*/\2 \1/' | head -1)
@@ -42,7 +42,7 @@ case "$KIND" in
     awk -v s="$s" -v m="$m" 'BEGIN{split(s,a," "); split(m,b," "); printf "kernel %s: SPITBOL %.2f us/rep, m4 %.2f us/rep (fixed-time twins, %s ms points)\n", "'"$NAME"'", a[1]/a[2]/1000, b[1]/b[2]/1000, "'"${BAR_BUD_MS:-500}"'"}'
     verdict "$x" "kernel $NAME" ;;
   demo)
-    D="$S4E/corpus/demos/snobol4"
+    D="$S4E_CORPUS/demos/snobol4"
     . "$HERE/lib_declared_arena.sh" || refuse "cannot load lib_declared_arena.sh -- the one reader of a declared size"
     case "$NAME" in
       claws5) P=$D/claws5/claws5.sno; IN=$D/claws5/CLAWS5inTASA.dat; N=16;; treebank) P=$D/treebank/treebank.sno; IN=$D/treebank/treebank.input; N=1024;;
@@ -55,7 +55,7 @@ case "$KIND" in
     SWD="$(declared_switches_beside "$P")" && OAD="$(declared_oracle_args_beside "$P")" || refuse "$NAME: its declared sizes are refused"
     : > "$T/in"; for ((i=0;i<N;i++)); do cat "$IN" >> "$T/in"; done
     "$SCRIP" --compile --out="$T/d.s" "$P" < /dev/null 2> "$T/cc.err" && gcc "$T/d.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$T/d.prog" 2>> "$T/cc.err" || { head -3 "$T/cc.err"; refuse "$NAME did not build in mode 4"; }
-    best() { local tag=$1 b=999999999999 i e; shift; for ((i=0;i<${BAR_REPS:-3};i++)); do ( cd "$S4E/corpus/include" && "$WRAP" timeout -k 5 600 "$@" < "$T/in" > "$T/$tag.out" 2> "$T/err" ); e=$(grep -oE 'elapsed_ns=[0-9]+' "$T/err" | tail -1 | cut -d= -f2); [ -n "$e" ] || { echo ""; return; }; [ "$e" -lt "$b" ] && b=$e; done; echo "$b"; }
+    best() { local tag=$1 b=999999999999 i e; shift; for ((i=0;i<${BAR_REPS:-3};i++)); do ( cd "$S4E_CORPUS/include" && "$WRAP" timeout -k 5 600 "$@" < "$T/in" > "$T/$tag.out" 2> "$T/err" ); e=$(grep -oE 'elapsed_ns=[0-9]+' "$T/err" | tail -1 | cut -d= -f2); [ -n "$e" ] || { echo ""; return; }; [ "$e" -lt "$b" ] && b=$e; done; echo "$b"; }
     s=$(best sbl "$SBL" -bf $OAD "$P"); m=$(best m4 "$T/d.prog" $SWD)
     [ -n "$s" ] && [ -n "$m" ] || refuse_timing "a run printed no BENCH_RUSAGE line (sbl='$s' m4='$m')"
     cmp -s "$T/sbl.out" "$T/m4.out" && [ -s "$T/m4.out" ] || refuse "$NAME: outputs differ between sbl -bf and mode 4 (or are empty) -- no multiple over a wrong answer"

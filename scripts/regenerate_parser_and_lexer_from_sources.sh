@@ -11,7 +11,7 @@
 # Tools: bison 3.8.2 / flex 2.6.4 -- gen_tools_ready (lib_build_flags.sh) resolves BISON_PKGDATADIR for the rootless ~/.local install and
 # PROVES bison generates before anything is touched. Usage: bash ../harness/scripts/regenerate_parser_and_lexer_from_sources.sh
 set -euo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SCRIP="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; SCRIP="$S4E_SCRIP"
 . "$HERE/lib_build_flags.sh"
 . "$HERE/lib_gen_parsers.sh"
 gen_tools_ready || exit 2

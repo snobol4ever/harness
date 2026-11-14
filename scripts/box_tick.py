@@ -16,6 +16,7 @@
 import os, sys, re, time, json, fcntl, resource, subprocess, glob, shutil, datetime, calendar
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib_grade_locks as GL
+import harness_paths as HP
 
 ROOT = os.environ.get("S4E_HOME") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PO = os.environ.get("S4E_POSTOFFICE") or os.environ.get("S4E_POST") or "/home/resources/postoffice"
@@ -183,7 +184,7 @@ def _append(path, text):
     with open(path, "a", encoding="utf-8") as fh: fh.write(text + "\n")
 def master_pkg_rows(): return [r for r in _rows(RUNNERS_TSV) if len(r) >= 5 and r[1] in ("master", "pkg")]
 def suite_cells(r):
-    """the cells of one SUITE_RUNNERS row: core and every chunk:NN of its PARTITION.tsv (table corpus/tests/<lang> for a master, the table column for a pkg)"""
+    """the cells of one SUITE_RUNNERS row: core and every chunk:NN of its PARTITION.tsv (table <corpus>/tests/<lang> for a master, the table column for a pkg)"""
     d = os.path.join(ROOT, "corpus", "tests", r[2]) if r[1] == "master" else os.path.join(ROOT, r[4])
     rows = _rows(os.path.join(d, "PARTITION.tsv"))
     if len(rows) < 2 or "part" not in rows[0]: return []
@@ -534,7 +535,7 @@ def live_sweep(n):
     if DRY or PROBING or n % SWEEP_EVERY:
         return "sweep=skipped"
     try:
-        r = subprocess.run(["timeout", "-k", "5", "240", "bash", os.path.join(ROOT, "harness/scripts/s4e_msg.sh"), "sweep"], capture_output=True, text=True,
+        r = subprocess.run(["timeout", "-k", "5", "240", "bash", os.path.join(str(HP.harness(ROOT)), "scripts/s4e_msg.sh"), "sweep"], capture_output=True, text=True,
                            errors="replace", stdin=subprocess.DEVNULL, env=dict(os.environ, S4E_NO_BANNER="1"))
     except Exception as e:
         return "sweep=failed:%s" % type(e).__name__
@@ -555,7 +556,7 @@ def stock_cmd():
     return ["systemd-run", "--user", "--quiet", "--collect", "--unit=" + FEED_UNIT, "--slice=s4e-batch.slice", "-p", "RuntimeMaxSec=1800",
             "--setenv=S4E_HOME=" + ROOT, "--setenv=S4E_POST=" + POST, "--setenv=S4E_SEAT=" + os.environ.get("S4E_SEAT", "cio"),
             "--setenv=S4E_FEED_WAKES=" + TICK_DIR + "/wake.pending", "-p", "StandardOutput=append:" + TICK_DIR + "/feed.log", "-p", "StandardError=append:" + TICK_DIR + "/feed.log",
-            sys.executable, "-I", os.path.join(ROOT, "harness/scripts/util_reds_to_juniors.py"), "--stock", "--apply"]
+            sys.executable, "-I", os.path.join(str(HP.harness(ROOT)), "scripts/util_reds_to_juniors.py"), "--stock", "--apply"]
 
 
 def stock_juniors(n, active=None, run=None):

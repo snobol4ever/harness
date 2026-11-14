@@ -13,7 +13,7 @@ For every file git tracks under DIR (every file on disk when DIR is in no reposi
   PROGRAM    a file the path column of ALL.csv names for a row ALL.omit does not name
   STREAM     STEM.in, STEM.out or STEM.err beside a PROGRAM of that stem
   OMITTED    a program a line of ALL.omit or a row of an EXCLUDED*.tsv names (declared out, with its measurement; not loose), and its streams
-  TABLE      CONTRACT.tsv, CONTAINERS.tsv, EXCLUDED*.tsv, PARTITION.tsv, SOURCES.tsv, DRIVERS.tsv, or a .tsv at the root a script of harness/scripts names
+  TABLE      CONTRACT.tsv, CONTAINERS.tsv, EXCLUDED*.tsv, PARTITION.tsv, SOURCES.tsv, DRIVERS.tsv, or a .tsv at the root a script of the harness names
   PART       a file ALL.launch names (the package's own driver around or under which each row runs; the grader 2026-11-11 on chat80's drive.pl);
              NAME.ecp beside a program or an omitted program of a package whose CONTRACT.tsv says units iso-rejection (the distribution's expected compiler
              listing, which the builder reads for the lines a rejection must name; the coo 2026-11-11 on pat); STEM.E.ref beside a program a row of PREPROCESS.tsv names (the preprocess-only contract's answer; the coo's ask of 2026-11-10 on jcon and

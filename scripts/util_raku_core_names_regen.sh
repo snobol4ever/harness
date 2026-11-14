@@ -16,7 +16,7 @@
 #   X::Syntax::Term exception names are not that.
 # Usage: bash ../harness/scripts/util_raku_core_names_regen.sh     (rc 2 if the oracle is absent or answers nothing)
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$S4E_SCRIP"
 RAKU="${RAKU_BIN:-/usr/bin/raku}"
 OUT="$ROOT/src/parsers/raku/rk_core_names.inc"
 [ -x "$RAKU" ] || { echo "⛔ REFUSE rc=2 [util_raku_core_names_regen] -- no oracle at $RAKU"; exit 2; }

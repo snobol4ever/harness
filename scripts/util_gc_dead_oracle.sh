@@ -20,9 +20,10 @@
 #     the linker sees), so this class is empty for the scrip binary — but verify if the
 #     resolution mechanism ever changes.
 set -euo pipefail
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+ROOT="$S4E_SCRIP"
 cd "$ROOT"
-OBJ="/tmp/si_objs$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd | tr '/' '-')"  # mirrors Makefile OBJ (per-tree, s150)
+OBJ="/tmp/si_objs$(printf '%s' "$S4E_SCRIP" | tr '/' '-')"  # mirrors Makefile OBJ (per-tree, s150)
 OUT=/tmp/dead_current.txt
 
 echo "[oracle] recompiling all TUs with section splitting ..."

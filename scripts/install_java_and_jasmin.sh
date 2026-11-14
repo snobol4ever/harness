@@ -4,7 +4,8 @@
 # Usage: bash build/build_java.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SCRIP="$ROOT/SCRIP"
+. "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
+SCRIP="$S4E_SCRIP"
 
 # Java
 if which javac &>/dev/null; then

@@ -24,7 +24,8 @@
 # Prints one line: `CAUSE=<A|B|C|D> <label>: <text>`. rc=0 a cause was determined · rc=2 CANNOT MEASURE.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_paths.sh"
+ROOT="$S4E_SCRIP"
 [ "$#" -eq 3 ] || { echo "REFUSE(2): usage: $(basename "$0") <lang> <label> <clause-regex>"; exit 2; }
 LANG_="$1"; LABEL="$2"; RX="$3"
 . "$HERE/lib_inventory.sh" 2>/dev/null || { echo "REFUSE(2): lib_inventory.sh unloadable -- cannot call the shared body"; exit 2; }

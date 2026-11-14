@@ -42,7 +42,7 @@ if "--probe-umbrella" in sys.argv[1:]:
         with open(os.path.join(d, "SUITES.tsv"), "w") as f: f.write("key\ttoday_pass\ttoday_total\nplanted-a\t3\t10\nplanted-b\t3\t10\n")
         with open(os.path.join(d, "QUEUE.tsv"), "w") as f: f.write("0\tumb-a\tworker_07\tPARKED-UMBRELLA:plana-cto-533-rest\n0\tumb-b\tworker_07\tPARKED-UMBRELLA:planb-cto-533-rest\n1\tplana-step-1-cto-533\t@haiku\tQUEUED:tier-haiku\n")
         for t, k in (("umb-a", "planted-a"), ("umb-b", "planted-b")):
-            with open(os.path.join(d, "tasks", t + ".task.md"), "w") as f: f.write("# TASK %s\nDONE-WHEN: bash harness/scripts/util_suite_row_at_100.sh %s\n" % (t, k))
+            with open(os.path.join(d, "tasks", t + ".task.md"), "w") as f: f.write("# TASK %s\nDONE-WHEN: bash $S4E_HARNESS/scripts/util_suite_row_at_100.sh %s\n" % (t, k))
         with open(os.path.join(d, "TIERS.tsv"), "w") as f: f.write("seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\ncio\tCIO\t/x\tclaude-fable-5-1\thigh\tred\t1\tfleet-system\n")
         with open(os.path.join(d, "tubes.tsv"), "w") as f: f.write("tube\tready\toldest_ready_age_s\ntier-haiku\t0\t0\n")
         r = subprocess.run([sys.executable, os.path.abspath(__file__), "--suites", os.path.join(d, "SUITES.tsv"), "--queue", os.path.join(d, "QUEUE.tsv"), "--tasks", os.path.join(d, "tasks"), "--tiers", os.path.join(d, "TIERS.tsv"), "--claims", os.path.join(d, "claims"), "--tubes", os.path.join(d, "tubes.tsv"), "--sleeping", os.path.join(d, "none")], capture_output=True, text=True, timeout=120)

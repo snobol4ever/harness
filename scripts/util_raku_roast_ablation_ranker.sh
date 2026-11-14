@@ -32,7 +32,8 @@
 #                   full pass, so the cheap questions were priced like the expensive one and went unasked.
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
-cd "$HERE/../../SCRIP" || exit 2
+. "$HERE/lib_paths.sh"
+cd "$S4E_SCRIP" || exit 2
 ROOT=$(pwd)
 SCRIP="$ROOT/scrip"
 . "$HERE/lib_raku_roast_bucket.sh" || { echo "⛔ REFUSE(2): lib_raku_roast_bucket.sh unavailable" >&2; exit 2; }

@@ -2,9 +2,10 @@
 # test_smoke_snobol4_jvm_sj4jvm2.sh — SJ4-JVM-2 gate: SnoRt.j assembles and runs correctly
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-JASMIN="${JASMIN:-$HERE/../../SCRIP/miscellaneous/jasmin.jar}"
-SNORT_J="$HERE/../../SCRIP/miscellaneous/runtimes/jvm/SnoRt.j"
-SNORT_MS_J="$HERE/../../SCRIP/miscellaneous/runtimes/jvm/SnoRtMatchState.j"
+. "$HERE/lib_paths.sh"
+JASMIN="${JASMIN:-$S4E_SCRIP/miscellaneous/jasmin.jar}"
+SNORT_J="$S4E_SCRIP/miscellaneous/runtimes/jvm/SnoRt.j"
+SNORT_MS_J="$S4E_SCRIP/miscellaneous/runtimes/jvm/SnoRtMatchState.j"
 PASS=0; FAIL=0
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT INT TERM
