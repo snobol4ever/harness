@@ -26,6 +26,7 @@
 # another seat against this inbox, which is exactly the layer-2 false-GREEN hq_P found in the batons.
 set -u
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+_s4e_here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # the bus verbs it names are this script's siblings (/home/harness once a root drops its own)
 . "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
 PO="${S4E_POST:-/home/resources/postoffice}"
 ME="${S4E_SEAT:-}"
@@ -63,9 +64,9 @@ for f in "$d"/*.msg; do [ -f "$f" ] || continue
 if [ "$u" -gt 0 ]; then
   printf '⛔ POSTOFFICE [%s] -- %s UNREAD, %s read not cleared. THE LOOP step 1 binds BEFORE anything else: read, then ACT OR REPLY, then clear (an empty inbox IS the acknowledgement). Reading without replying is NOT answering -- that is the s261 failure this hook exists to prevent.\n' "$ME" "$u" "$r"
   printf '%s' "$heads"
-  printf 'bodies: bash %s/harness/scripts/s4e_msg.sh check   |   after acting: bash %s/harness/scripts/s4e_msg.sh clear\n' "$S4E" "$S4E"
+  printf 'bodies: bash %s/s4e_msg.sh check   |   after acting: bash %s/s4e_msg.sh clear\n' "$_s4e_here" "$_s4e_here"
 elif [ "$r" -gt 0 ]; then
-  printf '[%s] %s read, not cleared; bash %s/harness/scripts/s4e_msg.sh clear archives them\n' "$ME" "$r" "$S4E"
+  printf '[%s] %s read, not cleared; bash %s/s4e_msg.sh clear archives them\n' "$ME" "$r" "$_s4e_here"
 else
   printf '✅ POSTOFFICE [%s] -- inbox empty. That IS the acknowledgement; nothing owed.\n' "$ME"
 fi

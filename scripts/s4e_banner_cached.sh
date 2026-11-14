@@ -11,17 +11,21 @@
 # ASSIGNED or CLAIMED to it the gate answers {"decision":"block","reason":...}; since 2026-11-08 08:1x (Lon) that verdict is only shown in the banner, never returned.
 # The seat is S4E_SEAT when the session sets it (every root's settings.local.json does), else the hook's argument.
 set -u
+# THE THREE HOME REPOS (Lon 2026-11-13 19:4x CST: "the complete re-write of the make and shell scripts and fleet system to use the THREE NEW repos in /home folder"; row
+# harness-every-seats-hooks-and-claude-md-name-the-three-home-repos): every sibling this banner runs is read beside this script (HERE), never under <root>/harness, so a
+# root that has dropped its harness keeps its banner; S4E_HOME is the root, exported for the bus verbs it runs.
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ "${1:-}" = "--refresh" ]; then
-    root="$2"; seat="$3"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"; : > "$c.lock"; start=$(date +%s)
-    timeout -k 5 600 bash "$root/harness/scripts/s4e_msg.sh" banner > "$c.tmp" 2>&1
+    root="$2"; seat="$3"; export S4E_HOME="${S4E_HOME:-$root}"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"; : > "$c.lock"; start=$(date +%s)
+    timeout -k 5 600 bash "$HERE/s4e_msg.sh" banner > "$c.tmp" 2>&1
     [ -s "$c.tmp" ] && mv -f "$c.tmp" "$c" && touch -d "@$start" "$c"   # the cache is dated by its SNAPSHOT, not by the write: a bus action after the start makes it stale
     rm -f "$c.lock" "$c.tmp"; exit 0
 fi
-root="${1:?root}"; seat="${S4E_SEAT:-${2:?seat}}"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"
+root="${1:?root}"; seat="${S4E_SEAT:-${2:?seat}}"; export S4E_HOME="${S4E_HOME:-$root}"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"
 hookin=""; [ -t 0 ] || hookin="$(timeout 2 cat 2>/dev/null)"
 now=$(date +%s); load=$(cut -d' ' -f1 /proc/loadavg)
 [ -f "$c.lock" ] && [ $(( now - $(stat -c %Y "$c.lock") )) -gt 900 ] && rm -f "$c.lock"
-spawn() { setsid bash "$root/harness/scripts/s4e_banner_cached.sh" --refresh "$root" "$seat" < /dev/null > /dev/null 2>&1 & }
+spawn() { setsid bash "$HERE/s4e_banner_cached.sh" --refresh "$root" "$seat" < /dev/null > /dev/null 2>&1 & }
 # THE STALE CACHE (Lon 2026-11-08 22:4x, in the cto's window: the banner said IN-PROGRESS on a row released a minute before; "something to do with caching?").
 # MEASURED: the cache written 22:46:20 carried the BOX stamp 22:45:11, the verb's start, and the row was released at 22:45:4x; the hook served it
 # until it was 240 s old and even then showed it once more while the refresh ran. THE RULE: every state-changing bus verb stamps
@@ -30,7 +34,7 @@ spawn() { setsid bash "$root/harness/scripts/s4e_banner_cached.sh" --refresh "$r
 stamp="/tmp/s4e/$seat/bus.stamp"; stale=0
 [ -f "$c" ] && [ -f "$stamp" ] && [ "$(stat -c %Y "$stamp")" -ge "$(stat -c %Y "$c")" ] && stale=1
 if [ "$stale" = 1 ] && [ ! -f "$c.lock" ]; then
-    start=$now; fresh="$(timeout -k 5 100 bash "$root/harness/scripts/s4e_msg.sh" banner 2>&1)"
+    start=$now; fresh="$(timeout -k 5 100 bash "$HERE/s4e_msg.sh" banner 2>&1)"
     if [ -n "$fresh" ]; then printf '%s' "$fresh" > "$c"; touch -d "@$start" "$c"; stale=0; fi
 fi
 if [ -f "$c" ]; then
@@ -41,7 +45,7 @@ $out"
     [ "$stale" = 0 ] && [ "$age" -gt 60 ] && out="(banner cached ${age} s ago at load $load; a refresh is running)
 $out"   # first section, never the end (Lon 2026-11-06: "Remove the verbaiage \"(banner cahced ... blah)\" from the end of the banner. Put it in the first section instead.")
 else
-    out="$(timeout -k 5 100 bash "$root/harness/scripts/s4e_msg.sh" banner 2>&1)"
+    out="$(timeout -k 5 100 bash "$HERE/s4e_msg.sh" banner 2>&1)"
     if [ -n "$out" ]; then printf '%s' "$out" > "$c"; else out="banner: the verb printed nothing within 100 s at load $load; the first refresh runs in the background and the next turn shows it"; [ -f "$c.lock" ] || spawn; fi
 fi
 if [ -f "$root/.claude/banner_compact.py" ]; then cmp="$(printf '%s' "$out" | python3 -I "$root/.claude/banner_compact.py" 2>/dev/null)" && [ -n "$cmp" ] && out="$cmp"; fi
@@ -55,8 +59,8 @@ word="$(printf '%s\n' "$out" | grep -xE 'SUCCESS|IN-PROGRESS|DRAIN|STOP|FAILURE'
 # old and read a different SUITES.tsv than the fresh one). Each part is bounded; the countdown's last good render waits in /tmp/s4e/<seat>/countdown.cache for a read that runs over.
 extra=""
 if [ -n "$grid" ]; then
-    gf="$(timeout -k 2 10 python3 -I "$root/harness/scripts/util_suite_banner.py" < /dev/null 2>/dev/null | grep -E '│|^[0-9]+ suites, ')"; [ -n "$gf" ] && grid="$gf"
-    cc="/tmp/s4e/$seat/countdown.cache"; extra="$(timeout -k 2 8 python3 -I "$root/harness/scripts/util_cycle_countdown.py" < /dev/null 2>/dev/null)"
+    gf="$(timeout -k 2 10 python3 -I "$HERE/util_suite_banner.py" < /dev/null 2>/dev/null | grep -E '│|^[0-9]+ suites, ')"; [ -n "$gf" ] && grid="$gf"
+    cc="/tmp/s4e/$seat/countdown.cache"; extra="$(timeout -k 2 8 python3 -I "$HERE/util_cycle_countdown.py" < /dev/null 2>/dev/null)"
     if [ -n "$extra" ]; then printf '%s\n' "$extra" > "$cc"
     elif [ -s "$cc" ]; then extra="$(cat "$cc")
 (the cycle line and the countdown above were rendered at $(date -r "$cc" +%H:%M); the live read did not finish in 8 s)"; fi
@@ -98,7 +102,7 @@ _held="${S4E_CYCLE_REFUSED:-/home/resources/progress/CYCLE.refused}"
 if [ -n "$grid" ] && [ -s "$_held" ]; then out="$out
 ⛔ SUITE ROWS HELD ($(grep -c . "$_held")): the grid shows their older reading; each refusal in full is $_held
 $(awk -F'\t' '{ r = $3; c = (r ~ /denominator moves/) ? "denominator moved, no stamp" : (r ~ /no suite (table|key)/) ? "no banner row" : (r ~ /have no reading/) ? "entries unread" : "other"; n[c]++; k[c] = k[c] " " $1 } END { for (c in n) printf "   %s (%d):%s\n", c, n[c], k[c] }' "$_held" | sort)"; fi
-gate="{}"; g="$root/harness/scripts/s4e_stop_gate.sh"
+gate="{}"; g="$HERE/s4e_stop_gate.sh"
 [ -f "$g" ] && gate="$(printf '%s' "$hookin" | timeout 20 bash "$g" "$root" "$seat" --json 2>/dev/null)"
 printf '%s' "$out" | G="$gate" python3 -c 'import json,os,sys
 m=sys.stdin.read()
