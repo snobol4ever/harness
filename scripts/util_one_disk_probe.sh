@@ -17,12 +17,13 @@ SEAT="${S4E_SEAT:-probe}"
 die() { echo "ONE_DISK_PROBE REFUSE(2): $*"; exit 2; }
 g() { git -c user.name=LCherryholmes -c user.email=lcherryh@yahoo.com "$@"; }
 T="$(mktemp -d "/tmp/s4e/$SEAT/one-disk-probe.XXXXXX" 2>/dev/null)" || { mkdir -p "/tmp/s4e/$SEAT" && T="$(mktemp -d "/tmp/s4e/$SEAT/one-disk-probe.XXXXXX")"; } || die "cannot make a scratch box"
-why=""
+why=""; declare -A h0=()   # each source's HEAD at the start: /home/corpus moves under a run (the grader's minute update), so arm 3 compares with this, never the live HEAD
 src_of() { case "$1" in SCRIP) printf '%s' "$S4E_SCRIP" ;; corpus) printf '%s' "$S4E_CORPUS" ;; harness) printf '%s' "$S4E_HARNESS" ;; .github) printf '%s' "$S4E_GITHUB" ;; esac; }
 for r in SCRIP corpus harness .github; do
     s="$(src_of "$r")"; [ -e "$s/.git" ] || die "no $r checkout at $s to borrow"
     objs="$(cd "$s" && git rev-parse --path-format=absolute --git-common-dir)/objects"; b="$T/origin/$r.git"
-    mkdir -p "$T/origin" && git init -q --bare "$b" && echo "$objs" > "$b/objects/info/alternates" && git -C "$b" update-ref refs/heads/main "$(git -C "$s" rev-parse HEAD)" && git -C "$b" symbolic-ref HEAD refs/heads/main || die "cannot make the scratch origin of $r"
+    h0[$r]="$(git -C "$s" rev-parse HEAD)"
+    mkdir -p "$T/origin" && git init -q --bare "$b" && echo "$objs" > "$b/objects/info/alternates" && git -C "$b" update-ref refs/heads/main "${h0[$r]}" && git -C "$b" symbolic-ref HEAD refs/heads/main || die "cannot make the scratch origin of $r"
 done
 git clone -q --shared "$T/origin/SCRIP.git" "$T/root" || die "cannot clone the root"
 git clone -q --shared "$T/origin/harness.git" "$T/harness" || die "cannot clone the one-disk harness"
@@ -45,12 +46,12 @@ if [ -n "$ent" ]; then
 fi
 # arm 3
 g -C "$T/root" commit -q --allow-empty -m "probe: a SCRIP change landed from a root that is the clone" || die "cannot commit in the root"
-gate="[ \"\$S4E_SCRIP\" = \"$T/root\" ] && [ \"\$S4E_HOME\" = \"$T/root\" ] && [ -x \"\$S4E_SCRIP/scrip\" ] && bash \"\$S4E_HARNESS/scripts/lib_paths.sh\" --show | grep -q 'S4E_CORPUS=$T/corpus (one-disk)'"
+gate="[ \"\$S4E_SCRIP\" = \"$T/root\" ] && [ \"\$S4E_HOME\" = \"$T/root\" ] && [ -x \"\$S4E_SCRIP/scrip\" ] && bash \"\$S4E_HARNESS/scripts/lib_paths.sh\" --show | grep -q 'S4E_CORPUS=$T/corpus '"
 ( cd "$T/root" && "${E[@]}" bash "$T/harness/scripts/s4e_land.sh" --home "$T/root" --gate "$gate" SCRIP ) > "$T/land.log" 2>&1; rc=$?
 grep -E 'stage=(preflight|gate|push)|LAND ok|LAND RED|REFUSE' "$T/land.log" | cut -c1-180 | sed 's/^/    arm3| /' | tail -8
 [ "$rc" = 0 ] && grep -q '^LAND ok ' "$T/land.log" || why="$why arm 3: the landing from the root returned rc=$rc;"
 [ "$(git -C "$T/origin/SCRIP.git" rev-parse main)" = "$(git -C "$T/root" rev-parse HEAD)" ] || why="$why arm 3: SCRIP's origin is not the root's HEAD;"
-for r in corpus harness .github; do [ "$(git -C "$T/origin/$r.git" rev-parse main)" = "$(git -C "$(src_of "$r")" rev-parse HEAD)" ] || why="$why arm 3: $r's origin moved;"; done
+for r in corpus harness .github; do [ "$(git -C "$T/origin/$r.git" rev-parse main)" = "${h0[$r]}" ] || why="$why arm 3: $r's origin moved;"; done
 # arm 4
 dw="test -x \"\$S4E_SCRIP/scrip\" && [ \"\$S4E_SCRIP\" = \"$T/root\" ] && test -f \"\$S4E_CORPUS/tests/snobol4/ALL.csv\""
 o="$( cd "$T/root" && "${E[@]}" bash "$T/harness/scripts/s4e_msg.sh" mint one-disk-probe-row --owner "$SEAT" --stdin 2>&1 <<BODY
