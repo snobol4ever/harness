@@ -4,8 +4,8 @@
 # four trees and the arguments, so it runs ONCE per tree for the whole fleet and every later run on the same trees replays its verdict.
 #
 #   util_check_cache.sh [--fresh] NAME -- COMMAND [ARG...]
-#       KEY  = sha256 of NAME, the HEAD^{tree} of SCRIP, corpus, harness and .github (this script's own root: the four siblings beside
-#              harness/), and COMMAND with every ARG (NUL-separated, so no two argument lists share a key).
+#       KEY  = sha256 of NAME, the HEAD^{tree} of SCRIP, corpus, harness and .github (the four checkouts lib_paths.sh names: S4E_SCRIP,
+#              S4E_CORPUS, S4E_HARNESS, S4E_GITHUB, the environment first, else /home/<repo>, else the sibling), and COMMAND with every ARG (NUL-separated, so no two argument lists share a key).
 #       HIT  (the four trees CLEAN at those hashes, SCRIP's out/buildinfo naming the same SCRIP tree, the entry present): prints
 #              "CACHED <key> <utc of the run that stored it>", then the stored output, and exits with the stored rc. COMMAND is not run.
 #       MISS: runs COMMAND (stdout and stderr together), prints its output, exits with its rc, and STORES rc and output by an atomic rename
@@ -17,7 +17,7 @@
 #              S4E_NO_CHECK_CACHE=1 (the control arm).
 #       --fresh: bypasses the lookup once and says so on the first line ("FRESH <key>"); the run is stored as a miss would be.
 #   util_check_cache.sh --cacheable-text TEXT
-#       rc 0 when TEXT (a DONE-WHEN) names at least one harness script and every harness script it names is a test_gate_*.sh not in
+#       rc 0 when TEXT (a DONE-WHEN) names at least one harness script (harness/scripts/X or $S4E_HARNESS/scripts/X) and every harness script it names is a test_gate_*.sh not in
 #       checks_nocache.tsv; rc 1 otherwise. s4e_msg.sh done and the zero-base sweep route a DONE-WHEN through the cache only then: a criterion
 #       that names a board, a bus verb or any other script runs live as before.
 #   util_check_cache.sh --census
@@ -41,7 +41,9 @@
 # scratch directory (the seam util_build_cache.sh's gate uses). Entries are never invalidated: a new landing is a new key (section 3.1).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-ROOT="$(cd "$HERE/../.." && pwd -P)"
+[ -f "$HERE/lib_paths.sh" ] || { echo "REFUSE(2): util_check_cache.sh: no lib_paths.sh beside it in $HERE" >&2; exit 2; }
+. "$HERE/lib_paths.sh"
+rdir() { case "$1" in SCRIP) printf '%s' "$S4E_SCRIP" ;; corpus) printf '%s' "$S4E_CORPUS" ;; harness) printf '%s' "$S4E_HARNESS" ;; .github) printf '%s' "$S4E_GITHUB" ;; esac; }
 STORE="${S4E_CHECK_CACHE_DIR:-/home/resources/progress/checks}"
 NOCACHE="$HERE/checks_nocache.tsv"
 PAT_BUS='/home/resources/postoffice|s4e_msg\.sh|s4e_test_request\.sh|QUEUE\.tsv'
@@ -61,23 +63,23 @@ census() {
     done
 }
 nocache_has() { [ -f "$NOCACHE" ] && grep -v '^#' "$NOCACHE" | cut -f1 | grep -qxF -- "$1"; }
-tree_of() { git -C "$ROOT/$1" rev-parse 'HEAD^{tree}' 2>/dev/null; }
-clean_of() { [ -d "$ROOT/$1/.git" ] || [ -f "$ROOT/$1/.git" ] || return 1; [ -z "$(git -C "$ROOT/$1" status --porcelain 2>/dev/null)" ]; }
+tree_of() { git -C "$(rdir "$1")" rev-parse 'HEAD^{tree}' 2>/dev/null; }
+clean_of() { local d; d="$(rdir "$1")"; [ -d "$d/.git" ] || [ -f "$d/.git" ] || return 1; [ -z "$(git -C "$d" status --porcelain 2>/dev/null)" ]; }
 input_id() {
     local t="$1" r p id d
     case "$t" in
         *@HEAD)
             r="${t%@HEAD}"; case "$r" in SCRIP|corpus|harness|.github) ;; *) return 1 ;; esac
-            id="$(git -C "$ROOT/$r" rev-parse HEAD 2>/dev/null)" && [ -n "$id" ] || return 1
-            d=0; [ -n "$(git -C "$ROOT/$r" status --porcelain 2>/dev/null)" ] && d=1
+            id="$(git -C "$(rdir "$r")" rev-parse HEAD 2>/dev/null)" && [ -n "$id" ] || return 1
+            d=0; [ -n "$(git -C "$(rdir "$r")" status --porcelain 2>/dev/null)" ] && d=1
             printf '%s %s\n' "$id" "$d" ;;
         */*)
             r="${t%%/*}"; p="${t#*/}"; case "$r" in SCRIP|corpus|harness|.github) ;; *) return 1 ;; esac
-            if id="$(git -C "$ROOT/$r" rev-parse "HEAD:$p" 2>/dev/null)" && [ -n "$id" ]; then
-                d=0; [ -n "$(git -C "$ROOT/$r" status --porcelain -- "$p" 2>/dev/null)" ] && d=1
+            if id="$(git -C "$(rdir "$r")" rev-parse "HEAD:$p" 2>/dev/null)" && [ -n "$id" ]; then
+                d=0; [ -n "$(git -C "$(rdir "$r")" status --porcelain -- "$p" 2>/dev/null)" ] && d=1
                 printf '%s %s\n' "$id" "$d"
-            elif [ -f "$ROOT/$r/$p" ]; then
-                printf '%s 0\n' "$(sha256sum "$ROOT/$r/$p" | cut -c1-40)"
+            elif [ -f "$(rdir "$r")/$p" ]; then
+                printf '%s 0\n' "$(sha256sum "$(rdir "$r")/$p" | cut -c1-40)"
             else return 1; fi ;;
         *) return 1 ;;
     esac
@@ -87,11 +89,11 @@ probe_inputs() {
     mkdir -p "/tmp/s4e/${S4E_SEAT:-probe}" 2>/dev/null
     T="$(mktemp -d "/tmp/s4e/${S4E_SEAT:-probe}/cci.XXXXXX" 2>/dev/null)" || { echo "REFUSE(2): mktemp failed for the probe" >&2; return 2; }
     for r in SCRIP corpus harness .github; do mkdir -p "$T/$r" && git -C "$T/$r" init -q 2>/dev/null || { rm -rf "$T"; return 2; }; done
-    mkdir -p "$T/harness/scripts" && cp "$HERE/util_check_cache.sh" "$HERE/checks_nocache.tsv" "$T/harness/scripts/" || { rm -rf "$T"; return 2; }
+    mkdir -p "$T/harness/scripts" && cp "$HERE/util_check_cache.sh" "$HERE/checks_nocache.tsv" "$HERE/lib_paths.sh" "$T/harness/scripts/" || { rm -rf "$T"; return 2; }
     printf 'one\n' > "$T/harness/in.txt"; printf 'other\n' > "$T/harness/other.txt"; printf 'corpus\n' > "$T/corpus/c.txt"
     cm() { git -C "$T/$1" add -A && git -C "$T/$1" -c user.name=probe -c user.email=probe@localhost commit -q --allow-empty -m "$2"; }
     for r in SCRIP corpus harness .github; do cm "$r" init || { rm -rf "$T"; return 2; }; done
-    export S4E_CHECK_CACHE_DIR="$T/store"
+    export S4E_CHECK_CACHE_DIR="$T/store" S4E_HOME="$T" S4E_SCRIP="$T/SCRIP" S4E_CORPUS="$T/corpus" S4E_HARNESS="$T/harness" S4E_GITHUB="$T/.github"
     cmd="echo run >> $T/count; cat $T/harness/in.txt"
     run_once() { bash "$T/harness/scripts/util_check_cache.sh" --inputs "$1" probe -- bash -c "$cmd" > "$T/out" 2> "$T/err"; }
     klass() { if grep -q LIVE "$T/err"; then echo live; elif head -1 "$T/out" | grep -q '^CACHED '; then echo hit; else echo miss; fi; }
@@ -121,7 +123,7 @@ case "${1:-}" in
     --probe-inputs) probe_inputs; exit $? ;;
     --cacheable-text)
         text="${2:-}"; n=0
-        for s in $(printf '%s\n' "$text" | grep -oE '[A-Za-z0-9_./-]*harness/scripts/[A-Za-z0-9_.-]+' | sed 's|.*/||' | sort -u); do
+        for s in $(printf '%s\n' "$text" | grep -oE '(harness|S4E_HARNESS\}?)/scripts/[A-Za-z0-9_.-]+' | sed 's|.*/||' | sort -u); do
             n=$((n + 1))
             case "$s" in test_gate_*.sh) ;; *) exit 1 ;; esac
             nocache_has "$s" && exit 1
@@ -154,7 +156,7 @@ else
     key="$( { printf '%s\n%s\n' "$name" "$trees"; printf '%s\0' "$@"; } | sha256sum | cut -c1-40)"
     for r in SCRIP corpus harness .github; do clean_of "$r" || { why="the $r tree is dirty or absent"; break; }; done
     if [ -z "$why" ]; then
-        st="$(tree_of SCRIP)"; bt="$(sed -n 's/^tree //p' "$ROOT/SCRIP/out/buildinfo" 2>/dev/null | head -1)"
+        st="$(tree_of SCRIP)"; bt="$(sed -n 's/^tree //p' "$S4E_SCRIP/out/buildinfo" 2>/dev/null | head -1)"
         [ -n "$bt" ] && [ "$bt" = "$st" ] || why="SCRIP's out/buildinfo does not name the SCRIP tree ${st:0:12} (run make)"
     fi
 fi
