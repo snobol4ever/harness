@@ -78,7 +78,7 @@ s4e_unfolded_authority_mail() {
     local newest=-1 f base nanos sender
     for f in "$archive_dir"/*.msg; do
         [ -e "$f" ] || continue
-        base="$(basename "$f")"
+        base="${f##*/}"                                      # no fork: a seat's archive holds thousands of messages and a basename each stalled park for minutes at load 80 (the cto 2026-11-14, 4,618 files)
         nanos="${base%%-*}"
         case "$nanos" in ''|*[!0-9]*) continue ;; esac       # filename doesn't start with a number -- not ours to parse
         sender="${base#*-}"; sender="${sender%%-*}"
@@ -111,7 +111,7 @@ s4e_release_guard_note() {
         local f base nanos sender
         for f in "$archive_dir"/*.msg; do
             [ -e "$f" ] || continue
-            base="$(basename "$f")"
+            base="${f##*/}"
             nanos="${base%%-*}"
             case "$nanos" in ''|*[!0-9]*) continue ;; esac
             sender="${base#*-}"; sender="${sender%%-*}"
