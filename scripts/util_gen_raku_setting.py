@@ -12,7 +12,9 @@ imported from the module that exports it, CORE for the core prelude; rk_syntax.c
   --dir D and --out F read the setting from D and write or check F (a gate's plant on scratch copies); rc 2 refuses.
 """
 import os, re, sys
-ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP")
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE); import harness_paths   # THE ABSOLUTE MODEL (row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them): the SCRIP this writes is S4E_SCRIP, never the harness's sibling
+ROOT = str(harness_paths.scrip())
 SET = os.path.join(ROOT, "src", "parsers", "raku", "setting")
 OUT = os.path.join(ROOT, "src", "parsers", "raku", "raku_setting.inc")
 
