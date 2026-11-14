@@ -189,7 +189,7 @@ def _git_short(repo, full=False):
         out = subprocess.run(["git", "-C", repo, "rev-parse"] + ([] if full else ["--short"]) + ["HEAD"], capture_output=True, text=True, timeout=20)
         h = out.stdout.strip()
         if out.returncode == 0 and re.fullmatch(r"[0-9a-f]{7,}", h):
-            dirty = subprocess.run(["git", "-C", repo, "status", "--porcelain", "--untracked-files=no"], capture_output=True, text=True, timeout=60)
+            dirty = subprocess.run(["git", "--no-optional-locks", "-C", repo, "status", "--porcelain", "--untracked-files=no"], capture_output=True, text=True, timeout=60)   # a read takes no index lock (the cio 2026-11-14: a grade's git status held .git/index.lock in a seat's clone at the instant its lander's rebase continued, and the landing read red)
             return h + ("-dirty" if dirty.stdout.strip() else "")
     except Exception:
         pass

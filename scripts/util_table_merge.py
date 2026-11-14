@@ -7,6 +7,7 @@ red:rebase): one new entry renumbers the rank column of every row below it and m
 
     util_table_merge.py csv BASE OURS THEIRS OUT          ALL.csv: rows keyed by the `entry` column
     util_table_merge.py partition BASE OURS THEIRS OUT    PARTITION.tsv: rows keyed by their first column, comment lines kept from OURS
+    util_table_merge.py md BASE OURS THEIRS OUT           MULTI-LINERS.md: one section a test, keyed by its `## <entry name>` heading (a heading inside a fence is text)
     util_table_merge.py --probe                           the law on planted tables; one TABLE_MERGE line
 
 OURS is the tree being rebased ONTO (origin), THEIRS the commit being replayed (git's stages 2 and 3 during a rebase), BASE their common ancestor (stage 1).
@@ -157,8 +158,58 @@ def merge_partition(base, ours, theirs):
     return "\n".join(no + [row["line"] for _k, row in merged]) + "\n"
 
 
+def _md_sections(text):
+    """(preamble, {name: section text}) of a SCRIPtix container: a section starts at a line `## <name>` that stands outside every fence; a fence opens at a line of three or
+    more backticks (with or without a tag) and closes at a line of exactly as many backticks, so a `## ` line of a program or an answer is never taken for a heading."""
+    pre, rows, cur, name, fence = [], {}, None, None, 0
+    for line in text.split("\n"):
+        if fence:
+            if line.strip() == "`" * fence:
+                fence = 0
+        else:
+            t = line.lstrip("`")
+            n = len(line) - len(t)
+            if n >= 3 and "`" not in t:
+                fence = n
+            elif line.startswith("## "):
+                if name is not None:
+                    rows[name] = {"text": "\n".join(cur)}
+                name = line[3:].strip(); cur = []
+                if name in rows:
+                    raise Conflict("the section %s stands twice in one side" % name)
+        (cur if name is not None else pre).append(line)
+    if name is not None:
+        rows[name] = {"text": "\n".join(cur)}
+    if fence:
+        raise Conflict("a fence is left open at the end of one side")
+    return "\n".join(pre), rows
+
+
+def merge_md(base, ours, theirs):
+    _pb, rb = _md_sections(base); po, ro = _md_sections(ours); _pt, rt = _md_sections(theirs)
+    for d in (rb, ro, rt):                 # the last section owns the file's final newline; every section is compared without its trailing blank lines
+        for k in d:
+            d[k]["text"] = d[k]["text"].rstrip("\n")
+    merged = _keyed(rb, ro, rt, ["text"], set())
+    body = "\n\n".join(row["text"] for _k, row in merged)
+    return (po.rstrip("\n") + "\n\n" if po.strip() else "") + body + ("\n\n" if ours.endswith("\n\n") else "\n")   # the file ends as origin's ends
+
+
 def probe():
     why = []
+    M = lambda *secs: "".join("## %s\n\n```Pascal\n%s\n```\n\n```stdout\n%s\n```\n\n" % x for x in secs).rstrip("\n") + "\n"
+    mb = M(("a", "begin end.", "1"), ("c", "begin end.", "3"))
+    mo = M(("a", "begin end.", "1"), ("x_origin", "## not a heading", "x"), ("c", "begin end.", "3"))
+    mt = M(("a", "begin end.", "1"), ("y_landing", "begin end.", "y"), ("c", "begin end.", "3"))
+    try:
+        got = merge_md(mb, mo, mt)
+        if got != M(("a", "begin end.", "1"), ("y_landing", "begin end.", "y"), ("x_origin", "## not a heading", "x"), ("c", "begin end.", "3")): why.append("arm 7 (two sections added at one spot of the container, a heading-like line inside a fence): got %r" % got)
+    except Conflict as e:
+        why.append("arm 7 raised %s" % e)
+    try:
+        merge_md(mb, M(("a", "begin writeln(1) end.", "1"), ("c", "begin end.", "3")), M(("a", "begin writeln(2) end.", "1"), ("c", "begin end.", "3"))); why.append("arm 8: both sides changed one section differently and it merged")
+    except Conflict:
+        pass
     H = "rank,entry,family,heap_kb\n"
     base = H + "1,a,f,10\n2,b,f,10\n3,c,f,10\n"
     ours = H + "1,a,f,10\n2,x_origin,f,10\n3,b,f,10\n4,c,f,10\n"            # origin added x_origin after a
@@ -196,14 +247,14 @@ def probe():
         if got != "entry,heap_kb\na,1\nc,3\nb,2\n" and got != "entry,heap_kb\na,1\nb,2\nc,3\n": why.append("arm 6 (a table with no rank column): got %r" % got)
     except Conflict as e:
         why.append("arm 6 raised %s" % e)
-    print("TABLE_MERGE ok arms=6 (two landings' new rows are both kept and the rank counted again; a cell one side changed is that side's; a cell both changed differently, and a row one deleted and the other changed, are real conflicts; a row origin deleted stays deleted; the partition keeps both new rows)" if not why else "TABLE_MERGE RED: " + " | ".join(why))
+    print("TABLE_MERGE ok arms=8 (two landings' new rows are both kept and the rank counted again; a cell one side changed is that side's; a cell both changed differently, and a row one deleted and the other changed, are real conflicts; a row origin deleted stays deleted; the partition keeps both new rows; two sections added at one spot of a container are both kept, a heading inside a fence is text, and a section both changed differently is a real conflict)" if not why else "TABLE_MERGE RED: " + " | ".join(why))
     return 0 if not why else 1
 
 
 def main(argv):
     if argv[1:] == ["--probe"]:
         return probe()
-    if len(argv) != 6 or argv[1] not in ("csv", "partition"):
+    if len(argv) != 6 or argv[1] not in ("csv", "partition", "md"):
         sys.stderr.write(__doc__)
         return 2
     try:
@@ -212,7 +263,7 @@ def main(argv):
         sys.stderr.write("REFUSE(2) [table_merge]: %s\n" % e)
         return 2
     try:
-        out = merge_csv(b, o, t) if argv[1] == "csv" else merge_partition(b, o, t)
+        out = merge_csv(b, o, t) if argv[1] == "csv" else merge_md(b, o, t) if argv[1] == "md" else merge_partition(b, o, t)
     except Conflict as e:
         sys.stderr.write("TABLE_MERGE conflict in %s: %s\n" % (argv[5], e))
         return 1

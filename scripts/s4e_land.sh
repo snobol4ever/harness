@@ -921,10 +921,10 @@ merged_outputs=0; merged_names=""
 # makes them exact: MEASURED on origin's pascal master, util_build_rungs_suite.py --reindex reproduces ALL.csv byte for byte, and on real history the keyed merge of two real
 # witness additions from their common base equals the ALL.csv that landed when they went one after the other. --probe-table-merge proves it on scratch origins.
 merged_tables=""
-is_container_table() { case "$1" in tests/*/ALL.csv|tests/*/PARTITION.tsv|packages/*/ALL.csv|packages/*/PARTITION.tsv|demos/*/ALL.csv|demos/*/PARTITION.tsv) return 0 ;; esac; return 1; }
+is_container_table() { case "$1" in tests/*/ALL.csv|tests/*/PARTITION.tsv|tests/*/MULTI-LINERS.md|packages/*/ALL.csv|packages/*/PARTITION.tsv|packages/*/MULTI-LINERS.md|demos/*/ALL.csv|demos/*/PARTITION.tsv|demos/*/MULTI-LINERS.md) return 0 ;; esac; return 1; }   # MULTI-LINERS.md too (the cio 2026-11-14, MEASURED after the tables' merge landed: junior_14's pascal witness conflicted in the container itself, two sections placed at one spot): merged by its section headings
 merge_container_table() {   # <repo> <file>: git's stages 1 (base), 2 (origin, the tree rebased onto) and 3 (the landing's commit) merged into the file and added; rc 1 a real conflict
     local d kind t; d="$(rd "$1")"; t="$LOG/tm.$(printf '%s' "$2" | tr '/' '_')"
-    case "$2" in *PARTITION.tsv) kind=partition ;; *) kind=csv ;; esac
+    case "$2" in *PARTITION.tsv) kind=partition ;; *MULTI-LINERS.md) kind=md ;; *) kind=csv ;; esac
     git -C "$d" show ":1:$2" > "$t.base" 2>/dev/null || : > "$t.base"
     git -C "$d" show ":2:$2" > "$t.ours" 2>/dev/null && git -C "$d" show ":3:$2" > "$t.theirs" 2>/dev/null || { echo "one side deleted $2" > "$LOG/table_merge"; return 1; }
     python3 "$HERE/util_table_merge.py" "$kind" "$t.base" "$t.ours" "$t.theirs" "$d/$2" > "$LOG/table_merge" 2>&1 || return 1
@@ -935,10 +935,10 @@ tables_after_merge() {   # after the rebase: each MASTER whose table was merged 
     [ -n "$merged_tables" ] || return 0
     d="$(rd corpus)"
     for f in $merged_tables; do
-        case "$f" in tests/*/ALL.csv|tests/*/PARTITION.tsv) lang="${f#tests/}"; lang="${lang%%/*}" ;; *) echo "LAND stage=rebase table $f merged by entry key (a package has no generator: the merge is its answer)"; continue ;; esac
+        case "$f" in tests/*/ALL.csv|tests/*/PARTITION.tsv|tests/*/MULTI-LINERS.md) lang="${f#tests/}"; lang="${lang%%/*}" ;; *) echo "LAND stage=rebase table $f merged by entry key (a package has no generator: the merge is its answer)"; continue ;; esac
         case "$lang" in snobol4|icon|prolog|raku|snocone|rebus|pascal) ;; *) echo "LAND stage=rebase table $f merged by entry key (tests/$lang is no master the builder knows: the merge is its answer)"; continue ;; esac
         case " $seen " in *" $lang "*) continue ;; esac; seen="$seen $lang"
-        if ( cd "$d" && S4E_CORPUS="$d" timeout -k 5 600 python3 "$HERE/util_build_rungs_suite.py" --lang "$lang" --reindex ) > "$LOG/reindex.$lang" 2>&1 \
+        if ( cd "$d" && S4E_CORPUS="$d" timeout -k 5 600 python3 "$HERE/util_build_rungs_suite.py" --lang "$lang" --resort && S4E_CORPUS="$d" timeout -k 5 600 python3 "$HERE/util_build_rungs_suite.py" --lang "$lang" --reindex ) > "$LOG/reindex.$lang" 2>&1 \
             && ( cd "$d/tests/$lang" && timeout -k 5 600 python3 "$HERE/util_suite_partition.py" build ALL.csv ) >> "$LOG/reindex.$lang" 2>&1; then
             n="$(git -C "$d" status --porcelain --untracked-files=no -- "tests/$lang" | wc -l)"
             if [ "$n" -gt 0 ]; then
@@ -973,7 +973,20 @@ resolve_output_conflicts() {   # <repo> (step 19: generated tables merge by rege
             fi
             merged_outputs=$((merged_outputs + 1)); merged_names="$merged_names $r/$f"
         done
-        GIT_EDITOR=true git -C "$(rd "$r")" rebase --continue > "$LOG/rebase.$r" 2>&1 || true
+        # THE INDEX LOCK OF ANOTHER GIT PROCESS IS WAITED OUT (the cio 2026-11-14, MEASURED: senior_09's landing read LAND RED stage=rebase conflicts=? because its
+        # rebase --continue met .git/index.lock, held for an instant by another git process in the seat's own clone, a grade's git status): up to five more tries.
+        for _k in 1 2 3 4 5 6; do
+            GIT_EDITOR=true git -C "$(rd "$r")" rebase --continue > "$LOG/rebase.$r" 2>&1 && break
+            grep -q 'index.lock' "$LOG/rebase.$r" || break
+            sleep "$_k"
+        done
+        if [ -e "$(git_state "$r" rebase-merge)" ] || [ -e "$(git_state "$r" rebase-apply)" ]; then
+            mapfile -t u < <(git -C "$(rd "$r")" diff --name-only --diff-filter=U)
+            if [ "${#u[@]}" = 0 ]; then
+                git -C "$(rd "$r")" rebase --abort > /dev/null 2>&1
+                red rebase "repo=$r the rebase could not continue: $(grep -m1 -E 'fatal|error' "$LOG/rebase.$r" | cut -c1-160) (the rebase was aborted; the tree is as it was; land again)"
+            fi
+        fi
     done
 }
 written=(); summary=""; binfo=""
