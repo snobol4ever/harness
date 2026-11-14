@@ -948,7 +948,29 @@ def _suite_table_lock():
     os.environ['S4E_SUITE_TABLE_LOCKED']=str(os.getpid())
     return fd
 def main(a):
-    if '--set' in a or '--render' in a or '--open' in a or '--open-row' in a or '--set-wall' in a or '--set-run' in a: _suite_table_lock()
+    if '--set' in a or '--render' in a or '--open' in a or '--open-row' in a or '--set-wall' in a or '--set-run' in a or '--nick' in a: _suite_table_lock()
+    if '--nick' in a:
+        # ⭐ A ROW IS RENAMED IN ONE WRITE (the grader 2026-11-14; Lon 07:3x CST, in the grader's window, verbatim: "Your names are not consistent
+        # PasRosetta versus RosettaSnobo. get it right."): --nick KEY NICK sets the nick of the bare row KEY and of every KEY@<engine> row, which shares
+        # it (SnoRungs), under the table's lock and its history writer; the readings are untouched. Refuses a key with no bare row, a nick empty or over
+        # 12 characters, or a nick another bare key holds (nick_to_key would hand that row's readings to this one). NOTHING IS WRITTEN on a refusal.
+        i=a.index('--nick'); key,nick=(a[i+1:i+3]+['',''])[:2]
+        head,rows=load()
+        if not any(r['key']==key for r in rows) or _engine_of(key) or not nick or len(nick)>12:
+            sys.stderr.write(f"REFUSE(rc=2): --nick {key!r} {nick!r}: KEY must be a bare row of {TSV} and NICK 1 to 12 characters. NOTHING WAS WRITTEN.\n"); sys.exit(2)
+        other=[r['key'] for r in _scrip(rows) if r['nick']==nick and r['key']!=key]
+        if other:
+            sys.stderr.write(f"REFUSE(rc=2): --nick {key!r} {nick!r}: the nick is {other[0]}'s. NOTHING WAS WRITTEN.\n"); sys.exit(2)
+        old=next(r['nick'] for r in rows if r['key']==key)
+        if old==nick:
+            print(f"--nick {key}: already {nick}; nothing written"); return
+        before=open(TSV,encoding='utf-8').read()
+        n=0
+        for r in rows:
+            if r['key']==key or r['key'].partition('@')[0]==key: r['nick']=nick; n+=1
+        save(head,rows); history(head,before,rows)
+        print(f"⭐ --nick {key}: {old} -> {nick} ({n} row{'s' if n!=1 else ''})")
+        return
     if '--open' in a:
         # ⛔⭐ A PORT ENGINE'S ROW IS OPENED BY ITS FIRST PUBLISH (ceo CEO-1822, to hq_dotnet: "A port engine's SUITES.tsv row is created by
         # that engine's FIRST PUBLISH through util_score_row.py, the table's one writer, under its lock and history writer, never by hand").

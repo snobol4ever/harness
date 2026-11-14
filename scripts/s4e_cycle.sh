@@ -283,9 +283,20 @@ record_once() {   # key stamp -> from-progress output; rc its exit
 runner_row() {   # key -> "kind lang dir" of its SUITE_RUNNERS.tsv row, dir from the corpus root
     awk -F'\t' -v k="$1" '!/^#/ && $1 == k { d = ($2 == "master") ? "tests/" $3 : $5; sub(/^corpus\//, "", d); print $2 "\t" $3 "\t" d; exit }' "$RUNNERS"
 }
-cycle_nick() {   # key lang -> a banner nick of at most 12 characters for a row the cycle opens
-    local ab; case "$2" in snobol4) ab=Sno;; icon) ab=Icn;; prolog) ab=Pro;; pascal) ab=Pas;; raku) ab=Rak;; snocone) ab=Snc;; rebus) ab=Reb;; *) ab=X;; esac
-    case "$1" in gate_cases_*) echo "${ab}Cases";; *) printf '%s' "$1" | awk -F'[-_]' '{ s = ""; for (i = 1; i <= NF; i++) s = s toupper(substr($i, 1, 1)) substr($i, 2); print substr(s, 1, 12) }';; esac
+# A NICK IS THE LANGUAGE'S PREFIX, THEN THE NAME, WHOLE WORDS (the grader 2026-11-14; Lon 07:3x CST, in the grader's window, verbatim: "Your names are
+# not consistent PasRosetta versus RosettaSnobo. get it right."): the cut of 2026-11-13 camel-cased the key and cut it at 12 characters, so rosetta-snobol4
+# read RosettaSnobo beside PasRosetta and ProRosetta, and power_of_prolog read PowerOfProlo. The nick is the prefix (Sno Icn Uni Pro Pas Rak Snc Reb Tix;
+# Uni for an icon key naming unicon or uni), then the key's other words capitalised, the language's own names and "of" and "the" dropped, demos read
+# Demo as the table spells it, the last word dropped while it is over 12 (metalevel_contests ProMetalevel); one word still over 12 prints nothing and
+# --open-row refuses, so a row is named by hand (util_suite_banner.py --nick), never cut mid-word. rosetta-raku RakRosetta, rosetta-unicon UniRosetta,
+# uni_ipl UniIpl, power_of_prolog ProPower. A row named by hand keeps its name (Gimpel, Logtalk, PrologCafe): the rule names only a row the cycle opens.
+cycle_nick() {   # key lang -> the banner nick of a row the cycle opens: prefix and whole words, at most 12 characters, or nothing
+    local ab drop; case "$2" in snobol4) ab=Sno drop="snobol4 snobol sno";; icon) ab=Icn drop="icon icn";; prolog) ab=Pro drop="prolog pl pro";; pascal) ab=Pas drop="pascal pas";; raku) ab=Rak drop="raku rak";; snocone) ab=Snc drop="snocone snc";; rebus) ab=Reb drop="rebus reb";; scriptix) ab=Tix drop="scriptix tix";; *) ab=X drop="";; esac
+    case "$1" in gate_cases_*) echo "${ab}Cases"; return 0;; esac
+    case "$2:-$1-" in icon:*[-_]uni[-_]*|icon:*[-_]unicon[-_]*) ab=Uni drop="$drop unicon uni";; esac
+    printf '%s' "$1" | awk -F'[-_]' -v ab="$ab" -v drop="$drop of the" 'BEGIN { n = split(drop, d, " "); for (i = 1; i <= n; i++) skip[d[i]] = 1 }
+        { m = 0; for (i = 1; i <= NF; i++) if ($i != "" && !($i in skip)) w[++m] = ($i == "demos") ? "Demo" : toupper(substr($i, 1, 1)) substr($i, 2)
+          while (m > 0) { s = ab; for (i = 1; i <= m; i++) s = s w[i]; if (length(s) <= 12) { print s; exit } m-- } }'
 }
 record_row() {   # key -> the suite's row from the progress store; a refusal the cycle cannot cure is logged and held in CYCLE.refused
     local o rc r R="$PROG/CYCLE.refused" kind lang dir mv st c
