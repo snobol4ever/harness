@@ -10,7 +10,7 @@ byte-identical with and without the cure BY CONSTRUCTION, so no suite could miss
 IS INDISTINGUISHABLE FROM A WIRED ONE BY EVERY CHECK EXCEPT READING THE RECIPE.  This is that check.
 
 WHY A RATCHET AND NOT THE CENSUS THAT WAS ASKED FOR.  Measured before a line of it was written: 279
-../harness/scripts/test_gate_*.sh on disk, 64 reachable from `make test` + `make test-postoffice`.  UNWIRED IS THE NORM,
+../harness/scripts/test_gate_*.sh on disk, 64 reachable from `make test` + `make test-postoffice`.  UNWIRED IS THE NORM,   # one-disk: not a path
 roughly four out of five.  The check as originally specified -- assert reachable, or exempted with a reason --
 would have emitted 215 violations on its first run inside handoff_status.sh, which is a check nobody reads
 twice, and a muted check is worse than no check because it looks like coverage.  So it fires on the
@@ -46,7 +46,7 @@ name is in exactly one bucket" -- and only a single population can check that.  
           that leaves a fingerprint in the diff.
 
 ⛔ REACHABILITY MEANS EXECUTION, AND THE CLOSURE FOLLOWS LITERAL NAMES ONLY.  A gate reached only because some
-census GLOBS ../harness/scripts/test_gate_*.sh and READS the files (test_gate_runners_refuse_on_a_stale_binary.sh does
+census GLOBS ../harness/scripts/test_gate_*.sh and READS the files (test_gate_runners_refuse_on_a_stale_binary.sh does   # one-disk: not a path
 exactly this, twice) is not run by anything, and counting it would be the instrument lying in the
 comfortable direction.  Comment text is stripped from every line before names are taken, in the Makefile
 expansion as well as in the scripts: `make -n` echoes a recipe line's trailing `# ...` comment verbatim
@@ -228,13 +228,13 @@ def reachable(root, skipped=None):
 
     ⛔⭐ AND IT FOLLOWS A RECIPE'S DECLARED-POPULATION FILE, which is not a refinement -- it is the difference
     between "reachable from the recipe" and "run by something", and the first draft got it wrong by 22 gates.
-    `make preflight` landed today reading its arms from ../harness/scripts/preflight_arms.txt (`grep -E '^../harness/scripts/' ...`),
+    `make preflight` landed today reading its arms from ../harness/scripts/preflight_arms.txt (`grep -E '^../harness/scripts/' ...`),   # one-disk: not a path
     deliberately, because a static grep over the scripts cannot classify them in either direction. So `make -n
     preflight` names NO gate at all while running 31, and this instrument confidently called 22 of them run by
     nothing. ⭐ THE GENERAL FORM, and it is the same one this file already warns about in the other direction:
     the moment a target reads its population from a file, EXPANDING THE RECIPE STOPS ANSWERING THE QUESTION
-    YOU ASKED. Only *.txt files under ../harness/scripts/ that a seeded recipe actually names are followed, and only
-    their `^../harness/scripts/` lines -- an over-broad rule here would quietly mark gates wired that nothing runs, which
+    YOU ASKED. Only *.txt files under ../harness/scripts/ that a seeded recipe actually names are followed, and only   # one-disk: not a path
+    their `^../harness/scripts/` lines -- an over-broad rule here would quietly mark gates wired that nothing runs, which   # one-disk: not a path
     is the comfortable direction and the one nobody would notice."""
     seed, texts = set(), []
     # ⛔ THE DECLARATION TARGET OF A REQUIRED TARGET IS ITSELF REQUIRED. If it will not expand it must REFUSE,
@@ -272,7 +272,7 @@ def reachable(root, skipped=None):
                 continue
             with open(pop, encoding="utf-8", errors="replace") as fh:
                 for line in fh:
-                    if line.startswith("../harness/scripts/"):
+                    if line.startswith("../harness/scripts/"):   # one-disk: not a path
                         seed |= set(_SH.findall(line))
     seen, work = set(), list(seed)
     while work:
@@ -429,7 +429,7 @@ def check(root, out=sys.stdout):
         for g in left:
             print("      %s" % g, file=out)
             print(_cure("re-add it to the Makefile `test:` recipe, or name the new state:"), file=out)
-            print("               python3 ../harness/scripts/util_gate_wiring.py declare %s RULING \"<why it is deliberately out>\"" % g, file=out)
+            print("               python3 ../harness/scripts/util_gate_wiring.py declare %s RULING \"<why it is deliberately out>\"" % g, file=out)   # one-disk: not a path
     # ⛔ hq_S'S MEASURED CASE, EXACTLY: on disk, run by nothing, and nobody has said so. Fires at the ONE moment
     # it is cheap -- the author is still here and wiring it is one line in the recipe.
     new_unwired = sorted(g for g in disk if g not in rec and g not in reach)
@@ -439,14 +439,14 @@ def check(root, out=sys.stdout):
         for g in new_unwired:
             print("      %s" % g, file=out)
             print(_cure("wire it into the Makefile `test:` recipe (one line), or rule it out WITH A REASON:"), file=out)
-            print("               python3 ../harness/scripts/util_gate_wiring.py declare %s RULING \"<why it is deliberately out>\"" % g, file=out)
+            print("               python3 ../harness/scripts/util_gate_wiring.py declare %s RULING \"<why it is deliberately out>\"" % g, file=out)   # one-disk: not a path
     new_wired = sorted(g for g in disk if g not in rec and g in reach)
     if new_wired:
         v += len(new_wired)
         print("\n⛔ WIRED BUT NOT IN THE FLOOR (%d) — good news the file does not know: record them or the ratchet cannot protect them:" % len(new_wired), file=out)
         for g in new_wired:
             print("      %s" % g, file=out)
-        print(_cure("python3 ../harness/scripts/util_gate_wiring.py adopt"), file=out)
+        print(_cure("python3 ../harness/scripts/util_gate_wiring.py adopt"), file=out)   # one-disk: not a path
     # ⛔ A RULING/TASK LINE OVER A GATE THAT IS WIRED TODAY IS A HOLE IN THE RATCHET, not a harmless staleness:
     # while it says TASK, arm LEFT-THE-WIRED-SET is switched off for that gate, so it can be un-wired in silence.
     promoted = sorted(g for g in by_cls["RULING"] + by_cls["TASK"] if g in reach)
@@ -455,14 +455,14 @@ def check(root, out=sys.stdout):
         print("\n⛔ WIRED NOW BUT STILL LISTED AS RULING/TASK (%d) — the ratchet is OFF for these until promoted:" % len(promoted), file=out)
         for g in promoted:
             print("      %-58s recorded %s" % (g, rec[g][1]), file=out)
-        print(_cure("python3 ../harness/scripts/util_gate_wiring.py adopt"), file=out)
+        print(_cure("python3 ../harness/scripts/util_gate_wiring.py adopt"), file=out)   # one-disk: not a path
     gone = sorted(g for g in rec if g not in disk)
     if gone:
         v += len(gone)
         print("\n⛔ RECORDED BUT NOT ON DISK (%d) — deleted or renamed; the line is now a claim about nothing:" % len(gone), file=out)
         for g in gone:
             print("      %-58s recorded %s" % (g, rec[g][1]), file=out)
-        print(_cure("python3 ../harness/scripts/util_gate_wiring.py adopt"), file=out)
+        print(_cure("python3 ../harness/scripts/util_gate_wiring.py adopt"), file=out)   # one-disk: not a path
     # ⛔ hq_S'S CONSTRAINT 2, and the one place a ratchet rots: an exemption list that accepts a blank reason IS
     # the new silent backlog with a tidier name. Refused exactly as the package inventory refuses an empty
     # sidecar reason.
@@ -472,7 +472,7 @@ def check(root, out=sys.stdout):
         print("\n⛔ RULING WITHOUT A REASON OR A DECLARER (%d) — an exemption nobody signed is not a ruling:" % len(noreason), file=out)
         for g in noreason:
             print("      %s" % g, file=out)
-            print(_cure("python3 ../harness/scripts/util_gate_wiring.py declare %s RULING \"<reason>\"" % g), file=out)
+            print(_cure("python3 ../harness/scripts/util_gate_wiring.py declare %s RULING \"<reason>\"" % g), file=out)   # one-disk: not a path
     bad = sorted(r[0] for r in rows if r[1] not in CLASSES)
     if bad:
         v += len(bad)
@@ -556,7 +556,7 @@ def adopt(root, out=sys.stdout):
         for g in stuck:
             print("      %s" % g, file=out)
             print("         wire it into the Makefile `test:` recipe, or:", file=out)
-            print("         python3 ../harness/scripts/util_gate_wiring.py declare %s RULING \"<why it is deliberately out>\"" % g, file=out)
+            print("         python3 ../harness/scripts/util_gate_wiring.py declare %s RULING \"<why it is deliberately out>\"" % g, file=out)   # one-disk: not a path
         return 1
     return 0
 
@@ -572,7 +572,7 @@ def declare(root, gate, cls, reason, by=None, out=sys.stdout):
         return 2
     a = analyse(root)
     if gate not in a["disk"]:
-        print("⛔ REFUSED — %s is not on disk under ../harness/scripts/. Nothing to declare." % gate, file=out)
+        print("⛔ REFUSED — %s is not on disk under ../harness/scripts/. Nothing to declare." % gate, file=out)   # one-disk: not a path
         return 2
     if gate in a["reach"]:
         print("⛔ REFUSED — %s IS reachable from the recipe today; declaring it %s would make the file lie and" % (gate, cls), file=out)
@@ -602,9 +602,9 @@ def declare(root, gate, cls, reason, by=None, out=sys.stdout):
 
 
 def _fx(td, gates, recipe, tsv, post=None):
-    """Build a scratch SCRIP-shaped root: a Makefile whose `test:` recipe is exactly `recipe`, and ../harness/scripts/.
+    """Build a scratch SCRIP-shaped root: a Makefile whose `test:` recipe is exactly `recipe`, and ../harness/scripts/.   # one-disk: not a path
 
-    ⛔ IT WIPES ../harness/scripts/ FIRST. The first draft only added files, so every arm ran against the union of every
+    ⛔ IT WIPES ../harness/scripts/ FIRST. The first draft only added files, so every arm ran against the union of every   # one-disk: not a path
     earlier arm's fixture -- three arms went red for gates a later arm had left lying about, and the failure
     read as a bug in adopt. A fixture builder that accumulates is testing a world no arm described."""
     import shutil as _sh
@@ -653,28 +653,28 @@ def selftest(out=sys.stdout):
     _was = os.environ.get("S4E_HARNESS"); os.environ["S4E_HARNESS"] = os.path.join(td, "harness")  # one-disk: not a path
     try:
         # ARM 1 CLEAN: two wired, one declared TASK inside the ceiling, nothing on disk unaccounted for.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh", "bash ../harness/scripts/test_gate_b.sh"],
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh", "bash ../harness/scripts/test_gate_b.sh"],   # one-disk: not a path
             HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tWIRED\t-\t-\t-\ntest_gate_c.sh\tTASK\t-\t-\t-\n")
         rc, txt = run(check, root); ck("1 clean", rc, 0)
         # ARM 2 THE RATCHET: b leaves the recipe. It must refuse AND NAME b -- printing the difference, not
         # "the floor moved". This is the arm the whole file exists for.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh"],
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh"],   # one-disk: not a path
             HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tWIRED\t-\t-\t-\ntest_gate_c.sh\tTASK\t-\t-\t-\n")
         rc, txt = run(check, root); ck("2 left-the-wired-set", rc, 1)
         ck("2 names the gate that left", "LEFT THE WIRED SET" in txt and "test_gate_b.sh" in txt, True)
         # ARM 3 THE COUNT-ONLY TRAP hq_S NAMED: b leaves and d arrives wired in the SAME edit. WIRED count is
         # unchanged (2 -> 2), so a count floor is GREEN over a real regression. The name set must still refuse.
-        _fx(td, G + ["test_gate_d.sh"], ["bash ../harness/scripts/test_gate_a.sh", "bash ../harness/scripts/test_gate_d.sh"],
+        _fx(td, G + ["test_gate_d.sh"], ["bash ../harness/scripts/test_gate_a.sh", "bash ../harness/scripts/test_gate_d.sh"],   # one-disk: not a path
             HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tWIRED\t-\t-\t-\ntest_gate_c.sh\tTASK\t-\t-\t-\n")
         rc, txt = run(check, root); ck("3 count-unchanged regression", rc, 1)
         ck("3 names b, not just a total", "test_gate_b.sh" in txt, True)
         # ARM 4 hq_S'S MEASURED CASE: a gate lands on disk, in no recipe, in no list.
-        _fx(td, G + ["test_gate_new.sh"], ["bash ../harness/scripts/test_gate_a.sh", "bash ../harness/scripts/test_gate_b.sh"],
+        _fx(td, G + ["test_gate_new.sh"], ["bash ../harness/scripts/test_gate_a.sh", "bash ../harness/scripts/test_gate_b.sh"],   # one-disk: not a path
             HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tWIRED\t-\t-\t-\ntest_gate_c.sh\tTASK\t-\t-\t-\n")
         rc, txt = run(check, root); ck("4 landed unwired+undeclared", rc, 1)
         ck("4 names it with its cure", "LANDED UNWIRED" in txt and "test_gate_new.sh" in txt, True)
         # ARM 5 THE HOLE: c is listed TASK but IS wired. While the file says TASK the ratchet is off for c.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh", "bash ../harness/scripts/test_gate_b.sh", "bash ../harness/scripts/test_gate_c.sh"],
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh", "bash ../harness/scripts/test_gate_b.sh", "bash ../harness/scripts/test_gate_c.sh"],   # one-disk: not a path
             HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tWIRED\t-\t-\t-\ntest_gate_c.sh\tTASK\t-\t-\t-\n")
         rc, txt = run(check, root); ck("5 wired-but-listed-TASK", rc, 1)
         rc, txt = run(adopt, root); ck("5 adopt promotes it", rc, 0)
@@ -687,7 +687,7 @@ def selftest(out=sys.stdout):
         rc, txt = run(adopt, root); ck("6 adopt drops it", rc, 0)
         rc, txt = run(check, root); ck("6 clean after adopt", rc, 0)
         # ARM 7 hq_S'S CONSTRAINT 2: a RULING with a blank reason is refused, and one with a blank declarer too.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh"],
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh"],   # one-disk: not a path
             HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tRULING\t-\t-\t-\ntest_gate_c.sh\tRULING\tlong bench\t-\t-\n")
         rc, txt = run(check, root); ck("7 ruling without reason/declarer", rc, 1)
         ck("7 names both", "test_gate_b.sh" in txt and "test_gate_c.sh" in txt, True)
@@ -702,13 +702,13 @@ def selftest(out=sys.stdout):
         rows, _, _ = load(root)
         ck("8 the reason is stored", [r for r in rows if r[0] == "test_gate_b.sh"][0][2], "reads the live fleet")
         # ARM 9 THE CEILING: a new unwired gate may not join TASK silently.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh"],
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh"],   # one-disk: not a path
             "# scratch\n%s 1\ntest_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tTASK\t-\t-\t-\ntest_gate_c.sh\tRULING\tbench\thq_T\t2026-09-06T00:00Z\n" % CEIL_KEY)
         rc, txt = run(check, root); ck("9 at the ceiling is clean", rc, 0)
         rc, txt = run(declare, root, "test_gate_c.sh", "TASK", "just moving it", by="hq_T"); ck("9 declare TASK over ceiling", rc, 2)
         ck("9 says the debt may only go down", "MAY ONLY GO DOWN" in txt, True)
         # ARM 10 SUM/DUPES/UNKNOWN CLASS: every name in exactly one bucket is the property one file buys.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh"],
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh"],   # one-disk: not a path
             "# scratch\n%s 2\ntest_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tTASK\t-\t-\t-\ntest_gate_b.sh\tTASK\t-\t-\t-\ntest_gate_c.sh\tNOPE\t-\t-\t-\n" % CEIL_KEY)
         rc, txt = run(check, root); ck("10 duplicate + unknown class", rc, 1)
         ck("10 names both faults", "LISTED TWICE" in txt and "UNKNOWN CLASS" in txt, True)
@@ -720,7 +720,7 @@ def selftest(out=sys.stdout):
         # ARM 12 REACHABILITY IS EXECUTION, NOT MENTION: a gate named only in a comment, only in an echo, or
         # only inside a glob-census that READS the files is NOT reachable. This is the arm that keeps the
         # instrument from lying in the comfortable direction.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh   # see also test_gate_b.sh",
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh   # see also test_gate_b.sh",   # one-disk: not a path
                     "echo 'run test_gate_c.sh by hand'"], None)
         with open(os.path.join(td, "harness", "scripts", "test_gate_a.sh"), "w") as fh:  # one-disk: not a path
             fh.write("#!/usr/bin/env bash\nfor f in \"$HERE\"/test_gate_*.sh; do grep -q x \"$f\"; done\nexit 0\n")
@@ -730,17 +730,17 @@ def selftest(out=sys.stdout):
         # ../harness/scripts/preflight_arms.txt, so `make -n preflight` names NO gate while running all of them -- and the
         # first draft of this instrument therefore filed 22 genuinely-run gates as debt. Expanding a recipe
         # stops answering the question you asked the moment a target reads its population from a file.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh"], None)
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh"], None)   # one-disk: not a path
         with open(os.path.join(td, "SCRIP", "Makefile"), "a") as fh:  # one-disk: not a path
-            fh.write("preflight:\n\t@while read -r arm; do bash $$arm; done < <(grep -E '^../harness/scripts/' \"$(ROOT)/../harness/scripts/pop_arms.txt\")\n")
+            fh.write("preflight:\n\t@while read -r arm; do bash $$arm; done < <(grep -E '^../harness/scripts/' \"$(ROOT)/../harness/scripts/pop_arms.txt\")\n")   # one-disk: not a path
         with open(os.path.join(td, "harness", "scripts", "pop_arms.txt"), "w") as fh:  # one-disk: not a path
-            fh.write("# a declared population\n../harness/scripts/test_gate_b.sh\n")
+            fh.write("# a declared population\n../harness/scripts/test_gate_b.sh\n")   # one-disk: not a path
         got = sorted(g for g in disk_gates(root) if g in reachable(root))
         ck("13 declared-population arm is reachable", got, ["test_gate_a.sh", "test_gate_b.sh"])
         # ARM 14 AND AN OPTIONAL TARGET THAT WILL NOT EXPAND IS NAMED, NEVER SILENTLY DROPPED: its gates leave
         # the wired set, and a refusal that cannot say WHY they left is loud and undiagnosable.
         with open(os.path.join(td, "SCRIP", "Makefile"), "w") as fh:  # one-disk: not a path
-            fh.write("test:\n\tbash ../harness/scripts/test_gate_a.sh\n")
+            fh.write("test:\n\tbash ../harness/scripts/test_gate_a.sh\n")   # one-disk: not a path
         skipped = []
         reachable(root, skipped=skipped)
         ck("14 unexpandable optional targets are named", sorted(skipped), ["preflight", "test-postoffice"])
@@ -749,9 +749,9 @@ def selftest(out=sys.stdout):
         # THE DETECTOR ARM, and the detector arm is the one that fails OPEN (R-480/481): if the count ever
         # stops seeing the double, this arm goes green reading "there was never a bug here", so it asserts the
         # refusal FIRES, NAMES the script, and SAYS the two comments disagree -- three claims, not one rc.
-        TW = ["-bash ../harness/scripts/test_gate_a.sh   # ~13s MEASURED (17 arms)",
-              "bash ../harness/scripts/test_gate_a.sh   # ~4s MEASURED (5 arms)",
-              "bash ../harness/scripts/test_gate_b.sh"]
+        TW = ["-bash ../harness/scripts/test_gate_a.sh   # ~13s MEASURED (17 arms)",   # one-disk: not a path
+              "bash ../harness/scripts/test_gate_a.sh   # ~4s MEASURED (5 arms)",   # one-disk: not a path
+              "bash ../harness/scripts/test_gate_b.sh"]   # one-disk: not a path
         _fx(td, G, TW, HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tWIRED\t-\t-\t-\ntest_gate_c.sh\tTASK\t-\t-\t-\n")
         rc, txt = run(check, root); ck("15 wired twice in one recipe", rc, 1)
         ck("15 names the doubled script", "WIRED TWICE" in txt and "test_gate_a.sh" in txt, True)
@@ -759,37 +759,37 @@ def selftest(out=sys.stdout):
         ck("15 flags the divergent cost comments", "DISAGREE ABOUT THE COST" in txt, True)
         # ARM 15b THE DOUBLE IS THE DEFECT, NOT THE DISAGREEMENT. Two identical lines waste the same seconds
         # and are the likelier merge output; a check that only fired on divergent comments would miss them.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh   # ~4s", "bash ../harness/scripts/test_gate_a.sh   # ~4s",
-                    "bash ../harness/scripts/test_gate_b.sh"],
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh   # ~4s", "bash ../harness/scripts/test_gate_a.sh   # ~4s",   # one-disk: not a path
+                    "bash ../harness/scripts/test_gate_b.sh"],   # one-disk: not a path
             HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tWIRED\t-\t-\t-\ntest_gate_c.sh\tTASK\t-\t-\t-\n")
         rc, txt = run(check, root); ck("15b identical lines still refuse", rc, 1)
         ck("15b does not claim a disagreement", "DISAGREE ABOUT THE COST" in txt, False)
         # ARM 15c ACROSS THE SUB-MAKE BOUNDARY: one line in `test:`, one in the `test-postoffice:` that `test`
         # invokes. One `make test` runs it twice and each recipe reads correct on its own screen.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh", "$(MAKE) --no-print-directory test-postoffice",
-                    "bash ../harness/scripts/test_gate_b.sh"],
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh", "$(MAKE) --no-print-directory test-postoffice",   # one-disk: not a path
+                    "bash ../harness/scripts/test_gate_b.sh"],   # one-disk: not a path
             HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tWIRED\t-\t-\t-\ntest_gate_c.sh\tTASK\t-\t-\t-\n",
-            post=["bash ../harness/scripts/test_gate_a.sh"])
+            post=["bash ../harness/scripts/test_gate_a.sh"])   # one-disk: not a path
         rc, txt = run(check, root); ck("15c wired twice across a sub-make", rc, 1)
         ck("15c names both targets", "test-postoffice" in txt and "test_gate_a.sh" in txt, True)
         # ARM 15d A DELIBERATE SECOND RUN IS SIGNED, NOT REFUSED -- and 15e, a signature with no reason is
         # refused exactly as a RULING with no reason is. An escape hatch that takes no reason IS the backlog.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh   # first, cheap arms",
-                    "bash ../harness/scripts/test_gate_a.sh --slow   # WIRED-TWICE-OK: re-run after the build, deliberate",
-                    "bash ../harness/scripts/test_gate_b.sh"],
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh   # first, cheap arms",   # one-disk: not a path
+                    "bash ../harness/scripts/test_gate_a.sh --slow   # WIRED-TWICE-OK: re-run after the build, deliberate",   # one-disk: not a path
+                    "bash ../harness/scripts/test_gate_b.sh"],   # one-disk: not a path
             HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tWIRED\t-\t-\t-\ntest_gate_c.sh\tTASK\t-\t-\t-\n")
         rc, txt = run(check, root); ck("15d a signed second line is clean", rc, 0)
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh",
-                    "bash ../harness/scripts/test_gate_a.sh   # WIRED-TWICE-OK:",
-                    "bash ../harness/scripts/test_gate_b.sh"],
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh",   # one-disk: not a path
+                    "bash ../harness/scripts/test_gate_a.sh   # WIRED-TWICE-OK:",   # one-disk: not a path
+                    "bash ../harness/scripts/test_gate_b.sh"],   # one-disk: not a path
             HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tWIRED\t-\t-\t-\ntest_gate_c.sh\tTASK\t-\t-\t-\n")
         rc, txt = run(check, root); ck("15e signed with no reason refuses", rc, 1)
         ck("15e says the sanction is unjustified", "WITH NO REASON" in txt, True)
         # ARM 16 THE FALSE-POSITIVE SIDE, which is what would get this arm muted rather than fixed: a script
         # named TWICE ON ONE LINE runs once, and a name in a trailing comment or an echo is not an invocation
         # at all. Same rule as reachability -- mention is not execution -- applied to the count.
-        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh || bash ../harness/scripts/test_gate_a.sh   # a retry, one line",
-                    "bash ../harness/scripts/test_gate_b.sh   # see also test_gate_a.sh",
+        _fx(td, G, ["bash ../harness/scripts/test_gate_a.sh || bash ../harness/scripts/test_gate_a.sh   # a retry, one line",   # one-disk: not a path
+                    "bash ../harness/scripts/test_gate_b.sh   # see also test_gate_a.sh",   # one-disk: not a path
                     "echo 'and test_gate_a.sh by hand'"],
             HDR + "test_gate_a.sh\tWIRED\t-\t-\t-\ntest_gate_b.sh\tWIRED\t-\t-\t-\ntest_gate_c.sh\tTASK\t-\t-\t-\n")
         rc, txt = run(check, root); ck("16 one line, a comment and an echo are not a double", rc, 0)

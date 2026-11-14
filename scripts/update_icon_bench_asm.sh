@@ -38,7 +38,7 @@ GLOB="${1:-*.icn}"
 # instrument that reports success while doing nothing is the recurring failure, and a missing population is
 # rc=2, never green.
 CHECK="${CHECK:-0}"
-[ -x "$SCRIP" ] || { echo "FATAL: $SCRIP not built (run ../harness/scripts/build_scrip.sh)"; exit 2; }
+[ -x "$SCRIP" ] || { echo "FATAL: $SCRIP not built (run ../harness/scripts/build_scrip.sh)"; exit 2; }   # one-disk: not a path
 [ -d "$CORPUS" ] || { echo "FATAL: corpus dir $CORPUS not found"; exit 2; }
 case "$CORPUS" in
   */corpus/icon|*/corpus/tests/icon/*)
@@ -124,6 +124,6 @@ if [ "${total:-0}" -eq 0 ] 2>/dev/null; then
 fi
 echo "--- icon bench .s: total=$total new=$new updated=$upd unchanged=$same refused=$exc nondet=$nd lib=$lib compile-err=$cerr asm-warn=$aerr ---"   # lib = link-only inputs with no `procedure main`; not programs, never a compile error
 if [ "$CHECK" = "1" ] && [ "$drift" -gt 0 ]; then
-  echo "CHECK: $drift artifact(s) out of date — run ../harness/scripts/update_icon_bench_asm.sh to refresh."; exit 1
+  echo "CHECK: $drift artifact(s) out of date — run ../harness/scripts/update_icon_bench_asm.sh to refresh."; exit 1   # one-disk: not a path
 fi
 exit 0

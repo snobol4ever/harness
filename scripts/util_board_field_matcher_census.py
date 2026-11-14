@@ -30,7 +30,7 @@ zeros that mean nothing.  Per-mode fields are matched by SUFFIX (`_pass`, `_fail
 builds the name with a backreference -- `(m[34])_pass=(\\d+) \\1_fail=` -- is still read as two board fields.
 
 rc: 0 no ADJACENT matcher remains; 1 at least one does; 2 the vocabulary could not be derived.
-Usage: python3 ../harness/scripts/util_board_field_matcher_census.py [--root DIR] [--selftest] [--verbose]
+Usage: python3 util_board_field_matcher_census.py [--root DIR] [--selftest] [--verbose]
 """
 import argparse, os, re, sys, tempfile
 
@@ -168,7 +168,7 @@ def census(root, verbose=False, out=print):
     names, suffixes = derive_vocabulary(root, out)
     if names is None:
         return 2
-    out(f"CENSUS board-matchers VOCABULARY derived from ../harness/scripts/corpus_suite_harness.py's own SUITE_BOARD printer: "
+    out(f"CENSUS board-matchers VOCABULARY derived from ../harness/scripts/corpus_suite_harness.py's own SUITE_BOARD printer: "   # one-disk: not a path
         f"{len(names)} field name(s), {len(suffixes)} per-mode suffix(es) -- never a hand list, and a printer that "
         f"is renamed REFUSES rc=2 rather than report zeros")
     rows = []

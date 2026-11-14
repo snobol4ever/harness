@@ -51,7 +51,7 @@ SW=""
 ENGINES="${ENGINES:-sbl m3 m4}"
 [ -x "$SCRIP" ] || { echo "SKIP scrip not built"; exit 0; }
 [ -d "$B" ]     || { echo "SKIP fixed-iter bench corpus missing ($B)"; exit 0; }
-[ -f "$SCALETSV" ] || { echo "REFUSING: no $SCALETSV -- angle 2 needs a committed per-kernel N; run ../harness/scripts/calibrate_bench_scale.sh once to bake it, then commit it. Not deriving one on the fly (that would be re-deriving from scratch on every run, exactly what this row exists to stop)." >&2; exit 3; }
+[ -f "$SCALETSV" ] || { echo "REFUSING: no $SCALETSV -- angle 2 needs a committed per-kernel N; run ../harness/scripts/calibrate_bench_scale.sh once to bake it, then commit it. Not deriving one on the fly (that would be re-deriving from scratch on every run, exactly what this row exists to stop)." >&2; exit 3; }   # one-disk: not a path
 WRAP="$ROOT/out/bench_rusage"
 [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$S4E_HARNESS/scripts/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
 if [ "$STATIC" = 1 ]; then
@@ -172,7 +172,7 @@ if [ "$tot_load" -gt 0 ]; then
 fi
 if [ -n "$UNSCALED" ]; then
   echo "⛔ UNSCALED (no row in $SCALETSV, not measured):$UNSCALED"
-  echo "   Every benchmark needs a committed N in SCALE.tsv -- run ../harness/scripts/calibrate_bench_scale.sh to add it."
+  echo "   Every benchmark needs a committed N in SCALE.tsv -- run ../harness/scripts/calibrate_bench_scale.sh to add it."   # one-disk: not a path
 fi
 if [ -n "$UNGRADED" ]; then
   echo "⛔ UNGRADED (has a SCALE.tsv row but bench_wrap_snobol4.py refused it):$UNGRADED"

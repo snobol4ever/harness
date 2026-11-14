@@ -2,9 +2,9 @@
 export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_oracle_flags.sh"
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
-B="${BENCH_DIR:-$S4E/corpus/benchmarks/prolog/bench}"; T="${TIMEOUT:-30}"
+B="${BENCH_DIR:-$S4E_CORPUS/benchmarks/prolog/bench}"; T="${TIMEOUT:-30}"
 # THE SCRIP ARMS RUN AT EACH KERNEL'S DECLARED HEAP AND STACK (<k>.heap / <k>.stack, read by lib_declared_arena.sh and carried as
 #   -d<kb>k -s<kb>k after --run and at the head of the mode-4 binary's argv; RULES.md clause 8 (g), R-1353). The script typed
 #   ulimit -s unlimited here until 2026-10-01 and passed nothing: SCRIP sets its own stack from -s, so tak (declared 65536 KB) read

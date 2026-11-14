@@ -33,8 +33,9 @@ probe() {
     bat="$po/tasks/resume-plant.task.md"
     printf '# TASK resume-plant\nGOAL: plant\nDONE-WHEN: false\n## NEXT\nthe old next block\n## QA\n## LEDGER\n- [plant] minted\n' > "$bat"
     run() { env -u S4E_PID_LOCK S4E_POST="$po" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$HERE/s4e_msg.sh" "$@" 2>&1; }
-    o="$(run resume resume-plant --tree "$t/wt" --command "bash harness/scripts/test_design_box_scheduler_steps.sh --step 16" --state step-16-red --log "$t/run.log")"
-    printf '%s\n' "$o" | grep -qE "^RESUME [0-9TZ:-]+ $ME tree=$t/wt command=bash harness/scripts/test_design_box_scheduler_steps.sh --step 16 state=step-16-red log=$t/run.log$" \
+    c16="bash harness/scripts/test_design_box_scheduler_steps.sh --step 16"   # one-disk: not a path (the command string a probe round-trips)
+    o="$(run resume resume-plant --tree "$t/wt" --command "$c16" --state step-16-red --log "$t/run.log")"
+    printf '%s\n' "$o" | grep -qE "^RESUME [0-9TZ:-]+ $ME tree=$t/wt command=$c16 state=step-16-red log=$t/run.log$" \
         || why="$why the write did not echo the line [$o];"
     grep -q '^## RESUME$' "$bat" || why="$why no ## RESUME heading;"
     [ "$(awk '/^## /{print; exit}' "$bat")" = "## RESUME" ] || why="$why ## RESUME is not the first section;"

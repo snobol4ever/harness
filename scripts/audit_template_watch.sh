@@ -45,7 +45,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_paths.sh"
 ROOT="$(cd "$S4E_SCRIP" && pwd)"
-. "$HERE/lib_fanout.sh" || { echo "REFUSE(2): ../harness/scripts/lib_fanout.sh is missing -- the fan-out ceiling (R-1333) has no instrument"; exit 2; }
+. "$HERE/lib_fanout.sh" || { echo "REFUSE(2): ../harness/scripts/lib_fanout.sh is missing -- the fan-out ceiling (R-1333) has no instrument"; exit 2; }   # one-disk: not a path
 AUDIT="$HERE/audit_bb_fixup_file.sh"
 PO="${S4E_POST:-/home/resources/postoffice}"
 REPO="$ROOT"

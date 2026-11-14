@@ -57,9 +57,10 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
+. "$HERE/lib_paths.sh"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ GATE REFUSES: lib_oracle_flags.sh unloadable" >&2; exit 2; }
 . "$HERE/lib_icon_ipl_isolation.sh" 2>/dev/null || { echo "⛔ GATE REFUSES: lib_icon_ipl_isolation.sh unloadable -- the argv sidecar reader is the one authority both tiers share" >&2; exit 2; }
-PKG="$S4E/corpus/packages/icon/ipl"
+PKG="$S4E_CORPUS/packages/icon/ipl"
 SUBDIR="progs"
 MAINS_ONLY=0
 TIMEOUT="${TIMEOUT:-8}"
@@ -107,7 +108,7 @@ cleanup_template() { rm -rf "$TEMPLATE"; }
 # ⛔ BEFORE the first oracle invocation: what the subtree looks like now is the only thing this run can
 # be held responsible for changing. Untracked fixtures authored earlier in the sitting are part of the
 # starting state, not evidence of a breach.
-ipl_isolation_baseline "$S4E/corpus" || echo "⚠ could not snapshot the ipl subtree; the end-of-run isolation check will fall back to a HEAD comparison and say so" >&2
+ipl_isolation_baseline "$S4E_CORPUS" || echo "⚠ could not snapshot the ipl subtree; the end-of-run isolation check will fall back to a HEAD comparison and say so" >&2
 
 # run_isolated <file.icn> <outfile> -> writes captured combined output to <outfile>, returns rc via
 # the function's own exit status (NOT a global -- a global set inside a command-substitution call would
@@ -634,4 +635,4 @@ printf 'TOTALS[%s]: LIVE %d (minted %d, minute-rejected %d) · HAVE_STD %d · EM
 # two-bodies-drift shape this lane keeps filing (the Prolog/Raku ladder pair; the two copies of the .dat
 # convention). It was already one fix behind the moment the library's grew a baseline, and the copy is
 # what would have kept printing the false breach banner here.
-ipl_isolation_verify_clean "$S4E/corpus" || true
+ipl_isolation_verify_clean "$S4E_CORPUS" || true

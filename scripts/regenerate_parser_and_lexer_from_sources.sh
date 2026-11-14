@@ -32,4 +32,4 @@ gen() {
 while IFS=$'\t' read -r d src out cmd; do gen "$d" "$out" "$cmd" "$src"; done < <(gen_parsers_table)
 echo "DONE -- generated files now differing from HEAD (empty = the committed outputs already match their sources):"
 git -C "$SCRIP" status --short -- src/parsers | grep -E '\.tab\.[ch]|\.lex\.c|lex\.[a-z]+\.c' | sed 's/^/   /' || true
-echo "commit .y/.l and their outputs together; prove object identity with: bash ../harness/scripts/util_style200_oracle_yl.sh src/parsers/*/*.y src/parsers/*/*.l"
+echo "commit .y/.l and their outputs together; prove object identity with: bash ../harness/scripts/util_style200_oracle_yl.sh src/parsers/*/*.y src/parsers/*/*.l"   # one-disk: not a path

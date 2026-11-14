@@ -16,7 +16,7 @@ Builds corpus/tests/snobol4/{ALL.sno, ALL.ref, ALL.csv} from EVERY suite pair un
    represent is EXCLUDED LOUDLY on stderr and listed in ALL.csv's sibling ALL.omit -- never silently dropped (the
    shrunken-denominator law).
  - Validation: the written pair is re-read and the entry count must equal the sum of the included families' counts, else REFUSE
-   and write nothing. Grading is unchanged machinery: python3 ../harness/scripts/corpus_suite_harness.py run ALL.sno ALL.ref --modes m3,m4.
+   and write nothing. Grading is unchanged machinery: python3 ../harness/scripts/corpus_suite_harness.py run ALL.sno ALL.ref --modes m3,m4.   # one-disk: not a path
 Stdlib only. Uses corpus_suite_harness's own read_suite/write_suite -- ONE authority for the suite grammar, never a second parser.
 
 ⛔⛔ CUT-OVER LANGUAGES RE-VERIFY IN A SCRATCH TREE AND DIFF -- NEVER BY DELETING IN PLACE.
@@ -44,7 +44,7 @@ success. hq_P's phrasing is the one to remember: CLOBBER-BY-GUARD-REBUILD IS CLO
   ⛔ THEREFORE A BYTE DIFF OF A RUNGS IS ~3000 LINES OF PURE RENUMBERING AND A REAL CHANGE IS INVISIBLE
   INSIDE IT -- the procedure was asking for a needle in a haystack it generated itself. hq_P predicted
   this ("a 3154-line diff that would bury any real change") before the mechanism was known.
-  ✅ Use `python3 ../harness/scripts/util_rungs_content_diff.py <live> <scratch> [--lang L]`: it compares what the
+  ✅ Use `python3 ../harness/scripts/util_rungs_content_diff.py <live> <scratch> [--lang L]`: it compares what the   # one-disk: not a path
   grader reads -- name, body, ref, stdin, xfail, reason, want_rc -- and IGNORES seq and file order, which
   carry no meaning any grader consults. rc=0 identical, rc=1 real differences (named), rc=2 cannot measure.
   ⛔ AND DO NOT COMMIT A REBUILD WHOSE ONLY CHANGE IS THAT REORDERING: it buries the next real diff for

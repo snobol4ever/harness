@@ -228,7 +228,7 @@ done = counts['DONE']
 L = []
 L.append('# PROLOG-ISO-TRACKER.md — mechanical coverage: SCRIP vs gprolog 1.4.5')
 L.append('')
-L.append('**GENERATED — do not hand-edit.** Regenerate: `bash ../harness/scripts/audit_prolog_iso_coverage.sh`')
+L.append('**GENERATED — do not hand-edit.** Regenerate: `bash ../harness/scripts/audit_prolog_iso_coverage.sh`')   # one-disk: not a path
 L.append('Source of truth: `refs/gprolog-master/src/BipsPl/*.pl` `set_bip_name/2` self-declarations.')
 L.append('Rung: GOAL-PROLOG-BB.md LADDER A → PL-ISO-10. **100% == UNASSIGNED 0 AND core-open 0.**')
 L.append('')

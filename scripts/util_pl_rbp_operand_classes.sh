@@ -9,18 +9,19 @@
 # A full pass is about six minutes: a DONE-WHEN that runs it is routed by telegram (it outlives assign's 120 s probe).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_paths.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
 CLS=""; MAX=""
 while [ $# -gt 0 ]; do case "$1" in --class) CLS="$2"; shift 2;; --at-most) MAX="$2"; shift 2;; *) echo "usage: util_pl_rbp_operand_classes.sh [--class C] [--at-most N]" >&2; exit 2;; esac; done
-[ -x "$ROOT/SCRIP/scrip" ] || { echo "REFUSE(2): no $ROOT/SCRIP/scrip"; exit 2; }
+[ -x "$S4E_SCRIP/scrip" ] || { echo "REFUSE(2): no $S4E_SCRIP/scrip"; exit 2; }
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
-bash "$HERE/util_spine_population.sh" --corpus "$ROOT/corpus" --lang prolog | cut -f2 > "$T/files" || { echo "REFUSE(2): no population"; exit 2; }
+bash "$HERE/util_spine_population.sh" --corpus "$S4E_CORPUS" --lang prolog | cut -f2 > "$T/files" || { echo "REFUSE(2): no population"; exit 2; }
 [ -s "$T/files" ] || { echo "REFUSE(2): the Prolog population is empty"; exit 2; }
-( cd "$ROOT/SCRIP" && env -u S4E_HOME python3 "$HERE/util_bb_placement_census.py" --files $(cat "$T/files") ) > "$T/out" 2>/dev/null; rc=$?
+( cd "$S4E_SCRIP" && env -u S4E_HOME python3 "$HERE/util_bb_placement_census.py" --files $(cat "$T/files") ) > "$T/out" 2>/dev/null; rc=$?
 [ "$rc" = 0 ] || { grep '^BB_PLACEMENT REFUSE' "$T/out"; echo "REFUSE(2): the census did not measure (rc $rc)"; exit 2; }
 grep -q '^BB_HOSTS prolog ' "$T/out" || { echo "REFUSE(2): the census printed no BB_HOSTS prolog line"; exit 2; }
 grep '^BB_HOSTS_RBP_CLASS prolog ' "$T/out"
-python3 - "$T/out" "$(git -C "$ROOT/SCRIP" rev-parse --short HEAD)" "$CLS" "$MAX" <<'PY'
+python3 - "$T/out" "$(git -C "$S4E_SCRIP" rev-parse --short HEAD)" "$CLS" "$MAX" <<'PY'
 import sys
 out, tree, cls, mx = sys.argv[1:5]
 c = {}; total = None

@@ -22,14 +22,15 @@
 set -u
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$SELF_DIR/../.." && pwd)}"
+. "$SELF_DIR/lib_paths.sh"
 MODEF="${S4E_POSTOFFICE:-/home/resources/postoffice}/MODE"
-GATE="$S4E/harness/scripts/lib_mode_lane_check.sh"
-MSG="$S4E/harness/scripts/s4e_msg.sh"
+GATE="$S4E_HARNESS/scripts/lib_mode_lane_check.sh"
+MSG="$S4E_HARNESS/scripts/s4e_msg.sh"
 fail() { printf '⛔ REFUSED: %s\n' "$*" >&2; exit 2; }
 [ -r "$MODEF" ] || fail "cannot read MODE at $MODEF"
 [ -x "$GATE" ] || [ -r "$GATE" ] || fail "cannot read the lane gate at $GATE"
 MODE_NOW="$(head -1 "$MODEF" | tr -d '[:space:]')"
-TBL_COMMIT="$(git -C "$S4E/harness" log -1 --format='%h %cr' -- scripts/s4e_msg.sh 2>/dev/null || echo UNKNOWN)"
+TBL_COMMIT="$(git -C "$S4E_HARNESS" log -1 --format='%h %cr' -- scripts/s4e_msg.sh 2>/dev/null || echo UNKNOWN)"
 MODE_WRITTEN="$(date -r "$MODEF" '+%Y-%m-%d %H:%M:%S %Z' 2>/dev/null || echo UNKNOWN)"
 printf 'MODE line 1      : %s\n' "$MODE_NOW"
 printf 'MODE written     : %s\n' "$MODE_WRITTEN"
@@ -63,8 +64,8 @@ case "${1:---check}" in
       [ "$match" = 1 ] || { printf '⛔ %s allows the roster %s, and MODE names: %s\n' "$MODE_NOW" "$ok" "$SET"; exit 1; }
     fi
     printf 'roster (%s)     :%s\n' "$n" "$ROSTER"
-    bash "$S4E/harness/scripts/util_mode_cap.sh" --check \
-        || { printf '⛔ MODE is over its cap or has no archive (box-scheduler step 14): run harness/scripts/util_mode_cap.sh --apply\n'; exit 1; }
+    bash "$S4E_HARNESS/scripts/util_mode_cap.sh" --check \
+        || { printf '⛔ MODE is over its cap or has no archive (box-scheduler step 14): run harness/scripts/util_mode_cap.sh --apply\n'; exit 1; }   # one-disk: not a path
     bash "$GATE" >/dev/null 2>&1; rc=$?
     if [ "$rc" = 0 ]; then printf '✅ table and MODE AGREE (gate rc=0)\n'; exit 0; fi
     printf '⛔ table and MODE DISAGREE (gate rc=%s)\n' "$rc"

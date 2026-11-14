@@ -208,7 +208,7 @@ def run_gate(lang, fake_missing=False):
         return "UNPROVEN(2): no gate wired in this generator for %r" % lang
     script_path = os.path.join(SCRIP_ROOT, "scripts", g["script"])
     if fake_missing or not os.path.isfile(script_path):
-        return "UNPROVEN(2): gate script missing at ../harness/scripts/%s" % g["script"]
+        return "UNPROVEN(2): gate script missing at ../harness/scripts/%s" % g["script"]   # one-disk: not a path
     cmd = ["bash", os.path.join("scripts", g["script"])] + g["args"]
     try:
         p = subprocess.run(cmd, cwd=SCRIP_ROOT, stdin=subprocess.DEVNULL,

@@ -88,7 +88,7 @@ while IFS=$'\t' read -r dir src out cmd; do
         if ! diff -q <(grep -v '^#line' "$P/$dir/$f") <(grep -v '^#line' "$w/$f") >/dev/null 2>&1; then
             n=$(diff <(grep -v '^#line' "$P/$dir/$f") <(grep -v '^#line' "$w/$f") | grep -c '^[<>]')
             echo "RED  $dir/$f: committed output does NOT match a fresh regeneration from $dir/$src ($n non-#line lines differ)"
-            echo "       cure: bash ../harness/scripts/regenerate_parser_and_lexer_from_sources.sh, then commit $dir/$src and its outputs TOGETHER"
+            echo "       cure: bash ../harness/scripts/regenerate_parser_and_lexer_from_sources.sh, then commit $dir/$src and its outputs TOGETHER"   # one-disk: not a path
             bad=$((bad + 1))
         fi
     done

@@ -51,7 +51,7 @@ refuse() { echo "⛔ REFUSE(2) [$G]: $*"; exit 2; }
 W="$(cd "${PHASE_ROOT:-$SELF}" 2>/dev/null && pwd)" || refuse "PHASE_ROOT=${PHASE_ROOT:-} is not a directory"
 S4E="${S4E_HOME:-$(cd "$SELF/.." && pwd)}"; CORPUS="${CORPUS:-$S4E_CORPUS}"
 [ -d "$CORPUS/tests" ] || refuse "no corpus at $CORPUS"
-[ -x "$W/scripts/util_require_fresh.sh" ] || refuse "$W is not a SCRIP checkout (no ../harness/scripts/util_require_fresh.sh)"
+[ -x "$W/scripts/util_require_fresh.sh" ] || refuse "$W is not a SCRIP checkout (no ../harness/scripts/util_require_fresh.sh)"   # one-disk: not a path
 "$W/scripts/util_require_fresh.sh" --gate "$G" "$W/scrip" "$W/out/libscrip_rt.so" || exit 2
 PY="$HERE/util_parser_phase_profile.py"; [ -f "$PY" ] || refuse "the classifier $PY is missing"
 command -v valgrind > /dev/null || refuse "no valgrind on PATH -- the profile is callgrind's"

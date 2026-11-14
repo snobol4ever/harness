@@ -233,14 +233,14 @@ else
     # Filtering on STALE alone reproduced, one layer up, the exact blind spot the ADRIFT state was added to
     # close: the one moment somebody is looking at the state of the world would not have shown it.
     printf '%s\n' "$_score_out" | grep -E 'STALE|ADRIFT|UNPINNED|UNKNOWN|^worst=' | sed 's/^/  /'
-    echo "  ⚠ WARN — re-measure the stale suite(s) and rewrite the row: python3 ../harness/scripts/util_score_row.py write --lang <lang> --column board --measurer \"\${S4E_SEAT:-}\" --text '<board line>'"
+    echo "  ⚠ WARN — re-measure the stale suite(s) and rewrite the row: python3 ../harness/scripts/util_score_row.py write --lang <lang> --column board --measurer \"\${S4E_SEAT:-}\" --text '<board line>'"   # one-disk: not a path
   else
     echo "  ⛔ UNVERIFIED — the staleness check REFUSED (rc=$_score_rc, cannot measure). Not blocking, but this run proves nothing about the leaderboard."
     printf '%s\n' "$_score_out" | sed 's/^/  /'
   fi
 fi
 echo "------------------------------------------------------------"
-echo "GATE WIRING (../harness/scripts/gate_wiring.tsv) — a gate on disk that no recipe runs — WARN-ONLY, does not affect the verdict below"
+echo "GATE WIRING (../harness/scripts/gate_wiring.tsv) — a gate on disk that no recipe runs — WARN-ONLY, does not affect the verdict below"   # one-disk: not a path
 # ⛔⭐ THE DEFECT, and it is hq_S's, measured 2026-09-06: test_gate_sno_fence_body_dynamic_operand.sh landed on
 # disk IN THE SAME PUSH as the cure it grades and was never added to the `test:` recipe, so for a day the ONE
 # instrument that could grade that cure was run by nothing. NOTHING COULD HAVE NOTICED: the gate was green when
@@ -299,7 +299,7 @@ elif [ ! -f "$SELF_DIR/util_gc_census.py" ]; then
 elif [ ! -x "$_zls_root/scrip" ]; then
   echo "  ⛔ NOT MEASURED — no ./scrip binary under $_zls_root (run make). A census that cannot compile a rung suite must never print 0."
 else
-  _zls_out="$(cd "$_zls_root" && timeout -k 5 300s "$SELF_DIR"/util_run_slot.sh --admit run python3 ../harness/scripts/util_gc_census.py maps --zls-langs all 2>&1)"; _zls_rc=$?   # the census takes a pool slot (the seat share, then the run pool): a bypasser is not admitted
+  _zls_out="$(cd "$_zls_root" && timeout -k 5 300s "$SELF_DIR"/util_run_slot.sh --admit run python3 "$S4E_HARNESS/scripts/util_gc_census.py" maps --zls-langs all 2>&1)"; _zls_rc=$?   # the census takes a pool slot (the seat share, then the run pool): a bypasser is not admitted
   if [ "$_zls_rc" = 124 ]; then
     echo "  ⛔ NOT MEASURED — the sweep timed out at 300s (load $(cut -d' ' -f1 /proc/loadavg)). No reading this run."
   else

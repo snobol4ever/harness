@@ -34,7 +34,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_paths.sh"
 ROOT="$(cd "$S4E_SCRIP" && pwd)"
-S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+S4E="${S4E_HOME:-$(dirname "$S4E_SCRIP")}"
 GATE_NAME=util_icon_ref_provenance
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || true
 ICONT="$(command -v icont_bin >/dev/null 2>&1 && icont_bin || echo /home/resources/icon-master/bin/icont)"

@@ -149,7 +149,7 @@ def main(argv):
         print('wrote %s: %d rows, %d slots' % (pc, len(rows), pow2_over(2 * len(rows))))
         return 0
     if not os.path.exists(pc) or open(pc, encoding='utf-8').read() != c:
-        print('GATE RED: stale or missing: %s -- run: python3 harness/scripts/util_gen_core_fn_table.py --write' % pc)
+        print('GATE RED: stale or missing: %s -- run: python3 harness/scripts/util_gen_core_fn_table.py --write' % pc)   # one-disk: not a path
         return 1
     print('current: %d rows, %d slots' % (len(rows), pow2_over(2 * len(rows))))
     return 0

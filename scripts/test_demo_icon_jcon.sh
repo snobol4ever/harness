@@ -31,7 +31,7 @@
 # USAGE: bash ../harness/scripts/test_demo_icon_jcon.sh [name ...]      (default: every entry in the demo dir)
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; . "$HERE/lib_paths.sh"; ROOT="$(cd "$S4E_SCRIP" && pwd)"
-S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+S4E="${S4E_HOME:-$(dirname "$S4E_SCRIP")}"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"
 D="${JCON_DEMO_DIR:-$S4E_CORPUS/demos/icon/jcon}"
 PKG="${JCON_PKG_DIR:-$S4E_CORPUS/packages/icon/jcon-compiler}"
