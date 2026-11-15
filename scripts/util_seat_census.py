@@ -33,6 +33,9 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
                                        whose ANON is at 90%% of it; a scope there by its file pages is RECLAIMED (memory.reclaim swappiness=0), never alarmed (box-budget step 7)
   --watch-check                        RED when the coo's loop, tier1 (the fleet watch) or the seat watch is not running, or the fleet watch has not passed in 15 min
   --health                             --check, --memory-check, --cpu-check, --tmp-check, --proc-check and --watch-check together; rc the worst
+  --probe-health                       planted inputs: an unmapped Claude session is named and a terminal scope holding no Claude process is not; a kill is
+                                       named by the run that read its count rise; a session running no shell is no S4E_SEAT reading (rc 0/1)
+  --proc DIR                           read comm and environ under DIR instead of /proc (the probe's fixtures)
   --memory-check                       step 8's DONE-WHEN (it prints each live seat scope's cur, high, anon and file, box-budget step 7): every live seat scope's memory.max below the box, the sessions' slice and the two s4e slices
                                        capped, S4E_SEAT in each session and both runners placing TMPDIR=/tmp/s4e/<seat>, /tmp under 60, no oom_kill in 24 h
   util_seat_census.py --grader-rate S  step 5's DONE-WHEN (default 7200): 200 distinct programs per hour or more among results.tsv's rr=1 rows while the ledger's
@@ -156,13 +159,27 @@ def scopes(root):
     return out
 
 
-def classify(units, live):
+def holds_session(d):
+    """True when the cgroup D holds a Claude process (comm claude, or a Claude version binary, as s4e_session_start.sh's claude_comm reads it). A terminal
+    scope that holds none is no session: the cio 2026-11-15, MEASURED: of five scopes read UNMAPPED and RED, four held only the bash wrapper of a seat
+    spawn_fleet.sh had moved to s4e-seat-<seat>.scope (0 MB each) and the fifth Lon's Sublime Text, started from a terminal."""
+    proc = arg("--proc", "/proc")
+    for p in rd(os.path.join(d, "cgroup.procs")).split():
+        c = rd(os.path.join(proc, p, "comm")).strip()
+        if c == "claude" or re.fullmatch(r"\d+\.\d+\.\d+", c):
+            return True
+    return False
+
+
+def classify(units, live, root=None):
     by_scope = {sc: (seat, cls) for seat, (cls, sc) in live.items()}
     rows, unmapped = [], []
     for rel, kind, name in units:
         if kind == "SESSION":
             seat, cls = by_scope.get(rel, (None, None))
-            if seat is None:
+            if seat is None and root is not None and not holds_session(os.path.join(root, rel)):
+                rows.append((rel, "LON", "desktop"))
+            elif seat is None:
                 unmapped.append(rel)
                 rows.append((rel, "LON", "unmapped"))
             else:
@@ -251,7 +268,7 @@ def tmp_sizes(seats):
 def sample(root, seats_path, interval=10.0):
     live = seat_map(seats_path)
     units = scopes(root)
-    rows, unmapped = classify(units, live)
+    rows, unmapped = classify(units, live, root)
     app = os.path.join(root, "user@1000.service", "app.slice")
     a = {rel: usage_usec(os.path.join(root, rel)) for rel, _, _ in rows}
     a_app = usage_usec(app)
@@ -262,6 +279,7 @@ def sample(root, seats_path, interval=10.0):
     b_app = usage_usec(app)
     acc = {}
     kids = {}
+    in_app = 0.0
     for rel, cls, name in rows:
         if cls in ("BATCH", "GRADER") and name not in ("batch", "grader") and a.get(rel) is not None and b.get(rel) is not None:
             k = kids.setdefault(rel.rsplit("/", 1)[0], [0, 0, 0, 0])
@@ -276,12 +294,14 @@ def sample(root, seats_path, interval=10.0):
         k = (cls, name)
         e = acc.setdefault(k, [0.0, 0, 0, 0, 0])
         e[0] += cores
+        if cls in ("SEAT", "LON") and rel.startswith("user@1000.service/app.slice/"):
+            in_app += cores
         e[1] += max(0, num(d, "memory.current") // 1048576 - sub[1])
         e[2] += max(0, num(d, "memory.peak") // 1048576 - sub[2])
         e[3] += oom_kills(d)
         e[4] += max(0, num(d, "pids.current") - sub[3])
     app_cores = (b_app - a_app) / 1e6 / dt if a_app is not None and b_app is not None else 0.0
-    return acc, unmapped, live, app_cores
+    return acc, unmapped, live, (app_cores, in_app)
 
 
 def oracle_hits(window):
@@ -327,7 +347,7 @@ def run(do_append, do_print):
     if not os.path.isdir(root):
         print("REFUSED(2): no cgroup tree at %s" % root)
         return 2
-    acc, unmapped, live, app_cores = sample(root, arg("--seats", SEATS))
+    acc, unmapped, live, (app_cores, in_app) = sample(root, arg("--seats", SEATS))
     held = slot_holders(root)
     seats = sorted({n for (c, n) in acc if c == "SEAT"})
     tmp = tmp_sizes(seats)
@@ -341,7 +361,7 @@ def run(do_append, do_print):
         cls_sum[cls] = cls_sum.get(cls, 0.0) + e[0]
     for cls in sorted(cls_sum):
         lines.append([utc, "CLASS", cls, cls.lower(), "%.2f" % cls_sum[cls], "-", "-", "-", "-", "-", "-", "-"])
-    lines.append([utc, "APP", "APP", "app.slice", "%.2f" % app_cores, "-", "-", "-", "-", "-", "-", "-"])
+    lines.append([utc, "APP", "APP", "app.slice", "%.2f" % app_cores, "%.2f" % in_app, "-", "-", "-", "-", "-", "-"])   # column 6: the SEAT and LON units INSIDE app.slice, what --check compares
     for u in unmapped:
         lines.append([utc, "UNMAPPED", "LON", u.rsplit("/", 1)[-1], "-", "-", "-", "-", "-", "-", "-", "-"])
     box = box_line(held, app_cores)
@@ -362,7 +382,7 @@ def run(do_append, do_print):
                 f.write("\t".join(l) + "\n")
     if do_print:
         for l in lines:
-            print("%-8s %-6s %-14s %6s cores %6s MB peak %6s oom %s pids %s cc %s run %s tmp %s" % tuple(l[1:]) if l[1] not in ("BOX", "LAP") else "%s %s" % (l[1], l[4]))
+            print("%-8s %-6s %-14s %6s cores %6s MB peak %6s oom %s pids %s cc %s run %s tmp %s" % tuple(l[1:]) if l[1] not in ("BOX", "LAP", "APP") else "%s %s" % (l[1], l[4]) if l[1] != "APP" else "APP      app.slice %s cores, its SEAT and LON units %s" % (l[4], l[5]))
     return 0
 
 
@@ -817,8 +837,11 @@ def check():
         gaps.append("live session scopes SEATS.tsv does not map: " + " ".join(unm))
     app = next((float(r[4]) for r in rows if r[1] == "APP"), None)
     board_and_desk = sum(float(r[4]) for r in rows if r[1] == "UNIT" and r[2] in ("SEAT", "LON"))
-    if app is not None and app > 0.5 and abs(board_and_desk - app) > 0.10 * app:
-        gaps.append("the SEAT and LON lines sum to %.2f cores where app.slice's own delta read %.2f (over ten percent apart)" % (board_and_desk, app))
+    in_app = next((r[5] for r in rows if r[1] == "APP" and len(r) > 5), "-")
+    if re.fullmatch(r"\d+\.\d+", in_app):   # the units inside app.slice alone: a seat's graded runs and a spawned seat's scope live in s4e.slice since 2026-11-13, outside the delta they were summed against (the cio 2026-11-15, MEASURED: 10.68 against 2.83 with every unit accounted)
+        board_and_desk = float(in_app)
+    if app is not None and app > 0.5 and abs(board_and_desk - app) > max(0.10 * app, 0.25):
+        gaps.append("the SEAT and LON units inside app.slice sum to %.2f cores where app.slice's own delta read %.2f (over ten percent apart)" % (board_and_desk, app))
     print("SEAT CENSUS run=%s age=%ds seats=%d/%d app=%s seat_and_lon=%.2f" % (last, age, len(want) - len(miss), len(want), "%.2f" % app if app is not None else "-", board_and_desk))
     if gaps:
         for g in gaps:
@@ -847,6 +870,68 @@ def reclaim_file(d, nbytes):
         return "ok"
     except OSError as e:
         return "partial" if e.errno == 11 else "refused (%s)" % (e.strerror or e)
+
+
+def seat_env_gap(envs, seat):
+    """True when the session runs shells and none carries S4E_SEAT=<seat>. A shell Claude Code starts carries CLAUDECODE; the session process, its helpers
+    and the terminal's own wrapper carry neither, so a session between two tool calls is no reading (the cio 2026-11-15, MEASURED on the cio's scope:
+    claude and the terminal's bash alone read RED, the rule before being two readable pids)."""
+    shells = [e for e in envs if any(x.startswith("CLAUDECODE=") for x in e)]
+    return bool(shells) and not any("S4E_SEAT=" + seat in e for e in shells)
+
+
+def oom_recent(ledger_lines, cut):
+    """{CLASS/name: utc} of every unit whose kill count ROSE in a run at or after CUT. memory.events counts over a cgroup's life and a slice never ends, so a
+    count above zero named its unit for ever (the cio 2026-11-15, MEASURED: s4e-runs-grader.slice read 1 from one kill at 08:03:58Z, and 1..6 through 11-13 and 11-14)."""
+    prev, out = {}, {}
+    for l in ledger_lines:
+        r = l.split("\t")
+        if len(r) > 7 and r[1] == "UNIT" and r[7].isdigit():
+            k, n = "%s/%s" % (r[2], r[3]), int(r[7])
+            if n > prev.get(k, 0):
+                try:
+                    if __import__("calendar").timegm(time.strptime(r[0], "%Y-%m-%dT%H:%M:%SZ")) >= cut:
+                        out[k] = r[0]
+                except ValueError:
+                    pass
+            prev[k] = n
+    return out
+
+
+def probe_health():
+    """--probe-health: the three readings above on planted inputs, rc 0 every arm as said, rc 1 naming the first that is not."""
+    import tempfile
+    bad = []
+    with tempfile.TemporaryDirectory(prefix="census-probe-") as t:
+        term = "user@1000.service/app.slice/app-org.gnome.Terminal.slice"
+        proc = os.path.join(t, "proc")
+        for sc, pid, comm in (("vte-spawn-a.scope", "11", "claude"), ("vte-spawn-b.scope", "22", "claude"), ("vte-spawn-c.scope", "33", "bash"), ("vte-spawn-d.scope", "44", "2.1.139")):
+            os.makedirs(os.path.join(t, "cg", term, sc)); os.makedirs(os.path.join(proc, pid))
+            open(os.path.join(t, "cg", term, sc, "cgroup.procs"), "w").write(pid + "\n")
+            open(os.path.join(proc, pid, "comm"), "w").write(comm + "\n")
+        sys.argv += ["--proc", proc]
+        root = os.path.join(t, "cg")
+        rows, unm = classify(scopes(root), {"cio": ("SEAT", term + "/vte-spawn-a.scope")}, root)
+        got = sorted(u.rsplit("/", 1)[-1] for u in unm)
+        if got != ["vte-spawn-b.scope", "vte-spawn-d.scope"]:
+            bad.append("unmapped: a session no line maps is named and a scope holding no Claude process is not; read %s" % got)
+        if (term + "/vte-spawn-c.scope", "LON", "desktop") not in rows or (term + "/vte-spawn-a.scope", "SEAT", "cio") not in rows:
+            bad.append("classes: the wrapper scope is LON desktop and the mapped scope its seat; read %s" % rows)
+    now = time.time()
+    ts = lambda ago: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now - ago))
+    L = lambda ago, name, n: "\t".join([ts(ago), "UNIT", "SEAT", name, "1.00", "10", "10", str(n), "5", "0", "0", "0"])
+    got = oom_recent([L(200000, "old", 1), L(3600, "old", 1), L(200000, "new", 0), L(7200, "new", 1), L(3600, "new", 1), L(200000, "gone", 2), L(100000, "gone", 0), L(60, "gone", 0)], now - 86400)
+    if sorted(got) != ["SEAT/new"] or got.get("SEAT/new") != ts(7200):
+        bad.append("oom: only the unit whose count rose inside the day is named, at the run that read the rise; read %s" % got)
+    sh, wr = ["CLAUDECODE=1", "S4E_SEAT=cio"], ["HOME=/x"]
+    arms = (([wr, wr], False), ([wr, ["CLAUDECODE=1"]], True), ([wr, sh, ["CLAUDECODE=1"]], False), ([], False))
+    for envs, want in arms:
+        if seat_env_gap(envs, "cio") != want:
+            bad.append("env: %s reads %s, want %s" % (envs, not want, want))
+    for b in bad:
+        print("  RED  " + b)
+    print("PROBE health arms=3 %s" % ("RED" if bad else "GREEN an unmapped session is named and a scope with no Claude process is not; a kill is named by its rise; a session with no shell is no reading"))
+    return 1 if bad else 0
 
 
 def memory_check():
@@ -878,11 +963,11 @@ def memory_check():
         envs = []
         for p in pids:
             try:
-                with open("/proc/%s/environ" % p, "rb") as f:
+                with open(os.path.join(arg("--proc", "/proc"), p, "environ"), "rb") as f:
                     envs.append(f.read().decode("utf-8", "replace").split("\0"))
             except OSError:
                 pass
-        if len(envs) >= 2 and not any(want in e for e in envs):   # the session process never carries the settings env; only a shell child does, so one pid is no reading (the fleet test, 2026-11-01)
+        if seat_env_gap(envs, seat):   # the session process never carries the settings env; only a shell child does (the fleet test, 2026-11-01)
             gaps.append("seat %s: its session's shells run without %s, so its runners cannot place TMPDIR=/tmp/s4e/%s" % (seat, want, seat))
     svc = os.path.join(root, "user@1000.service")
     for nm, rel, knob in (("the sessions' slice", "app.slice/app-org.gnome.Terminal.slice", "memory.high"), ("s4e-batch.slice", "s4e.slice/s4e-batch.slice", "memory.max"),
@@ -898,18 +983,9 @@ def memory_check():
     used = 100.0 * (st.f_blocks - st.f_bfree) / max(1, st.f_blocks - st.f_bfree + st.f_bavail)
     if used >= 60:
         gaps.append("/tmp is %.0f percent used (60 is the bound)" % used)
-    cut = time.time() - 86400
-    ooms = set()
-    for l in rd(arg("--load", LOAD)).splitlines():
-        r = l.split("\t")
-        if len(r) > 7 and r[1] == "UNIT" and r[7].isdigit() and int(r[7]) > 0:
-            try:
-                if __import__("calendar").timegm(time.strptime(r[0], "%Y-%m-%dT%H:%M:%SZ")) >= cut:
-                    ooms.add("%s/%s" % (r[2], r[3]))
-            except ValueError:
-                pass
+    ooms = oom_recent(rd(arg("--load", LOAD)).splitlines(), time.time() - 86400)
     if ooms:
-        gaps.append("oom_kill in the last 24 h: " + " ".join(sorted(ooms)))
+        gaps.append("oom_kill in the last 24 h: " + " ".join("%s (first read %s)" % (k, ooms[k]) for k in sorted(ooms)))
     print("MEMORY CHECK seats=%d box=%d MB tmp=%.0f%% gaps=%d" % (seen, box // 1048576, used, len(gaps)))
     for l in split:
         print(l)
@@ -1451,6 +1527,8 @@ def main():
         return tmp_check()
     if "--cpu-check" in av:
         return cpu_check()
+    if "--probe-health" in av:
+        return probe_health()
     if "--memory-check" in av:
         return memory_check()
     if "--check" in av:
