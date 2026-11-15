@@ -36,6 +36,10 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 GEN="$HERE/bench_prolog_wrap.sh"; [ -x "$GEN" ] || refuse "no wrapper generator at $GEN -- angles 2 and 3 have nothing to run"
 WRAP="$S4E_SCRIP/out/bench_rusage"
 [ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/bench_rusage.c" || refuse "out/bench_rusage failed to build -- angle 1 has no wrapper"
+# MODE 3 ONLY UNLESS S4E_MODES NAMES m4 (Lon 2026-11-08, verbatim: "We will test mode 3 only until further notice"; COO-487; the coo 2026-11-14 23:1x CST: the word
+# covers the legacy runners, this one named). Mode 4 here is a compile to assembly and a link for every angle of every kernel: MEASURED 2026-11-14 22:43 CST, the
+# prolog-bench-ref cell's scratch held 7.5 GB of assembly, 234 MB a kernel, on a 4 GB budget. The same form as the snobol4, snocone and raku bench runners.
+MODES="$(printf "%s" "${S4E_MODES:-m3}" | tr "," " ")"
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac
 case "$BUD_MS" in ''|*[!0-9]*|0) refuse "BENCH_BUD_MS must be a positive whole number of milliseconds (got '$BUD_MS')";; esac
 IS_BOARD=0; one_runner_suite_is_a_board "$BD" && IS_BOARD=1
@@ -106,14 +110,14 @@ for k in "${KERNELS[@]}"; do
   ORC[$orc]=$((${ORC[$orc]}+1)); [ "$orc" = gprolog ] || ORC_NAMED="$ORC_NAMED $k($orc: $orc_why)"
   [ -n "$st" ] && { cfg="$([ "$cfg" = shipped ] || printf '%s,' "$cfg")SCRIP_STACK=${st}k"; HEAPD=$((HEAPD+1)); }
   if [ ! -s "$ref" ]; then
-    for m in m3 m4; do printf 'benchmark\tprolog-bench-ref\tprolog\t%s\t%s\tFAIL\t0\tno-ref\t%s\n' "$k" "$m" "$cfg" >>"$PROG_ROWS"; done
+    for m in $MODES; do printf 'benchmark\tprolog-bench-ref\tprolog\t%s\t%s\tFAIL\t0\tno-ref\t%s\n' "$k" "$m" "$cfg" >>"$PROG_ROWS"; done
     printf '%-20s %-4s %s\n' "$k" both "FAIL no .ref -- a benchmark without a REF cannot be graded, and is counted, not skipped"; [ -n "$ocls" ] || NAMED="$NAMED $k(no-ref)"; continue
   fi
   gen_ok=1
   bash "$GEN" "$f" --mode=iter --n="$ITER_N" --engine=scrip -o "$T/$k.iter.pl" >/dev/null 2>"$T/$k.iter.gen" || gen_ok=0
   bash "$GEN" "$f" --mode=time --bud="$BUD_MS" --engine=scrip -o "$T/$k.time.pl" >/dev/null 2>"$T/$k.time.gen" || gen_ok=0
   okboth=1
-  for m in m3 m4; do
+  for m in $MODES; do
     _tm="$(progress_clock)"   # the mode's own wall for its row: its three angles, and in m4 their compile and link (R-1676 (c))
     r1=FAIL; r2=FAIL; r3=FAIL; why=""
     if [ "$gen_ok" = 0 ]; then why="the wrapper generator REFUSED: $(head -c 160 "$T/$k.iter.gen" "$T/$k.time.gen" 2>/dev/null | tr '\n' ' ')"
@@ -144,7 +148,7 @@ for k in "${KERNELS[@]}"; do
   done
   [ "$okboth" = 1 ] && [ -z "$ocls" ] && BOTH=$((BOTH+1))
 done
-LINE="SUITE_BOARD family=prolog-bench-ref total=$TOTAL shipped=$((TOTAL+NOUT))$([ "$NOUT" -gt 0 ] && echo " excluded=$NOUT") all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} angles=process,iter,time iter_n=$ITER_N bud_ms=$BUD_MS memory_declared=$HEAPD oracles=gprolog:${ORC[gprolog]},swipl:${ORC[swipl]}"
+LINE="SUITE_BOARD family=prolog-bench-ref total=$TOTAL shipped=$((TOTAL+NOUT))$([ "$NOUT" -gt 0 ] && echo " excluded=$NOUT") all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=$(case " $MODES " in *" m4 "*) echo "${PASSN[m4]}";; *) echo -;; esac) angles=process,iter,time iter_n=$ITER_N bud_ms=$BUD_MS memory_declared=$HEAPD oracles=gprolog:${ORC[gprolog]},swipl:${ORC[swipl]}"
 echo
 echo "$LINE"
 [ -n "$NAMED" ] && echo "  not passing:$NAMED"

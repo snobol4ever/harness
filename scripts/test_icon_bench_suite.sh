@@ -62,6 +62,11 @@ PW="$HERE/util_progress_append.py"; [ -f "$PW" ] || refuse "the one progress-dat
 W="$(mktemp -d "${TMPDIR:-/tmp}/icnbench.XXXXXX")" || refuse "cannot make a work dir"; trap 'rm -rf "$W"' EXIT
 [ -n "$OUTDIR" ] || OUTDIR="$W/out"; mkdir -p "$OUTDIR" || refuse "cannot make $OUTDIR"
 RUSAGE="$W/bench_rusage"; gcc -o "$RUSAGE" "$HERE/bench_rusage.c" 2>"$W/rusage.err" || refuse "harness/scripts/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"   # one-disk: not a path
+# MODE 3 ONLY UNLESS S4E_MODES NAMES m4 (Lon 2026-11-08, verbatim: "We will test mode 3 only until further notice"; COO-487; the coo 2026-11-14 23:1x CST: the word
+# covers the legacy runners, this one named). Mode 4 here is a compile to assembly and a link for every angle of every kernel: MEASURED 2026-11-14 22:43 CST, the
+# prolog-bench-ref cell's scratch held 7.5 GB of assembly, 234 MB a kernel, on a 4 GB budget. The same form as the snobol4, snocone and raku bench runners.
+MODES="$(printf "%s" "${S4E_MODES:-m3}" | tr "," " ")"
+rec4() { case " $MODES " in *" m4 "*) record "$@" ;; esac; }   # a mode 4 row is written only when mode 4 is graded
 POP=()
 while IFS= read -r f; do grep -q '^[[:space:]]*procedure[[:space:]]\+main' "$f" || continue
   n="$(basename "$f" .icn)"; [ -n "$WANT" ] && ! grep -qw -- "$n" <<<"$WANT" && continue; POP+=("$f")
@@ -99,15 +104,15 @@ for f in "${POP[@]}"; do
   oe="$(declared_oracle_env_beside "$f")" || krc=2; declare -a OENV=(); [ -n "$oe" ] && read -r -a OENV <<<"$oe"
   declare -a AV=(); arc=0; [ -f "${f%.icn}.argv" ] && { ipl_argv_read "$f" AV || arc=$?; }
   if [ ! -s "$ref" ]; then REFLESS=$((REFLESS + 1)); printf '  %-40s REFLESS -- no non-empty .ref, not a pass\n' "$rel"
-    record "$rel" m3 UNGRADED 0 "no .ref"; record "$rel" m4 UNGRADED 0 "no .ref"; continue; fi
+    record "$rel" m3 UNGRADED 0 "no .ref"; rec4 "$rel" m4 UNGRADED 0 "no .ref"; continue; fi
   if [ "$krc" != 0 ] || [ "$arc" != 0 ]; then why="a malformed ${NM}.heap, ${NM}.stack or ${NM}.oracle_env (the reader said why above)"; [ "$arc" != 0 ] && why="a malformed ${NM}.argv (the reader said why above)"
-    printf '  %-40s UNPROVEN -- %s\n' "$rel" "$why"; record "$rel" m3 UNPROVEN 0 "$why"; record "$rel" m4 UNPROVEN 0 "$why"; continue; fi
+    printf '  %-40s UNPROVEN -- %s\n' "$rel" "$why"; record "$rel" m3 UNPROVEN 0 "$why"; rec4 "$rel" m4 UNPROVEN 0 "$why"; continue; fi
   # ⭐ THE DECLARATION RIDES THE COMMAND LINE AS SWITCHES (R-1353): after scrip in m3, leading the binary's arguments in m4 (a --
   # before the kernel's argv), never SCRIP_HEAP_KB -- gc_heap.c reads that as the collector's WINDOW, so every declared kernel ran at
   # window = cap. The oracle runs get none of these switches; they get NAME.oracle_env (OENV above).
   [ -n "$kb" ] && HEAPD=$((HEAPD + 1))
   python3 "$GEN" "$f" >"$K/$NM.icn" 2>"$K/gen.err" || { printf '  %-40s UNPROVEN -- the wrapper generator refused: %s\n' "$rel" "$(head -1 "$K/gen.err")"
-    record "$rel" m3 UNPROVEN 0 "unwrappable"; record "$rel" m4 UNPROVEN 0 "unwrappable"; continue; }
+    record "$rel" m3 UNPROVEN 0 "unwrappable"; rec4 "$rel" m4 UNPROVEN 0 "unwrappable"; continue; }
   # ---- the oracle: the REF's own check (the PRISTINE kernel), then the loop shape both modes are held to (the WRAPPED one)
   ENVP=(${OENV[@]+"${OENV[@]}"}); SHAPE=""; why=""
   if ! ( cd "$K" && "$ICONT" -s -o op "$f" && "$ICONT" -s -o ox "$NM.icn" ) >"$K/icont.log" 2>&1; then why="REF DRIFT: icont refuses the kernel or its wrapper -- $(grep -v '^$' "$K/icont.log" | head -1 | cut -c1-100)"
@@ -122,10 +127,10 @@ for f in "${POP[@]}"; do
     fi
   fi
   if [ -z "$SHAPE" ]; then case "$why" in WRAPPER*) WSENS=$((WSENS + 1));; *) DRIFT=$((DRIFT + 1));; esac; printf '  %-40s UNPROVEN -- %s\n' "$rel" "${why%% --*}"; NOTES="$NOTES\n    $rel: $why"
-    record "$rel" m3 UNPROVEN 0 "${why%% --*}"; record "$rel" m4 UNPROVEN 0 "${why%% --*}"; continue; fi
+    record "$rel" m3 UNPROVEN 0 "${why%% --*}"; rec4 "$rel" m4 UNPROVEN 0 "${why%% --*}"; continue; fi
   [ "$SHAPE" = IN ] && LIN=$((LIN + 1)) || LPROC=$((LPROC + 1))
   o3=PASS; o4=PASS; s3=0; s4=0; cells=""
-  for mode in m3 m4; do
+  for mode in $MODES; do
     PRI=(); WRP=(); o=PASS
     if [ "$mode" = m3 ]; then PRI=("$SCRIP" ${SWA[@]+"${SWA[@]}"} "$f"); WRP=("$SCRIP" ${SWA[@]+"${SWA[@]}"} "$K/$NM.icn"); [ "${#AV[@]}" -gt 0 ] && { PRI+=(-- "${AV[@]}"); WRP+=(-- "${AV[@]}"); }
     else
@@ -167,14 +172,14 @@ for f in "${POP[@]}"; do
   done
   [ "$o3" = PASS ] && P3=$((P3 + 1)); [ "$o4" = PASS ] && P4=$((P4 + 1))
   hnote=""; [ -n "$kb" ] && hnote=" at declared $kb"
-  record "$rel" m3 "$o3" "$s3" "process/iter/time vs REF, loop $SHAPE$hnote"; record "$rel" m4 "$o4" "$s4" "process/iter/time vs REF, loop $SHAPE$hnote"
+  record "$rel" m3 "$o3" "$s3" "process/iter/time vs REF, loop $SHAPE$hnote"; rec4 "$rel" m4 "$o4" "$s4" "process/iter/time vs REF, loop $SHAPE$hnote"
   if [ "$o3" = PASS ] && [ "$o4" = PASS ]; then PASS=$((PASS + 1)); printf '  %-40s PASS  (6 of 6 runs print the REF, loop %s)%s\n' "$rel" "$SHAPE" "${hnote:+ --$hnote}"
   else printf '  %-40s FAIL %s  (loop %s)\n' "$rel" "$cells" "$SHAPE"; fi
 done
 N=${#POP[@]}
 [ -n "$NOTES" ] && printf 'NOT PASSING, NAMED:%b\n' "$NOTES"
 printf 'SCOUTING DATA -- one run each on a loaded box, NOT A GRID (timing waits for the quiet box, R-1219):%b\n' "$SCOUT"
-LINE="SUITE_BOARD family=icon-bench-ref total=$N shipped=$N all_pass=$PASS all_n=$N m3_pass=$P3 m4_pass=$P4 angles=process,iter,time loop_in=$LIN loop_proc=$LPROC refless=$REFLESS ref_drift=$DRIFT wrapper_sensitive=$WSENS heap_declared=$HEAPD"
+LINE="SUITE_BOARD family=icon-bench-ref total=$N shipped=$N all_pass=$PASS all_n=$N m3_pass=$P3 m4_pass=$([[ " $MODES " == *" m4 "* ]] && echo "$P4" || echo -) angles=process,iter,time loop_in=$LIN loop_proc=$LPROC refless=$REFLESS ref_drift=$DRIFT wrapper_sensitive=$WSENS heap_declared=$HEAPD"
 echo "$LINE"
 rr_selected && { rr_end icon-bench-ref; [ "$PASS" = "$N" ] && exit 0 || exit 1; }
 [ "$PREFUSED" = 0 ] || echo "⚠ $PREFUSED progress row(s) REFUSED (named above) -- the board stands, but it cannot be published until they are recorded"

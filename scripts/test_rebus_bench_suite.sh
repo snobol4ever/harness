@@ -47,6 +47,10 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 GEN="$HERE/bench_wrap_rebus.py"; [ -f "$GEN" ] || refuse "no wrapper generator at $GEN -- angles 2 and 3 have nothing to run"
 WRAP="$S4E_SCRIP/out/bench_rusage"
 [ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/bench_rusage.c" || refuse "out/bench_rusage failed to build -- angle 1 has no wrapper"
+# MODE 3 ONLY UNLESS S4E_MODES NAMES m4 (Lon 2026-11-08, verbatim: "We will test mode 3 only until further notice"; COO-487; the coo 2026-11-14 23:1x CST: the word
+# covers the legacy runners, this one named). Mode 4 here is a compile to assembly and a link for every angle of every kernel: MEASURED 2026-11-14 22:43 CST, the
+# prolog-bench-ref cell's scratch held 7.5 GB of assembly, 234 MB a kernel, on a 4 GB budget. The same form as the snobol4, snocone and raku bench runners.
+MODES="$(printf "%s" "${S4E_MODES:-m3}" | tr "," " ")"
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac
 case "$BUD_MS" in ''|*[!0-9]*|0) refuse "BENCH_BUD_MS must be a positive whole number of milliseconds (got '$BUD_MS')";; esac
 IS_BOARD=0; one_runner_suite_is_a_board "$BD" && IS_BOARD=1
@@ -91,14 +95,14 @@ for k in "${KERNELS[@]}"; do
   cfg="shipped"; [ -n "$kb" ] && { cfg="SCRIP_HEAP_CAP_KB=$kb"; HEAPD=$((HEAPD+1)); }
   [ -n "$st" ] && { cfg="$([ "$cfg" = shipped ] || printf '%s,' "$cfg")SCRIP_STACK=${st}k"; HEAPD=$((HEAPD+1)); }
   if [ ! -s "$ref" ]; then
-    for m in m3 m4; do printf 'benchmark\trebus-bench-ref\trebus\t%s\t%s\tFAIL\t0\tno-ref\t%s\n' "$k" "$m" "$cfg" >>"$PROG_ROWS"; done
+    for m in $MODES; do printf 'benchmark\trebus-bench-ref\trebus\t%s\t%s\tFAIL\t0\tno-ref\t%s\n' "$k" "$m" "$cfg" >>"$PROG_ROWS"; done
     printf '%-16s %-4s %s\n' "$k" both "FAIL no .ref -- a benchmark without a REF cannot be graded, and is counted, not skipped"; NAMED="$NAMED $k(no-ref)"; continue
   fi
   want="$(head -1 "$ref")"
   gen_ok=1
   for a in iter time; do python3 "$GEN" "$f" --mode "$a" --n "$ITER_N" --bud-ms "$BUD_MS" -o "$T/$k.$a.reb" 2>"$T/$k.$a.gen" || gen_ok=0; done
   okboth=1
-  for m in m3 m4; do
+  for m in $MODES; do
     _tm="$(progress_clock)"   # the mode's own wall for its row: its three angles, and in m4 their compile and link (R-1676 (c))
     r1=FAIL; r2=FAIL; r3=FAIL; why=""
     if [ "$gen_ok" = 0 ]; then why="the wrapper generator REFUSED: $(head -c 160 "$T/$k.iter.gen" "$T/$k.time.gen" 2>/dev/null | tr '\n' ' ')"
@@ -128,7 +132,7 @@ for k in "${KERNELS[@]}"; do
   done
   [ "$okboth" = 1 ] && BOTH=$((BOTH+1))
 done
-LINE="SUITE_BOARD family=rebus-bench-ref total=$TOTAL shipped=$TOTAL all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} angles=process,iter,time iter_n=$ITER_N bud_ms=$BUD_MS memory_declared=$HEAPD"
+LINE="SUITE_BOARD family=rebus-bench-ref total=$TOTAL shipped=$TOTAL all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=$(case " $MODES " in *" m4 "*) echo "${PASSN[m4]}";; *) echo -;; esac) angles=process,iter,time iter_n=$ITER_N bud_ms=$BUD_MS memory_declared=$HEAPD"
 echo
 echo "$LINE"
 [ -n "$NAMED" ] && echo "  not passing:$NAMED"

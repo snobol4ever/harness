@@ -44,6 +44,10 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 declare -a DECL_SW=()
 WRAP="$S4E_SCRIP/out/bench_rusage"
 [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/bench_rusage.c" || refuse "out/bench_rusage failed to build -- angle 1 has no wrapper"
+# MODE 3 ONLY UNLESS S4E_MODES NAMES m4 (Lon 2026-11-08, verbatim: "We will test mode 3 only until further notice"; COO-487; the coo 2026-11-14 23:1x CST: the word
+# covers the legacy runners, this one named). Mode 4 here is a compile to assembly and a link for every angle of every kernel: MEASURED 2026-11-14 22:43 CST, the
+# prolog-bench-ref cell's scratch held 7.5 GB of assembly, 234 MB a kernel, on a 4 GB budget. The same form as the snobol4, snocone and raku bench runners.
+MODES="$(printf "%s" "${S4E_MODES:-m3}" | tr "," " ")"
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac
 case "$TIME_LIMIT" in ''|*[!0-9]*|0) refuse "BENCH_TIME_LIMIT must be a positive whole number of seconds (got '$TIME_LIMIT')";; esac
 OUTDIR="${BENCH_OUT_DIR:-$(mktemp -d -t pascal_bench_runs.XXXXXX)}"; mkdir -p "$OUTDIR" || refuse "cannot create $OUTDIR"
@@ -74,17 +78,17 @@ printf '%-10s %-4s %-7s %-7s %-7s %s\n' kernel mode wrap iter time verdict
 for k in "${KERNELS[@]}"; do
   TOTAL=$((TOTAL+1)); okboth=1
   if [ ! -s "$B/$k.ref" ]; then
-    for m in m3 m4; do printf 'benchmark\tpascal-bench-ref\tpascal\t%s\t%s\tFAIL\t0\tno-ref\n' "$k" "$m" >>"$PROG_ROWS"; done
+    for m in $MODES; do printf 'benchmark\tpascal-bench-ref\tpascal\t%s\t%s\tFAIL\t0\tno-ref\n' "$k" "$m" >>"$PROG_ROWS"; done
     printf '%-10s %-4s %s\n' "$k" "both" "FAIL no .ref -- a benchmark without a REF cannot be graded, and is counted, not skipped"; NAMED="$NAMED $k(no-ref)"; continue
   fi
   in="$B/$k.in"; [ -f "$in" ] || in=/dev/null
   DECL_SW=(); dw=$(declared_switches_beside "$B/$k.pas") || refuse "$k: a .heap or .stack sidecar the reader refuses (it said why above)"; [ -n "$dw" ] && read -r -a DECL_SW <<<"$dw"
   knob=0; if [ "$in" != /dev/null ] && [ "$(grep -c . "$in")" = 1 ] && grep -qE '^[[:space:]]*[0-9]+[[:space:]]*$' "$in"; then knob=1; fi
   tc="$(progress_clock)"
-  m4ok=1; ( cd "$TMP" && "$TIMEOUT_RETRY" 300s "$SCRIP" --compile --out="$TMP/$k.s" "$B/$k.pas" </dev/null >"$TMP/$k.cc.err" 2>&1 ) \
-    && ( cd "$TMP" && cc -m64 -no-pie "$k.s" -o "$k.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >>"$TMP/$k.cc.err" 2>&1 ) || m4ok=0
+  m4ok=1; case " $MODES " in *" m4 "*) ( cd "$TMP" && "$TIMEOUT_RETRY" 300s "$SCRIP" --compile --out="$TMP/$k.s" "$B/$k.pas" </dev/null >"$TMP/$k.cc.err" 2>&1 ) \
+    && ( cd "$TMP" && cc -m64 -no-pie "$k.s" -o "$k.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >>"$TMP/$k.cc.err" 2>&1 ) || m4ok=0 ;; esac
   cs="$(progress_secs_since "$tc")"
-  for m in m3 m4; do
+  for m in $MODES; do
     a1=FAIL; a2=FAIL; a3=FAIL; why=""; tm="$(progress_clock)"
     if [ "$m" = m4 ] && [ "$m4ok" = 0 ]; then why="m4 compile/link failed: $(head -c 120 "$TMP/$k.cc.err" | tr '\n' ' ')"
     else
@@ -119,7 +123,7 @@ for k in "${KERNELS[@]}"; do
   [ "$okboth" = 1 ] && BOTH=$((BOTH+1))
 done
 echo
-echo "PASCAL_BENCH_BOARD total=$TOTAL both_pass=$BOTH m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} (three angles each: process wrapper, fixed iterations N=$ITER_N, fixed time limit ${TIME_LIMIT}s; every run diffed against its .ref)"
+echo "PASCAL_BENCH_BOARD total=$TOTAL both_pass=$BOTH m3_pass=${PASSN[m3]} m4_pass=$(case " $MODES " in *" m4 "*) echo "${PASSN[m4]}";; *) echo -;; esac) (three angles each: process wrapper, fixed iterations N=$ITER_N, fixed time limit ${TIME_LIMIT}s; every run diffed against its .ref)"
 [ -n "$NAMED" ] && echo "  not passing:$NAMED"
 echo "  evidence: every run's stdout and rusage line kept under $OUTDIR (scratch, not a corpus file -- OUT is REF, R-1222)"
 echo "  tree: SCRIP=$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E_SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E_CORPUS" diff --quiet 2>/dev/null || echo -dirty) RT_OPT=-O0"
@@ -132,7 +136,7 @@ echo "  tree: SCRIP=$(git -C "$S4E_SCRIP" rev-parse --short HEAD 2>/dev/null)$(g
 if [ -s "$PROG_ROWS" ]; then
   progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS DB NOT UPDATED -- the board above stands, its per-program rows do not (reason above)" >&2
 fi
-LINE="SUITE_BOARD family=pascal-bench-ref total=$TOTAL all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} angles=wrap,iter,time"
+LINE="SUITE_BOARD family=pascal-bench-ref total=$TOTAL all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=$(case " $MODES " in *" m4 "*) echo "${PASSN[m4]}";; *) echo -;; esac) angles=wrap,iter,time"
 echo "$LINE"
 rr_selected && { rr_end pascal-bench-ref; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; }
 . "$HERE/lib_bench_write.sh" || refuse "lib_bench_write.sh unloadable -- the one rule for when a bench row publishes"
