@@ -1,0 +1,28 @@
+# STEPS.tsv -- THE DESIGN-PLAN fpc-ladder STEP TABLE (the coo's draft 2026-11-15, ruled by the cto 09:4x CST; the design text is skill pascal section 20; skill design-plans section 0).
+# FpcSource is rolled out as Pascal rungs 33 and up, one cause class a rung, in the order of its class's size; depends names true dependencies only.
+# members = the live census members (MEMBERS.tsv, census of SCRIP 67c7cebfd3), "not measured" where no census class serves the rung yet; rows = the standing QUEUE.tsv rows the rung is made of (ROWS.tsv).
+# The fixtures are flNN<letter>_<slug>.pas in harness/fixtures/fpc_ladder (a folder named in the cell for the others), each with its {$mode} line and at most 20 lines, its .ref cut twice from fpc 3.2.2
+# in that mode, and its .rc when fpc ends it non-zero (fl35b ends rc 3). WHILE A FIXTURE IS A FIXTURE it is graded by its bytes and its return code:
+#   scrip --run harness/fixtures/fpc_ladder/flNN_<slug>.pas < /dev/null > out; cmp out flNN_<slug>.ref, and rc equal to flNN_<slug>.rc (0 when absent)
+# A fixture joins the pascal master in the landing that turns it green: python3 harness/scripts/util_add_ladder_witness.py --lang pascal --family ladder --dialect <its mode> --source <fixture> --apply
+# (the entry is ladder__rungNN_<slug>, and LADDER.tsv's # PLAN-rungNN line becomes a rungNN row in the same landing).
+# A RUNG IS CLOSED when every fixture of its cell reads m3_pass=1 through corpus_suite_harness.py run corpus/tests/pascal/ALL.pas corpus/tests/pascal/ALL.ref --lang pascal --modes m3 --partition entry:ladder__rungNN_<slug>
+#   (mode 4 is proved by the lander's own run), and its MEMBERS.tsv members have been graded again on the cycle's road, a member still red censused again into a later rung or a bug row.
+rung	class	members	rows	depends	fixtures
+33	a Variant actual chooses its overload and converts (test/cg/variants/ivarol*)	101	0	-	-
+34	the RTL units a member names (typinfo, unicodedata, character, baseunix, varutils, the code-page units, syncobjs, ucomplex)	97	52	-	-
+35	names and routines of system, sysutils, math and strutils	215	23	-	fl35a_hexstr_and_binstr,fl35b_randseed_filemode_exitcode
+36	a type name called with one argument is a value typecast	33	5	-	-
+37	sections and class members (class var, static and class methods)	27	18	-	fl37_class_var_and_static_class_methods,pascal_sections/sc00..sc06
+38	case over a string (numeric expected, a HYPOTHESIS until the members are read)	27	0	-	fl38_case_over_a_string
+39	generics in delphi mode	26	5	-	fl39_delphi_generic_class
+40	helpers	13	12	37 (a helper constant reuses the body-constant member kind, skill pascal section 17)	pascal_helpers/hp02..hp07
+41	the calling and hint directives fpc accepts	29	1	-	-
+42	operator overloading (a named result, the symbolic and word operators, operator in)	23	10	-	fl42_operator_with_a_named_result_and_operator_in
+43	the lexer forms (a byte-order mark, the % and & number prefixes)	19	3	-	fl43a_binary_and_octal_literals,fl43b_a_byte_order_mark
+44	a nested procedural type (is nested)	11	3	-	fl44_a_nested_procedural_type
+45	array of const (TVarRec carrying int64 and extended)	15	1	-	fl45_array_of_const_int64_and_extended
+46	a Turbo Pascal object built by new with its constructor	4	1	-	fl46_a_tp_object_built_by_new_with_its_constructor
+47	strings with a code page	not measured (no census class yet; read after rung 33)	1	-	fl47_strings_with_a_code_page
+48	a bitpacked record laid out by bits	not measured (no census class yet; read after rung 33)	2	-	fl48_bitpacked_record_size
+49	extended, the 80-bit real	not measured (no census class yet; read after rung 33)	0	-	fl49_an_extended_literal_past_double

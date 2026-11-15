@@ -1,0 +1,6 @@
+int 1
+ext 2.50
+str abc
+i64 1099511627776
+chr z
+bool TRUE
