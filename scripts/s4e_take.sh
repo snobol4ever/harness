@@ -43,17 +43,27 @@ take() {
     die "REFUSE(2): no seat holds $1, and nothing was made. Lon 2026-11-14: \"Only ONE maintainer has /home/{.github,corpus,harness} and that is GRADER.\" Read it at $TOP/$1. To change it, give the grader a patch: bash $TOP/harness/scripts/s4e_take.sh give $1 <patch> \"<why>\" (the head of this script says how a patch is written with no clone)." 2
 }
 give() {
-    local r="$1" p="${2:-}" why="${3:-}" seat="${S4E_SEAT:-}" src err out base
+    local r="$1" p="${2:-}" why="${3:-}" seat="${S4E_SEAT:-}" src err="" out base ob hb at ix
     [ -n "$seat" ] || die "REFUSE(2): S4E_SEAT is unset: a give names its seat" 2
     [ -n "$p" ] && [ -s "$p" ] || die "REFUSE(2): no patch at '$p' (usage: s4e_take.sh give corpus|harness|.github <patch> \"<why>\")" 2
     [ -n "$why" ] || die "REFUSE(2): a give says why, the row and what the change does (usage: s4e_take.sh give $r <patch> \"<why>\")" 2
     case "$why" in *$'\t'*|*$'\n'*) die "REFUSE(2): the why is one line with no tab" 2 ;; esac
     src="$TOP/$r"; [ -d "$src/.git" ] || die "REFUSE(2): no checkout at $src" 2
     p="$(readlink -f "$p")"
-    err="$(git -C "$src" apply --check "$p" 2>&1)" || die "REFUSE(1): the patch does not apply to $src at $(git -C "$src" rev-parse --short=10 HEAD 2>/dev/null): $(printf '%s' "$err" | head -1). Nothing given." 1
+    # THE CHECK IS AGAINST ORIGIN FIRST, THEN THE CHECKOUT'S HEAD, AND NEVER THE WORKING FILES (the cio 2026-11-15, on the grader's ask): the keeper stood
+    # /home/.github at 61ee066a5 for 140 minutes while origin moved twice, and a patch cut on origin was refused here while one cut on the checkout
+    # conflicted at the grader's rebase. Each check reads a commit through a private index, so a stalled or dirtied checkout blocks no giver.
+    ob="$(git -C "$src" rev-parse -q --verify refs/remotes/origin/main 2>/dev/null)"; hb="$(git -C "$src" rev-parse -q --verify HEAD 2>/dev/null)"; base=""
+    for at in "$ob" "$hb"; do
+        [ -n "$at" ] && [ -z "$base" ] || continue
+        ix="$(mktemp -u "${TMPDIR:-/tmp}/s4e-give-index.XXXXXX")"
+        if GIT_INDEX_FILE="$ix" git -C "$src" read-tree "$at" 2>/dev/null && err="$(GIT_INDEX_FILE="$ix" git -C "$src" apply --cached --check "$p" 2>&1)"; then base="$at"; fi
+        rm -f "$ix"
+    done
+    [ -n "$base" ] || die "REFUSE(1): the patch applies neither to origin/main ${ob:0:10} nor to $src at ${hb:0:10}: $(printf '%s' "$err" | head -1). Nothing given." 1
     mkdir -p "$GIVES" 2>/dev/null || die "REFUSE(2): cannot make $GIVES" 2
     out="$GIVES/$(date -u +%Y%m%dT%H%M%SZ)-$seat-${r#.}-$$.patch"
-    base="$(git -C "$src" rev-parse HEAD 2>/dev/null)"   # THE GIVE NAMES ITS BASE (the cio 2026-11-14, ruled with the grader): the commit of the one checkout the patch was checked against. A give that adds an entry to a container renumbers every row below it, so once another such give lands it applies nowhere but at its base; the grader applies it there, in a worktree, and its landing's rebase merges the container's tables by entry key (util_table_merge.py, s4e_land.sh)
+    :   # THE GIVE NAMES ITS BASE (the cio 2026-11-14, ruled with the grader): the commit of the one checkout the patch was checked against. A give that adds an entry to a container renumbers every row below it, so once another such give lands it applies nowhere but at its base; the grader applies it there, in a worktree, and its landing's rebase merges the container's tables by entry key (util_table_merge.py, s4e_land.sh)
     cp "$p" "$out" && printf '%s\t%s\t%s\t%s\t%s\n' "$(basename "$out")" "$seat" "$r" "$why" "base=$base" >> "$GIVES/GIVES.tsv" || die "REFUSE(2): cannot store the give in $GIVES" 2
     echo "GIVEN $out ($r, by $seat, base ${base:0:10}: $why). The grader alone applies it."
     echo "WAKE: SendMessage to GRADER now with this first line: \"give $(basename "$out"): run bash $TOP/harness/scripts/s4e_take.sh apply $out\""
@@ -154,7 +164,20 @@ probe() {
     [ "$rc" = 0 ] && [ ! -e "$T/top/claude_x/corpus" ] || why="$why arm 6: drop kept a folder clean at origin/main (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
     o="$(run bash "$me" check 2>&1)"; rc=$?
     [ "$rc" = 0 ] || why="$why arm 6: check still read red after the drop (rc $rc);"
-    if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE probe ok arms=6 (take refuses every seat and makes nothing; give stores a patch that applies with its seat and why and refuses one that does not; apply is the grader's alone; the grader's apply lands the give on origin and the one checkout holds it; check reads red while a seat root holds one of the three; drop refuses unlanded work and removes a clean folder)"; return 0; fi
+    $g clone -q "$T/origin.git" "$T/w" 2>/dev/null && echo a3 > "$T/w/a" && $g -C "$T/w" commit -qam a3 && $g -C "$T/w" push -q origin HEAD:main 2>/dev/null && $g -C "$T/top/corpus" fetch -q origin
+    printf '%s\n' '--- a/a' '+++ b/a' '@@ -1 +1 @@' '-a3' '+a4' > "$T/onorigin.patch"; printf '%s\n' '--- a/a' '+++ b/a' '@@ -1 +1 @@' '-a2' '+a5' > "$T/oncheckout.patch"
+    echo dirt >> "$T/top/corpus/a"
+    o="$(run bash "$me" give corpus "$T/onorigin.patch" "cut on origin while the checkout stands behind" 2>&1)"; rc=$?
+    gf="$(ls -t "$T/gives"/*.patch 2>/dev/null | head -1)"
+    [ "$rc" = 0 ] && [ -n "$gf" ] && [ "$(run bash "$me" base "$gf" 2>/dev/null)" = "$($g --git-dir="$T/origin.git" rev-parse main)" ] || why="$why arm 7: a patch cut on origin was not taken with origin's commit as its base while the checkout stood behind and dirty (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
+    sleep 1
+    o="$(run bash "$me" give corpus "$T/oncheckout.patch" "cut on the stalled checkout" 2>&1)"; rc=$?
+    gf="$(ls -t "$T/gives"/*.patch 2>/dev/null | head -1)"
+    [ "$rc" = 0 ] && [ -n "$gf" ] && [ "$(run bash "$me" base "$gf" 2>/dev/null)" = "$(git -C "$T/top/corpus" rev-parse HEAD)" ] || why="$why arm 7: a patch cut on the stalled checkout's commit was not taken with that commit as its base (rc $rc);"
+    o="$(run bash "$me" give corpus "$T/bad.patch" "applies nowhere" 2>&1)"; rc=$?
+    [ "$rc" = 1 ] || why="$why arm 7: a patch that applies to neither commit was not refused rc 1 (rc $rc);"
+    [ "$(git -C "$T/top/corpus" status --porcelain | tr -d ' \n')" = "Ma" ] || why="$why arm 7: the give's checks changed the checkout's index or files;"
+    if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE probe ok arms=7 (take refuses every seat and makes nothing; give stores a patch that applies with its seat and why and refuses one that does not; apply is the grader's alone; the grader's apply lands the give on origin and the one checkout holds it; check reads red while a seat root holds one of the three; drop refuses unlanded work and removes a clean folder; a give is checked against origin first and then the checkout's commit, through a private index)"; return 0; fi
     echo "TAKE probe RED:$why"; echo "    kept: $T"; return 1
 }
 case "${1:-}" in
