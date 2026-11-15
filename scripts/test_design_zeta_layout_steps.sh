@@ -12,7 +12,7 @@
 #   --step N     grade step N: every witness four ways, then the step's probe tokens:
 #                gate=name (bash name.sh rc 0) | smoke=L|ALL (test_smoke_L.sh green; ALL = the eight) | nosym=a,b (no definition or reference of the names under SCRIP/src)
 #                nofile=rel,rel (no such file under SCRIP) | grepmax=REGEX@REL:N (grep -rcE REGEX over SCRIP/REL sums to at most N; REL a file or a directory; a REGEX
-#                may not contain @ or whitespace) | tsvmin=FILE:N (harness/scripts/FILE holds at least N non-comment rows) | rule5=N (SCRIP_GC_SITES_REPORT=1 --compile over
+#                may not contain @ or whitespace) | tsvmin=FILE:N (FILE, read from SCRIP/src/runtime when the clone holds it, else from harness/scripts, holds at least N non-comment rows) | rule5=N (SCRIP_GC_SITES_REPORT=1 --compile over
 #                the gc_witnesses population and this step's witnesses: rule=5 site records at most N; a compile that fails REFUSES) | rspmoves=N (the template rsp-move
 #                census: x86("push" | x86("pop" | x86("sub"/"add", "rsp" in src/templates/bb and xa, at most N) | layoutcheck=N (util_zeta_layout_check.py over the step's
 #                witnesses' mode-4 asm against --dump-plan, mismatches at most N; RED while the checker does not exist, since the checker is step 1's deliverable) | rows=L|ALL (SUITES.tsv today_pass not below
@@ -167,7 +167,7 @@ for tok in $probe; do
         grepmax) re="${val%%@*}"; rest="${val#*@}"; rel="${rest%%:*}"; lim="${rest##*:}"
             [ -e "$SC/$rel" ] || refuse "grepmax: no $SC/$rel"
             c="$(grep -rhoE -- "$re" "$SC/$rel" | wc -l)"; readings="$readings grep[$re@$rel]=$c(at_most $lim)"; [ "$c" -le "$lim" ] || pgreen=0 ;;
-        tsvmin) f="${val%%:*}"; lim="${val##*:}"; if [ -f "$HERE/$f" ]; then c="$(grep -cv '^#' "$HERE/$f")"; else c=0; fi; readings="$readings tsv[$f]=$c(at_least $lim)"; [ "$c" -ge "$lim" ] || pgreen=0 ;;
+        tsvmin) f="${val%%:*}"; lim="${val##*:}"; tf="$SC/src/runtime/$f"; [ -f "$tf" ] || tf="$HERE/$f"; if [ -f "$tf" ]; then c="$(grep -cv '^#' "$tf")"; else c=0; fi; readings="$readings tsv[$f]=$c(at_least $lim)"; [ "$c" -ge "$lim" ] || pgreen=0 ;;
         rule5) c="$(rule5_census)"; case "$c" in REFUSED*) refuse "rule5: a program of the population did not compile: $c" ;; esac
             readings="$readings rule5_sites=$c(at_most $val)"; [ "$c" -le "$val" ] || pgreen=0 ;;
         rspmoves) c="$(rspmoves_census)"; readings="$readings template_rsp_moves=$c(at_most $val)"; [ "$c" -le "$val" ] || pgreen=0 ;;

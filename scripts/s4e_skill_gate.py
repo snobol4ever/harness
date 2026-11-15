@@ -19,7 +19,7 @@ GENERATED = ("gc_allocating_table.inc", "box_cell_shapes.inc", "rtx_clobber_tabl
 RULES = [   # (regex on the path, skills) -- every matching rule applies; the path is normalised to forward slashes
     (r"/SCRIP/src/templates/", ["box-templates"]),
     (r"/SCRIP/src/emitter/emit\.cpp$|/SCRIP/src/emitter/em/", ["box-templates"]),
-    (r"/SCRIP/src/runtime/rtx/", ["rtx-asm-leaves"]),
+    (r"/SCRIP/src/runtime/rtx/|/SCRIP/src/runtime/rt_entries\.tsv$", ["rtx-asm-leaves"]),
     (r"/SCRIP/src/lower/", ["lowering"]),
     (r"/SCRIP/src/(planner|emitter)/|/SCRIP/src/runtime/rt/gc_", ["scrip-memory-model"]),
     (r"/SCRIP/bootstrap/[^/]*\.sc$", ["snocone-parser-patterns"]),
@@ -192,6 +192,7 @@ def self_test():
         ("Bash cp -p onto a one-disk file still refuses", "Bash", {"command": "cp -p /tmp/s4e/x/s4e_msg.sh /home/harness/scripts/s4e_msg.sh"}, some, 2, ["s4e_take.sh give harness", "one-disk"]),
         ("the same edit in the root's own clone is judged by its skills alone", "Edit", {"file_path": R + "/.github/README.md"}, none, 0, []),
         ("root is the clone: Edit of a lowerer at the root's top wants lowering, icon and scrip-c-code", "Edit", {"file_path": R + "/src/lower/lower_icon.c"}, none, 2, ["/lowering", "/icon", "/scrip-c-code"]),
+        ("root is the clone: Edit of the runtime entry table's source wants rtx-asm-leaves (in the SCRIP clone since 2026-11-14)", "Edit", {"file_path": R + "/src/runtime/rt_entries.tsv"}, none, 2, ["/rtx-asm-leaves"]),
         ("root is the clone: Edit of the builtin table's source wants runtime-calls", "Edit", {"file_path": R + "/src/runtime/builtins.tsv"}, none, 2, ["/runtime-calls"]),
         ("root is the clone: Edit of the cell-shape table's source wants scrip-memory-model", "Edit", {"file_path": R + "/src/planner/box_cell_shapes.tsv"}, none, 2, ["/scrip-memory-model"]),
         ("root is the clone: Edit of the Makefile wants scrip-build", "Edit", {"file_path": R + "/Makefile"}, none, 2, ["/scrip-build"]),
