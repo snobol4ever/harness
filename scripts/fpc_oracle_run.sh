@@ -23,4 +23,8 @@ if [ $rc -ne 0 ] || [ ! -x "$work/$name" ]; then
     cat "$work/compile.log" >&2
     exit 126
 fi
+# THE ANSWER IS CUT WITH C STDIO LINE-BUFFERED (the coo 2026-11-14, row rosetta-pascal-paraffins-1-ref-is-recut-with-stdout-flushed; MEASURED: paraffins-1 writes through
+# libgmp's C stdio (mp_printf) and fpc's exit does not flush it, so its ref was 483 of 500 lines, 53249 bytes (13 x 4096 + 1), the last line cut mid-number; under stdbuf -oL
+# fpc prints every line, twice equal). stdbuf touches C stdio alone: a program that writes only through the Pascal RTL answers byte for byte as before.
+if command -v stdbuf > /dev/null 2>&1; then exec stdbuf -oL "$work/$name"; fi
 exec "$work/$name"
