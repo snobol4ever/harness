@@ -42,7 +42,8 @@ import harness_paths
 HERE = os.path.dirname(os.path.abspath(__file__))
 S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 GITHUB_DIR = str(harness_paths.github(S4E))
-SCORE_MD = os.environ.get("S4E_SCORE_MD") or os.path.join(GITHUB_DIR, "SCORE.md")
+REAL_SCORE_MD = os.path.join(GITHUB_DIR, "SCORE.md")   # bound again below, once the suite record is known: never a one-disk checkout (harness_paths.render_dir)
+SCORE_MD = os.environ.get("S4E_SCORE_MD") or REAL_SCORE_MD
 REPOS = ["SCRIP", "corpus"]
 def _repo_dir(repo):
     return str({"SCRIP": harness_paths.scrip, "corpus": harness_paths.corpus, "harness": harness_paths.harness, ".github": harness_paths.github}[repo](S4E)) if repo in ("SCRIP", "corpus", "harness", ".github") else os.path.join(S4E, repo)
@@ -1151,7 +1152,7 @@ def write_grid_direct(a):
         die("--text for the grid %s column carries no N/M fraction (%r); the ladder cell states PASS p/t over the graded population" % (gkey, text))
     if "\n" in text:
         die("--text spans lines; a markdown table row is one line")
-    if os.path.abspath(SCORE_MD) == os.path.abspath(os.path.join(GITHUB_DIR, "SCORE.md")):
+    if os.path.abspath(SCORE_MD) == os.path.abspath(REAL_SCORE_MD):
         dirty = tree_is_dirty()
         if dirty:
             print("⚠ SCORE.md ROW SKIPPED — %s %s uncommitted; this run measured a tree nobody else can check out."
@@ -1220,10 +1221,15 @@ def write_grid_direct(a):
 # scratch .github/SUITES.tsv, so a fixture that redirects the root without naming S4E_SUITES_TSV still never writes the real record.
 REAL_SUITES_TSV = "/home/resources/progress/SUITES.tsv"
 def _root_suites_tsv():
-    if re.fullmatch(r"/home/claude_[A-Za-z0-9_]+", os.path.realpath(S4E)):
-        return REAL_SUITES_TSV
+    if re.fullmatch(r"/home/claude_[A-Za-z0-9_]+", os.path.realpath(S4E)) or os.path.realpath(GITHUB_DIR) == "/home/.github":
+        return REAL_SUITES_TSV   # a tool run with S4E_HOME unset reads its root as /home: the record is never a file of the one-disk checkout (the cio 2026-11-14; /home/.github/SUITES.tsv.lock of 2026-11-13 20:20 is such a run's)
     return os.path.join(GITHUB_DIR, "SUITES.tsv")
 SUITES_TSV = os.environ.get("S4E_SUITES_TSV") or _root_suites_tsv()
+# THE RENDER IS NEVER WRITTEN INTO A ONE-DISK CHECKOUT (the cio 2026-11-14, on the grader's measurement; harness_paths.render_dir carries the why): under
+# the one-disk layout SCORE.md and LATEST.tsv live beside the suite record, seeded once from the checkout's tracked copies; a root holding its own .github
+# clone, a scratch root and S4E_SCORE_MD read exactly as before. The clean-tree and pushed-tree guards follow REAL_SCORE_MD, the real leaderboard's path.
+REAL_SCORE_MD = str(harness_paths.render_file("SCORE.md", SUITES_TSV, S4E))
+SCORE_MD = os.environ.get("S4E_SCORE_MD") or REAL_SCORE_MD
 # ⛔⭐ ONE WRITER AT A TIME ON THE SUITE TABLE (coo 2026-09-25, hq_pascal's report: parallel runners of one lane lost each other's
 # SCORE.md line -- SUITES.tsv read fpc 158/181 while SCORE.md's FPC line read 156, twice, the last writer putting back what it had
 # read). A write holds an exclusive flock on SUITES.tsv.lock beside the record from before its first read of SCORE.md or SUITES.tsv until the
@@ -1437,7 +1443,7 @@ def _fraction_from_text(text, p_override, t_override):
 # verbatim SUITE_BOARD line it was handed, and when it was handed none it SAYS SO in a greppable line rather than
 # leaving the reader to assume one was kept.
 BOARD_LINE_RX = re.compile(r"(?m)^.*?\b([A-Z0-9_]*SUITE_BOARD\b.*)$")
-BOARD_LINES_DIR = GITHUB_DIR
+BOARD_LINES_DIR = os.path.dirname(str(harness_paths.render_file("LATEST.tsv", SUITES_TSV, S4E)))
 BOARD_LINES_HEADER = (
     "# THE LATEST VERBATIM RUNNER BOARD LINE OF EACH SUITE, the now state only (Lon 2026-11-11: \"We do not need track the\n"
     "# time element anymore just the now state of the test suites.\"). Each write replaces its suite's line. Each line is\n"
@@ -2387,7 +2393,7 @@ def write_suite_row_only(a):
     print(suite_sync(a, tree, False, decided))
     _arch = archive_board_line(a.text, key, a.measurer, tree)
     print("⛔ NOT DONE UNTIL PUSHED: commit .github/SCORE.md (its suite-table line, re-rendered in this call; SUITES.tsv is %s, written in place)" % SUITES_TSV   # one-disk: not a path
-          + (" AND %s" % os.path.relpath(_arch, GITHUB_DIR) if _arch else "")
+          + (" AND %s" % os.path.relpath(_arch, BOARD_LINES_DIR) if _arch else "")
           + " with the landing that carried this measurement.")
     return 0
 
@@ -2505,7 +2511,7 @@ def cmd_write(a):
     # The clean-tree condition guards the REAL leaderboard only. selftest writes to a scratch copy, whose
     # whole purpose is to be written while the working tree is mid-change; applying it there would make the
     # gate fail for every seat who ran it during a landing, i.e. exactly when it matters.
-    if os.path.abspath(SCORE_MD) == os.path.abspath(os.path.join(GITHUB_DIR, "SCORE.md")):
+    if os.path.abspath(SCORE_MD) == os.path.abspath(REAL_SCORE_MD):
         dirty = tree_is_dirty()
         if dirty:
             print("⚠ SCORE.md ROW SKIPPED — %s %s uncommitted; this run measured a tree nobody else can check out."
@@ -2965,7 +2971,7 @@ def cmd_write(a):
     print(suite_sync(a, suite_tree_stamp(), False, _decided))
     _arch = archive_board_line(a.text, _decided[0], a.measurer, suite_tree_stamp())
     print("⛔ NOT DONE UNTIL PUSHED: commit .github/SCORE.md (SUITES.tsv is %s, written in place)" % SUITES_TSV   # one-disk: not a path
-          + (" AND %s" % os.path.relpath(_arch, GITHUB_DIR) if _arch else "")
+          + (" AND %s" % os.path.relpath(_arch, BOARD_LINES_DIR) if _arch else "")
           + " with the landing that carried this measurement.")
     return 0
 

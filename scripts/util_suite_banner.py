@@ -455,7 +455,7 @@ def md():
         print(f"| {r['nick']} | {r['lang']} | {_res} | {r['today_date']} | `{r['tree']}` | {tail} |")
 # a scratch TSV keeps its scratch SCORE.md beside it (a fixture that redirects the record redirects the render with it); the real record
 # renders into the .github beside this script
-SCORE=os.environ.get('S4E_SCORE_MD') or (os.path.join(os.path.dirname(os.path.abspath(TSV)),'SCORE.md') if os.environ.get('S4E_SUITES_TSV') else os.path.join(GH,'SCORE.md'))
+SCORE=os.environ.get('S4E_SCORE_MD') or (os.path.join(os.path.dirname(os.path.abspath(TSV)),'SCORE.md') if os.environ.get('S4E_SUITES_TSV') else (str(harness_paths.render_file('SCORE.md', TSV)) if os.path.abspath(GH)==os.path.abspath(str(harness_paths.github())) else os.path.join(GH,'SCORE.md')))   # never a one-disk checkout (harness_paths.render_dir, the cio 2026-11-14)
 def md_lines():
     import io, contextlib
     buf=io.StringIO()
