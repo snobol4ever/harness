@@ -872,9 +872,15 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                 _iso_src.write_bytes(src.read_bytes())
                 if lang == "icon" and merged and contract["oracle"] == "unicon" and contract["prebuild"]:
                     _unicon_prebuild(Path(_iso_dir), contract["ipath"], contract["prebuild"].split())
-                if lang == "icon" and merged and contract["oracle"] == "unicon":
-                    return h.run_unicon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text,
-                                                                         prog_args=prog_args, out_files=out_files)
+                if lang == "icon" and contract["oracle"] == "unicon":
+                    # ⛔ `oracle unicon` IS THE ORACLE WHETHER OR NOT THE CONTRACT MERGES STDERR (the cio 2026-11-15, row uni_ipl-red-progs-dd2res). MEASURED
+                    # before it: this arm asked for `stderr merged` too, so uni_ipl (oracle unicon, stdout-only refs) fell through to run_oracle and
+                    # every ref was cut by Arizona's icon while the run printed "contract: oracle unicon"; progs/dd2res reads `shafts needed: 0`
+                    # there and 1 under unicon (set(&null) is the empty set in Icon and a set of one member in Unicon), and SCRIP, told
+                    # --dialect=unicon by the same contract, answered 1 and read red. The entry's own stderr cell decides the stream (_ms), and
+                    # its run sidecars reach the program as they reach the grade (side_env_for_source).
+                    return h.run_unicon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text, prog_args=prog_args, out_files=out_files,
+                                                                         merge_stderr=_ms, side_env=h.side_env_for_source(src, Path(_iso_dir)))
                 elif lang == "icon" and merged:
                     # ⭐ THE REF IS CUT UNDER THE SIDECARS ITS GRADE APPLIES (the cfo 2026-11-14, row ipl-the-grader-applies-env-pin-and-shims-through-ipl-env-apply):
                     # NAME.env, NAME.pin and NAME.shims/ beside the source reach the oracle's run through the grader's own reader, h.side_env_for_source,

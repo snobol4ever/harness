@@ -724,11 +724,14 @@ def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=N
     return out.decode("utf-8", "replace").rstrip("\n"), rc, kind
 
 
-def run_unicon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None):
+def run_unicon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, merge_stderr=True, side_env=None):
     """THE UNICON ORACLE AS UNICON'S OWN tests/Makefile.test RUNS IT (hq_unicon, R-2072): the translator with -s -o <stem> <name> in the file's own
     directory through unicon_bin() (never a bare name, never -E), then `./<stem> args < in > out 2>&1`. Returns (text, rc, kind) as
     run_icon_built_oracle does; a translation that fails returns kind "TRANSLATE" and the translator's first line as text. A compile that
-    returns rc 0 and leaves no executable (a library module linking sibling .u files) is also "TRANSLATE"."""
+    returns rc 0 and leaves no executable (a library module linking sibling .u files) is also "TRANSLATE".
+    merge_stderr=False is the package whose contract does not merge stderr: the answer is stdout alone. side_env is the entry's run
+    sidecars (side_env_for_source: NAME.env, NAME.pin, NAME.shims/), laid over the program's run only, never the translator's, so a ref is
+    cut under the sidecars its grade applies, as run_icon_built_oracle cuts it (the cio 2026-11-15, row uni_ipl-red-progs-dd2res)."""
     src_path = Path(src_path)
     d, stem = src_path.parent, src_path.stem
     lib = HARNESS_SCRIPTS / "lib_oracle_flags.sh"
@@ -743,7 +746,8 @@ def run_unicon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args
         first = ((err or b"") + (out or b"")).decode("utf-8", "replace").strip().split("\n")[0]
         return first or "the translator left no executable", rc, "TRANSLATE"
     _out_files_clear(d, out_files)
-    kind, out, _err, rc = _run_raw(["./" + stem] + [str(a) for a in (prog_args or [])], timeout, cwd=str(d), stdin_text=stdin_text, merge_stderr=True)
+    kind, out, _err, rc = _run_raw(["./" + stem] + [str(a) for a in (prog_args or [])], timeout, cwd=str(d),
+                                   env=(dict(os.environ, **side_env) if side_env else None), stdin_text=stdin_text, merge_stderr=merge_stderr)
     out = _out_files_append(out, d, out_files) if out_files else out
     if kind == "RAN" and rc is not None and rc < 0:
         kind = "CRASH"
