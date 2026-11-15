@@ -67,7 +67,7 @@
 #     line_wait=S      seconds a landing waits in the line before it refuses rc 2 (default 10800)
 #   Every landing writes one line to LANDINGS.tsv (the progress store): outcome, attempts, seconds a stage, the switches it ran under.
 # OUTPUT: one line per stage, LAND stage=<name> ...; the verdict LAND ok stages=N rejected=R pushed=..., or LAND RED stage=<name> ...
-# (rc 1), or LAND REFUSE(2) ... (rc 2). Logs under /tmp/s4e/<seat>/land.<pid>, deleted on a green verdict and kept on any other.
+# (rc 1), or LAND REFUSE(2) ... (rc 2). Logs under /home/resources/keep/<seat>/land.<utc>.<pid> (S4E_KEEP names another top), deleted on a green verdict and kept on any other: a kept record is never under /tmp.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SELF="$HERE/$(basename "${BASH_SOURCE[0]}")"
@@ -149,6 +149,7 @@ TSV="$TH/scripts/generated_tables.tsv"
 seat="${S4E_SEAT:-$(bash "$HERE/s4e_msg.sh" whoami 2>/dev/null | tail -1 | tr -d '[:space:]')}"
 [ -n "$seat" ] || seat="$(id -un)"
 mkdir -p "/tmp/s4e/$seat" || refuse "cannot make /tmp/s4e/$seat"
+case "${mode:-}" in probe*|*probe) export S4E_KEEP="${S4E_KEEP:-/tmp/s4e/$seat/probe-keep}" ;; esac   # A PROBE'S LOGS ARE TEMPORARY: every landing a probe arm runs on its scratch origin keeps its red logs under /tmp, never in the real keep folder on /home (MEASURED by the cto 2026-11-14: a self-test cut short left two probe folders in /home/resources/keep/cto)
 if [ "$mode" = tables ]; then
     [ -f "$TSV" ] || refuse "no registry at $TSV"
     awk -F'\t' '!/^#/' "$TSV" | column -t -s $'\t'
@@ -237,7 +238,7 @@ probe() {
     for r in "${ORDER[@]}"; do was[$r]="$(git -C "$T/origin/$r.git" rev-parse main)"; done
     S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate 'echo "probe: this gate reads red"; exit 1' > "$log" 2>&1; rc=$?
     sed 's/^/    arm1| /' "$log" | tail -12
-    k="$(sed -n 's/^LAND logs kept: \(\/tmp\/s4e\/.*\/land\.[0-9]*\)$/\1/p' "$log")"; [ -n "$k" ] && rm -rf "$k"
+    k="$(sed -n 's/^LAND logs kept: \(\/.*\/land\.[0-9TZ.]*\)$/\1/p' "$log")"; [ -n "$k" ] && rm -rf "$k"
     [ "$rc" = 1 ] && grep '^LAND RED stage=gate' "$log" > /dev/null || { echo "LAND dry-run RED: arm 1 (a red gate) returned rc=$rc without LAND RED stage=gate"; exit 1; }
     for r in "${ORDER[@]}"; do
         [ "$(git -C "$T/origin/$r.git" rev-parse main)" = "${was[$r]}" ] || { echo "LAND dry-run RED: arm 1 pushed $r past a red gate"; exit 1; }
@@ -735,7 +736,7 @@ take_lease() {
     echo "LAND stage=lease held seat=$seat pid=$$ after_gate=1 (released after the push)"
 }
 drop_lease() { if [ "$lease_skipped" = 1 ]; then lease_skipped=0; echo "LAND stage=lease released held_s=0 (a boss holds no lease) $1"; return 0; fi; printf 'free: released by seat=%s pid=%s at %s\n' "$seat" "$$" "$(date -u +%FT%TZ)" > "$lease"; flock -u 8; echo "LAND stage=lease released held_s=$(( $(date +%s) - lease_since )) $1"; }   # the file names the last holder until the next takes it; a waiter reads free:
-LOG="/tmp/s4e/$seat/land.$$"
+LOG="${S4E_KEEP:-/home/resources/keep}/$seat/land.$(date -u +%Y%m%dT%H%M%SZ).$$"   # A RECORD IS NEVER KEPT UNDER /tmp (Lon 2026-11-14, in the cto's window: "DO use /tmp for TEMPORARY things and ONLY temporary THINGS!"): a landing's logs are deleted on a green verdict and KEPT on any other, and a kept log is cited by its baton, so it lives on /home past a sweep or a reboot; the stamp keeps a pid a reboot repeats from naming an older kept folder
 mkdir -p "$LOG" || refuse "cannot make $LOG"
 declare -A stage_done
 land_t0="$(date +%s)"; last_mark="$land_t0"; line_waited=0; touches_from=declared; tables_need=1; declare -A stage_secs
