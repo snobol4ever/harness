@@ -39,7 +39,10 @@ mkdir -p "$TMPDIR/cycle" "$PROG" || exit 2
 # 13:5x: the grader root's .github read M SCORE.md between laps, so next refused that seat's jobs rc 2): util_score_row.py and util_suite_banner.py
 # render the suite table into S4E_SCORE_MD, the record stays /home/resources/progress/SUITES.tsv; the scratch is seeded from the root's SCORE.md.
 export S4E_SCORE_MD="${S4E_SCORE_MD:-$TMPDIR/cycle/SCORE.md}"
-[ -s "$S4E_SCORE_MD" ] || [ ! -f "$S4E_GITHUB/SCORE.md" ] || cp -f "$S4E_GITHUB/SCORE.md" "$S4E_SCORE_MD"
+# THE SEED IS THE RENDER BESIDE THE RECORD when there is one (the grader 2026-11-14, on the cio's harness 944a50d74: outside the cycle the score render now lives in
+# $PROG/SCORE.md, never in the one-disk .github checkout, whose tracked copy therefore goes stale); the checkout's copy seeds only a box that has no render yet.
+_score_seed="$S4E_GITHUB/SCORE.md"; [ ! -s "$PROG/SCORE.md" ] || _score_seed="$PROG/SCORE.md"
+[ -s "$S4E_SCORE_MD" ] || [ ! -f "$_score_seed" ] || cp -f "$_score_seed" "$S4E_SCORE_MD"
 [ ! -f "$S4E_SCORE_MD" ] || [ -w "$S4E_SCORE_MD" ] || chmod u+w "$S4E_SCORE_MD"   # a root's tracked files are read-only shared links (skill shared-box 4), so a fresh copy is mode 444 and the render refused PermissionError (MEASURED 2026-11-13, a scratch S4E_CYCLE_PROG)
 # THE CYCLE NAMES ITS TABLE, IT NEVER LETS THE ROOT'S NAME CHOOSE IT (the grader 2026-11-13; MEASURED: from 21:26Z every row write refused "rc=1, no
 # refusal line" and CYCLE.refused held 71 rows, because util_score_row.py writes /home/resources/progress/SUITES.tsv only for a root spelled
@@ -363,7 +366,8 @@ lap_start() {
     # the restore stays for a hand run in this root, and after the sync the scratch is seeded from the root's SCORE.md as origin has it.
     if [ "$(git -C "$S4E_GITHUB" status --porcelain --untracked-files=no 2>/dev/null)" = " M SCORE.md" ]; then git -C "$S4E_GITHUB" checkout -q -- SCORE.md >> "$TMPDIR/cycle/sync.log" 2>&1; fi
     ( cd "$S4E" && bash "$S4E_HARNESS/scripts/util_sync_root.sh" ) >> "$TMPDIR/cycle/sync.log" 2>&1 < /dev/null; sy=$?
-    [ ! -f "$S4E_GITHUB/SCORE.md" ] || cp -f "$S4E_GITHUB/SCORE.md" "$S4E_SCORE_MD" 2>> "$TMPDIR/cycle/sync.log"
+    _score_seed="$S4E_GITHUB/SCORE.md"; [ ! -s "$PROG/SCORE.md" ] || _score_seed="$PROG/SCORE.md"
+    [ ! -f "$_score_seed" ] || cp -f "$_score_seed" "$S4E_SCORE_MD" 2>> "$TMPDIR/cycle/sync.log"
     [ ! -f "$S4E_SCORE_MD" ] || [ -w "$S4E_SCORE_MD" ] || chmod u+w "$S4E_SCORE_MD"
     : > "$TMPDIR/cycle/lap.sync"   # the marker request_ready compares a pending request with: a request filed after it may name what the next sync brings
     ( cd "$S4E_SCRIP" && make -j8 ) >> "$TMPDIR/cycle/make.log" 2>&1 < /dev/null; mk=$?
