@@ -2118,6 +2118,15 @@ def main():
     pkg_dir = Path(args.package_dir).resolve()
     if not pkg_dir.is_dir():
         h.refuse(f"not a directory: {pkg_dir}")
+    # ⛔ THE ONE-DISK CORPUS CHECKOUT IS NEVER BUILT IN PLACE BY A SEAT (the cio 2026-11-15; skill seat-conduct 2: nobody edits, commits or builds in /home/corpus,
+    # a change to it is a patch to the grader). This builder rewrites ALL.csv, ALL.omit, ALL.rc and the answers of the folder it is handed, and the skill gate,
+    # which refuses an Edit, a Write and a shell write there, cannot see a program's own writes. MEASURED 14:20 CST that day: a --mine run handed
+    # /home/corpus/packages/icon/unicon_uni cut its ALL.csv from 13 entries to 1 and deleted ALL.omit in the shared checkout; every reading on a dirty corpus tree
+    # is UNREAD and the cycle graded a one-entry table. A seat cuts in a copy of the package and hands the grader the difference.
+    _one_corpus = Path(os.environ.get("S4E_ONE_DISK_TOP", "/home")).resolve() / "corpus"
+    if (pkg_dir == _one_corpus or _one_corpus in pkg_dir.parents) and os.environ.get("S4E_SEAT", "") != "grader":
+        h.refuse(f"{pkg_dir} is inside the one-disk corpus checkout {_one_corpus}, which only the grader writes (this seat: {os.environ.get('S4E_SEAT', '') or 'unset'}) -- "
+                 f"copy the package to scratch (cp -r --no-preserve=mode), build the copy, and hand the grader the difference as a patch (s4e_take.sh give corpus)")
     MINE_FATAL_GRADABLE = read_contract(pkg_dir)["fatal"] == "gradable"
     if args.mine and args.mine_add and not args.mine_under:
         h.refuse("--mine-add adds one folder to a mined package: it needs --mine-under FOLDER")
