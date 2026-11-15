@@ -114,3 +114,4 @@ icon_group	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_group
 ipl_gprogs	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/ipl_gprogs
 wirth1976	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/wirth1976
 pascaline	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascaline
+p99	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/p99

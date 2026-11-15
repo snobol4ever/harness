@@ -1545,7 +1545,7 @@ def build_files_form(pkg_dir, lang, twice=False, only=None, src_ext=None):
 
 MINE_KEYS = ("root", "origin", "version", "licence")
 MINE_OPTIONAL = {"copy": ("root", "folder"), "cwd": ("root", "folder")}
-MINE_EXTS = {"raku": (".raku", ".p6", ".pl6", ".t", ".rakutest"), "pascal": (".pas", ".pp", ".p", ".lpr"), "icon": (".icn",), "prolog": (".pl", ".pro"),
+MINE_EXTS = {"raku": (".raku", ".p6", ".pl6", ".t", ".rakutest"), "pascal": (".pas", ".pp", ".p", ".lpr"), "icon": (".icn",), "prolog": (".pl", ".pro", ".prolog"),
              "snobol4": (".sno", ".spt", ".sbl")}
 MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl", "pascal": "fpc", "snobol4": "sbl", "icon": "unicon"}
 # PASCAL (the coo 2026-11-11, COO-508): fpc only compiles, so a Pascal program is run by fpc_oracle_run.sh (compile to a private folder, then run; exit 126 =
@@ -1569,7 +1569,10 @@ MINE_SCRATCH = {}
 # only what the box's own wrappers need, a scratch HOME, the user nobody, and a canary. A program whose answer holds the canary or any value of
 # that environment reads READS-THE-ENVIRONMENT and is no entry: its answer is a fact about the machine, not about the program.
 MINE_CANARY = "s4e-mine-canary-5d41402abc4b2a76"
-MINE_ENV_KEEP = ("PATH", "TMPDIR", "S4E_HOME", "S4E_SEAT", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS")
+# S4E_CLASS IS KEPT (the grader 2026-11-14, MEASURED on three Prolog censuses run with S4E_CLASS=grader: the scrub dropped it, so every oracle run took the seat's
+# own four run tokens beside the seat's other long jobs; SLOT_WAITS.tsv read 50 swipl waits of mean 310.8 s, max 1296.4 s, for runs of about a second, and a census of
+# 145 programs could not end inside its bound): the class only names the pool the run waits in, its value is under the eight bytes the leak check reads.
+MINE_ENV_KEEP = ("PATH", "TMPDIR", "S4E_HOME", "S4E_SEAT", "S4E_CLASS", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS")
 
 
 def _mine_env(work):
