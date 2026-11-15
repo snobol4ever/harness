@@ -46,9 +46,21 @@ def drop_excluded_and_containers(table, rows):
     d = os.path.dirname(os.path.abspath(table))
     ex_p = os.path.join(d, "ALL.omit")
     ct_p = os.path.join(d, "CONTAINERS.tsv")
-    if not os.path.isfile(ex_p) and not os.path.isfile(ct_p):
+    xl_p = os.path.join(d, "EXCLUDED.tsv")
+    if not os.path.isfile(ex_p) and not os.path.isfile(ct_p) and not os.path.isfile(xl_p):
         return rows
-    ex, ct = set(), set()
+    ex, ct, xl = set(), set(), set()
+    if os.path.isfile(xl_p):
+        # A NAME THE PACKAGE'S EXCLUDED.tsv DECLARES OUT IS IN NO CELL (the grader 2026-11-15, on the coo's ruling of that hour; MEASURED: 783 table rows
+        # of 26 packages were named by their own EXCLUDED.tsv, left out of the suite row by util_score_row.py and still run by the cycle every lap;
+        # rosetta-pascal's unix-ls, NO_ORACLE_ANSWER since 2026-10-29, hung 300 s and 600 s more on the retry in chunk:18 each lap). The name is the
+        # first column, as the score row reads it: itself when it is a table entry, else its form without the source extension.
+        _names = set(r.get("entry") for r in rows)
+        with open(xl_p, encoding="utf-8", errors="replace") as f:
+            for l in f:
+                if l.strip() and not l.startswith("#"):
+                    n = l.split("\t", 1)[0].strip()
+                    xl.add(n if n in _names else os.path.splitext(n)[0])
     if os.path.isfile(ex_p):
         with open(ex_p, encoding="utf-8", errors="replace") as f:
             ex = set(l.split(": ", 1)[0].strip() for l in f if l.strip())
@@ -62,8 +74,9 @@ def drop_excluded_and_containers(table, rows):
             ct = set(os.path.splitext(l.split("\t", 1)[0].strip())[0] for l in f if l.strip() and not l.startswith("#"))
     n_ex = sum(1 for r in rows if r.get("entry") in ex)
     n_ct = sum(1 for r in rows if r.get("entry") in ct and r.get("entry") not in ex)
-    print("PARTITION_DROPPED excluded=%d containers=%d" % (n_ex, n_ct))
-    return [r for r in rows if r.get("entry") not in ex and r.get("entry") not in ct]
+    n_xl = sum(1 for r in rows if r.get("entry") in xl and r.get("entry") not in ex and r.get("entry") not in ct)
+    print("PARTITION_DROPPED excluded=%d containers=%d declared_out=%d" % (n_ex, n_ct, n_xl))
+    return [r for r in rows if r.get("entry") not in ex and r.get("entry") not in ct and r.get("entry") not in xl]
 
 
 def read_secs(path, key):

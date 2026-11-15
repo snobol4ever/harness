@@ -146,7 +146,8 @@ def main():
                     part[c[ip]].add(c[ie])
         pnames = set().union(*part.values()) if part else set()
         gone = len(pnames - cont) if cont is not None else "-"
-        nocell = len(cont - pnames) if cont is not None else "-"
+        # an entry the package's EXCLUDED.tsv or CONTAINERS.tsv declares out is in no cell by the partition's own rule (util_suite_partition.py), so it is no entry the cycle forgot
+        nocell = len(cont - pnames - table_names(d, "EXCLUDED.tsv") - table_names(d, "CONTAINERS.tsv")) if cont is not None else "-"
         owed = owed_of(d) if (kind == "pkg" and cont is not None) else []
         if want_owed:
             for n, why in owed:
