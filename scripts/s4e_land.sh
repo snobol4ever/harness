@@ -319,13 +319,13 @@ probe() {
     log="$T/arm8.log"
     S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" S4E_LAND_PLANT="bash $T/race8.sh" bash "$SELF" --home "$T/work" --gate "echo g >> $T/gates8" > "$log" 2>&1; rc=$?
     sed 's/^/    arm8| /' "$log" | grep -E 'REJECTED|regate|lease released|LAND ok|LAND RED|REFUSE' | tail -5
-    [ "$rc" = 0 ] && grep -q '^LAND stage=push:corpus REJECTED' "$log" && grep -q '^LAND ok stages=[0-9]* rounds=1 ' "$log" \
+    [ "$rc" = 0 ] && grep -q '^LAND stage=push:corpus REJECTED' "$log" && grep -q '^LAND stage=finish attempt=1: ' "$log" && grep -q '^LAND ok stages=[0-9]* rounds=0 .* origin_moved_rebases=1 serial_round=1 ' "$log" \
         && [ "$(awk -F'\t' '$3 == "corpus"' "$T/po/PUSH_REJECTED.tsv" 2>/dev/null | wc -l)" = 1 ] && [ "$(wc -l < "$T/gates8")" = 2 ] \
         && git -C "$T/origin/corpus.git" log --format=%s main | grep -x "probe: a racer lands probe-race8-$$.txt" > /dev/null \
         && [ "$(git -C "$T/origin/corpus.git" rev-parse main)" = "$(git -C "$T/work/corpus" rev-parse HEAD)" ] \
-        || { echo "LAND dry-run RED: arm 8 (a hand push between the lease's fetch and the push) rc=$rc: expected one rejected corpus push recorded, one round more, two gate runs, the racer kept"; exit 1; }
+        || { echo "LAND dry-run RED: arm 8 (a hand push between the lease's fetch and the push) rc=$rc: expected one rejected corpus push recorded, the rest finished in the same round (stage=finish attempt=1, rounds=0, one rebase, the serial gate), two gate runs, the racer kept"; exit 1; }   # until harness 9421ef91 (2026-11-14) an overtaken corpus push went round again and the verdict read rounds=1; since then a landing with a repo on origin finishes the rest before it lets go, and this arm read RED on every lander text after e80379397a019251
     { mkdir -p "$(dirname "$PROBE_GREEN")"; printf '%s\t%s\t%s\tstages=%s\n' "$key" "$(date -u +%FT%TZ)" "$seat" "$n" >> "$PROBE_GREEN"; } 2>/dev/null
-    echo "LAND dry-run ok stages=$n rounds=1 repos=${#ORDER[@]} arms=8 regate=affected hand_push=leased lease=push-only (scratch origins borrowing $home; a red gate pushed nothing;"\
+    echo "LAND dry-run ok stages=$n finished=1 repos=${#ORDER[@]} arms=8 regate=affected hand_push=leased lease=push-only (scratch origins borrowing $home; a red gate pushed nothing;"\
          "moved origins rebased; a move under the gate rebased under the lease and re-gated unleased; a held lease waited on after the gate, its holder named, nothing pushed; landed once free;"\
          "a race under an untouched path did not re-gate, one under a touched path did; a hand push went under the lease with its proof recorded, and without one refused;"\
          "the gate found the lease free and the lease was held $h s; a push rejected by a hand push outside the lease was recorded once and re-landed)"
