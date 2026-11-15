@@ -98,6 +98,7 @@ gate_cases_icon	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/gate_cases
 gate_cases_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/gate_cases_prolog
 gate_cases_pascal	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/gate_cases_pascal
 gate_cases_raku	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/gate_cases_raku
+rosetta-raku	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/rosetta-raku
 gate_cases_snocone	pkg	snocone	corpus_suite_harness.py	corpus/packages/snocone/gate_cases_snocone
 prolog_cafe	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/prolog_cafe
 power_of_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/power_of_prolog
