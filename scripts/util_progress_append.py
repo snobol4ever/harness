@@ -172,7 +172,10 @@ def migrate_header(path):
 # written that day, and the harness tree was recorded nowhere. Since the cutover a seat root holds taken corpus and harness clones, so the road is
 # wide. So the record step reads the corpus tree and the harness tree this script runs from, and a dirty one (a tracked file changed) writes
 # NOTHING and says so, as S4E_PROGRESS_OFF does: commit, then grade. HARNESS_TREE is the harness this file sits in (the selftest points it at a
-# scratch repository). A SCRIP tree that is dirty is still written with its -dirty stamp, which every reader skips.
+# scratch repository). A DIRTY SCRIP TREE WRITES NOTHING TO THE SHARED STORE EITHER (the cio 2026-11-14): the store is a current table, one row per
+# program and mode, so the stamped row REPLACED the clean reading and every reader then skipped it. MEASURED that night: six xsb m3 rows of the shared
+# store were dirty readings (five the cfo's at 913418258f-dirty, one the cio's at 8366c1e1a-dirty), each standing where the grader's clean row had
+# stood, unread until the cycle's next lap. A private S4E_PROGRESS_DB still takes a dirty SCRIP reading with its -dirty stamp.
 HARNESS_TREE = os.path.dirname(HERE)
 
 
@@ -664,6 +667,11 @@ def append_rows(rows, db=None):
         print(f"progress: UNREAD -- {len(rows)} row(s) NOT recorded in {path}: the {' and the '.join(_dt)} tree{'s are' if len(_dt) > 1 else ' is'} "
               f"dirty ({', '.join(k + ' ' + ctx[k] for k in _dt)}); a reading on a dirty tree never enters the store (CEO-2060): commit, then grade", file=sys.stderr)
         return 0
+    if _origin_only(path) and str(ctx.get("scrip", "")).endswith("-dirty"):
+        print(f"progress: UNREAD -- {len(rows)} row(s) NOT recorded in {path}: the SCRIP tree is dirty ({ctx['scrip']}); the shared store is a current table, "
+              f"one row a program, so a dirty reading replaces the clean one and is then skipped by every reader: land, then grade, or name a private store "
+              f"in S4E_PROGRESS_DB", file=sys.stderr)
+        return 0
     _ul = unlanded_trees(ctx) if _origin_only(path) else []
     if _ul:
         print(f"progress: UNREAD -- {len(rows)} row(s) NOT recorded in {path}: the {' and the '.join(_ul)} commit{'s are' if len(_ul) > 1 else ' is'} "
@@ -960,11 +968,18 @@ def selftest():
             git(S_, "push", "-q", "origin", "HEAD:refs/heads/main")
             a11 = a11p and reading() == 1
             print("ARM 11 OK: a private store took the unlanded reading, and the shared rule took it once the commit landed (the stale remote ref cured by one fetch)" if a11 else "ARM 11 FAIL: private store wrote=%s, or the landed commit wrote no row" % a11p)
+            # ARMS 12 AND 13: a dirty SCRIP tree writes nothing to the shared store, and a private store takes it with its stamp (the cio 2026-11-14)
+            with open(os.path.join(t, S_, ".gitignore"), "a") as h: h.write("dirt\n")
+            a12 = reading() == 0
+            print("ARM 12 OK: a dirty SCRIP tree wrote no row to the shared store" if a12 else "ARM 12 FAIL: a dirty SCRIP tree wrote a row to the shared store")
             os.environ.pop("S4E_PROGRESS_ORIGIN_ONLY", None)
+            a13 = reading() == 1 and any(l.split("\t")[1].endswith("-dirty") for l in open(db) if l.strip())
+            print("ARM 13 OK: a private store took the dirty SCRIP reading with its stamp" if a13 else "ARM 13 FAIL: a private store did not take the stamped reading")
+            git(S_, "checkout", "-q", "--", ".gitignore")
         finally:
             HARNESS_TREE = old_ht
-        ok = a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11
-        print(f"PROGRESS_PIN_SELFTEST arms=11 {'OK' if ok else 'FAIL'}")
+        ok = a1 and a2 and a3 and a4 and a5 and a6 and a7 and a8 and a9 and a10 and a11 and a12 and a13
+        print(f"PROGRESS_PIN_SELFTEST arms=13 {'OK' if ok else 'FAIL'}")
         return 0 if ok else 1
     except (OSError, subprocess.CalledProcessError) as e:
         print(f"REFUSE(2): the scratch repositories could not be made: {e}"); return 2
