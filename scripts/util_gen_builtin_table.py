@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-# util_gen_builtin_table.py [--check | --write] [--tsv FILE] [--out DIR] -- harness/scripts/builtins.tsv -> SCRIP/src/runtime/builtin_table.h, builtin_table.c, builtin_leaf.h and builtin_leaf.c
+# util_gen_builtin_table.py [--check | --write] [--tsv FILE] [--out DIR] -- SCRIP/src/runtime/builtins.tsv -> SCRIP/src/runtime/builtin_table.h, builtin_table.c, builtin_leaf.h and builtin_leaf.c
+# THE TABLE LIVES IN THE SCRIP CLONE, beside the files it generates (the cto's ruling 2026-11-14: a table a checked-in SCRIP file is generated from is SCRIP's source and
+# changes in the same landing as the code; the grader is the one writer of harness, Lon 2026-11-14, so a landing could no longer change harness's table and SCRIP's
+# generated files together). This tool stays in harness and reads the clone's table; a clone that lacks it is behind origin and is refused rc 2 with the cure.
 # (DESIGN-PLAN builtin-table step 1; ARCH-BUILTIN-TABLE.md section 3; R-2016).
 #
 # builtins.tsv is the ONE table of builtins: one row per builtin per vocabulary. This writes the two generated files the runtime and the compiler include:
@@ -272,14 +275,14 @@ def styled(*texts):
 
 
 def main(argv):
-    tsv = os.path.join(HERE, 'builtins.tsv')
+    tsv = os.path.join(SCRIP_DIR, 'src', 'runtime', 'builtins.tsv')
     out = os.path.join(SCRIP_DIR, 'src', 'runtime')
     if '--tsv' in argv:
         tsv = argv[argv.index('--tsv') + 1]
     if '--out' in argv:
         out = argv[argv.index('--out') + 1]
     if not os.path.exists(tsv):
-        print('util_gen_builtin_table: no table at %s' % tsv, file=sys.stderr)
+        print('util_gen_builtin_table: no table at %s (the table lives in the SCRIP clone: bring the clone to origin/main, git fetch and fast-forward)' % tsv, file=sys.stderr)
         return 2
     try:
         rows = validate(load(tsv))

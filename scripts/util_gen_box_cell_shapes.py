@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""util_gen_box_cell_shapes.py -- writes src/planner/box_cell_shapes.inc of SCRIP from scripts/box_cell_shapes.tsv of the harness, the cell-shape table
+"""util_gen_box_cell_shapes.py -- writes src/planner/box_cell_shapes.inc of SCRIP from src/planner/box_cell_shapes.tsv of the SAME clone, the cell-shape table
+(the table lives in the SCRIP clone beside the file it generates, the cto's ruling 2026-11-14; this tool stays in harness and reads the clone's table)
 (ARCH-ZETA-ONE-COORDINATE 3.5 (iii); ARCH-THREE-ZETAS-EMISSION 10 (3); the cto, R-1923). The planner's zd_k_own walks the generated rows top to
 bottom and takes the first that matches the node's kind and condition.
   util_gen_box_cell_shapes.py --write     rewrite the .inc
@@ -14,7 +15,7 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import harness_paths   # THE ABSOLUTE MODEL (lib_paths.sh): S4E_SCRIP, S4E_CORPUS, S4E_HARNESS, else /home/<repo>, else the sibling
-TSV = os.path.join(HERE, 'box_cell_shapes.tsv')
+TSV = os.path.join(str(harness_paths.scrip()), 'src', 'planner', 'box_cell_shapes.tsv')
 INC = os.path.join(str(harness_paths.scrip()), 'src', 'planner', 'box_cell_shapes.inc')
 WHEN = {'always': 'BCS_ALWAYS', 'call_curmov': 'BCS_CALL_CURMOV', 'icn_local': 'BCS_ICN_LOCAL', 'icn_suspend': 'BCS_ICN_SUSPEND',
         'has_operands': 'BCS_HAS_OPERANDS', 'no_operands': 'BCS_NO_OPERANDS', 'patv': 'BCS_PATV', 'home_frame': 'BCS_HOME_FRAME', 'icn_home': 'BCS_ICN_HOME',
@@ -67,7 +68,7 @@ def rows():
     try:
         lines = open(TSV, encoding='utf-8').read().splitlines()
     except OSError as e:
-        refuse('cannot read %s: %s' % (TSV, e))
+        refuse('cannot read %s: %s (the table lives in the SCRIP clone: bring the clone to origin/main, git fetch and fast-forward)' % (TSV, e))
     out, low, head, section = [], [], False, 0
     for n, l in enumerate(lines, 1):
         if not l or l.startswith('#'):

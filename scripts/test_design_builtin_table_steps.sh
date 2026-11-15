@@ -35,7 +35,7 @@ SUITES=/home/resources/progress/SUITES.tsv
 SBL=/home/resources/x64/bin/sbl
 ICONT=/home/resources/icon-master/bin/icont
 DISPATCH="$SC/src/runtime/by_name_dispatch.c"
-TSV="$HERE/builtins.tsv"
+TSV="$SC/src/runtime/builtins.tsv"
 SMOKES="snobol4 snocone rebus icon prolog raku pascal polyglot"
 CALLS=200000
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
