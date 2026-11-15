@@ -19,9 +19,12 @@ rc=0
 for r in corpus harness .github; do
     d="$TOP/$r"
     [ -d "$d/.git" ] || { echo "$(now) REFUSE(2) $d is not a clone"; rc=2; continue; }
+    # THE FETCH COMES FIRST, A DIRTY TREE OR NOT (the grader 2026-11-15): a fetch moves only the remote ref, never a working file, so a tree left as it is still
+    # knows where origin stands. s4e_take.sh give checks a patch against origin/main of this checkout first (the cio, harness 0bd680d10); MEASURED the night
+    # before, /home/.github held a rewritten SCORE.md from 03:48Z to 06:08Z, this loop left it before fetching, and origin/main stood as stale as HEAD.
+    timeout -k 5 120 git -C "$d" fetch -q origin main 2>/dev/null || { echo "$(now) REFUSE(2) $d: fetch of origin main failed"; rc=2; continue; }
     if [ -n "$(git -C "$d" status --porcelain --untracked-files=no 2>/dev/null)" ]; then echo "$(now) LEFT $d: it holds tracked changes (named, never discarded)"; [ $rc = 0 ] && rc=1; continue; fi
     b="$(git -C "$d" rev-parse --short=10 HEAD)"
-    timeout -k 5 120 git -C "$d" fetch -q origin main 2>/dev/null || { echo "$(now) REFUSE(2) $d: fetch of origin main failed"; rc=2; continue; }
     if git -C "$d" merge -q --ff-only origin/main 2>/dev/null; then
         a="$(git -C "$d" rev-parse --short=10 HEAD)"; [ "$a" = "$b" ] || echo "$(now) KEEP $r $b..$a"
     else
