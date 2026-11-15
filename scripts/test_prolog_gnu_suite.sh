@@ -61,7 +61,7 @@ ONLY_DRIVER=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --driver) [ $# -ge 2 ] || flaggate_reject "$1" "--driver REL.pl (one driven library, as the board names it)"; ONLY_DRIVER="$2"; shift 2 ;;
-        *) flaggate_reject "$1" "--driver REL.pl, or none (set GNU_SUITE_VERBOSE / GNU_SUITE_CLASSIFY_TIMEOUT / GNU_SUITE_RUN_TIMEOUT via environment instead)" ;;
+        *) flaggate_reject "$1" "--driver REL.pl, or none (set GNU_SUITE_VERBOSE / GNU_SUITE_CLASSIFY_TIMEOUT / GNU_SUITE_RUN_TIMEOUT / GNU_SUITE_COMPILE_TIMEOUT via environment instead)" ;;
     esac
 done
 SCRIP="${S4E_SCRIP}/scrip"
@@ -69,6 +69,12 @@ RT_SO="${S4E_SCRIP}/out/libscrip_rt.so"
 PKG="${GNU_PROLOG_SUITE:-$S4E_CORPUS/packages/prolog/gnu_prolog}"   # line 2 sets it to this default, so the guard judges the suite graded here
 CLASSIFY_TIMEOUT="${GNU_SUITE_CLASSIFY_TIMEOUT:-10}"
 RUN_TIMEOUT="${GNU_SUITE_RUN_TIMEOUT:-15}"
+# A DRIVER'S MODE-4 COMPILE HAS ITS OWN BOUND (the grader 2026-11-14, on the coo's telegram: gnu all read rc=2 on laps 35 and 36, "2 driver(s) timed out under load",
+# 1522 to 1629 s a lap for no reading). MEASURED at load 26 on 16 cores, origin SCRIP: scrip --compile of BipsPl/pred_driver.pl took 62 s (323,735,167 bytes of
+# assembly) and of Pl2Wam/all_driver.pl 104 s (539,209,652 bytes), a run token's wait included; the compile was held to the RUN bound, 15 s. A compile that writes half
+# a gigabyte is not a run of a test: it gets 300 s, and a second timeout past util_timeout_retry.sh's retry is still could-not-measure under load (R-1686) or the
+# program's FAIL on a quiet box, as before.
+COMPILE_TIMEOUT="${GNU_SUITE_COMPILE_TIMEOUT:-300}"
 GPROLOG_BIN="$(gprolog_bin 2>/dev/null || true)"
 VERBOSE="${GNU_SUITE_VERBOSE:-0}"
 
@@ -263,7 +269,7 @@ for f in "${FILES[@]}"; do
         # (a SCRIP defect the driver exposed) and a dirty SCRIP skips every row this pass writes.
         # each mode's own wall for its row (R-1676 (c)): m3 its run, m4 the compile, link and run
         drv_lock "$drv"; _t0="$(progress_clock)"
-        "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --compile "${CA[@]}" "$drv" --out="$dout" < /dev/null > "$probe_log" 2>&1; drc=$?
+        "$TIMEOUT_RETRY" "$COMPILE_TIMEOUT" "$SCRIP" --compile "${CA[@]}" "$drv" --out="$dout" < /dev/null > "$probe_log" 2>&1; drc=$?
         _cs="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"
         m3_out=$(cd "$TMP" && run_at_declared_table "$DECL" "${rel%.pl}" -- "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --run "${CA[@]}" "$drv" ${dargv[0]+--} "${dargv[@]}" < "$din" 2>/dev/null); m3rc=$?
         S3="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"
