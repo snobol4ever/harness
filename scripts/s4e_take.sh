@@ -13,6 +13,8 @@
 #   s4e_take.sh apply <given patch>             THE GRADER ONLY (S4E_SEAT=grader; any other seat rc 2): brings the one checkout to origin/main, applies the give,
 #                                               commits it under its why and its giver, pushes; a give that no longer applies, or a push origin refuses, leaves
 #                                               the checkout at origin/main and the give where it was
+#   s4e_take.sh base <given patch>              prints the commit of the one checkout the give was checked against: where the grader applies a give that no longer
+#                                               applies at origin/main (a witness added to a container another give has since renumbered), before its landing's rebase
 #   s4e_take.sh check                           rc 1 and one line a folder while ANY seat root under the top holds corpus, harness or .github; rc 0 when none does
 #   s4e_take.sh list                            the repos this root still holds, each with what it carries
 #   s4e_take.sh drop corpus|harness|.github     remove one this root still holds; refuses rc 1, naming what would be lost, while it holds an edit, an untracked
@@ -41,7 +43,7 @@ take() {
     die "REFUSE(2): no seat holds $1, and nothing was made. Lon 2026-11-14: \"Only ONE maintainer has /home/{.github,corpus,harness} and that is GRADER.\" Read it at $TOP/$1. To change it, give the grader a patch: bash $TOP/harness/scripts/s4e_take.sh give $1 <patch> \"<why>\" (the head of this script says how a patch is written with no clone)." 2
 }
 give() {
-    local r="$1" p="${2:-}" why="${3:-}" seat="${S4E_SEAT:-}" src err out
+    local r="$1" p="${2:-}" why="${3:-}" seat="${S4E_SEAT:-}" src err out base
     [ -n "$seat" ] || die "REFUSE(2): S4E_SEAT is unset: a give names its seat" 2
     [ -n "$p" ] && [ -s "$p" ] || die "REFUSE(2): no patch at '$p' (usage: s4e_take.sh give corpus|harness|.github <patch> \"<why>\")" 2
     [ -n "$why" ] || die "REFUSE(2): a give says why, the row and what the change does (usage: s4e_take.sh give $r <patch> \"<why>\")" 2
@@ -51,8 +53,9 @@ give() {
     err="$(git -C "$src" apply --check "$p" 2>&1)" || die "REFUSE(1): the patch does not apply to $src at $(git -C "$src" rev-parse --short=10 HEAD 2>/dev/null): $(printf '%s' "$err" | head -1). Nothing given." 1
     mkdir -p "$GIVES" 2>/dev/null || die "REFUSE(2): cannot make $GIVES" 2
     out="$GIVES/$(date -u +%Y%m%dT%H%M%SZ)-$seat-${r#.}-$$.patch"
-    cp "$p" "$out" && printf '%s\t%s\t%s\t%s\n' "$(basename "$out")" "$seat" "$r" "$why" >> "$GIVES/GIVES.tsv" || die "REFUSE(2): cannot store the give in $GIVES" 2
-    echo "GIVEN $out ($r, by $seat: $why). The grader alone applies it."
+    base="$(git -C "$src" rev-parse HEAD 2>/dev/null)"   # THE GIVE NAMES ITS BASE (the cio 2026-11-14, ruled with the grader): the commit of the one checkout the patch was checked against. A give that adds an entry to a container renumbers every row below it, so once another such give lands it applies nowhere but at its base; the grader applies it there, in a worktree, and its landing's rebase merges the container's tables by entry key (util_table_merge.py, s4e_land.sh)
+    cp "$p" "$out" && printf '%s\t%s\t%s\t%s\t%s\n' "$(basename "$out")" "$seat" "$r" "$why" "base=$base" >> "$GIVES/GIVES.tsv" || die "REFUSE(2): cannot store the give in $GIVES" 2
+    echo "GIVEN $out ($r, by $seat, base ${base:0:10}: $why). The grader alone applies it."
     echo "WAKE: SendMessage to GRADER now with this first line: \"give $(basename "$out"): run bash $TOP/harness/scripts/s4e_take.sh apply $out\""
 }
 apply() {
@@ -68,7 +71,7 @@ apply() {
     [ -z "$(git -C "$src" status --porcelain 2>/dev/null | head -1)" ] || die "REFUSE(1): $src is not clean; nothing applied (git -C $src status)" 1
     git -C "$src" fetch -q origin 2>/dev/null || die "REFUSE(2): cannot fetch origin in $src; nothing applied" 2
     git -C "$src" merge -q --ff-only origin/main 2>/dev/null || die "REFUSE(1): $src does not fast-forward to origin/main; nothing applied" 1
-    git -C "$src" apply --index "$g" 2>/dev/null || die "REFUSE(1): the give no longer applies to $src at origin/main $(git -C "$src" rev-parse --short=10 HEAD); nothing applied. $giver makes it again on today's files and gives it again." 1
+    git -C "$src" apply --index "$g" 2>/dev/null || die "REFUSE(1): the give no longer applies to $src at origin/main $(git -C "$src" rev-parse --short=10 HEAD); nothing applied. Its base is $(printf '%s' "$row" | cut -f5 | sed 's/^base=//;s/^$/not recorded/'): applied there in a worktree and landed with s4e_land.sh, the rebase merges a container's tables by entry key (s4e_take.sh base <give> prints it); for any other file $giver makes it again on today's files." 1
     if ! git -C "$src" commit -q -m "$why (given by $giver through the grader: $(basename "$g"))" 2>/dev/null; then
         git -C "$src" reset -q --hard origin/main; die "REFUSE(1): the commit was refused; $src is back at origin/main; nothing applied" 1
     fi
@@ -131,6 +134,7 @@ probe() {
     o="$(run bash "$me" give corpus "$T/good.patch" "probe row: a becomes a2" 2>&1)"; rc=$?
     gf="$(ls "$T/gives"/*.patch 2>/dev/null | head -1)"
     [ "$rc" = 0 ] && [ -n "$gf" ] && grep -q "$(printf 'x\tcorpus\tprobe row: a becomes a2')" "$T/gives/GIVES.tsv" 2>/dev/null && [ "$(cat "$T/top/corpus/a")" = a ] || why="$why arm 2: give did not store the patch with its seat and why, or it changed the checkout (rc $rc);"
+    [ -n "$gf" ] && [ "$(run bash "$me" base "$gf" 2>/dev/null)" = "$(git -C "$T/top/corpus" rev-parse HEAD)" ] || why="$why arm 2: the give does not name its base, the commit of the one checkout it was checked against;"
     o="$(run bash "$me" apply "$gf" 2>&1)"; rc=$?
     [ "$rc" = 2 ] && [ "$(cat "$T/top/corpus/a")" = a ] && [ -f "$gf" ] || why="$why arm 3: apply by a seat that is not the grader was not refused rc 2, or it changed something (rc $rc);"
     o="$(SEATAS=grader run bash "$me" apply "$gf" 2>&1)"; rc=$?
@@ -159,6 +163,7 @@ case "${1:-}" in
     check) check; exit $? ;;
     give) shift; repo_ok "${1:-}" || die "usage: s4e_take.sh give corpus|harness|.github <patch> \"<why>\"" 2; give "$1" "${2:-}" "${3:-}" ;;
     apply) shift; apply "${1:-}" ;;
+    base) shift; b="$(awk -F'\t' -v b="$(basename "${1:-}")" '$1==b {print $5}' "$GIVES/GIVES.tsv" 2>/dev/null | tail -1)"; b="${b#base=}"; [ -n "$b" ] || die "REFUSE(1): no base recorded for '${1:-}' in $GIVES/GIVES.tsv (a give made before 2026-11-14 18:0x names none)" 1; echo "$b" ;;
     drop) shift; landed=0; [ "${1:-}" = --landed ] && { landed=1; shift; }; repo_ok "${1:-}" || die "usage: s4e_take.sh drop [--landed] corpus|harness|.github" 2; drop "$1" "$landed" ;;
     corpus|harness|.github) take "$1" ;;
     *) die "usage: s4e_take.sh give <repo> <patch> \"<why>\" | apply <given patch> | check | list | drop <repo> | --probe   (repo: corpus|harness|.github; a bare repo name REFUSES: no seat holds one)" 2 ;;
