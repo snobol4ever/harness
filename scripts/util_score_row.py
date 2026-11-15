@@ -1922,8 +1922,15 @@ def cmd_from_progress(a):
         if not ext:   # a package with no container (Flake, Dotnet, x64, x32): the extension its shipped programs carry most
             _ec = _c.Counter(f.rsplit(".", 1)[1] for f in os.listdir(tdir) if "." in f and f.rsplit(".", 1)[1] in _EXTS and not f.startswith("ALL."))
             ext = _ec.most_common(1)[0][0] if _ec else ""
+        _byp = {}   # a files-form package's ALL.csv names each entry's program in its path column (tbs/tb0105.pp for the entry tbs/tb0105)
+        _ap = os.path.join(tdir, "ALL.csv")
+        if os.path.exists(_ap):
+            with open(_ap, encoding="utf-8", errors="replace", newline="") as f:
+                _byp = {r["path"]: r["entry"] for r in _csv.DictReader(f) if r.get("path") and r.get("entry")}
         def _stem(n):
             n = n.strip()
+            if n in _byp:   # an exclusion named by its path, whatever its extension (the grader 2026-11-15, MEASURED on fpc-source: 67 .pp names were not subtracted, 724/1940 for 724/1873)
+                return _byp[n]
             for e in ((ext,) if ext else ()) + _EXTS:
                 if n.endswith("." + e):
                     return n[:-len(e) - 1]
