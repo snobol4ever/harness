@@ -3,7 +3,7 @@
 # nobody fails without knowing). The cycle (s4e_cycle.sh) copies the results table at a lap's start and calls tell_lap_new_reds at the lap's end with every suite
 # key the lap graded. A NEW RED is a program whose latest reading in the copy was PASS and whose latest reading now is not PASS (m3 or m4). The SMOKE.tsv line
 # of the retired grade worker is gone (nothing read it after 2026-11-08). Requests served from test_requests are not told: the asker reads its own answer.
-#   tell_lap_new_reds <tree> <snapshot> <key>...   one telegram per designer naming the tree and, per suite, the count and the first twenty new reds; prints LAP_NEW_REDS
+#   tell_lap_new_reds <tree> <snapshot> <key>...   one telegram per designer, and one to the coo holding every suite's (the coo deals the rows), naming the tree and, per suite, the count and the first twenty new reds; prints LAP_NEW_REDS
 #   designer_of <key>                              the seat whose TIERS.tsv role names the suite key, else the cto (S4E_TIERS overrides the table)
 # A telegram wakes nobody (CIO-51: the designer parks the red). S4E_RESULTS overrides the results table; S4E_POST the postoffice (a probe's scratch one).
 : "${S4E_HOME:?REFUSE(2) [lib_grade_cell]: S4E_HOME unset}"
@@ -39,14 +39,20 @@ for k in sorted(now):
     if now[k][0] != "PASS" and p and p[0] == "PASS": print("%s\t%s\t%s\t%s" % (want[k[0]], k[1], k[2], now[k][0]))
 PY
 tell_lap_new_reds() {
-    local tree="$1" snap="$2" lines key prog mode outc d sent=0 total=0; shift 2
+    local tree="$1" snap="$2" lines key prog mode outc d r sent=0 total=0; shift 2
     [ -f "$snap" ] || { echo "LAP_NEW_REDS refused=no-snapshot told=0 reds=0"; return 0; }
     lines="$(python3 -c "$NEWREDS_PY" "$S4E_HARNESS/scripts" "$snap" "$RESULTS" "$@")" || { echo "LAP_NEW_REDS refused=reader told=0 reds=0"; return 0; }
-    declare -A BODY=() CNT=() SHOWN=()
+    declare -A BODY=() CNT=() SHOWN=() ONCE=()
     while IFS=$'\t' read -r key prog mode outc; do
         [ -n "$key" ] || continue
-        total=$((total + 1)); d="$(designer_of "$key")"; CNT[$d|$key]=$(( ${CNT[$d|$key]:-0} + 1 ))
-        if [ "${SHOWN[$d|$key]:-0}" -lt 20 ]; then BODY[$d]="${BODY[$d]:-}  $key: $prog $mode reads $outc"$'\n'; SHOWN[$d|$key]=$(( ${SHOWN[$d|$key]:-0} + 1 )); fi
+        total=$((total + 1)); d="$(designer_of "$key")"
+        # THE COO IS TOLD EVERY NEW RED, the designer its own (the coo 2026-11-15, MEASURED: laps 36 and 37's telegrams reached the cto alone, since no TIERS.tsv role names a
+        # suite key and designer_of falls to the cto; the coo deals the rows): each red goes to its designer and to the coo, once when the coo is the designer
+        for r in "$d" coo; do
+            [ "$r" = coo ] && [ "$d" = coo ] && [ -n "${ONCE[$key|$prog|$mode]:-}" ] && continue; ONCE[$key|$prog|$mode]=1
+            CNT[$r|$key]=$(( ${CNT[$r|$key]:-0} + 1 ))
+            if [ "${SHOWN[$r|$key]:-0}" -lt 20 ]; then BODY[$r]="${BODY[$r]:-}  $key: $prog $mode reads $outc"$'\n'; SHOWN[$r|$key]=$(( ${SHOWN[$r|$key]:-0} + 1 )); fi
+        done
     done <<< "$lines"
     for d in "${!BODY[@]}"; do
         local sum=""; for k in "${!CNT[@]}"; do [ "${k%%|*}" = "$d" ] && sum="$sum ${k#*|}=${CNT[$k]}"; done
