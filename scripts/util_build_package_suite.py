@@ -276,7 +276,7 @@ def read_contract(pkg_dir):
     ⭐ CIO-22 D (the coo 2026-11-10, on the cio's design; CIO-15 d revised): `units<TAB>generated` with `generator<TAB><module>` -- a per-goal
     suite (INRIA's goals, Logtalk's cases) is a container of GENERATED programs: the module (scripts/<module>.py of the harness) yields each case of the
     package's own table and the builder runs no oracle (see build_generated)."""
-    out = {"argv": "", "stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": ""}
+    out = {"argv": "", "stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": "", "path": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -330,6 +330,8 @@ def read_contract(pkg_dir):
             out["unmarked_compile_args"] = f[1].strip()
         elif f[0] == "argv" and f[1] == "name-first":
             out["argv"] = "name-first"   # R-328: NAME.argv is one line NAME<TAB>arg..., the program's own name first, as the deleted test_icon_ipl_suite.sh read it (ipl_argv_read)
+        elif f[0] == "path" and f[1] == "oracle-bin":
+            out["path"] = "oracle-bin"   # the folder of the Icon oracle's translator goes first on PATH for every run of this container, the cut's and the grade's (h.oracle_bin_on_path)
         elif f[0] == "road" and f[1] == "run-files":
             pass   # the cycle's own key (s4e_cycle.sh road_flag): the package is run by the package switch; the builder cuts the same answers either way
         elif f[0] == "stdin":
@@ -337,7 +339,7 @@ def read_contract(pkg_dir):
             out["stdin"] = f[1].strip()
         else:
             h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, argv=name-first, units=ref-beside,units=plunit,units=tap, units=iso-rejection, dialect=any-fpc-mode, fatal=gradable, bom=as-shipped, units=generated, generator=MODULE, "
-                     f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space, ipath=DIR, lpath=DIR and unmarked_compile_args=--dialect=NAME only")
+                     f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space, ipath=DIR, lpath=DIR, path=oracle-bin and unmarked_compile_args=--dialect=NAME only")
     if (out["units"] == "generated") != bool(out["generator"]):
         h.refuse(f"{cf}: units=generated and generator=<module> go together (got units={out['units']!r}, generator={out['generator']!r})")
     if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):
@@ -541,6 +543,7 @@ def build_generated(pkg_dir, lang, out_prefix, contract, only):
     return 0
 
 
+FX_FOLDER = set()   # the entries whose table row declares fixtures=folder: the cut runs in a copy of the entry's own folder (h.stage_folder), as stage_entry stages it to grade, and the cell is written back
 FX_STAGED = set()   # the entries whose cut ran over their NAME.fixtures/ tree (h.stage_fixtures): their ALL.csv fixtures cell reads staged, so stage_entry stages the same tree to grade
 
 
@@ -586,7 +589,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
     if (pkg_dir / f"{out_prefix}.csv").is_file():
         with open(pkg_dir / f"{out_prefix}.csv", newline="") as _f:
             _rdr = csv.DictReader(_f)
-            _decl_cols = [c for c in ("out_files", "stderr", "timeout_s") if c in (_rdr.fieldnames or [])]
+            _decl_cols = [c for c in ("out_files", "stderr", "timeout_s", "fixtures") if c in (_rdr.fieldnames or [])]
             for _row in _rdr:
                 _decl[_row.get("entry")] = {c: (_row.get(c) or "").strip() for c in _decl_cols}
     if merged:
@@ -601,6 +604,9 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
     tap = contract["units"] == "tap"
     if lang == "icon" and contract["ipath"] and contract["oracle"] != "unicon":
         os.environ["IPATH"] = os.pathsep.join(x for x in (contract["ipath"], os.environ.get("IPATH", "")) if x)
+    if lang == "icon" and contract["path"] == "oracle-bin":
+        h.oracle_bin_on_path()
+        print("contract: path oracle-bin (CONTRACT.tsv) -- the Icon oracle's folder is first on PATH for every run, as the grade runs it", file=sys.stderr)
     xsb = contract["oracle"] == "xsb-gentest"
     xsb_bin, xsb_runs, xsb_owed, xsbold = None, {}, set(), []
     staged = read_staged(pkg_dir)
@@ -808,6 +814,15 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                                         "so it would not be byte-identical to the file the ref was cut from (the same rule as a non-UTF-8 source)"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (non-UTF-8 stdin {stdin_path.name})", file=sys.stderr)
             continue
+        if stdin_text is not None and any(_c in stdin_text for _c in "\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029"):
+            # ⛔ THE CUT FEEDS THE STDIN THE CONTAINER FEEDS (the grader 2026-11-15, on the cfo's measurement of ipl progs/literat): ALL.in is read as text
+            # lines (read_stdin_sidecar: read_text and splitlines), so a carriage return, a form feed or another line boundary in a stdin file reaches the
+            # graded run as a newline, and one that ends the file is dropped. MEASURED: literat.dat ends each menu answer with a carriage return; fed those
+            # bytes iconx answers 18 lines, fed what the container holds it stops at Run-time error 103, as SCRIP does, and the entry read red on a ref no
+            # graded run could print. The oracle is fed the text as the reader will give it back, and that text is what the container stores.
+            _lines = stdin_text.replace("\r\n", "\n").replace("\r", "\n").splitlines()
+            stdin_text = "\n".join(_lines) + ("\n" if stdin_text.endswith("\n") and _lines else "")
+            print(f"[{i}/{len(srcs)}] {name}: its stdin {stdin_path.name} holds line boundaries the container stores as newlines; the oracle is fed the stored text", file=sys.stderr)
         _of_path = src.with_suffix(".outfiles")
         _of_cell = " ".join(ln.strip() for ln in _of_path.read_text().split("\n") if ln.strip() and not ln.lstrip().startswith("#")) if _of_path.is_file() else _decl.get(name, {}).get("out_files", "")
         _ms = merged or _decl.get(name, {}).get("stderr", "") == "merged"
@@ -835,7 +850,12 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
         # it matches this package's own README's documented usage (`cp progs/hello.icn /tmp/t.icn && cd /tmp
         # && icont -s t.icn`) rather than inventing a new invocation contract.
         def _oracle_isolated(flags=flags):
-            with tempfile.TemporaryDirectory(prefix="pkgsuite_oracle_") as _iso_dir:
+            with tempfile.TemporaryDirectory(prefix="pkgsuite_oracle_") as _iso_top:
+                # ⛔ THE CUT RUNS IN A FOLDER NAMED AS THE GRADE NAMES IT (the grader 2026-11-15, on the cfo's measurement of ipl progs/cwd): stage_entry writes an
+                # entry named progs/cwd at <scratch>/progs/cwd.icn and runs it there, so a program that prints its directory answers "progs"; cut at the
+                # top of the scratch folder its section was that folder's random name, a line no run could print. A flat name runs at the top as before.
+                _iso_dir = str(Path(_iso_top) / Path(name).parent)
+                Path(_iso_dir).mkdir(parents=True, exist_ok=True)
                 # ⛔ THE ORACLE READS THE NAME THE GRADER STAGES (the coo 2026-11-09, measured on x64tests gcbuster and testpgms test1 and test6):
                 # stage_entry writes <name><ext> (ALL.sno's .sno), so a ref cut from the shipped .sbl or .spt name prints &FILE and &LASTFILE
                 # the graded run can never print, and the three read FAIL on those two lines alone. Under --src-ext the source is staged as
@@ -867,9 +887,15 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     for _cf in src.parent.iterdir():
                         if _cf.is_file() and not _cf.name.startswith("ALL.") and _cf.name != src.name:
                             (Path(_iso_dir) / _cf.name).write_bytes(_cf.read_bytes())
+                if _decl.get(name, {}).get("fixtures", "") == "folder":
+                    # ⭐ fixtures=folder IS STAGED AT THE CUT AS AT THE GRADE (the grader 2026-11-15, on the cfo's measurement of ipl progs/declchck, which lists the .icn
+                    # files of its run directory): the entry's own folder beside it, through the grader's own stage_folder, after the source is written below.
+                    FX_FOLDER.add(name)
                 if h.stage_fixtures(src.parent, src.stem, Path(_iso_dir)):   # NAME.fixtures/ staged where the oracle runs; the fixtures cell tells stage_entry to stage it to grade
                     FX_STAGED.add(name)
                 _iso_src.write_bytes(src.read_bytes())
+                if name in FX_FOLDER:
+                    h.stage_folder(src.parent, src.stem, Path(_iso_dir))
                 if lang == "icon" and merged and contract["oracle"] == "unicon" and contract["prebuild"]:
                     _unicon_prebuild(Path(_iso_dir), contract["ipath"], contract["prebuild"].split())
                 if lang == "icon" and contract["oracle"] == "unicon":
@@ -1151,7 +1177,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
     _cmd_cols = ["compile_args", "run_args"]   # a new table gets both; a rebuild keeps the ones the table has, never imposes one
     _of_col = ["out_files"] if any(getattr(e, "out_files", None) for e in entries) or any(d.get("out_files") for d in _decl.values()) else []   # from <stem>.outfiles, else the table's own declaration
     _se_col = ["stderr"] if merged or any(d.get("stderr") for d in _decl.values()) else []
-    _fx_col = ["fixtures"] if FX_STAGED else []   # the entries cut over their NAME.fixtures/ tree, read by corpus_suite_harness.py stage_entry   # from CONTRACT.tsv (every entry), else the table's own per-entry declaration
+    _fx_col = ["fixtures"] if (FX_STAGED or FX_FOLDER) else []   # the entries cut over their NAME.fixtures/ tree, read by corpus_suite_harness.py stage_entry   # from CONTRACT.tsv (every entry), else the table's own per-entry declaration
     _tmo_col = ["timeout_s"] if "timeout_s" in _decl_cols else []   # the declared bound (test-cycle step 6), carried forward; a table that never declared one gains none here
     # ⭐ fresh-vars and error-context (corpus_suite_harness.py _grade_output): a Prolog ref prints a fresh variable as the oracle names it
     # (ISO/IEC 13211-1 7.10.5) and an error term's context as the oracle builds it (7.12.1), both the implementation's; each is derived
@@ -1212,7 +1238,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
             joined = "\n".join(e.sno_lines)
             flags_row = m.attrs_for_text(joined, table_lang)
             w.writerow([e.seq, e.name, f"{pkg_dir.name}__{e.name}", pkg_dir.name, len(e.sno_lines),
-                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_decl.get(e.name, {}).get("timeout_s", "") for c in _tmo_col] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + [("merged" if getattr(e, "decl_stderr", merged) else "") for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + ((["swi-cases", e.name.rsplit("/", 1)[0] if "/" in e.name else "."] if plunit else ["tap-cases"]) if _gr_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [_old_dl.get(e.name, "") for c in _dl_col] + [("staged" if e.name in FX_STAGED else "") for c in _fx_col] + [flags_row[c] for c, _fn in cols])
+                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_decl.get(e.name, {}).get("timeout_s", "") for c in _tmo_col] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + [("merged" if getattr(e, "decl_stderr", merged) else "") for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + ((["swi-cases", e.name.rsplit("/", 1)[0] if "/" in e.name else "."] if plunit else ["tap-cases"]) if _gr_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [_old_dl.get(e.name, "") for c in _dl_col] + [("folder" if e.name in FX_FOLDER else ("staged" if e.name in FX_STAGED else "")) for c in _fx_col] + [flags_row[c] for c, _fn in cols])
         _rank = max([e.seq for e in entries] or [0])
         for _row in sorted(_carried, key=lambda r: r.get("entry") or ""):
             _rank += 1
@@ -1377,7 +1403,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
     if set(hdr) - known or "entry" not in ix or "rank" not in ix:
         h.refuse(f"splice gate: {f_csv}'s header is not one the splice can fill: unknown {sorted(set(hdr) - known)}")
     for e in entries:
-        for _col, _need in (("out_files", getattr(e, "out_files", None)), ("compare", _cm_val(e)), ("stderr", merged), ("stage", e.name in staged), ("fixtures", e.name in FX_STAGED)):
+        for _col, _need in (("out_files", getattr(e, "out_files", None)), ("compare", _cm_val(e)), ("stderr", merged), ("stage", e.name in staged), ("fixtures", e.name in FX_STAGED or e.name in FX_FOLDER)):
             if _need and _col not in ix:
                 h.refuse(f"splice gate: {e.name} needs a {_col} cell and {f_csv} has no {_col} column -- a whole rebuild adds it")
     dialect_cell = {n: ("fpc" if d == "fpc-default" else d) for n, d in dialects} if "dialect" in ix else {}
@@ -1395,7 +1421,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
              "want_rc": e.want_rc, "heap_kb": m.DEFAULT_HEAP_KB, "stack_kb": m.DEFAULT_STACK_KB, "run_args": "", "mode_gap_s": "", "timeout_s": "",
              "compile_args": contract["unmarked_compile_args"] if contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "",
              "out_files": " ".join(getattr(e, "out_files", None) or []), "stderr": "merged" if merged else "", "compare": _cm_val(e),
-             "stage": "upstream" if e.name in staged else "", "fixtures": "staged" if e.name in FX_STAGED else "", "dialect": dialect_cell.get(e.name, ""), "answer": ("" if staged[e.name] == "stdout" else staged[e.name]) if e.name in staged else ""}
+             "stage": "upstream" if e.name in staged else "", "fixtures": "folder" if e.name in FX_FOLDER else ("staged" if e.name in FX_STAGED else ""), "dialect": dialect_cell.get(e.name, ""), "answer": ("" if staged[e.name] == "stdout" else staged[e.name]) if e.name in staged else ""}
         v.update({c: flags_row[c] for c, _fn in cols})
         if e.name in row_at:
             prev = rows[row_at[e.name]]

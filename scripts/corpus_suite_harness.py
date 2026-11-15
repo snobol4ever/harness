@@ -5531,12 +5531,31 @@ def _one_runner_guard(suite_path=None, corpus_root=None, lang=None):
     sys.stderr.write("\u26d4 REFUSE(2) ONE RUNNER, ONE BOARD -- ONE RUNNER PER LANGUAGE: a %s rungs/package run is a board and seat %s is not %s, the seat MODE LANES: names for %s. Every language HQ runs its OWN language suites, once per landing, on origin HEAD, and writes its own rows (Lon 2026-09-16 10:5x, RULES.md § ONE RUNNER PER LANGUAGE, R-775); another language board is an ASK to that language HQ.\n" % (blang, seat or "?", " or ".join(who) if who else "<no seat -- the LANES line names none>", blang))
     sys.exit(2)
 
+def oracle_bin_on_path():
+    """CONTRACT.tsv path=oracle-bin (the grader 2026-11-15, on the cfo's measurement of ipl progs/genfile and progs/declchck): THE FOLDER OF THE ICON
+    ORACLE'S TRANSLATOR IS FIRST ON PATH for every run of the container, the builder's cut and both modes of the grade. An IPL program that
+    builds another (exprfile's and declchck's system("icont ...")) answers by whether a bare icont resolves, and until this key the answer was
+    borrowed from whoever started the run: iconx alone gives error 212 at genfile.icn 45 and with icont on PATH the sequence, and the cycle's
+    PATH held no icont while the refs beside the sources were cut with one (lib_icon_ipl_isolation.sh states the same PATH for the deleted
+    runner). Idempotent; a missing oracle refuses rc 2, never a run on a PATH that silently lacks it."""
+    lib = HARNESS_SCRIPTS / "lib_oracle_flags.sh"
+    r = subprocess.run(["bash", "-c", f". '{lib}' && icont_bin"], capture_output=True, text=True)
+    d = str(Path(r.stdout.strip()).parent) if r.returncode == 0 and r.stdout.strip() else ""
+    if not d or not (Path(d) / "icont").is_file():
+        refuse(f"CONTRACT.tsv path=oracle-bin: lib_oracle_flags.sh names no Icon translator (icont_bin: {r.stderr.strip()[:200]})")
+    if os.environ.get("PATH", "").split(os.pathsep)[:1] != [d]:
+        os.environ["PATH"] = os.pathsep.join(x for x in (d, os.environ.get("PATH", "")) if x)
+    return d
+
+
 def _pkg_ipath_for(args):
     if getattr(args, "lang", None) != "icon" or not args.sno: return
     cf = Path(args.sno).resolve().parent / "CONTRACT.tsv"
     if not cf.is_file(): return
     for line in cf.read_text().splitlines():
         f = line.split("\t")
+        if len(f) >= 3 and f[0] == "path" and f[1] == "oracle-bin":
+            oracle_bin_on_path()
         if len(f) >= 3 and f[0] == "ipath" and (cf.parent / f[1]).is_dir():
             os.environ["IPATH"] = os.pathsep.join(x for x in (str((cf.parent / f[1]).resolve()), os.environ.get("IPATH", "")) if x)
         # lpath (the coo 2026-11-11, for Unicon's uni tree: 153 of its files $include guih.icn from another folder and 31 evdefs.icn from Unicon's own
