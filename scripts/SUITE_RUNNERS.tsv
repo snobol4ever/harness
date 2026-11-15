@@ -70,6 +70,16 @@ gimpel@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gimpel
 snoflake@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snoflake_suite
 unitests	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/unicon_tests
 vanilla	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/vanilla
+exercism_snobol4	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/exercism_snobol4
+slobol_tests	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/slobol_tests
+strange_code_book	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/strange_code_book
+cbrooker_snobol	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/cbrooker_snobol
+exs_sno	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/exs_sno
+snobol_playground	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snobol_playground
+matrixmike_tests	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/matrixmike_tests
+tkslide_examples	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/tkslide_examples
+snobol4hs_examples	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snobol4hs_examples
+begoon_snobol	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/begoon_snobol
 decus_vax84a	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/decus_vax84a
 jmu_cs430	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/jmu_cs430
 spitbol_88	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_88
