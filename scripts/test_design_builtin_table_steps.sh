@@ -11,7 +11,7 @@
 #                boxcensus=L:N (call_byname, call_try, call_method and call_gen boxes over corpus/benchmarks/L in mode 4, at most N; the box kinds that carry a name)
 #                ircall=W:N (callgrind Ir per call of loop witness W's mode-4 binary, 200000 calls, at most N)
 #                nosym=a,b (no definition or reference of the names under SCRIP/src, read) | gate=name (bash name.sh rc 0) | smoke=L|ALL (test_smoke_L.sh green; ALL = the eight)
-#                rows=L|ALL (SUITES.tsv today_pass not below the pass recorded in ROWS0.tsv beside STEPS.tsv) | rowsmin=N (harness/scripts/builtins.tsv holds at least N rows) | -
+#                rows=L|ALL (SUITES.tsv today_pass not below the pass recorded in ROWS0.tsv beside STEPS.tsv) | rowsmin=N (src/runtime/builtins.tsv holds at least N rows) | -
 #                leafbound (the finish: builtin_leaf.h declares no weak entry, and every conv leaf or open row of builtins.tsv names a symbol the built runtime DEFINES, so no g_bt_leaf or g_bt_open slot reads 0;
 #                           the nm of out/libscrip_rt.so cannot show an unbound hidden weak, the linker drops it, so the source and the table are read beside the defined symbols; cto 2026-11-04)
 #   --cut        re-cut every witness ref from its oracle (the design seat's road; an HQ that changes a witness re-cuts it the same way)

@@ -24,7 +24,7 @@ RULES = [   # (regex on the path, skills) -- every matching rule applies; the pa
     (r"/SCRIP/src/(planner|emitter)/|/SCRIP/src/runtime/rt/gc_", ["scrip-memory-model"]),
     (r"/SCRIP/bootstrap/[^/]*\.sc$", ["snocone-parser-patterns"]),
     (r"/SCRIP/src/runtime/rt/gc_|/SCRIP/src/runtime/rtx/rtx_(gc|alloc)\.s$", ["gc-collector"]),
-    (r"/SCRIP/src/runtime/rt/rt\.c$|/SCRIP/src/lower/lower_call_forms\.c$|/harness/scripts/builtins\.tsv$", ["runtime-calls"]),
+    (r"/SCRIP/src/runtime/rt/rt\.c$|/SCRIP/src/lower/lower_call_forms\.c$|/SCRIP/src/runtime/builtins\.tsv$", ["runtime-calls"]),
     (r"/SCRIP/Makefile$", ["scrip-build"]),
     (r"/SCRIP/src/lower/lower_icon_class\.c$|/harness/fixtures/unicon/|/corpus/packages/icon/unicon_tests/|/\.github/GOAL-UNICON-100\.md$|/harness/scripts/[^/]*unicon[^/]*$", ["unicon"]),
     (r"/harness/scripts/test_[^/]*\.sh$|/corpus/(tests|packages|demos|benchmarks)/.*(\.ref|/ALL\.csv|/STEPS\.tsv|/LADDER\.tsv)$|/corpus/tests/.*\.(sno|icn|pl|pas|raku|sc|reb)$", ["gates-and-witnesses"]),
@@ -41,8 +41,13 @@ WRITE_MARK = re.compile(r"(?:>>?|\btee\b(?:\s+-a)?|\bcp\b(?:\s+-[a-zA-Z]+)*(?:\s
 INPLACE = re.compile(r"(?:\bsed\s+(?:-[a-zA-Z]*\s+)*-i[^\s]*|\bperl\s+-[a-zA-Z]*i[^\s]*)\s+(?P<rest>[^|;&]*)")   # the path is any later token of the same command
 # THE ONE-DISK CHECKOUTS ARE NOBODY'S TO EDIT (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover; Lon: "Each seat shares harness and corpus in ONE PLACE on disk."):
 # /home/corpus, /home/harness and /home/.github are every seat's and the grader's keeper holds them at origin. MEASURED the day of the cut: their files are mode 664 and 775
-# and nothing refused an edit, while 242 live batons name a path under them. An Edit, a Write or a shell write under one of the three refuses with the cure: s4e_take.sh makes
-# the root's own clone, the edit goes there, the landing drops it (skill seat-conduct 2). No skill lifts it.
+# and nothing refused an edit, while 242 live batons name a path under them. An Edit, a Write or a shell write under one of the three refuses with the cure, which since
+# Lon 2026-11-14 17:1x CST is a give to the grader, the one writer of the three (s4e_take.sh give; skill seat-conduct 2). No skill lifts it.
+# A SEAT ROOT IS ITS SCRIP CLONE (Lon 2026-11-14 16:4x CST: "The /home/claude_cto folder IS the SCRIP clone from github."): src/, bootstrap/ and the Makefile stand at the
+# root's top, so no path holds a /SCRIP/ component and every /SCRIP/ rule above matched nothing. MEASURED by the cto 2026-11-14 19:0x CST on harness a8040aae:
+# --judge Edit /home/claude_cto/src/lower/lower_icon.c with no skill loaded read rc 0. A path at a root's top, or a relative one (the shell stands in the root), is read as
+# the clone's before the rules; the old spelling still matches.
+ROOT_CLONE = re.compile(r"^(/home/claude_[a-z0-9_]+)?/(?=src/|bootstrap/|Makefile$)")
 ONE_DISK = re.compile(r"^/home/(corpus|harness|\.github)(?:/|$)")
 PY_OPEN = re.compile(r"open\(\s*['\"](?P<path>[^'\"]+)['\"]\s*,\s*['\"][wa][^'\"]*['\"]")
 
@@ -53,6 +58,7 @@ def skills_for(path):
         p = "/" + p
     if any(p.endswith("/" + g) for g in GENERATED):
         return None
+    p = ROOT_CLONE.sub(lambda m: (m.group(1) or "") + "/SCRIP/", p)
     need = []
     for rx, sk in RULES:
         if re.search(rx, p):
@@ -86,7 +92,7 @@ def paths_of(tool, inp):
             found += [tok for tok in re.findall(r"[\w./~-]+", m.group("rest").replace("\"", "").replace("'", "")) if "/" in tok]
         if base:
             found = [p if p.startswith(("/", "~")) else base + "/" + p for p in found]
-        return [p for p in found if re.search(r"SCRIP/|/src/|bootstrap/|harness/scripts/|corpus/|resources/postoffice/|resources/progress/|\.github/|^/home/harness/", p)]
+        return [p for p in found if re.search(r"SCRIP/|(?:^|/)src/|^Makefile$|bootstrap/|harness/scripts/|corpus/|resources/postoffice/|resources/progress/|\.github/|^/home/harness/", p)]
     return []
 
 
@@ -117,11 +123,11 @@ def judge(tool, inp, transcript):
         if m:
             r = m.group(1)
             rel = os.path.normpath(p)[len("/home/" + r) + 1:]
-            return 2, ("SKILL GATE: %s is in the one-disk checkout /home/%s, which every seat shares and only the grader writes (Lon 2026-11-14: \"Only ONE maintainer has "
-                       "/home/{.github,corpus,harness} and that is GRADER.\"). No seat takes a clone. Hand the grader the change: copy %s to your scratch, edit the copy, "
-                       "diff -u --label a/%s --label b/%s /home/%s/%s <your copy> > <patch>, then bash /home/harness/scripts/s4e_take.sh give %s <patch> \"<why>\" "
-                       "and send the WAKE line it prints (skill seat-conduct section 2)."
-                       % (os.path.basename(p), r, rel, rel, rel, r, rel, r))
+            return 2, ("SKILL GATE: %s is in the one-disk checkout /home/%s, which every seat reads and the grader alone writes. A change to it is a GIVE: "
+                       "read the file out to scratch (git -C /home/%s archive HEAD %s | tar -x -C /tmp/s4e/<seat>/<dir>), edit the copy, prove the change from it, "
+                       "write diff -u --label a/%s --label b/%s /home/%s/%s <copy> into a patch kept under /home/resources, then run: "
+                       "bash /home/harness/scripts/s4e_take.sh give %s <patch> \"<why, and the command that proves it>\"  and send the grader the WAKE line it prints "
+                       "(skill seat-conduct section 2)." % (os.path.basename(p), r, r, rel, rel, rel, r, rel, r))
     gen = [p for p in paths if skills_for(p) is None]
     if gen:
         return 2, "SKILL GATE: %s is a GENERATED table, regenerated and never edited (make regenerates it; skill fleet-bus section 7, the landing recipe)." % os.path.basename(gen[0])
@@ -178,13 +184,22 @@ def self_test():
         ("Bash tee onto a quoted bus path wants fleet-bus", "Bash", {"command": "echo x | tee \"" + R + "/harness/scripts/s4e_msg.sh\""}, none, 2, ["/fleet-bus"]),
         ("Edit of the tabling prelude wants prolog-tabling beside prolog", "Edit", {"file_path": R + "/SCRIP/src/parsers/prolog/prelude/tabling.pl"}, none, 2, ["/prolog-tabling", "/prolog"]),
         ("Edit of the suite table wants suites-and-grading", "Edit", {"file_path": "/home/resources/progress/SUITES.tsv"}, none, 2, ["/suites-and-grading"]),
-        ("Edit under the one-disk corpus refuses with the give line, whatever is loaded", "Edit", {"file_path": "/home/corpus/tests/pascal/ALL.ref"}, some, 2, ["s4e_take.sh give corpus", "a/tests/pascal/ALL.ref", "one-disk"]),
+        ("Edit under the one-disk corpus refuses with the give line, whatever is loaded", "Edit", {"file_path": "/home/corpus/tests/pascal/ALL.ref"}, some, 2, ["s4e_take.sh give corpus", "corpus/tests/pascal/ALL.ref", "one-disk", "GIVE"]),
         ("Write under the one-disk harness refuses with the give line", "Write", {"file_path": "/home/harness/designs/new_plan/STEPS.tsv"}, some, 2, ["s4e_take.sh give harness", "one-disk"]),
         ("Edit under the one-disk .github refuses with the give line", "Edit", {"file_path": "/home/.github/skills/fleet-bus/SKILL.md"}, none, 2, ["s4e_take.sh give .github", "one-disk"]),
         ("Bash sed -i on a one-disk script refuses with the give line", "Bash", {"command": "sed -i s/a/b/ /home/harness/scripts/s4e_msg.sh"}, some, 2, ["s4e_take.sh give harness", "one-disk"]),
         ("Bash cp -r OUT of a one-disk checkout to scratch is a read and passes (the cio 2026-11-14: the flag was read as the source and the source as the target)", "Bash", {"command": "cp -r /home/harness/scripts /tmp/s4e/x/copy/"}, some, 0, []),
         ("Bash cp -p onto a one-disk file still refuses", "Bash", {"command": "cp -p /tmp/s4e/x/s4e_msg.sh /home/harness/scripts/s4e_msg.sh"}, some, 2, ["s4e_take.sh give harness", "one-disk"]),
         ("the same edit in the root's own clone is judged by its skills alone", "Edit", {"file_path": R + "/.github/README.md"}, none, 0, []),
+        ("root is the clone: Edit of a lowerer at the root's top wants lowering, icon and scrip-c-code", "Edit", {"file_path": R + "/src/lower/lower_icon.c"}, none, 2, ["/lowering", "/icon", "/scrip-c-code"]),
+        ("root is the clone: Edit of the builtin table's source wants runtime-calls", "Edit", {"file_path": R + "/src/runtime/builtins.tsv"}, none, 2, ["/runtime-calls"]),
+        ("root is the clone: Edit of the cell-shape table's source wants scrip-memory-model", "Edit", {"file_path": R + "/src/planner/box_cell_shapes.tsv"}, none, 2, ["/scrip-memory-model"]),
+        ("root is the clone: Edit of the Makefile wants scrip-build", "Edit", {"file_path": R + "/Makefile"}, none, 2, ["/scrip-build"]),
+        ("root is the clone: Bash sed -i on a relative template path wants box-templates", "Bash", {"command": "sed -i s/a/b/ src/templates/bb/bb_to.cpp"}, none, 2, ["/box-templates"]),
+        ("root is the clone: Bash redirect onto a bootstrap parser after a cd to the root wants snocone-parser-patterns", "Bash", {"command": "cd " + R + " && cat /tmp/x.sc > bootstrap/parser_raku.sc"}, none, 2, ["/snocone-parser-patterns"]),
+        ("root is the clone: Edit of a generated table at the root's top refuses outright", "Edit", {"file_path": R + "/src/planner/box_cell_shapes.inc"}, some, 2, ["GENERATED"]),
+        ("root is the clone: the same lowerer edit with its skills loaded passes", "Edit", {"file_path": R + "/src/lower/lower_prolog.c"}, some, 0, []),
+        ("a src folder outside a seat root asks for nothing", "Edit", {"file_path": "/tmp/x/src/lower/lower_icon.c"}, none, 0, []),
     ]
     bad = 0
     for i, (name, tool, inp, tr, want, words) in enumerate(cases, 1):

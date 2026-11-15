@@ -90,7 +90,7 @@ SEATS = {
 - Skills: `/gc-collector` and `/scrip-memory-model` first. Manuals: `/home/resources/manuals/gc/`.
 """, None),
     "templates": ("layer", """## THIS ROOT IS THE hq_templates SEAT (postoffice identity `hq_templates`): THE BOX TEMPLATES
-- `src/templates/bb/` and the `x86()` encoder (`/box-templates`): every Byrd box's four ports as straight-line jumps, one return, no locals, one `x86()` call per line; `box_cell_shapes.inc` from `harness/scripts/box_cell_shapes.tsv`; the template audit; the runtime entry table (zeta-layout step 5). Under the split role this seat verifies and lands the cto's template steps. GOAL-HQ-TEMPLATES.md is the cursor.
+- `src/templates/bb/` and the `x86()` encoder (`/box-templates`): every Byrd box's four ports as straight-line jumps, one return, no locals, one `x86()` call per line; `box_cell_shapes.inc` from `src/planner/box_cell_shapes.tsv`; the template audit; the runtime entry table (zeta-layout step 5). Under the split role this seat verifies and lands the cto's template steps. GOAL-HQ-TEMPLATES.md is the cursor.
 - Skills: `/box-templates` and `/scrip-memory-model` first. Manuals: `/home/resources/manuals/byrd-boxes/`.
 """, None),
     "packages": ("layer", """## THIS ROOT IS THE hq_packages SEAT (postoffice identity `hq_packages`): THE VENDORED SUITES
