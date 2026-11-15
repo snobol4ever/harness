@@ -2,7 +2,7 @@
 """THE DOUBLE-SIDED BANNER (the cto, 2026-11-03 22:3x CST, first as /home/claude_cto/.claude/banner_compact.py; fleet-wide on Lon's word
 2026-11-04: "In the display banner add a column for a delta/difference and distribute the new double-sided banner across the fleet.";
 CEO-2129). The Stop hook pipes `s4e_msg.sh banner` through this filter: the suite grid's rows are laid out in TWO COLUMNS side by side,
-half the suites on the left, half on the right, each cell `Lang Suite Pass/Tot Excl Min Run Pct Δ` (the M3 cell gone, Lon 2026-11-14: "Remove the redundant M3 column.") (Pct second from the right beside Δ and the unused M4 gone, Lon 2026-11-12 12:1x CST: "Move the \"Pct\" column in the stop-turn test-suite banner 2nd to last from the right next to delta. Remove the un-used M4 column.") (Excl is the suite's excluded count, `-` when blank;
+half the suites on the left, half on the right, each cell `Suite Pass/Tot Excl Min Earliest Latest Pct Δ`, the suite's name carrying its language as a prefix and no Lang column (Lon 2026-11-15, see the note above cut(); before it the cell began `Lang Suite`) (the M3 cell gone, Lon 2026-11-14: "Remove the redundant M3 column.") (Pct second from the right beside Δ and the unused M4 gone, Lon 2026-11-12 12:1x CST: "Move the \"Pct\" column in the stop-turn test-suite banner 2nd to last from the right next to delta. Remove the un-used M4 column.") (Excl is the suite's excluded count, `-` when blank;
 Run is the date and time range of the readings the row was assembled from and Δ is the LAST column, both on Lon's word 2026-11-11 10:2x CST, in the coo's
 window, verbatim: "The stop turn banner should display the date/time-range of the run that created the row." / "In the stop turn banner the delta
 column should be last."), so the whole fleet score fits one screen without
@@ -20,9 +20,16 @@ the input passes through untouched, so a refused or missing grid is never hidden
 import re
 import sys
 
-CELLW = 77   # 82 until the M3 column left (Lon 2026-11-14 12:2x CST: "Remove the redundant M3 column.", every row is graded in mode 3, so M3 repeated Pass); 81 until the M4 column left (Lon 2026-11-12 12:1x); 76 until Run became Earliest and Latest (Lon 2026-11-12 19:0x)
+CELLW = 68   # 77 until the Lang column left (Lon 2026-11-15 12:1x CST); before it 82 until the M3 column left (Lon 2026-11-14 12:2x CST: "Remove the redundant M3 column.", every row is graded in mode 3, so M3 repeated Pass); 81 until the M4 column left (Lon 2026-11-12 12:1x); 76 until Run became Earliest and Latest (Lon 2026-11-12 19:0x)
 WIDTH = 2 * CELLW + 3
 STATE = {"DONE": "✓", "VOID": "V", "NO READING": "?", "": ""}
+
+
+# THERE IS NO LANG COLUMN: THE LANGUAGE IS THE SUITE NAME'S PREFIX (Lon 2026-11-15 12:1x CST, in the grader's window, verbatim: "Let's remove the language column
+# and put lang as the prefix, for instance IconBench, etc. That will save space." / "So then this will me a mass name change." / "Fix the names."; said when the
+# banner, at 115 suites, passed the size at which Claude Code shows a hook's output as persisted-output). The names themselves were changed in SUITES.tsv that day
+# (util_suite_banner.py --nick, 43 of them: Gimpel is SnoGimpel, IcnBench is IconBench, Roast is RakRoast), so this filter only leaves the column out. The rows keep
+# the grid's order, by language and then by name, so each language's suites still stand together.
 
 
 def cut(s, w=WIDTH):
@@ -63,13 +70,13 @@ def main():
         st = r.get("State", "")
         ds = STATE.get(st, st[:1]) if st else r.get("Δ", "")
         ex = (r.get("Excl", "") or "").strip() or "-"
-        s = f"{r.get('Lang',''):<8} {r.get('Suite',''):<12} {r.get('Pass',''):>4}/{r.get('Total',''):<4} {ex:>4} {r.get('Wall',''):>6} {r.get('Earliest',''):<11} {r.get('Latest',''):<11} {r.get('Pct',''):>4} {ds:>4}"
+        s = f"{r.get('Suite',''):<12} {r.get('Pass',''):>4}/{r.get('Total',''):<4} {ex:>4} {r.get('Wall',''):>6} {r.get('Earliest',''):<11} {r.get('Latest',''):<11} {r.get('Pct',''):>4} {ds:>4}"
         return s[:CELLW].ljust(CELLW)
 
     half = (len(rows) + 1) // 2
     left, right = rows[:half], rows[half:]
     out = [cut(h) for h in head if h.strip()]
-    hdr = f"{'Lang':<8} {'Suite':<12} {'Pass/Tot':<9} {'Excl':>4} {'Min':>6} {'Earliest':<11} {'Latest':<11} {'Pct':>4} {'Δ':>4}".ljust(CELLW)
+    hdr = f"{'Suite':<12} {'Pass/Tot':<9} {'Excl':>4} {'Min':>6} {'Earliest':<11} {'Latest':<11} {'Pct':>4} {'Δ':>4}".ljust(CELLW)
     out.append(hdr + " │ " + hdr)
     for i in range(half):
         l = fmt(left[i])

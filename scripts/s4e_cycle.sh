@@ -323,7 +323,7 @@ runner_row() {   # key -> "kind lang dir" of its SUITE_RUNNERS.tsv row, dir from
 # --open-row refuses, so a row is named by hand (util_suite_banner.py --nick), never cut mid-word. rosetta-raku RakRosetta, rosetta-unicon UniRosetta,
 # uni_ipl UniIpl, power_of_prolog ProPower. A row named by hand keeps its name (Gimpel, Logtalk, PrologCafe): the rule names only a row the cycle opens.
 cycle_nick() {   # key lang -> the banner nick of a row the cycle opens: prefix and whole words, at most 12 characters, or nothing
-    local ab drop; case "$2" in snobol4) ab=Sno drop="snobol4 snobol sno";; icon) ab=Icn drop="icon icn";; prolog) ab=Pro drop="prolog pl pro";; pascal) ab=Pas drop="pascal pas";; raku) ab=Rak drop="raku rak";; snocone) ab=Snc drop="snocone snc";; rebus) ab=Reb drop="rebus reb";; scriptix) ab=Tix drop="scriptix tix";; *) ab=X drop="";; esac
+    local ab drop; case "$2" in snobol4) ab=Sno drop="snobol4 snobol sno";; icon) ab=Icon drop="icon icn";; prolog) ab=Pro drop="prolog pl pro";; pascal) ab=Pas drop="pascal pas";; raku) ab=Rak drop="raku rak";; snocone) ab=Snc drop="snocone snc";; rebus) ab=Reb drop="rebus reb";; scriptix) ab=Tix drop="scriptix tix";; *) ab=X drop="";; esac
     case "$1" in gate_cases_*) echo "${ab}Cases"; return 0;; esac
     case "$2:-$1-" in icon:*[-_]uni[-_]*|icon:*[-_]unicon[-_]*) ab=Uni drop="$drop unicon uni";; esac
     printf '%s' "$1" | awk -F'[-_]' -v ab="$ab" -v drop="$drop of the" 'BEGIN { n = split(drop, d, " "); for (i = 1; i <= n; i++) skip[d[i]] = 1 }
