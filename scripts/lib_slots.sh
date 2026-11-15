@@ -53,12 +53,17 @@ s4e_slot_hold() {
              if [ "${S4E_CLASS:-}" = grader ]; then grader=1; hi=$((n - 1)); else hi=$((n - 1 - ${S4E_RUN_GRADER_RESERVED:-$S4E_RUN_GRADER_RESERVED_DEFAULT})); [ "$hi" -ge 0 ] || hi=0; fi ;;
         *) return 2 ;;
     esac
-    local one=0 res="${S4E_RUN_GRADER_RESERVED:-$S4E_RUN_GRADER_RESERVED_DEFAULT}" cores; cores="$(s4e_cores_conf cores)"
+    local one=0 slo=0 res="${S4E_RUN_GRADER_RESERVED:-$S4E_RUN_GRADER_RESERVED_DEFAULT}" cores; cores="$(s4e_cores_conf cores)"
     if [ -n "$cores" ] && [ "$cores" -ge 1 ]; then   # THE ONE CORE BUDGET: the file is there, so this take is one token of the one count, compile or run
         [ -n "${S4E_CORE_HELD:-}${S4E_RUN_SLOT_HELD:-}" ] && return 1   # NO NESTED TAKE: the caller runs its command on its parent's token (rc 1, not the refusal's 2)
         one=1; dir="${S4E_RUN_SLOT_DIR:-/tmp/s4e-run-slots}"; n="$cores"; cap="$(s4e_cores_conf seat)"; cap="${cap:-$n}"; [ "$cap" -ge 1 ] || cap=1
         res="$(s4e_cores_conf grader)"; res="${res:-0}"; [ "$res" -lt "$n" ] || res=$((n - 1))
         if [ "${S4E_CLASS:-}" = grader ]; then grader=1; hi=$((n - 1)); else grader=0; hi=$((n - 1 - res)); fi
+        # seats=S: THE SEATS' SHARE OF THE ONE COUNT, the mirror of grader=G (the cio 2026-11-14, on the cqo's measurement): the bottom S tokens are never taken by
+        # S4E_CLASS=grader, so a seat's compile or run waits only for another seat. MEASURED before it, 00:50Z to 01:50Z, cores=14 grader=6: the grader waited for a run
+        # token 776 times, so the 8 shared tokens always had a crowd of its takers polling for them, and a seat's compile, a second or two of work, waited 49 to 108 s
+        # each (cqo 145 waits, 8178 s; coo 35, 2289 s; cfo 16, 1492 s). A share of the one count, no second limit; with no seats line nothing changes.
+        slo="$(s4e_cores_conf seats)"; slo="${slo:-0}"; [ "$slo" -le $((n - res)) ] || slo=$((n - res))
     fi
     sfd=7; seat="$(s4e_slot_seat)"
     mkdir -p "$dir/seat/$seat" 2>/dev/null || return 1
@@ -85,7 +90,7 @@ s4e_slot_hold() {
     # THE GRADER TAKES ITS RESERVED SLOTS FIRST (the coo's measurement of 2026-11-11 01:25, CIO-120: it sat in two of the seats' four slots while three of
     # its own four stood empty, because every taker tried slot 0 first): the reserved range, the top of the pool, then the shared slots.
     local order res_lo
-    if [ "$grader" = 1 ]; then res_lo=$((n - res)); [ "$res_lo" -ge 0 ] || res_lo=0; order="$(seq "$res_lo" "$hi") $([ "$res_lo" -gt 0 ] && seq 0 $((res_lo - 1)))"
+    if [ "$grader" = 1 ]; then res_lo=$((n - res)); [ "$res_lo" -ge 0 ] || res_lo=0; order="$(seq "$res_lo" "$hi") $([ "$res_lo" -gt "$slo" ] && seq "$slo" $((res_lo - 1)))"
     else order="$(seq 0 "$hi")"; fi
     while :; do
         for i in $order; do
@@ -134,7 +139,31 @@ g = h._run_slot(); print('grader', os.path.basename(g.pool_f.name), g.seat_f is 
     grep -qx 'seat slot[01] seat/probe_h/[01]' "$T/py.out" && grep -qx 'grader slot2 True' "$T/py.out" || why="$why arm 5: the harness's taker did not follow the file ($(tr '\n' ';' < "$T/py.out" | cut -c1-160));"
     env -u S4E_CORE_HELD -u S4E_RUN_SLOT_HELD -u S4E_CLASS S4E_CORES_CONF="$T/absent" S4E_RUN_SLOT_DIR="$T/run2" S4E_CC_SLOT_DIR="$T/cc2" S4E_SLOT_WAITS=/dev/null S4E_SEAT=probe_a bash "$here/util_cc_slot.sh" true > /dev/null 2>&1; rc=$?
     [ "$rc" = 0 ] && [ -e "$T/cc2/slot0" ] && [ ! -e "$T/run2/slot0" ] || why="$why arm 6: with no file a compile did not take the compile pool of before (rc $rc);"
-    if [ -z "$why" ]; then rm -rf "$T"; echo "CORES probe ok arms=6 (one count for compiles and runs: two shared tokens held by a compile and a run kept a third of each kind out, refused rc 2 with nothing run; the grader took its reserved token; a compile under a held token ran at once; the harness's taker followed the same file; with no file the compile pool of before)"; return 0; fi
+    # arm 7, seats=S: cores=3 grader=1 seats=1. The grader takes its reserved token, then the one shared token, and a third grader taker is kept out of the seats' token
+    # (rc 2 at its bound, nothing run) while a seat takes that token at once; an order of events, never a clock.
+    printf 'cores=3\ngrader=1\nseat=2\nseats=1\n' > "$T/CORES.conf"
+    local g1 g2
+    "${E[@]}" S4E_RUN_SLOT_DIR="$T/run7" S4E_SEAT=probe_g S4E_CLASS=grader bash "$here/util_run_slot.sh" sleep 300 > /dev/null 2>&1 & g1=$!
+    "${E[@]}" S4E_RUN_SLOT_DIR="$T/run7" S4E_SEAT=probe_g S4E_CLASS=grader bash "$here/util_run_slot.sh" sleep 300 > /dev/null 2>&1 & g2=$!
+    held7() { n=0; for i in 1 2; do [ -e "$T/run7/slot$i" ] && ! flock -n "$T/run7/slot$i" true 2>/dev/null && n=$((n + 1)); done; printf '%s' "$n"; }
+    i=0; while [ "$(held7)" != 2 ] && [ "$i" -lt 200 ]; do sleep 0.1; i=$((i + 1)); done
+    [ "$(held7)" = 2 ] || why="$why arm 7: two grader takers did not hold the reserved and the shared token (held $(held7));"
+    "${E[@]}" S4E_RUN_SLOT_DIR="$T/run7" S4E_SEAT=probe_g S4E_CLASS=grader S4E_SLOT_WAIT_MAX=1 bash "$here/util_run_slot.sh" sh -c ": > '$T/grader3'" > /dev/null 2>&1; rc=$?
+    [ "$rc" = 2 ] && [ ! -e "$T/grader3" ] || why="$why arm 7: a third grader taker was not kept out of the seats' token (rc $rc);"
+    "${E[@]}" S4E_RUN_SLOT_DIR="$T/run7" S4E_SEAT=probe_a S4E_SLOT_WAIT_MAX=20 bash "$here/util_cc_slot.sh" sh -c ": > '$T/seat7'" > /dev/null 2>&1; rc=$?
+    [ "$rc" = 0 ] && [ -e "$T/seat7" ] || why="$why arm 7: a seat's compile did not take the seats' token while the grader held the rest (rc $rc);"
+    "${E[@]}" S4E_RUN_SLOT_DIR="$T/run7" S4E_SEAT=probe_g S4E_CLASS=grader python3 -c "
+import sys, os, threading
+sys.path.insert(0, '$here')
+import corpus_suite_harness as h
+r = []
+t = threading.Thread(target=lambda: r.append(h._run_slot()), daemon=True); t.start(); t.join(2)
+print('grader-kept-out' if not r else 'grader-took ' + os.path.basename(r[0].pool_f.name), flush=True)
+os._exit(0)
+" > "$T/py7.out" 2>&1
+    grep -qx 'grader-kept-out' "$T/py7.out" || why="$why arm 7: the harness's taker let the grader into the seats' token ($(tr '\n' ';' < "$T/py7.out" | cut -c1-160));"
+    kill "$g1" "$g2" 2>/dev/null; wait "$g1" "$g2" 2>/dev/null
+    if [ -z "$why" ]; then rm -rf "$T"; echo "CORES probe ok arms=7 (seats=S keeps the grader out of the seats' tokens and a seat takes one at once; one count for compiles and runs: two shared tokens held by a compile and a run kept a third of each kind out, refused rc 2 with nothing run; the grader took its reserved token; a compile under a held token ran at once; the harness's taker followed the same file; with no file the compile pool of before)"; return 0; fi
     echo "CORES probe RED:$why"; echo "    kept: $T"; return 1
 }
 

@@ -876,7 +876,7 @@ def _cores_conf():
     c = {}
     try:
         for line in open(os.environ.get("S4E_CORES_CONF") or "/home/resources/postoffice/CORES.conf"):
-            m = re.match(r"^(cores|grader|seat|wait)=(\d+)\s*$", line)
+            m = re.match(r"^(cores|grader|seat|seats|wait)=(\d+)\s*$", line)
             if m:
                 c[m.group(1)] = int(m.group(2))
     except OSError:
@@ -925,7 +925,8 @@ def _run_slot():
                 time.sleep(0.25 + random.random() * 0.25)
         seat_f = None if grader else take([os.path.join(sd, "%d" % i) for i in range(cap)])
         _res_lo = max(0, n - res)
-        _order = (list(range(_res_lo, hi + 1)) + list(range(0, _res_lo))) if grader else list(range(hi + 1))   # the grader takes its reserved slots first (CIO-120)
+        _slo = min(one.get("seats", 0), _res_lo) if one else 0   # seats=S of CORES.conf: the bottom S tokens are the seats' alone, never the grader's (lib_slots.sh s4e_slot_hold, the same rule)
+        _order = (list(range(_res_lo, hi + 1)) + list(range(_slo, _res_lo))) if grader else list(range(hi + 1))   # the grader takes its reserved slots first (CIO-120)
         pool_f = take([os.path.join(d, "slot%d" % i) for i in _order])
         return _SlotHold(seat_f, pool_f)
     except OSError:
