@@ -68,13 +68,24 @@ def one_disk(name, root=None):
     return _pick({"corpus": "S4E_CORPUS", "harness": "S4E_HARNESS", ".github": "S4E_GITHUB"}[name], name, root)[1] == "one-disk"
 
 
+def _render_pick(root=None):
+    # lib_paths.sh EXPORTS what it picked, so a tool run from a shell that sourced it reads S4E_GITHUB=/home/.github and _pick answers "env": the
+    # checkout named by the environment is still the checkout (the cio 2026-11-15, on the grader's measurement: SCORE.md in /home/.github rewritten
+    # again at 2026-11-15T05:36Z, the keeper stalled 03:48Z to 06:08Z; every suite runner sources lib_paths.sh before it writes its row).
+    gh, how = _pick("S4E_GITHUB", ".github", root)
+    one = Path(os.environ.get("S4E_ONE_DISK_TOP", "/home")) / ".github"
+    if how == "env" and _seat_home() and (one / ".git").exists() and os.path.realpath(str(gh)) == os.path.realpath(str(one)):
+        return one, "one-disk"
+    return gh, how
+
+
 def render_dir(suites_tsv=None, root=None):
     """WHERE A TOOL WRITES WHAT IT USED TO WRITE INTO .github (SCORE.md, LATEST.tsv): the .github folder itself while that is a root's own clone, a sibling
     or named by S4E_GITHUB, and NEVER a one-disk checkout (the cio 2026-11-14, on the grader's measurement: a suite row write outside the cycle re-rendered
     /home/.github/SCORE.md in place, the keeper read "it holds tracked changes" 348 times from 18:31Z to 01:00Z, /home/.github stood three landings behind
     origin and every seat loaded stale skills). Under the one-disk layout it is the folder of the suite record (suites_tsv), and when that is unnamed or is
     the checkout itself, <top>/resources/progress, <top> being S4E_ONE_DISK_TOP or /home: the render lives beside the record it is rendered from."""
-    gh, how = _pick("S4E_GITHUB", ".github", root)
+    gh, how = _render_pick(root)
     if how != "one-disk":
         return gh
     if suites_tsv:
@@ -87,7 +98,7 @@ def render_dir(suites_tsv=None, root=None):
 def render_file(name, suites_tsv=None, root=None):
     """The path of one such file. Under the one-disk layout a file that is not there yet is seeded once from the checkout's tracked copy, by a link of a
     private copy, so two first writers never overwrite one another's row."""
-    gh, how = _pick("S4E_GITHUB", ".github", root)
+    gh, how = _render_pick(root)
     p = render_dir(suites_tsv, root) / name
     if how == "one-disk" and not p.exists() and (gh / name).is_file():
         tmp = p.with_name("%s.seed.%d" % (name, os.getpid()))
@@ -144,13 +155,23 @@ def _probe_render():
         got = ask("h.render_file('SCORE.md')", S4E_HOME=os.path.join(t, "scratchroot"))
         if got != os.path.join(t, "scratchroot", ".github", "SCORE.md"):
             bad.append("arm 6 (a scratch root: its own sibling, as before) got %s" % got)
+        got = ask("h.render_file('SCORE.md')", S4E_ONE_DISK_TOP=top, S4E_HOME=seat, S4E_GITHUB=gh)
+        if got != want:
+            bad.append("arm 8 (the checkout named by S4E_GITHUB, as lib_paths.sh exports it: still never the checkout) got %s" % got)
+        got = ask("h.render_file('SCORE.md', %r)" % os.path.join(gh, "SUITES.tsv"), S4E_ONE_DISK_TOP=top, S4E_HOME=seat, S4E_GITHUB=gh)
+        if got != want:
+            bad.append("arm 9 (the same with the record named inside the checkout) got %s" % got)
+        other = os.path.join(t, "other"); os.makedirs(other)
+        got = ask("h.render_file('SCORE.md')", S4E_ONE_DISK_TOP=top, S4E_HOME=seat, S4E_GITHUB=other)
+        if got != os.path.join(other, "SCORE.md"):
+            bad.append("arm 10 (S4E_GITHUB naming any other folder: that folder, as before) got %s" % got)
         if open(os.path.join(gh, "SCORE.md")).read() != "tracked\n" or sorted(os.listdir(gh)) != [".git", "SCORE.md"]:
             bad.append("arm 7 (the one-disk checkout is untouched)")
     finally:
         shutil.rmtree(t, ignore_errors=True)
     for b in bad:
         print("RENDER_HOME RED: " + b)
-    print("RENDER_HOME %s arms=7 (a render is never written into a one-disk checkout)" % ("RED" if bad else "ok"))
+    print("RENDER_HOME %s arms=10 (a render is never written into a one-disk checkout)" % ("RED" if bad else "ok"))
     return 1 if bad else 0
 
 
