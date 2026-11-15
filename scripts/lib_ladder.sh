@@ -25,7 +25,8 @@
 # POPULATION: every origin `ladder__rungNN_<slug>` of corpus/tests/<suite>/ALL.csv with NN <= N, materialized
 # OUT of the rungs by origin through lib_rungs_extract.sh -- keyed on the CSV `origin` column, never on the
 # entry name or a filename glob.
-# EACH WITNESS RUNS ALONE IN BOTH MODES:  m3 = scrip --run  ·  m4 = scrip --compile --out=x.s + as --64 + gcc -no-pie + run
+# EVERY WITNESS IS GRADED BY corpus_suite_harness.py, IN MODE 3, in one run naming the selected entries (the cio 2026-11-15; before it this body ran each
+# witness itself in both modes, with no mask, no companion and no run directory of its own).
 # Verdict per witness per mode: stdout byte-equal to the .ref AND rc equal to the declared rc (ALL.rc,
 # keyed on the entry NAME; default 0, and the file need not exist). A timeout is a FAIL(rc=124), never a hang.
 # ⭐ REFS ARE ORACLE-CUT, NOT HAND-AUTHORED, and this body never re-invokes an oracle at grading time: the
@@ -105,69 +106,36 @@ PY
   # ⭐ NOT BEFORE `--list`: listing witnesses is not grading them, and a refusal there would demand a rebuild
   # to answer a question the binary is not consulted for. The refusal belongs where the verdict is minted.
   "$HERE/util_require_fresh.sh" --gate "${LADDER_SUITE}-ladder" "$SCRIP" "$RT/libscrip_rt.so" || exit 2
-  wantrc() { local n="$1"; [ -f "$RUNGS_DIR/ALL.rc" ] || { echo 0; return; }; local v; v=$(awk -F'\t' -v n="$n" '$1==n{print $2; exit}' "$RUNGS_DIR/ALL.rc"); printf '%s\n' "${v:-0}"; }
+  # THE LADDER GRADES THROUGH THE ONE GRADER (the cio 2026-11-15, on the cqo's measurement and the coo's word; the one-grader design, CIO-15). This body ran every
+  # witness itself: no mask row (ALL.mask), no staged companion (ALL.path), the m3 run in the caller's own directory. MEASURED on SCRIP 902150c31, corpus 58b11e54a,
+  # test_snobol4_ladder.sh --to 42: ladder__rung29_include_control_statement m3=FAIL(rc=231) m4=NOBUILD (its include file was never staged) and ladder__rung30_dump
+  # FAIL in both modes (its two masked lines, &FILE and &LASTFILE, compared raw), both PASS through corpus_suite_harness.py on the same tree; and nine .txt files the
+  # file rungs write were left in the seat's root, so the stamp read DIRTY on a clean tree. Now the selected witnesses are named to corpus_suite_harness.py in ONE run,
+  # in mode 3 (Lon: mode 3 only, COO-487; the harness drops mode 4 from any --modes itself), with the progress store off: the masks, the companions, the declared
+  # sizes and command line, the wanted rc and the isolated run directory are the harness's own, never a second copy here. A witness is PASS unless the harness names
+  # it non-PASS, and that absence counts only after the harness's own SUITE_BOARD line read the same number of entries (skill gates-and-witnesses section 1).
   local W; W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
-  local n=0 pass=0 fail=0 pair src ref name want r3 r4 v3 v4; local -A rp rf
-  # ⭐ THE DEBT COUNTER IS PART OF THE CURE, NOT A DECORATION. Capturing stderr without saying how much of it nobody
-  # asserts would replace a silent false green with a silent uncompared stream -- the same defect one step quieter.
-  # This prints, on every run, how many witnesses EMIT stderr that no rungs block asserts. It is a work list.
-  local unasserted=0 unasserted_names="" _decl_nums="" undeclared=""
+  local n=0 pass=0 fail=0 pair name v3 _parts="" _hrc _board _tot; local -A rp rf ename
+  local unasserted=0 unasserted_names="" undeclared=""
+  [ "$SCRIP" = "$ROOT/scrip" ] || refuse "SCRIP=$SCRIP is not this root's own binary ($ROOT/scrip): the ladder grades through corpus_suite_harness.py, which runs the root's build; run it from that tree's root"
   for pair in $(printf '%s\n' "${origins[@]}" | sort -n | tr ' ' ':'); do
-    r=${pair%%:*}; o=${pair#*:}; src="$W/$o$RUNGS_EXT"; ref="$W/$o.ref"
-    rungs_extract_origin "$o" "$src" "$ref" >/dev/null 2>&1 || refuse "cannot extract $o from the rungs suite (lib_rungs_extract.sh)"
-    name=$(rungs_entry_for_origin "$o") || refuse "no entry name for origin $o"
-    want=$(wantrc "$name"); n=$((n+1))
-    # ⛔⭐ STDIN (row icon-construct-ladder-from-rung-0, seat01): rungs_extract_origin already writes
-    # $W/$o.in via rungs_extract_name's --out-in whenever the origin has one (lib_rungs_extract.sh) --
-    # this loop just never looked for it and fed /dev/null unconditionally, so no ladder witness in ANY
-    # language could ever legitimately read() stdin. Purely additive: no .in present -> /dev/null, byte
-    # for byte the prior behavior.
-    local stdin_src="$W/$o.in"; [ -f "$stdin_src" ] || stdin_src=/dev/null
-    # ⛔⭐ STDERR IS CAPTURED, AND COMPARED ONLY WHERE THE RUNGS DECLARES IT (hq_T 2026-09-09; hq_B .github 367b083e
-    # and hq_V's FINDING measured the same gap from both ends, the officer ordered the cure R-457 item 3).
-    # THE DEFECT: these two graded runs sent stderr to /dev/null, and Icon's &trace writes EXCLUSIVELY there
-    # (core.c trace_print_icon) -- so every trace rung in the Icon ladder was graded on stdout alone and COULD NOT FAIL
-    # for the reason it was minted. procedure_write_264 holds the one-line ref `A:end` and PASSES while the oracle
-    # prints seven lines. corpus/tests/icon/ALL.ref contains ZERO trace-shaped lines. The Arizona suite runner had this
-    # right all along (2>&1), which is why tracer.std carries all 85 trace lines -- so the PACKAGES instrument was right
-    # and the LADDER instrument was wrong, and the ladder is where rungs are minted.
-    # ⛔ WHY NOT SIMPLY 2>&1 LIKE ARIZONA, which is what the ruling first said: hq_V MEASURED that Icon writes a trace
-    # line's first column as the SOURCE FILE NAME in a fixed 13-character field truncated FROM THE LEFT, and
-    # rungs_extract_origin materialises a witness under its ORIGIN name (40-60 chars). A merged ref is therefore pinned
-    # to the extraction basename -- a self-pin on a harness temp filename, which is a WORSE instrument than the one it
-    # replaces and would rot the first time an origin is renamed. A separate stream has no such column.
-    # ⭐ ADDITIVE, EXACTLY LIKE THE .in SIDECAR ABOVE: no $o.err declared -> stderr is captured but NOT compared, which
-    # is byte-for-byte today's behaviour for all 886 entries. A declared block makes it an assertion. So this landing
-    # changes ZERO verdicts by construction, and every later change is a deliberate one -- which is the whole reason it
-    # is safe to land two days before the announcement.
-    local err_ref="$W/$o.err"
-    # ⛔⭐ THE WITNESS'S OWN COMMAND LINE (Lon 2026-09-28, R-1353; the coo's row instruments-every-runner-passes-each-units-declared-
-    # heap-and-stack-...): extract writes the entry's declared heap and stack (<stem>.heap / <stem>.stack) and compile and run args
-    # (<stem>.cmdline) beside the witness, and the ladder READS them -- through lib_declared_arena.sh and the harness's own reader, never a
-    # copy -- exactly as the harness runs the same entry: m3 scrip --run <compile_args> <sizes> src -- <run_args>; m4 compiles with
-    # <compile_args> and no size, and the binary runs <sizes> -- <run_args>. A witness that declares no size is NAMED at the end, never
-    # run silently at the default. (It used to type SCRIP_SNO_STMTKW=1 for every language and read no declaration at all.)
-    local sw ca ra _cl
-    sw=$(declared_switches_beside "$src") || refuse "lib_declared_arena.sh refused the declared heap/stack beside $o -- fix the ALL.csv row; this ladder does not grade around it"
-    _cl=$(ladder_cmdline_words "$src") || refuse "the harness refused the declared command line beside $o"
-    ca=$(printf '%s\n' "$_cl" | sed -n 1p); ra=$(printf '%s\n' "$_cl" | sed -n 2p)
-    [ -n "$sw" ] || undeclared="$undeclared $o"
-    # shellcheck disable=SC2086
-    r3=$( ( "$TIMEOUT_RETRY" "$T" "$SCRIP" --run $ca $sw "$src" ${ra:+-- $ra} <"$stdin_src" >"$W/$o.m3.out" 2>"$W/$o.m3.err"; echo $? ) 2>/dev/null )
-    [ -s "$W/$o.m3.err" ] && [ ! -f "$err_ref" ] && unasserted=$((unasserted+1)) && unasserted_names="$unasserted_names $o"
-    if [ "$r3" = "$want" ] && cmp -s "$W/$o.m3.out" "$ref" && { [ ! -f "$err_ref" ] || cmp -s "$W/$o.m3.err" "$err_ref"; }; then v3=PASS; pass=$((pass+1)); rp[$r]=$(( ${rp[$r]:-0} + 1 )); else v3="FAIL(rc=$r3)"; fail=$((fail+1)); rf[$r]=$(( ${rf[$r]:-0} + 1 )); fi
-    v4=NOBUILD
-    # shellcheck disable=SC2086
-    if (cd "$W" && "$TIMEOUT_RETRY" "$T" "$SCRIP" --compile $ca --out="$o.s" "$src" </dev/null >/dev/null 2>&1) && [ -s "$W/$o.s" ] \
-       && as --64 -o "$W/$o.o" "$W/$o.s" 2>/dev/null && gcc -no-pie -o "$W/$o.bin" "$W/$o.o" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>/dev/null; then
-      # shellcheck disable=SC2086
-      r4=$( ( "$TIMEOUT_RETRY" "$T" "$W/$o.bin" $sw ${ra:+-- $ra} <"$stdin_src" >"$W/$o.m4.out" 2>"$W/$o.m4.err"; echo $? ) 2>/dev/null )
-      if [ "$r4" = "$want" ] && cmp -s "$W/$o.m4.out" "$ref" && { [ ! -f "$err_ref" ] || cmp -s "$W/$o.m4.err" "$err_ref"; }; then v4=PASS; else v4="FAIL(rc=$r4)"; fi
-    fi
-    if [ "$v4" = PASS ]; then pass=$((pass+1)); rp[$r]=$(( ${rp[$r]:-0} + 1 )); else fail=$((fail+1)); rf[$r]=$(( ${rf[$r]:-0} + 1 )); fi
-    printf 'rung %2d  %-44s m3=%-12s m4=%-12s (%s, want rc=%s)\n' "$r" "$o" "$v3" "$v4" "$name" "$want"
+    o=${pair#*:}; name=$(rungs_entry_for_origin "$o") || refuse "no entry name for origin $o"
+    [ -n "$name" ] || refuse "no entry name for origin $o"
+    ename[$o]="$name"; _parts="$_parts${_parts:+,}entry:$name"; n=$((n+1))
   done
-  for r in $(printf '%s\n' "${!rp[@]}" "${!rf[@]}" | sort -nu); do printf 'rung %2d summary: PASS=%d FAIL=%d (witness x mode)\n' "$r" "${rp[$r]:-0}" "${rf[$r]:-0}"; done
+  ( cd "$W" && S4E_PROGRESS_OFF=1 SUITE_LIST_ALL=1 python3 -I "$HERE/corpus_suite_harness.py" run "$RUNGS_DIR/ALL$RUNGS_EXT" "$RUNGS_DIR/ALL.ref" --lang "$LADDER_SUITE" --modes m3 --partition "$_parts" > "$W/harness.out" 2> "$W/harness.err" ); _hrc=$?
+  _board=$(grep -m1 '^SUITE_BOARD ' "$W/harness.out")
+  [ -n "$_board" ] || refuse "corpus_suite_harness.py printed no SUITE_BOARD line for the ladder's $n entr(y/ies) (rc=$_hrc): $(grep -m1 -E 'REFUS|GROUND MOVED' "$W/harness.out" "$W/harness.err" | cut -c1-300)"
+  _tot=$(printf '%s\n' "$_board" | sed -nE 's/.* m3_n=([0-9]+) .*/\1/p')
+  [ "$_tot" = "$n" ] || refuse "corpus_suite_harness.py graded ${_tot:-no} entr(y/ies) in mode 3 where the ladder named $n: $(printf '%s' "$_board" | cut -c1-200)"
+  for pair in $(printf '%s\n' "${origins[@]}" | sort -n | tr ' ' ':'); do
+    r=${pair%%:*}; o=${pair#*:}; name="${ename[$o]}"
+    v3=$(awk -v t=" m3 $name: " 'substr($0, 1, 2) == "  " { i = index($0, t); if (i > 0) { print substr($0, 3, i - 3); exit } }' "$W/harness.err")
+    if [ -z "$v3" ]; then v3=PASS; pass=$((pass+1)); rp[$r]=$(( ${rp[$r]:-0} + 1 )); else v3=$(printf '%s' "$v3" | cut -c1-24); fail=$((fail+1)); rf[$r]=$(( ${rf[$r]:-0} + 1 )); fi
+    printf 'rung %2d  %-44s m3=%-12s (%s)\n' "$r" "$o" "$v3" "$name"
+  done
+  [ "$fail" = 0 ] || grep -E '^  .* m3 [^ ]+: ' "$W/harness.err" | cut -c1-300
+  for r in $(printf '%s\n' "${!rp[@]}" "${!rf[@]}" | sort -nu); do printf 'rung %2d summary: PASS=%d FAIL=%d (witnesses, mode 3)\n' "$r" "${rp[$r]:-0}" "${rf[$r]:-0}"; done
   [ -n "$undeclared" ] && printf 'LADDER %s: UNDECLARED heap/stack on %d of %d witness(es) -- run at the runtime default, named (R-1353: every unit declares its sizes in its ALL.csv row):%s\n' "$SEL" "$(set -- $undeclared; echo $#)" "$n" "$(printf '%s' "$undeclared" | tr ' ' '\n' | head -12 | tr '\n' ' ')"
   [ "$unasserted" -gt 0 ] && printf 'LADDER %s: stderr UNASSERTED on %d of %d witness(es) -- captured, not compared (no ALL.err block):%s\n' "$SEL" "$unasserted" "$n" "$(printf '%s' "$unasserted_names" | tr ' ' '\n' | head -8 | tr '\n' ' ')"
   # ⛔⭐ `git status --short | grep -q .` WAS A PROVENANCE LIE WAITING FOR LOAD, and it is the same defect this session
@@ -180,7 +148,7 @@ PY
   local _sd="" _cd=""
   [ -n "$(git -C "$ROOT" status --short 2>/dev/null)" ] && _sd="-DIRTY"
   [ -n "$(git -C "$S4E_CORPUS" status --short 2>/dev/null)" ] && _cd="-DIRTY"
-  echo "LADDER $SEL: witnesses=$n modes=2 (m3 --run, m4 --compile+as+gcc) graded=$((n*2)) PASS=$pass FAIL=$fail  tree: SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo ?)$_sd corpus=$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo ?)$_cd"
+  echo "LADDER $SEL: witnesses=$n modes=1 (m3, graded by corpus_suite_harness.py) graded=$n PASS=$pass FAIL=$fail  tree: SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo ?)$_sd corpus=$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo ?)$_cd"
   [ "$n" -gt 0 ] || refuse "graded ZERO witnesses -- cannot measure, not a pass"
   # ⛔⭐ A RUNG DECLARED IN LADDER.tsv AND NOT BUILT IS RED, NOT ABSENT. The population comes from ALL.csv's
   # `ladder__rungNN_*` origins, so a rung nobody has written simply is not in it -- and `--to <top>` then
@@ -289,7 +257,7 @@ EOF
   # "no --to given". A provenance stamp whose reproduction line cannot reproduce it is worse than none:
   # the reader who tries it gets a refusal and reads the CELL as stale (hq_T 2026-09-13).
   _decl=$( [ -n "$_unb" ] && printf ' · declared top rung %s, %s rung(s) NOT BUILT (RED by declaration):%s' "$_dtop" "$(set -- $_unb; echo $#)" "$_unb" )
-    _cell="built rungs 0..${_top} PASS $pass/$((n*2)) FAIL $fail${_decl} (witnesses=$n · m3+m4 · test_${_ll}_ladder.sh${TO:+ --to $TO}${ONLY:+ --only $ONLY} · SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo ?) corpus=$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo ?) RT_OPT=-O0)"
+    _cell="built rungs 0..${_top} PASS $pass/$n FAIL $fail${_decl} (witnesses=$n · m3 · test_${_ll}_ladder.sh${TO:+ --to $TO}${ONLY:+ --only $ONLY} · SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo ?) corpus=$(git -C "$S4E_CORPUS" rev-parse --short HEAD 2>/dev/null || echo ?) RT_OPT=-O0)"
     # ⛔⭐ A FILTER THAT MATCHES NOTHING MUST SAY SO, NOT FALL SILENT (hq_T 2026-09-13, on the cfo's
     # measured report). This grep listed the three SUCCESS shapes and nothing else, while
     # util_score_row.py's ONE-RUNNER identity refusal exits 0 (correctly -- a bookkeeping refusal must
@@ -307,6 +275,6 @@ EOF
       elif [ -n "$_w" ]; then echo "SCORE ROW: NOT WRITTEN (util_score_row.py exited 0 but wrote no row; the verdict below is unchanged):"; printf '%s\n' "$_w" | head -3 | cut -c1-200; fi
     else echo "SCORE ROW: UNWRITTEN (util_score_row.py refused; the verdict below is unchanged):"; printf '%s\n' "$_w" | head -3 | cut -c1-200; fi
   fi
-  [ "$fail" -eq 0 ] && { if [ -n "$ONLY" ]; then echo "✅ LADDER OK: rung $ONLY alone PASS $pass/$((n*2))"; else echo "✅ LADDER OK: rungs 0..${_top} PASS $pass/$((n*2))$( [ "${TO:-}" != "" ] && [ "${TO}" != "${_top}" ] && printf ' (requested --to %s; top graded rung is %s)' "$TO" "$_top")"; fi; exit 0; }
-  echo "⛔ LADDER RED: $fail of $((n*2)) witness x mode gradings FAIL (rungs 0..${_top})"; exit 1
+  [ "$fail" -eq 0 ] && { if [ -n "$ONLY" ]; then echo "✅ LADDER OK: rung $ONLY alone PASS $pass/$n"; else echo "✅ LADDER OK: rungs 0..${_top} PASS $pass/$n$( [ "${TO:-}" != "" ] && [ "${TO}" != "${_top}" ] && printf ' (requested --to %s; top graded rung is %s)' "$TO" "$_top")"; fi; exit 0; }
+  echo "⛔ LADDER RED: $fail of $n witnesses FAIL in mode 3 (rungs 0..${_top})"; exit 1
 }
