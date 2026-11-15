@@ -234,6 +234,8 @@ def enforce_mem_limit():
 # RUNS_WEIGHT beside the sessions' slice at 100, so graded and seat runs together are owed the larger part of the one limit when the box is full; inside it the grader's slice
 # stands at GRADER_RUNS_WEIGHT beside ONE sibling for all the seats. While a seat's old flat run slice (s4e-runs-<seat>.slice, before this row) still holds a run, each is a
 # sibling of the grader at 100, so the grader's weight is raised by 100 for each until they are gone: the share cannot drift with the roster or with the transition.
+# HOLDS A RUN is the kernel's own word, populated 1 in the slice's cgroup.events: an empty slice contends for nothing and is not counted (the cio 2026-11-15, MEASURED: 39 flat
+# slices of the worker seats stopped on 2026-11-14 still stood, each with no process, and the grader's slice read 4200 against the seats' 100, 42 parts of 43 where the law says 3 of 4).
 RUNS_SLICE = "s4e-runs.slice"; GRADER_RUNS_SLICE = "s4e-runs-grader.slice"; SEATS_RUNS_SLICE = "s4e-runs-seats.slice"
 RUNS_WEIGHT = 300; GRADER_RUNS_WEIGHT = 300
 
@@ -245,8 +247,15 @@ def _weight(cg):
         return None
 
 
+def _populated(cg):
+    try:
+        return any(l.split() == ["populated", "1"] for l in open(os.path.join(cg, "cgroup.events")))
+    except OSError:
+        return False
+
+
 def weight_actions(top):
-    """[(unit, weight)]: s4e-runs.slice to RUNS_WEIGHT; the grader's run slice to GRADER_RUNS_WEIGHT plus 100 for each old flat seat run slice still standing beside it"""
+    """[(unit, weight)]: s4e-runs.slice to RUNS_WEIGHT; the grader's run slice to GRADER_RUNS_WEIGHT plus 100 for each old flat seat run slice beside it that holds a process"""
     acts = []
     runs = os.path.join(top, FLEET_SLICE, RUNS_SLICE)
     if not os.path.isdir(runs):
@@ -256,7 +265,7 @@ def weight_actions(top):
     g = os.path.join(runs, GRADER_RUNS_SLICE)
     if os.path.isdir(g):
         try:
-            flat = [x for x in os.listdir(runs) if x.endswith(".slice") and x not in (GRADER_RUNS_SLICE, SEATS_RUNS_SLICE)]
+            flat = [x for x in os.listdir(runs) if x.endswith(".slice") and x not in (GRADER_RUNS_SLICE, SEATS_RUNS_SLICE) and _populated(os.path.join(runs, x))]
         except OSError:
             flat = []
         want = min(10000, GRADER_RUNS_WEIGHT + 100 * len(flat))
@@ -864,12 +873,14 @@ def probe_one_limit(scratch=False):
         arm("mem_noconf", mem_limit_actions(os.path.join(T, "m"), None, None) == [], "no mem line must change nothing")
         mc = os.path.join(T, "MEM.conf"); open(mc, "w").write("cores=4\nmem=26\nmem_seats=16\n")
         mb = os.path.join(T, "MEMBAD.conf"); open(mb, "w").write("mem=8\nmem_seats=9\n")
-        def wplant(rel, w):
+        def wplant(rel, w, pop=None):
             d = os.path.join(T, "w", rel); os.makedirs(d, exist_ok=True); open(os.path.join(d, "cpu.weight"), "w").write("%d\n" % w)
+            if pop is not None: open(os.path.join(d, "cgroup.events"), "w").write("populated %d\nfrozen 0\n" % pop)
         wplant("s4e.slice/s4e-runs.slice", 100); wplant("s4e.slice/s4e-runs.slice/s4e-runs-grader.slice", 300); wplant("s4e.slice/s4e-runs.slice/s4e-runs-seats.slice", 100)
-        wplant("s4e.slice/s4e-runs.slice/s4e-runs-junior_01.slice", 100); wplant("s4e.slice/s4e-runs.slice/s4e-runs-junior_02.slice", 100)
+        wplant("s4e.slice/s4e-runs.slice/s4e-runs-junior_01.slice", 100, 1); wplant("s4e.slice/s4e-runs.slice/s4e-runs-junior_02.slice", 100, 1)
+        wplant("s4e.slice/s4e-runs.slice/s4e-runs-junior_03.slice", 100, 0); wplant("s4e.slice/s4e-runs.slice/s4e-runs-junior_04.slice", 100)
         wgot = sorted(weight_actions(os.path.join(T, "w")))
-        arm("weights_law", wgot == sorted([("s4e-runs.slice", 300), ("s4e-runs-grader.slice", 500)]), "weight actions %s: the runs slice goes to 300 and the grader to 300 plus 100 for each old flat seat slice" % wgot)
+        arm("weights_law", wgot == sorted([("s4e-runs.slice", 300), ("s4e-runs-grader.slice", 500)]), "weight actions %s: the runs slice goes to 300 and the grader to 300 plus 100 for each old flat seat slice that holds a process, an empty one and one with no events file not counted" % wgot)
         import shutil as _sh
         _sh.rmtree(os.path.join(T, "w", "s4e.slice/s4e-runs.slice/s4e-runs-junior_01.slice")); _sh.rmtree(os.path.join(T, "w", "s4e.slice/s4e-runs.slice/s4e-runs-junior_02.slice"))
         wplant("s4e.slice/s4e-runs.slice", 300); wplant("s4e.slice/s4e-runs.slice/s4e-runs-grader.slice", 500)
