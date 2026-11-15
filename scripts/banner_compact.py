@@ -20,7 +20,7 @@ the input passes through untouched, so a refused or missing grid is never hidden
 import re
 import sys
 
-CELLW = 68   # 77 until the Lang column left (Lon 2026-11-15 12:1x CST); before it 82 until the M3 column left (Lon 2026-11-14 12:2x CST: "Remove the redundant M3 column.", every row is graded in mode 3, so M3 repeated Pass); 81 until the M4 column left (Lon 2026-11-12 12:1x); 76 until Run became Earliest and Latest (Lon 2026-11-12 19:0x)
+CELLW = 71   # 68 with a Suite column of 12 until the names took the FULL language name (Lon 2026-11-15 12:4x CST: "Go with full language name as prefix, icon, pascal, prolog, raku, rebus, snobol4, snocone."; the column is 15); 77 until the Lang column left (Lon 2026-11-15 12:1x CST); before it 82 until the M3 column left (Lon 2026-11-14 12:2x CST: "Remove the redundant M3 column.", every row is graded in mode 3, so M3 repeated Pass); 81 until the M4 column left (Lon 2026-11-12 12:1x); 76 until Run became Earliest and Latest (Lon 2026-11-12 19:0x)
 WIDTH = 2 * CELLW + 3
 STATE = {"DONE": "✓", "VOID": "V", "NO READING": "?", "": ""}
 
@@ -28,7 +28,7 @@ STATE = {"DONE": "✓", "VOID": "V", "NO READING": "?", "": ""}
 # THERE IS NO LANG COLUMN: THE LANGUAGE IS THE SUITE NAME'S PREFIX (Lon 2026-11-15 12:1x CST, in the grader's window, verbatim: "Let's remove the language column
 # and put lang as the prefix, for instance IconBench, etc. That will save space." / "So then this will me a mass name change." / "Fix the names."; said when the
 # banner, at 115 suites, passed the size at which Claude Code shows a hook's output as persisted-output). The names themselves were changed in SUITES.tsv that day
-# (util_suite_banner.py --nick, 43 of them: Gimpel is SnoGimpel, IcnBench is IconBench, Roast is RakRoast), so this filter only leaves the column out. The rows keep
+# (util_suite_banner.py --nick: first a short prefix, then on his next word the full language name: Gimpel is Snobol4Gimpel, IcnBench is IconBench, Roast is RakuRoast), so this filter only leaves the column out. The rows keep
 # the grid's order, by language and then by name, so each language's suites still stand together.
 
 
@@ -70,13 +70,13 @@ def main():
         st = r.get("State", "")
         ds = STATE.get(st, st[:1]) if st else r.get("Δ", "")
         ex = (r.get("Excl", "") or "").strip() or "-"
-        s = f"{r.get('Suite',''):<12} {r.get('Pass',''):>4}/{r.get('Total',''):<4} {ex:>4} {r.get('Wall',''):>6} {r.get('Earliest',''):<11} {r.get('Latest',''):<11} {r.get('Pct',''):>4} {ds:>4}"
+        s = f"{r.get('Suite',''):<15} {r.get('Pass',''):>4}/{r.get('Total',''):<4} {ex:>4} {r.get('Wall',''):>6} {r.get('Earliest',''):<11} {r.get('Latest',''):<11} {r.get('Pct',''):>4} {ds:>4}"
         return s[:CELLW].ljust(CELLW)
 
     half = (len(rows) + 1) // 2
     left, right = rows[:half], rows[half:]
     out = [cut(h) for h in head if h.strip()]
-    hdr = f"{'Suite':<12} {'Pass/Tot':<9} {'Excl':>4} {'Min':>6} {'Earliest':<11} {'Latest':<11} {'Pct':>4} {'Δ':>4}".ljust(CELLW)
+    hdr = f"{'Suite':<15} {'Pass/Tot':<9} {'Excl':>4} {'Min':>6} {'Earliest':<11} {'Latest':<11} {'Pct':>4} {'Δ':>4}".ljust(CELLW)
     out.append(hdr + " │ " + hdr)
     for i in range(half):
         l = fmt(left[i])

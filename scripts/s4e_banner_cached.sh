@@ -129,4 +129,4 @@ except Exception: g={}
 # "Whoops, you just displayed \"Stop hook error\". I am about to whack you."): Claude Code labels every {"decision":"block"} at a Stop as a
 # "Stop hook blocking error", so the verdict of the gate is never passed on; its reason is shown in the banner and the seat stops. A seat is woken
 # for its work by a message, never by a held stop.
-print(json.dumps({"systemMessage": m}))'
+sys.stdout.buffer.write((json.dumps({"systemMessage": m}, ensure_ascii=False) + "\n").encode("utf-8"))'   # written as UTF-8, never as \\uXXXX escapes: 163 of them cost 526 bytes of a banner that must stay under the size Claude Code shows (the grader 2026-11-15)
