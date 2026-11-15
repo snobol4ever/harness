@@ -55,12 +55,16 @@ def drop_excluded_and_containers(table, rows):
         # of 26 packages were named by their own EXCLUDED.tsv, left out of the suite row by util_score_row.py and still run by the cycle every lap;
         # rosetta-pascal's unix-ls, NO_ORACLE_ANSWER since 2026-10-29, hung 300 s and 600 s more on the retry in chunk:18 each lap). The name is the
         # first column, as the score row reads it: itself when it is a table entry, else its form without the source extension.
+        # A NAME THAT IS THE STEM OF A FILE THE FOLDER SHIPS IS THAT FILE, NEVER AN ENTRY WRITTEN WITH AN EXTENSION (the cfo 2026-11-15; MEASURED on
+        # gate_cases_snobol4: EXCLUDED.tsv names the program <case>__w.defer, shipped as <case>__w.defer.sno, and the bare splitext read it as the
+        # table entry <case>__w, so that entry was in no cell while util_score_row.py kept it in the denominator: UNREAD on every lap, 479 of 488 at best).
         _names = set(r.get("entry") for r in rows)
+        _stems = set(os.path.splitext(x)[0] for x in os.listdir(d))
         with open(xl_p, encoding="utf-8", errors="replace") as f:
             for l in f:
                 if l.strip() and not l.startswith("#"):
                     n = l.split("\t", 1)[0].strip()
-                    xl.add(n if n in _names else os.path.splitext(n)[0])
+                    xl.add(n if n in _names or n in _stems else os.path.splitext(n)[0])
     if os.path.isfile(ex_p):
         with open(ex_p, encoding="utf-8", errors="replace") as f:
             ex = set(l.split(": ", 1)[0].strip() for l in f if l.strip())
@@ -68,7 +72,8 @@ def drop_excluded_and_containers(table, rows):
         # through its driver" lines matched no table entry, so chunk:01 to 04 and chunk:09 named 354 libraries the container does not hold and the
         # cycle's five cells refused rc 2 every lap): a name that is no table entry while its extension-less form is one drops that entry.
         names = set(r.get("entry") for r in rows)
-        ex |= set(os.path.splitext(x)[0] for x in ex if x not in names and os.path.splitext(x)[0] in names)
+        _fst = set(os.path.splitext(x)[0] for x in os.listdir(d))   # a name that is the stem of a shipped file is that file (the EXCLUDED.tsv rule above)
+        ex |= set(os.path.splitext(x)[0] for x in ex if x not in names and x not in _fst and os.path.splitext(x)[0] in names)
     if os.path.isfile(ct_p):
         with open(ct_p, encoding="utf-8", errors="replace") as f:
             ct = set(os.path.splitext(l.split("\t", 1)[0].strip())[0] for l in f if l.strip() and not l.startswith("#"))
