@@ -303,7 +303,14 @@ def styled(text):
 
 
 def main(argv):
-    tsv = os.path.join(HERE, 'rt_entries.tsv')
+    # THE TABLE IS SCRIP'S SOURCE AND LIVES IN THE SCRIP CLONE (the cto's ruling 2026-11-14, on the cio's ask: "a table that a file checked into SCRIP is generated from, or that
+    # is derived from SCRIP's built runtime, is SCRIP's SOURCE. It lives in the SCRIP clone beside the file it generates and changes in the same landing as the code."). It is
+    # both derived from the landing's built runtime (--sync-asm, --sync-alloc) and the source of rt_entry_table.inc (--write); in harness, which only the grader writes, a
+    # seat's landing could do neither half, and its derive stage skipped both checks ("no-harness"). The clone's src/runtime/rt_entries.tsv is read whenever the clone has
+    # one; harness's copy is read ONLY while the clone lacks the file, never both.
+    tsv = os.path.join(SCRIP_DIR, 'src', 'runtime', 'rt_entries.tsv')
+    if not os.path.exists(tsv):
+        tsv = os.path.join(HERE, 'rt_entries.tsv')
     out = os.path.join(SCRIP_DIR, 'src', 'runtime')
     if '--tsv' in argv:
         tsv = argv[argv.index('--tsv') + 1]

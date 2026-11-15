@@ -1015,6 +1015,7 @@ regen() {
             0) ;;
             1) stale+=("$k") ;;
             2) refuse "$phase table $k cannot be checked: $(tail -1 "$LOG/check.$k")" ;;
+            129|130|137|143) stop_lander "a signal to its table check ($k, rc $rc)" ;;   # A TABLE CHECK KILLED BY A SIGNAL IS A STOP, NOT A RED (the cio 2026-11-14, on the cto's measurement: LANDINGS.tsv 21:52:08Z read red:derive for the cto's own stop, the check's log rc=143 Terminated): the lander's children were stopped under it, so the landing is ledgered stopped and refuses, as a stop of the lander itself does
             *) red "$2" "table=$k check rc=$rc: $(tail -1 "$LOG/check.$k")" ;;
         esac
     done

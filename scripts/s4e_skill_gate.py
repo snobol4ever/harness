@@ -37,7 +37,7 @@ RULES = [   # (regex on the path, skills) -- every matching rule applies; the pa
     (r"/SCRIP/src/parsers/prolog/prelude/(clpfd|clpq|clpr|chr_runtime)\.pl$|/SCRIP/src/lower/lower_prolog_chr\.c$", ["prolog-constraints"]),
     (r"/SCRIP/src/runtime/rtx/rtx_plunify\.s$|/SCRIP/src/runtime/rt/rt_pl_trail\.c$|/SCRIP/src/runtime/rt/pl_trail_layout\.h$", ["prolog-engine"]),
 ]
-WRITE_MARK = re.compile(r"(?:>>?|\btee\b(?:\s+-a)?|\bcp\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+)|\bmv\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+))\s+[\"']?(?P<path>[\w./~-]+)[\"']?")   # a quoted target is a target
+WRITE_MARK = re.compile(r"(?:>>?|\btee\b(?:\s+-a)?|\bcp\b(?:\s+-[a-zA-Z]+)*(?:\s+(?!-)\S+)|\bmv\b(?:\s+-[a-zA-Z]+)*(?:\s+(?!-)\S+))\s+[\"']?(?P<path>[\w./~-]+)[\"']?")   # a quoted target is a target
 INPLACE = re.compile(r"(?:\bsed\s+(?:-[a-zA-Z]*\s+)*-i[^\s]*|\bperl\s+-[a-zA-Z]*i[^\s]*)\s+(?P<rest>[^|;&]*)")   # the path is any later token of the same command
 # THE ONE-DISK CHECKOUTS ARE NOBODY'S TO EDIT (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover; Lon: "Each seat shares harness and corpus in ONE PLACE on disk."):
 # /home/corpus, /home/harness and /home/.github are every seat's and the grader's keeper holds them at origin. MEASURED the day of the cut: their files are mode 664 and 775
@@ -116,10 +116,12 @@ def judge(tool, inp, transcript):
         m = ONE_DISK.match(os.path.normpath(p)) if p.startswith("/") else None
         if m:
             r = m.group(1)
-            return 2, ("SKILL GATE: %s is in the one-disk checkout /home/%s, which every seat shares and nobody edits (the grader keeps it at origin). "
-                       "Run: bash /home/harness/scripts/s4e_take.sh %s  -- it makes your root's own clone; make the same edit there (your root, then %s/%s); "
-                       "land with s4e_land.sh --row <topic> and the landing drops the clone (skill seat-conduct section 2)."
-                       % (os.path.basename(p), r, r, r, os.path.normpath(p)[len("/home/" + r) + 1:]))
+            rel = os.path.normpath(p)[len("/home/" + r) + 1:]
+            return 2, ("SKILL GATE: %s is in the one-disk checkout /home/%s, which every seat shares and only the grader writes (Lon 2026-11-14: \"Only ONE maintainer has "
+                       "/home/{.github,corpus,harness} and that is GRADER.\"). No seat takes a clone. Hand the grader the change: copy %s to your scratch, edit the copy, "
+                       "diff -u --label a/%s --label b/%s /home/%s/%s <your copy> > <patch>, then bash /home/harness/scripts/s4e_take.sh give %s <patch> \"<why>\" "
+                       "and send the WAKE line it prints (skill seat-conduct section 2)."
+                       % (os.path.basename(p), r, rel, rel, rel, r, rel, r))
     gen = [p for p in paths if skills_for(p) is None]
     if gen:
         return 2, "SKILL GATE: %s is a GENERATED table, regenerated and never edited (make regenerates it; skill fleet-bus section 7, the landing recipe)." % os.path.basename(gen[0])
@@ -176,10 +178,12 @@ def self_test():
         ("Bash tee onto a quoted bus path wants fleet-bus", "Bash", {"command": "echo x | tee \"" + R + "/harness/scripts/s4e_msg.sh\""}, none, 2, ["/fleet-bus"]),
         ("Edit of the tabling prelude wants prolog-tabling beside prolog", "Edit", {"file_path": R + "/SCRIP/src/parsers/prolog/prelude/tabling.pl"}, none, 2, ["/prolog-tabling", "/prolog"]),
         ("Edit of the suite table wants suites-and-grading", "Edit", {"file_path": "/home/resources/progress/SUITES.tsv"}, none, 2, ["/suites-and-grading"]),
-        ("Edit under the one-disk corpus refuses with the take line, whatever is loaded", "Edit", {"file_path": "/home/corpus/tests/pascal/ALL.ref"}, some, 2, ["s4e_take.sh corpus", "corpus/tests/pascal/ALL.ref", "one-disk"]),
-        ("Write under the one-disk harness refuses with the take line", "Write", {"file_path": "/home/harness/designs/new_plan/STEPS.tsv"}, some, 2, ["s4e_take.sh harness", "one-disk"]),
-        ("Edit under the one-disk .github refuses with the take line", "Edit", {"file_path": "/home/.github/skills/fleet-bus/SKILL.md"}, none, 2, ["s4e_take.sh .github", "one-disk"]),
-        ("Bash sed -i on a one-disk script refuses with the take line", "Bash", {"command": "sed -i s/a/b/ /home/harness/scripts/s4e_msg.sh"}, some, 2, ["s4e_take.sh harness", "one-disk"]),
+        ("Edit under the one-disk corpus refuses with the give line, whatever is loaded", "Edit", {"file_path": "/home/corpus/tests/pascal/ALL.ref"}, some, 2, ["s4e_take.sh give corpus", "a/tests/pascal/ALL.ref", "one-disk"]),
+        ("Write under the one-disk harness refuses with the give line", "Write", {"file_path": "/home/harness/designs/new_plan/STEPS.tsv"}, some, 2, ["s4e_take.sh give harness", "one-disk"]),
+        ("Edit under the one-disk .github refuses with the give line", "Edit", {"file_path": "/home/.github/skills/fleet-bus/SKILL.md"}, none, 2, ["s4e_take.sh give .github", "one-disk"]),
+        ("Bash sed -i on a one-disk script refuses with the give line", "Bash", {"command": "sed -i s/a/b/ /home/harness/scripts/s4e_msg.sh"}, some, 2, ["s4e_take.sh give harness", "one-disk"]),
+        ("Bash cp -r OUT of a one-disk checkout to scratch is a read and passes (the cio 2026-11-14: the flag was read as the source and the source as the target)", "Bash", {"command": "cp -r /home/harness/scripts /tmp/s4e/x/copy/"}, some, 0, []),
+        ("Bash cp -p onto a one-disk file still refuses", "Bash", {"command": "cp -p /tmp/s4e/x/s4e_msg.sh /home/harness/scripts/s4e_msg.sh"}, some, 2, ["s4e_take.sh give harness", "one-disk"]),
         ("the same edit in the root's own clone is judged by its skills alone", "Edit", {"file_path": R + "/.github/README.md"}, none, 0, []),
     ]
     bad = 0

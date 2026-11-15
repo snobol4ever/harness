@@ -31,5 +31,5 @@ parsers	built	SCRIP/src/parsers/pascal/pascal.tab.c	bash harness/scripts/lib_par
 parsers	built	SCRIP/src/parsers/pascal/pascal.tab.h	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
 parsers	built	SCRIP/src/parsers/pascal/pascal.lex.c	bash harness/scripts/lib_parser_generated_in_sync.sh	bash harness/scripts/regenerate_parser_and_lexer_from_sources.sh
 gc_allocating_table	binary	SCRIP/src/templates/x86/gc_allocating_table.inc	python3 harness/scripts/util_gen_gc_allocating_table.py --check	python3 harness/scripts/util_gen_gc_allocating_table.py
-rt_entries_asm	binary	harness/scripts/rt_entries.tsv	python3 harness/scripts/util_gen_rt_entry_table.py --check-asm	python3 harness/scripts/util_gen_rt_entry_table.py --sync-asm
-rt_entries_alloc	binary	harness/scripts/rt_entries.tsv	python3 harness/scripts/util_gen_rt_entry_table.py --check-alloc	python3 harness/scripts/util_gen_rt_entry_table.py --sync-alloc
+rt_entries_asm	binary	SCRIP/src/runtime/rt_entries.tsv	python3 harness/scripts/util_gen_rt_entry_table.py --check-asm	python3 harness/scripts/util_gen_rt_entry_table.py --sync-asm
+rt_entries_alloc	binary	SCRIP/src/runtime/rt_entries.tsv	python3 harness/scripts/util_gen_rt_entry_table.py --check-alloc	python3 harness/scripts/util_gen_rt_entry_table.py --sync-alloc
