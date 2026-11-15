@@ -16,9 +16,10 @@
 #   status      JOBSERVER unit=<active|inactive> tokens=<declared> free=<in the pipe> makes=<processes holding the pipe>   rc 0 live, 1 down, 2 unmeasurable
 #   set N       move the budget to N tokens (the controller's actuator): adds tokens, or takes the surplus out of the pipe as they return
 #   make ARGS   run GNU make joined to the pipe (-j/--jobs arguments are dropped: the pipe is the budget); no holder: plain make ARGS
+#   --probe-no-holder   with no holder an outer make -j8 still runs its inner jobs side by side (four one-second jobs, width 4); rc 0/1
 #   prove       the gate: one make of (N+5) one-second jobs against the live pipe must run exactly N+1 wide and leave N tokens; rc 0/1/2
 set -uo pipefail
-FIFO=/home/resources/progress/jobserver.fifo
+FIFO="${S4E_JOBSERVER_FIFO:-/home/resources/progress/jobserver.fifo}"   # the override is the no-holder probe's alone
 TSV=/home/resources/progress/JOBSERVER.tsv
 UNIT=s4e-jobserver
 PIDFILE=/home/resources/progress/jobserver.pid
@@ -106,7 +107,32 @@ PY
       exec 7<>"$FIFO"
       MAKEFLAGS="-j --jobserver-auth=$FD,$FD" exec make "${args[@]}"
     fi
-    exec make "$@" ;;
+    # NO HOLDER: THE BUILD IS STILL AS WIDE AS IT WAS ASKED (the cio 2026-11-14, on the cqo's measurement: the holder unit is transient and does not outlive a boot; with it
+    # gone this line ran plain make, which inherited the outer make's MAKEFLAGS, -jN and --jobserver-auth, with the outer's descriptors closed, so GNU make printed
+    # "jobserver unavailable: using -j1" and every root's make -j8 compiled ONE file at a time, each compile then waiting its core token: 37 of about 900 objects in 40
+    # minutes). The dead jobserver words are taken out of MAKEFLAGS and the inner make runs at the width the outer was given (the -jN of the arguments, else of MAKEFLAGS,
+    # else 8). Nothing is unbounded by it: every compile takes its core token at the door (util_cc_slot.sh, CORES.conf), the one limit. --probe-no-holder proves it.
+    w=""; case " ${MAKEFLAGS:-} " in *" -j"[0-9]*) w="$(printf '%s\n' " ${MAKEFLAGS:-}" | sed -n 's/.* -j\([0-9][0-9]*\).*/\1/p')" ;; esac
+    for a in "$@"; do case "$a" in -j[0-9]*) w="${a#-j}" ;; --jobs=[0-9]*) w="${a#--jobs=}" ;; esac; done
+    MAKEFLAGS="$(printf '%s' "${MAKEFLAGS:-}" | sed -E 's/(^| )--jobserver-(auth|fds)=[^ ]*//g; s/(^| )-j[0-9]*//g')" exec make -j"${w:-8}" "${args[@]}" ;;
+  --probe-no-holder)
+    # an outer make -j8 whose recipe reaches four one-second jobs through this tool with NO holder (S4E_JOBSERVER_FIFO names a pipe that does not exist) must run them side by side
+    w="$(mktemp -d "${TMPDIR:-/tmp}/jobserver_noholder.XXXXXX")"; trap 'rm -rf "$w"' EXIT
+    printf 'all:\n\t@S4E_JOBSERVER_FIFO=%s/none bash %s make --no-print-directory -f %s/inner.mk all\n' "$w" "$SELF" "$w" > "$w/outer.mk"
+    { printf 'all: a b c d\n'; for j in a b c d; do printf '%s:\n\t@date +%%s.%%N >> %s/starts; sleep 1; date +%%s.%%N >> %s/ends\n' "$j" "$w" "$w"; done; } > "$w/inner.mk"
+    out="$( (unset MAKEFLAGS MFLAGS; make -j8 -f "$w/outer.mk") 2>&1)"; rc=$?
+    width="$(python3 - "$w" <<'PY'
+import sys
+w = sys.argv[1]
+ev = [(float(x), 1) for x in open(w + '/starts')] + [(float(x), -1) for x in open(w + '/ends')]
+ev.sort(); cur = mx = 0
+for _, d in ev:
+    cur += d; mx = max(mx, cur)
+print(mx)
+PY
+)"
+    if [ "$rc" = 0 ] && [ "$width" = 4 ] && ! printf '%s' "$out" | grep -q 'jobserver unavailable'; then echo "JOBSERVER no-holder ok width=4 (an outer make -j8 with no holder runs its inner jobs side by side)"; exit 0; fi
+    echo "JOBSERVER no-holder RED rc=$rc width=${width:-?} of 4: $(printf '%s' "$out" | head -1)"; exit 1 ;;
   prove)
     holder_alive || { echo "PROVE: no holder (JOBSERVER inactive)"; exit 1; }
     d="$(declared)"; [ "${d:-0}" -gt 0 ] || refuse "no declared token count"
