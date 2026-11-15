@@ -5,8 +5,9 @@ The setting is Raku source under src/parsers/raku/setting/, one module per file,
 Test/Util.rakumod is Test::Util). This writes src/parsers/raku/raku_setting.inc, a committed table of the sources the Raku front end's
 module road (import_module in rk_syntax.c) reads when no file on the program's lib path names the module, exactly as the Pascal prelude
 units (util_gen_pascal_prelude_units.py) and the Prolog prelude libraries are embedded: { name, source, exports } triples ending in { 0, 0, 0 }.
-exports is the space-padded list of the sub and proto names the module declares (CTO-517 step 1: an undeclared routine used by a program is
-imported from the module that exports it, CORE for the core prelude; rk_syntax.c core_export_has reads this column).
+exports is the space-padded list of the names the module declares at its top: its sub and proto names, its dynamic variables, the methods of an augment line,
+and its constants (the cto 2026-11-14: a constant the setting declares is found as its subs are). CTO-517 step 1: an undeclared name used by a program is
+imported from the module that exports it, CORE for the core prelude; rk_syntax.c core_export_has reads this column.
   python3 ../harness/scripts/util_gen_raku_setting.py            write the .inc  # one-disk: not a path
   python3 ../harness/scripts/util_gen_raku_setting.py --check    rc 1 when the committed .inc differs from a fresh generation, 0 when equal  # one-disk: not a path
   --dir D and --out F read the setting from D and write or check F (a gate's plant on scratch copies); rc 2 refuses.
@@ -29,6 +30,9 @@ def exports_of(src):
         if m.group(1) not in names:
             names.append(m.group(1))
     for m in re.finditer(r"^my[ \t]+(\$\*[A-Za-z_][A-Za-z0-9_-]*)", src, re.M):
+        if m.group(1) not in names:
+            names.append(m.group(1))
+    for m in re.finditer(r"^(?:my[ \t]+)?constant[ \t]+([^\s:=;]+)", src, re.M):
         if m.group(1) not in names:
             names.append(m.group(1))
     for line in re.finditer(r"^augment[ \t]+class[ \t]+[^\n]*", src, re.M):
