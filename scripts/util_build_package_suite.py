@@ -1554,6 +1554,15 @@ MINE_OPTIONAL = {"copy": ("root", "folder"), "cwd": ("root", "folder")}
 MINE_EXTS = {"raku": (".raku", ".p6", ".pl6", ".t", ".rakutest"), "pascal": (".pas", ".pp", ".p", ".lpr"), "icon": (".icn",), "prolog": (".pl", ".pro", ".prolog"),
              "snobol4": (".sno", ".spt", ".sbl")}
 MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl", "pascal": "fpc", "snobol4": "sbl", "icon": "unicon"}
+MINE_FATAL_GRADABLE = False   # the package's CONTRACT.tsv says `fatal gradable`: a program SPITBOL ends with an error is an entry (Lon 2026-11-15)
+_SBL_LISTING_CLOCK = re.compile(rb"(?m)^x86-64  [A-Z][a-z]{2} [A-Z][a-z]{2} [ 0-9]\d \d\d:\d\d:\d\d \d{4}$")
+
+
+def _sbl_listing_clock_out(b):
+    """a compile listing's page-header line with the date and time, replaced by a fixed text, for the comparison of two runs"""
+    return _SBL_LISTING_CLOCK.sub(b"x86-64  (the listing's date and time)", b or b"")
+
+
 MINE_SILENT_RC = False   # --mine-silent-rc: a silent program is an entry graded by its exit status (Lon 2026-11-15)
 # PASCAL (the coo 2026-11-11, COO-508): fpc only compiles, so a Pascal program is run by fpc_oracle_run.sh (compile to a private folder, then run; exit 126 =
 # fpc refuses the source). The dialect is found by the census: the first mode of the ladder in which fpc compiles the program cut its answer and is
@@ -1804,18 +1813,29 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
         h.refuse(f"the oracle wrapper refused on {rel}: {first}")
     if lang == "raku" and b"===SORRY!===" in err1:
         return "ORACLE-REFUSES", (err1.decode("utf-8", "replace").replace("===SORRY!===", "").strip().splitlines() or [""])[0][:160], None, b""
+    # AN ERROR FROM THE ORACLE IS AN ANSWER (Lon 2026-11-15 13:3x CST, in the grader's window, verbatim: "You do realize when the oracle produces and error then
+    # SCRIP should produce the same error. Yes? Do you get that?"; CEO-1344, the container road's CONTRACT.tsv key `fatal gradable`, which this road now reads
+    # too): under that key a program SPITBOL ends with an error is an ENTRY whose answer is what it printed, its fatal block included, and whose want_rc is
+    # its exit status. Without the key the verdict stays ORACLE-REFUSES, so a re-cut of an older package moves no total by accident.
+    _fatal = ""
     if lang == "snobol4" and sbl_died(out1.decode("utf-8", "replace")):
         why = next((ln for ln in out1.decode("utf-8", "replace").splitlines() if _SBL_DIED_RE1.search(ln)), "")
-        return "ORACLE-REFUSES", f"SPITBOL ends it with an error: {why.strip()[:140]}", None, b""
+        if not MINE_FATAL_GRADABLE:
+            return "ORACLE-REFUSES", f"SPITBOL ends it with an error: {why.strip()[:140]}", None, b""
+        _fatal = f"ends with SPITBOL's error, graded: {why.strip()[:110]}"
     if lang == "raku" and rc1 == 2 and first.startswith("Usage:"):
         return "NEEDS-INPUT", "it asks for arguments (rakudo prints its usage, exit 2)", None, b""
     time.sleep(max(0.0, math.floor(t1) + 1.05 - time.time()))
     rc2, out2, err2 = _mine_run(lang, at, name, cap, fed, flags, launch, args, outf)
-    if (rc2, out2) != (rc1, out1):
+    # A COMPILE REFUSAL'S LISTING CARRIES THE CLOCK (MEASURED 2026-11-15 on DECUS palin.sno, exit 231 twice, 319 and 319 bytes: the two runs differ in the one
+    # line `x86-64  Sun Nov 15 13:34:22 2026` of the listing's page header, and the census read DIFFERS-BETWEEN-RUNS). The grader reads such a ref by the line
+    # and code of each diagnostic alone (corpus_suite_harness.py _spitbol_compile_refusal_verdict), so the two runs are compared with that line left out.
+    _same = _sbl_listing_clock_out if lang == "snobol4" else (lambda b: b)
+    if (rc2, _same(out2)) != (rc1, _same(out1)):
         return "DIFFERS-BETWEEN-RUNS", f"exit {rc1} and {rc2}, {len(out1)} and {len(out2)} bytes", None, b""
     if not feed:
         rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags, launch, args, outf)
-        if (rc3, out3) != (rc1, out1):
+        if (rc3, _same(out3)) != (rc1, _same(out1)):
             return "NEEDS-INPUT", "its answer changes with what standard input holds", None, b""
     if not out1.strip():
         # A SILENT PROGRAM MAY BE GRADED BY ITS EXIT STATUS (Lon 2026-11-15 11:5x CST, in the grader's window, verbatim: "So change the standing order to
@@ -1825,7 +1845,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
         if MINE_SILENT_RC:
             return "ENTRY", f"silent: graded by its exit status {rc1} alone" + (f"; stderr not graded: {first}" if first else ""), rc1, out1
         return "NO-OUTPUT", f"nothing on standard output, exit {rc1}; a dead engine would earn the same" + (f"; stderr: {first}" if first else ""), None, b""
-    return "ENTRY", "; ".join(x for x in ((f"standard input is {feed[0]}" if feed else ""), (f"stderr not graded: {first}" if first else "")) if x), rc1, out1
+    return "ENTRY", "; ".join(x for x in (_fatal, (f"standard input is {feed[0]}" if feed else ""), (f"stderr not graded: {first}" if first else "")) if x), rc1, out1
 
 
 def _mine_args(pkg_dir, root, stems, under):
@@ -2093,11 +2113,12 @@ def main():
                     help="under --mine, programs another package grades already: a line is the path from the root, a tab, and where it is graded; "
                          "each reads HELD-ELSEWHERE in the census, is not run and is no entry")
     args = ap.parse_args()
-    global MINE_SILENT_RC
+    global MINE_SILENT_RC, MINE_FATAL_GRADABLE
     MINE_SILENT_RC = bool(args.mine_silent_rc)
     pkg_dir = Path(args.package_dir).resolve()
     if not pkg_dir.is_dir():
         h.refuse(f"not a directory: {pkg_dir}")
+    MINE_FATAL_GRADABLE = read_contract(pkg_dir)["fatal"] == "gradable"
     if args.mine and args.mine_add and not args.mine_under:
         h.refuse("--mine-add adds one folder to a mined package: it needs --mine-under FOLDER")
     if args.mine:
