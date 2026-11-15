@@ -137,5 +137,6 @@ simply_logical	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/simply_
 p99_constable	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/p99_constable
 covington_ppid	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/covington_ppid
 art_of_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/art_of_prolog
+swi_bench	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/swi_bench
 bratko_4th	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/bratko_4th
 gpc_tests	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/gpc_tests
