@@ -118,3 +118,4 @@ p99	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/p99
 simply_logical	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/simply_logical
 p99_constable	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/p99_constable
 covington_ppid	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/covington_ppid
+gpc_tests	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/gpc_tests
