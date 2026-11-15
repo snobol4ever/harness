@@ -1548,6 +1548,7 @@ MINE_OPTIONAL = {"copy": ("root", "folder"), "cwd": ("root", "folder")}
 MINE_EXTS = {"raku": (".raku", ".p6", ".pl6", ".t", ".rakutest"), "pascal": (".pas", ".pp", ".p", ".lpr"), "icon": (".icn",), "prolog": (".pl", ".pro", ".prolog"),
              "snobol4": (".sno", ".spt", ".sbl")}
 MINE_ORACLE = {"raku": "rakudo", "prolog": "swipl", "pascal": "fpc", "snobol4": "sbl", "icon": "unicon"}
+MINE_SILENT_RC = False   # --mine-silent-rc: a silent program is an entry graded by its exit status (Lon 2026-11-15)
 # PASCAL (the coo 2026-11-11, COO-508): fpc only compiles, so a Pascal program is run by fpc_oracle_run.sh (compile to a private folder, then run; exit 126 =
 # fpc refuses the source). The dialect is found by the census: the first mode of the ladder in which fpc compiles the program cut its answer and is
 # the row's dialect cell (SCRIP's own names: iso, fpc, objfpc, delphi, tp); --mine-dialects names another ladder (fpc alone for Free Pascal's own
@@ -1811,6 +1812,12 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
         if (rc3, out3) != (rc1, out1):
             return "NEEDS-INPUT", "its answer changes with what standard input holds", None, b""
     if not out1.strip():
+        # A SILENT PROGRAM MAY BE GRADED BY ITS EXIT STATUS (Lon 2026-11-15 11:5x CST, in the grader's window, verbatim: "So change the standing order to
+        # allow a silent program to use the return/exit code."; skill suites-and-grading section 4). Under --mine-silent-rc a program that prints nothing,
+        # twice alike and whatever standard input holds, is an ENTRY: its answer is empty and its want_rc is the oracle's exit status, so the engine
+        # must print nothing and end with that status. Without the switch the verdict stays NO-OUTPUT, so a re-cut of an older package moves no total.
+        if MINE_SILENT_RC:
+            return "ENTRY", f"silent: graded by its exit status {rc1} alone" + (f"; stderr not graded: {first}" if first else ""), rc1, out1
         return "NO-OUTPUT", f"nothing on standard output, exit {rc1}; a dead engine would earn the same" + (f"; stderr: {first}" if first else ""), None, b""
     return "ENTRY", "; ".join(x for x in ((f"standard input is {feed[0]}" if feed else ""), (f"stderr not graded: {first}" if first else "")) if x), rc1, out1
 
@@ -2068,6 +2075,7 @@ def main():
                          "the package names (a line of ALL.stdin: entry, tab, a file of the collection by its path from the root; or our own NAME.in "
                          "at the program's path) is fed it on both runs")
     ap.add_argument("--mine-cap", type=int, default=60, help="seconds the oracle has for one program under --mine (default 60)")
+    ap.add_argument("--mine-silent-rc", action="store_true", help="under --mine a program that prints nothing is an entry graded by its exit status alone (Lon 2026-11-15); without it the verdict is NO-OUTPUT")
     ap.add_argument("--mine-jobs", type=int, default=4, help="oracle runs side by side under --mine (default 4, a seat's share of the run pool)")
     ap.add_argument("--mine-under", default="", metavar="FOLDER|PROGRAM", help="under --mine, only the programs under this folder of the root, or this one program (its path from the root)")
     ap.add_argument("--mine-add", action="store_true",
@@ -2079,6 +2087,8 @@ def main():
                     help="under --mine, programs another package grades already: a line is the path from the root, a tab, and where it is graded; "
                          "each reads HELD-ELSEWHERE in the census, is not run and is no entry")
     args = ap.parse_args()
+    global MINE_SILENT_RC
+    MINE_SILENT_RC = bool(args.mine_silent_rc)
     pkg_dir = Path(args.package_dir).resolve()
     if not pkg_dir.is_dir():
         h.refuse(f"not a directory: {pkg_dir}")
