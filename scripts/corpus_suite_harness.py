@@ -1071,7 +1071,7 @@ def _bounded_run_in_slot(argv, timeout, cwd, env, stdin_bytes, merge_stderr):
         n = 0
         for b in iter(lambda: f.read1(1 << 16), b""):
             if n < _OUTPUT_CAP:
-                keep.append(b[:_OUTPUT_CAP - n])
+                keep += b[:_OUTPUT_CAP - n]   # ONE BUFFER, never a list of the reads (the grader 2026-11-15, MEASURED: a child that writes a byte or two a call left one bytes object a read, 9 MB of output held in 289 MB, and rosetta-pascal's unix-ls, blank lines without end, took this process to 8.3 GB inside the 256 MB cap; the cgroup killed it and chunk:18 refused)
             n += len(b)
             if n > _OUTPUT_CAP and not over.is_set():
                 over.set()
@@ -1083,7 +1083,7 @@ def _bounded_run_in_slot(argv, timeout, cwd, env, stdin_bytes, merge_stderr):
             f.close()
         except (BrokenPipeError, OSError):
             pass
-    outs, errs = [], []
+    outs, errs = bytearray(), bytearray()
     drains = [threading.Thread(target=drain, args=(f, k), daemon=True) for f, k in ((p.stdout, outs), (p.stderr, errs)) if f is not None]
     ts = drains + ([threading.Thread(target=feed, args=(p.stdin,), daemon=True)] if p.stdin is not None else [])
     for t in ts:
@@ -1109,7 +1109,7 @@ def _bounded_run_in_slot(argv, timeout, cwd, env, stdin_bytes, merge_stderr):
     for t in ts:
         t.join(max(0.0, deadline - time.monotonic()) if not hung else 5)
     hung = hung or any(t.is_alive() for t in drains)
-    return rc, b"".join(outs), b"".join(errs), ("OVERFLOW" if over.is_set() else "HANG" if hung else None)
+    return rc, bytes(outs), bytes(errs), ("OVERFLOW" if over.is_set() else "HANG" if hung else None)
 def _run_raw(argv, timeout, cwd=None, env=None, stdin_text=None, merge_stderr=False):
     # ⛔ A PROGRAM THE CGROUP MEMORY CAP KILLED IS UNPROVEN, NEVER A CRASH (row instrument-698-runners-..., the officer's clause): a
     # SIGKILL alone cannot say who sent it, so the enclosing scope's own oom_kill count is read on both sides of the run and only
