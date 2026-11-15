@@ -49,11 +49,11 @@ SEATS = {
 - Suite rows to 100 by THE LANDING RECIPE in whatever language MODE line 2 names, and the reviews of collector visitors and typed heap kinds (the cfo reviews every new DESCR kind, `/pascal` reference § 9 R5). GOAL-CFO.md is the cursor.
 - Skills: `/pascal` first, then the language of the row held; `/scrip-memory-model` for any frame or collector question. Manuals: `/home/resources/manuals/<lang>/`.
 """, None),
-    "cao": ("officer", """## THIS ROOT IS THE CAO SEAT (postoffice identity `cao`): A GENERAL OFFICER (Opus)
+    "cao": ("officer", """## THIS ROOT IS THE CAO SEAT (postoffice identity `cao`): THE CHIEF ARCHITECTURE OFFICER
 - The rows MODE line 2 names, by THE LANDING RECIPE; Prolog (the XSB package, tabling, call subsumption) has been its ground. GOAL-CAO.md is the cursor.
 - Skills: `/prolog` and `/prolog-tabling` first, then the language of the row held. Manuals: `/home/resources/manuals/<lang>/`.
 """, None),
-    "cqo": ("officer", """## THIS ROOT IS THE CQO SEAT (postoffice identity `cqo`): A GENERAL OFFICER (Opus)
+    "cqo": ("officer", """## THIS ROOT IS THE CQO SEAT (postoffice identity `cqo`): THE CHIEF QUALITY OFFICER
 - Suite rows to 100 by THE LANDING RECIPE in whatever language MODE line 2 names (Prolog's SWI and Trealla suites, the consulted-clause record), and the machine-management rows CTO-478 assigned (cgroup weights and quotas, the job server). GOAL-CQO.md is the cursor.
 - Skills: `/prolog` first (its dialect record and database rulings), `/shared-box` for the machine rows, then the language of the row held. Manuals: `/home/resources/manuals/<lang>/`.
 """, None),
