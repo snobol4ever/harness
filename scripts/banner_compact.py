@@ -20,7 +20,7 @@ the input passes through untouched, so a refused or missing grid is never hidden
 import re
 import sys
 
-CELLW = 71   # 68 with a Suite column of 12 until the names took the FULL language name (Lon 2026-11-15 12:4x CST: "Go with full language name as prefix, icon, pascal, prolog, raku, rebus, snobol4, snocone."; the column is 15); 77 until the Lang column left (Lon 2026-11-15 12:1x CST); before it 82 until the M3 column left (Lon 2026-11-14 12:2x CST: "Remove the redundant M3 column.", every row is graded in mode 3, so M3 repeated Pass); 81 until the M4 column left (Lon 2026-11-12 12:1x); 76 until Run became Earliest and Latest (Lon 2026-11-12 19:0x)
+CELLW = 74   # 68 with a Suite column of 12 until the names took the FULL language name (Lon 2026-11-15 12:4x CST: "Go with full language name as prefix, icon, pascal, prolog, raku, rebus, snobol4, snocone."; the column was 15); 74 with a column of 18 (Lon 2026-11-15 17:4x CST, in the grader's window, verbatim: "Do another rename operation on the test suite banner: give several better names, just a tid bit longer."); 77 until the Lang column left (Lon 2026-11-15 12:1x CST); before it 82 until the M3 column left (Lon 2026-11-14 12:2x CST: "Remove the redundant M3 column.", every row is graded in mode 3, so M3 repeated Pass); 81 until the M4 column left (Lon 2026-11-12 12:1x); 76 until Run became Earliest and Latest (Lon 2026-11-12 19:0x)
 WIDTH = 2 * CELLW + 3
 STATE = {"DONE": "✓", "VOID": "V", "NO READING": "?", "": ""}
 
@@ -70,13 +70,13 @@ def main():
         st = r.get("State", "")
         ds = STATE.get(st, st[:1]) if st else r.get("Δ", "")
         ex = (r.get("Excl", "") or "").strip() or "-"
-        s = f"{r.get('Suite',''):<15} {r.get('Pass',''):>4}/{r.get('Total',''):<4} {ex:>4} {r.get('Wall',''):>6} {r.get('Earliest',''):<11} {r.get('Latest',''):<11} {r.get('Pct',''):>4} {ds:>4}"
+        s = f"{r.get('Suite',''):<18} {r.get('Pass',''):>4}/{r.get('Total',''):<4} {ex:>4} {r.get('Wall',''):>6} {r.get('Earliest',''):<11} {r.get('Latest',''):<11} {r.get('Pct',''):>4} {ds:>4}"
         return s[:CELLW].ljust(CELLW)
 
     half = (len(rows) + 1) // 2
     left, right = rows[:half], rows[half:]
     out = [cut(h) for h in head if h.strip()]
-    hdr = f"{'Suite':<15} {'Pass/Tot':<9} {'Excl':>4} {'Min':>6} {'Earliest':<11} {'Latest':<11} {'Pct':>4} {'Δ':>4}".ljust(CELLW)
+    hdr = f"{'Suite':<18} {'Pass/Tot':<9} {'Excl':>4} {'Min':>6} {'Earliest':<11} {'Latest':<11} {'Pct':>4} {'Δ':>4}".ljust(CELLW)
     out.append(hdr + " │ " + hdr)
     for i in range(half):
         l = fmt(left[i])

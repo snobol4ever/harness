@@ -956,8 +956,8 @@ def main(a):
         # 15 characters (12 until 2026-11-15, when Lon ruled the full language name as the prefix: Snobol4Gimpel, PrologLogtalk), or a nick another bare key holds (nick_to_key would hand that row's readings to this one). NOTHING IS WRITTEN on a refusal.
         i=a.index('--nick'); key,nick=(a[i+1:i+3]+['',''])[:2]
         head,rows=load()
-        if not any(r['key']==key for r in rows) or _engine_of(key) or not nick or len(nick)>15:
-            sys.stderr.write(f"REFUSE(rc=2): --nick {key!r} {nick!r}: KEY must be a bare row of {TSV} and NICK 1 to 15 characters. NOTHING WAS WRITTEN.\n"); sys.exit(2)
+        if not any(r['key']==key for r in rows) or _engine_of(key) or not nick or len(nick)>18:
+            sys.stderr.write(f"REFUSE(rc=2): --nick {key!r} {nick!r}: KEY must be a bare row of {TSV} and NICK 1 to 18 characters. NOTHING WAS WRITTEN.\n"); sys.exit(2)
         other=[r['key'] for r in _scrip(rows) if r['nick']==nick and r['key']!=key]
         if other:
             sys.stderr.write(f"REFUSE(rc=2): --nick {key!r} {nick!r}: the nick is {other[0]}'s. NOTHING WAS WRITTEN.\n"); sys.exit(2)
@@ -996,12 +996,12 @@ def main(a):
         # instead of just appending errors at the end of the banner."; MEASURED that hour: six gate_cases_<lang> rows of SUITE_RUNNERS.tsv were graded
         # every lap and every row write refused "no suite key", because no row was ever opened; rows were opened by hand before, CIO-113). --open-row
         # KEY NICK EMOJI LANG appends a row with its identity cells only, for a KEY that is a master or pkg row of SUITE_RUNNERS.tsv; the first --set
-        # fills every reading and first_*. Refuses any other key, a nick over 15 characters, and an open key (nothing written).
+        # fills every reading and first_*. Refuses any other key, a nick over 18 characters, and an open key (nothing written).
         i=a.index('--open-row'); key,nick,emoji,lang=(a[i+1:i+5]+['','','',''])[:4]
         _rn=os.path.join(os.path.dirname(os.path.abspath(__file__)),'SUITE_RUNNERS.tsv')
         _graded={f[0]:f[1] for f in (l.rstrip('\n').split('\t') for l in open(_rn,encoding='utf-8') if not l.startswith('#')) if len(f)>=5 and f[1] in ('master','pkg')}
-        if key not in _graded or not nick or len(nick)>15 or not emoji or not lang:
-            sys.stderr.write(f"REFUSE(rc=2): --open-row {key!r} {nick!r} {emoji!r} {lang!r}: KEY must be a master or pkg row of {_rn}, NICK 1 to 15 characters, EMOJI and LANG given. NOTHING WAS WRITTEN.\n"); sys.exit(2)
+        if key not in _graded or not nick or len(nick)>18 or not emoji or not lang:
+            sys.stderr.write(f"REFUSE(rc=2): --open-row {key!r} {nick!r} {emoji!r} {lang!r}: KEY must be a master or pkg row of {_rn}, NICK 1 to 18 characters, EMOJI and LANG given. NOTHING WAS WRITTEN.\n"); sys.exit(2)
         head,rows=load()
         if any(r['key']==key for r in rows):
             print(f"--open-row {key}: the row is already open; nothing written"); return
