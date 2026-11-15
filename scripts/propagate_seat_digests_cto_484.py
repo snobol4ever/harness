@@ -228,6 +228,14 @@ def settings_main(argv, apply):
             with open(p + ".tmp", "w", encoding="utf-8", newline="\n") as fh: fh.write(new)
             os.replace(p + ".tmp", p); print("WROTE %s" % p)
     print("SEAT_SETTINGS %s=%d roots=%d harness=%s" % ("written" if apply else "to-write", todo, len(roots), harness))
+def digest_dir(root):
+    """WHERE A SEAT'S GENERATED CLAUDE.md LIVES: the root, unless the root's own clone tracks a CLAUDE.md at its top (snobol4dotnet and snobol4jvm do); then it is
+    <root>/.claude/CLAUDE.md, which Claude Code reads too, so the repo's own file stands at the top and this tool never writes over a tracked file (Lon 2026-11-14,
+    in the cto's window: "The folder holds one of three things: SCRIP, snobol4dotnet, or snobol4jvm." and, on the two files at one name: "Yes, do both port roots that way.")."""
+    import subprocess
+    try: tracked = subprocess.run(["git", "-C", root, "ls-files", "--error-unmatch", "CLAUDE.md"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+    except OSError: tracked = False
+    return os.path.join(root, ".claude") if tracked else root
 def main(argv):
     apply = "--apply" in argv
     if "--settings" in argv: settings_main(argv, apply)
@@ -242,16 +250,16 @@ def main(argv):
             with open(os.path.join(d, "CLAUDE.md"), "w", encoding="utf-8", newline="\n") as fh: fh.write(new)
             print("%-5s %-10s %6d bytes -> %s" % ("out", seat, len(new.encode()), os.path.join(d, "CLAUDE.md"))); continue
         root = os.path.join(([a.split("=", 1)[1] for a in argv if a.startswith("--homes=")] or ["/home"])[0], "claude_%s" % seat)
-        p = os.path.join(root, "CLAUDE.md")
         if not os.path.isdir(root):
             print("SKIP %-10s no root" % seat); continue
+        dd = digest_dir(root); p = os.path.join(dd, "CLAUDE.md")
         old = open(p, encoding="utf-8").read() if os.path.exists(p) else ""
         same = old == new
         if not same: towrite += 1
         print("%-5s %-10s %6d bytes (was %6d) %s" % ("same" if same else ("WRITE" if apply else "would"), seat, len(new.encode()), len(old.encode()), "" if same else "-> " + p))
         if same or not apply:
             continue
-        bak = os.path.join(root, BAK)
+        bak = os.path.join(dd, BAK); os.makedirs(dd, exist_ok=True)
         if old and not os.path.exists(bak):
             with open(bak, "w", encoding="utf-8", newline="\n") as fh: fh.write(old)
         with open(p, "w", encoding="utf-8", newline="\n") as fh: fh.write(new)
