@@ -252,6 +252,8 @@ def main(argv):
         root = os.path.join(([a.split("=", 1)[1] for a in argv if a.startswith("--homes=")] or ["/home"])[0], "claude_%s" % seat)
         if not os.path.isdir(root):
             print("SKIP %-10s no root" % seat); continue
+        if not only and not os.path.isdir(os.path.join(root, ".claude")):
+            print("SKIP %-10s an emptied root (no .claude): name it with --root=%s to write it" % (seat, seat)); continue
         dd = digest_dir(root); p = os.path.join(dd, "CLAUDE.md")
         old = open(p, encoding="utf-8").read() if os.path.exists(p) else ""
         same = old == new
