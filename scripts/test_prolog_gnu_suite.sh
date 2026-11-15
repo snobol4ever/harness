@@ -75,6 +75,12 @@ RUN_TIMEOUT="${GNU_SUITE_RUN_TIMEOUT:-15}"
 # a gigabyte is not a run of a test: it gets 300 s, and a second timeout past util_timeout_retry.sh's retry is still could-not-measure under load (R-1686) or the
 # program's FAIL on a quiet box, as before.
 COMPILE_TIMEOUT="${GNU_SUITE_COMPILE_TIMEOUT:-300}"
+# MODE 3 ONLY (Lon 2026-11-08 10:2x, verbatim: "We will test mode 3 only until further notice"; COO-487; the coo 2026-11-14 22:4x CST, ruling the grader's question on
+# this runner: the word covers every suite, the legacy runners included). Mode 4 (a driver's compile, the link and the binary's run; a plain program's link and run) is
+# graded only when S4E_MODES names m4, as the harness road reads it (default m3). With it off a verdict is m3 against gprolog, no m4 row is written to the store, and a
+# plain program's classify compile stays: it is how this runner tells a program from a library, a reject and a ladder rung, and it is short.
+M4=0; case ",${S4E_MODES:-m3}," in *,m4,*) M4=1 ;; esac
+m4_agrees() { [ "$M4" = 0 ] || [ "$1" = "$2" ]; }
 GPROLOG_BIN="$(gprolog_bin 2>/dev/null || true)"
 VERBOSE="${GNU_SUITE_VERBOSE:-0}"
 
@@ -249,7 +255,7 @@ for f in "${FILES[@]}"; do
         [ ! -f "$drv" ] || SIDE_ERR+=("$rel has a driver and UNGRADABLE.tsv still names it -- delete the stale row")
         if command -v progress_append >/dev/null 2>&1; then
             progress_append package gnu prolog "$rel" m3 UNGRADED 0 "${UGB_SET[$rel]}" || true
-            progress_append package gnu prolog "$rel" m4 UNGRADED 0 "${UGB_SET[$rel]}" || true
+            [ "$M4" = 0 ] || progress_append package gnu prolog "$rel" m4 UNGRADED 0 "${UGB_SET[$rel]}" || true
         fi
         [ "$VERBOSE" -eq 1 ] && echo "  UNGRADABLE ${UGB_SET[$rel]} (UNGRADABLE.tsv, the oracle's reason) $rel"
         continue
@@ -269,12 +275,12 @@ for f in "${FILES[@]}"; do
         # (a SCRIP defect the driver exposed) and a dirty SCRIP skips every row this pass writes.
         # each mode's own wall for its row (R-1676 (c)): m3 its run, m4 the compile, link and run
         drv_lock "$drv"; _t0="$(progress_clock)"
-        "$TIMEOUT_RETRY" "$COMPILE_TIMEOUT" "$SCRIP" --compile "${CA[@]}" "$drv" --out="$dout" < /dev/null > "$probe_log" 2>&1; drc=$?
+        drc=0; [ "$M4" = 0 ] || { "$TIMEOUT_RETRY" "$COMPILE_TIMEOUT" "$SCRIP" --compile "${CA[@]}" "$drv" --out="$dout" < /dev/null > "$probe_log" 2>&1; drc=$?; }
         _cs="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"
         m3_out=$(cd "$TMP" && run_at_declared_table "$DECL" "${rel%.pl}" -- "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --run "${CA[@]}" "$drv" ${dargv[0]+--} "${dargv[@]}" < "$din" 2>/dev/null); m3rc=$?
         S3="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"
         m4_out=""; m4rc=0
-        if [ "$drc" -eq 0 ] && gcc -no-pie "$dout" -L "${S4E_SCRIP}/out" -lscrip_rt -Wl,-rpath,"${S4E_SCRIP}/out" -o "$dbin" 2>/dev/null; then
+        if [ "$M4" = 1 ] && [ "$drc" -eq 0 ] && gcc -no-pie "$dout" -L "${S4E_SCRIP}/out" -lscrip_rt -Wl,-rpath,"${S4E_SCRIP}/out" -o "$dbin" 2>/dev/null; then
             m4_out=$(cd "$TMP" && run_at_declared_table "$DECL" "${rel%.pl}" -- "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$dbin" "${dargv[@]}" < "$din" 2>/dev/null); m4rc=$?
         fi
         S4="$(progress_secs_sum "$(progress_secs_since "$_t0")" "$_cs")"
@@ -289,8 +295,9 @@ for f in "${FILES[@]}"; do
                 XL_N[$rel]=$((${XL_N[$rel]:-0}+1)); done <<< "${XL_PFX[$rel]}"
             gp_out=$(drop_excluded_lines "$rel" "$gp_out"); m3_out=$(drop_excluded_lines "$rel" "$m3_out"); m4_out=$(drop_excluded_lines "$rel" "$m4_out")
         fi
-        if [ "$m3_out" = "$gp_out" ] && [ "$m4_out" = "$gp_out" ]; then _gv=PASS; else _gv=FAIL; fi
+        if [ "$m3_out" = "$gp_out" ] && m4_agrees "$m4_out" "$gp_out"; then _gv=PASS; else _gv=FAIL; fi
         D_V=$_gv; D_M3=$(diff <(printf '%s\n' "$gp_out") <(printf '%s\n' "$m3_out") | grep -c '^>'); D_M4=$(diff <(printf '%s\n' "$gp_out") <(printf '%s\n' "$m4_out") | grep -c '^>')
+        [ "$M4" = 1 ] || D_M4=-   # mode 4 not graded: the line says so, never a 0 that reads as agreement
         # ⛔ A TIMEOUT UNDER LOAD IS A TIMEOUT, NEVER A FAIL (R-1686, R-1574's load-guard rule for every runner; the coo 2026-10-11): at
         # load 20-30 five driver compiles read rc 124 on 966109bb9 (Pl2Wam/all.pl among them with 0 of 201 lines differing) and the row fell
         # 18 -> 17 on a reading of the box, not the program. A driver whose compile or run answered 124 -- after util_timeout_retry.sh's own
@@ -303,14 +310,14 @@ for f in "${FILES[@]}"; do
                 echo "  DRIVEN TIMEOUT $rel -- compile rc $drc, m3 rc $m3rc, m4 rc $m4rc at load1 $_l1 on $_nc cores: could not measure (R-1686), not a FAIL"
                 if command -v progress_append >/dev/null 2>&1; then
                     progress_append package gnu prolog "$rel" m3 UNGRADED "$S3" "timeout-under-load load1=$_l1 cores=$_nc" || true
-                    progress_append package gnu prolog "$rel" m4 UNGRADED "$S4" "timeout-under-load load1=$_l1 cores=$_nc" || true
+                    [ "$M4" = 0 ] || progress_append package gnu prolog "$rel" m4 UNGRADED "$S4" "timeout-under-load load1=$_l1 cores=$_nc" || true
                 fi
                 continue
             fi
         fi
         if command -v progress_append >/dev/null 2>&1; then
             progress_append package gnu prolog "$rel" m3 "$([ "$m3_out" = "$gp_out" ] && echo PASS || echo FAIL)" "$S3" "driver ${base}_driver.pl vs gprolog" || true
-            progress_append package gnu prolog "$rel" m4 "$([ "$m4_out" = "$gp_out" ] && echo PASS || echo FAIL)" "$S4" "driver ${base}_driver.pl vs gprolog" || true
+            [ "$M4" = 0 ] || progress_append package gnu prolog "$rel" m4 "$([ "$m4_out" = "$gp_out" ] && echo PASS || echo FAIL)" "$S4" "driver ${base}_driver.pl vs gprolog" || true
         fi
         if [ "$_gv" = PASS ]; then
             OK_PASS=$((OK_PASS+1))
@@ -329,7 +336,7 @@ for f in "${FILES[@]}"; do
         _ln="library-needs-driver"; [ "${UNG_SET[$rel]:-NEEDS_DRIVER}" = NEEDS_DRIVER ] || _ln="${UNG_SET[$rel]}"
         if command -v progress_append >/dev/null 2>&1; then
             progress_append package gnu prolog "$rel" m3 UNGRADED 0 "$_ln" || true
-            progress_append package gnu prolog "$rel" m4 UNGRADED 0 "$_ln" || true
+            [ "$M4" = 0 ] || progress_append package gnu prolog "$rel" m4 UNGRADED 0 "$_ln" || true
         fi
         [ "$VERBOSE" -eq 1 ] && echo "  LIB (bootstrap-only file, no SCRIP invocation) $rel"
         continue
@@ -353,7 +360,7 @@ for f in "${FILES[@]}"; do
         S3="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"
         bin="$TMP/${base}.bin"
         m4_out=""
-        if gcc -no-pie "$out" -L "${S4E_SCRIP}/out" -lscrip_rt -Wl,-rpath,"${S4E_SCRIP}/out" -o "$bin" 2>/dev/null; then
+        if [ "$M4" = 1 ] && gcc -no-pie "$out" -L "${S4E_SCRIP}/out" -lscrip_rt -Wl,-rpath,"${S4E_SCRIP}/out" -o "$bin" 2>/dev/null; then
             m4_out=$(run_at_declared_table "$DECL" "${rel%.pl}" -- "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$bin" < /dev/null 2>/dev/null)
         fi
         S4="$(progress_secs_sum "$(progress_secs_since "$_t0")" "$_cs")"
@@ -384,22 +391,22 @@ for f in "${FILES[@]}"; do
         # per-MODE outcome cannot be derived from it without lying about what was compared -- a mode is not graded
         # independently here. Both rows carry the SAME agreement verdict and the note names the comparison, rather than
         # inventing a per-mode result the runner never computed.
-        if [ "$m3_out" = "$m4_out" ] && [ "$m4_out" = "$gp_out" ] && [ -z "$m3_out" ]; then
+        if [ "$m3_out" = "$gp_out" ] && m4_agrees "$m4_out" "$gp_out" && [ -z "$m3_out" ]; then
             EMPTY=$((EMPTY+1)); EMPTY_NAMES+=("$rel")
             [ -n "${UNG_SET[$rel]:-}" ] || SIDE_ERR+=("$rel prints 0 bytes in m3, m4 and gprolog and UNGRADED.tsv does not name it -- an empty output grades nothing")
             if command -v progress_append >/dev/null 2>&1; then
                 progress_append package gnu prolog "$rel" m3 UNGRADED 0 "empty-output-grades-nothing" || true
-                progress_append package gnu prolog "$rel" m4 UNGRADED 0 "empty-output-grades-nothing" || true
+                [ "$M4" = 0 ] || progress_append package gnu prolog "$rel" m4 UNGRADED 0 "empty-output-grades-nothing" || true
             fi
             continue
         fi
         [ -z "${UNG_SET[$rel]:-}" ] || SIDE_ERR+=("$rel is named in UNGRADED.tsv and now grades with output -- delete the stale row")
         if command -v progress_append >/dev/null 2>&1; then
-            if [ "$m3_out" = "$m4_out" ] && [ "$m4_out" = "$gp_out" ]; then _gv=PASS; else _gv=FAIL; fi
+            if [ "$m3_out" = "$gp_out" ] && m4_agrees "$m4_out" "$gp_out"; then _gv=PASS; else _gv=FAIL; fi
             progress_append package gnu prolog "$rel" m3 "$_gv" "$S3" "three-way m3=m4=gprolog" || true
-            progress_append package gnu prolog "$rel" m4 "$_gv" "$S4" "three-way m3=m4=gprolog" || true
+            [ "$M4" = 0 ] || progress_append package gnu prolog "$rel" m4 "$_gv" "$S4" "three-way m3=m4=gprolog" || true
         fi
-        if [ "$m3_out" = "$m4_out" ] && [ "$m4_out" = "$gp_out" ]; then
+        if [ "$m3_out" = "$gp_out" ] && m4_agrees "$m4_out" "$gp_out"; then
             OK_PASS=$((OK_PASS+1))
             [ "$VERBOSE" -eq 1 ] && echo "  OK PASS $rel (m3=m4=gprolog, $(printf '%s' "$m3_out" | wc -c) bytes)"
         else
