@@ -82,6 +82,9 @@ mine_pid() {  # mine_pid <pid> -> 0 when the pid carries one of this seat's hand
   # THE SEAT'S OWN SCOPE (the coo 2026-11-14, on officer_05's measurement: a seat's sandbox cannot read /proc/<pid>/environ or cwd, so all 6 of its orphaned reduce runs read
   # "not mine" and were killed by hand; /proc/<pid>/cgroup is world-readable there): a pid in s4e-seat-<seat>.scope or in one of the seat's s4e-mem-<seat>-* scopes is the seat's
   [ -n "$me_seat" ] && grep -qE "/(s4e-seat-${me_seat}\.scope|s4e-mem-${me_seat}-[^/]*\.scope)(/|\$)" "/proc/$1/cgroup" 2>/dev/null && { echo "cgroup $(sed -n 's|^0::||p' "/proc/$1/cgroup" | sed 's|.*/||') of $me_seat"; return 0; }
+  # THE SEAT'S OWN SLICE (the coo 2026-11-16, on the grader's measurement: the cycle's cells run in s4e-grader.slice/s4e-cycle-<N>.scope, which is neither scope of the arm above,
+  # so the grader's kill of two held cells of its own cycle was refused "not mine" and it sent the TERM by hand): a pid in a scope of the slice named for the seat, s4e-<seat>.slice, is the seat's
+  [ -n "$me_seat" ] && grep -qE "/s4e-${me_seat}\.slice/[^/]*\.scope(/|\$)" "/proc/$1/cgroup" 2>/dev/null && { echo "cgroup $(sed -n 's|^0::||p' "/proc/$1/cgroup" | sed 's|.*/||') in s4e-${me_seat}.slice of $me_seat"; return 0; }
   echo "not mine: no handle of $me_seat in its environment${h:+ (handle $h is not under $bgdir)} and cwd ${cwd:-?} is not under $S4E"; return 1; }
 kill_one() {  # kill_one <pid> <why>: TERM, then KILL after 3 s; the ledger line; prints the KILL-MINE line
   local pid="$1" cwd cmd i; cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null); cmd=$( (tr '\0' ' ' < "/proc/$pid/cmdline") 2>/dev/null | sed 's/[[:space:]]*$//')
