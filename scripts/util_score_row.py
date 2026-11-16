@@ -1998,6 +1998,14 @@ def cmd_from_progress(a):
         pop = [e for e in pop if e not in _omn]
         pkg_pop = set(pkg_pop) - _omn
     want = set(pop)
+    # ⭐ A PACKAGE GRADED CASE BY CASE COUNTS ITS CASES AS SWI's ROW DOES (the grader 2026-11-15, MEASURED on exercism_prolog: its 110 entries carry grader
+    # swi-cases, the store holds 1,581 case readings keyed file.pl:unit:test#k, 1,562 PASS, and the row read 0/110 because only the key swi was read by case).
+    # A package whose every ALL.csv row names the grader swi-cases is read by case, its population util_swi_match.py's enumeration, exactly as swi.
+    _cases = key == "swi"
+    if not _cases and os.path.exists(_csvp):
+        with open(_csvp, encoding="utf-8", errors="replace", newline="") as _cf:
+            _gr = [r.get("grader", "") for r in _csv.DictReader(_cf)]
+        _cases = bool(_gr) and all(g == "swi-cases" for g in _gr)
     # (program, mode) -> (outcome, note, tree, ts, secs) at the NEWEST timestamp: the table is compacted (older keys kept ahead of today's
     # appends, 380 backward steps measured 2026-10-11), so file order is not time order; a tie keeps the later line, the later append
     # ⭐ A READING TAKEN ON A DIRTY TREE IS UNREAD (R-2060, on the coo's finding COO-441 (5)): a number's tree is part of its label, and a
@@ -2014,7 +2022,7 @@ def cmd_from_progress(a):
             if fl[1].lower().endswith("-dirty") or fl[2].lower().endswith("-dirty"):   # a dirty SCRIP or corpus tree (the grader 2026-11-14)
                 dirty_keys.add((fl[7], fl[8]))
                 continue
-            if key == "swi":   # SWI's rows name a CASE of a table file, file.pl:unit:test#k (its table lists files)
+            if _cases:   # SWI's rows name a CASE of a table file, file.pl:unit:test#k (its table lists files)
                 _sf = fl[7].split(":", 1)[0]
                 if (_sf[:-3] if _sf.endswith(".pl") else None) in want:
                     k = (fl[7], fl[8])
@@ -2097,7 +2105,7 @@ def cmd_from_progress(a):
         # ⭐ AN ENTRY THE ORACLE REFUSES IN BOTH MODES LEAVES THE DENOMINATOR (R-1696: no oracle answer is excluded, never debt): its latest
         # readings are OUTSIDE in m3 and m4, the shape INRIA's three file_manip entries and every package's oracle-refused programs record
         _swi_excl = None
-        if key == "swi":
+        if _cases:
             # ⭐ SWI's POPULATION IS THE ORACLE'S ENUMERATION OF ITS CASES (the row counts cases; the table lists files), less the cases with no oracle
             # answer and the EXCLUDED_CASES.tsv rows, as the runner grades them (_swi_case_census); Excl is declared - graded, as the runner writes it,
             # so it moves with the corpus and never with an old row (the first cut read SUITES.tsv's own today_excluded back: 167 where the corpus says 211)
@@ -2164,7 +2172,7 @@ def cmd_from_progress(a):
             return 2
     if part:
         byc = _c.defaultdict(list)
-        _pk = (lambda p: p.split(":", 1)[0][:-3]) if key == "swi" else (lambda p: p)   # an SWI case is in its file's part
+        _pk = (lambda p: p.split(":", 1)[0][:-3]) if _cases else (lambda p: p)   # an SWI case is in its file's part
         for (prog, m), v in last.items():
             byc[part.get(_pk(prog), "?")].append((v[3], v[2]))
         sizes = _c.Counter(part.get(_pk(e), "?") for e in pop)
