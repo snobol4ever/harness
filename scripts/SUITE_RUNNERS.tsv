@@ -134,6 +134,7 @@ uni_xml	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/uni_xml
 uni_bench	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/uni_bench
 icon_group	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_group
 ipl_gprogs	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/ipl_gprogs
+ipl_gprocs	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/ipl_gprocs
 ipl_gpacks	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/ipl_gpacks
 wirth1976	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/wirth1976
 pascaline	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascaline
