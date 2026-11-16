@@ -71,16 +71,16 @@ char *qsearch(char *key, char *base, int nel, int width, int (*cmp)()) {
     while (lo <= hi) {
         long mid = lo + (hi - lo) / 2;
         char *p = base + mid * (long)width;
-        int c = (*cmp)(key, p);
+        int c = (*cmp)(p, key);
         if (c == 0) return p;
-        if (c < 0) hi = mid - 1; else lo = mid + 1;
+        if (c > 0) hi = mid - 1; else lo = mid + 1;
     }
     return (char *)0;
 }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 char *reserve(int region, word nbytes) { (void)region; (void)nbytes; return &uxw_room; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-int interp(int fsig, dptr cargp) { uxw_collect_t *rec = ((uxw_collect_t **)(void *)cargp)[-1]; if (!rec || fsig != G_Csusp) return A_Resume; return rec->push(rec, cargp); }
+int interp(int fsig, dptr cargp) { uxw_collect_t *rec = ((uxw_collect_t **)(void *)cargp)[-1]; if (!rec || (fsig != G_Csusp && fsig != G_Fsusp)) return A_Resume; return rec->push(rec, cargp); }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 struct descrip xwin_kywd_prog(void) { const char *p = rt_main_progname(); struct descrip d; if (!p) p = ""; StrLen(d) = (word)strlen(p); StrLoc(d) = (char *)p; return d; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
