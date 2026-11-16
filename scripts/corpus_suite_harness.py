@@ -1875,7 +1875,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     # byte-identical to its .ref when run from its own directory in BOTH modes, FAIL in both from
     # anywhere else. Consistent for suite entries too: run_suite_entry materializes the entry into a
     # temp dir and passes THAT path, so parent is the temp dir -- exactly where it copies companions.
-    return classify(_screen_wrap(argv, out_files), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    return classify(_screen_wrap(argv, out_files, sno_path), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
@@ -2006,7 +2006,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # the declared heap and stack ride the binary's command line as -d -i -s (see _size_switches), read at its first allocation
     # Same rule as run_m3 above: the compiled binary's relative opens must resolve against the
     # SOURCE's directory, not the harness's cwd. out_bin is an absolute path, so moving cwd is safe.
-    return classify(_screen_wrap(argv, out_files), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    return classify(_screen_wrap(argv, out_files, sno_path), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 # ⛔⭐ run_ast TAKES NO prog_argv AND MUST NOT -- NOT AN OVERSIGHT. `--dump-ast` never executes the
@@ -4307,6 +4307,9 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
         stage_folder(_cdir, Path(entry.name).name, cand.parent)     # ALL.csv fixtures=folder: the entry's own folder beside it, as the deleted demos runner staged it
     elif _cdir and getattr(entry, "fixtures", False):
         stage_fixtures(_cdir, Path(entry.name).name, cand.parent)   # ALL.csv fixtures=staged: NAME.fixtures/ beside the entry's source, as the builder's cut staged it
+    _evs = (Path(_cdir) / (Path(entry.name).name + ".events")) if _cdir else None
+    if _evs is not None and _evs.is_file() and SCREEN_FILE in (getattr(entry, "out_files", None) or []):
+        cand.with_suffix(".events").write_bytes(_evs.read_bytes())   # THE SCREEN ROAD'S EVENT SCRIPT (W7, _screen_wrap): NAME.events beside a graphics entry's source travels beside the staged program
     for _fn, _body in (getattr(entry, "files", None) or {}).items():   # THE FILE FENCES (CIO-55): the entry's own companions, beside the program
         (cand.parent / _fn).write_bytes(_body.encode("utf-8"))
     # PROGRAM ARGUMENTS THAT NAME A COMPANION (AIS HSORT: its input file name arrives in HOST(0)): an argv token
@@ -7325,13 +7328,17 @@ def validate_stderr_cell(raw, where):
 
 
 SCREEN_FILE = "screen.dump"
-def _screen_wrap(argv, out_files):
+def _screen_wrap(argv, out_files, src=None):
     """THE SCREEN ROAD (Lon 2026-11-14: "We are absolutely DOING GRAPHICS, X-windows." / "We should be able to do off-line ... GUI tests."; skill icon
     section 1): an entry whose out_files names screen.dump is a graphics program. Its command runs under util_screen_run.py, on a virtual X display
     of its own; that script ends a program that waits for a human once its screen holds still and writes the one-line screen.dump, which the
-    out_files road then appends to the answer like any written file. Every other entry's command is returned as it came."""
+    out_files road then appends to the answer like any written file. Every other entry's command is returned as it came.
+    SCRIPTED EVENTS (W7 of the window facility, skill icon reference.md section 9; the cqo 2026-11-16): when NAME.events stands beside the program
+    src (stage_entry copies it there from beside the entry's source), the road is handed it with --events and gives the program that mouse and
+    those keys, one more screen line a step; an entry with no such file runs exactly as before."""
     if not out_files or SCREEN_FILE not in out_files: return argv
-    return [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py"), "--out", SCREEN_FILE, "--"] + list(argv)
+    _ev = Path(src).with_suffix(".events") if src else None
+    return [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py"), "--out", SCREEN_FILE] + (["--events", str(_ev.resolve())] if _ev is not None and _ev.is_file() else []) + ["--"] + list(argv)
 def _out_files_clear(cwd, names):
     for n in names or []:
         (Path(cwd) / n).unlink(missing_ok=True)
@@ -8337,9 +8344,43 @@ def own_clone_probe():
     return 1 if why else 0
 
 
+def screen_events_probe():
+    """--probe-screen-events: THE SCREEN ROAD'S EVENT SCRIPT REACHES THE ROAD (W7 of the window facility; the cqo 2026-11-16), on scratch with the X
+    distribution's own xeyes, whose picture follows the pointer; no Icon needed. Six arms: an entry that names no screen.dump is not wrapped; a
+    graphics entry with no NAME.events is wrapped exactly as before; stage_entry carries NAME.events beside a graphics entry's staged program and
+    beside no other; the wrap then hands it to the road; graded through classify the answer is one screen line a step and the same answer twice;
+    the same program with no script answers its opening line alone. SCREEN_EVENTS ok|RED; rc 0 or 1, 2 cannot measure."""
+    import types
+    if not shutil.which("xeyes") or not shutil.which("Xvfb"):
+        print("REFUSE(2): --probe-screen-events needs xeyes (x11-apps) and Xvfb", file=sys.stderr); return 2
+    t = Path(tempfile.mkdtemp(prefix="s4e-screen-events.")); why = []
+    try:
+        pkg, run = t / "pkg", t / "run"; pkg.mkdir(); run.mkdir()
+        argv = ["xeyes", "-geometry", "300x200+0+0"]; road = [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py"), "--out", SCREEN_FILE]
+        if _screen_wrap(argv, None, run / "eyes.icn") != argv or _screen_wrap(argv, ["other.txt"], run / "eyes.icn") != argv: why.append("arm 1: an entry that names no screen.dump was wrapped")
+        if _screen_wrap(argv, [SCREEN_FILE], run / "eyes.icn") != road + ["--"] + argv or _screen_wrap(argv, [SCREEN_FILE]) != road + ["--"] + argv: why.append("arm 2: a graphics entry with no events file is not wrapped as before")
+        script = "move 30 700\nwait\nmove 1000 20\n"; (pkg / "eyes.events").write_text(script); (pkg / "plain.events").write_text(script)
+        mk = lambda name, of: types.SimpleNamespace(name=name, kind="block", sno_lines=["procedure main()", "end"], ref=[""], out_files=of)
+        cand, _ = stage_entry(mk("eyes", [SCREEN_FILE]), str(run), ".icn", str(pkg)); stage_entry(mk("plain", None), str(run), ".icn", str(pkg))
+        if not (run / "eyes.events").is_file() or (run / "eyes.events").read_text() != script or (run / "plain.events").exists(): why.append("arm 3: stage_entry did not carry NAME.events beside the graphics entry alone")
+        w = _screen_wrap(argv, [SCREEN_FILE], cand)
+        if w != road + ["--events", str((run / "eyes.events").resolve()), "--"] + argv: why.append("arm 4: the wrap does not hand the staged script to the road: %r" % (w,))
+        v1 = classify(w, 120, "", cwd=str(run), out_files=[SCREEN_FILE]); ans = v1.stdout.decode("utf-8", "replace"); ls = ans.strip().split("\n")
+        v2 = classify(w, 120, ans.rstrip("\n"), cwd=str(run), out_files=[SCREEN_FILE])
+        if len(ls) != 3 or len(set(ls)) != 3 or not all(l.startswith("screen 1024x768 md5 ") for l in ls) or v2.kind != "PASS": why.append("arm 5: the scripted answer read %r and graded %s against itself" % (ls, v2.kind))
+        v3 = classify(_screen_wrap(argv, [SCREEN_FILE]), 120, ls[0], cwd=str(run), out_files=[SCREEN_FILE])
+        if v3.kind != "PASS": why.append("arm 6: with no script the answer is not the opening line alone: %r" % (v3.stdout,))
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+    print("SCREEN_EVENTS ok arms=6 (no screen.dump no wrap; no events file the wrap of before; NAME.events staged beside a graphics entry alone; the wrap hands it to the road; one screen line a step, the same twice; no script the opening line alone)" if not why else "SCREEN_EVENTS RED: " + " ".join(why))
+    return 1 if why else 0
+
+
 def main():
     if sys.argv[1:] == ["--probe-big-mem"]:
         sys.exit(big_mem_probe())
+    if sys.argv[1:] == ["--probe-screen-events"]:
+        sys.exit(screen_events_probe())
     if sys.argv[1:] == ["--probe-own-clone"]:
         sys.exit(own_clone_probe())
     own_clone_args(sys.argv)
