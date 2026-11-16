@@ -12,20 +12,22 @@
 #                   marker by cut_ladder.sh's body instead: util_screen_run.py with --events NAME.events, its answer its standard output then its screen
 #                   line), refusing a disagreement; writes D/NAME.out, D/NAME.err and D/NAME.rc (default a scratch folder) and says SAME or DIFFERS
 #                   against the fixture's own NAME.out, NAME.err and want_rc
-# TWO KINDS OF ENTRY. XPCE-RUNNER.txt names every entry whose run reaches library(pce) (its program, or a file it loads, names it): those are graded
-# only through THE XPCE RUNNER (step 3, officer_04's design: GRADING.md section 2, DESIGN J2 J4 J5), which is not built; until it lands, any token on
-# such an entry answers REFUSED, could not measure, never green and never red (the one marked place: xpce_runner below). Every other entry is PLAIN and
-# is graded today: the board of corpus_suite_harness.py (standard output and rc, mode 3, and mode 4 too when S4E_MODE4=1, COO-487), then its standard
+# TWO KINDS OF ENTRY. ALL.xpce names every entry whose run reaches library(pce) (its program, or a file it loads, names it): those run only through
+# THE XPCE RUNNER (step 3, officer_04: util_xpce_run.py, which corpus_suite_harness.py's _xpce_wrap puts in front of the oracle's and SCRIP's command of
+# every such entry, inside the screen road; GRADING.md section 2, DESIGN J2 J4 J5): XDG_CONFIG_HOME emptied before every run, standard input a pipe held
+# open and silent, pre.pl before the program on the oracle's side; an entry with NAME.display runs under the road's --no-screen. This harness's own
+# standard-error runs put the same wrap in front of SCRIP (the one marked place: xpce_runner below). Every other entry is PLAIN. Every entry is
+# graded: the board of corpus_suite_harness.py (standard output and rc, mode 3, and mode 4 too when S4E_MODE4=1, COO-487), then its standard
 # error against NAME.err by the harness itself, since the board reads a package entry's NAME.err (corpus_suite_harness.py line 3602) and compares it
 # nowhere (MEASURED 2026-11-16 at harness ab983818: stderr_answer is read and written and never graded).
 # THE PROBE TOKENS (the probe column, space separated; the vocabulary is closed, a token not listed refuses rc 2):
 #   baseline            every fixture entry reads red in mode 3 today, each named with its first line, run by hand (scrip --run, stdin /dev/null; a
 #                       runner entry off its runner, since red needs no runner), and the board of the plain entries reads 0 passing (step 0)
-#   entries=a,b         the named entries pass: stdout and rc by the board, stderr against NAME.err (a runner entry: REFUSED until step 3)
+#   entries=a,b         the named entries pass: stdout and rc by the board, stderr against NAME.err (a runner entry through the XPCE runner)
 #   stress=a,b          the same under SCRIP_GC_STRESS=1 and SCRIP_GC_PLANT_FLIP=1; the collector's own report lines on standard error ([GC-FLIP]
 #                       and its kin, the proof the plant applied) are no part of the answer and are dropped before the comparison
 #   c2bb=a,b            each named entry, run in mode 3 with SCRIP_C2BB_TRACE set, ends with its want_rc and the trace holds 0 lines; REFUSED when the
-#                       runtime was built without the trace (no SCRIP_C2BB_TRACE string in out/libscrip_rt.so, RT_DIAG off), or on a runner entry
+#                       runtime was built without the trace (no SCRIP_C2BB_TRACE string in out/libscrip_rt.so, RT_DIAG off)
 #   obj=FILE            the shared object FILE stands: SCRIP's out/FILE, or, for libxpce.so, the kernel library CURRENT names (OBJ_KERNEL below)
 #   objsym=FILE:NAME    that object defines the dynamic symbol NAME
 #   noneed=LIB          SCRIP's out/libscrip_rt.so carries no NEEDED entry naming LIB (the binding alone needs the kernel, which alone links X: J1)
@@ -45,7 +47,11 @@
 #                         kernelbuild, hello, classes  (steps 1 and 2, the cio) the verbs check, hello and classes of util_xpce_kernel_build.sh
 #                                     (its rc 0 green, 1 red, 2 refused); RED while that script is absent, never a refusal. The kernel witness
 #                                     xpce_k_hello and its refs have one home, harness/xpce with the recipe, and are not in this fixture (the cio)
-#                         runner      (step 3, officer_04), rosetta4 (step 24), demos7, demos_fontviewer, demos_broadcast and demos_emacs (steps 25
+#                         runner      (step 3, officer_04) three arms, rc 0 green: (a) util_xpce_run.py --probe (the runner on swipl, each part
+#                                     fail-once by a plant); (b) corpus_suite_harness.py --probe-xpce-runner (the harness's wiring); (c) every ALL.xpce
+#                                     entry cut twice from the oracle THROUGH THE RUNNER (corpus_suite_harness.py expect --keep, DISPLAY unset, so a
+#                                     display is the road's alone): the two cuts alike and each byte equal to the fixture's NAME.out, NAME.err and want_rc
+#                         rosetta4 (step 24), demos7, demos_fontviewer, demos_broadcast and demos_emacs (steps 25
 #                                     to 28, the demos' package entries under the screen road, DESIGN J15; officer_04): REFUSED, their commands are not
 #                                     yet named by their seat; the seat names each here in its step's landing
 set -uo pipefail
@@ -75,15 +81,23 @@ col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STE
 fixture_entries() { awk -F, 'NR > 1 {print $2}' "$FIX/ALL.csv"; }
 cell() { awk -F, -v e="$1" -v k="$2" 'NR == 1 {for (i = 1; i <= NF; i++) if ($i == k) c = i} NR > 1 && $2 == e {print $c; exit}' "$FIX/ALL.csv"; }
 is_entry() { fixture_entries | grep -x "$1" > /dev/null; }
-needs_runner() { grep -qx "$1" "$FIX/XPCE-RUNNER.txt" 2>/dev/null; }
+needs_runner() { grep -v '^#' "$FIX/ALL.xpce" 2>/dev/null | grep -qx "$1"; }
+runner_entries() { grep -v '^#' "$FIX/ALL.xpce" 2>/dev/null | grep .; }
 seat_tmp() { mkdir -p "/tmp/s4e/${S4E_SEAT:-anon}" && mktemp -d "/tmp/s4e/${S4E_SEAT:-anon}/prolog_xpce_$1.XXXXXX"; }   # a seat's run scratch (skill seat-conduct 2)
 stage() { local d; d="$(seat_tmp "$1")" || return 1; cp -r "$FIX/." "$d/" && echo "$d"; }
 # ⭐ THE XPCE RUNNER, THE ONE MARKED PLACE (step 3, officer_04: GRADING.md section 2; DESIGN J2 the one-thread oracle, J4 standard input held open and
-# silent with a screen entry's hold a read of it, J5 XDG_CONFIG_HOME a fixed empty folder for both systems). Until step 3 lands it measures nothing: a
-# token on a runner entry is REFUSED here. Step 3's landing replaces this body with the runner's call and its board, and the tokens below call it as is.
-xpce_runner() { echo "    $1: reaches library(pce), so it is graded only through the XPCE runner (step 3), which is not built: could not measure" >> "$log"; echo refuse; }
+# silent with a screen entry's hold a read of it, J5 XDG_CONFIG_HOME a folder emptied before every run, for both systems). The board grades a runner
+# entry through corpus_suite_harness.py, whose _xpce_wrap applies the runner itself; this harness's own runs of SCRIP (its standard-error check and
+# c2bb) put the same words in front of the command: xpce_runner ENTRY prints them, nothing for a plain entry (the screen road with --no-screen for an
+# entry with NAME.display, with --out screen.dump and its events for a graphics entry, then util_xpce_run.py with no pre.pl, SCRIP's side).
+xpce_runner() {
+    needs_runner "$1" || return 0
+    if [ -e "$FIX/$1.display" ]; then printf '%s ' python3 -I "$HERE/util_screen_run.py" --no-screen --
+    elif [ "$(cell "$1" out_files)" = screen.dump ]; then printf '%s ' python3 -I "$HERE/util_screen_run.py" --out screen.dump; [ -f "$FIX/$1.events" ] && printf '%s ' --events "$1.events"; printf '%s ' --; fi
+    printf '%s ' python3 -I "$HERE/util_xpce_run.py" --
+}
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: prolog-xpce -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 5' "$STEPS" | wc -l) steps (STEPS.tsv), $(fixture_entries | wc -l) witnesses (fixtures/prolog_xpce, $(grep -vc "^#" "$FIX/XPCE-RUNNER.txt") through the XPCE runner)"
+    echo "DESIGN-PLAN: prolog-xpce -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 5' "$STEPS" | wc -l) steps (STEPS.tsv), $(fixture_entries | wc -l) witnesses (fixtures/prolog_xpce, $(runner_entries | wc -l) through the XPCE runner)"
     printf '%-4s %-38s %-11s %-12s %s\n' step slug executor depends probe
     awk -F'\t' '!/^#/ && $1 != "step" && NF >= 5 {printf "%-4s %-38s %-11s %-12s %s\n", $1, $2, $3, $4, substr($5, 1, 90)}' "$STEPS"
     exit 0
@@ -133,19 +147,18 @@ gc_lines_out() { grep -vE '^\[GC-[A-Z0-9-]+\]' "$1"; }   # the collector's own r
 err_same() { cmp -s <(gc_lines_out "$1") "$2"; }
 run_m3() {  # run_m3 DIR ENTRY [ENV...]: scrip --run in mode 3 in the staged folder; writes DIR/ENTRY.{o,e,r}
     local d="$1" e="$2"; shift 2
-    ( cd "$d" && env "$@" timeout -k 5 "$(cell "$e" timeout_s)" "$S4E_SCRIP/scrip" --run --dialect=swi $(sizes "$e") "$e.pl" < /dev/null > "$e.o" 2> "$e.e"; echo "$?" > "$e.r" )
+    ( cd "$d" && env "$@" timeout -k 5 "$(cell "$e" timeout_s)" $(xpce_runner "$e") "$S4E_SCRIP/scrip" --run --dialect=swi $(sizes "$e") "$e.pl" < /dev/null > "$e.o" 2> "$e.e"; echo "$?" > "$e.r" )
 }
 run_m4() {  # run_m4 DIR ENTRY [ENV...]: scrip --compile then the binary, mode 4; writes DIR/ENTRY.{o4,e4,r4}
     local d="$1" e="$2"; shift 2
     ( cd "$d" && if timeout -k 5 300 "$S4E_SCRIP/scrip" --compile --dialect=swi $(sizes "$e") "$e.pl" --out="$e.m4" < /dev/null > /dev/null 2> "$e.c4"; then
-        env "$@" timeout -k 5 "$(cell "$e" timeout_s)" "./$e.m4" < /dev/null > "$e.o4" 2> "$e.e4"; echo "$?" > "$e.r4"; else : > "$e.o4"; cp "$e.c4" "$e.e4"; echo 2 > "$e.r4"; fi )
+        env "$@" timeout -k 5 "$(cell "$e" timeout_s)" $(xpce_runner "$e") "./$e.m4" < /dev/null > "$e.o4" 2> "$e.e4"; echo "$?" > "$e.r4"; else : > "$e.o4"; cp "$e.c4" "$e.e4"; echo 2 > "$e.r4"; fi )
 }
 board() {  # board ENTRIES [ENV...]: grade plain entries by corpus_suite_harness, then their stderr; echo green|red|refuse
     local ents="$1"; shift
     local e m part n modes=m3 o line pass all d v=green
     for e in $(printf '%s' "$ents" | tr ',' ' '); do
         is_entry "$e" || { echo "    $e is no entry of the fixture" >> "$log"; echo refuse; return; }
-        needs_runner "$e" && { xpce_runner "$e"; return; }
     done
     part="$(printf '%s' "$ents" | tr ',' '\n' | sed 's/^/entry:/' | paste -sd, -)"; n="$(printf '%s' "$ents" | tr ',' '\n' | grep -c .)"
     [ "${S4E_MODE4:-0}" = 1 ] && modes=m3,m4
@@ -208,7 +221,6 @@ for tok in $probe; do
             v=green; d="$(stage c2bb)" || { note "$tok" refuse; continue; }
             for e in $(printf '%s' "${tok#c2bb=}" | tr ',' ' '); do
                 is_entry "$e" || { echo "    $e is no entry of the fixture" >> "$log"; v=refuse; break; }
-                needs_runner "$e" && { v="$(xpce_runner "$e")"; break; }
                 rm -f "$d/$e.c2bb"; run_m3 "$d" "$e" SCRIP_C2BB_TRACE="$d/$e.c2bb"
                 h=0; [ -f "$d/$e.c2bb" ] && h="$(grep -c . "$d/$e.c2bb")"
                 [ "$(cat "$d/$e.r")" = "$(cell "$e" want_rc)" ] || { echo "    $e ended rc $(cat "$d/$e.r"), want_rc $(cell "$e" want_rc)" >> "$log"; v=red; }
@@ -268,7 +280,24 @@ for tok in $probe; do
                k="$HERE/util_xpce_kernel_build.sh"; verb="${tok#cmd=}"; [ "$verb" = kernelbuild ] && verb=check
                if [ ! -f "$k" ]; then echo "    no $k" >> "$log"; note "$tok" red
                else bash "$k" "$verb" >> "$log" 2>&1; r=$?; case "$r" in 0) note "$tok" green ;; 2) note "$tok" refuse ;; *) note "$tok" red ;; esac; fi ;;
-        cmd=runner|cmd=rosetta4|cmd=demos7|cmd=demos_fontviewer|cmd=demos_broadcast|cmd=demos_emacs) echo "    $tok: its command is not yet named by its seat (officer_04)" >> "$log"; note "$tok" refuse ;;
+        cmd=runner)
+               v=green; d="$(seat_tmp runner)"
+               python3 -I "$HERE/util_xpce_run.py" --probe >> "$log" 2>&1; r=$?; [ "$r" = 0 ] || { [ "$r" = 2 ] && v=refuse || v=red; }
+               python3 "$CSH" --probe-xpce-runner >> "$log" 2>&1; r=$?; [ "$r" = 0 ] || { [ "$r" = 2 ] && v=refuse || { [ "$v" = refuse ] || v=red; }; }
+               ents="$(runner_entries | paste -sd, -)"
+               for k in 1 2; do
+                   env -u DISPLAY -u XAUTHORITY timeout -k 5 1800 python3 "$CSH" expect "$FIX/ALL.pl" "$FIX/ALL.ref" --lang prolog --only "$ents" --jobs 4 --timeout 120 --keep "$d/cut$k" > "$d/cut$k.log" 2>&1 || { echo "    (c) the oracle's cut $k through the runner refused: $(tail -1 "$d/cut$k.log" | cut -c1-140)" >> "$log"; v=refuse; }
+               done
+               n=0; same=0
+               for e in $(runner_entries); do n=$((n + 1)); k1="$d/cut1/$e"; k2="$d/cut2/$e"
+                   if ! { cmp -s "$k1.out" "$k2.out" && cmp -s "$k1.err" "$k2.err" && cmp -s "$k1.rc" "$k2.rc"; }; then echo "    (c) $e: the two cuts through the runner disagree" >> "$log"; [ "$v" = green ] && v=refuse; continue; fi
+                   if cmp -s "$k1.out" "$FIX/$e.out" && cmp -s "$k1.err" <(cat "$FIX/$e.err" 2>/dev/null) && [ "$(cat "$k1.rc")" = "$(cell "$e" want_rc)" ]; then same=$((same + 1))
+                   else echo "    (c) $e: the runner's cut differs from the fixture (rc $(cat "$k1.rc"), want_rc $(cell "$e" want_rc))" >> "$log"; [ "$v" = green ] && v=red; fi
+               done
+               echo "    (c) $same of $n runner entries cut twice alike through the runner and byte equal to the fixture" >> "$log"
+               [ "$n" -gt 0 ] || v=refuse
+               rm -rf "${d:?}"; note "$tok" "$v" ;;
+        cmd=rosetta4|cmd=demos7|cmd=demos_fontviewer|cmd=demos_broadcast|cmd=demos_emacs) echo "    $tok: its command is not yet named by its seat (officer_04)" >> "$log"; note "$tok" refuse ;;
         *) echo "    unknown probe token $tok" >> "$log"; note "$tok" refuse ;;
     esac
 done

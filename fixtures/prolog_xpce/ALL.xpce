@@ -1,4 +1,4 @@
-# XPCE-RUNNER.txt: the entries whose run reaches library(pce) (the program names it, or loads test_xpce.pl, which does), so each is graded only on the XPCE runner (step 3); every other entry of ALL.csv is plain and is graded today. One entry a line.
+# ALL.xpce: the entries of this package whose run reaches library(pce) (the program names it, or loads test_xpce.pl, which does); each runs under the XPCE runner, util_xpce_run.py, on both sides (corpus_suite_harness.py _xpce_selected). One entry a line.
 xpce_e_await
 xpce_e_goal
 xpce_e_loop

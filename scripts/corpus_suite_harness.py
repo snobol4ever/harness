@@ -599,6 +599,8 @@ def run_oracle(oracle_bin, flags, sno_path, timeout, stdin_text=None, prog_args=
     that echoed text reproducible and comparable to a frozen .ref at all."""
     sno_path = Path(sno_path)
     argv = [oracle_bin] + flags.split() + _host_u_switch(sno_path, prog_args) + [sno_path.name] + (list(prog_args) if prog_args else [])
+    if sno_path.with_suffix(".xpce").is_file():   # an XPCE entry: the runner, oracle side, inside its screen road (_xpce_wrap)
+        argv = _screen_wrap(_xpce_wrap(argv, sno_path, oracle=True, stdin_text=stdin_text), out_files, sno_path)
     _out_files_clear(sno_path.parent, out_files)
     kind, out, _err, rc = _run_raw(argv, timeout, cwd=str(sno_path.parent), stdin_text=stdin_text, merge_stderr=merge_stderr)
     out = _out_files_append(out, sno_path.parent, out_files) if out_files else out
@@ -640,13 +642,18 @@ def process_ending(kind, rc):
     return "EXIT", rc
 
 
-def run_oracle_record(oracle_bin, flags, sno_path, timeout, stdin_text=None, prog_args=None, out_files=None, merge_stderr=False, env=None):
-    """run_oracle's own invocation, every argument the same, keeping the whole process record: (ending, rc, stdout text, stderr text)."""
+def run_oracle_record(oracle_bin, flags, sno_path, timeout, stdin_text=None, prog_args=None, out_files=None, merge_stderr=False, env=None, keep=None):
+    """run_oracle's own invocation, every argument the same, keeping the whole process record: (ending, rc, stdout text, stderr text).
+    keep, a dict, is given the raw bytes as well (keys out and err), for a caller that compares them byte for byte (expect --keep)."""
     sno_path = Path(sno_path)
     argv = [oracle_bin] + flags.split() + _host_u_switch(sno_path, prog_args) + [sno_path.name] + (list(prog_args) if prog_args else [])
+    if sno_path.with_suffix(".xpce").is_file():   # an XPCE entry: the runner, oracle side, inside its screen road (_xpce_wrap)
+        argv = _screen_wrap(_xpce_wrap(argv, sno_path, oracle=True, stdin_text=stdin_text), out_files, sno_path)
     _out_files_clear(sno_path.parent, out_files)
     kind, out, err, rc = _run_raw(argv, timeout, cwd=str(sno_path.parent), env=env, stdin_text=stdin_text, merge_stderr=merge_stderr)
     out = _out_files_append(out, sno_path.parent, out_files) if out_files else out
+    if keep is not None:
+        keep["out"], keep["err"] = out, (err or b"")
     ending, rc = process_ending(kind, rc)
     return ending, rc, out.decode("utf-8", "replace").rstrip("\n"), (err or b"").decode("utf-8", "replace")
 
@@ -1875,7 +1882,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     # byte-identical to its .ref when run from its own directory in BOTH modes, FAIL in both from
     # anywhere else. Consistent for suite entries too: run_suite_entry materializes the entry into a
     # temp dir and passes THAT path, so parent is the temp dir -- exactly where it copies companions.
-    return classify(_screen_wrap(argv, out_files, sno_path), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    return classify(_screen_wrap(_xpce_wrap(argv, sno_path, stdin_text=stdin_text), out_files, sno_path), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
@@ -2006,7 +2013,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # the declared heap and stack ride the binary's command line as -d -i -s (see _size_switches), read at its first allocation
     # Same rule as run_m3 above: the compiled binary's relative opens must resolve against the
     # SOURCE's directory, not the harness's cwd. out_bin is an absolute path, so moving cwd is safe.
-    return classify(_screen_wrap(argv, out_files, sno_path), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    return classify(_screen_wrap(_xpce_wrap(argv, sno_path, stdin_text=stdin_text), out_files, sno_path), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 # ⛔⭐ run_ast TAKES NO prog_argv AND MUST NOT -- NOT AN OVERSIGHT. `--dump-ast` never executes the
@@ -4343,7 +4350,44 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
             _hit = False
         if _hit:
             (cand.parent / _tok).write_bytes((Path(_cdir) / _tok).read_bytes())
+    if ext == ".pl" and _xpce_selected(entry, companion_dir):
+        cand = _xpce_stage(entry, cand, _cdir)
     return cand, expected
+
+
+def _xpce_selected(entry, companion_dir):
+    """THE XPCE RUNNER'S ENTRIES (DESIGN-PLAN prolog-xpce step 3, officer_04): a Prolog entry whose run reaches library(pce). One of two
+    declarations, never a reading of the program: a master entry named xpce__NAME (the family the plan's witnesses join the Prolog master
+    as), or an entry a package names in its ALL.xpce beside ALL.csv (one entry name a line, a # line a note). Every other entry is not."""
+    if Path(entry.name).name.startswith("xpce__"):
+        return True
+    lst = (Path(companion_dir) / "ALL.xpce") if companion_dir else None
+    if lst is None or not lst.is_file():
+        return False
+    return entry.name in {l.strip() for l in lst.read_text(errors="replace").splitlines() if l.strip() and not l.lstrip().startswith("#")}
+
+
+def _xpce_stage(entry, cand, cdir):
+    """An XPCE entry staged: the marker NAME.xpce beside the program (its text unread; _xpce_wrap reads it), and, when NAME.goal stands
+    beside the entry's source, THE WRAPPER FILE for a program with no hold of its own (a rosetta fragment, a demo; SCRIP has no goal switch,
+    scrip -g refuses, MEASURED by officer_04 2026-11-16 09:5x CST): NAME.run.pl is written beside the program for BOTH systems,
+    `:- consult('NAME.pl').` then `:- initialization((GOAL, read(user_input, _)), main).`, the goal NAME.goal's one line, the hold the read of
+    the runner's held standard input (grading-probes/fractal.run.pl, the oracle's md5 twice); the run is of NAME.run.pl, and the screen
+    road's side files travel to its stem. A NAME.goal of more than one line, or empty, is refused rc 2. Returns the file the run is of."""
+    cand.with_suffix(".xpce").write_text("")
+    g = (Path(cdir) / (Path(entry.name).name + ".goal")) if cdir else None
+    if g is None or not g.is_file():
+        return cand
+    lines = [l for l in g.read_text(errors="replace").splitlines() if l.strip()]
+    if len(lines) != 1:
+        refuse(f"{g}: a goal file holds one goal on one line, and this one holds {len(lines)}")
+    goal = lines[0].strip().rstrip(".").strip()
+    run = cand.with_name(cand.stem + ".run" + cand.suffix)
+    run.write_text(":- consult('%s').\n:- initialization((%s, read(user_input, _)), main).\n" % (cand.name, goal))
+    for sx in (".xpce", ".events", ".cap", ".depth", ".display"):
+        if cand.with_suffix(sx).is_file():
+            run.with_suffix(sx).write_bytes(cand.with_suffix(sx).read_bytes())
+    return run
 
 
 def expected_refusal_names(want, out, rc):
@@ -4834,14 +4878,21 @@ def cmd_expect(args):
         entries = [e for e in entries if e.name in want]
     require_population(paths, len(entries), 1, f"entries read from {args.sno}")
     comp = Path(args.sno).parent
+    if args.keep:
+        Path(args.keep).mkdir(parents=True, exist_ok=True)
     root = Path(tempfile.mkdtemp(prefix="csh_expect_"))
     oenv = dict(os.environ, SETL4PATH=".:%s" % paths["inc"]) if lang in ("snobol4", "snocone", "rebus") else None   # scorecard_snobol4.sh's sc_oracle_run: an -INCLUDE resolves against the corpus library
 
     def one(e):
         with tempfile.TemporaryDirectory(dir=root) as td:
             cand, expected = stage_entry(e, td, ext, comp)
+            _kp = {} if args.keep else None
             ending, rc, out, err = run_oracle_record(oracle_bin, flags, cand, args.timeout, stdin_text=e.stdin, prog_args=getattr(e, "argv", None),
-                                                     out_files=getattr(e, "out_files", None), merge_stderr=getattr(e, "merge_stderr", False), env=oenv)
+                                                     out_files=getattr(e, "out_files", None), merge_stderr=getattr(e, "merge_stderr", False), env=oenv, keep=_kp)
+            if args.keep:   # the raw record of each entry, NAME.out NAME.err NAME.rc (NAME every slash an underscore), for a byte comparison
+                _kn = Path(args.keep) / fmt2_out_name(e.name)
+                _kn.with_name(_kn.name + ".out").write_bytes(_kp["out"]); _kn.with_name(_kn.name + ".err").write_bytes(_kp["err"])
+                _kn.with_name(_kn.name + ".rc").write_text(("" if rc is None else str(rc)) + "\n")
             exp = expected.rstrip("\n") if expected is not None else None
             so = _expect_stdout_against_ref(out, exp)
             se = ("error" if (err.strip() and ((rc not in (None, 0)) or FATAL_REF_LINE.search(err))) else ("text" if err.strip() else "empty"))
@@ -7373,6 +7424,20 @@ def _screen_wrap(argv, out_files, src=None):
             refuse(f"{_dep}: the screen road's depth is 8 or 24, and this file reads {_n[:40]!r}")
         _capw = _capw + ["--depth", _n]
     return [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py"), "--out", SCREEN_FILE] + _capw + (["--events", str(_ev.resolve())] if _ev is not None and _ev.is_file() else []) + ["--"] + list(argv)
+def _xpce_wrap(argv, src=None, oracle=False, stdin_text=None):
+    """THE XPCE RUNNER (DESIGN-PLAN prolog-xpce step 3, officer_04; DESIGN J2 J4 J5 of the plan's design folder): a program staged with the
+    marker NAME.xpce beside it (_xpce_stage) runs under util_xpce_run.py on BOTH sides, the oracle and SCRIP in both modes: XDG_CONFIG_HOME a
+    folder emptied before every run (J5), standard input a pipe held open and silent for the program's whole life (J4), and on the oracle's
+    side alone pre.pl named before the program, so swipl runs XPCE on one thread (J2). It is the inner wrap: the screen road, when the entry
+    has one, goes round it (_screen_wrap(_xpce_wrap(...))), so the road's display reaches the program. An entry with no marker is returned
+    as it came. An XPCE entry that declares a standard input asks two things of one stream and is refused rc 2."""
+    if src is None or not Path(src).with_suffix(".xpce").is_file():
+        return argv
+    if stdin_text is not None:
+        refuse(f"{src}: an XPCE entry's standard input is the runner's held pipe, and this entry declares one of its own")
+    return [sys.executable, "-I", str(HARNESS_SCRIPTS / "util_xpce_run.py")] + (["--pre", "--prog", Path(src).name] if oracle else []) + ["--"] + list(argv)
+
+
 def _out_files_clear(cwd, names):
     for n in names or []:
         (Path(cwd) / n).unlink(missing_ok=True)
@@ -8378,6 +8443,51 @@ def own_clone_probe():
     return 1 if why else 0
 
 
+def xpce_runner_probe():
+    """--probe-xpce-runner: THE XPCE RUNNER'S WIRING (DESIGN-PLAN prolog-xpce step 3, officer_04), on scratch, no display and no SCRIP needed. Eight
+    arms: a Prolog entry neither named xpce__ nor listed in ALL.xpce is staged with no marker and its command returned as it came; a master entry
+    named xpce__NAME and a package entry its ALL.xpce lists are staged with NAME.xpce; SCRIP's command is wrapped by util_xpce_run.py with no
+    pre.pl and the oracle's with --pre --prog NAME.pl; the screen road goes round the runner, --no-screen for an entry with NAME.display and
+    --out screen.dump for a graphics entry; an XPCE entry that declares a standard input is refused rc 2; NAME.goal stages NAME.run.pl in the
+    wrapper's form, the run is of it and the marker and NAME.display travel to its stem; a goal file of two lines is refused rc 2; and live on
+    swipl, run_oracle_record of a staged XPCE entry reads the emptied config folder and the one-thread flag. XPCE_RUNNER ok|RED; rc 0 or 1."""
+    import types
+    t = Path(tempfile.mkdtemp(prefix="s4e-xpce-runner.")); why = []
+    try:
+        pkg, run = t / "pkg", t / "run"; pkg.mkdir(); run.mkdir()
+        mk = lambda name, of=None, lines=None: types.SimpleNamespace(name=name, kind="block", sno_lines=lines or [":- initialization(main, main).", "main :- true."], ref=[""], out_files=of)
+        (pkg / "ALL.xpce").write_text("# the probe's list\nlisted\nshown\ndrawn\ngoaled\n")
+        xr = [sys.executable, "-I", str(HARNESS_SCRIPTS / "util_xpce_run.py")]
+        plain, _ = stage_entry(mk("plain"), str(run), ".pl", str(pkg)); argv = ["scrip", "--run", plain.name]
+        if plain.with_suffix(".xpce").exists() or _xpce_wrap(argv, plain) != argv or _xpce_wrap(argv, plain, oracle=True) != argv: why.append("arm 1: an unlisted entry was staged or wrapped as XPCE")
+        master, _ = stage_entry(mk("xpce__probe"), str(run), ".pl", None); listed, _ = stage_entry(mk("listed"), str(run), ".pl", str(pkg))
+        if not (master.with_suffix(".xpce").is_file() and listed.with_suffix(".xpce").is_file()): why.append("arm 2: an xpce__ entry or an ALL.xpce entry was staged with no marker")
+        a3 = ["scrip", "--run", listed.name]; o3 = ["swipl", "-q", listed.name]
+        if _xpce_wrap(a3, listed) != xr + ["--"] + a3 or _xpce_wrap(o3, listed, oracle=True) != xr + ["--pre", "--prog", listed.name, "--"] + o3: why.append("arm 3: the runner's wraps read %r and %r" % (_xpce_wrap(a3, listed), _xpce_wrap(o3, listed, oracle=True)))
+        (pkg / "shown.display").write_text(""); shown, _ = stage_entry(mk("shown"), str(run), ".pl", str(pkg)); drawn, _ = stage_entry(mk("drawn", [SCREEN_FILE]), str(run), ".pl", str(pkg))
+        ws = _screen_wrap(_xpce_wrap(["scrip", shown.name], shown), None, shown); wd = _screen_wrap(_xpce_wrap(["scrip", drawn.name], drawn), [SCREEN_FILE], drawn)
+        road = [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py")]
+        if ws != road + ["--no-screen", "--"] + xr + ["--", "scrip", shown.name] or wd != road + ["--out", SCREEN_FILE, "--"] + xr + ["--", "scrip", drawn.name]: why.append("arm 4: the screen road does not go round the runner: %r %r" % (ws, wd))
+        r5 = subprocess.run([sys.executable, "-c", "import sys; sys.path.insert(0, %r); import corpus_suite_harness as h; h._xpce_wrap(['x'], %r, stdin_text='a')" % (str(HARNESS_SCRIPTS), str(listed))], capture_output=True, text=True)
+        if r5.returncode != 2: why.append("arm 5: an XPCE entry with its own standard input was not refused rc 2 (rc %s)" % r5.returncode)
+        (pkg / "goaled.goal").write_text("fractal.\n"); (pkg / "goaled.display").write_text("")
+        gr, _ = stage_entry(mk("goaled"), str(run), ".pl", str(pkg))
+        if gr.name != "goaled.run.pl" or gr.read_text() != ":- consult('goaled.pl').\n:- initialization((fractal, read(user_input, _)), main).\n" or not (gr.with_suffix(".xpce").is_file() and gr.with_suffix(".display").is_file()): why.append("arm 6: NAME.goal did not stage the wrapper with its side files (%s)" % gr.name)
+        (pkg / "goaled.goal").write_text("a.\nb.\n")
+        r7 = subprocess.run([sys.executable, "-c", "import sys, types; sys.path.insert(0, %r); import corpus_suite_harness as h; h.stage_entry(types.SimpleNamespace(name='goaled', kind='block', sno_lines=['x.'], ref=[''], out_files=None), %r, '.pl', %r)" % (str(HARNESS_SCRIPTS), str(t / "run7"), str(pkg))], capture_output=True, text=True)
+        if r7.returncode != 2: why.append("arm 7: a goal file of two lines was not refused rc 2 (rc %s)" % r7.returncode)
+        sw = subprocess.run(["bash", "-c", '. "$1" && swipl_bin', "-", str(HARNESS_SCRIPTS / "lib_oracle_flags.sh")], capture_output=True, text=True).stdout.strip()
+        if not sw: why.append("arm 8: no swipl to run live")
+        else:
+            live, _ = stage_entry(mk("listed", None, [":- initialization(main, main).", "main :- getenv('XDG_CONFIG_HOME', D), directory_files(D, F), msort(F, S), write(S), nl, ( current_prolog_flag(xpce_threaded, V) -> true ; V = none ), print(V), nl."]), str(t / "run8"), ".pl", str(pkg))
+            ending, rc, out, err = run_oracle_record(sw, "-q", live, 60)
+            if (ending, rc, out) != ("EXIT", 0, "[.,..]\nfalse"): why.append("arm 8: the oracle's run of a staged XPCE entry read %r" % ((ending, rc, out, err[:200]),))
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+    print("XPCE_RUNNER ok arms=8 (an unlisted entry neither staged nor wrapped; xpce__ and ALL.xpce entries staged with the marker; SCRIP wrapped with no pre.pl, the oracle with --pre --prog; the screen road round the runner, --no-screen and --out; a declared standard input refused; NAME.goal stages the wrapper with its side files; a two-line goal refused; live on swipl the emptied folder and the one-thread flag)" if not why else "XPCE_RUNNER RED: " + " ".join(why))
+    return 0 if not why else 1
+
+
 def screen_events_probe():
     """--probe-screen-events: THE SCREEN ROAD'S EVENT SCRIPT REACHES THE ROAD (W7 of the window facility; the cqo 2026-11-16), on scratch with the X
     distribution's own xeyes, whose picture follows the pointer; no Icon needed. Six arms: an entry that names no screen.dump is not wrapped; a
@@ -8441,6 +8551,8 @@ def main():
         sys.exit(big_mem_probe())
     if sys.argv[1:] == ["--probe-screen-events"]:
         sys.exit(screen_events_probe())
+    if sys.argv[1:] == ["--probe-xpce-runner"]:
+        sys.exit(xpce_runner_probe())
     if sys.argv[1:] == ["--probe-own-clone"]:
         sys.exit(own_clone_probe())
     own_clone_args(sys.argv)
@@ -8514,6 +8626,7 @@ def main():
     ex.add_argument("--jobs", type=int, default=4)
     ex.add_argument("--timeout", type=int, default=60)
     ex.add_argument("--write", action="store_true", help="keep the lines as ALL.expect.tsv beside the master")
+    ex.add_argument("--keep", default="", help="a folder: each entry's raw stdout, stderr and status written there as NAME.out NAME.err NAME.rc")
     ex.set_defaults(func=cmd_expect)
     e = sub.add_parser("extract", help="materialize ONE suite entry back into a standalone .sno (+ optional .ref/.in/.xfail) file")
     e.add_argument("sno")
