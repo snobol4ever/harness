@@ -66,6 +66,13 @@
 #     width=N          at most N landings run their rounds at once; the rest wait in the line having run nothing (default 0: no line)
 #     line_wait=S      seconds a landing waits in the line before it refuses rc 2 (default 10800)
 #   Every landing writes one line to LANDINGS.tsv (the progress store): outcome, attempts, seconds a stage, the switches it ran under.
+# THE CHECKS OF THE PATHS A LANDING TOUCHES (the cio 2026-11-16, on the cto's ask carried by officer_07: the vendored window tree SCRIP src/runtime/xwin is generated, never
+#   edited, and its check is a script, no container entry and no registered table). scripts/land_checks.tsv, read from the landing's own harness when the home holds one, names
+#   a check a row: name, paths (an extended regular expression read against each file of the landing's own diff spelled repo/path), check (a command run in the landing's
+#   home with S4E_HOME, S4E_SCRIP and S4E_HARNESS naming the landing's tree) and cure (the words a red reading ends with). A landing whose own commits change a file the paths
+#   name runs the check before its gate and again after every rebase it pushes from, the gate standing or not: rc 0 passes (LAND stage=check:<name> rc=0), rc 1 is
+#   LAND RED stage=check with the cure, rc 2 or a run past S4E_LAND_CHECK_S (600 s) is LAND REFUSE(2); nothing is pushed. A landing that touches none of a row's paths
+#   never runs it, and with no file there is no check. A held repo's files are not the landing's. --probe-checks proves it on scratch origins, five arms.
 # OUTPUT: one line per stage, LAND stage=<name> ...; the verdict LAND ok stages=N rejected=R pushed=..., or LAND RED stage=<name> ...
 # (rc 1), or LAND REFUSE(2) ... (rc 2). Logs under /home/resources/keep/<seat>/land.<utc>.<pid> (S4E_KEEP names another top), deleted on a green verdict and kept on any other: a kept record is never under /tmp.
 set -uo pipefail
@@ -112,13 +119,14 @@ while [ $# -gt 0 ]; do
         --probe-finish) mode=probe_finish; shift ;;
         --probe-no-lease) mode=probe_no_lease; shift ;;
         --probe-root-home) mode=probe_root_home; shift ;;
+        --probe-checks) mode=probe_checks; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
         --proved) proved="${2:-}"; shift 2 ;;
         --touches) touches="${2:-}"; shift 2 ;;
         SCRIP|harness|corpus|.github) names+=("$1"); shift ;;
         *) refuse "usage: s4e_land.sh [--home DIR] (--row TOPIC | --gate CMD) [--gate-timeout S] [--tries N] [--touches 'prefix ...'] [REPO ...]"\
-                  " | --push [--gate CMD | --proved TEXT] [REPO ...] | --probe | --tables" ;;
+                  " | --push [--gate CMD | --proved TEXT] [REPO ...] | --probe | --probe-checks | --tables" ;;
     esac
 done
 [ -n "$home" ] || home="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"   # the seat's root, never the folder above /home/harness (officer_05 2026-11-13: run from /home/harness with no --home the home read /home)
@@ -647,6 +655,43 @@ probe_no_lease() {   # LAND.conf lease=none, three landings by a seat that is no
     echo "LAND no-lease-probe ok arms=3 (a seat that is no boss landed with the lease never taken; overtaken twice by movers in another directory it pushed after its last gate with no third gate; overtaken in its own directory it gated once more and pushed)"
     exit 0
 }
+probe_checks() {   # THE CHECKS OF THE PATHS A LANDING TOUCHES, five landings on scratch origins whose harness carries a land_checks.tsv of one row (paths ^harness/probe_checked/): (1) the landing changes a file under the paths and the check answers 0: the check runs once, BEFORE the gate, and the landing lands; (2) the check answers 1: LAND RED stage=check with the row's cure, the gate never runs, origin does not move; (3) the check answers 2: LAND REFUSE(2), origin does not move; (4) the landing changes a file outside the paths: the check never runs; (5) origin moves in another directory during the gate: the gate stands and the check runs AGAIN on the rebased tree before the push. Every arm reads an order of events, never a clock.
+    local T log rc R was
+    T="$(mktemp -d "/tmp/s4e/$seat/land-checks.XXXXXX")" || refuse "cannot make a scratch directory"
+    trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+    rr() { echo "LAND checks-probe RED: $*"; echo "    kept: $T"; trap - EXIT; exit 1; }
+    scratch_clone "$T"; R="$T/racer"
+    printf '# the probe row\nname\tpaths\tcheck\tcure\nprobe_check\t^harness/probe_checked/\techo c >> %s; echo "PROBE_BOARD tree $S4E_SCRIP harness $S4E_HARNESS"; exit "$(cat %s)"\tTHE-PROBE-CURE\n' "$T/marks" "$T/answer" > "$T/work/harness/scripts/land_checks.tsv"
+    git -C "$T/work/harness" add -A && git -C "$T/work/harness" commit -q -m "probe: the scratch harness carries a land_checks.tsv" && git -C "$T/work/harness" push -q origin HEAD:main || refuse "probe: cannot seat the scratch land_checks.tsv"
+    git clone -q --shared "$T/origin/harness.git" "$R" || refuse "probe: cannot clone the racer"
+    git -C "$R" config user.name LCherryholmes; git -C "$R" config user.email lcherryh@yahoo.com
+    sed -i '/^BOSSES:/d' "$T/po/MODE" 2>/dev/null; printf 'tries=1\ntouches=derived\ntables=affected\nlease=none\n' > "$T/po/LAND.conf"
+    printf '#!/usr/bin/env bash\n[ -e "%s" ] && exit 0\n: > "%s"\ncd "%s" && git pull -q --rebase origin main && mkdir -p probe_other && echo race > probe_other/r-%s.txt && git add -A && git commit -q -m "probe: a racer lands in another directory" && git push -q origin HEAD:main\n' "$T/raced" "$T/raced" "$R" "$$" > "$T/race.sh"
+    own() { mkdir -p "$T/work/harness/$1" && echo own > "$T/work/harness/$1/$2" && git -C "$T/work/harness" add -A && git -C "$T/work/harness" commit -q -m "probe: the landing changes harness/$1/$2" || refuse "probe: cannot commit $1/$2"; }
+    lander() { S4E_LAND_UNADMITTED=1 S4E_POSTOFFICE="$T/po" S4E_SEAT=probe_worker bash "$SELF" --home "$T/work" "$@"; }
+    tip() { git -C "$T/origin/harness.git" rev-parse main; }
+    show() { sed "s/^/    $1| /" "$log" | grep -E 'stage=check|stage=gate|regate|LAND ok|LAND RED|REFUSE' | cut -c1-230 | tail -5; }
+    mkdir -p /tmp/s4e/probe_worker
+    echo 0 > "$T/answer"; own probe_checked "a-$$.txt"; log="$T/arm1.log"; lander --gate "echo g >> $T/marks" > "$log" 2>&1; rc=$?; show arm1
+    [ "$rc" = 0 ] && grep '^LAND stage=check:probe_check rc=0 ' "$log" > /dev/null && grep '^LAND ok ' "$log" > /dev/null && [ "$(tr '\n' ' ' < "$T/marks")" = "c g " ] && grep "PROBE_BOARD tree $T/work/SCRIP harness $T/work/harness\$" "$log" > /dev/null \
+        || rr "arm 1 (a file under the paths, the check green) rc=$rc: expected the check once before the gate (marks 'c g', read '$(tr '\n' ' ' < "$T/marks" 2>/dev/null)'), run on the landing's own tree and harness, and LAND ok"
+    : > "$T/marks"; echo 1 > "$T/answer"; own probe_checked "b-$$.txt"; was="$(tip)"; log="$T/arm2.log"; lander --gate "echo g >> $T/marks" > "$log" 2>&1; rc=$?; show arm2
+    [ "$rc" = 1 ] && grep '^LAND RED stage=check probe_check rc=1 .*THE-PROBE-CURE' "$log" > /dev/null && [ "$(tr '\n' ' ' < "$T/marks")" = "c " ] && [ "$(tip)" = "$was" ] \
+        || rr "arm 2 (the check answers 1) rc=$rc: expected LAND RED stage=check with the row's cure, no gate run (marks 'c', read '$(tr '\n' ' ' < "$T/marks" 2>/dev/null)') and origin unmoved"
+    : > "$T/marks"; echo 2 > "$T/answer"; log="$T/arm3.log"; lander --gate "echo g >> $T/marks" > "$log" 2>&1; rc=$?; show arm3
+    [ "$rc" = 2 ] && grep '^LAND REFUSE(2) the check probe_check of land_checks.tsv could not measure' "$log" > /dev/null && [ "$(tr '\n' ' ' < "$T/marks")" = "c " ] && [ "$(tip)" = "$was" ] \
+        || rr "arm 3 (the check answers 2) rc=$rc: expected LAND REFUSE(2), no gate run and origin unmoved"
+    git -C "$T/work/harness" reset -q --hard origin/main; : > "$T/marks"; echo 1 > "$T/answer"; own probe_elsewhere "c-$$.txt"; log="$T/arm4.log"; lander --gate "echo g >> $T/marks" > "$log" 2>&1; rc=$?; show arm4
+    [ "$rc" = 0 ] && ! grep 'stage=check' "$log" > /dev/null && grep '^LAND ok ' "$log" > /dev/null && [ "$(tr '\n' ' ' < "$T/marks")" = "g " ] \
+        || rr "arm 4 (a file outside the paths) rc=$rc: expected no check run (marks 'g', read '$(tr '\n' ' ' < "$T/marks" 2>/dev/null)') and LAND ok"
+    : > "$T/marks"; echo 0 > "$T/answer"; own probe_checked "d-$$.txt"; log="$T/arm5.log"; lander --gate "echo g >> $T/marks && bash $T/race.sh" > "$log" 2>&1; rc=$?; show arm5
+    [ "$rc" = 0 ] && grep '^LAND stage=regate:lease reason=unaffected files=1' "$log" > /dev/null && [ "$(grep -c '^LAND stage=check:probe_check rc=0 ' "$log")" = 2 ] && grep '^LAND ok ' "$log" > /dev/null && [ "$(tr '\n' ' ' < "$T/marks")" = "c g c " ] \
+        && [ -n "$(git -C "$T/origin/harness.git" ls-tree main "probe_checked/d-$$.txt")" ] && [ -n "$(git -C "$T/origin/harness.git" ls-tree main "probe_other/r-$$.txt")" ] \
+        || rr "arm 5 (origin moves in another directory under the gate) rc=$rc: expected the gate to stand and the check to run again on the rebased tree before the push (marks 'c g c', read '$(tr '\n' ' ' < "$T/marks" 2>/dev/null)'), both files on origin"
+    echo "LAND checks-probe ok arms=5 (a landing that changes a file under a row's paths ran the row's check once before its gate, on its own tree and harness, and landed; the check answering 1 read LAND RED stage=check with the row's cure and 2 refused, the gate never run and origin unmoved; a landing outside the paths ran no check; overtaken in another directory the gate stood and the check ran again on the rebased tree before the push)"
+    exit 0
+}
+[ "$mode" = probe_checks ] && probe_checks
 [ "$mode" = probe_no_lease ] && probe_no_lease
 [ "$mode" = probe_finish ] && probe_finish
 [ "$mode" = probe_table_merge ] && probe_table_merge
@@ -758,7 +803,7 @@ own_files() {   # the files the landing's own commits change, "repo/path" a line
         while IFS= read -r f; do [ -n "$f" ] && printf '%s/%s\n' "$r" "$f"; done < <(command git -C "$(rd "$r")" diff --name-only origin/main...HEAD 2>/dev/null)
     done
 }
-own="$(own_files)"
+own="$(own_files)"; own_all="$own"
 if [ -z "$touches" ] && [ "$touches_mode" = derived ]; then   # THE LANDING'S OWN DIFF NAMES ITS POPULATION (LAND.conf touches=derived): the directory of each file it changes, a file at a repo's top being its own prefix; a path with a blank derives nothing, and with nothing derived every moved file is a hit, as before. The shared layers stay a hit in affected_since whatever is derived.
     touches="$(printf '%s\n' "$own" | awk 'NF == 0 { next } /[[:space:]]/ { bad = 1 } { n = split($0, a, "/"); if (n > 2) sub(/\/[^\/]*$/, ""); d[$0] = 1 } END { if (bad) exit; for (k in d) printf "%s ", k }')"
     touches="${touches% }"
@@ -1089,6 +1134,29 @@ gate_run_serial() {   # <label>: the last round's ONE gate, run UNDER the lease 
         *) drop_lease "(the serial gate read red)"; red gate "rc=$rc under the lease: nothing pushed" ;;
     esac
 }
+check_s="${S4E_LAND_CHECK_S:-600}"
+checks_run() {   # [leased]: THE CHECKS OF THE PATHS THIS LANDING TOUCHES (scripts/land_checks.tsv; the header's block). Each row whose paths expression matches a file of the landing's own diff is run once in the landing's home; rc 0 passes, rc 1 reads RED with the row's cure, rc 2 or a run past its budget refuses. With `leased` the lease is let go before a red or a refusal, as the serial gate does.
+    local tsv="$TH/scripts/land_checks.tsv" mine f k re c cure rc n; local -a rows
+    [ -f "$tsv" ] || return 0
+    mine="$(printf '%s\n' "$own_all" | while IFS= read -r f; do [ -n "$f" ] || continue; is_held "${f%%/*}" || printf '%s\n' "$f"; done)"
+    [ -n "$mine" ] || return 0
+    mapfile -t rows < <(awk -F'\t' '!/^#/ && NF >= 3 && $1 != "name"' "$tsv")
+    for f in "${rows[@]}"; do
+        IFS=$'\t' read -r k re c cure <<< "$f"
+        n="$(printf '%s\n' "$mine" | grep -E -c -- "$re" 2>/dev/null)"; rc=$?
+        [ "$rc" = 1 ] && continue
+        [ "$rc" = 0 ] || { [ "${1:-}" = leased ] && drop_lease "(a path check could not be read)"; refuse "land_checks.tsv row $k: its paths cell is no extended regular expression ($re); pushed so far: ${pushed[*]:-none}"; }
+        spawn "$LOG/pathcheck.$k.log" "$(vhome)" "${genv[@]}" S4E_HARNESS="$TH" S4E_CORE_HELD=1 S4E_RUN_SLOT_HELD=1 timeout -k 5 "$check_s" bash -c "$c"; rc=$?
+        tail -3 "$LOG/pathcheck.$k.log" | cut -c1-240 | sed 's/^/    check| /'
+        case "$rc" in
+            0) mark "check:$k" "rc=0 on $(git -C "$(rd SCRIP)" rev-parse --short=9 HEAD 2>/dev/null) (the landing changes $n file(s) under the paths of land_checks.tsv row $k)" ;;
+            2) [ "${1:-}" = leased ] && drop_lease "(a path check could not measure)"; refuse "the check $k of land_checks.tsv could not measure (rc 2): $(tail -1 "$LOG/pathcheck.$k.log" | cut -c1-200); pushed so far: ${pushed[*]:-none}" ;;
+            124|137) [ "${1:-}" = leased ] && drop_lease "(a path check ran past its budget)"; refuse "the check $k of land_checks.tsv ran past its $check_s s budget; pushed so far: ${pushed[*]:-none}" ;;
+            129|130|143) stop_lander "a signal to its path check ($k, rc $rc)" ;;
+            *) [ "${1:-}" = leased ] && drop_lease "(a path check read red)"; red check "$k rc=$rc (the landing changes $n file(s) under its paths): $(tail -1 "$LOG/pathcheck.$k.log" | cut -c1-200). ${cure:-no cure is written in its row}; pushed so far: ${pushed[*]:-none}" ;;
+        esac
+    done
+}
 SERVER_REFUSAL='fatal error in commit_refs|remote rejected[^(]*\(failure\)|internal server error|returned error: 5[0-9][0-9]|HTTP 5[0-9][0-9]|error: 5[0-9][0-9] '
 push_retries="${S4E_LAND_PUSH_RETRIES:-4}"; push_backoff="${S4E_LAND_PUSH_BACKOFF:-5}"; server_refusals=0; retried_push=0; rebased_unmoved=0; moved_rounds=0
 push_one() {
@@ -1179,6 +1247,7 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
         fi
         mark derive "$d"
     fi
+    checks_run
     if [ -z "$gate" ]; then mark proved "hand proof recorded, no gate run here: $(printf '%s' "$proved" | cut -c1-120)"
     elif [ "$attempt" = 1 ]; then gate_run
     elif a="$(affected_since)"; then mark "regate:$attempt" "$a"; gate_run
@@ -1195,17 +1264,18 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
         if nothing_ahead; then mark "regate:lease" "nothing left to push: every commit of this landing is on origin already"; drop_lease "(nothing left to push)"; return 0; fi
         if a="$(affected_since)"; then
             moved_rounds=$((moved_rounds + 1))
-            if [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then [ "$mode" = push ] || text_only || { build serial; mark build:serial "${binfo:-built}"; }; gate_run_serial "$a"; note_origins
+            if [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then [ "$mode" = push ] || text_only || { build serial; mark build:serial "${binfo:-built}"; }; checks_run leased; gate_run_serial "$a"; note_origins
             else drop_lease "(origin moved under the gate, $a: the gate re-runs unleased)"; return 3; fi
         else
             mark "regate:lease" "$a (the gate stands: origin moved outside the row's population; the rebased tree is pushed)"
+            checks_run leased
             note_origins
         fi
     fi
     [ -n "${S4E_LAND_PLANT:-}" ] && { bash -c "$S4E_LAND_PLANT" > "$LOG/plant" 2>&1 7>&- 8>&- 9>&- || true; }   # the probe's plant: a hand push that lands between the lease's fetch and the push
     pushes; rc=$?
     if [ "$rc" = 3 ] && [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then
-        fetch; rebase; [ "$mode" = push ] || text_only || { build serial; mark build:serial "${binfo:-built}"; }; gate_run_serial "rebased after a push the origin refused on the last attempt"; note_origins
+        fetch; rebase; [ "$mode" = push ] || text_only || { build serial; mark build:serial "${binfo:-built}"; }; checks_run leased; gate_run_serial "rebased after a push the origin refused on the last attempt"; note_origins
         pushes; rc=$?
     fi
     # A LANDING THAT HAS PUSHED ONE REPO FINISHES THE REST BEFORE IT LETS GO (the cio 2026-11-14, MEASURED: senior_10's landing pushed SCRIP 710dc909f at about 17:56Z, its
@@ -1221,6 +1291,7 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
         echo "LAND stage=finish attempt=$fin: $([ "${#pushed[@]}" -gt 0 ] && echo "${pushed[*]} is on origin and a later push was overtaken" || echo "the last gate has run and origin refused the push"); the rest is rebased and pushed now"
         note_origins; fetch; rebase
         if nothing_ahead; then rc=0; break; fi
+        checks_run leased
         if a="$(affected_since $own)"; then [ "$mode" = push ] || text_only || { build serial; mark build:serial "${binfo:-built}"; }; [ -z "$gate" ] || gate_run_serial "$a (finishing: the movers touch what this landing changes)"; fi
         note_origins
         pushes; rc=$?

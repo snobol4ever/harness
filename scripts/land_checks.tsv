@@ -1,0 +1,8 @@
+# land_checks.tsv -- THE CHECKS A LANDING RUNS FOR THE PATHS IT TOUCHES (the cio 2026-11-16, on the cto's ask carried by officer_07; read by s4e_land.sh, checks_run; skill fleet-bus section 7).
+# A check here is a script that holds one law of a tree and is neither a container entry (a shape) nor a registered generated table (generated_tables.tsv, which a landing regenerates itself).
+# One row a check, four cells split by a tab. name: the stage reads LAND stage=check:<name>. paths: an extended regular expression read against each file the landing's own commits
+# change, spelled repo/path (SCRIP/..., harness/..., corpus/..., .github/...); a landing that changes no such file never runs the row. check: a command run by bash in the landing's
+# home with S4E_HOME, S4E_SCRIP and S4E_HARNESS naming the landing's own tree; rc 0 passes, rc 1 is LAND RED stage=check, rc 2 is LAND REFUSE(2), nothing pushed. cure: the words a
+# red reading ends with. The check runs before the gate and again after every rebase the landing pushes from. The owner of a law adds its row; s4e_land.sh --probe-checks is the proof.
+name	paths	check	cure
+icon_xwin_tree	^SCRIP/src/runtime/xwin/	bash "$S4E_HARNESS/scripts/util_icon_xwin_tree_check.sh" "$S4E_SCRIP"	SCRIP src/runtime/xwin is generated, never edited (skill icon reference.md section 9): a change is made in the generator, the class table or the patch under harness designs/icon_xwin and reaches origin first, as a patch through the grader; then the tree is written again with util_gen_icon_xwin_device.py --out SCRIP/src/runtime/xwin and this landing vendors the tree that origin's generator writes
