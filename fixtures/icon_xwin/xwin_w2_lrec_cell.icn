@@ -1,0 +1,70 @@
+record holder(win, tag);
+global wopen, wname, wserial, wstatus, wclose, wkeep, wkept, wsame, wbind, name, serial;
+
+procedure want(what, got, exp)
+   if got ~=== exp then write("BAD ", what, ": got ", image(got), " for ", image(exp));
+   return;
+end
+
+procedure label(tag, i)
+   return tag || "-" || i || "-" || repl("x", i % 7);
+end
+
+procedure check(what, w, i, st)
+   want(what || " name", wname(w), label("win", i));
+   want(what || " serial", wserial(w), i);
+   want(what || " status", wstatus(w), st);
+   return w;
+end
+
+procedure main()
+   local lib, w, L, T, h, keep, i, x, junk, n;
+   lib := getenv("GC_LREC_HELPER") | stop("GC_LREC_HELPER is not set");
+   wopen := loadfunc(lib, "lrec_wopen") | stop("no lrec_wopen");
+   wname := loadfunc(lib, "lrec_wname");
+   wserial := loadfunc(lib, "lrec_wserial");
+   wstatus := loadfunc(lib, "lrec_wstatus");
+   wclose := loadfunc(lib, "lrec_wclose");
+   wkeep := loadfunc(lib, "lrec_wkeep");
+   wkept := loadfunc(lib, "lrec_wkept");
+   wsame := loadfunc(lib, "lrec_wsame");
+   wbind := loadfunc(lib, "lrec_wbind");
+   name := loadfunc(lib, "lrec_name");
+   serial := loadfunc(lib, "lrec_serial");
+   L := [];
+   T := table();
+   every i := 1 to 120 do {
+      w := wopen(label("win", i), i);
+      if i % 4 = 0 then put(L, w);
+      if i % 10 = 0 then T[i] := w;
+      if i = 77 then keep := w;
+      if i = 33 then h := holder(w, "held");
+      junk := label("junk", i) || label("junk", i + 1);
+   };
+   junk := &null;
+   check("last", w, 120, 259);
+   check("local", keep, 77, 259);
+   check("field", h.win, 33, 259);
+   n := 0;
+   every i := 1 to *L do { check("list", L[i], 4 * i, 259); n +:= 1; };
+   every i := 10 to 120 by 10 do { check("table", T[i], i, 259); n +:= 1; };
+   write("cells: ", n, " windows read back through a list and a table");
+   wclose(L[3]);
+   x := L[3];
+   check("closed", x, 12, 256);
+   check("closed by another cell", T[60] & L[3], 12, 256);
+   check("open beside it", L[4], 16, 259);
+   write("close: status ", wstatus(L[3]), " beside ", wstatus(L[4]));
+   wkeep(keep);
+   keep := &null;
+   every i := 1 to 40 do junk := wopen(label("churn", i), -i);
+   junk := &null;
+   x := wkept() | stop("slot 0 is empty");
+   check("slot 0", x, 77, 259);
+   write("slot 0: ", wname(x), " same block ", wsame(x), ", another ", wsame(L[1]));
+   wbind(1, L[5]);
+   L := T := w := x := h := &null;
+   every i := 1 to 40 do junk := wopen(label("churn", i), -i);
+   junk := &null;
+   write("binding: ", name(1), " ", serial(1));
+end

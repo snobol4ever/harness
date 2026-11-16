@@ -4,6 +4,10 @@ typedef long word;
 typedef struct { word dword, vword; } descr;
 #define D_NULL ((word)0xA000000000000000ul)
 #define D_INTEGER ((word)0xA000000000000001ul)
+#define D_FILE ((word)0xB000000000000005ul)
+#define D_EXTERNAL ((word)0xB000000000000013ul)
+#define ST_OPEN 259
+#define ST_CLOSED 256
 #define LW(off, kind) (((uint64_t)(off) << 8) | (uint64_t)(kind))
 #define CHECK(s) (((word)(s) * 2654435761l) ^ 0x5A5A5A5A5A5A5A5Al)
 #define NREG 8
@@ -15,13 +19,17 @@ void rt_gc_visit_icnx_descr(void *d);
 struct node { struct node *next; word serial; descr name; word check; struct node **tab; word cap; char odd[3]; };
 static const uint64_t lay_node[] = { LW(offsetof(struct node, next), 1), LW(offsetof(struct node, name), 2), LW(offsetof(struct node, tab), 1), 0 };
 static const uint64_t lay_ptrs[] = { LW(0, 3), 0 };
+struct fileblk { word title; struct node *fd; word status; descr fname; };
+static const uint64_t lay_file[] = { LW(offsetof(struct fileblk, fd), 1), LW(offsetof(struct fileblk, fname), 2), 0 };
 static struct node *reg[NREG];
 static descr motto = { D_NULL, 0 };
+static descr slot0 = { D_NULL, 0 };
 static void lrec_roots(void) {
     static const char *const *const words[NREG] = { (const char *const *)&reg[0], (const char *const *)&reg[1], (const char *const *)&reg[2], (const char *const *)&reg[3],
         (const char *const *)&reg[4], (const char *const *)&reg[5], (const char *const *)&reg[6], (const char *const *)&reg[7] };
     rt_gc_run_loc_list(words, NREG);
     rt_gc_visit_icnx_descr(&motto);
+    rt_gc_visit_icnx_descr(&slot0);
 }
 static int regno(const descr *d) { return d->dword == D_INTEGER && d->vword >= 1 && d->vword <= NREG ? (int)d->vword - 1 : -1; }
 static struct node *held(const descr *d) { int r = regno(d); return r < 0 ? (struct node *)0 : reg[r]; }
@@ -80,3 +88,39 @@ int lrec_get(int argc, descr *argv) {
     return reg[dst] ? integer(&argv[0], dst + 1) : -1;
 }
 int lrec_motto(int argc, descr *argv) { if (argc >= 1) { rt_gc_root_fn_add(lrec_roots); motto = argv[1]; } argv[0] = motto; return 0; }
+static struct fileblk *wfile(const descr *d) { struct fileblk *f = d->dword == D_EXTERNAL ? (struct fileblk *)d->vword : (struct fileblk *)0; return f && f->title == D_FILE ? f : (struct fileblk *)0; }
+static int window(descr *r, struct fileblk *f) { if (!f) return -1; r->dword = D_EXTERNAL; r->vword = (word)f; return 0; }
+int lrec_wopen(int argc, descr *argv) {
+    struct node *n;
+    struct fileblk *f;
+    if (argc < 2 || argv[2].dword != D_INTEGER) return 101;
+    rt_gc_root_fn_add(lrec_roots);
+    n = (struct node *)rt_lrec_alloc(sizeof *n, lay_node);
+    f = (struct fileblk *)rt_lrec_alloc(sizeof *f, lay_file);
+    if (!n || !f) return 305;
+    n->name = argv[1];
+    n->serial = argv[2].vword;
+    n->check = CHECK(n->serial);
+    n->odd[0] = 'o';
+    n->odd[1] = 'd';
+    n->odd[2] = 'd';
+    f->title = D_FILE;
+    f->fd = n;
+    f->status = ST_OPEN;
+    f->fname = argv[1];
+    return window(&argv[0], f);
+}
+int lrec_wname(int argc, descr *argv) { struct fileblk *f = argc < 1 ? 0 : wfile(&argv[1]); if (!f) return -1; argv[0] = f->fname; return 0; }
+int lrec_wserial(int argc, descr *argv) { struct fileblk *f = argc < 1 ? 0 : wfile(&argv[1]); return f ? integer(&argv[0], f->fd && sound(f->fd) ? f->fd->serial : -999999) : -1; }
+int lrec_wstatus(int argc, descr *argv) { struct fileblk *f = argc < 1 ? 0 : wfile(&argv[1]); return f ? integer(&argv[0], f->status) : -1; }
+int lrec_wclose(int argc, descr *argv) { struct fileblk *f = argc < 1 ? 0 : wfile(&argv[1]); if (!f) return -1; f->status = ST_CLOSED; return window(&argv[0], f); }
+int lrec_wkeep(int argc, descr *argv) { struct fileblk *f = argc < 1 ? 0 : wfile(&argv[1]); if (!f) return -1; slot0.dword = D_FILE; slot0.vword = (word)f; return window(&argv[0], f); }
+int lrec_wkept(int argc, descr *argv) { (void)argc; return slot0.dword == D_FILE ? window(&argv[0], (struct fileblk *)slot0.vword) : -1; }
+int lrec_wsame(int argc, descr *argv) { struct fileblk *f = argc < 1 ? 0 : wfile(&argv[1]); return f ? integer(&argv[0], slot0.dword == D_FILE && slot0.vword == (word)f) : -1; }
+int lrec_wbind(int argc, descr *argv) {
+    int dst = argc < 2 ? -1 : regno(&argv[1]);
+    struct fileblk *f = argc < 2 ? 0 : wfile(&argv[2]);
+    if (dst < 0 || !f) return -1;
+    reg[dst] = f->fd;
+    return integer(&argv[0], dst + 1);
+}

@@ -1,8 +1,9 @@
 procedure main()
-   local upto3, words, sum, args, i, echo, x, s, L, t;
-   upto3 := loadfunc("/home/resources/progress/icon-xwin-libs/w5gen.so", "w5upto");
-   words := loadfunc("/home/resources/progress/icon-xwin-libs/w5gen.so", "w5words");
-   sum := loadfunc("/home/resources/progress/icon-xwin-libs/w5gen.so", "w5sum");
+   local upto3, words, sum, args, i, echo, x, s, L, t, lib;
+   lib := (getenv("ICON_XWIN_LIBS") | stop("ICON_XWIN_LIBS is not set")) || "/w5gen.so";
+   upto3 := loadfunc(lib, "w5upto");
+   words := loadfunc(lib, "w5words");
+   sum := loadfunc(lib, "w5sum");
    every write("upto ", upto3(4));
    i := 0; every upto3(7) do i +:= 1; write("count ", i);
    every write("words ", words(5));
@@ -12,7 +13,7 @@ procedure main()
    write("sum100 ", sum ! args);
    write("sum3 ", sum(1, 2, 3));
    every i := upto3(3) do every write("nest ", i, " ", upto3(i));
-   echo := loadfunc("/home/resources/progress/icon-xwin-libs/w5gen.so", "w5echo");
+   echo := loadfunc(lib, "w5echo");
    every x := echo(2.5, "str", "", 12345678901234567890123, &null, &output, 7, -3.25e10) do write("echo ", type(x), " ", image(x));
    every s := words(40) do { L := list(200, s || "x"); t := L[200]; if s == "word-40-even" then write("survived ", t) };
    every write("echobig ", echo(2 ^ 100, -(3 ^ 70)) + 1);

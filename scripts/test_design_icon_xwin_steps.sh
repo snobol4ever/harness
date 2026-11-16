@@ -11,7 +11,10 @@
 # THE PROBE TOKENS (the probe column, space separated; the vocabulary is closed, a token not listed refuses rc 2):
 #   baseline            every fixture entry reads red in mode 3 today, each named with its first line (step 0, the fail-once record)
 #   entries=a,b         the named fixture entries pass in mode 3 (and mode 4 too when S4E_MODE4=1, COO-487: the grading road is mode 3 only)
-#   stress=a,b          the same under SCRIP_GC_STRESS=1 and SCRIP_GC_PLANT_FLIP=1
+#   stress=a,b          the same twice more: under SCRIP_GC_STRESS=1 and SCRIP_GC_PLANT_FLIP=1 (the C collection), and under SCRIP_DIAG=0 with
+#                       no plant at a 64 KB heap (the asm collection, the one an ordinary run takes; the cao and the cto 2026-11-16 09:4x CST)
+#   fixture=NAME        every entry of the package-form fixture harness/fixtures/NAME passes in mode 3 by its own screen road (W5: icon_xwin_fn, officer_07's
+#                       ladder of the 48 window functions, one witness a function, its entry names the function)
 #   pkg=P:e1,e2         the named entries of corpus package packages/icon/P pass in mode 3 by its own screen road
 #   sym=NAME            NAME is a defined dynamic symbol of SCRIP's out/libscrip_rt.so
 #   noneed=LIB          SCRIP's out/libscrip_rt.so carries no NEEDED entry naming LIB (the window object alone links X, CIO-67 (4))
@@ -48,9 +51,14 @@ done
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 fixture_entries() { awk -F, 'NR > 1 {print $2}' "$FIX/ALL.csv"; }
 screen_of() { awk -F, -v e="$1" 'NR > 1 && $2 == e {print ($12 == "screen.dump") ? "screen" : "plain"}' "$FIX/ALL.csv"; }
-LIBS=/home/resources/progress/icon-xwin-libs   # THE LOADED LIBRARIES' ONE FOLDER: a witness names its library there by absolute path; each is built from the fixture's lib/NAME.c, never committed
+# THE LOADED LIBRARIES ARE THIS RUN'S OWN: each is built from the fixture's lib/NAME.c into a private scratch folder, never committed and never shared,
+# and the run exports where they stand: ICON_XWIN_LIBS (a witness loads "$ICON_XWIN_LIBS/NAME.so") and GC_LREC_HELPER (the cao's W2 programs).
+# MEASURED 2026-11-16 10:0x CST: one shared folder, /home/resources/progress/icon-xwin-libs, was rebuilt by every copy of this harness from its
+# own lib/ source, so the grader's run of a patch that grew the W2 helper loaded the origin copy's older helper halfway through and read RED.
+LIBS="$(mktemp -d "${TMPDIR:-/tmp}/s4e_icon_xwin_libs.XXXXXX")" || refuse "cannot make a private library folder"
+trap 'rm -rf "${LIBS:?}"' EXIT
+export ICON_XWIN_LIBS="$LIBS" GC_LREC_HELPER="$LIBS/xwin_w2_lrec.so"
 build_libs() {
-    mkdir -p "$LIBS" || refuse "cannot make $LIBS"
     local c n
     for c in "$FIX"/lib/*.c; do
         [ -f "$c" ] || continue; n="$(basename "$c" .c)"
@@ -116,9 +124,9 @@ for tok in $probe; do
         baseline)
             all="$(fixture_entries | paste -sd, -)"; n="$(fixture_entries | grep -c .)"
             for e in $(fixture_entries); do
-                d="$(mktemp -d "${TMPDIR:-/tmp}/s4e_icon_xwin_base.XXXXXX")"; cp "$FIX/$e.icn" "$d/"; envs=(); [ -f "$FIX/$e.env" ] && mapfile -t envs < <(grep -v '^#' "$FIX/$e.env" | grep '=')
-                if [ "$(screen_of "$e")" = screen ]; then o="$(cd "$d" && env "${envs[@]}" timeout -k 5 120 python3 "$HERE/util_screen_run.py" --out screen.dump -- "$S4E_SCRIP/scrip" --run "$e.icn" < /dev/null 2>&1)"
-                else o="$(cd "$d" && env "${envs[@]}" timeout -k 5 120 "$S4E_SCRIP/scrip" --run "$e.icn" < /dev/null 2>&1)"; fi
+                d="$(mktemp -d "${TMPDIR:-/tmp}/s4e_icon_xwin_base.XXXXXX")"; cp "$FIX/$e.icn" "$d/"
+                if [ "$(screen_of "$e")" = screen ]; then o="$(cd "$d" && timeout -k 5 120 python3 "$HERE/util_screen_run.py" --out screen.dump -- "$S4E_SCRIP/scrip" --run "$e.icn" < /dev/null 2>&1)"
+                else o="$(cd "$d" && timeout -k 5 120 "$S4E_SCRIP/scrip" --run "$e.icn" < /dev/null 2>&1)"; fi
                 echo "    $e today, first line: $(printf '%s\n' "$o" | grep -m1 . | cut -c1-110)" >> "$log"
                 rm -rf "${d:?}"
             done
@@ -129,7 +137,11 @@ for tok in $probe; do
             elif [ "$pass" = 0 ]; then note "baseline (0 of $n pass in mode 3: every witness red today)" green
             else note "baseline ($pass of $n already pass: a witness that is not red today proves nothing)" red; fi ;;
         entries=*) note "$tok" "$(board "$FIX" "${tok#entries=}")" ;;
-        stress=*) note "$tok" "$(board "$FIX" "${tok#stress=}" SCRIP_GC_STRESS=1 SCRIP_GC_PLANT_FLIP=1)" ;;
+        stress=*)  # two collections: the plants take the C collection; only SCRIP_DIAG=0 with no plant runs the asm collection an ordinary run uses (the cao, SCRIP 8a0dff7d6)
+               note "$tok (C collection: stress 1 and flip)" "$(board "$FIX" "${tok#stress=}" SCRIP_GC_STRESS=1 SCRIP_GC_PLANT_FLIP=1)"
+               note "$tok (asm collection: SCRIP_DIAG=0, a 64 KB heap)" "$(board "$FIX" "${tok#stress=}" SCRIP_DIAG=0 SCRIP_HEAP_KB=64)" ;;
+        fixture=*) fd="$HERE/../fixtures/${tok#fixture=}"; [ -f "$fd/ALL.csv" ] || { echo "    no fixture table $fd/ALL.csv" >> "$log"; note "$tok" refuse; continue; }
+               note "$tok" "$(board "$fd" "$(awk -F, 'NR > 1 {print $2}' "$fd/ALL.csv" | paste -sd, -)")" ;;
         pkg=*) p="${tok#pkg=}"; note "$tok" "$(board "$S4E_CORPUS/packages/icon/${p%%:*}" "${p#*:}")" ;;
         sym=*) [ -f "$RT" ] || { note "$tok" refuse; continue; }
                nm -D --defined-only "$RT" 2>/dev/null | awk '{print $NF}' | grep -x "${tok#sym=}" > /dev/null && note "$tok" green || note "$tok" red ;;
