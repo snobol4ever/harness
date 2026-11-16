@@ -1,0 +1,140 @@
+# ARENA-MEASURED.tsv -- step U2 of the Unicon window object, its own arena (the cto 2026-11-16 11:3x CST; skill scrip-memory-model section 6, THE GRAPHICS ARENA). officer_07 2026-11-16 12:1x CST. The allocator is designs/icon_xwin/unicon/uxwin_arena.c, bound to the kernel by the dialect's arena_define lines; util_gen_icon_xwin_device.py --dialect unicon --arena-check holds the heap-member rows equal to Unicon's headers and proves the allocator (exercise and nm). Every other row is a measurement of 2026-11-16, kept as measured: the proof's scripts, logs and tables are /home/resources/progress/handoffs/officer_07-2026-11-16/u2.
+# kind <tab> name <tab> value <tab> detail
+window	aslr	20 of 20	va.c of the cfo's engine-probes at 0x110000000000: map 256 MB and grow 256 MB beside it, MAP_FIXED_NOREPLACE, randomize_va_space 2
+window	setarch -R	ok	the same probe under setarch x86_64 -R
+window	valgrind	ok	the same probe under valgrind -q
+window	6 GB address limit	ok	the same probe under ulimit -v 6291456
+window	far end	ok	0x11ff00000000 maps and grows
+proof	bin/ivib	EQUAL	oracle 9d379d92bcc3; on the hook 9d379d92bcc3 9d379d92bcc3 rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	bin/ui	EQUAL	oracle a04c7f012d83; on the hook a04c7f012d83 a04c7f012d83 rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	tests/graphics/charting.icn	EQUAL	oracle 9c09bd31312b; on the hook 9c09bd31312b 9c09bd31312b rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	tests/graphics/subwindow.icn	EQUAL	oracle c553d642ddd2; on the hook c553d642ddd2 c553d642ddd2 rc 0,0; before the hook EQUAL
+proof	uni/3d/viewer/u3dviewer.icn	EQUAL	oracle screen none; on the hook screen none screen none rc 1,1; before the hook EQUAL
+proof	uni/gprogs/kaleid.icn	EQUAL	oracle 27dd2007c2a6; on the hook 27dd2007c2a6 27dd2007c2a6 rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/componentscrollareatest.icn	EQUAL	oracle 2134e032faf8; on the hook 2134e032faf8 2134e032faf8 rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/demo.icn	EQUAL	oracle 627e86b568e0; on the hook 627e86b568e0 627e86b568e0 rc 0,0; before the hook EQUAL
+proof	uni/gui/guidemos/dndtest.icn	EQUAL	oracle 843d73632a1c; on the hook 843d73632a1c 843d73632a1c rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/dyncomps.icn	EQUAL	oracle c330f4542b45; on the hook c330f4542b45 c330f4542b45 rc 0,0; before the hook EQUAL
+proof	uni/gui/guidemos/explorer.icn	NAMED	a picture of its environment, never a ref: the unmodified oracle draws 390f4d55 in the census, 685a48ee in this scratch path; on the hook 66dc40f3 twice; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/fillpanel.icn	EQUAL	oracle 2fb465d22eb4; on the hook 2fb465d22eb4 2fb465d22eb4 rc 0,0; before the hook EQUAL
+proof	uni/gui/guidemos/getweb.icn	EQUAL	oracle 4494632058c7; on the hook 4494632058c7 4494632058c7 rc 0,0; before the hook EQUAL
+proof	uni/gui/guidemos/imageview.icn	EQUAL	oracle c0eb34f67f41; on the hook c0eb34f67f41 c0eb34f67f41 rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/leak.icn	EQUAL	oracle 99a310da2ffa; on the hook 99a310da2ffa 99a310da2ffa rc 0,0; before the hook EQUAL
+proof	uni/gui/guidemos/lines.icn	EQUAL	oracle 0af0a2f1bdb4; on the hook 0af0a2f1bdb4 0af0a2f1bdb4 rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/listtest.icn	EQUAL	oracle d3b81cacbb6a; on the hook d3b81cacbb6a d3b81cacbb6a rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/menudemo.icn	EQUAL	oracle 74ba2704c6bc; on the hook 74ba2704c6bc 74ba2704c6bc rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/palette.icn	EQUAL	oracle 55646c24df09; on the hook 55646c24df09 55646c24df09 rc 0,0; before the hook EQUAL
+proof	uni/gui/guidemos/pointers.icn	EQUAL	oracle 78b7b4f90311; on the hook 78b7b4f90311 78b7b4f90311 rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/secondtest.icn	EQUAL	oracle b33342eeb973; on the hook b33342eeb973 b33342eeb973 rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/sieve.icn	EQUAL	oracle 2058012469f4; on the hook 2058012469f4 2058012469f4 rc 0,0; before the hook EQUAL
+proof	uni/gui/guidemos/sliders.icn	EQUAL	oracle 0dfe6f0714f6; on the hook 0dfe6f0714f6 0dfe6f0714f6 rc 0,0; before the hook EQUAL
+proof	uni/gui/guidemos/spinners.icn	EQUAL	oracle b580204862ff; on the hook b580204862ff b580204862ff rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/tabletest.icn	EQUAL	oracle 321ded48e8b5; on the hook 321ded48e8b5 321ded48e8b5 rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/tabs.icn	EQUAL	oracle 92292f27668f; on the hook 92292f27668f 92292f27668f rc 0,0; before the hook EQUAL
+proof	uni/gui/guidemos/testdialog.icn	EQUAL	oracle afe4330d7b9f; on the hook afe4330d7b9f afe4330d7b9f rc 0,0; before the hook EQUAL
+proof	uni/gui/guidemos/texttest.icn	EQUAL	oracle 6e04009b2f84; on the hook 6e04009b2f84 6e04009b2f84 rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/themedemo.icn	EQUAL	oracle e3c63a7f920f; on the hook e3c63a7f920f e3c63a7f920f rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/ticks.icn	EQUAL	oracle 35e0ab41af01; on the hook 35e0ab41af01 35e0ab41af01 rc 0,0; before the hook EQUAL
+proof	uni/gui/guidemos/toolbar.icn	EQUAL	oracle c6975bfb6da8; on the hook c6975bfb6da8 c6975bfb6da8 rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof	uni/gui/guidemos/ttexplorer.icn	EQUAL	oracle 8e307485993b; on the hook 8e307485993b 8e307485993b rc 0,0; before the hook ABORT (free(): invalid pointer)
+proof-count	on the hook	31 of 32 equal, explorer named	the scratch oracle rebuilt with its five window sources on the arena and the dialect's arena.patch (the destroy hook in getximage, the equal release in copyselection), nothing else changed
+proof-count	before the hook	13 of 32 equal, 19 abort	the same without the patch: every abort is free(): invalid pointer in libX11's image destroy
+proof-count	interposed	31 of 32 equal, explorer named	an EXPERIMENT, refused by the cto 11:5x CST (an object redefining free changes what every other library calls): the same arena with free and realloc also defined in it, so an arena block a library frees comes back to the arena and is counted (uxwin_arena_EXPERIMENT_interposed_free.c)
+crossing	libX11.so.6 +0x26fb9	498 frees over 38 runs	Xlib's image destroy (_XDestroyImage behind XDestroyImage) freeing im->data that getximage (rxwin.ri) allocates; CURED by the destroy hook of arena.patch (the cto 11:5x CST, ruling (a)): uxa_image_destroy of uxwin_arena.c returns the data to the arena and hands obdata and the XImage to XFree
+stats	peak bytes	3313440	the largest of 62 runs with allocations (tests/graphics/charting.icn); one 64 MB piece served every run
+stats	peak blocks	361	the most live blocks of any run
+stats	allocations	848	the most of any run
+stats	foreign frees	0	no pointer outside the window was handed to the arena's free by the kernel in any run, so the forward stands as a guard
+fault	seventh block twice: uni/gui/guidemos/demo.icn	DIFFERS	the arena with the seventh block of each class handed out twice (uxwin_arena_FAULT_seventh_twice.c): b70e847eb6c6 against the oracle's 627e86b568e0
+fault	seventh block twice: uni/gui/guidemos/dyncomps.icn	same	the arena with the seventh block of each class handed out twice (uxwin_arena_FAULT_seventh_twice.c): c330f4542b45 against the oracle's c330f4542b45
+fault	seventh block twice: uni/gui/guidemos/fillpanel.icn	DIFFERS	the arena with the seventh block of each class handed out twice (uxwin_arena_FAULT_seventh_twice.c): be80ad99eac0 against the oracle's 2fb465d22eb4
+fault	seventh block twice: uni/gui/guidemos/palette.icn	same	the arena with the seventh block of each class handed out twice (uxwin_arena_FAULT_seventh_twice.c): 55646c24df09 against the oracle's 55646c24df09
+fault	freed block twice	UNSEEN BY THE PROOF	a freed block handed out twice (uxwin_arena_FAULT_twice.c) changed no picture of demo, dyncomps, fillpanel or palette: those programs seldom take a freed block back, so the proof does not cover reuse after free and is never read as covering it
+heap-member	_wstate	filep	struct descrip	wstates, the window state chain; a binding's window
+heap-member	_wstate	listp	struct descrip	wstates, the window state chain; a binding's window
+heap-member	_wstate	funclist	struct descrip	wstates, the window state chain; a binding's window
+heap-member	_wcontext	normals	struct b_realarray *	wcntxts, the context chain; a binding's context
+heap-member	_wcontext	texcoords	struct b_realarray *	wcntxts, the context chain; a binding's context
+heap-member	_wtexture	d	struct descrip	a display's texture table stex (an array of records)
+heap-root	wcntxts	ptr	the head of the context chain
+heap-root	wstates	ptr	the head of the window state chain
+heap-root	wbndngs	ptr	the head of the binding chain
+heap-root	wdsplys	ptr	the head of the display chain
+heap-root	palsetup_palette	ptr	the current palette, kept across calls
+heap-root	sprite	ptr	the binding the last animation copied from (rxwin.ri 3076)
+heap-root	amperX	descriptor	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+heap-root	amperY	descriptor	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+heap-root	amperCol	descriptor	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+heap-root	amperRow	descriptor	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+heap-root	amperInterval	descriptor	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+heap-root	amperPick	descriptor	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+heap-root	lastEventWin	descriptor	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+heap-root	gl_torus	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_cube	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_sphere	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_cylinder	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_disk	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_rotate	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_translate	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_scale	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_popmatrix	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_pushmatrix	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_identity	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_matrixmode	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_meshmode	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_texture	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_font3d	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_drawstring3d	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_mark	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	gl_endmark	descriptor	a 3D display-list record constructor, made once by rec_structinate
+heap-root	kywd_xwin[0]	descriptor	the keyword &window, generated into xwin_gen.c
+heap-root	kywd_xwin[1]	descriptor	the second descriptor of kywd_xwin
+u3-layout	struct descrip	same	16 bytes, the value word at 8, F_Nqual 0x8000000000000000 and F_Ptr 0x1000000000000000, as Arizona's and the shim's xwin_descr_t
+u3-layout	struct b_file	DIFFERS	Unicon 48 bytes with fname at 32, Arizona 40 with fname at 24 (fd at 8 and status at 16 in both): the shim's xwin_file_t is Arizona's and does not read a Unicon file block
+u3-layout	struct region	same	64 bytes, end at 16, free at 24, as the shim's xwin_region_t
+u3-layout	struct b_bignum	same	40 bytes, msd 16, lsd 24, sign 32, digits 36, 32-bit digits, as the shim's xwin_bignum_t
+u3-layout	constants	same	T_Integer 1, T_Lrgint 2, T_File 5, Succeeded -7, A_Resume 1, G_Csusp 1, CvtFail -2, NoCvt -4, as the shim's XWIN_ defines
+u3-compile	xwin_shim.c against Unicon's h/rt.h	refused on types alone	err_msg fatalerr interp bigradix bigtoreal bigtos alcfile and t_errorvalue conflict as the shim's own type names against Unicon's (xwin_descr_t for struct descrip, xwin_numeric_t for union numeric), allchars emptystr curstring on const qualifiers, and DT_BLK of SCRIP's descr_tags_dt_platom.h against Unicon's enumerator; every layout they name is the same but the file block's, so the 17 compile unchanged once the shim's types are Unicon's own, alcfile's file block excepted
+u3-name	alclist	list allocator	ralc.r: allocate a list header block and attach an element block in the block region (alclist_raw leaves the slots uninitialised); reached from 2D code for the Pending list
+u3-name	bigmul	large integer	rlrgint.r: multiply two large-integer descriptors into a third
+u3-name	getenv_r	system	rsys.r: a reentrant getenv under the environment's read lock
+u3-name	iselect	system	rsys.r: select on one descriptor with a timeout in milliseconds (the event wait)
+u3-name	nullptr	datum	data.r: the descriptor with the pointer and not-qualifier flags and a null block pointer
+u3-name	qsearch	library	common/dconsole.c: a binary search with qsort's arguments (Bentley)
+u3-name	reserve	memory	ralc.r and rmemmgt.r: make sure a region (strings or blocks) holds nbytes free, collecting or growing it
+u3-name	salloc	allocation	common/alloc.c: strdup that exits on refusal; the arena binds it to uxa_salloc
+u3-name	set_errortext	errors	errmsg.r: set &errornumber and &errortext from the error table
+u3-name	syserr	errors	init.r: print System error with its place and exit
+# xlib-ownership: every call of Xlib and Xpm in the translated C of the Unicon dialect that creates, destroys or frees client memory or takes a client buffer, read by reading (the cto 11:5x CST): name is source:line of the call, value whether a kernel block is handed over
+xlib-ownership	rxwin.ri:3692 XCreateImage	KERNEL BLOCK	getximage: the image is created with no data and im->data is then a kernel malloc; carries the destroy hook (arena.patch)
+xlib-ownership	rxwin.ri:3698 XDestroyImage	KERNEL BLOCK	getximage: the image of 3692 on its own failure (data NULL): the hook
+xlib-ownership	rxwin.ri:3386 XDestroyImage	KERNEL BLOCK	blimage: an image of getximage: the hook
+xlib-ownership	rxwin.ri:3525 XDestroyImage	KERNEL BLOCK	strimage: an image of getximage: the hook (the 38 runs' crossing)
+xlib-ownership	rxwin.ri:3624 XDestroyImage	KERNEL BLOCK	getimstr: an image of getximage: the hook
+xlib-ownership	rxwin.ri:3673 XDestroyImage	KERNEL BLOCK	getimstr24: an image of getximage: the hook
+xlib-ownership	rxwin.ri:362 XFree	KERNEL BLOCK	copyselection: the string of PropertyToString, a kernel malloc (rxwin.ri 207 to 256), handed to Xlib's free; the 38 runs never reached it (no program asked for the selection); CURED by an equal release in arena.patch: free(string), the arena's
+xlib-ownership	rxwin.ri:3716 XGetSubImage	no	getximage: writes into the kernel's image, takes no ownership
+xlib-ownership	rxwin.ri:2975 XGetImage	no	copyArea: Xlib's own image and data, destroyed at 3015 by Xlib
+xlib-ownership	rxwin.ri:3015 XDestroyImage	no	copyArea: the image of 2975, Xlib's
+xlib-ownership	rxwin.ri:3764 XGetImage	no	getpixel_init: Xlib's own image, destroyed at 3777
+xlib-ownership	rxwin.ri:3777 XDestroyImage	no	getpixel_term: the image of 3764, Xlib's
+xlib-ownership	rxwin.ri:212 XGetAtomName	no	PropertyToString: Xlib's string, freed by XFree at 223
+xlib-ownership	rxwin.ri:223 XFree	no	PropertyToString: the atom name of 212, Xlib's
+xlib-ownership	rxwin.ri:340 XGetWindowProperty	no	copyselection: Xlib's data, freed by XFree at 365
+xlib-ownership	rxwin.ri:365 XFree	no	copyselection: the data of 340, Xlib's
+xlib-ownership	rxwin.ri:4022 XGetWMHints	no	remap: Xlib's hints, freed by XFree at 4060
+xlib-ownership	rxwin.ri:4060 XFree	no	remap: the hints of 4022, Xlib's
+xlib-ownership	rxrsc.ri:958 XListFonts	no	findfont: Xlib's list, freed by XFreeFontNames at 963 and 980
+xlib-ownership	rxrsc.ri:963 XFreeFontNames	no	findfont: the list of 958, Xlib's
+xlib-ownership	rxrsc.ri:980 XFreeFontNames	no	findfont: the list of 958, Xlib's
+xlib-ownership	rxwin.ri:473 XChangeProperty	no	AppendProperty: copies its data to the server
+xlib-ownership	rxwin.ri:707 XChangeProperty	no	handle_misc: copies the selection data to the server
+xlib-ownership	rxwin.ri:1447 XChangeProperty	no	wmap: copies its data to the server
+xlib-ownership	rxwin.ri:1338 XSetClassHint	no	setclasshints: copies the hint strings
+xlib-ownership	rxwin.ri:1761 XSetIconName	no	seticonlabel: copies the label
+xlib-ownership	rxwin.ri:1783 XStoreName	no	setwindowlabel: copies the label
+xlib-ownership	rxwin.ri:3971 XCreateBitmapFromData	no	SetPattern: copies the bits to a server pixmap
+xlib-ownership	rxwin.ri:3997 XCreateBitmapFromData	no	SetPatternBits: copies the bits to a server pixmap
+xlib-ownership	rxwin.ri:4238 XpmWriteFileFromPixmap	no	dumpimage: Xpm reads a server pixmap, allocates and frees its own
+xlib-ownership	rxwin.ri:4317 XpmReadFileToPixmap	no	loadimage: Xpm allocates and frees its own, answers server pixmaps
+xlib-ownership	rxwin.ri:4325 XpmReadFileToPixmap	no	loadimage: as 4317

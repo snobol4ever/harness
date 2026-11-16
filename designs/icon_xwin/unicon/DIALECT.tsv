@@ -34,3 +34,10 @@ own_data	kywd_xwin keyword.r
 by_value	kywd_prog xwin_kywd_prog
 export	xwin_kywd_addr
 functions	82
+arena_source	uxwin_arena.c
+arena_define	-Dmalloc=uxa_malloc
+arena_define	-Dcalloc=uxa_calloc
+arena_define	-Drealloc=uxa_realloc
+arena_define	-Dfree=uxa_free
+arena_define	-Dstrdup=uxa_strdup
+arena_define	-Dsalloc=uxa_salloc

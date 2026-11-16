@@ -49,19 +49,19 @@ def load_dialect(name):
     if name not in DIALECTS or not os.path.isfile(path):
         raise Refuse("no dialect %s: %s is missing (dialects: %s)" % (name, path, " ".join(DIALECTS)))
     d = {"name": name, "source": [], "include": [], "config": [], "own_data": [], "by_value": {}, "export": [],
-         "carry": [], "cc_include": [], "translator_args": "-x", "config_mode": "replace", "plain": None}
+         "carry": [], "cc_include": [], "translator_args": "-x", "config_mode": "replace", "plain": None, "arena_define": [], "arena_source": None}
     for n, line in enumerate(open(path), 1):
         if not line.strip() or line.startswith("#"):
             continue
         k, _, v = line.rstrip("\n").partition("\t")
-        if k in ("source", "include", "config", "export", "carry", "cc_include"):
+        if k in ("source", "include", "config", "export", "carry", "cc_include", "arena_define"):
             d[k].append(v)
         elif k == "own_data":
             d[k].append(tuple(v.split()))
         elif k == "by_value":
             a, b = v.split()
             d[k][a] = b
-        elif k in ("src", "translator", "translator_place", "translator_args", "plain", "config_file", "config_mode", "functions"):
+        elif k in ("src", "translator", "translator_place", "translator_args", "plain", "config_file", "config_mode", "functions", "arena_source"):
             d[k] = v
         else:
             raise Refuse("%s:%d key %s is unknown" % (path, n, k))
@@ -938,7 +938,7 @@ def unicon_prototypes(tree):
     return protos
 
 
-def build_object(src, outdir, work, extra_config=(), roots_only=False):
+def build_object(src, outdir, work, extra_config=(), roots_only=False, extra_cflags=(), patch=None):
     scratch = os.path.join(work, "scratch")
     tree = os.path.join(outdir, "tree")
     os.makedirs(scratch)
@@ -959,11 +959,15 @@ def build_object(src, outdir, work, extra_config=(), roots_only=False):
         if n.endswith(".h"):
             shutil.copyfile(os.path.join(scratch, "src", "h", n), os.path.join(tree, "h", n))
     carry_headers(scratch, tree)
+    if patch:
+        r = subprocess.run(["patch", "-p1", "-s", "--fuzz=0", "--no-backup-if-mismatch", "-d", tree, "-i", patch], capture_output=True, text=True)
+        if r.returncode != 0:
+            raise Fail("the arena patch %s does not apply rc=%d: %s" % (patch, r.returncode, tail(r.stdout + r.stderr)))
     objs = []
     for p in cfiles:
         n = os.path.basename(p)
         o = os.path.join(outdir, n[:-2] + ".o")
-        r = subprocess.run(["bash", CC_SLOT, "gcc", "-std=c11", "-c", "-w", "-fPIC", "-O0", "-ffunction-sections", "-fdata-sections"] + tree_includes() + [n, "-o", o],
+        r = subprocess.run(["bash", CC_SLOT, "gcc", "-std=c11", "-c", "-w", "-fPIC", "-O0", "-ffunction-sections", "-fdata-sections"] + list(extra_cflags) + tree_includes() + [n, "-o", o],
                            cwd=tree, capture_output=True, text=True)
         if r.returncode != 0:
             raise Fail("compile %s rc=%d: %s" % (n, r.returncode, tail(r.stderr)))
@@ -980,7 +984,7 @@ def build_object(src, outdir, work, extra_config=(), roots_only=False):
         raise Refuse("the 2D roots are not all Unicon functions: %s" % " ".join(missing))
     two = os.path.join(outdir, "libunicon_xwin_2d.so")
     link_object(objs, two, az, outdir)
-    return {"whole": whole, "two": two, "entries": entries, "sites": sites, "tree": tree, "roots2d": az}
+    return {"whole": whole, "two": two, "entries": entries, "sites": sites, "tree": tree, "roots2d": az, "objs": objs}
 
 
 def arizona_functions():
@@ -1086,6 +1090,194 @@ def object_main(a):
         return 1
 
 
+ARENA_TABLE = "ARENA-MEASURED.tsv"
+C_ALLOCATORS = ("malloc", "calloc", "realloc", "free", "strdup", "strndup", "salloc", "posix_memalign", "aligned_alloc")
+ARENA_EXERCISE = r'''#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include "pin_va.h"
+void *uxa_malloc(size_t n); void *uxa_calloc(size_t k, size_t n); void *uxa_realloc(void *p, size_t n); void uxa_free(void *p); char *uxa_strdup(const char *s);
+static int inside(void *p) { return (uintptr_t)p >= RT_UXWIN_ARENA_VA && (uintptr_t)p < RT_UXWIN_ARENA_VA + ((uintptr_t)1 << 40); }
+#define CK(c, m) do { if (!(c)) { printf("ARENA-EXERCISE FAIL %s\n", m); return 1; } printf("ARENA-EXERCISE ok %s\n", m); } while (0)
+int main(void) {
+    char *p = uxa_malloc(10); CK(p && inside(p), "allocate inside the window");
+    strcpy(p, "abcdefghi"); char *q = uxa_realloc(p, 1000); CK(q && inside(q) && !strcmp(q, "abcdefghi"), "grow keeps the bytes");
+    uxa_free(q); char *r = uxa_malloc(1000); CK(r == q, "a freed block is reused");
+    memset(r, 0xff, 1000); uxa_free(r); unsigned char *z = uxa_calloc(1000, 1); int zero = 1; for (int i = 0; i < 1000; i++) if (z[i]) zero = 0; CK(z && zero, "calloc of a reused block is zero");
+    char *a = uxa_malloc(64), *b = uxa_malloc(64); CK(a && b && a != b, "two live blocks are distinct");
+    char *big = uxa_malloc((size_t)100 << 20); CK(big && inside(big), "a block larger than a piece grows the window"); big[((size_t)100 << 20) - 1] = 1;
+    char *s = uxa_strdup("window"); CK(s && inside(s) && !strcmp(s, "window"), "strdup in the window");
+    void *f = malloc(32); uxa_free(f); CK(1, "a foreign pointer is handed to the C library's free");
+    CK(uxa_realloc(0, 8) != 0 && uxa_malloc(0) != 0, "realloc of NULL and malloc of 0 allocate");
+    printf("ARENA-EXERCISE PASS\n");
+    return 0;
+}
+'''
+
+
+def scrip_ir():
+    s = os.environ.get("S4E_SCRIP")
+    if not s:
+        raise Refuse("no SCRIP root (S4E_SCRIP) whose src/ir/pin_va.h names the window")
+    p = os.path.join(s, "src", "ir")
+    if not os.path.isfile(os.path.join(p, "pin_va.h")):
+        raise Refuse("%s/pin_va.h is absent" % p)
+    return p
+
+
+def build_arena_object(src, outdir, work):
+    ir = scrip_ir()
+    arena_src = os.path.join(DESIGNS, "unicon", D["arena_source"] or "uxwin_arena.c")
+    if not os.path.isfile(arena_src):
+        raise Refuse("no arena source %s" % arena_src)
+    defines = list(D["arena_define"])
+    if not defines:
+        raise Refuse("the dialect names no arena_define line")
+    patch = os.path.join(DESIGNS, "unicon", "arena.patch")
+    if not os.path.isfile(patch):
+        raise Refuse("no arena patch %s" % patch)
+    b = build_object(src, outdir, work, roots_only=True, extra_cflags=defines, patch=patch)
+    ao = os.path.join(outdir, "uxwin_arena.o")
+    r = subprocess.run(["bash", CC_SLOT, "gcc", "-std=gnu11", "-c", "-O0", "-g", "-fPIC", "-Wall", "-Werror", "-I" + ir, arena_src, "-o", ao], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise Fail("compile %s rc=%d: %s" % (os.path.basename(arena_src), r.returncode, tail(r.stderr)))
+    b["arena_o"] = ao
+    b["ir"] = ir
+    return b
+
+
+def arena_nm_check(b):
+    bad = []
+    for o in b["objs"]:
+        und = nm_names_o(o)
+        named = sorted(n for n in und if n in C_ALLOCATORS)
+        if named:
+            bad.append("%s names %s" % (os.path.basename(o), " ".join(named)))
+    und = nm_names_o(b["arena_o"])
+    return bad, sorted(n for n in und if n in C_ALLOCATORS)
+
+
+def nm_names_o(o):
+    r = subprocess.run(["nm", "-u", o], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise Fail("nm %s rc=%d" % (o, r.returncode))
+    return set(l.split()[-1].split("@")[0] for l in r.stdout.split("\n") if l.strip())
+
+
+def arena_exercise(b, work):
+    c = os.path.join(work, "arena_exercise.c")
+    with open(c, "w") as f:
+        f.write(ARENA_EXERCISE)
+    exe = os.path.join(work, "arena_exercise")
+    r = subprocess.run(["bash", CC_SLOT, "gcc", "-std=gnu11", "-O0", "-I" + b["ir"], c, b["arena_o"], "-o", exe, "-lX11", "-ldl", "-lpthread"], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise Fail("the exercise does not link rc=%d: %s" % (r.returncode, tail(r.stderr)))
+    stats = os.path.join(work, "arena_exercise.stats")
+    r = subprocess.run([exe], capture_output=True, text=True, timeout=120, env=dict(os.environ, UXWIN_ARENA_STATS=stats))
+    out = r.stdout.strip().split("\n")
+    st = open(stats).read() if os.path.isfile(stats) else ""
+    m = re.search(r"foreign_frees=(\d+)", st)
+    ok = r.returncode == 0 and out and out[-1] == "ARENA-EXERCISE PASS" and m and m.group(1) == "1"
+    return ok, out, st
+
+
+HEAP_REACH = [("_wbinding", "wbndngs, the binding chain"), ("_wstate", "wstates, the window state chain; a binding's window"), ("_wcontext", "wcntxts, the context chain; a binding's context"),
+              ("_wdisplay", "wdsplys, the display chain; a window state's or a context's display"), ("_wfont", "a display's fonts, a context's font"),
+              ("_wtexture", "a display's texture table stex (an array of records)"), ("wbind_list", "a window state's children (a child window's binding)")]
+
+
+def heap_members(tree):
+    probe = os.path.join(tree, ".xwin_probe.c")
+    with open(probe, "w") as f:
+        f.write('#include "h/rt.h"\n')
+    r = subprocess.run(["bash", CC_SLOT, "gcc", "-E", "-std=c11"] + tree_includes() + [".xwin_probe.c"], cwd=tree, capture_output=True, text=True)
+    os.unlink(probe)
+    if r.returncode != 0:
+        raise Fail("preprocessing Unicon's h/rt.h rc=%d: %s" % (r.returncode, tail(r.stderr)))
+    pp = re.sub(r"(?m)^#.*$", "", r.stdout)
+    rows = []
+    heapish = re.compile(r"^(?:struct\s+descrip|union\s+block\s*\*|struct\s+b_\w+\s*\*|dptr|struct\s+descrip\s*\*)$")
+    def walk(tag, prefix, reach, body=None):
+        text = " ".join((struct_body(pp, tag) if body is None else body).split())
+        for decl in top_decls(text):
+            if "{" in decl:
+                m = re.match(r"^(struct|union)\s*\w*\s*\{(.*)\}\s*(\w+)\s*$", decl)
+                if m:
+                    walk(tag, prefix + m.group(3) + ".", reach, m.group(2))
+                continue
+            parts = [p.strip() for p in decl.split(",")]
+            m = re.match(r"^(.*?)([\s*]+)(\w+)\s*(\[[^\]]*\])?$", parts[0])
+            if not m:
+                continue
+            base = " ".join(m.group(1).split())
+            names = [(m.group(2).count("*"), m.group(3), m.group(4))]
+            for p in parts[1:]:
+                mm = re.match(r"^(\**)\s*(\w+)\s*(\[[^\]]*\])?$", p)
+                if mm:
+                    names.append((len(mm.group(1)), mm.group(2), mm.group(3)))
+            for stars, name, arr in names:
+                ty = base + (" " + "*" * stars if stars else "")
+                if heapish.match(" ".join(ty.split())) or (base in ("struct descrip", "dptr") and arr):
+                    rows.append(("heap-member", tag, prefix + name + (arr or ""), " ".join(ty.split()), reach))
+    for tag, reach in HEAP_REACH:
+        walk(tag, "", reach)
+    return rows
+
+
+def arena_main(a):
+    try:
+        load_dialect(a.dialect)
+        if a.dialect != "unicon":
+            raise Refuse("--arena-check is the unicon dialect's verb")
+        src = os.path.abspath(a.src or D["src"])
+        for need in (os.path.join(src, D["translator"]), os.path.join(src, "runtime", "fwindow.r")):
+            if not os.path.isfile(need):
+                raise Refuse("the Unicon checkout lacks %s" % need)
+        table = os.path.join(DESIGNS, "unicon", ARENA_TABLE)
+        base = os.path.join("/tmp/s4e", os.environ.get("S4E_SEAT") or "anon", "xwgen")
+        os.makedirs(base, exist_ok=True)
+        work = tempfile.mkdtemp(prefix="xwarena-", dir=base)
+        try:
+            b = build_arena_object(src, os.path.join(work, "object"), os.path.join(work, "build"))
+            bad, arena_names = arena_nm_check(b)
+            for x in bad:
+                print("ARENA RED a kernel object calls the C allocator itself: %s" % x)
+            print("ARENA the arena file alone names the C allocator: %s" % (" ".join(arena_names) or "nothing"))
+            ok, out, st = arena_exercise(b, work)
+            for l in out:
+                print(l)
+            print("ARENA exercise stats: %s" % " ".join(st.split("\n")[0].split("\t")[1:]))
+            hm = heap_members(b["tree"])
+            want = []
+            if os.path.isfile(table):
+                want = [tuple(l.rstrip("\n").split("\t")) for l in open(table) if l.startswith("heap-member\t")]
+            elif not a.arena_write:
+                raise Refuse("no table %s" % table)
+            if a.arena_write:
+                print("ARENA heap members %d" % len(hm))
+                for r in hm:
+                    print("\t".join(r))
+                return 0 if not bad and ok else 1
+            drift = sorted(set(want) ^ set(hm))
+            for r in drift:
+                print("ARENA RED heap member %s: %s" % ("in the table only" if r in want else "in the headers only", "\t".join(r)))
+            if bad or not ok or drift:
+                print("ARENA FAIL: kernel objects naming the allocator %d, exercise %s, heap-member drift %d" % (len(bad), "PASS" if ok else "FAIL", len(drift)))
+                return 1
+            print("ARENA OK: no kernel object names the C allocator, the exercise passes, %d heap members as the table holds" % len(hm))
+            return 0
+        finally:
+            if not a.keep:
+                shutil.rmtree(work, ignore_errors=True)
+    except Refuse as e:
+        print("REFUSE(2): %s" % e)
+        return 2
+    except Fail as e:
+        print("ARENA FAIL %s" % e)
+        return 1
+
+
 def tree_files(t):
     s = set()
     for dp, dn, fn in os.walk(t):
@@ -1116,7 +1308,11 @@ def main():
     ap.add_argument("--keep", action="store_true")
     ap.add_argument("--object", nargs="?", const="", metavar="DIR")
     ap.add_argument("--object-check", action="store_true")
+    ap.add_argument("--arena-check", action="store_true")
+    ap.add_argument("--arena-write", action="store_true")
     a = ap.parse_args()
+    if a.arena_check or a.arena_write:
+        return arena_main(a)
     if a.object is not None or a.object_check:
         return object_main(a)
     if sum(1 for x in (a.out, a.check, a.classes) if x) != 1:
