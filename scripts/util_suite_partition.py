@@ -202,18 +202,34 @@ def main(argv):
         print(__doc__.strip().split("\n", 1)[0]); print("usage: util_suite_partition.py build|check|summary <ALL.csv> [options]"); return 2
     verb, table = argv[0], argv[1]
     opts = {"out": None, "core_k": 3, "ubiquitous": 0.5, "chunk_entries": 100, "secs": None, "suite_key": None}
+    given = set()
     i = 2
     while i < len(argv):
         a = argv[i]
         if a == "--out": opts["out"] = argv[i + 1]; i += 2
-        elif a == "--core-k": opts["core_k"] = int(argv[i + 1]); i += 2
-        elif a == "--ubiquitous": opts["ubiquitous"] = float(argv[i + 1]); i += 2
-        elif a == "--chunk-entries": opts["chunk_entries"] = int(argv[i + 1]); i += 2
-        elif a == "--secs": opts["secs"] = argv[i + 1]; i += 2
-        elif a == "--suite-key": opts["suite_key"] = argv[i + 1]; i += 2
+        elif a == "--core-k": given.add("core_k"); opts["core_k"] = int(argv[i + 1]); i += 2
+        elif a == "--ubiquitous": given.add("ubiquitous"); opts["ubiquitous"] = float(argv[i + 1]); i += 2
+        elif a == "--chunk-entries": given.add("chunk_entries"); opts["chunk_entries"] = int(argv[i + 1]); i += 2
+        elif a == "--secs": given.add("secs"); opts["secs"] = argv[i + 1]; i += 2
+        elif a == "--suite-key": given.add("suite_key"); opts["suite_key"] = argv[i + 1]; i += 2
         else: print("REFUSE(2): unknown option %s" % a); return 2
     if not os.path.isfile(table):
         print("REFUSE(2): no table at %s" % table); return 2
+    # CHECK REBUILDS WITH THE PARAMETERS THE STORED FILE RECORDS (the grader 2026-11-16, on the cqo's measurement: ipl_gprogs and ipl_gpacks, built at
+    # chunk_entries 60, read PARTITION STALE because check rebuilt at the default 100, a rebuild changing only the params line). Every parameter the caller
+    # did not name is taken from the stored file's "# params:" line; secs keeps its path, and its suite key is the package folder's name unless given.
+    if verb == "check":
+        _dest = opts["out"] or os.path.join(os.path.dirname(os.path.abspath(table)), "PARTITION.tsv")
+        if os.path.isfile(_dest):
+            for _ln in open(_dest, encoding="utf-8").read().split("\n")[:5]:
+                if _ln.startswith("# params:"):
+                    _kv = dict(w.split("=", 1) for w in _ln[len("# params:"):].split() if "=" in w)
+                    for _k, _cast in (("core_k", int), ("ubiquitous", float), ("chunk_entries", int)):
+                        if _k not in given and _k in _kv: opts[_k] = _cast(_kv[_k])
+                    if "secs" not in given and _kv.get("secs", "none") != "none":
+                        opts["secs"] = _kv["secs"]
+                        if "suite_key" not in given: opts["suite_key"] = os.path.basename(os.path.dirname(os.path.abspath(table)))
+                    break
     rows, feats = read_table(table)
     rows = drop_excluded_and_containers(table, rows)
     secs = read_secs(opts["secs"], opts["suite_key"]) if opts["secs"] and opts["suite_key"] else {}
