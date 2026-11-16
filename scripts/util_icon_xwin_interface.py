@@ -11,6 +11,10 @@ with the code, skill seat-conduct section 2), so the seat that changes the inter
           the file, what in SCRIP calls it, and its contract (a bt_ entry's from xwin_functions.tsv)
   import  every name the object takes from the runtime (nm -D -u of the object met by nm -D of out/libscrip_rt.so): its C
           signature read from the runtime source that defines it, the file, the object's files that use it, and its contract
+  offer   every name the hand-written contract table lists that the object neither exports nor imports: a name SCRIP's runtime
+          offers to any window library (a Unicon object binds it, Arizona's does not), its C signature read from the runtime source
+          that defines it, the file, and its contract; libscrip_rt.so must define and export it (the cto 12:1x CST 2026-11-16, on
+          officer_07's ask from the Unicon object's step U3)
   form    the data that crosses: the descriptor, the file block, the cset, large-integer and real blocks in the oracle's layout,
           the layout word, the roots and how they are registered, each as its C text read from the source
   library each system library the object needs (readelf NEEDED) and how many of its names the object calls
@@ -20,7 +24,8 @@ none is red.
 
   --write [ROOT]   regenerate the table from ROOT (default S4E_SCRIP), its out/ objects and its sources
   --check [ROOT]   rc 0 the table says what the object and the sources say; rc 1 the object exports or imports a name the table
-                   lacks or no longer does, a signature or a form changed, or a name has no contract (each named); rc 2 REFUSE:
+                   lacks or no longer does, a signature or a form changed, a name has no contract, or an offered name is one
+                   libscrip_rt.so does not export (each named); rc 2 REFUSE:
                    no ROOT, no out/libscrip_xwin.so or out/libscrip_rt.so in it, or no table or contract file in it
 """
 import argparse
@@ -57,7 +62,7 @@ FORMS = [
 HEADER = ("# xwin_interface.tsv -- the boundary between SCRIP's runtime and the window object, read from the built object and the sources by "
           "util_icon_xwin_interface.py --write ROOT (regenerated, never edited; the contracts are xwin_interface_contract.tsv beside it); "
           "util_icon_xwin_interface.py --check holds it equal to the object.\n"
-          "# kind <tab> name <tab> C signature or C text <tab> defined in <tab> called by (export) or used by (import) <tab> contract\n")
+          "# kind <tab> name <tab> C signature or C text <tab> defined in <tab> called by (export), used by (import) or offered (offer) <tab> contract\n")
 
 
 class Refuse(Exception):
@@ -227,6 +232,14 @@ def measure(root):
         if not sig:
             problems.append("import %s: no definition or declaration in the runtime's sources" % n)
         rows.append(("import", n, sig or "-", where or "-", ", ".join(users(n, obj_files, root)) or "-", con.get(n, "")))
+    hand = contracts(root)
+    for n in sorted(set(hand) - set(exports) - set(imports)):
+        if n not in rt_def:
+            problems.append("offer %s: the contract table lists it, but libscrip_rt.so does not define and export it" % n)
+        sig, where = signature(n, rt_files, root)
+        if not sig:
+            problems.append("offer %s: no definition or declaration in the runtime's sources" % n)
+        rows.append(("offer", n, sig or "-", where or "-", "offered to a window library; Arizona's object does not import it", hand[n]))
     for name, path, start in FORMS:
         t = form_text(root, path, start)
         if t is None:
@@ -261,7 +274,7 @@ def main():
         root = os.path.abspath(root)
         table = os.path.join(root, TABLE)
         rows, problems = measure(root)
-        counts = "exports=%d imports=%d forms=%d libraries=%d" % tuple(sum(1 for r in rows if r[0] == k) for k in ("export", "import", "form", "library"))
+        counts = "exports=%d imports=%d offers=%d forms=%d libraries=%d" % tuple(sum(1 for r in rows if r[0] == k) for k in ("export", "import", "offer", "form", "library"))
         if a.write is not None:
             if problems:
                 for p in problems:
