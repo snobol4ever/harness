@@ -1382,6 +1382,24 @@ FATAL_RENDER = {"voice": None}
 FATAL_REF_LINE = re.compile(r"^.*" + r"\n?".join((r"\(", r"\d+(?:\n\d+)?", r"\)", " ", ":", " ", "E", "R", "R", "O", "R", " ", r"\d", r"\d", r"\d", " ", "-", "-")) + r"(?:\n? |$)", re.M)   # the oracle's fatal line `<file>(<n>) : ERROR nnn -- <text>` as sbl -bf prints it, WRAPPED AT COLUMN 120 WHEREVER THAT FALLS: a long file name breaks the line inside its tail, and each break point was a red of its own until the pattern took the break anywhere (MEASURED: `ERROR nnn -` then `- <text>`, test_gate_sno_a_deferred_cset_..._error__f; `ERROR nnn --` then the text, harness a1037a32; `ERROR nnn` then ` -- <text>`, ..._setexit_trap_..._nesting__abort; `: E` then `RROR nnn -- <text>`, ..._a_runtime_error_names_the_source_file_..._statement__main; the cao 2026-11-15, a census of every ALL.ref, .out and MULTI-LINERS.md of the corpus: 53 fatal lines, the 51 the pattern before this one took and those last two)
 
 
+# ⭐ SPITBOL'S THROUGHPUT LINES ARE ITS CLOCK, NEVER AN ANSWER (the grader 2026-11-16, under R-420 (b) and R-1344: a fatal block's accounting is
+# never graded). stopr prints `stmt / microsec`, `stmt / millisec` and `stmt / second` exactly when `execution time msec` is above 0 (ile stpr2 skips
+# them at 0; util_spitbol_post_mortem.py measured the shape), so whether a fatal answer carries them, and what they read, turns on the oracle's
+# clock. MEASURED 2026-11-16 on sbl -bf: eight package programs ending in a fatal answered 72 bytes apart on two runs (the three lines, each printed
+# to both streams of a merged capture), and joeygibson ch2/recursive1.sno read `stmt / microsec 0` at 12 and 13 msec; SCRIP's rendered block
+# carries none of them. So the lines of an oracle's fatal block, after its `ERROR nnn --` line, are removed from the oracle's side before the
+# compare; a program's own output before the block is untouched, and SCRIP's side is never touched.
+SPITBOL_THROUGHPUT = re.compile(r"^stmt / (?:microsec|millisec|second) +[0-9]+$")
+SPITBOL_FATAL_HEAD = re.compile(r"^.*\(\d+\) : ERROR \d{3} -- ")
+def drop_spitbol_throughput(text):
+    out, seen = [], False
+    for ln in text.split("\n"):
+        seen = seen or SPITBOL_FATAL_HEAD.match(ln) is not None
+        if not (seen and SPITBOL_THROUGHPUT.match(ln)):
+            out.append(ln)
+    return "\n".join(out)
+
+
 def _fatal_render_voice_for(lang):
     return "spitbol" if lang in ("", "snobol4", "snocone") else None
 
@@ -1576,6 +1594,8 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
         if _fatal_n and rc == 1 and want_rc == 0:
             want_rc = 1
     exp = expected_text.rstrip("\n") if expected_text is not None else None
+    if exp is not None and FATAL_RENDER.get("voice") == "spitbol" and os.environ.get("S4E_FATAL_RENDER") != "0":
+        exp = drop_spitbol_throughput(exp)
     masked_n = 0
     if mask:
         exp_lines = len(exp.split("\n")) if exp is not None else 0

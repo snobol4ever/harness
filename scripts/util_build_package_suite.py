@@ -1020,7 +1020,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
         if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW"):
             time.sleep(max(0.0, math.floor(_t_first) + 1.05 - time.time()))
         _run2 = _oracle_isolated(_fl)[:2] if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") else (ora_text, ora_rc)
-        _mrows = _entry_masks.get(name, [])
+        _mrows = h.masks_for(_entry_masks, name)
         if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") and (h.apply_line_mask(_run2[0], _mrows, "oracle")[0], _run2[1]) != (h.apply_line_mask(ora_text, _mrows, "oracle")[0], ora_rc):
             excluded.append((name, "the oracle answers differently on two runs (time, randomness or addresses in its output) -- no one ground truth"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle nondeterministic)", file=sys.stderr)
@@ -1597,6 +1597,7 @@ def _sbl_listing_clock_out(b):
     return _SBL_LISTING_CLOCK.sub(b"x86-64  (the listing's date and time)", b or b"")
 
 
+MINE_MASKS = {}   # the package's ALL.mask rows (read_mask_sidecar), applied to both runs before the census compares them (the grader 2026-11-16)
 MINE_SILENT_RC = False   # --mine-silent-rc: a silent program is an entry graded by its exit status (Lon 2026-11-15)
 # PASCAL (the coo 2026-11-11, COO-508): fpc only compiles, so a Pascal program is run by fpc_oracle_run.sh (compile to a private folder, then run; exit 126 =
 # fpc refuses the source). The dialect is found by the census: the first mode of the ladder in which fpc compiles the program cut its answer and is
@@ -1864,7 +1865,14 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     # A COMPILE REFUSAL'S LISTING CARRIES THE CLOCK (MEASURED 2026-11-15 on DECUS palin.sno, exit 231 twice, 319 and 319 bytes: the two runs differ in the one
     # line `x86-64  Sun Nov 15 13:34:22 2026` of the listing's page header, and the census read DIFFERS-BETWEEN-RUNS). The grader reads such a ref by the line
     # and code of each diagnostic alone (corpus_suite_harness.py _spitbol_compile_refusal_verdict), so the two runs are compared with that line left out.
-    _same = _sbl_listing_clock_out if lang == "snobol4" else (lambda b: b)
+    # THE PACKAGE'S MASK ROWS APPLY TO THE TWO RUNS, as the grader applies them to the oracle's answer (the grader 2026-11-16, MEASURED: joeygibson
+    # ch2/recursive1.sno, a SPITBOL fatal under `fatal gradable`, printed `execution time msec  13` once and `12` the next time, every other byte alike, and
+    # the census read DIFFERS-BETWEEN-RUNS and refused the package; snobol_playground's ALL.mask masks that line for every entry). The container road reads
+    # the rows the same way (masks_for: the `*` rows and the entry's own); a package with no ALL.mask compares exactly as before. A SNOBOL4 fatal block's
+    # throughput lines are left out of the comparison as the grader leaves them out (corpus_suite_harness.py drop_spitbol_throughput).
+    _clock = (lambda b: h.drop_spitbol_throughput(_sbl_listing_clock_out(b).decode("utf-8", "surrogateescape")).encode("utf-8", "surrogateescape")) if lang == "snobol4" else (lambda b: b)
+    _mrows = h.masks_for(MINE_MASKS, os.path.splitext(rel)[0])
+    _same = (lambda b: h.apply_line_mask(_clock(b).decode("utf-8", "surrogateescape"), _mrows, "oracle")[0]) if _mrows else _clock
     if (rc2, _same(out2)) != (rc1, _same(out1)):
         return "DIFFERS-BETWEEN-RUNS", f"exit {rc1} and {rc2}, {len(out1)} and {len(out2)} bytes", None, b""
     if not feed:
@@ -2147,7 +2155,7 @@ def main():
                     help="under --mine, programs another package grades already: a line is the path from the root, a tab, and where it is graded; "
                          "each reads HELD-ELSEWHERE in the census, is not run and is no entry")
     args = ap.parse_args()
-    global MINE_SILENT_RC, MINE_FATAL_GRADABLE
+    global MINE_SILENT_RC, MINE_FATAL_GRADABLE, MINE_MASKS
     MINE_SILENT_RC = bool(args.mine_silent_rc)
     pkg_dir = Path(args.package_dir).resolve()
     if not pkg_dir.is_dir():
@@ -2162,6 +2170,7 @@ def main():
         h.refuse(f"{pkg_dir} is inside the one-disk corpus checkout {_one_corpus}, which only the grader writes (this seat: {os.environ.get('S4E_SEAT', '') or 'unset'}) -- "
                  f"copy the package to scratch (cp -r --no-preserve=mode), build the copy, and hand the grader the difference as a patch (s4e_take.sh give corpus)")
     MINE_FATAL_GRADABLE = read_contract(pkg_dir)["fatal"] == "gradable"
+    MINE_MASKS = h.read_mask_sidecar(pkg_dir / "ALL.ref")
     if args.mine and args.mine_add and not args.mine_under:
         h.refuse("--mine-add adds one folder to a mined package: it needs --mine-under FOLDER")
     if args.mine:
