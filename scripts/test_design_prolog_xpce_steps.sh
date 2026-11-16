@@ -177,6 +177,7 @@ board() {  # board ENTRIES [ENV...]: grade plain entries by corpus_suite_harness
     done
     d="$(stage stderr)" || { echo refuse; return; }
     for e in $(printf '%s' "$ents" | tr ',' ' '); do
+        [ -d "$d/$e.fixtures" ] && cp -r "$d/$e.fixtures/." "$d/"   # NAME.fixtures/ is staged where the program runs, as corpus_suite_harness.py's fixtures=staged does (officer_03 2026-11-16, xpce_p_module's companions)
         run_m3 "$d" "$e" "$@"
         err_same "$d/$e.e" "$FIX/$e.err" || { echo "    $e: standard error differs from $e.err in mode 3: $(head -1 "$d/$e.e" | cut -c1-110)" >> "$log"; v=red; }
         if [ "${S4E_MODE4:-0}" = 1 ]; then run_m4 "$d" "$e" "$@"
