@@ -359,6 +359,13 @@ unicon_bin() {
 # the plain accessors above stay the oracle of every other program. A graphics oracle is run under a private display alone (graphics_display_run below, or util_screen_run.py for the
 # screen road), never the caller's DISPLAY: a seat's session may carry the desktop's :0, and a window opened there is on Lon's screen.
 GRAPHICS_ICON_ORACLE_DIR="/home/resources/icon-master-x"
+# THE GRAPHICS ORACLE'S LIBRARY IS COMPILED BY ITS OWN TRANSLATOR (the cto 2026-11-16 16:2x CST, row icon-graphics-the-graphics-oracles-library-is-compiled-by-its-own-translator;
+# built by officer_02): $GRAPHICS_ICON_ORACLE_DIR/lib is the plain build's library copied beside it (2026-11-14), so a library file under $ifdef _X_WINDOW_SYSTEM held the else
+# arm (viface's vidget font, vtext's arrow keys). libx is the stock ipl/Makefile's recipe (icont -usc) run with this oracle's icont, which defines _X_WINDOW_SYSTEM and _GRAPHICS,
+# on corpus's semicolon text: /home/resources/progress/icon-graphics-2026-11-16/oracle-lib-officer_02/make_libx.sh makes it again. Every link of a graphics oracle cut takes it:
+# IPATH="$GRAPHICS_ICON_ORACLE_LIB" (ipl_graphics_stage.py's oracle_env, so the one prover and icon_demo.py). MEASURED before the switch: 383 of 392 modules byte equal; of every
+# graphics entry of ipl_gprogs, ipl_gprocs, ipl_gpacks, gdemos and rosetta-icon read on it, one answer moved, fontpick's (cut again in the corpus patch given with this one).
+GRAPHICS_ICON_ORACLE_LIB="$GRAPHICS_ICON_ORACLE_DIR/libx"
 GRAPHICS_UNICON_ORACLE_DIR="/home/resources/oracles-graphics/unicon"
 _graphics_oracle_bin() {
     local c="$1"

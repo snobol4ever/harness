@@ -39,8 +39,10 @@ def stage(entry, d, pkg):
     except SystemExit:
         raise Refuse(f"the harness refused to stage {entry.name}")
     return cand.parent, cand.name
+def oracle_lib(M):
+    return Path(os.environ.get("GRAPHICS_ICON_ORACLE_LIB") or sh_value('printf %s "${GRAPHICS_ICON_ORACLE_LIB:-}"') or f"{M}/lib")
 def oracle_env(M, ipl, d):
-    return {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "IPATH": f"{M}/lib", "LPATH": f"{ipl}/gincl {ipl}/incl", "HOME": str(d)}
+    return {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "IPATH": str(oracle_lib(M)), "LPATH": f"{ipl}/gincl {ipl}/incl", "HOME": str(d)}
 def included(d):
     inc = set()
     for f in Path(d).glob("*.icn"):
