@@ -7,7 +7,8 @@ fwindow.r, the function layer) and the conversions cnv.r and def.r, converts eve
 designs/icon_xwin/ALLOC-CLASSES.tsv, rewrites the includes so no line names a scratch path, copies the oracle's headers,
 writes xwin_alloc.h (the class macros), xwin_gen.c (the record layouts, the roots, the detached-image hook) and
 xwin_functions.tsv (the 48 functions from their headers), xwin_builtins.tsv (their rows of src/runtime/builtins.tsv)
-and xwin_entries.c (one bt_ entry a function, into the adapter rt_xwin_call_h; officer_01's format), applies designs/icon_xwin/xwin.patch and writes the tree to
+and xwin_entries.c (one bt_ entry a function, into the adapter rt_xwin_call_h; officer_01's format) and
+xwin_exports.map (the linker version script exporting those 48 entries and nothing else; the cto 08:4x CST), applies designs/icon_xwin/xwin.patch and writes the tree to
 --out with XWIN-MANIFEST.tsv. xwin_shim.h, W3's shim header, is hand-written: if it stands in the tree the gate does not
 compare it and --out keeps it; the generated files include none of it (h/rt.h declares the runtime names they call). Nothing under the oracle tree is written; the scratch is removed unless --keep.
 
@@ -468,7 +469,8 @@ SEPARATOR = "/*" + "-" * 196 + "*/"
 
 
 def write_builtins(tree, rows):
-    tsv, c = [], ['#include "ir/descr.h"', "DESCR_t rt_xwin_call_h(void *zfn, int nparms, DESCR_t *argv, int n, void **hslot);"]
+    tsv, c = [], ['#include "ir/descr.h"', "DESCR_t rt_xwin_call_h(void *zfn, int nparms, DESCR_t *argv, int n, void **hslot);",
+                   "#define XWIN_EXPORT __attribute__((visibility(\"default\")))"]
     for r in rows:
         name, entry, res, nparams, suspends, c_args = r.split("\t")[:6]
         conv = "gen" if suspends == "yes" else "leaf"
@@ -476,9 +478,9 @@ def write_builtins(tree, rows):
         c.append(SEPARATOR)
         c.append("extern int %s(%s);" % (entry, "int, void *" if c_args == "r_nargs,r_args" else "void *"))
         if conv == "gen":
-            c.append("DESCR_t bt_%s_h(DESCR_t *args, int nargs, void **hslot) { return rt_xwin_call_h((void *)%s, %s, args, nargs, hslot); }" % (name, entry, nparams))
+            c.append("XWIN_EXPORT DESCR_t bt_%s_h(DESCR_t *args, int nargs, void **hslot) { return rt_xwin_call_h((void *)%s, %s, args, nargs, hslot); }" % (name, entry, nparams))
         else:
-            c.append("DESCR_t bt_%s(DESCR_t *args, int nargs) { return rt_xwin_call_h((void *)%s, %s, args, nargs, (void **)0); }" % (name, entry, nparams))
+            c.append("XWIN_EXPORT DESCR_t bt_%s(DESCR_t *args, int nargs) { return rt_xwin_call_h((void *)%s, %s, args, nargs, (void **)0); }" % (name, entry, nparams))
     for line in c:
         if len(line) > 200:
             raise Refuse("an entry line is %d columns, over 200: %s" % (len(line), line[:80]))
@@ -487,6 +489,12 @@ def write_builtins(tree, rows):
         f.write("\n".join(tsv) + "\n")
     with open(os.path.join(tree, "xwin_entries.c"), "w") as f:
         f.write("\n".join(c) + "\n")
+    names = []
+    for r in rows:
+        f = r.split("\t")
+        names.append("bt_%s_h" % f[0] if f[4] == "yes" else "bt_%s" % f[0])
+    with open(os.path.join(tree, "xwin_exports.map"), "w") as f:
+        f.write("{\n  global:\n" + "".join("    %s;\n" % n for n in names) + "  local: *;\n};\n")
 
 
 def merge_builtins(tree, path):
