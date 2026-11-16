@@ -13,7 +13,9 @@ Unicon's graphics are a separate library by Lon's ruling of 2026-11-16 09:5x and
 THE GOAL LINES COME FIRST (Lon 2026-11-16 12:3x CST, in the coo's window, verbatim: "The number to watch as the countdown is Icon demo 10 to 177. Here we go. That
 is the goal." / "Gui pack from 3 to 7 is also the goal."): a line of the table whose first column is goal names a label, a suite key and where its denominator is
 read. The numerator is the suite row's newest pass count in SUITES.tsv, what the cycle graded; the denominator is the count of files a glob names (the library's
-177 graphics programs, so the count has its true end before every program is an entry) or, for -, the row's own total, which grows as entries are cut.
+graphics programs, so the count has its true end before every program is an entry), the lines of a file an expression finds (lines:FILE:REGEX), or, for -,
+the row's own total, which grows as entries are cut. THE END OF THE ICON DEMOS IS 149, NOT 177 (the cto and officer_04, MEASURED 2026-11-16 12:5x CST): ipl/gprogs
+holds 177 files and 149 of them call a window function, the gprogs lines of the package ipl's EXCLUDED.tsv; the other 28 draw nothing and are graded in ipl.
 Read only, nothing run. The table is GRAPHICS_PROGRESS.tsv beside this file: one line a language and one a goal.
   python3 -I util_graphics_progress.py            the header and one line a language; rc 0
   python3 -I util_graphics_progress.py --list     every graphics entry: language, suite key, entry, its newest reading, scripted or not, counted or not
@@ -136,7 +138,11 @@ def goals(e):
         if f[0] != "goal" or len(f) < 4: continue
         r = rows.get(f[2])
         have = int(r[8]) if r and r[8].isdigit() else None
-        of = len(glob.glob(f[3])) if f[3] != "-" else (int(r[9]) if r and r[9].isdigit() else None)
+        if f[3].startswith("lines:"):   # lines:FILE:REGEX, the lines of FILE the expression finds (a list that names the scope, one line a program)
+            fn, rx = f[3][6:].split(":", 1)
+            try: of = sum(1 for x in open(fn, encoding="utf-8", errors="replace") if re.search(rx, x))
+            except OSError: of = None
+        else: of = len(glob.glob(f[3])) if f[3] != "-" else (int(r[9]) if r and r[9].isdigit() else None)
         out.append((f[1], have, of))
     return out
 
@@ -191,6 +197,10 @@ def probe():
         open(os.path.join(t, "SUITES.tsv"), "w").write("# h\n" + "\t".join(["pk", "L", "x", "icon", "d", "0", "7", "d", "3", "7", "tree"]) + "\n")
         open(os.path.join(t, "table.tsv"), "a").write("goal\tIcon demos\tpk\t%s\ngoal\tGUI packs\tpk\t-\ngoal\tNo row\tnone\t-\n" % os.path.join(t, "lib", "*.icn"))
         g = goals(e)
+        open(os.path.join(t, "scope.tsv"), "w").write("# c\ngprogs/a.icn\tX\ngprogs/b.icn\tY\nprogs/c.icn\tX\n")
+        open(os.path.join(t, "table.tsv"), "a").write("goal\tBy lines\tpk\tlines:%s:^gprogs/\n" % os.path.join(t, "scope.tsv"))
+        if goals(e)[-1] != ("By lines", 3, 2): why += " arm6 a lines denominator reads %r, wanted 3 of 2 lines found;" % (goals(e)[-1],)
+        g = goals(e)[:3]
         if g != [("Icon demos", 3, 5), ("GUI packs", 3, 7), ("No row", None, None)]: why += " arm6 the goal lines read %r, wanted 3 of 5 by the glob, 3 of 7 by the row, and a missing row unread;" % (g,)
         if len(measure(e)) != 1: why += " arm6 a goal line was read as a language line;"
     finally:
