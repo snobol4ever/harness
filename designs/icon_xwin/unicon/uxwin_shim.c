@@ -8,6 +8,9 @@
 #define UXW_LW(off, kind) (((uint64_t)(off) << 8) | (uint64_t)(kind))
 #define UXW_LK_DESCR 2
 #define UXW_KWD_COUNT 8
+#define UXW_MOD_SHIFT 1
+#define UXW_MOD_CONTROL 2
+#define UXW_MOD_META 4
 extern DESCR_t rt_extfn_descr_out(const void *d);
 extern int core_icn_error(int code, DESCR_t val);
 extern void core_icn_fatal(int code, DESCR_t val);
@@ -197,6 +200,21 @@ static void uxw_gc_roots(void) {
 __attribute__((constructor)) static void uxw_load(void) { for (int i = 0; i < 256; i++) allchars[i] = (unsigned char)i; rt_gc_root_fn_add(uxw_gc_roots); }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 UXW_EXPORT void *xwin_kywd_addr(int which) { if (which < 0 || which >= UXW_KWD_COUNT) return (void *)0; return uxw_kywd[which]; }
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+UXW_EXPORT int xwin_kywd_mods(void) { return (xmod_shift ? UXW_MOD_SHIFT : 0) | (xmod_control ? UXW_MOD_CONTROL : 0) | (xmod_meta ? UXW_MOD_META : 0); }
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+UXW_EXPORT int xwin_lang_kywd_set(void *kywd, void *val) {
+    dptr k = (dptr)kywd, v = (dptr)val;
+    C_integer i;
+    struct descrip var;
+    if (k == &kywd_xwin[XKey_Window]) { if (v->dword != D_Null && (v->dword != D_File || !(BlkLoc(*v)->File.status & Fs_Window))) return 140; *k = *v; return 0; }
+    if (k != &amperX && k != &amperY && k != &amperCol && k != &amperRow && k != &amperInterval) return -1;
+    if (!cnv_c_int(v, &i)) return 101;
+    IntVal(*k) = i;
+    var.dword = D_Var;
+    VarLoc(var) = k;
+    return xyrowcol(&var) == -1 ? 140 : 0;
+}
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 static void uxw_poll(void) { pollctr >>= 1; pollctr++; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
