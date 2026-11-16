@@ -1490,6 +1490,7 @@ def build_shim_object(src, root, outdir, work, wanted):
         if n.endswith(".h"):
             shutil.copyfile(os.path.join(scratch, "src", "h", n), os.path.join(tree, "h", n))
     carry_headers(scratch, tree)
+    header_pass(tree, rrows, rreport)
     check_reads(rrows, rreport)
     patch = os.path.join(DESIGNS, "unicon", "arena.patch")
     if not os.path.isfile(patch):

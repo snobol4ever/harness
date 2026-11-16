@@ -160,3 +160,6 @@ read	cnv.r	809	Cset	1	CNV	a cset argument in the oracle's layout, handed so by t
 read	cnv.r	884	Proc	1	DEAD	the linker discards its function: the Unicon objects built with function sections and linked -shared --gc-sections, the 82 Z entries the only roots (--print-gc-sections names it) (strprc)
 read	cnv.r	1225	Lrgint	1	CNV	a lrgint argument in the oracle's layout, handed so by the adapter: left (ston)
 read	cnv.r	1417	Set	1	DEAD	the linker discards its function: the Unicon objects built with function sections and linked -shared --gc-sections, the 82 Z entries the only roots (--print-gc-sections names it) (cnv_list)
+read	xwin.h	173	List	1	PENDING	the Pending list's size inside the header macro EVQUEEMPTY, expanded in rxwin.ri 957: becomes xwin_list_size of its descriptor (the cto 12:49 CST; officer_06's census after the preprocessor)
+read	rmacros.h	344	Real	1	CNV	GetReal, a real argument in the oracle's layout (NoDescriptorDouble: a Real block), handed so by the adapter: left (cnv.r 58 131 372 532)
+read	rmacros.h	1221	Cset	1	CNV	CsetPtr, a cset argument in the oracle's layout, handed so by the adapter: left (cnv.r 241 589; the cto 12:49 CST)
