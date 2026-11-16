@@ -31,19 +31,26 @@ def corpus_root():
     return os.environ.get("S4E_CORPUS") or "/home/corpus"
 
 
+# A LANGUAGE READ WITH ANOTHER'S TABLE: Unicon is the superset of Icon, its programs .icn files that SCRIP takes with --dialect=unicon, so
+# its containers are read with icon's row of LANG_CONFIGS and that switch is the one compile argument a %%unicon cell carries itself.
+READ_AS = {"unicon": "icon"}
+OWN_SWITCH = {"unicon": "--dialect=unicon"}
+
+
 def master_dir(lang, given):
     return Path(given) if given else Path(corpus_root()) / "tests" / lang
 
 
 def block_entries(lang, d):
-    cfg = csh.LANG_CONFIGS.get(lang)
+    cfg = csh.LANG_CONFIGS.get(READ_AS.get(lang, lang))
     if cfg is None:
         refuse(f"no language {lang!r} in corpus_suite_harness.LANG_CONFIGS")
     src = d / ("ALL" + cfg["ext"])
     ref = d / "ALL.ref"
-    # A FORMAT-2 FOLDER (ONE-LINERS.EXT, ONE-LINERS.out, MULTI-LINERS.md) holds no ALL.EXT or ALL.ref: read_block_suite hands it to
-    # read_container_dir, so the two existence tests below are the old format's only (jupyter-step-5, the cto's cure of 2026-11-14).
-    if csh.fmt2_dir_of(src) is not None:
+    # A FORMAT-2 FOLDER (ONE-LINERS.EXT, ONE-LINERS.out, MULTI-LINERS.md) and a package in THE FILES FORM (ALL.csv with a path column, each
+    # program with its NAME.out beside it) hold no ALL.EXT or ALL.ref: read_block_suite hands them to read_container_dir and
+    # read_package_dir, so the two existence tests below are the old format's only (jupyter-steps 5 and 6, the cto's cure of 2026-11-14).
+    if csh.fmt2_dir_of(src) is not None or csh.pkg_dir_of(src) is not None:
         ref = src.with_suffix(".ref")
     elif not src.exists():
         refuse(f"{src} does not exist: {lang} has no test master here; build it from program files with the pairs verb")
@@ -63,7 +70,7 @@ def ref_text(ref):
     return "".join(line + "\n" for line in ref)
 
 
-def unfit(e):
+def unfit(e, lang=""):
     """Why a cell cannot be this entry, or "": a cell gives no stdin, no arguments and no companion file, and no cell's correct run ends
     in an error or a nonzero code (the cao's ruling, 2026-11-16 12:4x CST: a cell is not a program until the session host carries it)."""
     if e.stdin is not None:
@@ -76,6 +83,11 @@ def unfit(e):
         return f"its correct run exits {e.want_rc}"
     if getattr(e, "stderr_answer", None):
         return "its correct run writes stderr"
+    extra = [a for a in (getattr(e, "compile_args", None) or []) if a != OWN_SWITCH.get(lang)]
+    if extra:
+        return f"it needs the compile switches {' '.join(extra)}"
+    if getattr(e, "mask", None):
+        return "its answer is masked (a line belongs to the implementation)"
     return ""
 
 
@@ -130,7 +142,7 @@ def cmd_build(a):
         if n not in by_name:
             refuse(f"no entry {n!r} in {d}")
         e = by_name[n]
-        why = unfit(e)
+        why = unfit(e, a.lang)
         if why:
             refuse(f"entry {n!r} cannot be a cell: {why}")
         items.append((n, "\n".join(e.sno_lines), ref_text(e.ref)))
@@ -224,7 +236,7 @@ def probe():
             out = "".join(c["outputs"][0]["text"])
             if out != expect_out:
                 return bad(f"output of {name} differs from its ref")
-        return probe_fmt2(d / "fmt2")
+        return probe_fmt2(d / "fmt2") or probe_pkg(d / "pkg")
     except Exception as e:  # noqa: BLE001 -- a probe reports any failure as bad, never as a crash
         return bad(f"{type(e).__name__}: {e}")
     finally:
@@ -259,6 +271,36 @@ def probe_fmt2(d):
         rc = cmd_build_quiet(a)
     if rc != 2:
         return bad(f"an entry that reads stdin built rc {rc}, not refused rc 2")
+    return 0
+
+
+def probe_pkg(d):
+    """THE PACKAGE ARM: a planted package in the files form read as unicon; p_one (compile_args --dialect=unicon, the one switch a %%unicon cell
+    carries) builds one %%unicon cell whose output is its NAME.out; p_in (a NAME.in beside it) and p_sw (one switch more) are refused rc 2."""
+    (d / "a").mkdir(parents=True)
+    (d / "ALL.csv").write_text("rank,entry,path,compile_args\n1,a/p_one,a/p_one.icn,--dialect=unicon\n2,a/p_in,a/p_in.icn,--dialect=unicon\n"
+                               "3,a/p_sw,a/p_sw.icn,--dialect=unicon -S\n", encoding="utf-8")
+    prog = 'procedure main()\n    write("pkg")\nend\n'
+    for n in ("p_one", "p_in", "p_sw"):
+        (d / "a" / f"{n}.icn").write_text(prog, encoding="utf-8")
+        (d / "a" / f"{n}.out").write_text("pkg\n", encoding="utf-8")
+    (d / "a" / "p_in.in").write_text("x\n", encoding="utf-8")
+    a = argparse.Namespace(lang="unicon", title="probe", out=str(d / "probe.ipynb"), master=str(d), entries=["a/p_one"])
+    if cmd_build_quiet(a) != 0:
+        return bad("the build of the planted package did not exit 0")
+    with open(d / "probe.ipynb", encoding="utf-8") as f:
+        codes = [c for c in json.load(f)["cells"] if c["cell_type"] == "code"]
+    got = [("".join(c["source"]), "".join(c["outputs"][0]["text"])) for c in codes]
+    if got != [("%%unicon\n" + prog[:-1], "pkg\n")]:
+        return bad(f"package cells {got!r} are not the one %%unicon cell of a/p_one")
+    import contextlib
+    import io
+    for n in ("a/p_in", "a/p_sw"):
+        a.entries = [n]
+        with contextlib.redirect_stderr(io.StringIO()):
+            rc = cmd_build_quiet(a)
+        if rc != 2:
+            return bad(f"{n} built rc {rc}, not refused rc 2")
     return ok()
 
 
