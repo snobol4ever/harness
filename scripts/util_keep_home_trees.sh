@@ -23,10 +23,17 @@ for r in corpus harness .github; do
     # knows where origin stands. s4e_take.sh give checks a patch against origin/main of this checkout first (the cio, harness 0bd680d10); MEASURED the night
     # before, /home/.github held a rewritten SCORE.md from 03:48Z to 06:08Z, this loop left it before fetching, and origin/main stood as stale as HEAD.
     timeout -k 5 120 git -C "$d" fetch -q origin main 2>/dev/null || { echo "$(now) REFUSE(2) $d: fetch of origin main failed"; rc=2; continue; }
-    if [ -n "$(git -C "$d" status --porcelain --untracked-files=no 2>/dev/null)" ]; then echo "$(now) LEFT $d: it holds tracked changes (named, never discarded)"; [ $rc = 0 ] && rc=1; continue; fi
+    # A TRACKED CHANGE HOLDS THE TREE ONLY WHERE ORIGIN'S COMMITS TOUCH THE CHANGED FILE (the cio 2026-11-16, on the cto's and officer_08's measurement: a Jupyter
+    # save of notebooks/SNOBOL4_Green_Book.ipynb at 00:33Z left /home/corpus LEFT every minute, 1075 lines of this log, and by 18:40Z it stood 15 commits behind
+    # origin, so every Icon graphics row criterion that reads a package there read behind its own landing, none of the 15 commits touching the notebook). The
+    # fast-forward is git's own: it moves the tree and leaves a changed file as it is when no incoming commit touches it, and refuses, moving nothing, when one
+    # does. So the merge is always tried; a tree that moved with a change in it says so, and only a tree git refused is LEFT, its changed files named.
+    dirty="$(git -C "$d" status --porcelain --untracked-files=no 2>/dev/null | cut -c4- | head -5 | tr '\n' ' ')"
     b="$(git -C "$d" rev-parse --short=10 HEAD)"
     if git -C "$d" merge -q --ff-only origin/main 2>/dev/null; then
-        a="$(git -C "$d" rev-parse --short=10 HEAD)"; [ "$a" = "$b" ] || echo "$(now) KEEP $r $b..$a"
+        a="$(git -C "$d" rev-parse --short=10 HEAD)"; [ "$a" = "$b" ] || echo "$(now) KEEP $r $b..$a${dirty:+ (its tracked changes kept as they are: $dirty)}"
+    elif [ -n "$dirty" ]; then
+        echo "$(now) LEFT $d: origin's commits touch a file it holds changed (named, never discarded): $dirty"; [ $rc = 0 ] && rc=1
     else
         echo "$(now) LEFT $d: not a fast-forward of origin/main (a commit origin lacks; named, never discarded)"; [ $rc = 0 ] && rc=1
     fi
