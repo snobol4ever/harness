@@ -25,4 +25,11 @@ own_data	t_have_val init.r
 own_data	kywd_xwin keyword.r
 by_value	kywd_prog xwin_kywd_prog
 export	xwin_kywd_addr
+export	xwin_lang_open
+export	xwin_lang_close
+export	xwin_lang_write
+export	xwin_lang_flush
+export	xwin_lang_read
+export	xwin_lang_reads
+export	xwin_lang_image
 functions	48
