@@ -1,21 +1,16 @@
 #!/usr/bin/env python3
-"""util_cycle_countdown.py -- THE CYCLE'S STATUS LINE AND THE BUG COUNTDOWN, the two lines the Stop banner shows above the suite grid of a seat that
-shows the grid (the coo and the grader: s4e_msg.sh banner's own choice), printed by the ONE banner script every seat runs from its own root
-(s4e_banner_cached.sh; the grader 2026-11-13, row one-banner-script-seat-aware-run-from-each-seats-own-root; Lon, in the grader's window, verbatim:
-"do not reach into another's root folder and run a script." / "All seats should be running the SAME banner script with code that know WHO the HELL
-you ARE."). Moved here from the coo's root, where coo_stop_banner.py and coo_bug_countdown.py printed them for the coo alone: the status line is
-the coo's (Lon 2026-11-11 10:40 CST, in the coo's window: "Fix your banner to show the status aonly with the test banner."), the countdown the
-coo's (Lon 2026-11-12 16:2x CST: "counters ready for junior, seniors, officers, and COO boss (bosses: CIO, CTO, or CFO)? I want to see a total
-running count also."; 2026-11-13 14:4x CST: "You silly BUG COUNTDOWN is TOTALLY BOGUS.", so FIXED counts bug rows closed by their batons). Read
-only, nothing run: CYCLE.state and CYCLE.log for the status; SUITES.tsv through util_suite_banner.py's own load() and _scrip() for the open reds
-(ONE DB, Lon 2026-11-12 19:2x: "If you have banners grading DIFFERENT things, then DON'T!!! We want one DB."); QUEUE.tsv, QUEUE.done.tsv, the
-batons, the claims and the escalations for the rows.
-  python3 -I util_cycle_countdown.py            the status line, then the countdown lines; rc 0"""
-import calendar, datetime, glob, os, re, sys, time
+"""util_cycle_countdown.py -- THE CYCLE'S STATUS LINE, the one line the Stop banner shows above the suite grid of a seat that shows the grid (the coo
+and the grader: s4e_msg.sh banner's own choice), printed by the ONE banner script every seat runs from its own root (s4e_banner_cached.sh; the
+grader 2026-11-13, row one-banner-script-seat-aware-run-from-each-seats-own-root; Lon, in the grader's window, verbatim: "do not reach into
+another's root folder and run a script." / "All seats should be running the SAME banner script with code that know WHO the HELL you ARE."). The
+status line is the coo's (Lon 2026-11-11 10:40 CST, in the coo's window: "Fix your banner to show the status aonly with the test banner.").
+THE BUG COUNTDOWN IS GONE (Lon 2026-11-16 11:1x CST, in the coo's window, verbatim: "Remove the BUG COUNTDOWN from the stop-turn banner."): the
+table of rows closed, sent up and held a seat, which this file printed under the status line since 2026-11-12, is deleted with its code; the
+file keeps its name for its one caller. Read only, nothing run: CYCLE.state and CYCLE.log.
+  python3 -I util_cycle_countdown.py            the status line; rc 0"""
+import calendar, os, re, time
 
 P = os.environ.get("S4E_PROGRESS", "/home/resources/progress")
-PO = os.environ.get("S4E_POST", "/home/resources/postoffice")
-HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def cycle_status():
@@ -58,88 +53,8 @@ def cycle_status():
     return s + time.strftime("   [%m-%d %H:%M %Z]")
 
 
-START_REDS = 3098   # the banner rows' open reds at 2026-11-12 19:2x CST, the baseline of one DB
-SINCE = datetime.datetime(2026, 11, 12, 16, 40, tzinfo=datetime.timezone.utc).timestamp()
-BOSS_SEATS = ["coo", "cio", "cto", "cfo", "cqo", "cao", "grader"]   # EACH BOSS HAS ITS OWN LINE (Lon 2026-11-16 08:4x CST, in the coo's window, verbatim: "The bug countdown should show each boss seperately.")
-T = ["junior", "senior", "officer"] + BOSS_SEATS + ["bosses"]   # "bosses" holds only a row owned by the tier name (@fable), no one boss's
-
-
-def tier(seat):
-    s = seat.lstrip("@")
-    if s.startswith("junior") or s == "haiku": return "junior"
-    if s.startswith("senior") or s == "sonnet": return "senior"
-    if s.startswith("officer") or s == "opus": return "officer"
-    if s in BOSS_SEATS: return s
-    if s == "fable": return "bosses"
-    return None
-
-
-def countdown():
-    esc = dict.fromkeys(T, 0); held = dict.fromkeys(T, 0)
-    for p in glob.glob(PO + "/escalations/*-red-*.rung*.md"):
-        if os.path.getmtime(p) < SINCE: continue
-        n = int(re.search(r"\.rung(\d+)\.md$", p).group(1)); esc[{2: "junior", 3: "senior", 4: "officer"}.get(n, "coo")] += 1
-    try:
-        for l in open(PO + "/QUEUE.tsv", encoding="utf-8", errors="replace"):
-            f = l.rstrip("\n").split("\t")
-            if len(f) < 4 or "-red-" not in f[1] or f[3].startswith(("DONE", "RETIRED")): continue
-            m = re.match(r"(?:CLAIMED|ASSIGNED):(\S+)", f[3]); t = tier(m.group(1)) if m else None
-            if t is None:
-                m = re.match(r"QUEUED:(?:seat|tier)-(\S+)", f[3]); t = tier(m.group(1)) if m else tier(f[2])
-            if t: held[t] += 1
-    except OSError:
-        pass
-    sys.path.insert(0, HERE)
-    import util_suite_banner as b
-    _h, rows = b.load(); rows = b._scrip(rows)
-    p = t_ = ndone = nsuites = 0
-    for r in rows:
-        nsuites += 1
-        try: tp, tt = int(r["today_pass"]), int(r["today_total"])
-        except (ValueError, KeyError): continue
-        p += tp; t_ += tt; ndone += (tt > 0 and tp >= tt)
-    seats = {"junior": 0, "senior": 0, "officer": 0}
-    try:
-        roster = next((l for l in open(PO + "/MODE", encoding="utf-8", errors="replace") if l.startswith("ROSTER:")), "")
-    except OSError:
-        roster = ""
-    for s in re.findall(r"\b(junior|senior|officer)_\d+\b", roster):
-        seats[s] += 1
-    name = {"junior": "Juniors %d" % seats["junior"], "senior": "Seniors %d" % seats["senior"], "officer": "Officers %d" % seats["officer"], "bosses": "Any boss (unnamed)"}
-    name.update((s, s.upper()) for s in BOSS_SEATS)
-    SHOWN = ["officer"] + BOSS_SEATS + ["bosses"]   # NO JUNIOR AND NO SENIOR LINE (Lon 2026-11-16 08:4x CST, in the coo's window, verbatim: "remove the juniors and seniors from the banner display. They exist no more."): the table and its ALL line are the seats that exist; the FIXED line above keeps the whole count since the sweep began
-    # FIXED IS A ROW CLOSED, COUNTED BY ITS BATON (the coo 2026-11-13, on Lon's 14:4x word above: the receipt count missed every row retired green): a
-    # bug row counts FIXED when its baton's STATE is DONE or RETIRED:done-green*, by the day its baton was last written, credited to its OWNER's tier
-    day0 = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
-    cl_today = dict.fromkeys(T, 0); fixed = dict.fromkeys(T, 0)
-    for bp in glob.glob(PO + "/tasks/*-red-*.task.md"):
-        try:
-            mt = os.path.getmtime(bp)
-            if mt < SINCE: continue
-            txt = open(bp, encoding="utf-8", errors="replace").read(4000)
-        except OSError:
-            continue
-        st = re.search(r"^STATE: (\S+)", txt, re.M); ow = re.search(r"^OWNER: (\S+)", txt, re.M)
-        if not st or not re.match(r"(DONE|RETIRED:done-green)", st.group(1)): continue
-        tr = (tier(ow.group(1)) if ow else None) or "coo"
-        fixed[tr] += 1
-        if mt >= day0: cl_today[tr] += 1
-    out = ["BUG COUNTDOWN   %d of %d suites at 100%%   OPEN REDS %d of %d entries (%d pass)" % (ndone, nsuites, t_ - p, t_, p),
-           "  FIXED (bug rows closed DONE or retired green, by their batons): %d today since 00:00 CST, %d since the sweep began 11-12 10:4x CST" % (sum(cl_today.values()), sum(fixed.values())),
-           "  %-26s %6s %6s %6s" % ("rows since 11-12 10:4x", "closed", "up", "held")]
-    for k in SHOWN:
-        if k == "bosses" and not (fixed[k] or held[k]): continue   # the unnamed line shows only while a row is owned by the tier name
-        out.append("  %-26s %6d %6s %6d" % (name[k], fixed[k], esc[k] if k in ("officer", "coo") else "-", held[k]))
-    out.append("  %-26s %6d %6d %6d" % ("ALL", sum(fixed[k] for k in SHOWN), sum(esc[k] for k in ("officer", "coo")), sum(held[k] for k in SHOWN)))
-    return out
-
-
 if __name__ == "__main__":
     try:
         print(cycle_status())
     except Exception as ex:   # the banner is never lost to a status that could not be read
         print(f"Cycle: status unreadable ({type(ex).__name__})")
-    try:
-        print("\n".join(countdown()))
-    except Exception as ex:
-        print(f"BUG COUNTDOWN: unreadable ({type(ex).__name__})")

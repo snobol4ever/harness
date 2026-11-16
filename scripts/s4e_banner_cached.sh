@@ -57,18 +57,20 @@ if [ -f "$root/.claude/banner_compact.py" ]; then cmp="$(printf '%s' "$out" | py
 # ONE WORD AND A HUGE ICON (Lon 2026-11-11 13:0x CST, in officer_04's window, verbatim: "I just want one word and a huge icon so I can see from a distance. All those words are NEVER read."):
 # the hook shows the verdict word under a block icon and nothing else; the coo's suite grid (CIO-129) stays under it. The full text still goes to BOARD.md and the cache.
 word="$(printf '%s\n' "$out" | grep -xE "$WORDS" | tail -1)"; grid="$(printf '%s\n' "$out" | grep -E '│|^[0-9]+ suites, ')"   # the grid and its closing summary line ("73 suites, 44 at 100%; ..."), which carries no │ (MEASURED 2026-11-13: the filter dropped it, Lon: "It does not show the summary at the end.")
-# THE CYCLE LINE, THE BUG COUNTDOWN AND A FRESH GRID FOR A SEAT WHOSE BANNER CARRIES THE GRID (the grader 2026-11-13, row one-banner-script-seat-aware-run-from-each-seats-own-root; Lon, in the
+# THE CYCLE LINE AND A FRESH GRID FOR A SEAT WHOSE BANNER CARRIES THE GRID (the grader 2026-11-13, row one-banner-script-seat-aware-run-from-each-seats-own-root; Lon, in the
 # grader's window, verbatim: "do not reach into another's root folder and run a script." / "All seats should be running the SAME banner script with code that know WHO the HELL you ARE."): the
-# coo's own Stop script printed these for the coo alone, so the fleet ran two banners. This one script prints them for every seat whose banner carries the grid (s4e_msg.sh banner chooses by
-# seat: the coo and the grader), from util_cycle_countdown.py, and renders that grid fresh by util_suite_banner.py (MEASURED 2026-11-13: 0.46 s at load 53, while the cached grid is up to 240 s
-# old and read a different SUITES.tsv than the fresh one). Each part is bounded; the countdown's last good render waits in /tmp/s4e/<seat>/countdown.cache for a read that runs over.
+# coo's own Stop script printed these for the coo alone, so the fleet ran two banners. This one script prints the cycle's status line for every seat whose banner carries the grid (s4e_msg.sh
+# banner chooses by seat: the coo and the grader), from util_cycle_countdown.py, and renders that grid fresh by util_suite_banner.py (MEASURED 2026-11-13: 0.46 s at load 53, while the cached grid is up to 240 s
+# old and read a different SUITES.tsv than the fresh one). Each part is bounded; the cycle line's last good render waits in /tmp/s4e/<seat>/cycle_line.cache for a read that runs over.
+# NO BUG COUNTDOWN (Lon 2026-11-16 11:1x CST, in the coo's window, verbatim: "Remove the BUG COUNTDOWN from the stop-turn banner."): the table under the cycle line is gone from
+# util_cycle_countdown.py, and the cache has a new name so that a countdown.cache written before this never comes back as the last good render.
 extra=""
 if [ -n "$grid" ]; then
     gf="$(timeout -k 2 10 python3 -I "$HERE/util_suite_banner.py" --by-language < /dev/null 2>/dev/null)"; [ -n "$gf" ] && grid="$gf"   # THE SUMMARY BY LANGUAGE, never the whole grid (Lon 2026-11-16 08:3x CST: "stop displaying the entire test suite banner. It is just too big now. Make a summary per language now."); the grid is util_suite_banner.py with no argument
-    cc="/tmp/s4e/$seat/countdown.cache"; extra="$(timeout -k 2 8 python3 -I "$HERE/util_cycle_countdown.py" < /dev/null 2>/dev/null)"
+    cc="/tmp/s4e/$seat/cycle_line.cache"; extra="$(timeout -k 2 8 python3 -I "$HERE/util_cycle_countdown.py" < /dev/null 2>/dev/null)"
     if [ -n "$extra" ]; then printf '%s\n' "$extra" > "$cc"
     elif [ -s "$cc" ]; then extra="$(cat "$cc")
-(the cycle line and the countdown above were rendered at $(date -r "$cc" +%H:%M); the live read did not finish in 8 s)"; fi
+(the cycle line above was rendered at $(date -r "$cc" +%H:%M); the live read did not finish in 8 s)"; fi
 fi
 # NO VERDICT IS NEVER SHOWN (Lon 2026-11-14, verbatim: "get stop-turn banner to not say NO VERDICT."): when the verb printed no verdict word this turn (it ran over its budget under load), the last verdict in the cache is shown, and only with no cache at all PENDING, the banner is still being made.
 [ -n "$word" ] || word="$(grep -xE 'SUCCESS|IN-PROGRESS|DRAIN|STOP|FAILURE' "$c" 2>/dev/null | tail -1)"; [ -n "$word" ] || word="PENDING"
