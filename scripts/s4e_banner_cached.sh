@@ -64,7 +64,7 @@ word="$(printf '%s\n' "$out" | grep -xE "$WORDS" | tail -1)"; grid="$(printf '%s
 # old and read a different SUITES.tsv than the fresh one). Each part is bounded; the countdown's last good render waits in /tmp/s4e/<seat>/countdown.cache for a read that runs over.
 extra=""
 if [ -n "$grid" ]; then
-    gf="$(timeout -k 2 10 python3 -I "$HERE/util_suite_banner.py" < /dev/null 2>/dev/null | grep -E '│|^[0-9]+ suites, ')"; [ -n "$gf" ] && grid="$gf"
+    gf="$(timeout -k 2 10 python3 -I "$HERE/util_suite_banner.py" --by-language < /dev/null 2>/dev/null)"; [ -n "$gf" ] && grid="$gf"   # THE SUMMARY BY LANGUAGE, never the whole grid (Lon 2026-11-16 08:3x CST: "stop displaying the entire test suite banner. It is just too big now. Make a summary per language now."); the grid is util_suite_banner.py with no argument
     cc="/tmp/s4e/$seat/countdown.cache"; extra="$(timeout -k 2 8 python3 -I "$HERE/util_cycle_countdown.py" < /dev/null 2>/dev/null)"
     if [ -n "$extra" ]; then printf '%s\n' "$extra" > "$cc"
     elif [ -s "$cc" ]; then extra="$(cat "$cc")

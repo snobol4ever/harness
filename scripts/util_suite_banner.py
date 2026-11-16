@@ -947,7 +947,30 @@ def _suite_table_lock():
             time.sleep(0.05)
     os.environ['S4E_SUITE_TABLE_LOCKED']=str(os.getpid())
     return fd
+def by_language():
+    """THE SUMMARY BY LANGUAGE (Lon 2026-11-16 08:3x CST, in the coo's window, verbatim: "stop displaying the entire test suite banner. It is just too big now. Make a
+    summary per language now."): one line a language, SCRIP's own rows only: its suites, how many read 100%, the programs passing of the programs graded, the percent.
+    The order is MODE's ORDER-OF-WORK, then the rest by name; the last line is the whole table. The grid itself stays the default output for a reader who asks for it."""
+    head,rows=load(); rows=_scrip(rows); by={}
+    for r in rows:
+        try: p_=int(r.get('today_pass') or 0); t_=int(r.get('today_total') or 0)
+        except ValueError: continue
+        g=by.setdefault((r.get('lang') or '?').strip().lower() or '?',[0,0,0,0]); g[0]+=1; g[1]+=1 if t_ and p_==t_ else 0; g[2]+=p_; g[3]+=t_
+    order=[]
+    try:
+        mode=os.path.join(os.environ.get('S4E_POST') or '/home/resources/postoffice','MODE')
+        for l in open(mode,encoding='utf-8'):
+            if l.startswith('ORDER-OF-WORK:'): order=l.split(':',1)[1].split(); break
+    except OSError: pass
+    langs=[l for l in order if l in by]+sorted(l for l in by if l not in order)
+    def pct(a_,b_): return f"{100.0*a_/b_:5.1f}%" if b_ else "    -"
+    print(f"{'Language':<10}{'Suites':>7}{'At 100%':>9}{'Pass/Total':>15}{'Pct':>8}")
+    for l in langs:
+        n,dn,p_,t_=by[l]; print(f"{l:<10}{n:>7}{dn:>9}{str(p_)+'/'+str(t_):>15}{pct(p_,t_):>8}")
+    n=sum(v[0] for v in by.values()); dn=sum(v[1] for v in by.values()); p_=sum(v[2] for v in by.values()); t_=sum(v[3] for v in by.values())
+    print(f"{'ALL':<10}{n:>7}{dn:>9}{str(p_)+'/'+str(t_):>15}{pct(p_,t_):>8}")
 def main(a):
+    if '--by-language' in a: by_language(); return
     if '--set' in a or '--render' in a or '--open' in a or '--open-row' in a or '--set-wall' in a or '--set-run' in a or '--nick' in a: _suite_table_lock()
     if '--nick' in a:
         # ⭐ A ROW IS RENAMED IN ONE WRITE (the grader 2026-11-14; Lon 07:3x CST, in the grader's window, verbatim: "Your names are not consistent
