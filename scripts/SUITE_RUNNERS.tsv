@@ -143,3 +143,4 @@ gpc_tests	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/gpc_tests
 icon_lab	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_lab
 icon_problems	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_problems
 pl_icon_examples	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/pl_icon_examples
+aoc2017_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/aoc2017_prolog
