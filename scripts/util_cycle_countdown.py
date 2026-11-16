@@ -60,7 +60,8 @@ def cycle_status():
 
 START_REDS = 3098   # the banner rows' open reds at 2026-11-12 19:2x CST, the baseline of one DB
 SINCE = datetime.datetime(2026, 11, 12, 16, 40, tzinfo=datetime.timezone.utc).timestamp()
-T = ["junior", "senior", "officer", "coo", "bosses"]
+BOSS_SEATS = ["coo", "cio", "cto", "cfo", "cqo", "cao", "grader"]   # EACH BOSS HAS ITS OWN LINE (Lon 2026-11-16 08:4x CST, in the coo's window, verbatim: "The bug countdown should show each boss seperately.")
+T = ["junior", "senior", "officer"] + BOSS_SEATS + ["bosses"]   # "bosses" holds only a row owned by the tier name (@fable), no one boss's
 
 
 def tier(seat):
@@ -68,8 +69,8 @@ def tier(seat):
     if s.startswith("junior") or s == "haiku": return "junior"
     if s.startswith("senior") or s == "sonnet": return "senior"
     if s.startswith("officer") or s == "opus": return "officer"
-    if s == "coo": return "coo"
-    if s in ("cio", "cto", "cfo", "cqo", "cao", "grader", "fable"): return "bosses"
+    if s in BOSS_SEATS: return s
+    if s == "fable": return "bosses"
     return None
 
 
@@ -104,8 +105,9 @@ def countdown():
         roster = ""
     for s in re.findall(r"\b(junior|senior|officer)_\d+\b", roster):
         seats[s] += 1
-    name = {"junior": "Juniors %d" % seats["junior"], "senior": "Seniors %d" % seats["senior"], "officer": "Officers %d" % seats["officer"], "coo": "COO (boss)", "bosses": "CIO/CTO/CFO/CQO/CAO/GRADER"}
-    SHOWN = ["officer", "coo", "bosses"]   # NO JUNIOR AND NO SENIOR LINE (Lon 2026-11-16 08:4x CST, in the coo's window, verbatim: "remove the juniors and seniors from the banner display. They exist no more."): the table and its ALL line are the seats that exist; the FIXED line above keeps the whole count since the sweep began
+    name = {"junior": "Juniors %d" % seats["junior"], "senior": "Seniors %d" % seats["senior"], "officer": "Officers %d" % seats["officer"], "bosses": "Any boss (unnamed)"}
+    name.update((s, s.upper()) for s in BOSS_SEATS)
+    SHOWN = ["officer"] + BOSS_SEATS + ["bosses"]   # NO JUNIOR AND NO SENIOR LINE (Lon 2026-11-16 08:4x CST, in the coo's window, verbatim: "remove the juniors and seniors from the banner display. They exist no more."): the table and its ALL line are the seats that exist; the FIXED line above keeps the whole count since the sweep began
     # FIXED IS A ROW CLOSED, COUNTED BY ITS BATON (the coo 2026-11-13, on Lon's 14:4x word above: the receipt count missed every row retired green): a
     # bug row counts FIXED when its baton's STATE is DONE or RETIRED:done-green*, by the day its baton was last written, credited to its OWNER's tier
     day0 = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
@@ -126,8 +128,9 @@ def countdown():
            "  FIXED (bug rows closed DONE or retired green, by their batons): %d today since 00:00 CST, %d since the sweep began 11-12 10:4x CST" % (sum(cl_today.values()), sum(fixed.values())),
            "  %-26s %6s %6s %6s" % ("rows since 11-12 10:4x", "closed", "up", "held")]
     for k in SHOWN:
-        out.append("  %-26s %6d %6s %6d" % (name[k], fixed[k], esc[k] if k != "bosses" else "-", held[k]))
-    out.append("  %-26s %6d %6d %6d" % ("ALL", sum(fixed[k] for k in SHOWN), sum(esc[k] for k in SHOWN if k != "bosses"), sum(held[k] for k in SHOWN)))
+        if k == "bosses" and not (fixed[k] or held[k]): continue   # the unnamed line shows only while a row is owned by the tier name
+        out.append("  %-26s %6d %6s %6d" % (name[k], fixed[k], esc[k] if k in ("officer", "coo") else "-", held[k]))
+    out.append("  %-26s %6d %6d %6d" % ("ALL", sum(fixed[k] for k in SHOWN), sum(esc[k] for k in ("officer", "coo")), sum(held[k] for k in SHOWN)))
     return out
 
 
