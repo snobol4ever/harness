@@ -1,0 +1,109 @@
+# ALLOC-CLASSES.tsv -- Unicon 13.3's window sources as urtt -x translates them under designs/icon_xwin/unicon/DIALECT.tsv (the oracle's auto.h plus NoConcurrent plus NoMultiProgram, the cto 09:1x CST); officer_07 2026-11-16. The classes are Arizona's six (see designs/icon_xwin/arizona/ALLOC-CLASSES.tsv) and RECS, an array of records, an HB_LREC whose layout opens with a stride word of kind 4 (the cto 09:1x).
+# rows: site <tab> source <tab> line <tab> call <tab> assigned to <tab> class <tab> why; root <tab> source <tab> - <tab> ptr|descr <tab> name <tab> ROOT <tab> why
+# an XFree row names one of Xlib's frees that releases our block (copyselection); every other XFree is of X's own memory and is left as it is
+site	fwindow.r	741	malloc	points	SCRATCH	DrawLine's point buffer, freed in the same function (as Arizona fwindow.r 531)
+site	fwindow.r	1832	malloc	points	SCRATCH	FillPolygon's point buffer, freed in the same function (as Arizona fwindow.r 1155)
+site	fwindow.r	4972	realloc	wc->selectionnamelist	PTRS	WSection grows the context's selection-name list, an array of pointers to strdup'd names
+site	fwindow.r	4982	strdup	wc->selectionnamelist[wc->selectionnamecount]	HELD	one selection name, kept in the context's selection-name list
+site	rwindow.r	1221	calloc	gf_paltbl	CALLEXT	the BMP reader's palette, handed to the caller's imgdata
+site	rwindow.r	1246	malloc	tmp	CALLEXT	bmp_data's row buffer, freed in the same function
+site	rwindow.r	1307	malloc	colortable	CALLEXT	the BMP reader's colour table, read into the palette inside the call
+site	rwindow.r	1314	malloc	rasterdata	CALLEXT	the BMP reader's raster, handed to the caller's imgdata as its data
+site	rwindow.r	1398	malloc	gf_paltbl	CALLEXT	the GIF reader's palette, handed to the caller's imgdata (as Arizona rimage.r 112)
+site	rwindow.r	1562	malloc	gf_string	CALLEXT	the GIF reader's image data (as Arizona rimage.r 272)
+site	rwindow.r	1563	malloc	gf_prefix	CALLEXT	the GIF reader's LZW table (as Arizona rimage.r 273)
+site	rwindow.r	1564	malloc	gf_suffix	CALLEXT	the GIF reader's LZW table (as Arizona rimage.r 274)
+site	rwindow.r	1821	malloc	imd->paltbl	CALLEXT	the JPEG reader's palette, handed to the caller's imgdata
+site	rwindow.r	1839	calloc	imd->data	CALLEXT	the JPEG reader's pixels, handed to the caller's imgdata
+site	rwindow.r	2059	malloc	imd->data	CALLEXT	the PNG reader's pixels, handed to the caller's imgdata
+site	rwindow.r	2064	malloc	row_pointers	CALLEXT	the PNG reader's row pointers into those pixels, freed in the same function
+site	rwindow.r	2141	malloc	row_pointers	CALLEXT	the PNG writer's row pointers, freed in the same function
+site	rwindow.r	2201	malloc	imgBuf	CALLEXT	the PNG writer's image buffer, freed in writePNG
+site	rwindow.r	2258	malloc	gf_string	CALLEXT	the BMP writer's buffer
+site	rwindow.r	2340	malloc	gf_string	CALLEXT	the GIF writer's buffer
+site	rwindow.r	2588	malloc	imgBuf	CALLEXT	the JPEG writer's image buffer
+site	rwindow.r	2989	malloc	-	ROOTED	the current palette, kept in palsetup_palette across calls (as Arizona rcolor.r 585)
+site	rwindow.r	3929	strdup	StrLoc(*answer)	CALLEXT	a WAttrib answer string; the adapter copies a result string out with alcstr
+site	rwindow.r	3954	strdup	-	CALLEXT	a WAttrib answer string; the adapter copies a result string out with alcstr
+site	rwindow.r	4463	malloc	thepoints	CALLEXT	genCurve's point buffer, re-allocated inside its loop (as Arizona rwindow.r 1486)
+site	rwindow.r	4792	strdup	-	CALLEXT	watt's answer, a copy its caller uses inside the call
+site	rwindow.r	4831	malloc	curr	RECORD:wbind_list	a cell of a window's child-window list ws->children
+site	rxrsc.ri	92	calloc	ws->iconColors	HELD	a window's icon colour indices
+site	rxrsc.ri	102	calloc	ws->theColors	HELD	a window's colour indices
+site	rxrsc.ri	134	realloc	theColors)	HELD	a window's colour indices grow
+site	rxrsc.ri	290	calloc	ws->theColors	HELD	a window's colour indices
+site	rxrsc.ri	322	realloc	theColors)	HELD	a window's colour indices grow
+site	rxrsc.ri	378	realloc	wd->colors	HELD	the display's colour table wd->colors grows: struct wcolor holds no pointer
+site	rxrsc.ri	444	calloc	ws2->theColors	HELD	a cloned window's colour indices
+site	rxrsc.ri	501	malloc	toFree	CALLEXT	free_xcolors' pixel list, freed in the same function
+site	rxrsc.ri	598	GRFX_ALLOC:_wdisplay	wd	RECORD	a display record on the wdsplys chain
+site	rxrsc.ri	628	calloc	wd->colors	HELD	the display's colour table wd->colors: struct wcolor holds no pointer
+site	rxrsc.ri	1114	GRFX_ALLOC:_wfont	rv	RECORD	a font record
+site	rxrsc.ri	1114	strdup	rv->name	HELD	a font's name
+site	rxrsc.ri	1163	GRFX_ALLOC:_wcontext	wc	RECORD	a context record on the wcntxts chain
+site	rxrsc.ri	1264	GRFX_ALLOC:_wstate	ws	RECORD	a window state record on the wstates chain
+site	rwinrsc.r	31	GRFX_ALLOC:_wbinding	w	RECORD	a binding record on the wbndngs chain
+site	rxwin.ri	207	malloc	string	CALLEXT	PropertyToString's string, released by copyselection with XFree at 362
+site	rxwin.ri	228	malloc	string	CALLEXT	PropertyToString's string, released by copyselection with XFree at 362
+site	rxwin.ri	238	malloc	string	CALLEXT	PropertyToString's string, released by copyselection with XFree at 362
+site	rxwin.ri	256	malloc	string	CALLEXT	PropertyToString's string, released by copyselection with XFree at 362
+site	rxwin.ri	360	strdup	s	CALLEXT	copyselection's answer over 4000 bytes, made an attribute answer and copied out
+site	rxwin.ri	1241	salloc	ws->windowlabel	HELD	the window's label
+site	rxwin.ri	1574	salloc	ws->iconlabel	HELD	the icon's label
+site	rxwin.ri	1757	salloc	ws->iconlabel	HELD	the icon's label, replaced
+site	rxwin.ri	1780	salloc	ws->windowlabel	HELD	the window's label, replaced
+site	rxwin.ri	1920	malloc	ws->selectiondata	HELD	the window's selection data, served to a selection request later
+site	rxwin.ri	3216	calloc	ws->theColors	HELD	a window's colour indices
+site	rxwin.ri	3696	malloc	im->data	CALLEXT	an XImage's pixels, made by getximage and destroyed by its caller; the patch gives the image the destroy hook (as Arizona rxwin.ri 2497)
+site	rxwin.ri	3942	malloc	wc->patternname	HELD	a context's pattern name
+site	rxwin.ri	4080	salloc	ws->iconimage	HELD	the icon image's file name
+site	rxwin.ri	4111	salloc	ws->iconimage	HELD	the icon image's file name, replaced
+site	rxwin.ri	4377	calloc	ws->theColors	HELD	a window's colour indices
+site	rwin3d.ri	276	malloc	wc->selectionnamelist	PTRS	the context's selection-name list, an array of pointers to strdup'd names
+site	ropengl.ri	90	malloc	-	RECS:_wtexture	the display's texture table wd->stex, an array of struct _wtexture (the cto 09:1x: a seventh class, layout kind 4)
+site	ropengl.ri	162	malloc	texName	CALLEXT	texName, the OpenGL texture names, freed in make_enough_texture_space
+site	ropengl.ri	174	realloc	wd->stex	RECS:_wtexture	the texture table grows
+site	ropengl.ri	1313	realloc	newv	CALLEXT	traversefunctionlist's coordinate buffer, freed in the same function when not its stack buffer v2
+site	ropengl.ri	2535	malloc	tex	CALLEXT	a texture image, freed after glTexImage2D copies it
+site	ropengl.ri	2598	malloc	tex	CALLEXT	a texture image, freed after glTexImage2D copies it
+site	ropengl.ri	2682	malloc	tex2	CALLEXT	a scaled texture, freed in texture()
+site	ropengl.ri	2714	malloc	tex2	CALLEXT	a scaled texture, freed in texture1()
+site	ropengl.ri	2920	strdup	StrLoc(wt->d)	HELD	a texture's name, held by the descriptor d of its texture-table element
+site	ropengl.ri	2951	malloc	tex	CALLEXT	a texture image, freed after glTexImage2D copies it
+site	ropengl.ri	3744	malloc	tex2	CALLEXT	a copied area for a 3D texture, freed in the same function
+site	ropengl.ri	3790	malloc	tex	CALLEXT	a 2D window read into a texture, freed in the same function
+site	ropengl.ri	3827	malloc	tex	CALLEXT	a 3D window read into a texture, freed in the same function
+site	rxwin.ri	362	XFree	string	CALLEXT	the release of PropertyToString's string by copyselection: Xlib's free of our block becomes a store of NULL
+root	rwinrsc.r	-	ptr	wcntxts	ROOT	the head of the context chain
+root	rwinrsc.r	-	ptr	wstates	ROOT	the head of the window state chain
+root	rwinrsc.r	-	ptr	wbndngs	ROOT	the head of the binding chain
+root	rxrsc.ri	-	ptr	wdsplys	ROOT	the head of the display chain
+root	rwindow.r	-	ptr	palsetup_palette	ROOT	the current palette, kept across calls
+root	rxwin.ri	-	ptr	sprite	ROOT	the binding the last animation copied from (rxwin.ri 3076)
+root	rwindow.r	-	descr	amperX	ROOT	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+root	rwindow.r	-	descr	amperY	ROOT	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+root	rwindow.r	-	descr	amperCol	ROOT	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+root	rwindow.r	-	descr	amperRow	ROOT	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+root	rwindow.r	-	descr	amperInterval	ROOT	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+root	rwindow.r	-	descr	amperPick	ROOT	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+root	rwindow.r	-	descr	lastEventWin	ROOT	a keyword descriptor of rwindow.r, a plain global under NoMultiProgram
+root	ropengl.ri	-	descr	gl_torus	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_cube	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_sphere	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_cylinder	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_disk	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_rotate	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_translate	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_scale	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_popmatrix	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_pushmatrix	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_identity	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_matrixmode	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_meshmode	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_texture	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_font3d	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_drawstring3d	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_mark	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	ropengl.ri	-	descr	gl_endmark	ROOT	a 3D display-list record constructor, made once by rec_structinate
+root	keyword.r	-	descr	kywd_xwin[0]	ROOT	the keyword &window, generated into xwin_gen.c
+root	keyword.r	-	descr	kywd_xwin[1]	ROOT	the second descriptor of kywd_xwin

@@ -1,0 +1,28 @@
+# DIALECT.tsv -- what util_gen_icon_xwin_device.py reads for one dialect; key <tab> value, a key may repeat (officer_07 2026-11-16, the cto ruling 08:5x CST: one script, one folder a dialect)
+src	/home/resources/icon-master/src
+translator	rtt/rtt
+translator_place	src/rtt/rtt
+translator_args	-x
+source	rwindow.r
+source	rcolor.r
+source	rimage.r
+source	rwinrsc.r
+source	rwinsys.r
+source	fwindow.r
+source	cnv.r
+source	def.r
+include	rxwin.ri
+include	rxrsc.ri
+plain	common/xwindow.c
+config_file	h/define.h
+config_mode	replace
+config	#define Config linux
+config	#define Graphics 1
+own_data	tend init.r
+own_data	t_errornumber init.r
+own_data	t_errorvalue init.r
+own_data	t_have_val init.r
+own_data	kywd_xwin keyword.r
+by_value	kywd_prog xwin_kywd_prog
+export	xwin_kywd_addr
+functions	48

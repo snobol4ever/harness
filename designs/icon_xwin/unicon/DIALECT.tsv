@@ -1,0 +1,36 @@
+# DIALECT.tsv -- Unicon 13.3 (the graphics oracle's own source and configuration, its auto.h plus NoConcurrent and NoMultiProgram, proposed by officer_07 09:3x CST on the cto's 09:0x ruling; 3D compiled in); officer_07 2026-11-16
+src	/home/resources/oracles-graphics/unicon/src
+translator	rtt/urtt
+translator_place	bin/urtt
+translator_args	-x -I../h
+source	rwindow.r
+source	rwinrsc.r
+source	rwinsys.r
+source	rgfxsys.r
+source	fwindow.r
+source	cnv.r
+source	def.r
+include	rxwin.ri
+include	rxrsc.ri
+include	ropengl.ri
+include	rwin3d.ri
+plain	common/xwindow.c
+config_file	h/auto.h
+config_mode	append
+config	#define NoConcurrent 1
+config	#define NoMultiProgram 1
+carry	gdbm
+carry	libtp
+carry	xpm
+cc_include	gdbm
+cc_include	libtp
+cc_include	xpm/lib
+cc_include	/usr/include/freetype2
+own_data	tend init.r
+own_data	t_errornumber init.r
+own_data	t_errorvalue init.r
+own_data	t_have_val init.r
+own_data	kywd_xwin keyword.r
+by_value	kywd_prog xwin_kywd_prog
+export	xwin_kywd_addr
+functions	82

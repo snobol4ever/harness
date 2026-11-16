@@ -36,25 +36,51 @@ import tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 HARNESS = os.path.dirname(HERE)
 CC_SLOT = next(p for p in (os.path.join(HERE, "util_cc_slot.sh"), "/home/harness/scripts/util_cc_slot.sh") if os.path.isfile(p) or p.startswith("/home/harness/"))
-TABLE = os.path.join(HARNESS, "designs", "icon_xwin", "ALLOC-CLASSES.tsv")
-PATCH = os.path.join(HARNESS, "designs", "icon_xwin", "xwin.patch")
-DEFAULT_SRC = "/home/resources/icon-master/src"
-RUN_SOURCES = ["rwindow.r", "rcolor.r", "rimage.r", "rwinrsc.r", "rwinsys.r", "fwindow.r", "cnv.r", "def.r"]
-OWN_DATA = (("tend", "init.r"), ("t_errornumber", "init.r"), ("t_errorvalue", "init.r"), ("t_have_val", "init.r"), ("kywd_xwin", "keyword.r"))
-EXTRA_EXPORTS = ("xwin_kywd_addr",)
-LIST_SIZE_RE = re.compile(r"BlkLoc\(")
-LIST_MEMBER_RE = re.compile(r"->list\.\w|BlkD\([^;]*?,\s*List\s*\)\s*->")
-BY_VALUE = {"kywd_prog": "xwin_kywd_prog"}
-RUN_INCLUDES = ["rxwin.ri", "rxrsc.ri"]
-PLAIN_SOURCE = os.path.join("common", "xwindow.c")
-DEFINE_H = "#define Config linux\n#define Graphics 1\n"
+DESIGNS = os.path.join(HARNESS, "designs", "icon_xwin")
+DIALECTS = ("arizona", "unicon")
+D = {}
+report_reads = []
+
+
+def load_dialect(name):
+    path = os.path.join(DESIGNS, name, "DIALECT.tsv")
+    if name not in DIALECTS or not os.path.isfile(path):
+        raise Refuse("no dialect %s: %s is missing (dialects: %s)" % (name, path, " ".join(DIALECTS)))
+    d = {"name": name, "source": [], "include": [], "config": [], "own_data": [], "by_value": {}, "export": [],
+         "carry": [], "cc_include": [], "translator_args": "-x", "config_mode": "replace", "plain": None}
+    for n, line in enumerate(open(path), 1):
+        if not line.strip() or line.startswith("#"):
+            continue
+        k, _, v = line.rstrip("\n").partition("\t")
+        if k in ("source", "include", "config", "export", "carry", "cc_include"):
+            d[k].append(v)
+        elif k == "own_data":
+            d[k].append(tuple(v.split()))
+        elif k == "by_value":
+            a, b = v.split()
+            d[k][a] = b
+        elif k in ("src", "translator", "translator_place", "translator_args", "plain", "config_file", "config_mode", "functions"):
+            d[k] = v
+        else:
+            raise Refuse("%s:%d key %s is unknown" % (path, n, k))
+    for k in ("src", "translator", "translator_place", "config_file", "functions"):
+        if k not in d:
+            raise Refuse("%s names no %s" % (path, k))
+    d["functions"] = int(d["functions"])
+    d["table"] = os.path.join(DESIGNS, name, "ALLOC-CLASSES.tsv")
+    d["patch"] = os.path.join(DESIGNS, name, "xwin.patch")
+    d["reads"] = os.path.join(DESIGNS, name, "READ-CLASSES.tsv")
+    D.clear()
+    D.update(d)
+    return d
 MANIFEST = "XWIN-MANIFEST.tsv"
 HAND_WRITTEN = ("xwin_shim.h",)
 GRFX_OLD = "var = (struct type *)calloc(1, sizeof(struct type));"
 GRFX_NEW = "var = (struct type *)XWIN_LREC(type);"
 CALL_RE = re.compile(r"(?<![\w.>$])(malloc|calloc|realloc|salloc|alloc|strdup|free)\s*\(")
+XFREE_RE = re.compile(r"(?<![\w.>$])XFree\s*\(")
 LREC_RE = re.compile(r"(\w+)\s*=\s*\(struct (\w+) \*\)XWIN_LREC\((\w+)\)")
-CLASSES = ("RECORD", "HELD", "PTRS", "ROOTED", "CALLEXT", "SCRATCH")
+CLASSES = ("RECORD", "HELD", "PTRS", "ROOTED", "CALLEXT", "SCRATCH", "RECS")
 MACRO_DEFS = {
     ("HELD", "malloc"): "#define XWIN_HELD_MALLOC(n) rt_ws_alloc_raw((size_t)(n))",
     ("HELD", "calloc"): "#define XWIN_HELD_CALLOC(n, s) xwin_calloc_raw((size_t)(n), (size_t)(s))",
@@ -65,6 +91,11 @@ MACRO_DEFS = {
     ("PTRS", "alloc"): "#define XWIN_PTRS_ALLOC(n) rt_lrec_alloc((size_t)(n), xwin_layout_ptrs)",
     ("PTRS", "realloc"): "#define XWIN_PTRS_REALLOC(p, n) rt_lrec_realloc((p), (size_t)(n), xwin_layout_ptrs)",
     ("SCRATCH", "malloc"): "#define XWIN_SCRATCH_MALLOC(n) __builtin_alloca((size_t)(n))",
+    ("HELD", "strdup"): "#define XWIN_HELD_STRDUP(s) xwin_salloc_raw(s)",
+    ("CALLEXT", "strdup"): "#define XWIN_CALLEXT_STRDUP(s) xwin_salloc_raw(s)",
+    ("CALLEXT", "calloc"): "#define XWIN_CALLEXT_CALLOC(n, s) xwin_calloc_raw((size_t)(n), (size_t)(s))",
+    ("CALLEXT", "realloc"): "#define XWIN_CALLEXT_REALLOC(p, n) rt_rvec_realloc((p), (size_t)(n))",
+    ("PTRS", "malloc"): "#define XWIN_PTRS_MALLOC(n) rt_lrec_alloc((size_t)(n), xwin_layout_ptrs)",
     ("SCRATCH", "calloc"): "#define XWIN_SCRATCH_CALLOC(n, s) memset(__builtin_alloca((size_t)(n) * (size_t)(s)), 0, (size_t)(n) * (size_t)(s))",
 }
 BUILTIN_BASES = {"char", "short", "int", "long", "unsigned", "signed", "void", "float", "double"}
@@ -107,27 +138,37 @@ def load_table(path):
 
 
 def translate(src, scratch):
+    top = scratch
+    scratch = os.path.join(top, "src")
     shutil.copytree(os.path.join(src, "h"), os.path.join(scratch, "h"))
     shutil.copytree(os.path.join(src, "runtime"), os.path.join(scratch, "runtime"))
-    os.makedirs(os.path.join(scratch, "common"))
-    shutil.copyfile(os.path.join(src, PLAIN_SOURCE), os.path.join(scratch, PLAIN_SOURCE))
-    with open(os.path.join(scratch, "h", "define.h"), "w") as f:
-        f.write(DEFINE_H)
+    for c in D["carry"]:
+        shutil.copytree(os.path.join(src, c), os.path.join(scratch, c), ignore=shutil.ignore_patterns("*.o", "*.a"))
+    if D["plain"]:
+        os.makedirs(os.path.join(scratch, os.path.dirname(D["plain"])), exist_ok=True)
+        shutil.copyfile(os.path.join(src, D["plain"]), os.path.join(scratch, D["plain"]))
+    cfg = os.path.join(scratch, D["config_file"])
+    body = "".join(l + "\n" for l in D["config"])
+    if D["config_mode"] == "append":
+        body = open(cfg).read() + body
+    with open(cfg, "w") as f:
+        f.write(body)
     grttin = os.path.join(scratch, "h", "grttin.h")
     text = open(grttin).read()
     if text.count(GRFX_OLD) != 1:
         raise Refuse("h/grttin.h holds %d copies of the GRFX_ALLOC body %r, wants 1" % (text.count(GRFX_OLD), GRFX_OLD))
     with open(grttin, "w") as f:
         f.write(text.replace(GRFX_OLD, GRFX_NEW))
-    os.makedirs(os.path.join(scratch, "rtt"))
-    rtt = os.path.join(scratch, "rtt", "rtt")
-    shutil.copy2(os.path.join(src, "rtt", "rtt"), rtt)
+    rtt = os.path.join(top, D["translator_place"])
+    os.makedirs(os.path.dirname(rtt), exist_ok=True)
+    shutil.copy2(os.path.join(src, D["translator"]), rtt)
     rt = os.path.join(scratch, "runtime")
-    r = subprocess.run([rtt, "-x"] + RUN_SOURCES, cwd=rt, capture_output=True, text=True)
+    r = subprocess.run([rtt] + D["translator_args"].split() + D["source"], cwd=rt, capture_output=True, text=True)
     if r.returncode != 0:
         raise Fail("translator rc=%d: %s" % (r.returncode, tail(r.stderr or r.stdout)))
-    cfiles = [os.path.join(rt, "x" + name[:-2] + ".c") for name in RUN_SOURCES]
-    cfiles.append(os.path.join(scratch, PLAIN_SOURCE))
+    cfiles = [os.path.join(rt, "x" + name[:-2] + ".c") for name in D["source"]]
+    if D["plain"]:
+        cfiles.append(os.path.join(scratch, D["plain"]))
     for p in cfiles:
         if not os.path.isfile(p):
             raise Fail("not made: %s" % os.path.basename(p))
@@ -163,6 +204,8 @@ def census(path):
             continue
         for mm in CALL_RE.finditer(line):
             out.append({"idx": i, "pos": mm.start(), "call": mm.group(1), "source": src, "line": n})
+        for mm in XFREE_RE.finditer(line):
+            out.append({"idx": i, "pos": mm.start(), "call": "XFree", "source": src, "line": n})
         for mm in LREC_RE.finditer(line):
             if mm.group(2) != mm.group(3):
                 raise Refuse("%s line %d: XWIN_LREC(%s) cast to struct %s" % (os.path.basename(path), i + 1, mm.group(3), mm.group(2)))
@@ -200,6 +243,8 @@ def classify_and_convert(cfiles, sites, report):
                 row["seen"] += 1
                 report.append((s["source"], row["line"], s["call"], row["target"], row["cls"]))
                 continue
+            if s["call"] == "XFree" and row is None:
+                continue
             if s["call"] == "free" and row is None:
                 edits.setdefault(s["idx"], []).append((s["pos"], "free", None))
                 continue
@@ -212,16 +257,21 @@ def classify_and_convert(cfiles, sites, report):
             line = lines[idx]
             for pos, call, row in sorted(es, key=lambda e: -e[0]):
                 op = line.index("(", pos)
-                cl = balanced(line, op)
+                cl = balanced(line, op) if (row is not None and (call in ("free", "XFree") or row["cls"].startswith("RECORD:"))) else None
                 if row is None:
                     line = line[:pos] + "XWIN_FREE" + line[op:]
-                elif call == "free":
+                elif call in ("free", "XFree"):
                     if row["cls"] != "CALLEXT":
                         raise Refuse("class table row %d: a free row must be CALLEXT, is %s" % (row["row"], row["cls"]))
                     arg = strip_cast(line[op + 1:cl])
                     if arg != row["target"]:
                         raise Refuse("class table row %d: free(%s) is not of %s" % (row["row"], arg, row["target"]))
                     line = line[:pos] + "XWIN_FREE_NULL(" + arg + ")" + line[cl + 1:]
+                elif row["cls"].startswith("RECS:"):
+                    tag = row["cls"].split(":", 1)[1]
+                    if call not in ("malloc", "realloc"):
+                        raise Refuse("class table row %d: RECS:%s takes malloc or realloc, the site reads %s" % (row["row"], tag, call))
+                    line = line[:pos] + "XWIN_RECS_%s(%s, " % (call.upper(), tag) + line[op + 1:]
                 elif row["cls"].startswith("RECORD:"):
                     tag = row["cls"].split(":", 1)[1]
                     arg = line[op + 1:cl].strip()
@@ -252,11 +302,11 @@ def post_pass(lines, scratch):
         if i < 4 and re.match(r"^ \* \w{3} \w{3} [ \d]\d \d\d:\d\d:\d\d \d{4}$", line):
             out.append(" * generated by util_gen_icon_xwin_device.py; regenerated, never edited")
             continue
-        if re.match(r'^#include "[^"]*/rtt/\.\./h/rt\.h"$', line):
+        if re.match(r'^#include "%s[^"]*/h/rt\.h"$' % re.escape(marker), line):
             out.append('#include "xwin_alloc.h"')
             out.append('#include "h/rt.h"')
             continue
-        line = re.sub(r'"[^"]*/rtt/\.\./h/', '"h/', line)
+        line = re.sub(r'"%s[^"]*?/h/' % re.escape(marker), '"h/', line)
         line = line.replace('"../h/', '"h/')
         if marker in line or "/tmp/" in line:
             raise Refuse("a scratch path is left after the include post-pass: %s" % line.strip()[:120])
@@ -316,12 +366,35 @@ def struct_body(pp, tag):
     raise Refuse("struct %s has no closing brace" % tag)
 
 
-def layout_fields(pp, tag, types, prefix=""):
+def top_decls(body):
+    out, depth, start = [], 0, 0
+    for i, c in enumerate(body):
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+        elif c == ";" and depth == 0:
+            if body[start:i].strip():
+                out.append(body[start:i].strip())
+            start = i + 1
+    return out
+
+
+def layout_fields(pp, tag, types, prefix="", body=None):
     tags, ptr_typedefs, plain_typedefs = types
-    body = " ".join(struct_body(pp, tag).split())
+    body = " ".join((struct_body(pp, tag) if body is None else body).split())
     out = []
-    for decl in [d.strip() for d in body.split(";") if d.strip()]:
-        if "{" in decl or "(" in decl:
+    for decl in top_decls(body):
+        if "{" in decl:
+            m = re.match(r"^(struct|union)\s*\w*\s*\{(.*)\}\s*(\w+)\s*$", decl)
+            if not m:
+                raise Refuse("struct %s holds a field the layout pass cannot read: %s" % (tag, decl[:80]))
+            inner = layout_fields(pp, tag, types, prefix + m.group(3) + ".", m.group(2))
+            if m.group(1) == "union" and inner:
+                raise Refuse("struct %s holds a union %s with a pointer or a descriptor: a shape the layout has no word for" % (tag, m.group(3)))
+            out.extend(inner)
+            continue
+        if "(" in decl:
             raise Refuse("struct %s holds a field the layout pass cannot read: %s" % (tag, decl))
         parts = [p.strip() for p in decl.split(",")]
         m = re.match(r"^(.*?)([\s*]+)(\w+)\s*(\[[^\]]*\])?$", parts[0])
@@ -366,7 +439,7 @@ def preprocess(tree):
     probe = os.path.join(tree, ".xwin_probe.c")
     with open(probe, "w") as f:
         f.write('#include "h/rt.h"\n')
-    r = subprocess.run(["bash", CC_SLOT, "gcc", "-E", "-I.", ".xwin_probe.c"], cwd=tree, capture_output=True, text=True)
+    r = subprocess.run(["bash", CC_SLOT, "gcc", "-E"] + tree_includes() + [".xwin_probe.c"], cwd=tree, capture_output=True, text=True)
     os.unlink(probe)
     if r.returncode != 0:
         raise Fail("preprocessing h/rt.h for the layouts rc=%d: %s" % (r.returncode, tail(r.stderr)))
@@ -382,6 +455,16 @@ def preprocess(tree):
     return "".join(t for f, t in segs), segs
 
 
+def recs_tags(sites):
+    tags = []
+    for r in sites:
+        if r["cls"].startswith("RECS:"):
+            tag = r["cls"].split(":", 1)[1]
+            if tag not in tags:
+                tags.append(tag)
+    return tags
+
+
 def record_tags(sites):
     tags = []
     for r in sites:
@@ -395,7 +478,26 @@ def record_tags(sites):
     return tags
 
 
-def write_alloc_h(tree, tags, used):
+def carry_headers(scratch, tree):
+    if not D["carry"]:
+        return
+    src = os.path.join(scratch, "src")
+    probe = os.path.join(src, ".xwin_probe.c")
+    with open(probe, "w") as f:
+        f.write('#include "h/rt.h"\n')
+    r = subprocess.run(["bash", CC_SLOT, "gcc", "-M"] + tree_includes() + [".xwin_probe.c"], cwd=src, capture_output=True, text=True)
+    os.unlink(probe)
+    if r.returncode != 0:
+        raise Fail("gcc -M of h/rt.h for the carried headers rc=%d: %s" % (r.returncode, tail(r.stderr)))
+    for dep in r.stdout.replace("\\\n", " ").split()[1:]:
+        full = os.path.normpath(os.path.join(src, dep))
+        rel = os.path.relpath(full, src)
+        if rel.split(os.sep)[0] in D["carry"]:
+            os.makedirs(os.path.join(tree, os.path.dirname(rel)), exist_ok=True)
+            shutil.copyfile(full, os.path.join(tree, rel))
+
+
+def write_alloc_h(tree, tags, used, rtags=()):
     lines = ["#ifndef XWIN_ALLOC_H", "#define XWIN_ALLOC_H", "#include <stddef.h>", "#include <stdint.h>", "#include <string.h>",
              "void *rt_lrec_alloc(size_t nbytes, const uint64_t *layout);",
              "void *rt_lrec_realloc(void *p, size_t nbytes, const uint64_t *layout);",
@@ -404,7 +506,7 @@ def write_alloc_h(tree, tags, used):
              "int xwin_detached_destroy(struct _XImage *im);",
              "struct descrip;",
              "long xwin_list_size(struct descrip *d);"]
-    for name, fn in sorted(BY_VALUE.items()):
+    for name, fn in sorted(D["by_value"].items()):
         lines.append("struct descrip %s(void);" % fn)
         lines.append("#define %s %s()" % (name, fn))
     lines += [
@@ -416,10 +518,16 @@ def write_alloc_h(tree, tags, used):
     for t in tags:
         lines.append("extern const uint64_t xwin_layout_%s[];" % t)
     lines.append("extern const uint64_t xwin_layout_ptrs[];")
+    for t_ in rtags:
+        lines.append("extern const uint64_t xwin_layout_recs_%s[];" % t_)
+    if rtags:
+        lines.append("#define XWIN_LK_RECS_STRIDE 4")
+        lines.append("#define XWIN_RECS_MALLOC(tag, n) rt_lrec_alloc((size_t)(n), xwin_layout_recs_##tag)")
+        lines.append("#define XWIN_RECS_REALLOC(tag, p, n) rt_lrec_realloc((p), (size_t)(n), xwin_layout_recs_##tag)")
     lines.append("#define XWIN_LREC(tag) rt_lrec_alloc(sizeof(struct tag), xwin_layout_##tag)")
     lines.append("static inline void *xwin_calloc_raw(size_t n, size_t s) { void *p = rt_ws_alloc_raw(n * s); if (p) memset(p, 0, n * s); return p; }")
     lines.append("static inline char *xwin_salloc_raw(const char *s) { size_t n = strlen(s) + 1; char *p = (char *)rt_ws_alloc_raw(n); if (p) memcpy(p, s, n); return p; }")
-    if ("HELD", "realloc") in used:
+    if ("HELD", "realloc") in used or ("CALLEXT", "realloc") in used:
         lines.append("void *rt_rvec_realloc(void *p, size_t nbytes);")
     for key in sorted(used):
         lines.append(MACRO_DEFS[key])
@@ -432,7 +540,7 @@ def write_alloc_h(tree, tags, used):
 
 def own_data(src):
     out = []
-    for name, source in OWN_DATA:
+    for name, source in D["own_data"]:
         text = open(os.path.join(src, "runtime", source)).read()
         m = re.search(r"(?m)^([A-Za-z_][\w ]*?[\s*]+%s\b[^;]*;)" % re.escape(name), text)
         if not m:
@@ -441,31 +549,81 @@ def own_data(src):
     return out
 
 
-def list_pass(lines, path):
+READ_CLASSES = ("PENDING", "OWNFILE", "CNV", "DEAD", "V3D")
+
+
+def load_reads(path):
+    if not os.path.isfile(path):
+        raise Refuse("the read table %s is missing" % path)
+    rows = {}
+    for n, line in enumerate(open(path), 1):
+        if not line.strip() or line.startswith("#"):
+            continue
+        f = line.rstrip("\n").split("\t")
+        if len(f) < 6 or f[0] != "read":
+            raise Refuse("%s:%d is no read row (read, source, line, block, reads, class, why)" % (path, n))
+        if f[5] not in READ_CLASSES:
+            raise Refuse("%s:%d class %s is none of %s" % (path, n, f[5], " ".join(READ_CLASSES)))
+        rows[(f[1], int(f[2]), f[3])] = {"count": int(f[4]), "cls": f[5], "row": n, "seen": 0}
+    return rows
+
+
+def read_sites(line):
     out = []
-    for line in lines:
-        pos = 0
-        while True:
-            m = LIST_SIZE_RE.search(line, pos)
-            if not m:
-                break
-            cl = balanced(line, m.end() - 1)
-            tail_ = "->list.size"
-            if line[cl + 1:cl + 1 + len(tail_)] == tail_:
-                line = line[:m.start()] + "xwin_list_size(&(" + line[m.end():cl] + "))" + line[cl + 1 + len(tail_):]
-            pos = m.start() + 1
-        out.append(line)
-    for i, line in enumerate(out):
-        if not line.startswith("#") and LIST_MEMBER_RE.search(line):
-            raise Refuse("%s line %d still reads a member of a list block after the list pass: %s" % (os.path.basename(path), i + 1, line.strip()[:100]))
+    for mm in re.finditer(r"BlkLoc\(", line):
+        cl = balanced(line, mm.end() - 1)
+        m2 = re.match(r"\s*->\s*(\w+)\s*\.(\w+)", line[cl + 1:])
+        if m2:
+            out.append((mm.start(), cl + 1 + m2.end(), m2.group(1), m2.group(2), line[mm.end():cl]))
+    for mm in re.finditer(r"BlkD\(", line):
+        cl = balanced(line, mm.end() - 1)
+        m2 = re.match(r"^(.*),\s*(\w+)\s*$", line[mm.end():cl])
+        if m2:
+            m3 = re.match(r"\s*->\s*(\w+)", line[cl + 1:])
+            out.append((mm.start(), cl + 1 + (m3.end() if m3 else 0), m2.group(2), m3.group(1) if m3 else None, m2.group(1).strip()))
     return out
 
 
-def write_gen_c(tree, tags, roots, pp, segs, by_source, src):
+def read_pass(lines, path, rows, report):
+    src, n = None, 0
+    out = []
+    for line in lines:
+        m = re.match(r'#line (\d+) "([^"]*)"', line)
+        if m:
+            src, n = os.path.basename(m.group(2)), int(m.group(1))
+            out.append(line)
+            continue
+        for start, end, block, member, operand in sorted(read_sites(line), key=lambda s: -s[0]):
+            row = rows.get((src, n, block))
+            if row is None:
+                raise Refuse("%s %s:%d reads a %s block raw and no row of the read table names it: %s" % (os.path.basename(path), src, n, block, line.strip()[:100]))
+            row["seen"] += 1
+            if row["cls"] == "PENDING":
+                if block not in ("list", "List") or member != "size":
+                    raise Refuse("%s %s:%d a PENDING read must be a list's size, reads %s %s" % (os.path.basename(path), src, n, block, member))
+                line = line[:start] + "xwin_list_size(&(" + operand + "))" + line[end:]
+        n += 1
+        out.append(line)
+    return out
+
+
+def check_reads(rows, report):
+    bad = ["row %d %s:%d %s reads %d, counted %d" % (r["row"], k[0], k[1], k[2], r["count"], r["seen"]) for k, r in sorted(rows.items()) if r["seen"] != r["count"]]
+    if bad:
+        raise Refuse("%d read row(s) disagree with the translated C: %s" % (len(bad), "; ".join(bad[:8])))
+    tally = {}
+    for k, r in rows.items():
+        a = tally.setdefault(r["cls"], [0, 0])
+        a[0] += 1
+        a[1] += r["count"]
+    report.extend("%s sites=%d reads=%d" % (c, tally[c][0], tally[c][1]) for c in READ_CLASSES if c in tally)
+
+
+def write_gen_c(tree, tags, roots, pp, segs, by_source, src, rtags=()):
     types = oracle_types(segs)
     lines = ['#include "xwin_alloc.h"', '#include "h/rt.h"']
     lines += own_data(src)
-    own = set(n for n, s in OWN_DATA)
+    own = set(n for n, s in D["own_data"])
     for r in roots:
         if r["name"].split("[")[0] in own:
             continue
@@ -481,6 +639,9 @@ def write_gen_c(tree, tags, roots, pp, segs, by_source, src):
         words = ["XWIN_LW(offsetof(struct %s, %s), %d)" % (t, path, kind) for path, kind in layout_fields(pp, t, types)]
         lines.append("const uint64_t xwin_layout_%s[] = { %s, 0 };" % (t, ", ".join(words)))
     lines.append("const uint64_t xwin_layout_ptrs[] = { XWIN_LW(0, XWIN_LK_PTRS_TO_END), 0 };")
+    for t_ in rtags:
+        words = ["XWIN_LW(sizeof(struct %s), XWIN_LK_RECS_STRIDE)" % t_] + ["XWIN_LW(offsetof(struct %s, %s), %d)" % (t_, path, kind) for path, kind in layout_fields(pp, t_, types)]
+        lines.append("const uint64_t xwin_layout_recs_%s[] = { %s, 0 };" % (t_, ", ".join(words)))
     ptrs = [r for r in roots if r["kind"] == "ptr"]
     descrs = [r for r in roots if r["kind"] == "descr"]
     lines.append("const char *const *const xwin_root_words[] = { %s };" % ", ".join("(const char *const *)&%s" % r["name"] for r in ptrs))
@@ -516,7 +677,7 @@ def write_builtins(tree, rows):
         f.write("\n".join(tsv) + "\n")
     with open(os.path.join(tree, "xwin_entries.c"), "w") as f:
         f.write("\n".join(c) + "\n")
-    names = list(EXTRA_EXPORTS)
+    names = list(D["export"])
     for r in rows:
         f = r.split("\t")
         names.append("bt_%s_h" % f[0] if f[4] == "yes" else "bt_%s" % f[0])
@@ -625,7 +786,11 @@ def c_sources(tree):
 
 
 def cc_flags(n):
-    return ["-I.", "-I" + scrip_src()] if n == "xwin_entries.c" else ["-I."]
+    return ["-I.", "-I" + scrip_src()] if n == "xwin_entries.c" else tree_includes()
+
+
+def tree_includes():
+    return ["-I."] + ["-I" + c for c in D["cc_include"]]
 
 
 def syntax(tree):
@@ -661,13 +826,15 @@ def link_census(tree, work):
 
 def generate(src, tree, scratch, table, patch, use_patch, report):
     sites, roots = load_table(table)
+    rrows = load_reads(D["reads"])
+    rreport = []
     cfiles = translate(src, scratch)
     converted, used = classify_and_convert(cfiles, sites, report)
     os.makedirs(os.path.join(tree, "h"))
     by_source = {}
     made_fwindow = ""
     for p in cfiles:
-        text = "\n".join(list_pass(post_pass(converted[p], scratch), p))
+        text = "\n".join(read_pass(post_pass(converted[p], scratch), p, rrows, rreport))
         name = os.path.basename(p)
         with open(os.path.join(tree, name), "w", errors="surrogateescape") as f:
             f.write(text)
@@ -675,16 +842,20 @@ def generate(src, tree, scratch, table, patch, use_patch, report):
             made_fwindow = text
         for s in set(re.findall(r'#line \d+ "([^"/]*\.ri?)"', text)):
             by_source[s] = by_source.get(s, "") + "\n" + text
-    for n in sorted(os.listdir(os.path.join(scratch, "h"))):
+    for n in sorted(os.listdir(os.path.join(scratch, "src", "h"))):
         if n.endswith(".h"):
-            shutil.copyfile(os.path.join(scratch, "h", n), os.path.join(tree, "h", n))
+            shutil.copyfile(os.path.join(scratch, "src", "h", n), os.path.join(tree, "h", n))
+    carry_headers(scratch, tree)
+    check_reads(rrows, rreport)
+    report_reads[:] = rreport
     tags = record_tags(sites)
-    write_alloc_h(tree, tags, used)
+    rtags = recs_tags(sites)
+    write_alloc_h(tree, tags, used, rtags)
     pp, segs = preprocess(tree)
-    write_gen_c(tree, tags, roots, pp, segs, by_source, src)
+    write_gen_c(tree, tags, roots, pp, segs, by_source, src, rtags)
     nfun = write_functions(src, tree, made_fwindow)
-    if nfun != 48:
-        raise Fail("xwin_functions.tsv holds %d functions, wants 48" % nfun)
+    if nfun != D["functions"]:
+        raise Fail("xwin_functions.tsv holds %d functions, wants %d" % (nfun, D["functions"]))
     if use_patch:
         apply_patch(tree, patch)
     for dp, dn, fn in os.walk(tree):
@@ -711,12 +882,13 @@ def compare(a, b):
 
 def main():
     ap = argparse.ArgumentParser(description="Regenerate the Icon window facility's tree from the oracle's sources.")
-    ap.add_argument("--src", default=DEFAULT_SRC)
+    ap.add_argument("--dialect", default="arizona")
+    ap.add_argument("--src")
     ap.add_argument("--out")
     ap.add_argument("--check")
     ap.add_argument("--classes", action="store_true")
-    ap.add_argument("--table", default=TABLE)
-    ap.add_argument("--patch", default=PATCH)
+    ap.add_argument("--table")
+    ap.add_argument("--patch")
     ap.add_argument("--no-patch", action="store_true")
     ap.add_argument("--syntax", action="store_true")
     ap.add_argument("--link-census", action="store_true")
@@ -726,8 +898,15 @@ def main():
     if sum(1 for x in (a.out, a.check, a.classes) if x) != 1:
         print("REFUSE(2): give one of --out DIR, --check DIR, --classes")
         return 2
-    src = os.path.abspath(a.src)
-    need = ["rtt/rtt", "h/graphics.h", "h/xwin.h", "h/grttin.h", PLAIN_SOURCE] + sorted(set(os.path.join("runtime", s) for n, s in OWN_DATA)) + [os.path.join("runtime", n) for n in RUN_SOURCES + RUN_INCLUDES]
+    try:
+        load_dialect(a.dialect)
+    except Refuse as e:
+        print("REFUSE(2): %s" % e)
+        return 2
+    src = os.path.abspath(a.src or D["src"])
+    a.table = a.table or D["table"]
+    a.patch = a.patch or D["patch"]
+    need = [D["translator"], "h/graphics.h", "h/xwin.h", "h/grttin.h", D["config_file"]] + ([D["plain"]] if D["plain"] else []) + sorted(set(os.path.join("runtime", s) for n, s in D["own_data"])) + [os.path.join("runtime", n) for n in D["source"] + D["include"]]
     missing = [n for n in need if not os.path.isfile(os.path.join(src, n))]
     if missing:
         print("REFUSE(2): the oracle source at %s lacks %s" % (src, " ".join(missing)))
@@ -749,6 +928,8 @@ def main():
             for r in sorted(report):
                 print("XWIN-CLASS %s:%d\t%s\t%s\t%s" % r)
             print("XWIN-CLASSES sites=%d" % len(report))
+            for r in report_reads:
+                print("XWIN-READS %s" % r)
             return 0
         if a.syntax:
             syntax(tree)
