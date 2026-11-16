@@ -53,6 +53,9 @@ the run. With no --events the answer is byte for byte what it was. The script, o
   key KEYSYM               one key down and up by its X name (a, Return, Escape, F1); a shifted one (A, exclam) is sent with Shift
   keydown KEYSYM | keyup KEYSYM   one half of a key, for a held modifier (Control_L)
   type TEXT                each character of the rest of the line as a key (printable ASCII)
+  focus                    the input focus back to the pointer (X PointerRoot): a program that pins the focus to one window of its own
+                           (Icon's Raise does, rxwin.ri raiseWindow) takes a key in another only after this line (officer_06 2026-11-16,
+                           the cto's ruling: one explicit line, no policy, so a script without it sends exactly what it sent before)
   wait                     the end of a step: the screen holds still again and its line is written
 
 The keyboard goes to the window under the pointer (no window manager, so focus follows the pointer): move into the window before a key.
@@ -131,11 +134,12 @@ def read_events(path):
             body = raw.lstrip()[5:]
             if not body or any(not 0x20 <= ord(c) <= 0x7e for c in body): refuse(f"{where}: type wants printable ASCII text after it")
             cur += [("tap", ord(c)) for c in body]; continue
-        need = {"move": 2, "press": 1, "release": 1, "click": 3, "drag": 5, "key": 1, "keydown": 1, "keyup": 1, "wait": 0}.get(w[0])
-        if need is None: refuse(f"{where}: {w[0]!r} is no send (move press release click drag key keydown keyup type wait)")
+        need = {"move": 2, "press": 1, "release": 1, "click": 3, "drag": 5, "key": 1, "keydown": 1, "keyup": 1, "focus": 0, "wait": 0}.get(w[0])
+        if need is None: refuse(f"{where}: {w[0]!r} is no send (move press release click drag key keydown keyup focus type wait)")
         if len(w) - 1 != need: refuse(f"{where}: {w[0]} takes {need} word(s), {len(w) - 1} given")
         xy = lambda i: (num(w[i], 0, WIDE - 1, where, "x"), num(w[i + 1], 0, HIGH - 1, where, "y"))
         if w[0] == "wait": steps.append(cur); cur = []
+        elif w[0] == "focus": cur.append(("f",))
         elif w[0] == "move": cur.append(("m",) + xy(1))
         elif w[0] in ("press", "release"): cur.append(("b", num(w[1], 1, 5, where, "button"), w[0] == "press"))
         elif w[0] == "click": b = num(w[1], 1, 5, where, "button"); cur += [("m",) + xy(2), ("b", b, True), ("b", b, False)]
@@ -158,6 +162,7 @@ class Injector:
         X.XKeysymToKeycode.restype, X.XKeysymToKeycode.argtypes = ctypes.c_ubyte, [V, L]
         X.XkbKeycodeToKeysym.restype, X.XkbKeycodeToKeysym.argtypes = L, [V, U, I, I]
         X.XSync.argtypes, X.XCloseDisplay.argtypes = [V, I], [V]
+        X.XSetInputFocus.argtypes = [V, L, I, L]
         T.XTestQueryExtension.argtypes = [V] + [ctypes.POINTER(I)] * 4
         T.XTestFakeMotionEvent.argtypes, T.XTestFakeButtonEvent.argtypes, T.XTestFakeKeyEvent.argtypes = [V, I, I, I, L], [V, U, I, L], [V, U, I, L]
         self.dpy = X.XOpenDisplay(display.encode()) or refuse(f"--events: no connection to the road's display {display}")
@@ -181,6 +186,7 @@ class Injector:
             if s[0] == "m": one(T.XTestFakeMotionEvent, 0, s[1], s[2])
             elif s[0] == "b": one(T.XTestFakeButtonEvent, s[1], int(s[2]))
             elif s[0] == "k": one(T.XTestFakeKeyEvent, self.keys[s[1]][0], int(s[2]))
+            elif s[0] == "f": X.XSetInputFocus(d, 1, 1, 0); X.XSync(d, 0); time.sleep(PACE)   # PointerRoot, RevertToPointerRoot, CurrentTime
             else:
                 code, shifted = self.keys[s[1]]
                 if shifted: one(T.XTestFakeKeyEvent, self.shift, 1)
@@ -263,8 +269,26 @@ def probe_client(mode):
     X.XMapWindow(dpy, X.XCreateSimpleWindow(dpy, X.XRootWindow(dpy, scr), 0, 0, 200, 200, 0, 0, cell.value)); X.XFlush(dpy)
     if mode == "change": time.sleep(1.0); store(0, 0, 65535)
     while True: time.sleep(3600)
+def probe_pin():
+    """--probe-client pin: the focus arm's own X client. Two windows side by side, 0 0 and 300 0, 200 by 200, each taking key presses; once both
+    are mapped the focus is pinned to the right one, as Icon's Raise pins it; every key press is logged to pin.log in the working folder as the
+    window it reached, L or R. Waits for ever."""
+    X = ctypes.CDLL("libX11.so.6"); V, I, U, L = ctypes.c_void_p, ctypes.c_int, ctypes.c_uint, ctypes.c_ulong
+    X.XOpenDisplay.restype, X.XOpenDisplay.argtypes = V, [ctypes.c_char_p]; X.XDefaultScreen.argtypes = [V]
+    X.XRootWindow.restype, X.XRootWindow.argtypes = L, [V, I]; X.XCreateSimpleWindow.restype, X.XCreateSimpleWindow.argtypes = L, [V, L, I, I, U, U, U, L, L]
+    X.XSelectInput.argtypes, X.XMapWindow.argtypes, X.XFlush.argtypes = [V, L, ctypes.c_long], [V, L], [V]
+    X.XSetInputFocus.argtypes, X.XNextEvent.argtypes = [V, L, I, L], [V, ctypes.c_char_p]
+    dpy = X.XOpenDisplay(None) or sys.exit(2); root = X.XRootWindow(dpy, X.XDefaultScreen(dpy))
+    wl, wr = (X.XCreateSimpleWindow(dpy, root, x, 0, 200, 200, 0, 0, bg) for x, bg in ((0, 0xffffff), (300, 0x808080)))
+    for w in (wl, wr): X.XSelectInput(dpy, w, 1); X.XMapWindow(dpy, w)
+    X.XFlush(dpy); time.sleep(1.0); X.XSetInputFocus(dpy, wr, 2, 0); X.XFlush(dpy)
+    ev = ctypes.create_string_buffer(192)
+    with open("pin.log", "a") as log:
+        while True:
+            X.XNextEvent(dpy, ev)
+            if struct.unpack_from("i", ev.raw, 0)[0] == 2: log.write("L\n" if struct.unpack_from("Q", ev.raw, 32)[0] == wl else "R\n"); log.flush()
 def probe():
-    """Twenty-three arms on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
+    """Twenty-four arms on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
     scripted events xeyes, whose picture follows the pointer, and xev, which prints every event it is sent): no arm needs Icon. rc 0 all green,
     1 an arm red, 2 cannot measure. (xsetroot is no client for this: MEASURED, its colour never reaches the dump of an Xvfb root.)"""
     for c in ("xlogo", "ico", "xeyes", "xev"): which(c) or refuse(f"--probe needs {c} (x11-apps)")
@@ -316,6 +340,9 @@ def probe():
         k = go("badword", "touch badword.ran", events="move 50 60\njump 3\n")
         m = go("badkey", "touch badkey.ran", events="key NoSuchKeyOfOurs\n")
         n = go("nopicture", "echo whole-output; exit 3", events="move 50 60\nwait\nkey a\n")
+        pn = go("pinned", f"exec {sys.executable} {me} --probe-client pin", events="move 50 50\nwait\nkey a\nwait\n"); pl = seen("pin.log")
+        if os.path.exists(os.path.join(td, "pin.log")): os.remove(os.path.join(td, "pin.log"))
+        pf = go("focused", f"exec {sys.executable} {me} --probe-client pin", events="move 50 50\nfocus\nwait\nkey a\nwait\n"); fo = seen("pin.log")
         arms = [("a waiting program is ended at its still screen, rc 0, its text withheld", a[0] == 0 and a[1] == "" and a[2].startswith("screen 1024x768 md5 ")),
                 ("the same picture gives the same line twice", a[2] == b[2] and a[2] != ""),
                 ("another picture gives another line", c[2].startswith("screen 1024x768 md5 ") and c[2] != a[2]),
@@ -338,7 +365,8 @@ def probe():
                 ("events: a program that ends with steps unsent says how many", j[0] == 4 and len(jl) == 2 and pic(jl[0]) and jl[1] == "screen ended with 2 of 3 event steps unsent"),
                 ("events: a program that ends with no picture is screen none alone, its text and status kept", n[0] == 3 and n[1] == "whole-output\n" and n[2] == "screen none"),
                 ("events: a line that is no send is refused rc 2 before the program starts", k[0] == 2 and "REFUSE(2)" in k[3] and "line 2" in k[3] and not os.path.exists(os.path.join(td, "badword.ran"))),
-                ("events: a key that is no keysym is refused rc 2 before the program starts", m[0] == 2 and "REFUSE(2)" in m[3] and not os.path.exists(os.path.join(td, "badkey.ran")))]
+                ("events: a key that is no keysym is refused rc 2 before the program starts", m[0] == 2 and "REFUSE(2)" in m[3] and not os.path.exists(os.path.join(td, "badkey.ran"))),
+                ("events: a pinned focus keeps a key from the window under the pointer until focus returns it there", pn[0] == 0 and pl == "R\n" and pf[0] == 0 and fo == "L\n")]
         for what, ok in arms:
             print(("GREEN " if ok else "RED   ") + what); bad += 0 if ok else 1
     print(f"SCREEN-PROBE arms={len(arms)} red={bad}")
@@ -347,6 +375,7 @@ if __name__ == "__main__":
     a = sys.argv[1:]
     if a == ["--probe"]: sys.exit(probe())
     if len(a) == 2 and a[0] == "--probe-client" and a[1] in ("keep", "change", "blue"): probe_client(a[1])
+    if a == ["--probe-client", "pin"]: probe_pin()
     out, cap, keep, events, depth, plain = "screen.dump", 30.0, None, None, 24, False
     while a and a[0] != "--":
         if a[0] == "--out" and len(a) > 1: out = a[1]; a = a[2:]
