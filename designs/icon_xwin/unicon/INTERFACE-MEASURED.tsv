@@ -1,0 +1,398 @@
+# INTERFACE-MEASURED.tsv -- Unicon's window kernel linked as ONE shared object outside every repository of ours (step U1 of the Unicon object, the cto 2026-11-16 11:4x CST, on Lon's ruling of 09:5x: Keep Unicon graphics as a separate replaceable library); written by util_gen_icon_xwin_device.py --dialect unicon --object, held equal by --object-check. Read from nm of the LINKED objects, never from a call-graph walk.
+# source: the Unicon checkout of designs/icon_xwin/unicon/DIALECT.tsv at git d784f580b3003c50b0afffb3f1991364912c435f, translated raw by its own urtt under the dialect's configuration (Unicon's allocator as Unicon wrote it: 72 allocation sites and 82 frees, none converted, step U1 point 2)
+# libunicon_xwin.so: every Z entry exported, linked --gc-sections; libunicon_xwin_2d.so: rooted at Arizona's 48 functions and WindowContents; a third link, the same roots built with NoGL (every Graphics3D arm compiled out), is measurement only. An import's reach: 2d, reached from those roots with no 3D arm; 2d-3d-arm, reached from those roots only through their 3D arms (DrawLine's is_3D arm and kin, which a program that opens no 3D window never runs); 3d, reached only from the 3D functions
+# counts: exports 82; imports 303, of them the Unicon run-time 39 (2d 31, 2d-3d-arm 8); libraries 8
+# kind <tab> name <tab> C signature (an export's from xfwindow.c, a run-time import's from Unicon's own h/) <tab> defined in or supplied by <tab> reach (2d or 3d)
+export	ZActive	int ZActive(dptr r_args)	xfwindow.c	2d
+export	ZAlert	int ZAlert(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZBg	int ZBg(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZClip	int ZClip(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZClone	int ZClone(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZColor	int ZColor(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZColorValue	int ZColorValue(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZCopyArea	int ZCopyArea(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZCouple	int ZCouple(dptr r_args)	xfwindow.c	2d
+export	ZDrawArc	int ZDrawArc(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZDrawCircle	int ZDrawCircle(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZDrawCube	int ZDrawCube(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZDrawCurve	int ZDrawCurve(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZDrawCylinder	int ZDrawCylinder(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZDrawDisk	int ZDrawDisk(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZDrawImage	int ZDrawImage(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZDrawLine	int ZDrawLine(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZDrawPoint	int ZDrawPoint(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZDrawPolygon	int ZDrawPolygon(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZDrawRectangle	int ZDrawRectangle(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZDrawSegment	int ZDrawSegment(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZDrawSphere	int ZDrawSphere(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZDrawString	int ZDrawString(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZDrawTorus	int ZDrawTorus(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZEraseArea	int ZEraseArea(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZEvent	int ZEvent(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZEye	int ZEye(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZFg	int ZFg(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZFillArc	int ZFillArc(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZFillCircle	int ZFillCircle(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZFillPolygon	int ZFillPolygon(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZFillRectangle	int ZFillRectangle(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZFont	int ZFont(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZFreeColor	int ZFreeColor(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZGotoRC	int ZGotoRC(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZGotoXY	int ZGotoXY(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZIdentityMatrix	int ZIdentityMatrix(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZLower	int ZLower(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZMatrixMode	int ZMatrixMode(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZMultMatrix	int ZMultMatrix(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZNewColor	int ZNewColor(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZNormals	int ZNormals(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZPaletteChars	int ZPaletteChars(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZPaletteColor	int ZPaletteColor(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZPaletteKey	int ZPaletteKey(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZPattern	int ZPattern(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZPending	int ZPending(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZPixel	int ZPixel(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZPopMatrix	int ZPopMatrix(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZPushMatrix	int ZPushMatrix(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZPushRotate	int ZPushRotate(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZPushScale	int ZPushScale(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZPushTranslate	int ZPushTranslate(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZQueryPointer	int ZQueryPointer(dptr r_args)	xfwindow.c	2d
+export	ZRaise	int ZRaise(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZReadImage	int ZReadImage(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZRefresh	int ZRefresh(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZRotate	int ZRotate(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZScale	int ZScale(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZTexcoord	int ZTexcoord(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZTextWidth	int ZTextWidth(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZTexture	int ZTexture(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZTranslate	int ZTranslate(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZUncouple	int ZUncouple(dptr r_args)	xfwindow.c	2d
+export	ZWAttrib	int ZWAttrib(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZWDefault	int ZWDefault(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZWFlush	int ZWFlush(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZWSection	int ZWSection(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZWSync	int ZWSync(dptr r_args)	xfwindow.c	2d
+export	ZWinAssociate	int ZWinAssociate(dptr r_args)	xfwindow.c	3d
+export	ZWinButton	int ZWinButton(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZWinColorDialog	int ZWinColorDialog(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZWinEditRegion	int ZWinEditRegion(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZWinFontDialog	int ZWinFontDialog(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZWinMenuBar	int ZWinMenuBar(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZWinOpenDialog	int ZWinOpenDialog(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZWinPlayMedia	int ZWinPlayMedia(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZWinSaveDialog	int ZWinSaveDialog(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZWinScrollBar	int ZWinScrollBar(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZWinSelectDialog	int ZWinSelectDialog(int r_nargs, dptr r_args)	xfwindow.c	3d
+export	ZWindowContents	int ZWindowContents(int r_nargs, dptr r_args)	xfwindow.c	2d
+export	ZWriteImage	int ZWriteImage(int r_nargs, dptr r_args)	xfwindow.c	2d
+import	XAllocColor	-	libX11.so.6	2d
+import	XAllocColorCells	-	libX11.so.6	2d
+import	XBell	-	libX11.so.6	2d
+import	XChangeGC	-	libX11.so.6	2d
+import	XChangeProperty	-	libX11.so.6	2d
+import	XCheckTypedWindowEvent	-	libX11.so.6	2d-3d-arm
+import	XClearWindow	-	libX11.so.6	2d
+import	XCloseDisplay	-	libX11.so.6	2d
+import	XConnectionNumber	-	libX11.so.6	2d
+import	XConvertSelection	-	libX11.so.6	2d
+import	XCopyArea	-	libX11.so.6	2d
+import	XCopyColormapAndFree	-	libX11.so.6	2d
+import	XCopyPlane	-	libX11.so.6	2d
+import	XCreateBitmapFromData	-	libX11.so.6	2d
+import	XCreateColormap	-	libX11.so.6	2d-3d-arm
+import	XCreateFontCursor	-	libX11.so.6	2d
+import	XCreateGC	-	libX11.so.6	2d
+import	XCreateImage	-	libX11.so.6	2d
+import	XCreatePixmap	-	libX11.so.6	2d
+import	XCreateSimpleWindow	-	libX11.so.6	2d
+import	XCreateWindow	-	libX11.so.6	2d-3d-arm
+import	XDefineCursor	-	libX11.so.6	2d
+import	XDestroyWindow	-	libX11.so.6	2d
+import	XDrawArcs	-	libX11.so.6	2d
+import	XDrawLines	-	libX11.so.6	2d
+import	XDrawPoint	-	libX11.so.6	2d
+import	XDrawPoints	-	libX11.so.6	2d
+import	XDrawRectangle	-	libX11.so.6	2d
+import	XDrawSegments	-	libX11.so.6	2d
+import	XDrawString	-	libX11.so.6	2d
+import	XFillArcs	-	libX11.so.6	2d
+import	XFillPolygon	-	libX11.so.6	2d
+import	XFillRectangle	-	libX11.so.6	2d
+import	XFillRectangles	-	libX11.so.6	2d
+import	XFlush	-	libX11.so.6	2d
+import	XFree	-	libX11.so.6	2d
+import	XFreeColormap	-	libX11.so.6	2d
+import	XFreeColors	-	libX11.so.6	2d
+import	XFreeFontNames	-	libX11.so.6	2d
+import	XFreeGC	-	libX11.so.6	2d
+import	XFreePixmap	-	libX11.so.6	2d
+import	XGetAtomName	-	libX11.so.6	2d
+import	XGetDefault	-	libX11.so.6	2d
+import	XGetErrorText	-	libX11.so.6	2d
+import	XGetImage	-	libX11.so.6	2d
+import	XGetSelectionOwner	-	libX11.so.6	2d
+import	XGetSizeHints	-	libX11.so.6	2d
+import	XGetSubImage	-	libX11.so.6	2d
+import	XGetWMHints	-	libX11.so.6	2d
+import	XGetWMName	-	libX11.so.6	2d
+import	XGetWindowAttributes	-	libX11.so.6	2d
+import	XGetWindowProperty	-	libX11.so.6	2d
+import	XIconifyWindow	-	libX11.so.6	2d
+import	XInternAtom	-	libX11.so.6	2d
+import	XListFonts	-	libX11.so.6	2d
+import	XLoadQueryFont	-	libX11.so.6	2d
+import	XLookupString	-	libX11.so.6	2d
+import	XLowerWindow	-	libX11.so.6	2d
+import	XMapWindow	-	libX11.so.6	2d
+import	XMoveResizeWindow	-	libX11.so.6	2d
+import	XMoveWindow	-	libX11.so.6	2d
+import	XNextEvent	-	libX11.so.6	2d
+import	XOpenDisplay	-	libX11.so.6	2d
+import	XParseColor	-	libX11.so.6	2d
+import	XPending	-	libX11.so.6	2d
+import	XPutImage	-	libX11.so.6	2d
+import	XQueryColor	-	libX11.so.6	2d
+import	XQueryPointer	-	libX11.so.6	2d
+import	XRaiseWindow	-	libX11.so.6	2d
+import	XReadBitmapFile	-	libX11.so.6	2d
+import	XResizeWindow	-	libX11.so.6	2d
+import	XSelectInput	-	libX11.so.6	2d
+import	XSendEvent	-	libX11.so.6	2d
+import	XSetBackground	-	libX11.so.6	2d
+import	XSetClassHint	-	libX11.so.6	2d
+import	XSetClipMask	-	libX11.so.6	2d
+import	XSetClipRectangles	-	libX11.so.6	2d
+import	XSetErrorHandler	-	libX11.so.6	2d
+import	XSetFillStyle	-	libX11.so.6	2d
+import	XSetFont	-	libX11.so.6	2d
+import	XSetForeground	-	libX11.so.6	2d
+import	XSetFunction	-	libX11.so.6	2d
+import	XSetIconName	-	libX11.so.6	2d
+import	XSetInputFocus	-	libX11.so.6	2d
+import	XSetLineAttributes	-	libX11.so.6	2d
+import	XSetNormalHints	-	libX11.so.6	2d
+import	XSetSelectionOwner	-	libX11.so.6	2d
+import	XSetStandardProperties	-	libX11.so.6	2d
+import	XSetStipple	-	libX11.so.6	2d
+import	XSetWMHints	-	libX11.so.6	2d
+import	XSetWMProtocols	-	libX11.so.6	2d
+import	XSetWindowColormap	-	libX11.so.6	2d
+import	XStoreColor	-	libX11.so.6	2d
+import	XStoreName	-	libX11.so.6	2d
+import	XSync	-	libX11.so.6	2d
+import	XTextWidth	-	libX11.so.6	2d
+import	XWarpPointer	-	libX11.so.6	2d
+import	XWriteBitmapFile	-	libX11.so.6	2d
+import	XpmReadFileToPixmap	-	libXpm.so.4	2d
+import	XpmWriteFileFromPixmap	-	libXpm.so.4	2d
+import	__ctype_b_loc	-	libc.so.6	2d
+import	__cxa_finalize	-	libc.so.6	2d
+import	__isoc23_sscanf	-	libc.so.6	2d
+import	__stack_chk_fail	-	libc.so.6	2d
+import	_setjmp	-	libc.so.6	2d
+import	alcfile	struct b_file *alcfile (FILE *fd,int status,dptr name)	unicon run-time	2d
+import	alclist	struct b_list *alclist (uword size, uword nslots)	unicon run-time	2d
+import	alclisthdr	struct b_list *alclisthdr (uword size, union block *bptr)	unicon run-time	2d-3d-arm
+import	alcrealarray	struct b_realarray *alcrealarray(uword n)	unicon run-time	2d-3d-arm
+import	alcrecd	struct b_record *alcrecd (int nflds,union block *recptr)	unicon run-time	2d-3d-arm
+import	alcstr	char *alcstr (char *s,word slen)	unicon run-time	2d
+import	allchars	extern unsigned char allchars[]	unicon run-time	2d
+import	atof	-	libc.so.6	2d-3d-arm
+import	atoi	-	libc.so.6	2d
+import	atol	-	libc.so.6	2d
+import	bigmul	int bigmul (dptr da, dptr db, dptr dx)	unicon run-time	2d
+import	bigradix	word bigradix (int sign, int r, char *s, char *x, union numeric *result)	unicon run-time	2d
+import	bigtoreal	int bigtoreal (dptr da, double *result)	unicon run-time	2d
+import	bigtos	int bigtos (dptr da, dptr dx)	unicon run-time	2d
+import	c_get	int c_get (struct b_list *hp, struct descrip *res)	unicon run-time	2d
+import	c_put	void c_put (struct descrip *l, struct descrip *val)	unicon run-time	2d
+import	c_traverse	int c_traverse(struct b_list *hp, struct descrip * res, int position)	unicon run-time	2d-3d-arm
+import	calloc	-	libc.so.6	2d
+import	cos	-	libm.so.6	2d-3d-arm
+import	cplist2realarray	int cplist2realarray(dptr dp, dptr dp2, word i, word j, word skipcopyelements)	unicon run-time	2d-3d-arm
+import	curstring	extern struct region *curstring	unicon run-time	2d
+import	dynrecord	struct b_proc * dynrecord (dptr s, dptr fields, int n)	unicon run-time	2d-3d-arm
+import	emptystr	extern struct descrip emptystr	unicon run-time	2d
+import	err_msg	void err_msg (int n, dptr v)	unicon run-time	2d
+import	fatalerr	void fatalerr (int n,dptr v) __attribute__ ((noreturn,nothrow))	unicon run-time	2d
+import	fclose	-	libc.so.6	2d
+import	ferror	-	libc.so.6	2d
+import	fflush	-	libc.so.6	2d
+import	fmod	-	libm.so.6	2d
+import	fopen	-	libc.so.6	2d
+import	fprintf	-	libc.so.6	2d
+import	fread	-	libc.so.6	2d
+import	free	-	libc.so.6	2d
+import	fwrite	-	libc.so.6	2d
+import	getc	-	libc.so.6	2d
+import	getenv_r	int getenv_r (const char *name, char *buf, size_t len)	unicon run-time	2d
+import	glBegin	-	libGL.so.1	2d-3d-arm
+import	glBindTexture	-	libGL.so.1	2d-3d-arm
+import	glBlendFunc	-	libGL.so.1	2d-3d-arm
+import	glClear	-	libGL.so.1	2d-3d-arm
+import	glClearColor	-	libGL.so.1	2d-3d-arm
+import	glColor4f	-	libGL.so.1	2d-3d-arm
+import	glDisable	-	libGL.so.1	2d-3d-arm
+import	glEnable	-	libGL.so.1	2d-3d-arm
+import	glEnd	-	libGL.so.1	2d-3d-arm
+import	glFlush	-	libGL.so.1	2d-3d-arm
+import	glFrustum	-	libGL.so.1	2d-3d-arm
+import	glGenTextures	-	libGL.so.1	2d-3d-arm
+import	glGetBooleanv	-	libGL.so.1	2d-3d-arm
+import	glGetIntegerv	-	libGL.so.1	2d-3d-arm
+import	glGetLightfv	-	libGL.so.1	2d-3d-arm
+import	glGetMaterialfv	-	libGL.so.1	2d-3d-arm
+import	glGetString	-	libGL.so.1	2d-3d-arm
+import	glInitNames	-	libGL.so.1	2d-3d-arm
+import	glIsEnabled	-	libGL.so.1	2d-3d-arm
+import	glLightfv	-	libGL.so.1	2d-3d-arm
+import	glLineWidth	-	libGL.so.1	2d-3d-arm
+import	glLoadIdentity	-	libGL.so.1	2d-3d-arm
+import	glMaterialf	-	libGL.so.1	2d-3d-arm
+import	glMaterialfv	-	libGL.so.1	2d-3d-arm
+import	glMateriali	-	libGL.so.1	2d-3d-arm
+import	glMatrixMode	-	libGL.so.1	2d-3d-arm
+import	glMultMatrixd	-	libGL.so.1	2d-3d-arm
+import	glNormal3dv	-	libGL.so.1	2d-3d-arm
+import	glNormal3f	-	libGL.so.1	2d-3d-arm
+import	glNormal3fv	-	libGL.so.1	2d-3d-arm
+import	glPopMatrix	-	libGL.so.1	2d-3d-arm
+import	glPopName	-	libGL.so.1	2d-3d-arm
+import	glPushMatrix	-	libGL.so.1	2d-3d-arm
+import	glPushName	-	libGL.so.1	2d-3d-arm
+import	glReadPixels	-	libGL.so.1	2d-3d-arm
+import	glRenderMode	-	libGL.so.1	2d-3d-arm
+import	glRotated	-	libGL.so.1	2d-3d-arm
+import	glRotatef	-	libGL.so.1	2d-3d-arm
+import	glScaled	-	libGL.so.1	2d-3d-arm
+import	glSelectBuffer	-	libGL.so.1	2d-3d-arm
+import	glShadeModel	-	libGL.so.1	2d-3d-arm
+import	glTexCoord2f	-	libGL.so.1	2d-3d-arm
+import	glTexEnvf	-	libGL.so.1	2d-3d-arm
+import	glTexGeni	-	libGL.so.1	2d-3d-arm
+import	glTexImage2D	-	libGL.so.1	2d-3d-arm
+import	glTexParameterf	-	libGL.so.1	2d-3d-arm
+import	glTexSubImage2D	-	libGL.so.1	2d-3d-arm
+import	glTranslated	-	libGL.so.1	2d-3d-arm
+import	glTranslatef	-	libGL.so.1	2d-3d-arm
+import	glVertex2d	-	libGL.so.1	2d-3d-arm
+import	glVertex3dv	-	libGL.so.1	2d-3d-arm
+import	glVertex3f	-	libGL.so.1	2d-3d-arm
+import	glVertex3fv	-	libGL.so.1	2d-3d-arm
+import	glVertex4d	-	libGL.so.1	2d-3d-arm
+import	glViewport	-	libGL.so.1	2d-3d-arm
+import	glXChooseVisual	-	libGL.so.1	2d-3d-arm
+import	glXCreateContext	-	libGL.so.1	2d-3d-arm
+import	glXDestroyContext	-	libGL.so.1	2d-3d-arm
+import	glXMakeCurrent	-	libGL.so.1	2d-3d-arm
+import	glXQueryExtension	-	libGL.so.1	2d-3d-arm
+import	glXSwapBuffers	-	libGL.so.1	2d-3d-arm
+import	gluCylinder	-	libGLU.so.1	2d-3d-arm
+import	gluDeleteQuadric	-	libGLU.so.1	2d-3d-arm
+import	gluDisk	-	libGLU.so.1	2d-3d-arm
+import	gluLookAt	-	libGLU.so.1	2d-3d-arm
+import	gluNewQuadric	-	libGLU.so.1	2d-3d-arm
+import	gluPartialDisk	-	libGLU.so.1	2d-3d-arm
+import	gluPickMatrix	-	libGLU.so.1	2d-3d-arm
+import	gluQuadricDrawStyle	-	libGLU.so.1	2d-3d-arm
+import	gluQuadricNormals	-	libGLU.so.1	2d-3d-arm
+import	gluQuadricTexture	-	libGLU.so.1	2d-3d-arm
+import	gluScaleImage	-	libGLU.so.1	2d-3d-arm
+import	gluSphere	-	libGLU.so.1	2d-3d-arm
+import	idelay	int idelay (int n)	unicon run-time	2d
+import	interp	int interp (int fsig,dptr cargp)	unicon run-time	2d
+import	iselect	int iselect (int fd, int t)	unicon run-time	2d
+import	jpeg_CreateCompress	-	libjpeg.so.8	2d
+import	jpeg_CreateDecompress	-	libjpeg.so.8	2d
+import	jpeg_destroy_compress	-	libjpeg.so.8	2d
+import	jpeg_destroy_decompress	-	libjpeg.so.8	2d
+import	jpeg_finish_compress	-	libjpeg.so.8	2d
+import	jpeg_finish_decompress	-	libjpeg.so.8	2d
+import	jpeg_read_header	-	libjpeg.so.8	2d
+import	jpeg_read_scanlines	-	libjpeg.so.8	2d
+import	jpeg_set_defaults	-	libjpeg.so.8	2d
+import	jpeg_set_quality	-	libjpeg.so.8	2d
+import	jpeg_start_compress	-	libjpeg.so.8	2d
+import	jpeg_start_decompress	-	libjpeg.so.8	2d
+import	jpeg_std_error	-	libjpeg.so.8	2d
+import	jpeg_stdio_dest	-	libjpeg.so.8	2d
+import	jpeg_stdio_src	-	libjpeg.so.8	2d
+import	jpeg_write_scanlines	-	libjpeg.so.8	2d
+import	kywd_prog	extern struct descrip kywd_prog	unicon run-time	2d
+import	kywd_xwin	extern struct descrip kywd_xwin[]	unicon run-time	2d
+import	ldexp	-	libm.so.6	2d
+import	log	-	libm.so.6	2d
+import	longjmp	-	libc.so.6	2d
+import	malloc	-	libc.so.6	2d
+import	memcpy	-	libc.so.6	2d
+import	memmove	-	libc.so.6	2d
+import	memset	-	libc.so.6	2d
+import	nulldesc	extern struct descrip nulldesc	unicon run-time	2d
+import	nullptr	extern struct descrip nullptr	unicon run-time	2d
+import	onedesc	extern struct descrip onedesc	unicon run-time	2d-3d-arm
+import	png_create_info_struct	-	libpng16.so.16	2d
+import	png_create_read_struct	-	libpng16.so.16	2d
+import	png_create_write_struct	-	libpng16.so.16	2d
+import	png_destroy_read_struct	-	libpng16.so.16	2d
+import	png_destroy_write_struct	-	libpng16.so.16	2d
+import	png_get_IHDR	-	libpng16.so.16	2d
+import	png_get_bKGD	-	libpng16.so.16	2d
+import	png_get_gAMA	-	libpng16.so.16	2d
+import	png_get_rowbytes	-	libpng16.so.16	2d
+import	png_get_valid	-	libpng16.so.16	2d
+import	png_init_io	-	libpng16.so.16	2d
+import	png_read_image	-	libpng16.so.16	2d
+import	png_read_info	-	libpng16.so.16	2d
+import	png_read_update_info	-	libpng16.so.16	2d
+import	png_set_IHDR	-	libpng16.so.16	2d
+import	png_set_background	-	libpng16.so.16	2d
+import	png_set_bgr	-	libpng16.so.16	2d
+import	png_set_expand_gray_1_2_4_to_8	-	libpng16.so.16	2d
+import	png_set_gamma	-	libpng16.so.16	2d
+import	png_set_gray_to_rgb	-	libpng16.so.16	2d
+import	png_set_longjmp_fn	-	libpng16.so.16	2d
+import	png_set_packing	-	libpng16.so.16	2d
+import	png_set_palette_to_rgb	-	libpng16.so.16	2d
+import	png_set_sig_bytes	-	libpng16.so.16	2d
+import	png_set_strip_16	-	libpng16.so.16	2d
+import	png_set_strip_alpha	-	libpng16.so.16	2d
+import	png_sig_cmp	-	libpng16.so.16	2d
+import	png_write_end	-	libpng16.so.16	2d
+import	png_write_image	-	libpng16.so.16	2d
+import	png_write_info	-	libpng16.so.16	2d
+import	pow	-	libm.so.6	2d
+import	putc	-	libc.so.6	2d
+import	puts	-	libc.so.6	2d-3d-arm
+import	qsearch	char *qsearch (char *key, char *base, int nel, int width, int (*cmp)())	unicon run-time	2d
+import	qsort	-	libc.so.6	2d
+import	realloc	-	libc.so.6	2d
+import	reserve	char *reserve (int region, word nbytes)	unicon run-time	2d
+import	salloc	char *salloc (char *s)	unicon run-time	2d
+import	set_errortext	void set_errortext (int i)	unicon run-time	2d
+import	sin	-	libm.so.6	2d-3d-arm
+import	sprintf	-	libc.so.6	2d
+import	stderr	-	libc.so.6	2d
+import	strcat	-	libc.so.6	2d
+import	strchr	-	libc.so.6	2d
+import	strcmp	-	libc.so.6	2d
+import	strcpy	-	libc.so.6	2d
+import	strdup	-	libc.so.6	2d
+import	strlen	-	libc.so.6	2d
+import	strncmp	-	libc.so.6	2d
+import	strncpy	-	libc.so.6	2d
+import	strstr	-	libc.so.6	2d
+import	syserr	void syserr (char *s) __attribute__ ((noreturn,nothrow))	unicon run-time	2d
+import	t_errornumber	extern int t_errornumber	unicon run-time	2d
+import	t_errorvalue	extern struct descrip t_errorvalue	unicon run-time	2d
+import	t_have_val	extern int t_have_val	unicon run-time	2d
+import	tend	extern struct tend_desc *tend	unicon run-time	2d
+import	tolower	-	libc.so.6	2d
+import	zerodesc	extern struct descrip zerodesc	unicon run-time	2d-3d-arm
+library	libXpm.so.4	-	-	2d
+library	libGLU.so.1	-	-	2d
+library	libGL.so.1	-	-	2d
+library	libpng16.so.16	-	-	2d
+library	libjpeg.so.8	-	-	2d
+library	libX11.so.6	-	-	2d
+library	libm.so.6	-	-	2d
+library	libc.so.6	-	-	2d
