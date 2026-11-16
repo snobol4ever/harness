@@ -16,7 +16,10 @@
 #                                               148 patches given that day to 18:30Z: median wait 258 s, a tenth over 1050 s, the worst 2673 s; the grader landed
 #                                               one patch at a time, its lander busy 57% of the time and idle 43%, the idle part being the grader's own turns, in
 #                                               which it read each why and wrote the gate command by hand): one line, run by bash as the gate of the patch's
-#                                               landing, rc 0 on the patched tree and not before. It reads the patched trees as $S4E_HARNESS, $S4E_CORPUS and
+#                                               landing, rc 0 on the patched tree and not before. IT RUNS IN THE PATCHED REPO'S TOP, so a path is written as the
+#                                               patch writes it (scripts/x.sh, skills/y/SKILL.md, packages/icon/z/ALL.csv; the cio 2026-11-16, MEASURED on the
+#                                               drain's first hour: the coo's proof named scripts/util_graphics_progress.py and the gate, run in the worktree's
+#                                               top, could not open it). It also reads the patched trees as $S4E_HARNESS, $S4E_CORPUS and
 #                                               $S4E_HOME/.github, and a SCRIP built at origin/main as $S4E_SCRIP; a longer proof is a script under /home/resources
 #                                               that the command names. A give with no --proof is refused rc 2 and stores nothing.
 #   s4e_take.sh drain [--wait SECONDS]          THE GRADER ONLY: lands EVERY waiting patch that carries a proof, one after another with no turn of the grader
@@ -25,7 +28,8 @@
 #                                               the patches folder names (an extended regular expression read against giver, repo and why, tab separated: the one
 #                                               switch that says what goes first). LAND ok moves the patch to done; LAND RED moves it to refused with the log's last
 #                                               lines beside it and prints one TELL line for its giver; a landing that could not measure leaves the patch waiting
-#                                               and is not tried again in this run. A patch given before the proof was a command is named NEEDS-GATE and left for
+#                                               and is not tried again in this run, and a patch whose PROOF could not measure (the gate's rc 2) a second time
+#                                               goes back to its giver like a red one, since a proof that cannot run never will. A patch given before the proof was a command is named NEEDS-GATE and left for
 #                                               grader_give.sh. One line a patch in DRAIN.tsv (given, started, ended, seconds, outcome). One drain at a time: a
 #                                               second says so and ends rc 0. --wait keeps it waiting that long for the next patch once the queue is empty.
 #   s4e_take.sh apply <given patch>             THE GRADER ONLY (S4E_SEAT=grader; any other seat rc 2): brings the one checkout to origin/main, applies the patch,
@@ -119,12 +123,16 @@ drain_one() {   # <given patch>: one landing; rc 0 landed, 1 red (the patch is t
         git -C "$d" reset -q --hard 2>/dev/null; git -C "$d" checkout -q --detach origin/main 2>/dev/null; out=red:empty; mv "$g" "$GIVES/refused/"; echo "nothing to commit: origin already holds it" > "$GIVES/refused/${b%.patch}.why"
         echo "REFUSED $b by $giver: nothing to commit (origin already holds it)"; fin; return 1
     fi
-    ( cd "${S4E_HOME:-$WT}" && S4E_SEAT=grader bash "$LANDER" --home "$WT" --gate "$proof" "$r" > "$log" 2>&1 )
+    ( cd "${S4E_HOME:-$WT}" && S4E_SEAT=grader bash "$LANDER" --home "$WT" --gate "cd \"$d\" && ( $proof )" "$r" > "$log" 2>&1 )
     if grep -q '^LAND ok' "$log"; then out=ok; mv "$g" "$GIVES/done/"; echo "LANDED $b by $giver: $(grep -o 'pushed=[^ ]*' "$log" | tail -1)"; fin; return 0; fi
     git -C "$d" checkout -q --detach origin/main 2>/dev/null
     if grep -q '^LAND RED' "$log"; then
         out="red:$(grep -o '^LAND RED stage=[a-z:_A-Za-z0-9]*' "$log" | tail -1 | sed 's/.*stage=//')"; mv "$g" "$GIVES/refused/"; tail -5 "$log" | cut -c1-400 > "$GIVES/refused/${b%.patch}.why"
         echo "REFUSED $b by $giver: $(grep '^LAND RED' "$log" | tail -1 | cut -c1-200); log $log"; echo "TELL $giver: patch $b read red on its own proof ($out); the log is $log; cure it and give it again"; fin; return 1
+    fi
+    if grep -q 'the gate could not measure' "$log" && awk -F'\t' -v b="$b" '$1==b && $8=="held"' "$GIVES/DRAIN.tsv" 2>/dev/null | grep -q .; then
+        out=red:proof-rc2; mv "$g" "$GIVES/refused/"; tail -5 "$log" | cut -c1-400 > "$GIVES/refused/${b%.patch}.why"
+        echo "REFUSED $b by $giver: its proof could not measure twice (rc 2); log $log"; echo "TELL $giver: patch $b: your proof command could not run or measure, twice (rc 2; the log is $log); it runs in the patched repo's top; cure the command and give the patch again"; fin; return 1
     fi
     echo "HELD $b: the landing could not measure ($(grep -E '^LAND (REFUSE|stage)' "$log" | tail -1 | cut -c1-160)); the patch waits; log $log"; fin; return 2
 }
@@ -263,7 +271,7 @@ probe() {
     [ "$(git -C "$T/top/corpus" status --porcelain | tr -d ' \n')" = "Ma" ] || why="$why arm 7: the patch's checks changed the checkout's index or files;"
     # ARMS 8 TO 10, THE DRAIN (the cio 2026-11-16): a patches worktree of the scratch origin and a stand-in lander that runs the gate on the worktree and pushes on rc 0, as s4e_land.sh does
     rm -f "$T/gives"/*.patch; git -C "$T/top/corpus" checkout -q -- a 2>/dev/null; mkdir -p "$T/wt" && $g clone -q "$T/origin.git" "$T/wt/corpus" 2>/dev/null && git -C "$T/wt/corpus" config user.name probe && git -C "$T/wt/corpus" config user.email probe@localhost
-    printf '%s\n' '#!/bin/bash' 'home="$2"; gate="$4"; r="$5"' 'if ( cd "$home" && S4E_HOME="$home" S4E_CORPUS="$home/corpus" bash -c "$gate" ); then git -C "$home/$r" push -q origin HEAD:main 2>/dev/null && echo "LAND ok pushed=$r:$(git -C "$home/$r" rev-parse --short HEAD)"; else echo "LAND RED stage=gate rc=1"; exit 1; fi' > "$T/lander.sh"
+    printf '%s\n' '#!/bin/bash' 'home="$2"; gate="$4"; r="$5"' 'if ( cd "$home" && S4E_HOME="$home" S4E_CORPUS="$home/corpus" bash -c "$gate" ); then git -C "$home/$r" push -q origin HEAD:main 2>/dev/null && echo "LAND ok pushed=$r:$(git -C "$home/$r" rev-parse --short HEAD)"; elif [ $? = 2 ]; then echo "LAND REFUSE(2) the gate could not measure (rc 2): nothing pushed"; exit 2; else echo "LAND RED stage=gate rc=1"; exit 1; fi' > "$T/lander.sh"
     dr() { SEATAS="${SEATAS:-grader}" run env S4E_GIVES_WT="$T/wt" S4E_TAKE_LANDER="$T/lander.sh" bash "$me" drain "$@"; }
     $g -C "$T/top/corpus" fetch -q origin; printf 'n1\n' > "$T/n1"; printf 'n2\n' > "$T/n2"; printf 'n3\n' > "$T/n3"
     mk() { ( cd "$T" && diff -u --label /dev/null --label "b/$1" /dev/null "$1" ) > "$T/$1.patch"; }
@@ -290,7 +298,14 @@ probe() {
     printf '%s\tx\tcorpus\tan old give with no proof\tbase=%s\n' old-noproof.patch "$($g --git-dir="$T/origin.git" rev-parse main)" >> "$T/gives/GIVES.tsv"; cp "$T/n2.patch" "$T/gives/old-noproof.patch"
     o="$(dr 2>&1)"; rc=$?
     [ "$rc" = 0 ] && printf '%s' "$o" | grep -q '^NEEDS-GATE old-noproof.patch' && [ -f "$T/gives/old-noproof.patch" ] && printf '%s' "$o" | grep -q 'needs_gate=1 waiting=1' || why="$why arm 10: a patch given with no proof was not named NEEDS-GATE and left waiting (rc $rc);"
-    if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE probe ok arms=10 (a give carries its proof as a command and one with none is refused; the drain is the grader's alone, one at a time; it lands every waiting patch whose proof reads rc 0 on the patched tree, FIRST.conf's first, refuses the one whose proof reads red and names its giver, leaves the worktree at origin/main and a patch with no proof to the grader's hand; take refuses every seat and makes nothing; give stores a patch that applies with its seat and why and refuses one that does not; apply is the grader's alone; the grader's apply lands the patch on origin and the one checkout holds it; check reads red while a seat root holds one of the three; drop refuses unlanded work and removes a clean folder; a patch is checked against origin first and then the checkout's commit, through a private index)"; return 0; fi
+    rm -f "$T/gives/old-noproof.patch"; printf 'n4\n' > "$T/n4"; printf 'n5\n' > "$T/n5"; mk n4; mk n5; $g -C "$T/top/corpus" fetch -q origin
+    run bash "$me" give corpus "$T/n4.patch" "adds n4, its proof a path from the repo's top" --proof 'grep -q n4 n4' > /dev/null 2>&1; sleep 1
+    run bash "$me" give corpus "$T/n5.patch" "adds n5, its proof cannot run" --proof 'exit 2' > /dev/null 2>&1
+    o="$(dr 2>&1)"; rc=$?
+    [ "$rc" = 1 ] && [ "$($g --git-dir="$T/origin.git" show main:n4 2>/dev/null)" = n4 ] && printf '%s' "$o" | grep -q '^HELD .*-x-corpus-' && [ "$(ls "$T/gives"/*.patch 2>/dev/null | wc -l)" = 1 ] || why="$why arm 11: a proof written from the repo's top did not land its patch, or a proof that could not measure was not held once (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-160));"
+    o="$(dr 2>&1)"; rc=$?
+    [ "$rc" = 1 ] && [ -z "$(ls "$T/gives"/*.patch 2>/dev/null)" ] && [ "$(ls "$T/gives/refused"/*.patch | wc -l)" = 2 ] && printf '%s' "$o" | grep -q '^TELL x: .*could not run or measure' && ! $g --git-dir="$T/origin.git" cat-file -e main:n5 2>/dev/null || why="$why arm 12: a patch whose proof could not measure a second time was not returned to its giver (rc $rc);"
+    if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE probe ok arms=12 (a proof runs in the patched repo's top; one that cannot measure is held once and returned the second time; a give carries its proof as a command and one with none is refused; the drain is the grader's alone, one at a time; it lands every waiting patch whose proof reads rc 0 on the patched tree, FIRST.conf's first, refuses the one whose proof reads red and names its giver, leaves the worktree at origin/main and a patch with no proof to the grader's hand; take refuses every seat and makes nothing; give stores a patch that applies with its seat and why and refuses one that does not; apply is the grader's alone; the grader's apply lands the patch on origin and the one checkout holds it; check reads red while a seat root holds one of the three; drop refuses unlanded work and removes a clean folder; a patch is checked against origin first and then the checkout's commit, through a private index)"; return 0; fi
     echo "TAKE probe RED:$why"; echo "    kept: $T"; return 1
 }
 case "${1:-}" in
