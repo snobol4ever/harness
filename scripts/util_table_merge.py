@@ -7,6 +7,10 @@ red:rebase): one new entry renumbers the rank column of every row below it and m
 
     util_table_merge.py csv BASE OURS THEIRS OUT          ALL.csv: rows keyed by the `entry` column
     util_table_merge.py partition BASE OURS THEIRS OUT    PARTITION.tsv: rows keyed by their first column, comment lines kept from OURS
+    util_table_merge.py lines BASE OURS THEIRS OUT        a package's side table of one line a key (ALL.args, NOT-CUT.tsv, EXCLUDED.tsv, ALL.omit): lines keyed by their
+                                                          first column; a line both sides changed differently is a real conflict (the cio 2026-11-16, MEASURED in the
+                                                          drain's first hour: two of nine corpus patches of ipl_gprogs read red:rebase on ALL.args and NOT-CUT.tsv alone,
+                                                          seven owners each adding a line to the one and deleting a line of the other)
     util_table_merge.py md BASE OURS THEIRS OUT           MULTI-LINERS.md: one section a test, keyed by its `## <entry name>` heading (a heading inside a fence is text)
     util_table_merge.py --probe                           the law on planted tables; one TABLE_MERGE line
 
@@ -158,6 +162,12 @@ def merge_partition(base, ours, theirs):
     return "\n".join(no + [row["line"] for _k, row in merged]) + "\n"
 
 
+def merge_lines(base, ours, theirs):
+    _nb, rb = _part_rows(base); no, ro = _part_rows(ours); _nt, rt = _part_rows(theirs)
+    merged = _keyed(rb, ro, rt, ["line"], set())
+    return "\n".join(no + [row["line"] for _k, row in merged]) + "\n"
+
+
 def _md_sections(text):
     """(preamble, {name: section text}) of a SCRIPtix container: a section starts at a line `## <name>` that stands outside every fence; a fence opens at a line of three or
     more backticks (with or without a tag) and closes at a line of exactly as many backticks, so a `## ` line of a program or an answer is never taken for a heading."""
@@ -247,14 +257,25 @@ def probe():
         if got != "entry,heap_kb\na,1\nc,3\nb,2\n" and got != "entry,heap_kb\na,1\nb,2\nc,3\n": why.append("arm 6 (a table with no rank column): got %r" % got)
     except Conflict as e:
         why.append("arm 6 raised %s" % e)
-    print("TABLE_MERGE ok arms=8 (two landings' new rows are both kept and the rank counted again; a cell one side changed is that side's; a cell both changed differently, and a row one deleted and the other changed, are real conflicts; a row origin deleted stays deleted; the partition keeps both new rows; two sections added at one spot of a container are both kept, a heading inside a fence is text, and a section both changed differently is a real conflict)" if not why else "TABLE_MERGE RED: " + " | ".join(why))
+    try:
+        got = merge_lines("# n\nk\tw\na\t1\nb\t2\nc\t3\n", "# n\nk\tw\na\t1\nc\t3\nd\t4\n", "# n\nk\tw\nb\t2\nc\t3\ne\t5\n")
+        if sorted(got.split("\n")) != sorted("# n\nk\tw\nc\t3\nd\t4\ne\t5\n".split("\n")): why.append("arm 9 (lines: each side deletes one line and adds one): got %r" % got)
+    except Conflict as e:
+        why.append("arm 9 raised %s" % e)
+    try:
+        merge_lines("a\t1\n", "a\t2\n", "a\t3\n"); why.append("arm 10 (lines: one line changed differently by both sides) merged")
+    except Conflict:
+        pass
+    if why:
+        print("TABLE_MERGE RED: " + "; ".join(why)); return 1
+    print("TABLE_MERGE ok arms=10 (a side table's lines are merged by their first column, both sides' new lines kept and deleted lines gone, a line both changed differently a real conflict; two landings' new rows are both kept and the rank counted again; a cell one side changed is that side's; a cell both changed differently, and a row one deleted and the other changed, are real conflicts; a row origin deleted stays deleted; the partition keeps both new rows; two sections added at one spot of a container are both kept, a heading inside a fence is text, and a section both changed differently is a real conflict)" if not why else "TABLE_MERGE RED: " + " | ".join(why))
     return 0 if not why else 1
 
 
 def main(argv):
     if argv[1:] == ["--probe"]:
         return probe()
-    if len(argv) != 6 or argv[1] not in ("csv", "partition", "md"):
+    if len(argv) != 6 or argv[1] not in ("csv", "partition", "md", "lines"):
         sys.stderr.write(__doc__)
         return 2
     try:
@@ -263,7 +284,7 @@ def main(argv):
         sys.stderr.write("REFUSE(2) [table_merge]: %s\n" % e)
         return 2
     try:
-        out = merge_csv(b, o, t) if argv[1] == "csv" else merge_md(b, o, t) if argv[1] == "md" else merge_partition(b, o, t)
+        out = merge_csv(b, o, t) if argv[1] == "csv" else merge_md(b, o, t) if argv[1] == "md" else merge_lines(b, o, t) if argv[1] == "lines" else merge_partition(b, o, t)
     except Conflict as e:
         sys.stderr.write("TABLE_MERGE conflict in %s: %s\n" % (argv[5], e))
         return 1
