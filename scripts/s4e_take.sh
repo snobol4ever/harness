@@ -194,7 +194,12 @@ drain_one() {   # <given patch>: one landing; rc 0 landed, 1 red (the patch is t
         git -C "$d" reset -q --hard 2>/dev/null; git -C "$d" checkout -q --detach origin/main 2>/dev/null; out=red:empty; mv "$g" "$GIVES/refused/"; echo "nothing to commit: origin already holds it" > "$GIVES/refused/${b%.patch}.why"
         echo "REFUSED $b by $giver: nothing to commit (origin already holds it)"; fin; return 1
     fi
-    ( cd "${S4E_HOME:-$WT}" && S4E_SEAT=grader bash "$LANDER" --home "$WT" --gate "cd \"$d\" && ( $proof )" "$r" --regate own > "$log" 2>&1 )
+    # THE GRADER'S MAIL IS NO STOP ORDER FOR ANOTHER SEAT'S PATCH (Lon 2026-11-16 16:5x CST, in the grader's window, verbatim: "do your standard operating
+    # procedure anyway you and COO decide.", on the coo's cure of 13:2x CST and officer_04's measurement: the lander's mail guard refused rc 2 each time a
+    # giver's telegram stood unread in the grader's inbox, the drain held the patch, and a give telegram held whichever patch came next). The guard is for
+    # the grader's own landings; a drained patch is gated on its giver's proof, which the grader's inbox does not change, and the grader still reads and
+    # clears its mail every turn. A patch is stopped by superseding its file, which the drain reads.
+    ( cd "${S4E_HOME:-$WT}" && S4E_SEAT=grader S4E_LAND_IGNORE_MAIL="${S4E_LAND_IGNORE_MAIL:-the drain lands a patch of another seat on its own proof}" bash "$LANDER" --home "$WT" --gate "cd \"$d\" && ( $proof )" "$r" --regate own > "$log" 2>&1 )
     if grep -q '^LAND ok' "$log"; then out=ok; mv "$g" "$GIVES/done/"; echo "LANDED $b by $giver: $(grep -o 'pushed=[^ ]*' "$log" | tail -1)"; fin; return 0; fi
     git -C "$d" checkout -q --detach origin/main 2>/dev/null
     if grep -q '^LAND RED' "$log"; then
