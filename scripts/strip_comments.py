@@ -20,7 +20,7 @@ import harness_paths
 KEEP_SEPARATORS = True   # Option A (default). Set False for Option B (literal zero).
 SRC_ROOT = os.path.join(str(harness_paths.scrip()), "src")
 EXTS = (".c", ".h", ".cpp", ".hpp", ".y", ".l", ".s", ".S")
-GENERATED = re.compile(r"(\.lex\.c|\.tab\.c|\.tab\.h|(^|/)lex\.[^/]+\.c)$")
+GENERATED = re.compile(r"(\.lex\.c|\.tab\.c|\.tab\.h|(^|/)lex\.[^/]+\.c)$|(^|/)runtime/xwin/")
 SEP = re.compile(r"^\s*/\*[-=]+\*/\s*$")
 SEP_WIDTH = 200   # RULES.md: the sanctioned separator is exactly 200 chars; a short one is dirty and is NOT a comment
 

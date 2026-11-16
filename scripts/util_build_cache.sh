@@ -58,7 +58,7 @@ rpath_is_own() {   # <binary> -- rc 0 when every rpath entry is $ORIGIN-relative
     [ "${r:-0}" = 0 ]
 }
 required="scrip out/scrip-ipp out/libscrip_rt-$tag.so out/libscrip_rt.so"
-optional="out/scrip0 out/libscrip_rt0.so"
+optional="out/scrip0 out/libscrip_rt0.so out/libscrip_xwin-$tag.so out/libscrip_xwin.so"
 for l in snobol4 snocone rebus icon prolog pascal raku; do optional="$optional out/libscrip_parser_$l-$tag.so out/libscrip_parser_$l.so out/sc_mod/scmod_$l.sc out/sc_mod/scmod_$l.o"; done
 manifest() {
     local f

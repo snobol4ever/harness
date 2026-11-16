@@ -6,7 +6,7 @@ EXCEED 200 characters, all must fit." -- "when you begin wrapping, it must be at
 line, then you break at the hiearchical level and start the rule over again at the indention. But each child at the level gets its own line." --
 "Regarding the template CPP files, those should be more line oriented and not spead across 200 characters, but it can use 200 chars no problem.
 But since it is ASM, the lines of C++ code should match closely the lines of ASM being emitted."; RULES.md section C code style; R-1565).
-For every C, C++ and .inc file named (a directory names every such file under it; src/parsers and the two generated tables are never touched):
+For every C, C++ and .inc file named (a directory names every such file under it; src/parsers, the generated window tree src/runtime/xwin and the two generated tables are never touched):
 every comment goes (a separator line is kept and re-cut to exactly --width characters), every blank line goes, preprocessor directives keep their
 own lines (a continued directive is re-joined and re-wrapped with backslashes). C and .inc files take LON'S RULE: an item (a statement, or a
 whole block with its else-chain) that fits goes on ONE line of at most --width UTF-8 bytes at its indent; an item that does not fit is a block
@@ -29,7 +29,7 @@ import harness_paths
 
 ROOT = str(harness_paths.scrip())
 EXTS = (".c", ".h", ".cpp", ".hpp", ".inc")
-NEVER = re.compile(r"(/parsers/|gc_allocating_table\.inc|\.reflow_tmp\.)")
+NEVER = re.compile(r"(/parsers/|/runtime/xwin/|gc_allocating_table\.inc|\.reflow_tmp\.)")
 SEP_RX = re.compile(r"^\s*/\*([-=])\1{3,}\*/\s*$")
 TOK = re.compile(r"""
     (?P<ws>[ \t\r\f\v]+) | (?P<nl>\n) | (?P<bc>/\*[\s\S]*?\*/) | (?P<lc>//[^\n]*) | (?P<str>L?"(?:\\[\s\S]|[^"\\\n])*") | (?P<chr>L?'(?:\\[\s\S]|[^'\\\n])*')
