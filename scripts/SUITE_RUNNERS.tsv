@@ -150,3 +150,4 @@ leantap	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/leantap
 icon_apexskier	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_apexskier
 icon_rwl	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_rwl
 icon_numeronym	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_numeronym
+uni_cs410	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/uni_cs410
