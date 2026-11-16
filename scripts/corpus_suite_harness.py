@@ -699,7 +699,7 @@ def run_xsb_gentest(xsb_bin, upstream, run, timeout):
         return kind, (tp.read_bytes() if tp.is_file() else None), err, rc
 
 
-def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, side_env=None, run_cwd=None):
+def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, side_env=None, run_cwd=None, merge_stderr=True):
     """THE ICON ORACLE AS THE ICON PACKAGES' OWN HARNESS RUNS IT, for a package whose CONTRACT.tsv merges stderr (the coo
     2026-10-01, measured on jcon_tests): `icont -s -o <stem> <name>` in the file's own directory, its stderr kept apart, then
     `iconx <stem> args < in > out 2>&1` (iconx handed the bare icode name, so &progname reads the stem; exec'd through PATH
@@ -724,7 +724,7 @@ def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=N
     _rd = Path(run_cwd) if run_cwd else d                           # NAME.alone (alone_dir_for_source): iconx runs there, handed the icode by its full path
     _out_files_clear(_rd, out_files)
     kind, out, _err, rc = _run_raw([r.stdout.strip(), (str((d / stem).resolve()) if run_cwd else stem)] + [str(a) for a in (prog_args or [])], timeout, cwd=str(_rd),
-                                   env=(dict(os.environ, **side_env) if side_env else None), stdin_text=stdin_text, merge_stderr=True)
+                                   env=(dict(os.environ, **side_env) if side_env else None), stdin_text=stdin_text, merge_stderr=merge_stderr)   # merge_stderr: the entry's own stream (a merged package's every entry; an entry that declares a sidecar in a stdout-only one, util_build_package_suite.py)
     out = _out_files_append(out, _rd, out_files) if out_files else out
     if kind == "RAN" and rc is not None and rc < 0:
         kind = "CRASH"

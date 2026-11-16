@@ -252,6 +252,46 @@ def _unicon_prebuild(iso, ipath, names):
                 subprocess.run([r.stdout.strip(), "-c", "-s", f.name], cwd=str(iso), capture_output=True, timeout=300)
 
 
+def _icon_sidecar_declared(src):
+    """rc of the builder's question: does this Icon source declare a run sidecar the grade applies (NAME.env, NAME.pin, NAME.shims/, NAME.alone)."""
+    s = str(src)[:-len(".icn")] if str(src).endswith(".icn") else ""
+    return bool(s) and (Path(s + ".env").is_file() or Path(s + ".pin").is_file() or Path(s + ".shims").is_dir() or Path(s + ".alone").is_file())
+
+
+def probe_icon_sidecar():
+    """--probe-icon-sidecar: a scratch Icon package with no CONTRACT.tsv, three programs. pa writes &progname and declares nothing: the one-step
+    driver cuts it, pa.icn, as before. pb writes &progname and declares a NAME.env holding one comment: the built oracle cuts it, pb, the stem.
+    pc recurses 2000 deep and declares MSTKSIZE=100000 in its NAME.env: under the built oracle with the sidecar it answers 2000, where bare
+    it overflows iconx's default stack and is excluded. One line, ICON_SIDECAR_PROBE ok|RED; rc 0, 1, or 2 when the build itself refuses."""
+    import shutil
+    import subprocess
+    seat = os.environ.get("S4E_SEAT") or "probe"
+    base = Path(f"/tmp/s4e/{seat}"); base.mkdir(parents=True, exist_ok=True)
+    d = Path(tempfile.mkdtemp(prefix="icon-sidecar-probe.", dir=base)) / "pkg"; d.mkdir()
+    (d / "pa.icn").write_text("procedure main();\n  write(&progname);\nend\n")
+    (d / "pb.icn").write_text("procedure main();\n  write(&progname);\nend\n"); (d / "pb.env").write_text("# cut by the built convention\n")
+    (d / "pc.icn").write_text("procedure d(n);\n  return if n = 0 then 0 else 1 + d(n - 1);\nend\nprocedure main();\n  write(d(2000));\nend\n")
+    (d / "pc.env").write_text("MSTKSIZE=100000\n")
+    r = subprocess.run([sys.executable, str(Path(__file__).resolve()), str(d), "--lang", "icon"], capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    ref = (d / "ALL.ref").read_text(errors="replace") if (d / "ALL.ref").is_file() else ""
+    sec, name = {}, None
+    for ln in ref.splitlines():
+        if ln.startswith("#---") and ln.split():
+            name = ln.split()[-1]; sec[name] = []
+        elif name:
+            sec[name].append(ln)
+    got = {k: "\n".join(v).strip() for k, v in sec.items()}
+    want = {"pa": "pa.icn", "pb": "pb", "pc": "2000"}
+    if not ref:
+        print(f"ICON_SIDECAR_PROBE REFUSE(2): the build wrote no ALL.ref (rc {r.returncode}): {(r.stderr or r.stdout).strip()[-300:]}"); return 2
+    bad = [f"{k}: want {v!r}, got {got.get(k)!r}" for k, v in want.items() if got.get(k) != v]
+    if bad:
+        print("ICON_SIDECAR_PROBE RED: " + "; ".join(bad) + f" (kept {d})"); return 1
+    shutil.rmtree(d.parent, ignore_errors=True)
+    print("ICON_SIDECAR_PROBE ok (an undeclared entry is cut by the one-step driver, pa.icn; one with a NAME.env by the built oracle, pb, the stem; and one whose NAME.env declares the oracle's stack under it, 2000)")
+    return 0
+
+
 def read_contract(pkg_dir):
     """The package's own run contract, CONTRACT.tsv beside its sources: key<TAB>value<TAB>evidence, '#' comments. What the
     package's OWN harness does to produce its refs, declared once with the package and read here, never typed by a runner.
@@ -909,7 +949,12 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     # its run sidecars reach the program as they reach the grade (side_env_for_source).
                     return h.run_unicon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text, prog_args=prog_args, out_files=out_files,
                                                                          merge_stderr=_ms, side_env=h.side_env_for_source(src, Path(_iso_dir)))
-                elif lang == "icon" and merged:
+                elif lang == "icon" and (merged or _icon_sidecar_declared(src)):
+                    # ⭐ AN ENTRY THAT DECLARES A SIDECAR IS CUT HERE WHATEVER THE PACKAGE'S STDERR CELL (officer_04 2026-11-16, row
+                    # rosetta-icon-ten-entries-answer-the-clock-the-directory-or-iconxs-stack-and-are-cut-under-sidecars, the cfo's design): NAME.env, NAME.pin,
+                    # NAME.shims/ or NAME.alone beside an Icon source is applied by the grade in every package, so its ref is cut through the built oracle under it,
+                    # its own stream kept (stdout alone in a stdout-only package). MEASURED before it: rosetta-icon has no stderr cell, so ackermann-function's
+                    # NAME.env (MSTKSIZE=100000, the oracle's stack) never reached the oracle and the cut ended at iconx's error 301; --probe-icon-sidecar.
                     # ⭐ THE REF IS CUT UNDER THE SIDECARS ITS GRADE APPLIES (the cfo 2026-11-14, row ipl-the-grader-applies-env-pin-and-shims-through-ipl-env-apply):
                     # NAME.env, NAME.pin and NAME.shims/ beside the source reach the oracle's run through the grader's own reader, h.side_env_for_source,
                     # so one reader serves the cut and the grade. MEASURED before it: progs/parens (randomize(), pinned by parens.pin) was cut bare, a
@@ -917,8 +962,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     # ⭐ AND IN A DIRECTORY OF ITS OWN WHEN NAME.alone SAYS SO (row ipl-the-grader-runs-an-alone-program-in-a-directory-of-its-own): the grader's
                     # h.alone_dir_for_source makes it and stages the fixtures there; MEASURED before it: progs/gcomp was cut listing the package's progs folder.
                     _alone = h.alone_dir_for_source(src, Path(_iso_dir))
-                    return h.run_icon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text,
-                                                                         prog_args=prog_args, out_files=out_files, side_env=h.side_env_for_source(src, _alone or Path(_iso_dir)), run_cwd=_alone)
+                    return h.run_icon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text, prog_args=prog_args, out_files=out_files,
+                                                                         side_env=h.side_env_for_source(src, _alone or Path(_iso_dir)), run_cwd=_alone, merge_stderr=_ms)
                 elif lang == "prolog" and name in gnu_cells:
                     return h.run_oracle("bash", str(h.HARNESS_SCRIPTS / "gprolog_oracle_run.sh"), _iso_src, paths["timeout"], stdin_text=stdin_text,
                                                               prog_args=prog_args, out_files=out_files, merge_stderr=_ms)
@@ -2154,6 +2199,8 @@ def main():
     ap.add_argument("--mine-skip", default="", metavar="FILE",
                     help="under --mine, programs another package grades already: a line is the path from the root, a tab, and where it is graded; "
                          "each reads HELD-ELSEWHERE in the census, is not run and is no entry")
+    if sys.argv[1:] == ["--probe-icon-sidecar"]:
+        sys.exit(probe_icon_sidecar())
     args = ap.parse_args()
     global MINE_SILENT_RC, MINE_FATAL_GRADABLE, MINE_MASKS
     MINE_SILENT_RC = bool(args.mine_silent_rc)
