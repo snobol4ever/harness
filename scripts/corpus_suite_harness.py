@@ -3828,7 +3828,10 @@ def source_probe():
         (pkg / "sub").mkdir(parents=True)
         (coll / "sub" / "beside.txt").write_text("beside line\n")
         (coll / "sub" / "a.sno").write_text("        INPUT(.IN, 5, 'beside.txt')\n        OUTPUT = IN\nEND\n")
-        (coll / "b.sno").write_text("        OUTPUT = 'two'\nEND\n")
+        # b.sno also WRITES a file beside itself (the CAO's finding, 2026-11-15: slobol's lex.sbl leaves sbl.lex, sbl.com and minimal.txt where it
+        # runs): the collection must still read byte for byte as it was, so a road that ran it in place would read in_place=RED (the grader 2026-11-16,
+        # MEASURED: the SNOBOL4, Icon and Prolog grade roads and the mine road each ran such a program in a copy and left the collection as it was)
+        (coll / "b.sno").write_text("        OUTPUT(.F, 6, 'made.txt')\n        F = 'written beside'\n        OUTPUT = 'two'\nEND\n")
         (pkg / "ALL.csv").write_text("entry,path,timeout_s,heap_kb,stack_kb,compile_args\nsub/a,sub/a.sno,60,131072,4096,\nb,b.sno,60,131072,4096,\n")
         (pkg / "ALL.source").write_text(f"root\t{coll}\norigin\ta scratch collection of the probe\nversion\tprobe\nlicence\tpublic domain\n")
         (pkg / "sub" / "a.out").write_text("beside line\n")
@@ -3846,7 +3849,7 @@ def source_probe():
 
         before = snap()
         rc1, got, log1 = grade()
-        in_place = "ok" if (rc1 == 0 and got == (2, 2) and snap() == before and not any(f.suffix == ".sno" for f in pkg.rglob("*"))) else "RED"
+        in_place = "ok" if (rc1 == 0 and got == (2, 2) and snap() == before and not any(f.suffix == ".sno" or f.name == "made.txt" for f in pkg.rglob("*"))) else "RED"
         coll.rename(t / "coll_renamed")
         rc2, got2, log2 = grade()
         missing = "refused" if (rc2 == 2 and got2 is None) else "RED"
