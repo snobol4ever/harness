@@ -3562,7 +3562,11 @@ def read_package_dir(d, ext, modes=None):
             refuse(f"{d}/ALL.csv row {rown}: {name} names {rel}, which is no file of the package nor of its source root {src_root}")
         if not prog.is_file():
             raise ValueError(f"{d}/ALL.csv row {rown}: {name} names {rel}, which is no file of the package")
-        stem = _pkg_stem(d, rel)
+        # ⭐ ONE PROGRAM, SEVERAL INPUTS (Lon 2026-11-15 23:1x CST, in the grader's window: yes to the stem column): an optional `stem` cell names, from the
+        # package root, where an entry's STEM.in, STEM.out and STEM.err are kept, so two entries may run one program on two inputs or two argument lists
+        # (MEASURED that night: snobol-bf's interpreter over its nine Brainfuck programs, snobol4th's Forth over its two, Pascal-S over its samples could
+        # each be one entry only). Empty or absent, the stem is the program's own, as before; two entries still may not share a stem.
+        stem = (d / (r.get("stem") or "").strip()) if (r.get("stem") or "").strip() else _pkg_stem(d, rel)
         if stem in seen:
             raise ValueError(f"{d}: {name} and {seen[stem]} share the stem {stem.relative_to(d)}; their NAME.in, NAME.out and NAME.err would be one file")
         seen[stem] = name
@@ -3596,6 +3600,8 @@ def write_package_dir(entries, d, ext, path_of):
     carries what the form cannot hold. -> {"in": n, "out": n, "err": n, "args": n}. The four container files are the caller's to delete."""
     d = Path(d)
     fields, rows = _fmt2_read_csv(d)
+    if any((r.get("stem") or "").strip() for r in rows):
+        raise ValueError(f"{d}: ALL.csv names a stem for an entry, which this writer cannot keep; a package that runs one program on several inputs is cut by its own script, never rewritten here")
     by_row = {r.get("entry"): r for r in rows}
     plan, seen, args_lines = [], {}, []
     for e in entries:
@@ -6017,6 +6023,12 @@ def cmd_run(args):
     # ⭐ S4E_BATCH=1 (step 5): mode 3 of every eligible entry of this partition runs in ONE scrip --harness process, before the loop (see batch_m3_verdicts)
     _switch_alone = pkg_dir_of(args.sno) is not None and pkg_runs_by_the_switch_alone(pkg_dir_of(args.sno))
     if _switch_alone:
+        _pd = pkg_dir_of(args.sno)
+        if (Path(_pd) / "ALL.csv").is_file():
+            import csv as _c2
+            with open(Path(_pd) / "ALL.csv", encoding="utf-8", newline="") as _cf:
+                if any((r.get("stem") or "").strip() for r in _c2.DictReader(_cf)):
+                    refuse(f"{_pd}: ALL.csv names a stem for an entry, and scrip --run-files, the only road of a package read in place, reads an answer by its program's stem; a package that runs one program on several inputs is hosted (the grader 2026-11-15)")
         if modes != ["m3"] or paths["engine"] != "scrip":
             refuse(f"{Path(args.sno).parent} holds ALL.source or ALL.launch: only scrip --run-files stages such a package, in mode 3 (CIO-122); asked modes {','.join(modes)}, engine {paths['engine']}")
         if not getattr(args, "post", None):
