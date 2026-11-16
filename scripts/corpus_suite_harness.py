@@ -1882,7 +1882,8 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     # byte-identical to its .ref when run from its own directory in BOTH modes, FAIL in both from
     # anywhere else. Consistent for suite entries too: run_suite_entry materializes the entry into a
     # temp dir and passes THAT path, so parent is the temp dir -- exactly where it copies companions.
-    return classify(_screen_wrap(_xpce_wrap(argv, sno_path, stdin_text=stdin_text), out_files, sno_path), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    argv, env = _screen_parts(_xpce_wrap(argv, sno_path, stdin_text=stdin_text), out_files, sno_path, env, side_env)
+    return classify(argv, timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
@@ -2013,7 +2014,8 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # the declared heap and stack ride the binary's command line as -d -i -s (see _size_switches), read at its first allocation
     # Same rule as run_m3 above: the compiled binary's relative opens must resolve against the
     # SOURCE's directory, not the harness's cwd. out_bin is an absolute path, so moving cwd is safe.
-    return classify(_screen_wrap(_xpce_wrap(argv, sno_path, stdin_text=stdin_text), out_files, sno_path), timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    argv, env = _screen_parts(_xpce_wrap(argv, sno_path, stdin_text=stdin_text), out_files, sno_path, env, side_env)
+    return classify(argv, timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 # ⛔⭐ run_ast TAKES NO prog_argv AND MUST NOT -- NOT AN OVERSIGHT. `--dump-ast` never executes the
@@ -7438,6 +7440,24 @@ def _xpce_wrap(argv, src=None, oracle=False, stdin_text=None):
     return [sys.executable, "-I", str(HARNESS_SCRIPTS / "util_xpce_run.py")] + (["--pre", "--prog", Path(src).name] if oracle else []) + ["--"] + list(argv)
 
 
+def _screen_parts(argv, out_files, src, env, side_env):
+    """THE ROAD NEVER RUNS UNDER AN ENTRY'S OWN ENVIRONMENT (the cto's ruling of 2026-11-16 on officer_06's measurement; the cqo): an entry's run
+    sidecars (side_env_of: the NAME.env lines, the LD_PRELOAD of the clock and entropy pin, the PATH with its shims first) are the PROGRAM's. Laid
+    over the whole wrapped command they reach the road's own process too, and with the clock pin over it the road's own waits return at once, so a
+    still picture is declared after one second where the still rule asks three seconds of readings (MEASURED on xlogo: 1 s against 4 s; officer_06
+    read xtiles of ipl_gpacks unstable there, and the same md5 on three runs with the preload on iconx alone). So for an entry the road wraps, the
+    road is started in the caller's environment as it was before the sidecars, and each sidecar value reaches the program through env(1) placed
+    after the road's two dashes. Returns (the command, its environment); an entry with no sidecar, and one the road does not wrap, come back
+    exactly as before: the wrapped command and env as given."""
+    wrapped = _screen_wrap(argv, out_files, src)
+    if not side_env or wrapped is argv or wrapped == list(argv):
+        return wrapped, env
+    cut = len(wrapped) - len(argv)
+    base = dict(env)
+    for k in side_env:
+        if k in os.environ: base[k] = os.environ[k]
+        else: base.pop(k, None)
+    return wrapped[:cut] + ["/usr/bin/env"] + [f"{k}={env[k]}" for k in side_env if k in env] + list(argv), base
 def _out_files_clear(cwd, names):
     for n in names or []:
         (Path(cwd) / n).unlink(missing_ok=True)
@@ -8497,7 +8517,8 @@ def screen_events_probe():
     then reading unstable at that cap and not at the road's 30 s; a cap that is no number is refused; NAME.depth is staged the same way and handed
     over as --depth, the road's own colormap client then answering at depth 8 where at 24 it has no writable cell and ends with no picture; a depth
     other than 8 and 24 is refused; NAME.display beside an entry that names no screen.dump is staged and the entry wrapped --no-screen, a
-    program that holds a still window and then prints keeping its text and status; NAME.display beside a graphics entry is refused.
+    program that holds a still window and then prints keeping its text and status; NAME.display beside a graphics entry is refused; an entry's
+    side environment reaches the program and never the road's own process, an entry the road does not wrap keeping it laid over its command.
     SCREEN_EVENTS ok|RED; rc 0 or 1, 2 cannot measure."""
     import types
     if not shutil.which("xeyes") or not shutil.which("Xvfb") or not shutil.which("ico"):
@@ -8540,9 +8561,18 @@ def screen_events_probe():
         if wt != [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py"), "--no-screen", "--"] + held or not (run / "text.display").is_file() or v8.kind != "PASS": why.append("arm 11: NAME.display did not run the text entry under --no-screen with its text and status kept (wrap %r, graded %s)" % (wt, v8.kind))
         (run / "both.display").write_text(""); r7 = subprocess.run([sys.executable, "-c", "import sys; sys.path.insert(0, %r); import corpus_suite_harness as h; h._screen_wrap(['x'], [h.SCREEN_FILE], %r)" % (str(HARNESS_SCRIPTS), str(run / "both.icn"))], capture_output=True, text=True)
         if r7.returncode != 2 or "display" not in r7.stderr: why.append("arm 12: NAME.display beside an entry that names screen.dump was not refused rc 2 (rc %s)" % r7.returncode)
+        side = {"S4E_PROBE_SIDE": "of the entry", "PATH": str(run) + os.pathsep + os.environ.get("PATH", "")}; full = dict(os.environ, **side)
+        tell = ["bash", "-c", "echo program=$S4E_PROBE_SIDE; tr '\\0' '\\n' < /proc/$PPID/environ | grep -c '^S4E_PROBE_SIDE=' ; case $PATH in %s:*) echo shims-first;; esac; exit 6" % str(run)]
+        a9, e9 = _screen_parts(tell, None, tcand, full, side)
+        v9 = classify(a9, 120, "program=of the entry\n0\nshims-first", cwd=str(run), env=e9, want_rc=6)
+        a10, e10 = _screen_parts(tell, None, run / "nowrap.icn", full, side)
+        if "S4E_PROBE_SIDE" in e9 or e9.get("PATH") != os.environ.get("PATH") or a9[:4] != [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py"), "--no-screen", "--"] or a9[4] != "/usr/bin/env" or v9.kind != "PASS": why.append("arm 13: the entry's side environment did not reach the program alone (graded %s, the road's env carries it: %s)" % (v9.kind, "S4E_PROBE_SIDE" in e9))
+        if a10 != tell or e10 is not full: why.append("arm 14: an entry the road does not wrap did not keep its command and environment as given")
+        a11, e11 = _screen_parts(held, None, tcand, full, None)
+        if a11 != wt or e11 is not full: why.append("arm 15: a wrapped entry with no side environment is not wrapped as before")
     finally:
         shutil.rmtree(t, ignore_errors=True)
-    print("SCREEN_EVENTS ok arms=12 (no screen.dump no wrap; no events file the wrap of before; NAME.events staged beside a graphics entry alone; the wrap hands it to the road; one screen line a step, the same twice; no script the opening line alone; NAME.cap handed over as --cap; a cap that is no number refused; NAME.depth handed over as --depth; a depth other than 8 and 24 refused; NAME.display runs a text entry under --no-screen; NAME.display beside a graphics entry refused)" if not why else "SCREEN_EVENTS RED: " + " ".join(why))
+    print("SCREEN_EVENTS ok arms=15 (no screen.dump no wrap; no events file the wrap of before; NAME.events staged beside a graphics entry alone; the wrap hands it to the road; one screen line a step, the same twice; no script the opening line alone; NAME.cap handed over as --cap; a cap that is no number refused; NAME.depth handed over as --depth; a depth other than 8 and 24 refused; NAME.display runs a text entry under --no-screen; NAME.display beside a graphics entry refused; the side environment reaches the program and never the road; an unwrapped entry keeps it over its command; no side environment the wrap of before)" if not why else "SCREEN_EVENTS RED: " + " ".join(why))
     return 1 if why else 0
 
 
