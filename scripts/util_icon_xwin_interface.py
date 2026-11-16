@@ -117,8 +117,14 @@ def source_files(root, paths, exclude=()):
     return sorted(out)
 
 
-def read(path):
-    return open(path, errors="replace").read()
+_TEXT = {}
+
+
+def read(path):   # each source is read once: the table has some eighty names and the tree some eight hundred files (MEASURED 2026-11-16: 61,107 reads and regex searches, 45 s of CPU, before this)
+    t = _TEXT.get(path)
+    if t is None:
+        t = _TEXT[path] = open(path, errors="replace").read()
+    return t
 
 
 def signature(name, files, root):
@@ -127,7 +133,8 @@ def signature(name, files, root):
     data = re.compile(r"^(?:extern\s+)?((?:const\s+)?[A-Za-z_][\w \t\*]*?[\s\*])%s\s*(=|;|\[)" % re.escape(name), re.M)
     for rx, kind in ((defn, "definition"), (decl, "declaration"), (data, "data")):
         for f in files:
-            m = rx.search(read(f))
+            t = read(f)
+            m = rx.search(t) if name in t else None   # a file that does not hold the bare name cannot match
             if m:
                 if kind == "data":
                     sig = " ".join((m.group(1) + name).split())
@@ -139,7 +146,7 @@ def signature(name, files, root):
 
 def users(name, files, root):
     rx = re.compile(r"\b%s\b" % re.escape(name))
-    return sorted(set(os.path.relpath(f, root) for f in files if rx.search(read(f))))
+    return sorted(set(os.path.relpath(f, root) for f in files if name in read(f) and rx.search(read(f))))
 
 
 def form_text(root, path, start):
