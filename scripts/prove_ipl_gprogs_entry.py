@@ -11,8 +11,13 @@
 #         against a clock: at K above 1 an entry whose answer reads screen unstable or differs (between its runs or from NAME.out) is run once more
 #         alone, both runs, nothing else running, and that second reading is its verdict (a line RETRIED-ALONE NAME says so), so load can make no
 #         false red and hide no real one.
-# It honours what the harness honours beside an entry: its ALL.args line (the program's arguments), NAME.in (its stdin), NAME.fixtures/ with
-# fixtures=staged (its contents staged beside the program, as stage_fixtures does), every other file of PKG beside it (the files form), the
+# EACH RUN IS STAGED BY THE HARNESS'S OWN stage_entry (corpus_suite_harness.py beside this file; the cto's ruling 2026-11-16 14:4x CST, on
+# officer_04's finding): the program, the companions its text names, its argv and stdin files, NAME.fixtures/ (fixtures=staged) or its folder
+# (fixtures=folder) and the screen road's side files, and nothing else of PKG, so this prover and the graded road cannot drift: a program that
+# reads a file of PKG no name in its text gives away reads RED here as it does in the harness. Its cure is the entry's (a fixtures folder, a
+# companion its text names), never this prover's. The answer is compared byte for byte with NAME.out, stricter than the harness on purpose (the
+# same ruling: a ref is the oracle's bytes, and one that differs in a trailing newline or a decoded byte is a miscut ref).
+# It honours what the harness honours beside an entry: its ALL.args line (the program's arguments), NAME.in (its stdin), the
 # out_files cell (stdout, then each file's bytes in order; a file not written is <<out_files: N was not written>>), want_rc, and the screen road
 # (util_screen_run.py beside this file): --out screen.dump with NAME.events and NAME.cap when out_files names screen.dump, else --no-screen,
 # which NAME.display must then mark; NAME.depth as --depth either way; NAME.pin's clock and entropy shim on the program.
@@ -30,6 +35,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 DEFAULT_J = 4
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import corpus_suite_harness as H
 ROAD = HERE / "util_screen_run.py"
 class Refuse(Exception): pass
 def refuse(m): print("REFUSE(2): " + m); sys.exit(2)
@@ -54,10 +61,14 @@ base = Path(f"/tmp/s4e/{seat}"); base.mkdir(parents=True, exist_ok=True)
 work = Path(tempfile.mkdtemp(prefix="prove_ipl_gprogs.", dir=base))
 def one_run(c, n):
     name, d = c["name"], work / f"{c['name']}.{n}"
-    shutil.copytree(pkg, d)
-    if c["staged"]: shutil.copytree(pkg / f"{name}.fixtures", d, dirs_exist_ok=True)
+    d.mkdir()
+    try:
+        cand, _ = H.stage_entry(c["entry"], str(d), ".icn", str(pkg))
+    except SystemExit:
+        raise Refuse(f"the harness refused to stage {name}")
+    d, src = cand.parent, cand.name
     env = {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "IPATH": f"{M}/lib", "LPATH": f"{IPL}/gincl {IPL}/incl", "HOME": str(d)}
-    b = subprocess.run([str(M / "bin/icont"), "-s", "-o", name, f"{name}.icn"], cwd=d, env=env, capture_output=True, timeout=300)
+    b = subprocess.run([str(M / "bin/icont"), "-s", "-o", name, src], cwd=d, env=env, capture_output=True, timeout=300)
     if b.returncode: raise Refuse(f"{name} does not build: {b.stderr.decode(errors='replace').strip()[:200]}")
     for o in c["outs"]: (d / o).unlink(missing_ok=True)
     st = work / f"{name}.{n}.status"
@@ -74,13 +85,17 @@ def one_run(c, n):
         ans += f.read_bytes() if f.is_file() else f"<<out_files: {o} was not written>>\n".encode()
     dump = (d / "screen.dump").read_text(errors="replace").strip().split("\n")[-1] if c["screen"] and (d / "screen.dump").is_file() else ""
     waited = c["screen"] and not st.is_file() and dump.startswith("screen ") and dump != "screen unstable"
-    shutil.rmtree(d, ignore_errors=True)
+    shutil.rmtree(work / f"{name}.{n}", ignore_errors=True)
     return p.returncode, ans, waited
 bad, verdicts = 0, {}
 try:
     shutil.copytree(pkg, work / "pkg")
     pkg = work / "pkg"
     rows = {r["entry"]: r for r in csv.DictReader(io.StringIO((pkg / "ALL.csv").read_text()))}
+    try:
+        ents = {e.name: e for e in H.read_package_dir(pkg, ".icn")}
+    except (SystemExit, ValueError) as ex:
+        refuse(f"the harness cannot read {pkg} as a package: {ex}")
     argl, none = {}, {}
     if (pkg / "ALL.args").is_file():
         for l in (pkg / "ALL.args").read_text().split("\n"):
@@ -113,8 +128,8 @@ try:
             if pin is None: pin = sh_value("ipl_pin_shim_path")
             if not pin: refuse("no pin shim (ipl_pin_shim_path)")
             p = ["env", "LD_PRELOAD=" + pin]
-        staged = (r.get("fixtures") or "") == "staged" and (pkg / f"{name}.fixtures").is_dir()
-        cfg.append({"name": name, "row": r, "outs": outs, "screen": screen, "events": events, "road": road, "pin": p, "staged": staged, "args": argl.get(name, [])})
+        if name not in ents: refuse(f"{name} is a row of ALL.csv the harness does not read as an entry")
+        cfg.append({"name": name, "row": r, "outs": outs, "screen": screen, "events": events, "road": road, "pin": p, "entry": ents[name], "args": argl.get(name, [])})
     def pool(cs, k):
         with ThreadPoolExecutor(max_workers=2 * k) as ex:
             futs = {(c["name"], n): ex.submit(one_run, c, n) for c in cs for n in (1, 2)}
