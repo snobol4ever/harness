@@ -1604,6 +1604,7 @@ s4e_banner_plant_once() {   # step 37's probe on a scratch postoffice: two arriv
 s4e_banner_verdict() {   # <row> <repo>...: the banner's reading of one row (the cio, 2026-11-07): SUCCESS | FAILURE | NOTHING LANDED, from the claim, the LEDGER and each repo's origin/main as last fetched (no fetch)
     local _r="$1" _tf="$PO/tasks/$1.task.md" _led _red _lan _h _g _n=0 _ok=1; shift
     if [ -f "$PO/claims/$_r.claim" ] && grep -q '^DONE$' "$PO/claims/$_r.claim"; then echo SUCCESS; return 0; fi   # a closed claim: done ran its DONE-WHEN green
+    if awk -F'\t' -v t="$_r" '/^[0-9]/ && $2 == t && ($4 == "DONE" || $4 ~ /^DONE:/) {f = 1} END {exit !f}' "$PO/QUEUE.tsv" "$PO/QUEUE.done.tsv" 2>/dev/null; then echo SUCCESS; return 0; fi   # the queue says DONE: only done writes that state, on a green DONE-WHEN; the closed claim is swept to claims/expired within the minute, and the LEDGER of a row landed by a rebase names hashes origin never held (the cto 2026-11-16, MEASURED on raku-examples-red-euler-prob007-polettix: DONE in QUEUE.tsv since 2026-11-14T22:09Z, read FAILURE at every Stop for two days)
     [ -f "$_tf" ] || { echo "NOTHING LANDED"; return 0; }
     _led="$(awk '/^## LEDGER/{f=1;next} /^## /{f=0} f' "$_tf")"   # newest line first, so the smaller line number is the newer entry
     _red="$(printf '%s\n' "$_led" | grep -nm1 'DONE-WHEN read RED' | cut -d: -f1)"   # the line done writes when its DONE-WHEN exits red
@@ -1631,10 +1632,12 @@ s4e_banner_probe_verdict() {   # banner --probe-verdict: the readings on a scrat
     mk redafter "- [plant·d] DONE-WHEN read RED: exited 1 after 3s
 - [plant·d] LANDED r $h1"; mk landafter "- [plant·d] LANDED r $h1
 - [plant·d] DONE-WHEN read RED: exited 1 after 3s"; mk closed ""; printf 'plant\nDONE\n' > "$w/po/claims/closed.claim"
+    mk queuedone "- [plant·d] DONE-WHEN read RED: exited 1 after 3s"; mk sweptdone "- [plant·d] LANDED r $h2 via s4e_land.sh --row"; mk queueopen "- [plant·d] DONE-WHEN read RED: exited 1 after 3s"
+    printf '1\tqueuedone\tplant\tDONE\n1\tqueueopen\tplant\tFREE\n' > "$w/po/QUEUE.tsv"; printf '1\tsweptdone\tplant\tDONE\n' > "$w/po/QUEUE.done.tsv"
     rd() { ( PO="$w/po"; s4e_banner_verdict "$1" "$w/repos"/*/ ); }
-    [ "$(rd landed)" = SUCCESS ] && [ "$(rd landafter)" = SUCCESS ] && [ "$(rd closed)" = SUCCESS ] && s=1 || why="$why SUCCESS rows read [landed=$(rd landed) landafter=$(rd landafter) closed=$(rd closed)];"
+    [ "$(rd landed)" = SUCCESS ] && [ "$(rd landafter)" = SUCCESS ] && [ "$(rd closed)" = SUCCESS ] && [ "$(rd queuedone)" = SUCCESS ] && [ "$(rd sweptdone)" = SUCCESS ] && s=1 || why="$why SUCCESS rows read [landed=$(rd landed) landafter=$(rd landafter) closed=$(rd closed) queuedone=$(rd queuedone) sweptdone=$(rd sweptdone)];"
     [ "$(rd nothing)" = "NOTHING LANDED" ] && [ "$(rd unknown)" = "NOTHING LANDED" ] && n=1 || why="$why NOTHING LANDED rows read [nothing=$(rd nothing) unknown=$(rd unknown)];"
-    [ "$(rd red)" = FAILURE ] && [ "$(rd unpushed)" = FAILURE ] && [ "$(rd redafter)" = FAILURE ] && f=1 || why="$why FAILURE rows read [red=$(rd red) unpushed=$(rd unpushed) redafter=$(rd redafter)];"
+    [ "$(rd red)" = FAILURE ] && [ "$(rd unpushed)" = FAILURE ] && [ "$(rd redafter)" = FAILURE ] && [ "$(rd queueopen)" = FAILURE ] && f=1 || why="$why FAILURE rows read [red=$(rd red) unpushed=$(rd unpushed) redafter=$(rd redafter)];"
     [ "$s$n$f" = 111 ] && ok=1
     echo "BANNER_VERDICT success=$s nothing=$n failure=$f ok=$ok"; [ "$ok" = 1 ] || { echo "BANNER PROBE RED:$why"; exit 1; }; exit 0; }
 s4e_seat_repos() {   # one "<dir><TAB>own|shared" line per repo of this seat, each once (row harness-the-bus-banner-and-handoff-read-the-three-home-repos): the root when it is a clone, its sibling clones, S4E_SCRIP, and S4E_CORPUS, S4E_HARNESS, S4E_GITHUB; "shared" is a checkout outside the root (the grader's /home ones)
