@@ -21,6 +21,12 @@ THE LISTS (each row is what the oracle prints for the SCRIP field, measured on t
              "offending value: <image>\\n"                      when present
              "Traceback:\\n" then each frame on its own line, verbatim
              startup: "\\nRun-time error <code> in startup code\\n<text>\\n"
+             A HEAD THAT DOES NOT START ITS LINE (the cfo 2026-11-15, ipl progs/literat; MEASURED on iconx and on unicon 13.3 with a
+             five-line program that writes("partial") and then compares &null == "x"): the block's first byte is that newline, so
+             after a line the program left open the oracle's merged stream reads "partial\\nRun-time error 103\\n...", with no empty
+             line, where SCRIP's reads "partialscrip: error 103: ...". A located head inside a line (its next line the "  at
+             <file>:<line>" line) is rendered the same way: the text before it ends its line and the block follows. Icon and unicon
+             only, the located run-time form only; nothing else is measured.
   unicon   unicon 13.3 through unicon_bin() (the corpus's packages/icon/unicon_tests/ALL.ref, thread/error and mt/loaderr, are the receipts): the icon list, each traceback frame indented three spaces.
   spitbol  SPITBOL x64 fork /home/resources/x64/bin/sbl -bf (RULES.md § Oracles):
              code 216 (no END line; measured 2026-11-10 on sbl -bf: the one line on stderr, exit status 1, no file, no line):
@@ -46,12 +52,17 @@ import re, sys, os
 
 HEAD = re.compile(r'^scrip: error (\d+): (.*)$')
 AT = re.compile(r'^  at (.*?):(\d+)(?:; statement (\d+))?$')
+MID = re.compile(r'^(.+?)(scrip: error \d+: .*)$')
 RAKU_701 = re.compile(r'^call (\S+?)\((.*)\) can never succeed against the declared signature (\(.*\))$')
 
 def render(lines, oracle):
     out = []; i = 0; n = len(lines)
     while i < n:
-        m = HEAD.match(lines[i])
+        m = HEAD.match(lines[i]); pre = None
+        if not m and oracle in ('icon', 'unicon') and i + 1 < n and AT.match(lines[i + 1]):
+            mid = MID.match(lines[i])
+            if mid and not mid.group(2).startswith('scrip: error 703: '):
+                pre = mid.group(1); m = HEAD.match(mid.group(2))
         if not m:
             out.append(lines[i]); i += 1; continue
         code, text = int(m.group(1)), m.group(2)
@@ -71,7 +82,7 @@ def render(lines, oracle):
                 out += ['', 'Run-time error %d in startup code' % code, text]
             else:
                 f = os.path.basename(at.group(1)) if at else ''; ln = at.group(2) if at else '0'
-                out += ['', 'Run-time error %d' % code, 'File %s; Line %s' % (f, ln), text]
+                out += ['' if pre is None else pre, 'Run-time error %d' % code, 'File %s; Line %s' % (f, ln), text]
                 if val is not None: out.append('offending value: ' + val)
                 out.append('Traceback:'); out += frames if oracle == 'icon' else ['   ' + f for f in frames]
         elif oracle == 'spitbol' and code == 216:
