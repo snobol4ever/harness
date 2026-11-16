@@ -116,9 +116,9 @@ for tok in $probe; do
         baseline)
             all="$(fixture_entries | paste -sd, -)"; n="$(fixture_entries | grep -c .)"
             for e in $(fixture_entries); do
-                d="$(mktemp -d "${TMPDIR:-/tmp}/s4e_icon_xwin_base.XXXXXX")"; cp "$FIX/$e.icn" "$d/"
-                if [ "$(screen_of "$e")" = screen ]; then o="$(cd "$d" && timeout -k 5 120 python3 "$HERE/util_screen_run.py" --out screen.dump -- "$S4E_SCRIP/scrip" --run "$e.icn" < /dev/null 2>&1)"
-                else o="$(cd "$d" && timeout -k 5 120 "$S4E_SCRIP/scrip" --run "$e.icn" < /dev/null 2>&1)"; fi
+                d="$(mktemp -d "${TMPDIR:-/tmp}/s4e_icon_xwin_base.XXXXXX")"; cp "$FIX/$e.icn" "$d/"; envs=(); [ -f "$FIX/$e.env" ] && mapfile -t envs < <(grep -v '^#' "$FIX/$e.env" | grep '=')
+                if [ "$(screen_of "$e")" = screen ]; then o="$(cd "$d" && env "${envs[@]}" timeout -k 5 120 python3 "$HERE/util_screen_run.py" --out screen.dump -- "$S4E_SCRIP/scrip" --run "$e.icn" < /dev/null 2>&1)"
+                else o="$(cd "$d" && env "${envs[@]}" timeout -k 5 120 "$S4E_SCRIP/scrip" --run "$e.icn" < /dev/null 2>&1)"; fi
                 echo "    $e today, first line: $(printf '%s\n' "$o" | grep -m1 . | cut -c1-110)" >> "$log"
                 rm -rf "${d:?}"
             done

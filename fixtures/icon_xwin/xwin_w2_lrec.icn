@@ -1,0 +1,82 @@
+global cons, step, clear, name, rename, serial, put, get, motto;
+
+procedure want(what, got, exp)
+   if got ~=== exp then write("BAD ", what, ": got ", image(got), " for ", image(exp));
+   return;
+end
+
+procedure label(tag, i)
+   return tag || "-" || i || "-" || repl("x", i % 7);
+end
+
+procedure main()
+   local lib, junk, n, sum, i, HEAD, P, JUNK, ROOT, LEAF, T;
+   HEAD := 1;
+   P := 2;
+   JUNK := 3;
+   ROOT := 4;
+   LEAF := 5;
+   T := 6;
+   lib := getenv("GC_LREC_HELPER") | stop("GC_LREC_HELPER is not set");
+   cons := loadfunc(lib, "lrec_cons") | stop("no lrec_cons");
+   step := loadfunc(lib, "lrec_step");
+   clear := loadfunc(lib, "lrec_clear");
+   name := loadfunc(lib, "lrec_name");
+   rename := loadfunc(lib, "lrec_rename");
+   serial := loadfunc(lib, "lrec_serial");
+   put := loadfunc(lib, "lrec_put");
+   get := loadfunc(lib, "lrec_get");
+   motto := loadfunc(lib, "lrec_motto");
+   motto(label("motto", 12));
+   clear(HEAD);
+   every i := 1 to 300 do {
+      cons(HEAD, HEAD, label("node", i), i);
+      clear(JUNK);
+      cons(JUNK, JUNK, label("junk", i), -i);
+      cons(JUNK, JUNK, reverse(label("junk", i)), -i);
+   };
+   clear(JUNK);
+   n := 300;
+   sum := 0;
+   cons(P, HEAD, "walker", 0);
+   while step(P, P) do {
+      want("chain serial", serial(P), n);
+      want("chain name", name(P), label("node", n));
+      sum +:= serial(P);
+      n -:= 1;
+   };
+   write("chain: left ", n, " sum ", sum);
+   cons(ROOT, 0, "root", 0);
+   every i := 1 to 200 do {
+      cons(LEAF, 0, label("tail", i), 7 * i);
+      cons(LEAF, LEAF, label("leaf", i), 3 * i);
+      put(ROOT, i, LEAF);
+      junk := label("spill", i) || label("spill", i + 1);
+   };
+   clear(LEAF);
+   every i := 3 to 200 by 3 do put(ROOT, i, 0);
+   every i := 1 to 200 by 5 do rename(get(P, ROOT, i), label("renamed", i));
+   every i := 1 to 60 do cons(JUNK, JUNK, label("churn", i), i);
+   clear(JUNK);
+   n := 0;
+   sum := 0;
+   every i := 1 to 200 do {
+      if i % 3 = 0 then { want("cleared slot", get(P, ROOT, i) | "none", "none"); next; };
+      get(P, ROOT, i) | write("BAD slot ", i, " is empty");
+      n +:= 1;
+      want("leaf serial", serial(P), 3 * i);
+      want("leaf name", name(P), if i % 5 = 1 then label("renamed", i) else label("leaf", i));
+      step(T, P) | write("BAD leaf ", i, " has no tail");
+      want("tail serial", serial(T), 7 * i);
+      want("tail name", name(T), label("tail", i));
+      want("tail end", step(T, T) | "none", "none");
+      sum +:= serial(P) + 7 * i;
+   };
+   write("table: kept ", n, " sum ", sum);
+   write("root: ", name(ROOT), " ", serial(ROOT));
+   get(P, ROOT, 1);
+   get(T, ROOT, 200);
+   write("first: ", name(P), " last: ", name(T), " head: ", name(HEAD));
+   write("out of range: ", (get(P, ROOT, 100000) & "found") | "fails");
+   write("motto: ", motto());
+end

@@ -1,6 +1,6 @@
 # PARTITION.tsv -- built by util_suite_partition.py (R-1676; ARCH-SUITE-PARTITIONS.md); regenerate, never edit by hand; `util_suite_partition.py check <ALL.csv>` is the gate.
 # params: core_k=3 ubiquitous=0.5 chunk_entries=100 secs=none
-# shape: entries=13 features=1 ubiquitous=1(package) distinctive=0 core=1 clusters=12 chunks=1 sizes=12
+# shape: entries=14 features=1 ubiquitous=1(package) distinctive=0 core=1 clusters=13 chunks=1 sizes=13
 entry	part	cluster	shells
 xwin_attributes	core	core	
 xwin_drawing	chunk:01	family:xwin_drawing	
@@ -15,3 +15,4 @@ xwin_w5_adapter	chunk:01	family:xwin_w_adapter
 xwin_w5_adapter_probe	chunk:01	family:xwin_w_adapter_probe	
 xwin_w5_bigint	chunk:01	family:xwin_w_bigint	
 xwin_w7_events	chunk:01	family:xwin_w_events	
+xwin_w2_lrec	chunk:01	family:xwin_w_lrec	

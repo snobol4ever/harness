@@ -1,0 +1,6 @@
+chain: left 0 sum 45150
+table: kept 134 sum 134670
+root: root 0
+first: renamed-1-x last: leaf-200-xxxx head: node-300-xxxxxx
+out of range: fails
+motto: motto-12-xxxxx

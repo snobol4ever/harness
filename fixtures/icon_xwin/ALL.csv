@@ -12,3 +12,4 @@ rank,entry,path,origin,package,n_lines,want_rc,heap_kb,stack_kb,timeout_s,compil
 11,xwin_w5_adapter_probe,xwin_w5_adapter_probe.icn,icon_xwin__xwin_w5_adapter_probe,icon_xwin,19,0,131072,4096,120,,,
 12,xwin_w5_bigint,xwin_w5_bigint.icn,icon_xwin__xwin_w5_bigint,icon_xwin,14,0,131072,4096,120,,screen.dump,
 13,xwin_w7_events,xwin_w7_events.icn,icon_xwin__xwin_w7_events,icon_xwin,14,0,131072,4096,120,,screen.dump,
+14,xwin_w2_lrec,xwin_w2_lrec.icn,icon_xwin__xwin_w2_lrec,icon_xwin,82,0,131072,4096,120,,,
