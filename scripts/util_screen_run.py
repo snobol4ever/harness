@@ -271,7 +271,7 @@ def probe_client(mode):
     while True: time.sleep(3600)
 def probe_pin():
     """--probe-client pin: the focus arm's own X client. Two windows side by side, 0 0 and 300 0, 200 by 200, each taking key presses; once both
-    are mapped the focus is pinned to the right one, as Icon's Raise pins it; every key press is logged to pin.log in the working folder as the
+    are mapped (their own two MapNotify events read, an order of events, never a sleep) the focus is pinned to the right one, as Icon's Raise pins it; every key press is logged to pin.log in the working folder as the
     window it reached, L or R. Waits for ever."""
     X = ctypes.CDLL("libX11.so.6"); V, I, U, L = ctypes.c_void_p, ctypes.c_int, ctypes.c_uint, ctypes.c_ulong
     X.XOpenDisplay.restype, X.XOpenDisplay.argtypes = V, [ctypes.c_char_p]; X.XDefaultScreen.argtypes = [V]
@@ -280,9 +280,12 @@ def probe_pin():
     X.XSetInputFocus.argtypes, X.XNextEvent.argtypes = [V, L, I, L], [V, ctypes.c_char_p]
     dpy = X.XOpenDisplay(None) or sys.exit(2); root = X.XRootWindow(dpy, X.XDefaultScreen(dpy))
     wl, wr = (X.XCreateSimpleWindow(dpy, root, x, 0, 200, 200, 0, 0, bg) for x, bg in ((0, 0xffffff), (300, 0x808080)))
-    for w in (wl, wr): X.XSelectInput(dpy, w, 1); X.XMapWindow(dpy, w)
-    X.XFlush(dpy); time.sleep(1.0); X.XSetInputFocus(dpy, wr, 2, 0); X.XFlush(dpy)
-    ev = ctypes.create_string_buffer(192)
+    for w in (wl, wr): X.XSelectInput(dpy, w, 1 | 1 << 17); X.XMapWindow(dpy, w)
+    X.XFlush(dpy); ev = ctypes.create_string_buffer(192); mapped = set()
+    while len(mapped) < 2:
+        X.XNextEvent(dpy, ev)
+        if struct.unpack_from("i", ev.raw, 0)[0] == 19: mapped.add(struct.unpack_from("Q", ev.raw, 40)[0])
+    X.XSetInputFocus(dpy, wr, 2, 0); X.XFlush(dpy)
     with open("pin.log", "a") as log:
         while True:
             X.XNextEvent(dpy, ev)
