@@ -11,7 +11,7 @@
 #         against a clock: at K above 1 an entry whose answer reads screen unstable or differs (between its runs or from NAME.out) is run once more
 #         alone, both runs, nothing else running, and that second reading is its verdict (a line RETRIED-ALONE NAME says so), so load can make no
 #         false red and hide no real one.
-# EACH RUN IS STAGED BY THE HARNESS'S OWN stage_entry (corpus_suite_harness.py beside this file; the cto's ruling 2026-11-16 14:4x CST, on
+# EACH RUN IS STAGED BY THE HARNESS'S OWN stage_entry, through ipl_graphics_stage.py beside this file, the one staging this prover shares with the launcher icon_demo.py (officer_02 2026-11-16; the cto's ruling 2026-11-16 14:4x CST, on
 # officer_04's finding): the program, the companions its text names, its argv and stdin files, NAME.fixtures/ (fixtures=staged) or its folder
 # (fixtures=folder) and the screen road's side files, and nothing else of PKG, so this prover and the graded road cannot drift: a program that
 # reads a file of PKG no name in its text gives away reads RED here as it does in the harness. Its cure is the entry's (a fixtures folder, a
@@ -40,12 +40,11 @@ DEFAULT_J = 4
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import corpus_suite_harness as H
+import ipl_graphics_stage as G
 ROAD = HERE / "util_screen_run.py"
-class Refuse(Exception): pass
+Refuse = G.Refuse
 def refuse(m): print("REFUSE(2): " + m); sys.exit(2)
-def sh_value(fn):
-    q = subprocess.run(["bash", "-c", f'. "{HERE}/lib_oracle_flags.sh" >/dev/null 2>&1; . "{HERE}/lib_icon_ipl_isolation.sh" >/dev/null 2>&1; {fn}'], capture_output=True, text=True)
-    return q.stdout.strip() if q.returncode == 0 else ""
+sh_value = G.sh_value
 av = sys.argv[1:]
 jobs = DEFAULT_J
 if av[:1] == ["-j"]:
@@ -65,20 +64,15 @@ work = Path(tempfile.mkdtemp(prefix="prove_ipl_gprogs.", dir=base))
 def one_run(c, n):
     name, d = c["name"], work / f"{c['name']}.{n}"
     d.mkdir()
-    try:
-        cand, _ = H.stage_entry(c["entry"], str(d), ".icn", str(pkg))
-    except SystemExit:
-        raise Refuse(f"the harness refused to stage {name}")
-    d, src = cand.parent, cand.name
-    env = {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "IPATH": f"{M}/lib", "LPATH": f"{IPL}/gincl {IPL}/incl", "HOME": str(d)}
-    b = subprocess.run([str(M / "bin/icont"), "-s", "-o", name, src], cwd=d, env=env, capture_output=True, timeout=300)
-    if b.returncode: raise Refuse(f"{name} does not build: {b.stderr.decode(errors='replace').strip()[:200]}")
+    d, src = G.stage(c["entry"], d, pkg)
+    env = G.oracle_env(M, IPL, d)
+    run = G.oracle_build(M, name, src, d, env)
     for o in c["outs"]: (d / o).unlink(missing_ok=True)
     st = work / f"{name}.{n}.status"
     wrap = ["/bin/sh", "-c", '"$@"; r=$?; echo "$r" > "$0"; exit "$r"', str(st)]
     sin = open(pkg / f"{name}.in", "rb") if (pkg / f"{name}.in").is_file() else subprocess.DEVNULL
     try:
-        p = subprocess.run(c["road"] + ["--"] + wrap + c["pin"] + [str(M / "bin/iconx"), name] + c["args"], cwd=d, env=env, stdin=sin, capture_output=True, timeout=3600)
+        p = subprocess.run(c["road"] + ["--"] + wrap + c["pin"] + run + c["args"], cwd=d, env=env, stdin=sin, capture_output=True, timeout=3600)
     finally:
         if sin is not subprocess.DEVNULL: sin.close()
     if p.returncode == 2 and b"REFUSE" in p.stderr: raise Refuse(f"the road refused {name}: {p.stderr.decode(errors='replace').strip()[:200]}")
@@ -99,11 +93,7 @@ try:
         ents = {e.name: e for e in H.read_package_dir(pkg, ".icn")}
     except (SystemExit, ValueError) as ex:
         refuse(f"the harness cannot read {pkg} as a package: {ex}")
-    argl, none = {}, {}
-    if (pkg / "ALL.args").is_file():
-        for l in (pkg / "ALL.args").read_text().split("\n"):
-            if l.strip() and not l.startswith("#"):
-                f = l.split("\t"); argl[f[0]] = f[1:]
+    argl, none = G.read_args(pkg), {}
     if (pkg / "EVENTS-NONE.tsv").is_file():
         for l in (pkg / "EVENTS-NONE.tsv").read_text().split("\n"):
             f = l.split("\t")
