@@ -66,6 +66,12 @@
 #     width=N          at most N landings run their rounds at once; the rest wait in the line having run nothing (default 0: no line)
 #     line_wait=S      seconds a landing waits in the line before it refuses rc 2 (default 10800)
 #   Every landing writes one line to LANDINGS.tsv (the progress store): outcome, attempts, seconds a stage, the switches it ran under.
+# --regate own (the cto 2026-11-16, row harness-the-graders-drain-lands-in-lanes-and-regates-a-patch-only-for-its-own-directories; MEASURED: a drain landing of corpus
+#   gated rc 0 on SCRIP 5753478c2, then origin's SCRIP moved under src/runtime and the lander built SCRIP again and ran the whole proof again, a mover the proof never reads):
+#   every regate of this landing asks only whether a mover lands in its own directories (derived from its own diff whatever LAND.conf's touches says); a mover under
+#   SCRIP's runtime, templates or Makefile, or a generated output, is no hit. The grader's drain passes it for a given patch, which changes corpus, harness or .github alone
+#   and whose proof reads the oracle or a SCRIP built at origin; what a SCRIP landing changes is that landing's to answer, and the cycle grades origin. A seat's own landing
+#   keeps the affected set as it is (--regate all, the default). Proof: s4e_take.sh --probe-lanes arm (c), the real lander on scratch origins.
 # THE CHECKS OF THE PATHS A LANDING TOUCHES (the cio 2026-11-16, on the cto's ask carried by officer_07: the vendored window tree SCRIP src/runtime/xwin is generated, never
 #   edited, and its check is a script, no container entry and no registered table). scripts/land_checks.tsv, read from the landing's own harness when the home holds one, names
 #   a check a row: name, paths (an extended regular expression read against each file of the landing's own diff spelled repo/path), check (a command run in the landing's
@@ -90,7 +96,7 @@ if [ -z "${S4E_LAND_SELF:-}" ]; then
 fi
 SELF="$S4E_LAND_SELF"; HERE="$(cd "$(dirname "$SELF")" && pwd)"; RUNNING_COPY="${BASH_SOURCE[0]}"
 ORDER=(SCRIP harness corpus .github)
-home=""; gate=""; row=""; gt=1800; tries=""; mode=land; names=(); touches=""; proved=""
+home=""; gate=""; row=""; gt=1800; tries=""; mode=land; names=(); touches=""; proved=""; regate_own=0
 half_open=0
 half_note() {   # the landing ends with part of it on origin: said loudly and written down, since every other seat's table check and build now read a tree no landing proved
     [ "${half_open:-0}" = 1 ] || return 0
@@ -126,8 +132,9 @@ while [ $# -gt 0 ]; do
         --push) mode=push; shift ;;
         --proved) proved="${2:-}"; shift 2 ;;
         --touches) touches="${2:-}"; shift 2 ;;
+        --regate) case "${2:-}" in own) regate_own=1 ;; all) regate_own=0 ;; *) refuse "--regate takes own or all, not '${2:-}'" ;; esac; shift 2 ;;
         SCRIP|harness|corpus|.github) names+=("$1"); shift ;;
-        *) refuse "usage: s4e_land.sh [--home DIR] (--row TOPIC | --gate CMD) [--gate-timeout S] [--tries N] [--touches 'prefix ...'] [REPO ...]"\
+        *) refuse "usage: s4e_land.sh [--home DIR] (--row TOPIC | --gate CMD) [--gate-timeout S] [--tries N] [--touches 'prefix ...'] [--regate own|all] [REPO ...]"\
                   " | --push [--gate CMD | --proved TEXT] [REPO ...] | --probe | --probe-checks | --tables" ;;
     esac
 done
@@ -809,7 +816,7 @@ ledger() {   # <outcome>: ONE LINE A LANDING IN THE PROGRESS STORE (the box kept
     local s="" k
     for k in $(printf '%s\n' "${!stage_secs[@]}" | sort); do s="$s$k=${stage_secs[$k]} "; done
     { [ -s "$LEDGER" ] || printf '# at_utc\tseat\trow\toutcome\tattempts\torigin_moved\tserial_round\tseconds\tline_wait_s\tswitches\tstage_seconds  -- one line a landing, written by s4e_land.sh at its end (LAND.conf names the switches)\n'
-      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "$seat" "${row:-gate}" "$1" "${attempt:-1}" "${moved_rounds:-0}" "${serial_round:-0}" "$(( $(date +%s) - land_t0 ))" "${line_waited:-0}" "tries=$tries,touches=$touches_from,tables=$tables_mode,width=$width" "${s% }"; } >> "$LEDGER" 2>/dev/null || true
+      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "$seat" "${row:-gate}" "$1" "${attempt:-1}" "${moved_rounds:-0}" "${serial_round:-0}" "$(( $(date +%s) - land_t0 ))" "${line_waited:-0}" "tries=$tries,touches=$touches_from,tables=$tables_mode,width=$width$([ "$regate_own" = 1 ] && echo ,regate=own)" "${s% }"; } >> "$LEDGER" 2>/dev/null || true
 }
 present=()
 for r in "${ORDER[@]}"; do [ -e "$(rd "$r")/.git" ] && present+=("$r"); done
@@ -822,11 +829,12 @@ own_files() {   # the files the landing's own commits change, "repo/path" a line
     done
 }
 own="$(own_files)"; own_all="$own"
-if [ -z "$touches" ] && [ "$touches_mode" = derived ]; then   # THE LANDING'S OWN DIFF NAMES ITS POPULATION (LAND.conf touches=derived): the directory of each file it changes, a file at a repo's top being its own prefix; a path with a blank derives nothing, and with nothing derived every moved file is a hit, as before. The shared layers stay a hit in affected_since whatever is derived.
+if [ -z "$touches" ] && { [ "$touches_mode" = derived ] || [ "$regate_own" = 1 ]; }; then   # THE LANDING'S OWN DIFF NAMES ITS POPULATION (LAND.conf touches=derived): the directory of each file it changes, a file at a repo's top being its own prefix; a path with a blank derives nothing, and with nothing derived every moved file is a hit, as before. The shared layers stay a hit in affected_since whatever is derived.
     touches="$(printf '%s\n' "$own" | awk 'NF == 0 { next } /[[:space:]]/ { bad = 1 } { n = split($0, a, "/"); if (n > 2) sub(/\/[^\/]*$/, ""); d[$0] = 1 } END { if (bad) exit; for (k in d) printf "%s ", k }')"
     touches="${touches% }"
     [ -n "$touches" ] && { touches_from=derived; echo "LAND touches derived from the landing's own diff: $touches"; }
 fi
+[ "$regate_own" = 1 ] && echo "LAND regate=own: a regate of this landing asks only for a mover in its own directories (${touches:-nothing derived: every mover}); SCRIP's runtime, templates, Makefile and the generated outputs are no hit"
 if [ "$tables_mode" = affected ]; then   # A TABLE IS REGENERATED BY THE LANDING THAT CHANGES WHAT IT IS MADE FROM (LAND.conf tables=affected): every generator reads SCRIP's sources or its own script and registry, each SCRIP landing checks them all, so a landing with none of those in its own diff finds origin's tables as origin's last SCRIP landing left them
     tables_need=0
     printf '%s\n' "$own" | grep -E '^(SCRIP/|harness/scripts/(util_gen_[^/]*|generated_tables\.tsv|rt_entries\.tsv|lib_parser_generated_in_sync\.sh|regenerate_parser_and_lexer_from_sources\.sh)$)' > /dev/null && tables_need=1
@@ -1236,6 +1244,7 @@ affected_since() {   # [own] -> prints "reason=affected|unaffected files=N"; rc 
     local r f old new n=0 hit=0 t p txt=0; local -a outs
     text_only && txt=1
     [ "${1:-}" = own ] && txt=1
+    [ "$regate_own" = 1 ] && txt=1   # --regate own (the drain's landings): only a mover in the landing's own directories is a hit, at every regate
     mapfile -t outs < <(awk -F'\t' '!/^#/ && $1 != "name" {print $3}' "$TSV")
     for r in "${present[@]}"; do
         old="${origin_seen[$r]:-}"; new="$(git -C "$(rd "$r")" rev-parse origin/main)"; [ -n "$old" ] && [ "$old" != "$new" ] || continue

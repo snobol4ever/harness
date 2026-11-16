@@ -44,6 +44,12 @@
 #                                               goes back to its giver like a red one, since a proof that cannot run never will. A patch given before the proof was a command is named NEEDS-GATE and left for
 #                                               grader_give.sh. One line a patch in DRAIN.tsv (given, started, ended, seconds, outcome). One drain at a time: a
 #                                               second says so and ends rc 0. --wait keeps it waiting that long for the next patch once the queue is empty.
+#                                               LANES (the cto 2026-11-16, row harness-the-graders-drain-lands-in-lanes-and-regates-a-patch-only-for-its-own-directories): lanes=N, one
+#                                               line of DRAIN.conf in the patches folder, runs N landings at once, lane 1 in the patches worktree and lane K in its sibling
+#                                               <worktree>K (made by s4e_worktree.sh as the first was, when missing); a lane claims its patch by a rename into lane<K>/ of the
+#                                               patches folder, read as waiting by the count; a patch waits while an OLDER patch of its giver to its repo waits or is in a lane
+#                                               (FIRST.conf's patches excepted); DRAIN.tsv's ninth column is the lane. No line: one lane, the drain of before. Each landing is
+#                                               given --regate own: it gates again only for a mover in its own directories, never for one under SCRIP's runtime.
 #   s4e_take.sh apply <given patch>             THE GRADER ONLY (S4E_SEAT=grader; any other seat rc 2): brings the one checkout to origin/main, applies the patch,
 #                                               commits it under its why and its giver, pushes; a patch that no longer applies, or a push origin refuses, leaves
 #                                               the checkout at origin/main and the patch where it was
@@ -55,6 +61,7 @@
 #                                               file, a stash or a commit origin/main lacks (drop --landed is the lander's call after its push). These two verbs
 #                                               stay only to drain the folders made before this rule.
 #   s4e_take.sh --probe                         six arms on a scratch origin, top and root; nothing live touched. TAKE probe ok|RED
+#   s4e_take.sh --probe-lanes                   five arms (a to e) on scratch origins and a scratch patches folder, the real lander in two; TAKE lanes-probe ok|RED
 # HOW A SEAT WRITES A PATCH WITH NO CLONE: copy the files it changes from /home/<repo> to its scratch (/tmp/s4e/<seat>/), edit the copies, and
 # diff -u --label a/<path> --label b/<path> /home/<repo>/<path> <its copy>; a new file is a diff against /dev/null with --label a/<path> too.
 # The root is S4E_HOME; the top is /home (S4E_ONE_DISK_TOP names another, the probe's seam); the patches folder is /home/resources/postoffice/gives (S4E_GIVES).
@@ -144,15 +151,27 @@ drain_tell() {   # <giver> <patch> <one line>: the giver is told by telegram, by
     { printf 'From the grader'"'"'s drain (s4e_take.sh drain), %s. %s\n' "$(date -u +%FT%TZ)" "$line"; [ -s "$GIVES/refused/${b%.patch}.why" ] && { echo "THE LAST LINES OF ITS LANDING:"; cat "$GIVES/refused/${b%.patch}.why"; }; echo "The patch stands in $GIVES/refused/$b. Nothing was pushed."; } \
         | tr -d '`' | sed 's/\$(/(/g' | ( cd "${S4E_HOME:-$WT}" && S4E_SEAT=grader bash "$MSG" send "$giver" "$t" --stdin > /dev/null 2>&1 ) || echo "DRAIN: the telegram to $giver was not sent; pass the TELL line on by hand"
 }
-drain_next() {   # sets NEXT to the next waiting patch that carries a proof and was not tried in this run: FIRST.conf's patches first, then the oldest
-    local f b row key first="" rest=""
+drain_next() {   # sets NEXT to the next waiting patch that carries a proof and was not tried in this run: FIRST.conf's patches first, then the oldest; a patch waits while
+    # an OLDER patch of its own giver to its own repo waits or is in a lane (the cto 2026-11-16, row harness-the-graders-drain-lands-in-lanes-and-regates-a-patch-only-for-its-own-directories:
+    # a giver's second patch is often cut on its first), unless FIRST.conf names it, the one switch that says what goes first
+    local f b row key first="" rest="" o ob okey
     for f in "$GIVES"/*.patch; do
         [ -s "$f" ] || continue; b="$(basename "$f")"
         case " $TRIED " in *" $b "*) continue ;; esac
         row="$(awk -F'\t' -v b="$b" '$1==b' "$GIVES/GIVES.tsv" 2>/dev/null | tail -1)"
         case "$(printf '%s' "$row" | cut -f6)" in proof=?*) ;; *) case " $NOGATE " in *" $b "*) ;; *) NOGATE="$NOGATE $b"; echo "NEEDS-GATE $b: given with no proof command; land it by grader_give.sh" >&2 ;; esac; continue ;; esac
         key="$(printf '%s' "$row" | cut -f2-4)"
-        if [ -s "$GIVES/FIRST.conf" ] && printf '%s\n' "$key" | grep -q -E -f <(grep -v -e '^#' -e '^$' "$GIVES/FIRST.conf") 2>/dev/null; then [ -n "$first" ] || first="$f"; else [ -n "$rest" ] || rest="$f"; fi
+        if [ -s "$GIVES/FIRST.conf" ] && printf '%s\n' "$key" | grep -q -E -f <(grep -v -e '^#' -e '^$' "$GIVES/FIRST.conf") 2>/dev/null; then [ -n "$first" ] || first="$f"; continue; fi
+        [ -n "$rest" ] && continue
+        okey="$(printf '%s' "$row" | cut -f2-3)"
+        for o in "$GIVES"/*.patch "$GIVES"/lane*/*.patch; do
+            [ -f "$o" ] || continue; ob="$(basename "$o")"; [ "$ob" != "$b" ] || continue
+            [ "$(printf '%s\n%s\n' "$ob" "$b" | LC_ALL=C sort | head -1)" = "$ob" ] || continue
+            [ "$(awk -F'\t' -v b="$ob" '$1==b {k=$2 "\t" $3} END {print k}' "$GIVES/GIVES.tsv" 2>/dev/null)" = "$okey" ] || continue
+            case " $WAITED " in *" $b "*) ;; *) WAITED="$WAITED $b"; echo "DRAIN: $b waits for $ob, an older patch of its giver to the same repo" ;; esac
+            continue 2
+        done
+        rest="$f"
     done
     NEXT="${first:-$rest}"
 }
@@ -161,7 +180,7 @@ drain_one() {   # <given patch>: one landing; rc 0 landed, 1 red (the patch is t
     b="$(basename "$g")"; row="$(awk -F'\t' -v b="$b" '$1==b' "$GIVES/GIVES.tsv" | tail -1)"
     giver="$(printf '%s' "$row" | cut -f2)"; r="$(printf '%s' "$row" | cut -f3)"; why="$(printf '%s' "$row" | cut -f4)"; base="$(printf '%s' "$row" | cut -f5)"; base="${base#base=}"; proof="$(printf '%s' "$row" | cut -f6)"; proof="${proof#proof=}"
     given="${b%%-*}"; t0="$(date -u +%s)"; out=held; d="$WT/$r"; mkdir -p "$GIVES/logs" "$GIVES/done" "$GIVES/refused"; log="$GIVES/logs/land_${b%.patch}.log"
-    fin() { t1="$(date -u +%s)"; printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$b" "$giver" "$r" "$given" "$(date -u -d "@$t0" +%Y%m%dT%H%M%SZ)" "$(date -u -d "@$t1" +%Y%m%dT%H%M%SZ)" "$((t1 - t0))" "$out" >> "$GIVES/DRAIN.tsv"; }
+    fin() { t1="$(date -u +%s)"; printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$b" "$giver" "$r" "$given" "$(date -u -d "@$t0" +%Y%m%dT%H%M%SZ)" "$(date -u -d "@$t1" +%Y%m%dT%H%M%SZ)" "$((t1 - t0))" "$out" "${LANE:-1}" >> "$GIVES/DRAIN.tsv"; }
     if ! repo_ok "$r" || { [ ! -d "$d/.git" ] && [ ! -f "$d/.git" ]; }; then echo "HELD $b: no $r in the patches worktree $WT"; fin; return 2; fi
     if [ -n "$(git -C "$d" status --porcelain 2>/dev/null | grep -v '^??' | head -1)" ]; then echo "HELD $b: $d holds an edit; nothing applied"; fin; return 2; fi
     if ! { git -C "$d" fetch -q origin 2>/dev/null && git -C "$d" checkout -q --detach origin/main 2>/dev/null; }; then echo "HELD $b: cannot bring $d to origin/main"; fin; return 2; fi
@@ -175,7 +194,7 @@ drain_one() {   # <given patch>: one landing; rc 0 landed, 1 red (the patch is t
         git -C "$d" reset -q --hard 2>/dev/null; git -C "$d" checkout -q --detach origin/main 2>/dev/null; out=red:empty; mv "$g" "$GIVES/refused/"; echo "nothing to commit: origin already holds it" > "$GIVES/refused/${b%.patch}.why"
         echo "REFUSED $b by $giver: nothing to commit (origin already holds it)"; fin; return 1
     fi
-    ( cd "${S4E_HOME:-$WT}" && S4E_SEAT=grader bash "$LANDER" --home "$WT" --gate "cd \"$d\" && ( $proof )" "$r" > "$log" 2>&1 )
+    ( cd "${S4E_HOME:-$WT}" && S4E_SEAT=grader bash "$LANDER" --home "$WT" --gate "cd \"$d\" && ( $proof )" "$r" --regate own > "$log" 2>&1 )
     if grep -q '^LAND ok' "$log"; then out=ok; mv "$g" "$GIVES/done/"; echo "LANDED $b by $giver: $(grep -o 'pushed=[^ ]*' "$log" | tail -1)"; fin; return 0; fi
     git -C "$d" checkout -q --detach origin/main 2>/dev/null
     if grep -q '^LAND RED' "$log"; then
@@ -188,26 +207,71 @@ drain_one() {   # <given patch>: one landing; rc 0 landed, 1 red (the patch is t
     fi
     echo "HELD $b: the landing could not measure ($(grep -E '^LAND (REFUSE|stage)' "$log" | tail -1 | cut -c1-160)); the patch waits; log $log"; fin; return 2
 }
+drain_lanes() {   # the lanes of DRAIN.conf in the patches folder: lanes=N, one line (no line, or no file: one lane, the drain of before)
+    local v; v="$(awk -F= '!/^#/ && $1 == "lanes" { v = $2 } END { print v }' "$GIVES/DRAIN.conf" 2>/dev/null)"
+    case "$v" in ''|*[!0-9]*|0) echo 1 ;; *) echo "$v" ;; esac
+}
+lane_wt() { if [ "$1" = 1 ]; then printf '%s' "$WT"; else printf '%s%s' "$WT" "$1"; fi; }   # lane 1 is the patches worktree; lane K its sibling <worktree>K (wt-gives2, wt-gives3, ...)
+lane_ready() {   # <K>: rc 0 when lane K has its worktree; a missing one beside a worktree s4e_worktree.sh made is made the same way, once a run
+    local k="$1" w n lang
+    w="$(lane_wt "$k")"; [ -e "$w/corpus/.git" ] || [ -e "$w/harness/.git" ] || [ -e "$w/SCRIP/.git" ] && return 0
+    case " $LANE_TRIED " in *" $k "*) return 1 ;; esac; LANE_TRIED="$LANE_TRIED $k"
+    [ -f "$WT/.s4e-worktree" ] || { echo "DRAIN: lane $k has no worktree at $w (and $WT was not made by s4e_worktree.sh, so none is made): it runs no patch"; return 1; }
+    n="$(basename "$WT")"; n="${n#wt-}$k"; lang="$(sed -n 's/^corpus=sparse://p' "$WT/.s4e-worktree" | head -1)"
+    if S4E_SEAT=grader bash "$HERE/s4e_worktree.sh" new "$n" ${lang:+--lang "$lang"} > "$GIVES/logs/lane$k.worktree.log" 2>&1 9>&- && [ -d "$w" ]; then echo "DRAIN: lane $k made its worktree $w"; return 0; fi
+    echo "DRAIN: lane $k could not make its worktree $w (log $GIVES/logs/lane$k.worktree.log): it runs no patch"; return 1
+}
+lane_scrip() {   # <worktree>: the proofs' SCRIP stands at origin/main, built: read at most every two minutes a lane (a stamp file's age)
+    local sd="$1/SCRIP" st="$1/.drain-scrip-read"
+    [ -e "$sd/.git" ] || return 0
+    [ -n "$(find "$st" -mmin -2 2>/dev/null)" ] && return 0
+    : > "$st" 2>/dev/null; git -C "$sd" fetch -q origin 2>/dev/null
+    [ "$(git -C "$sd" rev-parse HEAD 2>/dev/null)" = "$(git -C "$sd" rev-parse origin/main 2>/dev/null)" ] || { git -C "$sd" checkout -q --detach origin/main 2>/dev/null && make -C "$sd" -j8 > "$GIVES/logs/scrip_build.$(basename "$1").log" 2>&1 || echo "DRAIN: $sd did not build at origin/main (log $GIVES/logs/scrip_build.$(basename "$1").log); proofs that run SCRIP will read red"; }
+}
 drain() {
-    local seat="${S4E_SEAT:-}" wait_s=0 waited=0 g rc n_ok=0 n_red=0 n_held=0 last=0 now sd
+    local seat="${S4E_SEAT:-}" wait_s=0 waited=0 g b k rc n_ok=0 n_red=0 n_held=0 nl busy f
+    local -A LP=() LB=()
     [ "$seat" = grader ] || die "REFUSE(2): only the grader drains the patches (this seat is '${seat:-unset}'); nothing landed. A seat gives: s4e_take.sh give <repo> <patch> \"<why>\" --proof '<command>'." 2
     [ "${1:-}" = --wait ] && wait_s="${2:-0}"; case "$wait_s" in ''|*[!0-9]*) die "usage: s4e_take.sh drain [--wait SECONDS]" 2 ;; esac
-    WT="${S4E_GIVES_WT:-/home/resources/worktrees/grader/wt-gives}"; LANDER="${S4E_TAKE_LANDER:-$HERE/s4e_land.sh}"; MSG="${S4E_TAKE_MSG:-$HERE/s4e_msg.sh}"; TRIED=""; NOGATE=""; NEXT=""
+    WT="${S4E_GIVES_WT:-/home/resources/worktrees/grader/wt-gives}"; LANDER="${S4E_TAKE_LANDER:-$HERE/s4e_land.sh}"; MSG="${S4E_TAKE_MSG:-$HERE/s4e_msg.sh}"; TRIED=""; NOGATE=""; NEXT=""; WAITED=""; LANE_TRIED=""
     [ -d "$WT" ] || die "REFUSE(2): no patches worktree at $WT (S4E_GIVES_WT names another)" 2
     mkdir -p "$GIVES" && exec 9> "$GIVES/.drain.lock" || die "REFUSE(2): cannot open $GIVES/.drain.lock" 2
     flock -n 9 || { echo "DRAIN is already running (lock $GIVES/.drain.lock): it lands every waiting patch that carries a proof, this one too"; return 0; }
+    mkdir -p "$GIVES/logs" "$GIVES/done" "$GIVES/refused"
+    for f in "$GIVES"/lane*/*.patch; do [ -f "$f" ] && mv "$f" "$GIVES/" && echo "DRAIN: $(basename "$f") was left in $(basename "$(dirname "$f")") by a drain that ended; it waits again"; done
+    # THE LANES (the cto 2026-11-16, row harness-the-graders-drain-lands-in-lanes-and-regates-a-patch-only-for-its-own-directories; MEASURED 19:59Z: 18 patches waiting, one
+    # drain landing one at a time, so one long proof held every patch behind it; nine patches waited 1100 to 1550 s before their landing began). lanes=N of DRAIN.conf runs
+    # N landings at once, each in a worktree of its own; a lane claims its patch by a rename into its own folder (lane<K>/ of the patches folder), which the waiting count
+    # reads as waiting; DRAIN.tsv's last column names the lane. With no line the drain is one lane, the drain of before. Two lanes that add entries to one container both
+    # land: the lander's rebase merges its tables by entry key.
+    nl="$(drain_lanes)"; [ "$nl" = 1 ] || echo "DRAIN lanes=$nl (DRAIN.conf)"
     while :; do
-        drain_next; g="$NEXT"
-        if [ -z "$g" ]; then [ "$waited" -lt "$wait_s" ] || break; sleep 5; waited=$((waited + 5)); continue; fi
-        waited=0; now="$(date -u +%s)"; sd="$WT/SCRIP"
-        if [ -e "$sd/.git" ] && [ $((now - last)) -ge 120 ]; then   # the proofs' SCRIP stands at origin/main, built: read at most every two minutes
-            last="$now"; git -C "$sd" fetch -q origin 2>/dev/null
-            [ "$(git -C "$sd" rev-parse HEAD 2>/dev/null)" = "$(git -C "$sd" rev-parse origin/main 2>/dev/null)" ] || { git -C "$sd" checkout -q --detach origin/main 2>/dev/null && make -C "$sd" -j8 > "$GIVES/logs/scrip_build.log" 2>&1 || echo "DRAIN: the patches worktree's SCRIP did not build at origin/main (log $GIVES/logs/scrip_build.log); proofs that run SCRIP will read red"; }
+        for k in "${!LP[@]}"; do
+            kill -0 "${LP[$k]}" 2>/dev/null && continue
+            wait "${LP[$k]}"; rc=$?
+            case "$rc" in 0) n_ok=$((n_ok + 1)) ;; 1) n_red=$((n_red + 1)) ;; *) n_held=$((n_held + 1)) ;; esac
+            [ -f "$GIVES/lane$k/${LB[$k]}" ] && mv "$GIVES/lane$k/${LB[$k]}" "$GIVES/"
+            unset "LP[$k]" "LB[$k]"
+        done
+        g=""
+        for k in $(seq 1 "$nl"); do
+            [ -n "${LP[$k]:-}" ] && continue
+            lane_ready "$k" || continue
+            drain_next; g="$NEXT"; [ -n "$g" ] || break
+            b="$(basename "$g")"; TRIED="$TRIED $b"; mkdir -p "$GIVES/lane$k"
+            mv "$g" "$GIVES/lane$k/$b" 2>/dev/null || continue
+            lane_scrip "$(lane_wt "$k")"
+            ( WT="$(lane_wt "$k")"; LANE="$k"; drain_one "$GIVES/lane$k/$b" ) 9>&- &
+            LP[$k]=$!; LB[$k]="$b"
+            [ "$nl" = 1 ] || echo "DRAIN lane $k takes $b"
+        done
+        busy="${#LP[@]}"
+        if [ "$busy" = 0 ] && [ -z "$g" ]; then
+            [ "$waited" -lt "$wait_s" ] || break; sleep 5; waited=$((waited + 5)); continue
         fi
-        TRIED="$TRIED $(basename "$g")"; drain_one "$g" 9>&-; rc=$?
-        case "$rc" in 0) n_ok=$((n_ok + 1)) ;; 1) n_red=$((n_red + 1)) ;; *) n_held=$((n_held + 1)) ;; esac
+        waited=0; sleep 1
     done
-    echo "DRAIN done: landed=$n_ok refused=$n_red held=$n_held needs_gate=$(printf '%s' "$NOGATE" | wc -w) waiting=$(ls "$GIVES"/*.patch 2>/dev/null | wc -l) (ledger $GIVES/DRAIN.tsv)"
+    echo "DRAIN done: landed=$n_ok refused=$n_red held=$n_held needs_gate=$(printf '%s' "$NOGATE" | wc -w) waiting=$(ls "$GIVES"/*.patch "$GIVES"/lane*/*.patch 2>/dev/null | wc -l) (ledger $GIVES/DRAIN.tsv)"
     [ "$n_red" = 0 ] && [ "$n_held" = 0 ]
 }
 apply() {
@@ -336,8 +400,8 @@ probe() {
     grep -q "$(printf 'base=[0-9a-f]*\tproof=grep -q n1')" "$T/gives/GIVES.tsv" || why="$why arm 8: the proof command is not the patch's sixth column;"
     o="$(SEATAS=x dr 2>&1)"; rc=$?
     [ "$rc" = 2 ] && [ "$(ls "$T/gives"/*.patch | wc -l)" = 3 ] || why="$why arm 9: a drain by a seat that is not the grader was not refused rc 2, or it moved a patch (rc $rc);"
-    ( exec 9> "$T/gives/.drain.lock"; flock -n 9; sleep 3 ) & 
-    sleep 1; o="$(dr 2>&1)"; rc=$?; wait
+    ( exec 9> "$T/gives/.drain.lock"; flock -n 9; : > "$T/held"; while [ -e "$T/held" ]; do sleep 0.1; done ) &   # the lock is held until the probe lets go: an order of events, never a sleep (MEASURED 2026-11-16 at load 45: a one-second sleep read arm 14 red once)
+    until [ -e "$T/held" ]; do sleep 0.1; done; o="$(dr 2>&1)"; rc=$?; rm -f "$T/held"; wait
     [ "$rc" = 0 ] && printf '%s' "$o" | grep -q 'already running' && [ "$(ls "$T/gives"/*.patch | wc -l)" = 3 ] || why="$why arm 9: a second drain did not stand aside rc 0 while the first held the lock (rc $rc);"
     printf '%s\n' '# what goes first' 'FIRSTLY' > "$T/gives/FIRST.conf"
     o="$(dr 2>&1)"; rc=$?
@@ -360,8 +424,8 @@ probe() {
     [ "$rc" = 1 ] && [ -z "$(ls "$T/gives"/*.patch 2>/dev/null)" ] && [ "$(ls "$T/gives/refused"/*.patch | wc -l)" = 2 ] && printf '%s' "$o" | grep -q '^TELL x: .*could not run or measure' && ! $g --git-dir="$T/origin.git" cat-file -e main:n5 2>/dev/null || why="$why arm 12: a patch whose proof could not measure a second time was not returned to its giver (rc $rc);"
     grep -q '^grader send x your-patch-.*-came-back-from-the-graders-drain --stdin' "$T/told" 2>/dev/null && grep -q 'read red on its own proof' "$T/told" && grep -q 'LAND RED stage=gate' "$T/told" || why="$why arm 13: the drain did not send the giver of a red patch a telegram as the grader, with the line and the landing's last lines;"
     printf 'n6\n' > "$T/n6"; mk n6; $g -C "$T/top/corpus" fetch -q origin
-    ( exec 9> "$T/gives/.drain.lock"; flock -n 9; sleep 3 ) &
-    sleep 1; o="$(run bash "$me" give corpus "$T/n6.patch" "adds n6 while a drain runs" --proof 'test -f n6' 2>&1)"; rc=$?; wait
+    ( exec 9> "$T/gives/.drain.lock"; flock -n 9; : > "$T/held"; while [ -e "$T/held" ]; do sleep 0.1; done ) &
+    until [ -e "$T/held" ]; do sleep 0.1; done; o="$(run bash "$me" give corpus "$T/n6.patch" "adds n6 while a drain runs" --proof 'test -f n6' 2>&1)"; rc=$?; rm -f "$T/held"; wait
     [ "$rc" = 0 ] && printf '%s' "$o" | grep -q '^NO WAKE IS OWED' && ! printf '%s' "$o" | grep -q '^WAKE:' || why="$why arm 14: a give while a drain runs still asks for a wake of the grader (rc $rc);"
     mkdir -p "$T/w/packages/p" && $g -C "$T/w" pull -q origin main 2>/dev/null; printf 'rank,entry\n1,ea\n2,eb\n' > "$T/w/packages/p/ALL.csv" && $g -C "$T/w" add packages && $g -C "$T/w" commit -qm table && $g -C "$T/w" push -q origin HEAD:main 2>/dev/null && $g -C "$T/top/corpus" fetch -q origin
     ( cd "$T" && printf '%s\n' '--- a/n1' '+++ /dev/null' '@@ -1 +0,0 @@' '-n1' > del.patch; printf '%s\n' '--- a/packages/p/ALL.csv' '+++ b/packages/p/ALL.csv' '@@ -1,3 +1,2 @@' ' rank,entry' ' 1,ea' '-2,eb' > drop.patch )
@@ -389,8 +453,90 @@ probe() {
     if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE probe ok arms=19 (a patch that changes a file or a row of an entry it does not add says so; a new row whose insertion counts the ranks again is no change; a patch that puts a file back to an older text says so too; a patch that deletes a file or drops a table row says so in numbers or is refused; a patch that deletes a file or drops a table row says so in numbers or is refused; the drain itself telegrams the giver of a patch that comes back; a give while a drain runs owes no wake; a proof runs in the patched repo's top; one that cannot measure is held once and returned the second time; a give carries its proof as a command and one with none is refused; the drain is the grader's alone, one at a time; it lands every waiting patch whose proof reads rc 0 on the patched tree, FIRST.conf's first, refuses the one whose proof reads red and names its giver, leaves the worktree at origin/main and a patch with no proof to the grader's hand; take refuses every seat and makes nothing; give stores a patch that applies with its seat and why and refuses one that does not; apply is the grader's alone; the grader's apply lands the patch on origin and the one checkout holds it; check reads red while a seat root holds one of the three; drop refuses unlanded work and removes a clean folder; a patch is checked against origin first and then the checkout's commit, through a private index)"; return 0; fi
     echo "TAKE probe RED:$why"; echo "    kept: $T"; return 1
 }
+probe_lanes() {   # THE LANES AND THE OWN-DIRECTORY REGATE (row harness-the-graders-drain-lands-in-lanes-and-regates-a-patch-only-for-its-own-directories), on scratch origins and a
+    # scratch patches folder; every reading an order of events in one file, never a wall-clock bound. (a) two givers' patches, lanes=2: the second's proof starts before the
+    # first's ends. (b) the REAL lander, lanes=2: two patches adding a row each to one package's ALL.csv, cut on one base, both land and origin's table holds both rows.
+    # (c) the real lander: a patch overtaken during its gate by a mover under the scratch SCRIP's src/runtime runs its proof once; one overtaken by a mover in its own
+    # directory runs it twice. (d) lanes=2, two patches of one giver to one repo: the second starts after the first ends. (e) no lanes line: two givers' patches run one
+    # after the other in lane 1. Then --probe, whose arms read the one-lane drain, stays green.
+    local T why="" o rc g="git -c user.name=probe -c user.email=probe@localhost -c init.defaultBranch=main" me="$HERE/s4e_take.sh" ev e1 e2 n
+    T="$(mktemp -d "/tmp/s4e/${S4E_SEAT:-seat}/take-lanes.XXXXXX" 2>/dev/null || mktemp -d)" || die "REFUSE(2): no scratch" 2
+    mkdir -p "$T/top/claude_x" "$T/po" "$T/gives" || die "REFUSE(2): no scratch" 2
+    bare() {   # <name>: a bare scratch origin with one commit holding the files of $T/seed.<name>
+        $g init -q --bare "$T/$1.git" && $g clone -q "$T/$1.git" "$T/s.$1" 2>/dev/null && cp -r "$T/seed.$1/." "$T/s.$1/" && $g -C "$T/s.$1" add -A && $g -C "$T/s.$1" commit -qm "seed $1" && $g -C "$T/s.$1" push -q origin HEAD:main 2>/dev/null; }
+    clone() { $g clone -q "$T/$1.git" "$2" 2>/dev/null && git -C "$2" config user.name probe && git -C "$2" config user.email probe@localhost; }
+    mkdir -p "$T/seed.corpus/packages/probe_pkg" "$T/seed.SCRIP/src/runtime"
+    printf 'rank,entry,path\n1,ea,ea.icn\n' > "$T/seed.corpus/packages/probe_pkg/ALL.csv"; echo seed > "$T/seed.corpus/readme"
+    printf 'all:\n\t@:\n' > "$T/seed.SCRIP/Makefile"; echo seed > "$T/seed.SCRIP/src/runtime/rt.c"
+    bare corpus && bare SCRIP && clone corpus "$T/top/corpus" && $g -C "$T/top/corpus" fetch -q origin || { rm -rf "$T"; die "REFUSE(2): cannot plant the scratch origins" 2; }
+    for n in wt wt2; do clone corpus "$T/$n/corpus" || { rm -rf "$T"; die "REFUSE(2): cannot plant the stub lanes" 2; }; done
+    for n in rwt rwt2; do clone corpus "$T/$n/corpus" && clone SCRIP "$T/$n/SCRIP" || { rm -rf "$T"; die "REFUSE(2): cannot plant the real lanes" 2; }; done
+    printf 'touches=derived\ntables=affected\nlease=none\ntries=1\n' > "$T/po/LAND.conf"; printf 'TENET\n' > "$T/po/MODE"
+    printf '%s\n' '#!/bin/bash' 'home="$2"; gate="$4"; r="$5"' 'if ( cd "$home" && S4E_HOME="$home" S4E_CORPUS="$home/corpus" bash -c "$gate" ); then i=0; until git -C "$home/$r" push -q origin HEAD:main 2>/dev/null; do i=$((i+1)); [ "$i" -lt 6 ] || { echo "LAND RED stage=push"; exit 1; }; git -C "$home/$r" pull -q --rebase origin main 2>/dev/null; done; echo "LAND ok pushed=$r:$(git -C "$home/$r" rev-parse --short HEAD)"; elif [ $? = 2 ]; then echo "LAND REFUSE(2) the gate could not measure (rc 2): nothing pushed"; exit 2; else echo "LAND RED stage=gate rc=1"; exit 1; fi' > "$T/lander.sh"
+    printf '%s\n' '#!/bin/bash' 'cat > /dev/null' > "$T/msg.sh"
+    # a proof: <name> <other> <bound>: it writes "start NAME", waits (at most BOUND tenths of a second) for "start OTHER", writes "end NAME"; it counts its runs in runs.NAME
+    printf '%s\n' '#!/bin/bash' 'ev="$1"; me="$2"; other="$3"; bound="$4"; echo r >> "$ev.runs.$me"; echo "start $me" >> "$ev"; i=0' \
+        'while ! grep -qx "start $other" "$ev" 2>/dev/null && [ "$i" -lt "$bound" ]; do sleep 0.1; i=$((i+1)); done' '[ -n "${5:-}" ] && [ "$(wc -l < "$ev.runs.$me")" = 1 ] && bash "$5"' 'echo "end $me" >> "$ev"; exit 0' > "$T/proof.sh"
+    mk() { mkdir -p "$(dirname "$T/p/$1")"; printf '%s\n' "$2" > "$T/p/$1"; ( cd "$T/p" && diff -u --label /dev/null --label "b/$1" /dev/null "$1" ) > "$T/$3.patch"; rm -f "$T/p/$1"; }
+    give_as() { $un_env S4E_ONE_DISK_TOP="$T/top" S4E_GIVES="$T/gives" S4E_HOME="$T/top/claude_x" S4E_SEAT="$1" bash "$me" give corpus "$T/$2.patch" "probe lanes: $2" --proof "$3" > "$T/give.$2.log" 2>&1 || why="$why give of $2 refused ($(tail -1 "$T/give.$2.log" | cut -c1-120));"; sleep 1; }
+    un_env="env -u S4E_SCRIP -u S4E_CORPUS -u S4E_GITHUB -u S4E_LAND_SELF"
+    dr() {   # <worktree> <lander>: one drain as the grader
+        $un_env S4E_ONE_DISK_TOP="$T/top" S4E_GIVES="$T/gives" S4E_HOME="$T/top/claude_x" S4E_SEAT=grader S4E_GIVES_WT="$1" S4E_TAKE_LANDER="$2" S4E_TAKE_MSG="$T/msg.sh" \
+            S4E_POSTOFFICE="$T/po" S4E_POST="$T/po" S4E_LAND_UNADMITTED=1 S4E_HOME_TREES_TOP="$T/none" S4E_HARNESS="$(cd "$HERE/.." && pwd)" bash "$me" drain; }
+    order() { grep -n -x "$2" "$1" 2>/dev/null | head -1 | cut -d: -f1; }   # the line number of an event, empty if it never happened
+    # (e) FIRST, no lanes line: one lane
+    ev="$T/ev.e"; mk e/one one e1; mk e/two two e2
+    give_as ga e1 "bash $T/proof.sh $ev e1 e2 30"; give_as gb e2 "bash $T/proof.sh $ev e2 e1 0"
+    o="$(dr "$T/wt" "$T/lander.sh" 2>&1)"; rc=$?
+    e1="$(order "$ev" "end e1")"; e2="$(order "$ev" "start e2")"
+    [ "$rc" = 0 ] && [ -n "$e1" ] && [ -n "$e2" ] && [ "$e1" -lt "$e2" ] && [ "$(cut -f9 "$T/gives/DRAIN.tsv" | sort -u | tr '\n' ' ')" = "1 " ] && ! printf '%s' "$o" | grep -q '^DRAIN lanes=' \
+        || why="$why arm e: with no lanes line the drain did not run its two patches one after the other in lane 1 (rc $rc; events $(tr '\n' ',' < "$ev" 2>/dev/null); lanes $(cut -f9 "$T/gives/DRAIN.tsv" | tr '\n' ' '));"
+    # (d) lanes=2, one giver, one repo: in the order given, the second after the first ends
+    printf 'lanes=2\n' > "$T/gives/DRAIN.conf"
+    ev="$T/ev.d"; mk d/one one d1; mk d/two two d2
+    give_as gx d1 "bash $T/proof.sh $ev d1 d2 30"; give_as gx d2 "bash $T/proof.sh $ev d2 d1 0"
+    o="$(dr "$T/wt" "$T/lander.sh" 2>&1)"; rc=$?
+    e1="$(order "$ev" "end d1")"; e2="$(order "$ev" "start d2")"
+    [ "$rc" = 0 ] && [ -n "$e1" ] && [ -n "$e2" ] && [ "$e1" -lt "$e2" ] && printf '%s' "$o" | grep -q 'waits for .*an older patch of its giver' \
+        || why="$why arm d: two patches of one giver to one repo did not land in the order given, the second after the first's end (rc $rc; events $(tr '\n' ',' < "$ev" 2>/dev/null));"
+    # (a) lanes=2, two givers: the second starts before the first ends
+    ev="$T/ev.a"; mk a/one one a1; mk a/two two a2
+    give_as ga a1 "bash $T/proof.sh $ev a1 a2 600"; give_as gb a2 "bash $T/proof.sh $ev a2 a1 600"
+    o="$(dr "$T/wt" "$T/lander.sh" 2>&1)"; rc=$?
+    e1="$(order "$ev" "end a1")"; e2="$(order "$ev" "start a2")"
+    [ "$rc" = 0 ] && [ -n "$e1" ] && [ -n "$e2" ] && [ "$e2" -lt "$e1" ] && [ "$($g --git-dir="$T/corpus.git" show main:a/one 2>/dev/null)" = one ] && [ "$($g --git-dir="$T/corpus.git" show main:a/two 2>/dev/null)" = two ] \
+        && [ "$(tail -2 "$T/gives/DRAIN.tsv" | cut -f9 | sort | tr '\n' ' ')" = "1 2 " ] \
+        || why="$why arm a: two givers' patches did not run at once in two lanes, the second's start before the first's end, and both land (rc $rc; events $(tr '\n' ',' < "$ev" 2>/dev/null); lanes $(tail -2 "$T/gives/DRAIN.tsv" | cut -f9 | tr '\n' ' '));"
+    # (b) the real lander, lanes=2: two rows added to one ALL.csv on one base both land
+    $g -C "$T/top/corpus" pull -q origin main 2>/dev/null
+    ev="$T/ev.b"
+    for n in b1 b2; do cp "$T/top/corpus/packages/probe_pkg/ALL.csv" "$T/all.$n"; printf '2,e%s,e%s.icn\n' "$n" "$n" >> "$T/all.$n"
+        diff -u --label a/packages/probe_pkg/ALL.csv --label b/packages/probe_pkg/ALL.csv "$T/top/corpus/packages/probe_pkg/ALL.csv" "$T/all.$n" > "$T/$n.patch"; done
+    give_as gc b1 "bash $T/proof.sh $ev b1 b2 600"; give_as gd b2 "bash $T/proof.sh $ev b2 b1 600"
+    o="$(dr "$T/rwt" "$HERE/s4e_land.sh" 2>&1)"; rc=$?
+    e1="$(order "$ev" "end b1")"; e2="$(order "$ev" "start b2")"
+    n="$($g --git-dir="$T/corpus.git" show main:packages/probe_pkg/ALL.csv 2>/dev/null | tr '\n' ' ')"
+    case "$n" in "rank,entry,path 1,ea,ea.icn 2,eb1,eb1.icn 3,eb2,eb2.icn "|"rank,entry,path 1,ea,ea.icn 2,eb2,eb2.icn 3,eb1,eb1.icn ") n="both rows: $n" ;; esac
+    [ "$rc" = 0 ] && [ -n "$e1" ] && [ -n "$e2" ] && [ "$e2" -lt "$e1" ] && [ "${n#both rows: }" != "$n" ] \
+        || why="$why arm b: two patches adding a row each to one ALL.csv in two lanes did not both land through the real lander (rc $rc; origin's table: $n; events $(tr '\n' ',' < "$ev" 2>/dev/null); $(printf '%s' "$o" | grep -E '^(REFUSED|HELD)' | head -2 | cut -c1-200));"
+    # (c) the real lander, one lane: a mover under SCRIP's runtime during the gate costs no second run; a mover in the patch's own directory does
+    rm -f "$T/gives/DRAIN.conf"; $g -C "$T/top/corpus" pull -q origin main 2>/dev/null
+    clone SCRIP "$T/rs"; clone corpus "$T/rc"
+    printf '#!/bin/bash\ncd "%s" && git pull -q --rebase origin main && echo m >> src/runtime/probe_mover.txt && git add -A && git commit -qm "probe: a mover under src/runtime" && git push -q origin HEAD:main\n' "$T/rs" > "$T/mover_rt.sh"
+    printf '#!/bin/bash\ncd "%s" && git pull -q --rebase origin main && mkdir -p c && echo m >> c/mover.txt && git add -A && git commit -qm "probe: a mover in the patch'"'"'s own directory" && git push -q origin HEAD:main\n' "$T/rc" > "$T/mover_own.sh"
+    ev="$T/ev.c"; mk c/one one c1; mk c/two two c2
+    give_as ge c1 "bash $T/proof.sh $ev c1 none 0 $T/mover_rt.sh"; give_as gf c2 "bash $T/proof.sh $ev c2 none 0 $T/mover_own.sh"
+    o="$(dr "$T/rwt" "$HERE/s4e_land.sh" 2>&1)"; rc=$?
+    e1="$(wc -l < "$ev.runs.c1" 2>/dev/null)"; e2="$(wc -l < "$ev.runs.c2" 2>/dev/null)"
+    [ "$rc" = 0 ] && [ "$e1" = 1 ] && [ "$e2" = 2 ] && [ "$($g --git-dir="$T/corpus.git" show main:c/one 2>/dev/null)" = one ] && [ "$($g --git-dir="$T/corpus.git" show main:c/two 2>/dev/null)" = two ] \
+        && $g --git-dir="$T/SCRIP.git" cat-file -e main:src/runtime/probe_mover.txt 2>/dev/null \
+        || why="$why arm c: the proof of a patch overtaken under SCRIP's runtime ran ${e1:-0} time(s) (want 1) and one overtaken in its own directory ${e2:-0} (want 2), or they did not land (rc $rc; $(printf '%s' "$o" | grep -E '^(REFUSED|HELD|LANDED)' | head -3 | cut -c1-160 | tr '\n' ' '));"
+    if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE lanes-probe ok arms=5 (e: with no lanes line the drain ran two givers' patches one after the other in lane 1; d: lanes=2 ran one giver's two patches to one repo in the order given, the second after the first ended; a: lanes=2 ran two givers' patches at once, the second started before the first ended, both landed; b: the real lander in two lanes landed two patches that each added a row to one ALL.csv, merged by entry key; c: the real lander ran the proof of a patch overtaken under SCRIP's runtime once and of one overtaken in its own directory twice)"; return 0; fi
+    echo "TAKE lanes-probe RED:$why"; echo "    kept: $T"; return 1
+}
 case "${1:-}" in
     --probe) probe; exit $? ;;
+    --probe-lanes) probe_lanes; exit $? ;;
     list) list ;;
     check) check; exit $? ;;
     give) shift; repo_ok "${1:-}" || die "usage: s4e_take.sh give corpus|harness|.github <patch> \"<why>\" --proof '<command>'" 2; give "$@" ;;
