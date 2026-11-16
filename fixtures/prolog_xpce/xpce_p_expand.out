@@ -6,4 +6,6 @@ called_initialization
 4: no_op_before
 5: pushed(700,xfx)
 6: read(===>,a,b)
-7: no_op_after
+7: located('xpce_p_expand.pl',5,8)
+8: no_location_at_run_time
+9: no_op_after

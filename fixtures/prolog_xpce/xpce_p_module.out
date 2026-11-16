@@ -10,3 +10,4 @@ no
 8: caught(existence_error(source_sink,wroot(no_such_file_xyz)))
 no
 9: again
+10: debug_done

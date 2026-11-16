@@ -6,6 +6,8 @@
 :- reexport(library(lists), [sum_list/2]).
 :- predicate_options(r/1, 1, [depth(integer)]).
 r(x).
+:- unlock_predicate(r/1).
+:- '$set_predicate_attribute'(r(_), hide_childs, false).
 flag(F) :-
     (   catch(current_prolog_flag(F, V), error(E, _), (print(F-raised(E)), nl, fail))
     ->  writeq(F = V), nl
