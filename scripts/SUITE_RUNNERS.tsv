@@ -141,3 +141,4 @@ swi_bench	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/swi_bench
 bratko_4th	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/bratko_4th
 gpc_tests	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/gpc_tests
 icon_lab	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_lab
+icon_problems	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_problems
