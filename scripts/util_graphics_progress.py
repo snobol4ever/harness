@@ -9,6 +9,7 @@ NOT WORKING: in a container of programs that wait for a mouse or a key (column s
 script, NAME.events, and passes with it; the line says how many entries have one. The denominator is every graphics entry cut, so it grows as packages are cut.
 BUILT EXPLAINS A FLAT WORKS: the steps of the design's step table (step 0, the baseline, left out) whose row is closed, a row named by the step's number
 (column rows, a regular expression with N for the number) standing in QUEUE.done.tsv or its baton reading STATE: DONE or RETIRED:done-green.
+A step table may name a step's row outright in a column row (a row minted before its plan carries no step number): that step is closed when that row is.
 Unicon's graphics are a separate library by Lon's ruling of 2026-11-16 09:5x and have a line of their own (the cqo, on Lon's word of 15:3x CST that
 day, in the coo's window, verbatim: "let's get the Icon rock solid and the Unicon graphics too."): the Icon line leaves the Unicon containers out (column
 excluded) and the Unicon line names them (column only: a line that carries it searches those containers and no other).
@@ -24,7 +25,7 @@ holds 177 files and 149 of them call a window function, the gprogs lines of the 
 Read only, nothing run. The table is GRAPHICS_PROGRESS.tsv beside this file: one line a language and one a goal.
   python3 -I util_graphics_progress.py            the header and one line a language; rc 0
   python3 -I util_graphics_progress.py --list     every graphics entry: language, suite key, entry, its newest reading, scripted or not, counted or not
-  python3 -I util_graphics_progress.py --probe    seven arms on a scratch store, corpus and postoffice; PROBE ok | RED"""
+  python3 -I util_graphics_progress.py --probe    eight arms on a scratch store, corpus and postoffice; PROBE ok | RED"""
 import csv, glob, os, re, shutil, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -92,11 +93,14 @@ def readings(e, keys):
 
 
 def built(e, row):
-    steps = []
+    steps, named, col = [], {}, None
     try:
         for ln in open(os.path.join(e["designs"], row["steps"]), encoding="utf-8"):
-            f = ln.split("\t")
-            if f[0].isdigit() and int(f[0]) > 0: steps.append(int(f[0]))
+            f = ln.rstrip("\n").split("\t")
+            if f[0] == "step" and "row" in f: col = f.index("row")   # a table may name each step's row outright (column row), for a row minted before its plan
+            if f[0].isdigit() and int(f[0]) > 0:
+                steps.append(int(f[0]))
+                if col is not None and len(f) > col and f[col] not in ("", "-"): named[int(f[0])] = f[col]
     except OSError:
         return None
     done = set()
@@ -112,7 +116,7 @@ def built(e, row):
         except OSError:
             continue
         if m and re.match(r"(DONE|RETIRED:done-green)", m.group(1)): done.add(os.path.basename(bp)[:-len(".task.md")])
-    closed = [n for n in steps if any(re.match(row["rows"].replace("N", str(n)), t) for t in done)]
+    closed = [n for n in steps if named.get(n) in done or (row["rows"] not in ("", "-") and any(re.match(row["rows"].replace("N", str(n)), t) for t in done))]
     return len(closed), len(steps)
 
 
@@ -230,9 +234,16 @@ def probe():
         if g != [("Icon graphics", 1, 5), ("Unicon graphics", 1, 2)]: why += " arm7 the two lines read %r, wanted Icon 1 of 5 with un left out and Unicon 1 of 2 from un alone;" % (g,)
         g = goals(e, mm)[-2:]
         if g != [("Unicon demos", 1, 4), ("No line", None, 2)]: why += " arm7 the scope goal reads %r, wanted 1 of 4 (two lines found and two entries cut) and a line nobody has unread;" % (g,)
+        os.makedirs(os.path.join(t, "designs/y"))
+        open(os.path.join(t, "designs/y/STEPS.tsv"), "w").write("# c\nstep\tslug\trow\n0\tbaseline\t-\n1\tone\t-\n2\ttwo\tun-a-row-of-another-name\n3\tthree\tun-open-row\n")
+        open(os.path.join(t, "po/QUEUE.done.tsv"), "a").write("0\tun-a-row-of-another-name\tx\tDONE\n0\tun-u1-one\tx\tDONE\n")
+        tb = open(os.path.join(t, "table.tsv")).read().replace("icon\tUnicon graphics\t-\t-\t-\t-\tun\n", "icon\tUnicon graphics\ty/STEPS.tsv\t^un-uN-\t-\t-\tun\n", 1)
+        open(os.path.join(t, "table.tsv"), "w").write(tb)
+        b = [bb for r, _d, bb in measure(e) if r["label"] == "Unicon graphics"]
+        if b != [(2, 3)]: why += " arm8 a step closed by its number's row and one closed by the row its table names read %r, wanted 2 of 3;" % (b,)
     finally:
         shutil.rmtree(t, ignore_errors=True)
-    print("GRAPHICS-PROGRESS PROBE " + ("RED:" + why if why else "ok arms=7 (empty store, the script rule, newest wins, dirty and mode 4 unread, a display entry, the goal lines, a line of named containers and its scope goal; steps closed by the done file and by a baton, never by a claim)"))
+    print("GRAPHICS-PROGRESS PROBE " + ("RED:" + why if why else "ok arms=8 (empty store, the script rule, newest wins, dirty and mode 4 unread, a display entry, the goal lines, a line of named containers and its scope goal, a step's row named by its table; steps closed by the done file and by a baton, never by a claim)"))
     return 1 if why else 0
 
 
