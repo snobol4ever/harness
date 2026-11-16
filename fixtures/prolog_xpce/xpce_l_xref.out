@@ -1,0 +1,6 @@
+[===> / 2-local(7),double/2-local(5),twice/2-local(6)]
+[double/2-twice/2,last/2-twice/2,maplist/3-twice/2,twice/2- ===> / 2,undefined_here/1- ===> / 2]
+module(xref_subject)
+exported([===> / 2,double/2])
+ops([op(700,xfx,===>)])
+flags([double_quotes-codes])

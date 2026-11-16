@@ -1,0 +1,3 @@
+5-(double(A,B):-B is A*2)
+6-(twice(A,B):-maplist(double,A,B),last(B,C))
+2-(:-use_module(library(lists)))

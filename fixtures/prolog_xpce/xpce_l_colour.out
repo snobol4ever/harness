@@ -1,0 +1,33 @@
+0-70-range
+0-70-clause
+12-2-neck(:-)
+0-11-head_term(unreferenced,foo(A,"s"))
+0-3-head(unreferenced,foo(A,"s"))
+4-1-var
+7-3-string
+15-55-body
+21-1-control
+15-6-goal_term(undefined,bar(A))
+15-3-goal(undefined,bar(A))
+19-1-var
+24-1-control
+23-1-goal_term(built_in,!)
+23-1-goal(built_in,!)
+38-1-control
+26-12-goal_term(undefined,baz([1,2|A]))
+26-3-goal(undefined,baz([1,2|A]))
+30-7-list
+31-1-int
+33-1-int
+35-1-var
+49-1-control
+40-9-goal_term(built_in,A='q a')
+42-1-goal(built_in,A='q a')
+40-1-var
+44-5-atom
+51-19-goal_term(built_in,format("~w~n",[A]))
+51-6-goal(built_in,format("~w~n",[A]))
+58-6-string
+66-3-list
+67-1-var
+70-1-fullstop
