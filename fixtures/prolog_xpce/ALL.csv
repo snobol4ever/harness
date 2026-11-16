@@ -26,3 +26,5 @@ rank,entry,path,origin,package,n_lines,want_rc,heap_kb,stack_kb,timeout_s,compil
 25,xpce_l_colour,xpce_l_colour.pl,prolog_xpce__xpce_l_colour,prolog_xpce,9,0,131072,4096,120,,,,swi
 26,xpce_l_xref,xpce_l_xref.pl,prolog_xpce__xpce_l_xref,prolog_xpce,12,0,131072,4096,120,,,,swi
 27,xpce_l_read_at,xpce_l_read_at.pl,prolog_xpce__xpce_l_read_at,prolog_xpce,6,0,131072,4096,120,,,,swi
+28,xpce_b_churn,xpce_b_churn.pl,prolog_xpce__xpce_b_churn,prolog_xpce,67,0,131072,4096,120,,,,swi
+29,xpce_b_badgif,xpce_b_badgif.pl,prolog_xpce__xpce_b_badgif,prolog_xpce,47,0,131072,4096,120,,,,swi

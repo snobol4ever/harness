@@ -17,3 +17,5 @@ xpce_h_obj2term_reads
 xpce_h_streams
 xpce_h_term2obj
 xpce_p_load
+xpce_b_churn
+xpce_b_badgif

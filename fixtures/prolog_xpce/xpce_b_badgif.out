@@ -1,0 +1,7 @@
+g1: loaded 2x2
+c1: not loaded
+c2: not loaded
+g2: loaded 2x2
+chain 3
+c3: not loaded
+done

@@ -1,0 +1,11 @@
+points 1: 2000 tail_y 2000
+points 2: 2000 tail_y 4000
+string 3000 bcdefghijklmnopqrstuvwxyzabcde
+truncated bcdef
+regrown 805
+sized 600 total 446700
+vector 4000 first 1 last 16000000
+table 3000 then 1500; key_1234 3702 gone; key_1233 3699
+points 3: 2000 tail_y 6000
+sized 600 total 446700
+done

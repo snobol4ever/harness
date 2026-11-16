@@ -44,6 +44,10 @@
 #                                     through rt_xpce_sym; (b) probe/xpce_load.pl (the directive use_foreign_library(foreign(pl2xpce)), then a write)
 #                                     in mode 3 (and mode 4 when S4E_MODE4=1) prints loaded with rc 0 and nothing on standard error, and maps
 #                                     libscrip_xpce.so; (c) probe/xpce_plain.pl maps neither libscrip_xpce.so nor libxpce.so
+#                         arena       (step 29, the cfo) probe/arena_probe.c built against SCRIP's src/runtime/xpce/xpce_arena.c and the kernel library
+#                                     CURRENT names, run on the screen road's display with no screen read: its three lines ARENA-A, ARENA-B, ARENA-C each end
+#                                     ok and its rc is 0, and out/libscrip_xpce.so imports no malloc, calloc or strdup; RED while SCRIP has no arena source,
+#                                     REFUSED with no kernel library or kernel tree (S4E_XPCE_TREE names another tree)
 #                         kernelbuild, hello, classes  (steps 1 and 2, the cio) the verbs check, hello and classes of util_xpce_kernel_build.sh
 #                                     (its rc 0 green, 1 red, 2 refused); RED while that script is absent, never a refusal. The kernel witness
 #                                     xpce_k_hello and its refs have one home, harness/xpce with the recipe, and are not in this fixture (the cio)
@@ -276,6 +280,20 @@ for tok in $probe; do
                ( cd "$d" && LD_DEBUG=libs LD_DEBUG_OUTPUT="$d/pl.ld" timeout -k 5 120 "$S4E_SCRIP/scrip" --run xpce_plain.pl < /dev/null > pl.out 2> pl.err )
                cat "$d"/pl.ld.* 2>/dev/null | grep -E 'libscrip_xpce|libxpce' > /dev/null && { echo "    (c) a plain program maps the binding or the kernel" >> "$log"; v=red; }
                rm -rf "${d:?}"; note "$tok" "$v" ;;
+        cmd=arena)
+               d="$(seat_tmp arena)"; v=green; K="$KERNEL_HOME/$(cat "$KERNEL_HOME/CURRENT" 2>/dev/null)"; T="${S4E_XPCE_TREE:-/home/resources/xpce-V9.0.4}"; A="$S4E_SCRIP/src/runtime/xpce/xpce_arena.c"
+               if [ ! -f "$K/libxpce.so" ] || [ ! -f "$T/src/h/interface.h" ]; then echo "    no kernel library or no kernel tree: cannot measure" >> "$log"; note "$tok" refuse
+               elif [ ! -f "$A" ]; then echo "    no $A" >> "$log"; note "$tok" red
+               elif ! gcc -O0 -g -o "$d/arena_probe" "$FIX/probe/arena_probe.c" "$A" -I"$S4E_SCRIP/src" -isystem "$T/src" -L"$K" -lxpce -Wl,-rpath,"$K" > "$d/cc.log" 2>&1; then echo "    the arena probe does not build: $(grep -m1 'error' "$d/cc.log" | cut -c1-110)" >> "$log"; note "$tok" red
+               else mkdir -p "$d/cfg"
+                   ( cd "$d" && XPCE_APPDATA_DIR="$d/cfg" env -u DISPLAY -u XAUTHORITY timeout -k 5 120 python3 -I "$HERE/util_screen_run.py" --no-screen -- ./arena_probe gif > arena.out 2> arena.err; echo "$?" > arena.rc )
+                   grep -a '^ARENA-\|^  FAIL' "$d/arena.out" | sed 's/^/    /' >> "$log"
+                   { [ "$(cat "$d/arena.rc")" = 0 ] && [ "$(grep -a -c '^ARENA-[ABC] .* ok$' "$d/arena.out")" = 3 ]; } || { echo "    the probe's rc $(cat "$d/arena.rc"), three lines ending ok wanted" >> "$log"; v=red; }
+                   b="$S4E_SCRIP/out/libscrip_xpce.so"
+                   if [ ! -f "$b" ]; then echo "    no $b" >> "$log"; v=red
+                   elif nm -D --undefined-only "$b" | awk '{print $NF}' | sed 's/@.*//' | grep -x -e malloc -e calloc -e strdup > /dev/null; then echo "    the binding imports a libc allocator that makes a block" >> "$log"; v=red; fi
+                   note "$tok" "$v"; fi
+               rm -rf "${d:?}" ;;
         cmd=kernelbuild|cmd=hello|cmd=classes)
                k="$HERE/util_xpce_kernel_build.sh"; verb="${tok#cmd=}"; [ "$verb" = kernelbuild ] && verb=check
                if [ ! -f "$k" ]; then echo "    no $k" >> "$log"; note "$tok" red
