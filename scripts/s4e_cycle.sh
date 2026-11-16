@@ -88,10 +88,18 @@ cells() {   # one line per cell: key kind lang dir cell (dir: the suite's contai
 # CYCLE.order, written at the lap's start, so a restart in the middle of a lap reads the same list and its index names the same cell.
 ORDERF="$PROG/CYCLE.order"
 order_write() { awk '$2 == "CELL" && $7 != "rc=2" { v = $8; sub(/^secs=/, "", v); s[$5 "\t" $6] = v } END { for (k in s) print k "\t" s[k] }' "$LOG" 2>/dev/null > "$ORDERF.tmp" && mv "$ORDERF.tmp" "$ORDERF"; }
+# THE SUITES NAMED FIRST (the grader 2026-11-16, on the coo's word of 11:3x CST and Lon's of 11:1x, "Icon/Prolog graphics and Jupyter lab/notebook
+# (SCRIPtix) and GRADING. Three things ONLY!!!"; MEASURED: lap 42 graded no cell for 2 h 17 min behind two rosetta-raku cells while no Icon or Prolog
+# suite was read on the day's graphics landings): CYCLE.first, beside CYCLE.order, one line a suite key or lang:L (# a comment). A named key runs first,
+# in the file's order; then every suite of a named language, the fastest first as below; then the rest as before. An absent or empty file is no change.
+FIRSTF="$PROG/CYCLE.first"
 order_cells() {   # stdin: the cells in the table's order; stdout: the lap's order
-    awk -F'\t' -v OF="$ORDERF" 'BEGIN { while ((getline l < OF) > 0) { split(l, a, "\t"); s[a[1] "\t" a[2]] = a[3]; have = 1 } }
-        { line[NR] = $0; su[NR] = $1; k = $1 "\t" $5; if (k in s) { tot[$1] += s[k]; seen[$1] = 1 } }
-        END { for (i = 1; i <= NR; i++) printf "%d\t%d\t%s\n", (!have ? 0 : (su[i] in seen) ? tot[su[i]] + 1 : 0), i, line[i] }' | sort -t "$(printf '\t')" -k1,1n -k2,2n | cut -f3-
+    awk -F'\t' -v OF="$ORDERF" -v FF="$FIRSTF" 'BEGIN { while ((getline l < OF) > 0) { split(l, a, "\t"); s[a[1] "\t" a[2]] = a[3]; have = 1 }
+            while ((getline l < FF) > 0) { sub(/#.*/, "", l); gsub(/[ \t]/, "", l); if (l == "") continue; n++; if (l ~ /^lang:/) fl[substr(l, 6)] = n; else fk[l] = n } }
+        { line[NR] = $0; su[NR] = $1; la[NR] = $3; k = $1 "\t" $5; if (k in s) { tot[$1] += s[k]; seen[$1] = 1 } }
+        END { for (i = 1; i <= NR; i++) { r = (!have ? 0 : (su[i] in seen) ? tot[su[i]] + 1 : 0)
+                  if (su[i] in fk) r = -2000000000 + fk[su[i]]; else if (la[i] in fl) r = r - 1000000000
+                  printf "%d\t%d\t%s\n", r, i, line[i] } }' | sort -t "$(printf '\t')" -k1,1n -k2,2n | cut -f3-
 }
 budget() { local T_SCRIP T_CORPUS T_HARNESS T_GITHUB; pin "${3:-$S4E}"; S4E_HOME="${3:-$S4E}" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" python3 -I "$T_HARNESS/scripts/util_grade_job.py" budget --suite "$1" --cell "$2" 2>/dev/null | sed -n 's/.* ttr_s=\([0-9]*\).*/\1/p' | head -1; }   # one-disk: not a path (the pin of the tree it is given: a base's own four repos)
 container_key() { case "$1" in snobol4) echo sno-rungs;; icon) echo icn-rungs;; prolog) echo pl-rungs;; pascal) echo pas-rungs;; raku) echo raku-rungs;; snocone) echo snc-rungs;; rebus) echo reb-rungs;; esac; }
