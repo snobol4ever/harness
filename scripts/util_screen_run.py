@@ -65,6 +65,7 @@ with a REFUSE line before the program is started. With --events and --keep, pict
 """
 import ctypes, hashlib, os, signal, struct, subprocess, sys, tempfile, time
 POLL, STILL, PACE, WIDE, HIGH = 0.5, 6, 0.05, 1024, 768
+BOUND = 600   # --probe: the longest any one wait of the probe lasts; past it the probe refuses rc 2 (cannot measure), never a verdict
 LIBC = ctypes.CDLL(None)
 def with_me():
     """Run in each child before its exec: the kernel kills it when this script dies (PR_SET_PDEATHSIG, SIGKILL), so a road killed outright at a
@@ -254,7 +255,8 @@ def run(cmd, out, cap, keep, steps=None, depth=24):
 def probe_client(mode):
     """--probe-client keep|change|blue: the depth probe's own X client, so the probe needs no Icon. On a colormap display it takes one writable
     colour cell, stores red in it (blue for mode blue), maps a 200 by 200 window whose background is that cell and waits for ever; mode change
-    stores blue into the same cell one second later, so the window's pixel bytes stay what they were while its colour moves. rc 3 where the
+    stores blue into the same cell once it has read its window's MapNotify (an order of events, never a sleep), so the window's pixel bytes
+    stay what they were while its colour moves. rc 3 where the
     display gives no writable cell (a 24-bit display)."""
     X = ctypes.CDLL("libX11.so.6"); V, I, U, L = ctypes.c_void_p, ctypes.c_int, ctypes.c_uint, ctypes.c_ulong
     class XColor(ctypes.Structure): _fields_ = [("pixel", L), ("red", ctypes.c_ushort), ("green", ctypes.c_ushort), ("blue", ctypes.c_ushort), ("flags", ctypes.c_char), ("pad", ctypes.c_char)]
@@ -262,12 +264,18 @@ def probe_client(mode):
     X.XDefaultScreen.argtypes = [V]; X.XRootWindow.restype, X.XRootWindow.argtypes = L, [V, I]; X.XDefaultColormap.restype, X.XDefaultColormap.argtypes = L, [V, I]
     X.XAllocColorCells.argtypes = [V, L, I, ctypes.POINTER(L), U, ctypes.POINTER(L), U]; X.XStoreColor.argtypes = [V, L, ctypes.POINTER(XColor)]
     X.XCreateSimpleWindow.restype, X.XCreateSimpleWindow.argtypes = L, [V, L, I, I, U, U, U, L, L]; X.XMapWindow.argtypes = [V, L]; X.XFlush.argtypes = [V]
+    X.XSelectInput.argtypes, X.XNextEvent.argtypes = [V, L, ctypes.c_long], [V, ctypes.c_char_p]
     dpy = X.XOpenDisplay(None) or sys.exit(2); scr = X.XDefaultScreen(dpy); cmap = X.XDefaultColormap(dpy, scr); cell = L()
     if not X.XAllocColorCells(dpy, cmap, 0, None, 0, ctypes.byref(cell), 1): sys.exit(3)
     def store(r, g, b): X.XStoreColor(dpy, cmap, ctypes.byref(XColor(cell.value, r, g, b, b"\x07", b"\x00"))); X.XFlush(dpy)
     store(0, 0, 65535) if mode == "blue" else store(65535, 0, 0)
-    X.XMapWindow(dpy, X.XCreateSimpleWindow(dpy, X.XRootWindow(dpy, scr), 0, 0, 200, 200, 0, 0, cell.value)); X.XFlush(dpy)
-    if mode == "change": time.sleep(1.0); store(0, 0, 65535)
+    w = X.XCreateSimpleWindow(dpy, X.XRootWindow(dpy, scr), 0, 0, 200, 200, 0, 0, cell.value); X.XSelectInput(dpy, w, 1 << 17); X.XMapWindow(dpy, w); X.XFlush(dpy)
+    if mode == "change":
+        ev = ctypes.create_string_buffer(192)
+        while True:
+            X.XNextEvent(dpy, ev)
+            if struct.unpack_from("i", ev.raw, 0)[0] == 19: break
+        store(0, 0, 65535)
     while True: time.sleep(3600)
 def probe_pin():
     """--probe-client pin: the focus arm's own X client. Two windows side by side, 0 0 and 300 0, 200 by 200, each taking key presses; once both
@@ -302,7 +310,8 @@ def probe():
             if events is not None:
                 with open(os.path.join(td, f"{name}.events"), "w") as f: f.write(events)
                 ev += ["--events", f"{name}.events"]
-            r = subprocess.run([sys.executable, me, "--out", f"{name}.dump", "--cap", cap] + ev + ["--", "bash", "-c", script], cwd=td, capture_output=True, text=True, timeout=180)
+            try: r = subprocess.run([sys.executable, me, "--out", f"{name}.dump", "--cap", cap] + ev + ["--", "bash", "-c", script], cwd=td, capture_output=True, text=True, timeout=2 * BOUND)
+            except subprocess.TimeoutExpired: refuse(f"--probe: arm {name} ran past {2 * BOUND} s, so the probe cannot measure")
             return r.returncode, r.stdout, open(os.path.join(td, f"{name}.dump")).read().strip() if os.path.exists(os.path.join(td, f"{name}.dump")) else "", r.stderr
         def seen(name):
             try: return open(os.path.join(td, name)).read()
@@ -318,8 +327,26 @@ def probe():
         k1, k2 = go("keep", cl("keep"), more=("--depth", "8")), go("keep2", cl("keep"), more=("--depth", "8"))
         ch, bl = go("change", cl("change"), more=("--depth", "8")), go("blue", cl("blue"), more=("--depth", "8"))
         d16 = go("deep16", "touch deep16.ran", more=("--depth", "16"))
-        held = "xlogo -geometry 200x200+0+0 & sleep 5; echo done-after-still; kill $!; exit 5"
-        n1 = go("plain", held, more=("--no-screen",)); n0 = go("ended", held)
+        # THE HELD PROGRAM holds a still window until the probe releases it (NAME.release, made by the probe), never by the clock; it writes its
+        # display beside it so the probe can read that screen itself. On the screen road it is never released, so only the road can end it at its
+        # still screen before its own bound; under --no-screen the probe releases it once it has itself read the window still (wait_still).
+        held = lambda n: (f'xlogo -geometry 200x200+0+0 & echo "$DISPLAY" > {n}.display; while [ ! -e {n}.release ] && [ "$SECONDS" -lt {BOUND} ]; do sleep 0.2; done; '
+                          'echo done-after-still; kill $!; exit 5')
+        lost = []
+        def wait_still(n):
+            t0, last, run_len = time.time(), None, 0
+            while run_len < STILL:
+                if time.time() - t0 > BOUND: lost.append(n); return
+                d = seen(f"{n}.display").strip()
+                shot = pixels(d)[0] if d else None
+                run_len = run_len + 1 if shot and shot[2] and shot == last else (1 if shot and shot[2] else 0); last = shot
+                time.sleep(POLL)
+            open(os.path.join(td, f"{n}.release"), "w").close()
+        import threading
+        rel = threading.Thread(target=wait_still, args=("plain",), daemon=True); rel.start()
+        n1 = go("plain", held("plain"), more=("--no-screen",)); rel.join()
+        if lost: refuse(f"--probe: arm {lost[0]} never showed its still window, so the probe cannot measure")
+        n0 = go("ended", held("ended"))
         n2 = go("plain8", "xdpyinfo | grep -c -E 'dimensions: +1024x768|depth of root window: +8 planes'", more=("--no-screen", "--depth", "8"))
         n3 = go("plainev", "touch plainev.ran", more=("--no-screen",), events="move 1 1\n")
         kids = lambda pid: [int(q) for q in os.listdir("/proc") if q.isdigit() and (lambda t: t is not None and int(t.rsplit(")", 1)[1].split()[1]) == pid)(read_stat(q))]
@@ -327,8 +354,16 @@ def probe():
             try: return open(f"/proc/{q}/stat").read()
             except OSError: return None
         zombie_or_gone = lambda q: (lambda t: t is None or t.rsplit(")", 1)[1].split()[0] == "Z")(read_stat(q))
+        comm = lambda q: (lambda t: t.split("(", 1)[1].rsplit(")", 1)[0] if t else "")(read_stat(q))
         rd = subprocess.Popen([sys.executable, me, "--out", "killed.dump", "--", "xlogo", "-geometry", "200x200+0+0"], cwd=td, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(2.0); mine = kids(rd.pid); rd.kill(); rd.wait(); time.sleep(1.0)
+        t0 = time.time()
+        while True:
+            mine = [q for q in kids(rd.pid) if comm(q) in ("Xvfb", "xlogo")]
+            if sorted(comm(q) for q in mine) == ["Xvfb", "xlogo"]: break
+            if rd.poll() is not None or time.time() - t0 > BOUND: rd.kill(); refuse("--probe: the road never had its display and its program as children, so the killed-road arm cannot measure")
+            time.sleep(0.1)
+        rd.kill(); rd.wait(); t0 = time.time()
+        while not all(zombie_or_gone(q) for q in mine) and time.time() - t0 < BOUND: time.sleep(0.1)
         orphans = [q for q in mine if not zombie_or_gone(q)]
         for q in orphans:
             try: os.kill(q, signal.SIGKILL)
