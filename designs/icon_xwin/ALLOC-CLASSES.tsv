@@ -1,0 +1,59 @@
+# ALLOC-CLASSES.tsv -- the class of every allocation site, every class-bearing free and every root of the oracle's window sources as rtt -x translates them for Config linux and Graphics 1 (skill icon reference.md section 9, THE WINDOW FACILITY, W1; officer_07 2026-11-16 from the cio's ICON-GRAPHICS-ALLOC-SITES.tsv of 2026-11-10, its six WinExtns rows dropped as not built and rcolor.r 585 added). util_gen_icon_xwin_device.py reads it, converts each site to the macro XWIN_<class>_<call> of xwin_alloc.h, and refuses rc 2 a site of the translated C that no row names and a row that names no site.
+# classes: RECORD a record of a chain, an HB_LREC block with its layout, by GRFX_ALLOC or one malloc of a record struct; HELD a buffer or name a record field keeps, an HB_RVEC block; PTRS an array of heap pointers a record keeps, an HB_LREC block whose layout marks every word; ROOTED a buffer a file-scope root keeps across calls, an HB_RVEC block; CALLEXT allocated in a helper and released by its caller inside one window function (and its free stores NULL), an HB_RVEC block; SCRATCH allocated and freed inside one function, its machine stack.
+# rows: site <tab> source <tab> line <tab> call <tab> assigned to <tab> class <tab> why   (a RECORD row of GRFX_ALLOC names its struct tag in the call column as GRFX_ALLOC:<tag>; line is the use line)
+# rows: root <tab> source <tab> - <tab> ptr|descr <tab> name <tab> ROOT <tab> why
+# gf_paltbl, the second palette pointer of the 2026-11-10 count, is no root: a static of rimage.r of call extent, its block reached after the read through the caller's imgdata (a record's layout or the function's own frame), and nothing moves inside one window function
+# every free of the sources becomes nothing (XWIN_FREE) except a free a CALLEXT row names, which stores NULL (XWIN_FREE_NULL)
+site	fwindow.r	531	malloc	points	SCRATCH	DrawCurve's point buffer, freed at 571 of the same function
+site	fwindow.r	1155	malloc	points	SCRATCH	FillPolygon's point buffer, freed at 1166 of the same function
+site	rcolor.r	585	malloc	palsetup_palette	ROOTED	the current palette, kept in a file-scope pointer across calls (missing from the 2026-11-10 table: its call is on the line after the assignment)
+site	rimage.r	112	malloc	gf_paltbl	CALLEXT	the GIF reader's palette, handed to the caller's imgdata or freed by the clean-up at 87
+site	rimage.r	272	malloc	gf_string	CALLEXT	the GIF reader's image data, handed to the caller's imgdata or freed at 88
+site	rimage.r	273	malloc	gf_prefix	CALLEXT	the GIF reader's LZW table, freed at 82 before the read returns
+site	rimage.r	274	malloc	gf_suffix	CALLEXT	the GIF reader's LZW table, freed at 83 before the read returns
+site	rimage.r	490	malloc	gf_pixels	CALLEXT	the GIF writer's pixel buffer, freed at 465
+site	rimage.r	702	malloc	mc_blist	SCRATCH	the median-cut box list, freed at 720 of the same function (its helpers run inside it)
+site	rwindow.r	1486	malloc	thepoints	CALLEXT	a curve's point buffer re-allocated inside the loop of genCurve: on the machine stack every pass would grow the frame, so it is a heap block (the 2026-11-10 table said SCRATCH)
+site	rxrsc.ri	47	calloc	ws->iconColors	HELD	a window's icon colour indices
+site	rxrsc.ri	55	calloc	ws->theColors	HELD	a window's colour indices
+site	rxrsc.ri	179	realloc	wd->colrptrs	PTRS	the display's colour table grows: an array of pointers to wcolor blocks
+site	rxrsc.ri	188	calloc	wd->colrptrs[j]	HELD	one wcolor of the display's colour table (no pointer inside it)
+site	rxrsc.ri	241	calloc	ws2->theColors	HELD	a cloned window's colour indices
+site	rxrsc.ri	363	GRFX_ALLOC:_wdisplay	wd	RECORD	a display record on the wdsplys chain
+site	rxrsc.ri	365	salloc	wd->name	HELD	the display's name
+site	rxrsc.ri	381	alloc	wd->colrptrs	PTRS	the display's colour table: an array of pointers to wcolor blocks
+site	rxrsc.ri	431	malloc	wd->fonts	RECORD:_wfont	the display's first font, a _wfont record
+site	rxrsc.ri	438	malloc	wd->fonts->name	HELD	the first font's name
+site	rxrsc.ri	757	GRFX_ALLOC:_wfont	rv	RECORD	a font record on its display's font chain
+site	rxrsc.ri	758	malloc	rv->name	HELD	a font's name
+site	rxrsc.ri	788	GRFX_ALLOC:_wcontext	wc	RECORD	a context record on the wcntxts chain
+site	rxrsc.ri	877	GRFX_ALLOC:_wstate	ws	RECORD	a window state record on the wstates chain
+site	rwinrsc.r	33	GRFX_ALLOC:_wbinding	w	RECORD	a binding record on the wbndngs chain
+site	rxwin.ri	534	salloc	ws->windowlabel	HELD	the window's label
+site	rxwin.ri	749	salloc	ws->iconlabel	HELD	the icon's label
+site	rxwin.ri	927	salloc	ws->iconlabel	HELD	the icon's label, replaced
+site	rxwin.ri	949	salloc	ws->windowlabel	HELD	the window's label, replaced
+site	rxwin.ri	2144	calloc	ws->theColors	HELD	a window's colour indices
+site	rxwin.ri	2456	calloc	ckey	SCRATCH	a colour cache freed at 2476 of the same function
+site	rxwin.ri	2457	calloc	cval	SCRATCH	a colour cache freed at 2475 of the same function
+site	rxwin.ri	2497	malloc	im->data	CALLEXT	an XImage's pixels, made by getximage and destroyed by its caller inside one window function; the patch gives the image a destroy hook that leaves its data to the collector (the 2026-11-10 table said the machine stack, which getximage's return would leave)
+site	rxwin.ri	2728	malloc	wc->patternname	HELD	a context's pattern name
+site	rxwin.ri	2856	salloc	ws->iconimage	HELD	the icon image's file name
+site	rxwin.ri	2887	salloc	ws->iconimage	HELD	the icon image's file name, replaced
+site	rxwin.ri	3134	calloc	ws->theColors	HELD	a window's colour indices
+site	rimage.r	82	free	gf_prefix	CALLEXT	the release of 273
+site	rimage.r	83	free	gf_suffix	CALLEXT	the release of 274
+site	rimage.r	87	free	gf_paltbl	CALLEXT	the release of 112 on a failed read
+site	rimage.r	88	free	gf_string	CALLEXT	the release of 272 on a failed read
+site	rimage.r	465	free	gf_pixels	CALLEXT	the release of 490
+root	rwinrsc.r	-	ptr	wcntxts	ROOT	the head of the context chain
+root	rwinrsc.r	-	ptr	wstates	ROOT	the head of the window state chain
+root	rwinrsc.r	-	ptr	wbndngs	ROOT	the head of the binding chain
+root	rxrsc.ri	-	ptr	wdsplys	ROOT	the head of the display chain
+root	rcolor.r	-	ptr	palsetup_palette	ROOT	the current palette, kept across calls
+root	rwindow.r	-	descr	amperX	ROOT	the keyword &x
+root	rwindow.r	-	descr	amperY	ROOT	the keyword &y
+root	rwindow.r	-	descr	amperCol	ROOT	the keyword &col
+root	rwindow.r	-	descr	amperRow	ROOT	the keyword &row
+root	rwindow.r	-	descr	amperInterval	ROOT	the keyword &interval
+root	rwindow.r	-	descr	lastEventWin	ROOT	the window of the last event
