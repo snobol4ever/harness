@@ -2,10 +2,14 @@
 # lang: the language column of SUITE_RUNNERS.tsv whose master and pkg containers are searched for graphics entries. label: the line's name on the banner.
 # steps: the design's step table under harness/designs (step 0 left out). rows: a regular expression matched at the start of a row's topic, N standing for the step's number.
 # scripted: containers of programs that wait for a mouse or a key, where a pass on the first picture alone does not count: an entry counts only with its NAME.events. - for none.
-# excluded: containers left out of this line (Unicon's graphics, a separate library by Lon's ruling of 2026-11-16 09:5x). - for none. The lead of a line keeps its row: the cto Icon, the cfo Prolog.
-lang	label	steps	rows	scripted	excluded
+# excluded: containers left out of this line (Unicon's graphics, a separate library by Lon's ruling of 2026-11-16 09:5x). - for none. The lead of a line keeps its row: the cto Icon, the cfo Prolog, the cqo Unicon.
+# only: when it names containers, the line searches those and no other (the Unicon line: the Unicon containers of the icon language). - or absent for every container of the language.
+lang	label	steps	rows	scripted	excluded	only
 icon	Icon graphics	icon_xwin/STEPS.tsv	^icon-xwin-(w|step-)N-	ipl_gprogs,ipl_gpacks	rosetta-unicon,unitests,unicon-uni,uni_ipl,uni_xml,uni_bench,uni_cs410,uni_ubugger
 prolog	Prolog graphics	prolog_xpce/STEPS.tsv	^prolog-xpce-step-N-	-	-
+icon	Unicon graphics	-	-	unicon_graphics	-	rosetta-unicon,unitests,unicon-uni,unicon_graphics
 # goal lines (Lon 2026-11-16 12:3x CST: "The number to watch as the countdown is Icon demo 10 to 177." / "Gui pack from 3 to 7 is also the goal."): goal, label, the suite key whose newest pass count in SUITES.tsv is the numerator, and the denominator: a glob whose files are counted, lines:FILE:REGEX for the lines of a file an expression finds, or - for the suite row's own total. The Icon demos end at 149: the gprogs lines of ipl's EXCLUDED.tsv under NEEDS_GRAPHICS_FACILITY, the programs of the library that call a window function (28 of its 177 files draw nothing and are graded in ipl).
 goal	Icon demos	ipl_gprogs	lines:/home/corpus/packages/icon/ipl/EXCLUDED.tsv:^gprogs/[^\t]*\tNEEDS_GRAPHICS_FACILITY
 goal	GUI packs	ipl_gpacks	-
+# the Unicon scope (the cqo 2026-11-16, on Lon's word of 15:3x CST: "let's get the Icon rock solid and the Unicon graphics too."): every Unicon program that uses graphics, MEASURED 53: the 43 of unicon_uni and the 4 of unicon_tests named NEEDS_GRAPHICS_FACILITY (33 of them the gui demos) and the 6 screen entries of rosetta-unicon. Its numerator is the Works count of the Unicon line (works:LABEL), since no one suite row holds the scope; its denominator is the sum of the cells after it (entries:KEY, the graphics entries cut in container KEY). The package the 47 are cut into is unicon_graphics, graded by the Unicon graphics oracle; its programs wait for a mouse or a key, so it stands in the scripted column.
+goal	Unicon demos	works:Unicon graphics	lines:/home/corpus/packages/icon/unicon_uni/EXCLUDED.tsv:^[^#\t]+\tNEEDS_GRAPHICS_FACILITY	lines:/home/corpus/packages/icon/unicon_tests/EXCLUDED.tsv:^[^#\t]+\tNEEDS_GRAPHICS_FACILITY	entries:rosetta-unicon
