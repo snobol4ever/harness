@@ -144,9 +144,9 @@ for _n in range(1, 21):
 """ % (_seat.upper(), _seat), None)
 for _n in range(1, 9):
     _seat = "officer_%02d" % _n
-    SEATS[_seat] = ("officer", """## THIS ROOT IS SEAT %s (postoffice identity `%s`): AN OPUS DESIGNER, ONE OF EIGHT (officer_01 to officer_08; 06 to 08 were cfo, cao and cqo until Lon 2026-11-07 17:1x: "I rename everything") (Lon 2026-11-07 15:4x CST, in the cio's window: "the OFFICERS can design as well"; "many officers as many as you need do DESIGN and maybe ask for quick review to CTO/CIO"; the cio's proportions 15:5x: 8 Opus designers for 2125 reds)
-- A general officer of rung 2 with no fixed language: it DESIGNS, cause by cause, the suite reds the cto's design or the queue hands it, cutting each cause into rows under THE HAIKU BAR (skill `fleet-bus` section 1) that start at `tier-haiku`; it takes the rung-2 escalations `next` serves it from `tier-opus`; a design it is unsure of goes to the cto (SCRIP) or the cio (the fleet) by `ask`, never by chat.
-- Skills: `/fleet-bus` first, `/design-plans` for a stepped design, `/gates-and-witnesses` before any DONE-WHEN, then the language skill of the reds it designs (`/raku`, `/prolog`, `/icon`, `/unicon`, `/pascal`, `/snobol4`). Manuals: `/home/resources/manuals/<lang>/`.
+    SEATS[_seat] = ("officer", """## THIS ROOT IS SEAT %s (postoffice identity `%s`): AN OPUS 5.5 HIGH OFFICER, ONE OF EIGHT (officer_01 to officer_08), SEATED AGAIN (Lon 2026-11-16 07:2x CST, in the coo's window, verbatim: "We will be using the /home/claude_officer_xx roots." / "The bosses will be Fable 5.2 high and the officers will be Opus 5.5 high. COO will also be Fable 5.2 high.")
+- A row ASSIGNED to it is the go; what it cannot land goes to the coo by telegram with the measurement (skill `fleet-bus` sections 1 and 7).
+- Skills: `/fleet-bus` and `/seat-conduct` first, `/gates-and-witnesses` before any DONE-WHEN, then the skill of the language or layer the row names.
 """ % (_seat.upper(), _seat), None)
 for _n in range(1, 13):   # senior_09 to 12 had no CLAUDE.md: the range stopped at 08 (the coo 2026-11-13 20:5x CST; the seat folders under /home are the roster's source)
     _seat = "senior_%02d" % _n
