@@ -1,0 +1,36 @@
+# IMPORTS-2D.tsv -- name by name, what a Unicon window object's 2D code asks of the outside against what Arizona's tree asks (officer_07 2026-11-16, the cto 10:0x CST; a measurement for the design he owes, nothing built from it).
+# Unicon: the 25 names its 2D code reaches (unicon/DIALECT.tsv's configuration plus NoGL, linked --gc-sections with the 48 Arizona functions as roots, less libc and libm and the tree's own data; UNICON-GENERATION-MEASURE.tsv third block) plus xwin_kywd_prog; read from the translator's raw output, before the generator's conversion, which removes salloc and adds xwin_list_size and the three allocators as for Arizona.
+# Arizona: what its tree needs from outside (util_gen_icon_xwin_device.py --link-census, reached after gc-sections), and how Arizona's object meets each today: its shim (src/runtime/xwin_shim.c) or a runtime import (arizona/INTERFACE.tsv).
+# name <tab> arizona tree needs <tab> unicon 2D needs <tab> arizona meets it by <tab> note
+alcfile	yes	yes	shim	
+alclist	no	yes	-	Unicon's own list allocator, reached from 2D code (the Pending list); Arizona's tree makes no list, its open does
+alcreal	yes	no	runtime import	
+alcstr	yes	yes	runtime import	
+allchars	yes	yes	shim	
+bigmul	no	yes	-	large-integer multiply, reached from Unicon's cnv.r
+bigradix	yes	yes	shim	
+bigtoreal	yes	yes	shim	
+bigtos	yes	yes	shim	
+c_get	yes	yes	runtime import	
+c_put	yes	yes	runtime import	
+curstring	yes	yes	shim	
+emptystr	yes	yes	shim	
+err_msg	yes	yes	shim	
+fatalerr	yes	yes	shim	
+getenv_r	no	yes	-	Unicon's reentrant getenv (its rposix), reached from 2D code
+idelay	yes	yes	shim	
+interp	yes	yes	shim	
+iselect	no	yes	-	Unicon's select wrapper (the event wait of its 2D code)
+nulldesc	yes	yes	runtime import	
+nullptr	no	yes	-	Unicon's null-pointer descriptor datum
+qsearch	no	yes	-	Unicon's binary search helper
+reserve	no	yes	-	Unicon's region reservation (its string and block regions)
+rt_lrec_alloc	yes	no	runtime import	
+rt_lrec_realloc	yes	no	runtime import	
+rt_ws_alloc_raw	yes	no	runtime import	
+rt_xwin_call_h	yes	no	runtime import	
+salloc	no	yes	-	a strdup; HELD sites of the class table, so the generator's conversion removes it from a converted tree
+set_errortext	no	yes	-	Unicon's error-text setter, reached from 2D code
+syserr	no	yes	-	Unicon's system-error exit
+xwin_kywd_prog	yes	yes	shim	
+xwin_list_size	yes	no	runtime import	
