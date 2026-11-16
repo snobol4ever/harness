@@ -28,7 +28,12 @@
 #                                               patch applied at its base through a private index, the files it deletes and the rows of an ALL.csv (by entry) or an
 #                                               ALL.args (by first column) it drops, and refuses rc 1 unless the giver states exactly those numbers after the proof:
 #                                               --deletes N and --drops K. The same for a file the patch PUTS BACK to a text it had before (its new text equal to
-#                                               one of that file's last twenty versions, as the 17 answers were): --reverts R. A patch that does none needs none.
+#                                               one of that file's last twenty versions, as the 17 answers were): --reverts R. AND FOR WHAT IT CHANGES OF AN ENTRY IT
+#                                               DOES NOT ADD (the cto's ruling of 2026-11-16 13:1x CST, the grader's row check folded in): in corpus, under tests,
+#                                               packages and demos, each changed file that is no table (an answer, an input, a program, a script of events) and each
+#                                               row of an ALL.csv (its rank aside) or ALL.args that stood before and reads differently after: --changes C. The
+#                                               refusal names the first five of each, so a giver sees what its patch touches that it did not mean. A patch that
+#                                               does none of the four needs no number.
 #   s4e_take.sh drain [--wait SECONDS]          THE GRADER ONLY: lands EVERY waiting patch that carries a proof, one after another with no turn of the grader
 #                                               between two, each as grader_give.sh landed one (the patches worktree at origin/main, or at the patch's base when it
 #                                               applies only there; s4e_land.sh with the proof as its gate). Oldest first, after the patches a line of FIRST.conf in
@@ -74,10 +79,13 @@ take() {
 give_keys() {   # <file name>: the keys of a table on standard input, the entry column of an ALL.csv (its second), the first column of any other
     case "$1" in *ALL.csv) awk -F, 'NR>1 {print $2}' ;; *) grep -v '^#' | cut -f1 ;; esac
 }
+give_rows() {   # <file name>: key, a tab, the row, of a table on standard input; an ALL.csv's row without its rank, which every insertion counts again
+    case "$1" in *ALL.csv) awk 'NR>1 {r=$0; sub(/^[^,]*,/, "", r); k=r; sub(/,.*/, "", k); print k "\t" r}' ;; *) grep -v '^#' | awk -F'\t' '{print $1 "\t" $0}' ;; esac
+}
 give() {
-    local r="$1" p="${2:-}" why="${3:-}" pf="${4:-}" proof="${5:-}" seat="${S4E_SEAT:-}" src err="" out base ob hb at ix say_del=0 say_drop=0 say_rev=0 ndel=0 ndrop=0 nrev=0 f nb dl="" dr="" rv=""
+    local r="$1" p="${2:-}" why="${3:-}" pf="${4:-}" proof="${5:-}" seat="${S4E_SEAT:-}" src err="" out base ob hb at ix say_del=0 say_drop=0 say_rev=0 say_chg=0 ndel=0 ndrop=0 nrev=0 nchg=0 f nb dl="" dr="" rv="" ch=""
     shift 5 2>/dev/null || shift $#
-    while [ $# -gt 0 ]; do case "$1" in --deletes) say_del="${2:-0}"; shift 2 ;; --drops) say_drop="${2:-0}"; shift 2 ;; --reverts) say_rev="${2:-0}"; shift 2 ;; *) die "REFUSE(2): unknown argument '$1' after the proof (--deletes N, --drops K, --reverts R)" 2 ;; esac; done
+    while [ $# -gt 0 ]; do case "$1" in --deletes) say_del="${2:-0}"; shift 2 ;; --drops) say_drop="${2:-0}"; shift 2 ;; --reverts) say_rev="${2:-0}"; shift 2 ;; --changes) say_chg="${2:-0}"; shift 2 ;; *) die "REFUSE(2): unknown argument '$1' after the proof (--deletes N, --drops K, --reverts R, --changes C)" 2 ;; esac; done
     [ -n "$seat" ] || die "REFUSE(2): S4E_SEAT is unset: a patch names its seat" 2
     [ -n "$p" ] && [ -s "$p" ] || die "REFUSE(2): no patch at '$p' (usage: s4e_take.sh give corpus|harness|.github <patch> \"<why>\")" 2
     [ -n "$why" ] || die "REFUSE(2): a patch says why, the row and what the change does (usage: s4e_take.sh give $r <patch> \"<why>\")" 2
@@ -105,6 +113,14 @@ give() {
                 nb="$(GIT_INDEX_FILE="$ix" git -C "$src" ls-files -s -- "$f" 2>/dev/null | cut -d' ' -f2)"
                 if [ -n "$nb" ] && git -C "$src" log -n 20 --format= --raw --no-abbrev "$base" -- "$f" 2>/dev/null | cut -d' ' -f3 | grep -q -x "$nb"; then nrev=$((nrev + 1)); [ "$nrev" -gt 5 ] || rv="$rv $f"; fi
             fi
+            case "$r:$at:$f" in corpus:M:tests/*|corpus:M:packages/*|corpus:M:demos/*)
+                case "${f##*/}" in
+                    ALL.csv|ALL.args) nb="$(awk -F'\t' 'NR==FNR {b[$1]=$0; next} ($1 in b) && b[$1] != $0 {n++} END {print n+0}' <(git -C "$src" show "$base:$f" 2>/dev/null | give_rows "$f") <(GIT_INDEX_FILE="$ix" git -C "$src" show ":$f" 2>/dev/null | give_rows "$f"))"
+                        [ "$nb" = 0 ] || { nchg=$((nchg + nb)); ch="$ch $nb row(s) of $f"; } ;;
+                    ALL.*|PARTITION.tsv|*.tsv|README.md|MULTI-LINERS.md|ONE-LINERS.*) ;;
+                    *) nchg=$((nchg + 1)); [ "$(printf '%s' "$ch" | wc -w)" -gt 8 ] || ch="$ch $f" ;;
+                esac ;;
+            esac
             case "$at:$f" in M:*ALL.csv|M:*ALL.args)
                 at="$(comm -23 <(git -C "$src" show "$base:$f" 2>/dev/null | give_keys "$f" | sort -u) <(GIT_INDEX_FILE="$ix" git -C "$src" show ":$f" 2>/dev/null | give_keys "$f" | sort -u))"
                 [ -z "$at" ] || { ndrop=$((ndrop + $(printf '%s\n' "$at" | wc -l))); dr="$dr $f:$(printf '%s' "$at" | head -3 | tr '\n' ',')"; } ;;
@@ -112,7 +128,7 @@ give() {
         done < <(GIT_INDEX_FILE="$ix" git -C "$src" diff-index --cached --name-status "$base" 2>/dev/null)
     fi
     rm -f "$ix"
-    [ "$ndel" = "$say_del" ] && [ "$ndrop" = "$say_drop" ] && [ "$nrev" = "$say_rev" ] || die "REFUSE(1): the patch DELETES $ndel file(s)${dl:+ ($dl ...)}, DROPS $ndrop table row(s)${dr:+ ($dr)} and PUTS BACK $nrev file(s) to an older text${rv:+ ($rv ...)}, and you stated --deletes $say_del --drops $say_drop --reverts $say_rev. Nothing given. A patch cut as a whole-folder difference from a scratch copy older than the tree deletes what others landed since (MEASURED 2026-11-16: corpus 157acb344 deleted 40 files of ipl_gprogs and applied clean). Cut the patch again from the files YOU changed, each against /home/$r as it stands now; or, if you mean every one of them, state the numbers after the proof: --deletes $ndel --drops $ndrop --reverts $nrev." 1
+    [ "$ndel" = "$say_del" ] && [ "$ndrop" = "$say_drop" ] && [ "$nrev" = "$say_rev" ] && [ "$nchg" = "$say_chg" ] || die "REFUSE(1): the patch DELETES $ndel file(s)${dl:+ ($dl ...)}, DROPS $ndrop table row(s)${dr:+ ($dr)}, PUTS BACK $nrev file(s) to an older text${rv:+ ($rv ...)} and CHANGES $nchg file(s) or row(s) of entries it does not add${ch:+ ($ch ...)}, and you stated --deletes $say_del --drops $say_drop --reverts $say_rev --changes $say_chg. Nothing given. A patch cut as a whole-folder difference from a scratch copy older than the tree deletes what others landed since (MEASURED 2026-11-16: corpus 157acb344 deleted 40 files of ipl_gprogs and applied clean). Cut the patch again from the files YOU changed, each against /home/$r as it stands now; or, if you mean every one of them, state the numbers after the proof: --deletes $ndel --drops $ndrop --reverts $nrev --changes $nchg (a number that is 0 may be left out)." 1
     mkdir -p "$GIVES" 2>/dev/null || die "REFUSE(2): cannot make $GIVES" 2
     out="$GIVES/$(date -u +%Y%m%dT%H%M%SZ)-$seat-${r#.}-$$.patch"
     :   # THE PATCH NAMES ITS BASE (the cio 2026-11-14, ruled with the grader): the commit of the one checkout the patch was checked against. A patch that adds an entry to a container renumbers every row below it, so once another such patch lands it applies nowhere but at its base; the grader applies it there, in a worktree, and its landing's rebase merges the container's tables by entry key (util_table_merge.py, s4e_land.sh)
@@ -362,7 +378,15 @@ probe() {
     [ "$rc" = 1 ] && printf '%s' "$o" | grep -q 'PUTS BACK 1 file' || why="$why arm 17: a patch that puts a file back to an older text was taken with no --reverts (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
     o="$(run bash "$me" give corpus "$T/back.patch" "puts a back to its older text and says so" --proof true --reverts 1 2>&1)"; rc=$?
     [ "$rc" = 0 ] || why="$why arm 17: a patch that states its one revert was refused (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
-    if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE probe ok arms=17 (a patch that puts a file back to an older text says so too; a patch that deletes a file or drops a table row says so in numbers or is refused; a patch that deletes a file or drops a table row says so in numbers or is refused; the drain itself telegrams the giver of a patch that comes back; a give while a drain runs owes no wake; a proof runs in the patched repo's top; one that cannot measure is held once and returned the second time; a give carries its proof as a command and one with none is refused; the drain is the grader's alone, one at a time; it lands every waiting patch whose proof reads rc 0 on the patched tree, FIRST.conf's first, refuses the one whose proof reads red and names its giver, leaves the worktree at origin/main and a patch with no proof to the grader's hand; take refuses every seat and makes nothing; give stores a patch that applies with its seat and why and refuses one that does not; apply is the grader's alone; the grader's apply lands the patch on origin and the one checkout holds it; check reads red while a seat root holds one of the three; drop refuses unlanded work and removes a clean folder; a patch is checked against origin first and then the checkout's commit, through a private index)"; return 0; fi
+    $g -C "$T/w" pull -q origin main 2>/dev/null; printf 'one\n' > "$T/w/packages/p/ea.out" && $g -C "$T/w" add packages && $g -C "$T/w" commit -qm ea && $g -C "$T/w" push -q origin HEAD:main 2>/dev/null && $g -C "$T/top/corpus" fetch -q origin
+    ( cd "$T" && printf '%s\n' '--- a/packages/p/ea.out' '+++ b/packages/p/ea.out' '@@ -1 +1 @@' '-one' '+two' > chg.patch; printf '%s\n' '--- a/packages/p/ALL.csv' '+++ b/packages/p/ALL.csv' '@@ -1,3 +1,4 @@' ' rank,entry' ' 1,ea' '-2,eb' '+2,ec' '+3,eb' > ins.patch )
+    o="$(run bash "$me" give corpus "$T/chg.patch" "changes the answer of ea, an entry it does not add, and does not say so" --proof true 2>&1)"; rc=$?
+    [ "$rc" = 1 ] && printf '%s' "$o" | grep -q 'CHANGES 1 file' || why="$why arm 18: a patch that changes an existing entry's answer was taken with no --changes (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
+    o="$(run bash "$me" give corpus "$T/chg.patch" "changes the answer of ea and says so" --proof true --changes 1 2>&1)"; rc=$?; sleep 1
+    [ "$rc" = 0 ] || why="$why arm 18: a patch that states its one change was refused (rc $rc);"
+    o="$(run bash "$me" give corpus "$T/ins.patch" "adds the entry ec above eb, whose rank is counted again" --proof true 2>&1)"; rc=$?
+    [ "$rc" = 0 ] || why="$why arm 19: a patch that only adds a row, the ranks below it counted again, was refused (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-160));"
+    if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE probe ok arms=19 (a patch that changes a file or a row of an entry it does not add says so; a new row whose insertion counts the ranks again is no change; a patch that puts a file back to an older text says so too; a patch that deletes a file or drops a table row says so in numbers or is refused; a patch that deletes a file or drops a table row says so in numbers or is refused; the drain itself telegrams the giver of a patch that comes back; a give while a drain runs owes no wake; a proof runs in the patched repo's top; one that cannot measure is held once and returned the second time; a give carries its proof as a command and one with none is refused; the drain is the grader's alone, one at a time; it lands every waiting patch whose proof reads rc 0 on the patched tree, FIRST.conf's first, refuses the one whose proof reads red and names its giver, leaves the worktree at origin/main and a patch with no proof to the grader's hand; take refuses every seat and makes nothing; give stores a patch that applies with its seat and why and refuses one that does not; apply is the grader's alone; the grader's apply lands the patch on origin and the one checkout holds it; check reads red while a seat root holds one of the three; drop refuses unlanded work and removes a clean folder; a patch is checked against origin first and then the checkout's commit, through a private index)"; return 0; fi
     echo "TAKE probe RED:$why"; echo "    kept: $T"; return 1
 }
 case "${1:-}" in
