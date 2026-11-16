@@ -63,3 +63,8 @@ read	cnv.r	407	cset	1	CNV	a cset argument in the oracle's layout, handed so by t
 read	cnv.r	395	bignumblk	2	CNV	a large-integer argument in the oracle's layout, handed so by the adapter: left (cnv_str)
 read	cnv.r	563	cset	1	CNV	a cset argument in the oracle's layout, handed so by the adapter: left (tmp_str)
 read	cnv.r	551	bignumblk	2	CNV	a large-integer argument in the oracle's layout, handed so by the adapter: left (tmp_str)
+read	xwin.h	147	list	1	PENDING	the Pending list's size inside the header macro EVQUEEMPTY, expanded in wgetq (rxwin.ri 331): becomes xwin_list_size of its descriptor (the cto 2026-11-16 12:0x CST; officer_06's census after the preprocessor)
+read	rmacros.h	176	realblk	1	CNV	GetReal, a real argument in the oracle's layout, handed so by the adapter (icnx_realblock_t is struct b_real): left (cnv.r 40 100 313 403 536 559)
+read	rmacros.h	174	realblk	1	DEAD	GetReal's Double branch: Double is not defined in this build, so the macro read is never expanded
+read	rmacros.h	540	cset	1	CNV	CsetPtr, a cset argument in the oracle's layout, handed so by the adapter (icnx_csetblock_t is struct b_cset): left (cnv.r 204 438)
+read	rmacros.h	364	tvsubs	2	DEAD	SubStr, a substring trapped variable's position and variable: the macro is expanded in no file of the tree

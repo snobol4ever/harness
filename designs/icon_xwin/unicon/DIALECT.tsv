@@ -41,3 +41,4 @@ arena_define	-Drealloc=uxa_realloc
 arena_define	-Dfree=uxa_free
 arena_define	-Dstrdup=uxa_strdup
 arena_define	-Dsalloc=uxa_salloc
+macro_reads	measure

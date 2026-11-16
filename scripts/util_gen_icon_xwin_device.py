@@ -49,7 +49,7 @@ def load_dialect(name):
     if name not in DIALECTS or not os.path.isfile(path):
         raise Refuse("no dialect %s: %s is missing (dialects: %s)" % (name, path, " ".join(DIALECTS)))
     d = {"name": name, "source": [], "include": [], "config": [], "own_data": [], "by_value": {}, "export": [],
-         "carry": [], "cc_include": [], "translator_args": "-x", "config_mode": "replace", "plain": None, "arena_define": [], "arena_source": None}
+         "carry": [], "cc_include": [], "translator_args": "-x", "config_mode": "replace", "plain": None, "arena_define": [], "arena_source": None, "macro_reads": "refuse"}
     for n, line in enumerate(open(path), 1):
         if not line.strip() or line.startswith("#"):
             continue
@@ -62,6 +62,8 @@ def load_dialect(name):
             a, b = v.split()
             d[k][a] = b
         elif k in ("src", "translator", "translator_place", "translator_args", "plain", "config_file", "config_mode", "functions", "arena_source"):
+            d[k] = v
+        elif k == "macro_reads" and v in ("refuse", "measure"):
             d[k] = v
         else:
             raise Refuse("%s:%d key %s is unknown" % (path, n, k))
@@ -590,8 +592,8 @@ def read_sites(line):
     return out
 
 
-def read_pass(lines, path, rows, report):
-    src, n = None, 0
+def read_pass(lines, path, rows, report, src=None, unrowed=None):
+    n = 1 if src else 0
     out = []
     for line in lines:
         m = re.match(r'#line (\d+) "([^"]*)"', line)
@@ -601,6 +603,9 @@ def read_pass(lines, path, rows, report):
             continue
         for start, end, block, member, operand in sorted(read_sites(line), key=lambda s: -s[0]):
             row = rows.get((src, n, block))
+            if row is None and unrowed is not None:
+                unrowed.append("%s:%d %s.%s" % (src, n, block, member))
+                continue
             if row is None:
                 raise Refuse("%s %s:%d reads a %s block raw and no row of the read table names it: %s" % (os.path.basename(path), src, n, block, line.strip()[:100]))
             row["seen"] += 1
@@ -611,6 +616,95 @@ def read_pass(lines, path, rows, report):
         n += 1
         out.append(line)
     return out
+
+
+def compile_headers(tree):
+    hs = set()
+    for n in c_sources(tree):
+        r = subprocess.run(["bash", CC_SLOT, "gcc", "-M", "-MG"] + cc_flags(n) + [n], cwd=tree, capture_output=True, text=True)
+        if r.returncode != 0:
+            raise Fail("gcc -M %s for the headers the C compile reads rc=%d: %s" % (n, r.returncode, tail(r.stderr)))
+        for dep in r.stdout.replace("\\\n", " ").split()[1:]:
+            rel = os.path.relpath(os.path.normpath(os.path.join(tree, dep)), tree)
+            if rel.endswith(".h") and not rel.startswith("..") and os.path.isfile(os.path.join(tree, rel)):
+                hs.add(rel)
+    return sorted(hs)
+
+
+def header_pass(tree, rows, report):
+    hs = compile_headers(tree)
+    unrowed = [] if D["macro_reads"] == "measure" else None
+    for rel in hs:
+        p = os.path.join(tree, rel)
+        lines = open(p, errors="surrogateescape").read().split("\n")
+        out = read_pass(lines, p, rows, report, src=os.path.basename(rel), unrowed=unrowed)
+        if out != lines:
+            with open(p, "w", errors="surrogateescape") as f:
+                f.write("\n".join(out))
+    if unrowed:
+        report.append("MEASURED header reads with no row (macro_reads measure, nothing refused): %d: %s" % (len(unrowed), " ".join(unrowed)))
+    return hs
+
+
+def pp_census(tree, rows, hs, scratch, report):
+    work = os.path.join(scratch, "ppcensus")
+    shutil.copytree(tree, work)
+    marks = {}
+    for rel in hs:
+        p = os.path.join(work, rel)
+        lines = open(p, errors="surrogateescape").read().split("\n")
+        for i, line in enumerate(lines):
+            for start, end, block, member, operand in sorted(read_sites(line), key=lambda s: -s[0]):
+                k = (os.path.basename(rel), i + 1, block)
+                marks.setdefault(k, len(marks))
+                line = line[:start] + "XWIN_RD_%d(" % marks[k] + line[start + len("BlkLoc("):]
+            lines[i] = line
+        text = "\n".join(lines)
+        text, nb = re.subn(r"#define\s+BlkLoc\(", "#define XWIN_PP_BlkLoc(", text)
+        with open(p, "w", errors="surrogateescape") as f:
+            f.write(text)
+    ids = {v: k for k, v in marks.items()}
+    used, bad = {}, []
+    for n in c_sources(work):
+        direct = {}
+        src, ln = None, 0
+        for line in open(os.path.join(work, n), errors="surrogateescape").read().split("\n"):
+            m = re.match(r'#line (\d+) "([^"]*)"', line)
+            if m:
+                src, ln = os.path.basename(m.group(2)), int(m.group(1))
+                continue
+            for s in read_sites(line):
+                direct[(src, ln, s[2])] = direct.get((src, ln, s[2]), 0) + 1
+            ln += 1
+        r = subprocess.run(["bash", CC_SLOT, "gcc", "-E"] + cc_flags(n) + [n], cwd=work, capture_output=True, text=True, errors="surrogateescape")
+        if r.returncode != 0:
+            raise Fail("gcc -E %s for the read census rc=%d: %s" % (n, r.returncode, tail(r.stderr)))
+        plain = {}
+        src, ln = None, 0
+        for line in r.stdout.split("\n"):
+            m = re.match(r'# (\d+) "([^"]*)"', line)
+            if m:
+                src, ln = os.path.basename(m.group(2)), int(m.group(1))
+                continue
+            for mm in re.finditer(r"XWIN_RD_(\d+)\(", line):
+                k = ids[int(mm.group(1))]
+                used.setdefault(k, set()).add("%s %s:%d" % (n, src, ln))
+            for s in read_sites(line):
+                plain[(src, ln, s[2])] = plain.get((src, ln, s[2]), 0) + 1
+            ln += 1
+        bad += ["%s %s:%d reads a %s block raw through a macro: %d after the preprocessor, %d in the text" % (n, k[0], k[1], k[2], c, direct.get(k, 0)) for k, c in sorted(plain.items(), key=str) if c > direct.get(k, 0)]
+    for k, where in sorted(used.items()):
+        row = rows.get(k)
+        if row is None:
+            bad.append("%s:%d reads a %s block raw and no row of the read table names it (expanded at %s)" % (k[0], k[1], k[2], ", ".join(sorted(where)[:4])))
+        elif row["cls"] == "DEAD":
+            bad.append("%s:%d is classed DEAD and is expanded at %s" % (k[0], k[1], ", ".join(sorted(where)[:4])))
+    if bad and D["macro_reads"] == "measure":
+        report.append("MEASURED after the preprocessor (macro_reads measure, nothing refused): %d: %s" % (len(bad), "; ".join(bad)))
+    elif bad:
+        raise Refuse("the read census after the preprocessor: %s" % "; ".join(bad[:8]))
+    report.append("MACRO sites=%d expanded=%d uses=%d" % (len(marks), len(used), sum(len(w) for w in used.values())))
+    shutil.rmtree(work)
 
 
 def check_reads(rows, report):
@@ -854,6 +948,7 @@ def generate(src, tree, scratch, table, patch, use_patch, report):
         if n.endswith(".h"):
             shutil.copyfile(os.path.join(scratch, "src", "h", n), os.path.join(tree, "h", n))
     carry_headers(scratch, tree)
+    hs = header_pass(tree, rrows, rreport)
     check_reads(rrows, rreport)
     report_reads[:] = rreport
     tags = record_tags(sites)
@@ -866,6 +961,8 @@ def generate(src, tree, scratch, table, patch, use_patch, report):
         raise Fail("xwin_functions.tsv holds %d functions, wants %d" % (nfun, D["functions"]))
     if use_patch:
         apply_patch(tree, patch)
+    pp_census(tree, rrows, hs, scratch, rreport)
+    report_reads[:] = rreport
     for dp, dn, fn in os.walk(tree):
         for n in fn:
             data = open(os.path.join(dp, n), "rb").read()
