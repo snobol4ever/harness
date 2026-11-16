@@ -217,13 +217,20 @@ drain_lanes() {   # the lanes of DRAIN.conf in the patches folder: lanes=N, one 
     case "$v" in ''|*[!0-9]*|0) echo 1 ;; *) echo "$v" ;; esac
 }
 lane_wt() { if [ "$1" = 1 ]; then printf '%s' "$WT"; else printf '%s%s' "$WT" "$1"; fi; }   # lane 1 is the patches worktree; lane K its sibling <worktree>K (wt-gives2, wt-gives3, ...)
-lane_ready() {   # <K>: rc 0 when lane K has its worktree; a missing one beside a worktree s4e_worktree.sh made is made the same way, once a run
-    local k="$1" w n lang
-    w="$(lane_wt "$k")"; [ -e "$w/corpus/.git" ] || [ -e "$w/harness/.git" ] || [ -e "$w/SCRIP/.git" ] && return 0
+lane_sparse() { [ "$(git -C "$1/corpus" config --get core.sparseCheckout 2>/dev/null)" = true ]; }   # <worktree>: rc 0 when its corpus is a sparse checkout
+lane_ready() {   # <K>: rc 0 when lane K has its worktree, its corpus as full as lane 1's; a missing one beside a worktree s4e_worktree.sh made is made, once a run
+    # A LANE'S CORPUS IS AS FULL AS LANE 1'S (officer_04 2026-11-16, MEASURED: wt-gives2, made from the marker's corpus=sparse:icon while wt-gives had since been
+    # widened, refused a Prolog patch at the rebase: the keyed merge's git add of tests/prolog/ALL.csv, outside the cone, read as a real conflict)
+    local k="$1" w n
+    w="$(lane_wt "$k")"
+    if [ -e "$w/corpus/.git" ] || [ -e "$w/harness/.git" ] || [ -e "$w/SCRIP/.git" ]; then
+        if [ "$k" != 1 ] && lane_sparse "$w" && ! lane_sparse "$WT"; then git -C "$w/corpus" sparse-checkout disable 2>/dev/null && echo "DRAIN: lane $k's corpus made full, as lane 1's is"; fi
+        return 0
+    fi
     case " $LANE_TRIED " in *" $k "*) return 1 ;; esac; LANE_TRIED="$LANE_TRIED $k"
     [ -f "$WT/.s4e-worktree" ] || { echo "DRAIN: lane $k has no worktree at $w (and $WT was not made by s4e_worktree.sh, so none is made): it runs no patch"; return 1; }
-    n="$(basename "$WT")"; n="${n#wt-}$k"; lang="$(sed -n 's/^corpus=sparse://p' "$WT/.s4e-worktree" | head -1)"
-    if S4E_SEAT=grader bash "$HERE/s4e_worktree.sh" new "$n" ${lang:+--lang "$lang"} > "$GIVES/logs/lane$k.worktree.log" 2>&1 9>&- && [ -d "$w" ]; then echo "DRAIN: lane $k made its worktree $w"; return 0; fi
+    n="$(basename "$WT")"; n="${n#wt-}$k"
+    if S4E_SEAT=grader bash "$HERE/s4e_worktree.sh" new "$n" $(lane_sparse "$WT" || echo --full) > "$GIVES/logs/lane$k.worktree.log" 2>&1 9>&- && [ -d "$w" ]; then echo "DRAIN: lane $k made its worktree $w"; return 0; fi
     echo "DRAIN: lane $k could not make its worktree $w (log $GIVES/logs/lane$k.worktree.log): it runs no patch"; return 1
 }
 lane_scrip() {   # <worktree>: the proofs' SCRIP stands at origin/main, built: read at most every two minutes a lane (a stamp file's age)
@@ -536,7 +543,12 @@ probe_lanes() {   # THE LANES AND THE OWN-DIRECTORY REGATE (row harness-the-grad
     [ "$rc" = 0 ] && [ "$e1" = 1 ] && [ "$e2" = 2 ] && [ "$($g --git-dir="$T/corpus.git" show main:c/one 2>/dev/null)" = one ] && [ "$($g --git-dir="$T/corpus.git" show main:c/two 2>/dev/null)" = two ] \
         && $g --git-dir="$T/SCRIP.git" cat-file -e main:src/runtime/probe_mover.txt 2>/dev/null \
         || why="$why arm c: the proof of a patch overtaken under SCRIP's runtime ran ${e1:-0} time(s) (want 1) and one overtaken in its own directory ${e2:-0} (want 2), or they did not land (rc $rc; $(printf '%s' "$o" | grep -E '^(REFUSED|HELD|LANDED)' | head -3 | cut -c1-160 | tr '\n' ' '));"
-    if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE lanes-probe ok arms=5 (e: with no lanes line the drain ran two givers' patches one after the other in lane 1; d: lanes=2 ran one giver's two patches to one repo in the order given, the second after the first ended; a: lanes=2 ran two givers' patches at once, the second started before the first ended, both landed; b: the real lander in two lanes landed two patches that each added a row to one ALL.csv, merged by entry key; c: the real lander ran the proof of a patch overtaken under SCRIP's runtime once and of one overtaken in its own directory twice)"; return 0; fi
+    # (f) a lane whose corpus is sparse while lane 1's is full is made full before it takes a patch
+    git -C "$T/wt2/corpus" sparse-checkout set --cone a 2>/dev/null; printf 'lanes=2\n' > "$T/gives/DRAIN.conf"; mk f/one one f1; give_as ga f1 "test -f f/one"
+    o="$(dr "$T/wt" "$T/lander.sh" 2>&1)"; rc=$?
+    [ "$rc" = 0 ] && [ "$(git -C "$T/wt2/corpus" config --get core.sparseCheckout 2>/dev/null)" != true ] && printf '%s' "$o" | grep -q "lane 2's corpus made full" \
+        || why="$why arm f: a lane whose corpus was sparse while lane 1's is full was not made full (rc $rc; core.sparseCheckout $(git -C "$T/wt2/corpus" config --get core.sparseCheckout 2>/dev/null));"
+    if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE lanes-probe ok arms=6 (e: with no lanes line the drain ran two givers' patches one after the other in lane 1; d: lanes=2 ran one giver's two patches to one repo in the order given, the second after the first ended; a: lanes=2 ran two givers' patches at once, the second started before the first ended, both landed; b: the real lander in two lanes landed two patches that each added a row to one ALL.csv, merged by entry key; c: the real lander ran the proof of a patch overtaken under SCRIP's runtime once and of one overtaken in its own directory twice; f: a lane whose corpus was sparse while lane 1's is full was made full)"; return 0; fi
     echo "TAKE lanes-probe RED:$why"; echo "    kept: $T"; return 1
 }
 case "${1:-}" in
