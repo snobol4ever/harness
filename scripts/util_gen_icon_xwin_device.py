@@ -19,7 +19,9 @@ compare it and --out keeps it; the generated files include none of it (h/rt.h de
   --no-patch       write the tree without the patch (to remake the patch: diff -ru the two trees)
   --syntax         gcc -fsyntax-only every .c of the tree
   --merge-builtins TSV  with --out or --check: write the 48 rows of xwin_builtins.tsv into SCRIP's builtins.tsv, an xwin
-                   row already there keeping its bid, a new one taking the next free id
+                   row already there keeping its bid, a new one taking the next free id, each with flags xwin (the merge
+                   sets it, so the tree's own rows carry none: the by-name dispatch resolves such a row's entry in the
+                   window object through rt_xwin_sym; officer_01 2026-11-16, W5)
   --link-census    compile the tree and name what it needs from outside; a call of the C allocator left is rc 1
 rc 0 made, equal or classed; rc 1 the translator, the patch, a syntax check or the comparison failed (named);
 rc 2 refused (a source missing, a site with no class, a row with no site, a scratch path left, usage).
@@ -687,6 +689,8 @@ def write_builtins(tree, rows):
 
 def merge_builtins(tree, path):
     rows = [l.rstrip("\n").split("\t") for l in open(os.path.join(tree, "xwin_builtins.tsv")) if not l.startswith("#") and l.strip()]
+    for r in rows:
+        r[8] = "xwin"
     lines = open(path).read().split("\n")
     if lines and lines[-1] == "":
         lines.pop()
