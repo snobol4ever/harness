@@ -1,0 +1,84 @@
+# xwin_fn_NewColor_8
+# At depth 8 (its NAME.depth): the success arms of NewColor that a PseudoColor display allows, beside the 24-bit witness xwin_fn_NewColor (the cto 10:1x CST).
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one NewColor_8 alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("NewColor_8");
+   &error := 1;
+   if v := i := NewColor(w) then write("NewColor", ": ", image(v))
+   else if &error = 0 then write("NewColor", ": error ", &errornumber)
+   else write("NewColor", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := j := NewColor(w, "red") then write("NewColor red", ": ", image(v))
+   else if &error = 0 then write("NewColor red", ": error ", &errornumber)
+   else write("NewColor red", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := k := NewColor(w, "0,0,65535") then write("NewColor 0,0,65535", ": ", image(v))
+   else if &error = 0 then write("NewColor 0,0,65535", ": error ", &errornumber)
+   else write("NewColor 0,0,65535", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Color(w, j) then write("Color of the red one", ": ", image(v))
+   else if &error = 0 then write("Color of the red one", ": error ", &errornumber)
+   else write("Color of the red one", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Color(w, k) then write("Color of the blue one", ": ", image(v))
+   else if &error = 0 then write("Color of the blue one", ": error ", &errornumber)
+   else write("Color of the blue one", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Fg(w, j) then write("Fg to the red one", ": ", image(v))
+   else if &error = 0 then write("Fg to the red one", ": error ", &errornumber)
+   else write("Fg to the red one", ": failed");
+   &error := 0;
+   DrawPoint(w, 1, 1);
+   &error := 1;
+   if v := Fg(w, k) then write("Fg to the blue one", ": ", image(v))
+   else if &error = 0 then write("Fg to the blue one", ": error ", &errornumber)
+   else write("Fg to the blue one", ": failed");
+   &error := 0;
+   DrawPoint(w, 2, 1);
+   show("drawn with the two", w, 0, 0, 4, 3);
+   &error := 1;
+   if v := NewColor(w, "nosuchcolour") then write("NewColor bad", ": ", image(v))
+   else if &error = 0 then write("NewColor bad", ": error ", &errornumber)
+   else write("NewColor bad", ": failed");
+   &error := 0;
+end

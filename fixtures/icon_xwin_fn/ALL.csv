@@ -47,3 +47,6 @@ rank,entry,path,origin,package,n_lines,want_rc,heap_kb,stack_kb,timeout_s,compil
 46,xwin_fn_ReadImage,xwin_fn_ReadImage.icn,icon_xwin_fn__xwin_fn_ReadImage,icon_xwin_fn,77,0,131072,4096,120,,screen.dump,
 47,xwin_fn_Lower,xwin_fn_Lower.icn,icon_xwin_fn__xwin_fn_Lower,icon_xwin_fn,55,0,131072,4096,120,,screen.dump,
 48,xwin_fn_WSync,xwin_fn_WSync.icn,icon_xwin_fn__xwin_fn_WSync,icon_xwin_fn,55,0,131072,4096,120,,screen.dump,
+49,xwin_fn_NewColor_8,xwin_fn_NewColor_8.icn,icon_xwin_fn__xwin_fn_NewColor_8,icon_xwin_fn,84,0,131072,4096,120,,screen.dump,
+50,xwin_fn_Color_8,xwin_fn_Color_8.icn,icon_xwin_fn__xwin_fn_Color_8,icon_xwin_fn,100,0,131072,4096,120,,screen.dump,
+51,xwin_fn_FreeColor_8,xwin_fn_FreeColor_8.icn,icon_xwin_fn__xwin_fn_FreeColor_8,icon_xwin_fn,86,0,131072,4096,120,,screen.dump,

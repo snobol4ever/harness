@@ -1,12 +1,12 @@
 # PARTITION.tsv -- built by util_suite_partition.py (R-1676; ARCH-SUITE-PARTITIONS.md); regenerate, never edit by hand; `util_suite_partition.py check <ALL.csv>` is the gate.
 # params: core_k=3 ubiquitous=0.5 chunk_entries=100 secs=none
-# shape: entries=48 features=1 ubiquitous=1(package) distinctive=0 core=4 clusters=44 chunks=1 sizes=44
+# shape: entries=51 features=1 ubiquitous=1(package) distinctive=0 core=5 clusters=43 chunks=1 sizes=46
 entry	part	cluster	shells
 xwin_fn_Event	core	core	
 xwin_fn_WAttrib	core	core	
 xwin_fn_DrawLine	core	core	
 xwin_fn_Fg	core	core	
-xwin_fn_FillRectangle	chunk:01	family:xwin_fn_FillRectangle	
+xwin_fn_FillRectangle	core	core	
 xwin_fn_Clone	chunk:01	family:xwin_fn_Clone	
 xwin_fn_CopyArea	chunk:01	family:xwin_fn_CopyArea	
 xwin_fn_WriteImage	chunk:01	family:xwin_fn_WriteImage	
@@ -50,3 +50,6 @@ xwin_fn_DrawPolygon	chunk:01	family:xwin_fn_DrawPolygon
 xwin_fn_ReadImage	chunk:01	family:xwin_fn_ReadImage	
 xwin_fn_Lower	chunk:01	family:xwin_fn_Lower	
 xwin_fn_WSync	chunk:01	family:xwin_fn_WSync	
+xwin_fn_NewColor_8	chunk:01	family:xwin_fn_NewColor	
+xwin_fn_Color_8	chunk:01	family:xwin_fn_Color	
+xwin_fn_FreeColor_8	chunk:01	family:xwin_fn_FreeColor	

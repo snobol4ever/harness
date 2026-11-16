@@ -1,0 +1,22 @@
+NewColor red: -74
+NewColor green: -75
+Color read: "red"
+before: 12 pixels from 0,0 size 4x3
+colour a = -74
+colour b = 65535,65535,65535
+   aaab
+   aaab
+   bbbb
+Color set blue: window_1:1(xwin_fn Color_8)
+Color read after: "blue"
+after: the same pixels, a new colour: 12 pixels from 0,0 size 4x3
+   aaab
+   aaab
+   bbbb
+Color set two: window_1:1(xwin_fn Color_8)
+Color read both: "white black"
+Color odd: error 146
+Color bad colour: failed
+Color of a shared colour: error 101
+Color of 1: failed
+screen none

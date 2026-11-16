@@ -1,0 +1,10 @@
+NewColor red: -74
+NewColor blue: -75
+FreeColor the red one: "window_1:1(xwin_fn FreeColor_8)"
+Color after the free: "red"
+FreeColor the red one again: "window_1:1(xwin_fn FreeColor_8)"
+FreeColor a shared colour: "window_1:1(xwin_fn FreeColor_8)"
+FreeColor two: "window_1:1(xwin_fn FreeColor_8)"
+FreeColor bad: window_1:1(xwin_fn FreeColor_8)
+FreeColor none: error 103
+screen none

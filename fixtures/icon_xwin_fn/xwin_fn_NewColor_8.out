@@ -1,0 +1,16 @@
+NewColor: -74
+NewColor red: -75
+NewColor 0,0,65535: -76
+Color of the red one: "red"
+Color of the blue one: "0,0,65535"
+Fg to the red one: "-75"
+Fg to the blue one: "-76"
+drawn with the two: 12 pixels from 0,0 size 4x3
+colour a = 65535,65535,65535
+   aaaa
+colour b = -75
+colour c = -76
+   abca
+   aaaa
+NewColor bad: failed
+screen none

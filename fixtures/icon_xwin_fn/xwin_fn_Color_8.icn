@@ -1,0 +1,100 @@
+# xwin_fn_Color_8
+# At depth 8 (its NAME.depth): the success arms of Color that a PseudoColor display allows, beside the 24-bit witness xwin_fn_Color (the cto 10:1x CST).
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one Color_8 alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("Color_8");
+   &error := 1;
+   if v := i := NewColor(w, "red") then write("NewColor red", ": ", image(v))
+   else if &error = 0 then write("NewColor red", ": error ", &errornumber)
+   else write("NewColor red", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := j := NewColor(w, "green") then write("NewColor green", ": ", image(v))
+   else if &error = 0 then write("NewColor green", ": error ", &errornumber)
+   else write("NewColor green", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Color(w, i) then write("Color read", ": ", image(v))
+   else if &error = 0 then write("Color read", ": error ", &errornumber)
+   else write("Color read", ": failed");
+   &error := 0;
+   Fg(w, i);
+   FillRectangle(w, 0, 0, 3, 2);
+   show("before", w, 0, 0, 4, 3);
+   &error := 1;
+   if v := Color(w, i, "blue") then write("Color set blue", ": ", image(v))
+   else if &error = 0 then write("Color set blue", ": error ", &errornumber)
+   else write("Color set blue", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Color(w, i) then write("Color read after", ": ", image(v))
+   else if &error = 0 then write("Color read after", ": error ", &errornumber)
+   else write("Color read after", ": failed");
+   &error := 0;
+   show("after: the same pixels, a new colour", w, 0, 0, 4, 3);
+   &error := 1;
+   if v := Color(w, i, "white", j, "black") then write("Color set two", ": ", image(v))
+   else if &error = 0 then write("Color set two", ": error ", &errornumber)
+   else write("Color set two", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Color(w, i) || " " || Color(w, j) then write("Color read both", ": ", image(v))
+   else if &error = 0 then write("Color read both", ": error ", &errornumber)
+   else write("Color read both", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Color(w, i, "red", j) then write("Color odd", ": ", image(v))
+   else if &error = 0 then write("Color odd", ": error ", &errornumber)
+   else write("Color odd", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Color(w, i, "nosuchcolour") then write("Color bad colour", ": ", image(v))
+   else if &error = 0 then write("Color bad colour", ": error ", &errornumber)
+   else write("Color bad colour", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Color(w, "red") then write("Color of a shared colour", ": ", image(v))
+   else if &error = 0 then write("Color of a shared colour", ": error ", &errornumber)
+   else write("Color of a shared colour", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Color(w, 1) then write("Color of 1", ": ", image(v))
+   else if &error = 0 then write("Color of 1", ": error ", &errornumber)
+   else write("Color of 1", ": failed");
+   &error := 0;
+end
