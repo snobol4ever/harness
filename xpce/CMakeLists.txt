@@ -83,10 +83,31 @@ endforeach()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/seams/pl-mutex.h ${STREAM_DIR}/pl-mutex.h COPYONLY)
 add_library(xpce_streams OBJECT ${STREAM_DIR}/os/pl-stream.c ${STREAM_DIR}/os/pl-utf8.c ${CMAKE_CURRENT_SOURCE_DIR}/xpce_stream_seams.c)
 target_include_directories(xpce_streams BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/seams ${STREAM_DIR}/os ${SWIPL_OS_TREE}/src)
-target_compile_options(xpce_streams PRIVATE -fvisibility=hidden -UHAVE_CONFIG_H)
+target_compile_options(xpce_streams PRIVATE -fvisibility=hidden -ffunction-sections -UHAVE_CONFIG_H)
 set_property(TARGET xpce_streams PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-add_library(xpce SHARED ${KERNEL_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/xpce_host.c $<TARGET_OBJECTS:xpce_streams>)
-add_dependencies(xpce xpce_names)
-target_include_directories(xpce BEFORE PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${XPCE_TREE}/src ${GUI_INCLUDE_DIRS})
+add_library(xpce_kernel OBJECT ${KERNEL_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/xpce_host.c)
+add_dependencies(xpce_kernel xpce_names)
+target_include_directories(xpce_kernel BEFORE PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${XPCE_TREE}/src ${GUI_INCLUDE_DIRS})
+target_compile_options(xpce_kernel PRIVATE -ffunction-sections)
+set_property(TARGET xpce_kernel PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+# THE ALLOCATION CLASSES (step 2 of the plan; ALLOC-CLASSES.tsv beside this file, scripts/util_xpce_alloc_census.py): once every
+# object is compiled and before the library is linked, the built objects' direct allocation sites are read against the table (a
+# site with no row, or a row with no site, refuses the build) and every object whose rows are all KERNEL has malloc, calloc,
+# realloc, strdup and free renamed onto the xpce_k_ entries of xpce_host.c, which call the kernel's own three slots. The objects
+# are compiled -ffunction-sections so that a site names its function. No source and no copy of a source is changed.
+set(XPCE_CENSUS "" CACHE FILEPATH "harness scripts/util_xpce_alloc_census.py")
+if(NOT EXISTS "${XPCE_CENSUS}")
+  message(FATAL_ERROR "XPCE_CENSUS names no file: pass -DXPCE_CENSUS=<harness>/scripts/util_xpce_alloc_census.py")
+endif()
+add_custom_target(xpce_alloc_classes
+    COMMAND python3 -I ${XPCE_CENSUS} convert ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/ALLOC-CLASSES.tsv
+    COMMENT "Reading the allocation sites against ALLOC-CLASSES.tsv and converting the KERNEL objects"
+    VERBATIM)
+add_dependencies(xpce_alloc_classes xpce_kernel xpce_streams)
+
+add_library(xpce SHARED $<TARGET_OBJECTS:xpce_kernel> $<TARGET_OBJECTS:xpce_streams>)
+set_target_properties(xpce PROPERTIES LINKER_LANGUAGE C)
+add_dependencies(xpce xpce_alloc_classes)
 target_link_libraries(xpce ${GUI_LIBRARIES} ${JPEG_LIBRARIES} m)

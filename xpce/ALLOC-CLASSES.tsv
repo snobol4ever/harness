@@ -1,0 +1,78 @@
+# ALLOC-CLASSES.tsv -- THE CLASS OF EVERY DIRECT ALLOCATION SITE OF THE XPCE KERNEL LIBRARY (DESIGN-PLAN prolog-xpce step 2, the cio 2026-11-16; ENGINE.md 6.2; read by scripts/util_xpce_alloc_census.py).
+# A site is a relocation of a built object against malloc, calloc, realloc, strdup or free (readelf -r; the objects are compiled -ffunction-sections, so a site names its function;
+# the count is the compiler's, gcc 13.3.0 at -O3 as the recipe builds, and the build's key holds the compiler's version). One row a site, cells split by a tab:
+# object (the kernel's path under src, STREAM/ for the oracle's stream file), function, callee, count, class, why. The build refuses a site with no row and a row with no site.
+# A CLASS IS DECIDED BY WHO RELEASES THE BLOCK, never by who makes it:
+#   KERNEL   the kernel releases it: the object's five names are renamed onto xpce_k_malloc, xpce_k_calloc, xpce_k_realloc, xpce_k_strdup and xpce_k_free (xpce_host.c), which call
+#            the kernel's own three slots; a host that fills the slots (SCRIP's binding, the graphics arena) then owns every such block.
+#   XOWNED   X or the C library releases or keeps it: it stays libc's.
+#   DEFAULT  the kernel's own default slots, which the three slot calls reach while no host fills them.
+# NO OBJECT MIXES KERNEL WITH ANOTHER CLASS (each block of the 37 kernel sites was followed to its release, 2026-11-16), so the conversion is of whole objects by objcopy and
+# NO PER-SITE CONVERSION IS BUILT: an object that came to mix would refuse the build, and that day the arm is designed. No source line and no copy of a source is changed.
+# ONE DEFECT OF THE KERNEL ITSELF, FOR THE BINDING (step 10) TO MEET: img/gifread.c makes its pixel buffer with malloc (line 254, XOWNED: libXpm releases it) and on its error path
+# releases the same buffer with pceFree (line 264). While the slots are libc's that is harmless; under a host's allocator it is a libc block handed to the host's free. The
+# binding's free and realloc slots therefore answer an address outside the arena's window by libc's own free and realloc (one compare, the window being at a fixed address).
+object	function	callee	count	class	why
+STREAM/pl-stream.c	S__close	free	6	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	S__close	strdup	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	S__fillbuf	free	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	S__setbuf	free	3	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	S__setbuf	malloc	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	S__seterror.isra.0	free	3	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	S__seterror.isra.0	strdup	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	S__wait	free	2	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	S__wait	strdup	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Scleanup	free	3	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sclearerr	free	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sclose_memfile	free	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sclosehook	malloc	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sdprintf	free	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sfputs	calloc	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sfree	free	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sgetcode	calloc	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sgetcode	free	4	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sgetcode	strdup	4	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sopenmem	free	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sopenmem	malloc	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sputcode	calloc	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sputs	calloc	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Ssetbuffer	free	3	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Ssetbuffer	malloc	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sseterr	free	2	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sseterr	strdup	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Sunlock	free	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Svdprintf	free	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Svfprintf	free	3	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Svfprintf	malloc	6	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	SwriteBOM	calloc	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Swrite_memfile	malloc	2	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	Swrite_memfile	realloc	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	get_utf16	free	4	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	get_utf16	strdup	4	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	put_code	calloc	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	reperror	free	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+STREAM/pl-stream.c	reperror	strdup	1	KERNEL	a stream the kernel opens, its buffers and names live in the kernel's memory and are released by the stream file or by the kernel (gra/postscript.c); nothing of it is handed to X
+gra/postscript.c	getPostscriptObject	free	2	KERNEL	releases the memory buffer Sopenmem made in pl-stream.c (line 85): one decision with the stream file
+img/gifread.c	GIFReadFD	malloc	1	XOWNED	the pixel buffer becomes the data of an XpmImage, released by libXpm's XpmFreeXpmImage (x11/ximage.c 347, x11/xconvert.c 555 and 576)
+img/giftoxpm.c	alloc_color	malloc	1	XOWNED	XpmMalloc (line 50): the colour table and its strings of an XpmImage, released by XpmFreeXpmImage
+img/giftoxpm.c	alloc_colortable	malloc	1	XOWNED	XpmMalloc (line 50): the colour table and its strings of an XpmImage, released by XpmFreeXpmImage
+img/jpegtoxpm.c	readJPEGtoXpmImage	malloc	5	XOWNED	XpmMalloc (line 68, the file's own note: left to free): the colour table, its strings and the data of an XpmImage, released by XpmFreeXpmImage
+itf/interface.c	(data.rel)	free	1	DEFAULT	the kernel's own default slots, the table TheCallbackFunctions: what pceMalloc, pceRealloc and pceFree call while no host fills them
+itf/interface.c	pce_malloc	malloc	1	DEFAULT	the kernel's own default slots, the table TheCallbackFunctions: what pceMalloc, pceRealloc and pceFree call while no host fills them
+itf/interface.c	pce_realloc	realloc	1	DEFAULT	the kernel's own default slots, the table TheCallbackFunctions: what pceMalloc, pceRealloc and pceFree call while no host fills them
+unx/process.c	initEnvironment.isra.0	malloc	2	XOWNED	the child's environment, assigned to environ: handed to the C library and never released by the kernel
+x11/xconvert.c	readImageFile	malloc	1	XOWNED	bitmap data handed to XCreateImage by CreateXImageFromData: released by XDestroyImage
+x11/xconvert.c	read_x11_bitmap_file	malloc	1	XOWNED	bitmap data handed to XCreateImage by CreateXImageFromData: released by XDestroyImage
+x11/xdisplay.c	ws_open_display	malloc	1	XOWNED	the argument vector handed to XtOpenDisplay: the toolkit keeps it and the kernel never releases it
+x11/xdnd.c	xdnd_drag	free	3	KERNEL	the drag-and-drop file's own type lists, action lists and text, each released in the same file; what Xlib hands it is released by XFree, never by these
+x11/xdnd.c	xdnd_get_actions	malloc	3	KERNEL	the drag-and-drop file's own type lists, action lists and text, each released in the same file; what Xlib hands it is released by XFree, never by these
+x11/xdnd.c	xdnd_get_three_types	malloc	1	KERNEL	the drag-and-drop file's own type lists, action lists and text, each released in the same file; what Xlib hands it is released by XFree, never by these
+x11/xdnd.c	xdnd_get_type_list	malloc	1	KERNEL	the drag-and-drop file's own type lists, action lists and text, each released in the same file; what Xlib hands it is released by XFree, never by these
+x11/xdnd.c	xdnd_handle_drop_events	free	3	KERNEL	the drag-and-drop file's own type lists, action lists and text, each released in the same file; what Xlib hands it is released by XFree, never by these
+x11/xdnd.c	xdnd_set_actions	free	1	KERNEL	the drag-and-drop file's own type lists, action lists and text, each released in the same file; what Xlib hands it is released by XFree, never by these
+x11/xdnd.c	xdnd_set_actions	malloc	2	KERNEL	the drag-and-drop file's own type lists, action lists and text, each released in the same file; what Xlib hands it is released by XFree, never by these
+x11/xframe.c	ws_realise_frame	free	1	KERNEL	releases the _NET_WM_ICON buffer ws_image_to_rgba made in x11/xppm.c, after XChangeProperty copied it
+x11/ximage.c	MakeXImage	malloc	1	XOWNED	the data of an XImage (the file's own note at 195): released by XDestroyImage
+x11/ximage.c	loadXImage	malloc	1	XOWNED	the data of an XImage (the file's own note at 195): released by XDestroyImage
+x11/xjpeg.c	staticColourReadJPEGFile	malloc	1	XOWNED	the data of an XImage: released by XDestroyImage
+x11/xppm.c	XImageToRGBA	malloc	1	KERNEL	the _NET_WM_ICON buffer of ws_image_to_rgba, released by x11/xframe.c

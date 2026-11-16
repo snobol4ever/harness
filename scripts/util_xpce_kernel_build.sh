@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_xpce_kernel_build.sh key | build | check [--deep] | hello -- THE XPCE KERNEL LIBRARY, ONCE FOR THE BOX (DESIGN-PLAN prolog-xpce step 1, the cio 2026-11-16; skill prolog reference, THE XPCE FACILITY).
+# util_xpce_kernel_build.sh key | build | check [--deep] | hello | classes -- THE XPCE KERNEL LIBRARY, ONCE FOR THE BOX (DESIGN-PLAN prolog-xpce steps 1 and 2, the cio 2026-11-16; skill prolog reference, THE XPCE FACILITY).
 # XPCE's C kernel of tag V9.0.4 is read where it stands and built by the recipe harness/xpce/CMakeLists.txt as one shared library with no SWI-Prolog in it, the oracle's
 # own stream source of 9.0.4 compiled in. The library stands outside every root, at /home/resources/xpce-kernel/KEY/libxpce.so; the one-line text file
 # /home/resources/xpce-kernel/CURRENT names the key (a file, never a link). No seat's root holds a copy and no SCRIP make builds it.
@@ -13,8 +13,12 @@
 #   hello   the witness: xpce_k_hello.c linked against the standing library ALONE (ldd names no libswipl), run on the screen road twice with the argument
 #           text and twice without, each screen line read against the oracle's cut (xpce_k_hello.screen, xpce_k_box.screen: the same pictures as Prolog
 #           programs under swipl on one thread).
+#   classes the allocation classes (step 2; harness/xpce/ALLOC-CLASSES.tsv, scripts/util_xpce_alloc_census.py): the census the build kept beside the standing library
+#           (every direct call of malloc, calloc, realloc, strdup and free in its objects, read by readelf after the conversion) is whole against the table,
+#           every KERNEL site calls the kernel's own layer and every other site libc, and the library imports from libc no allocation name that no XOWNED
+#           or DEFAULT row has. The build itself refuses a site with no row and a row with no site, so a library that stands passed the table whole.
 # rc 0 done or green; rc 1 a measured red (no library stands, stale, differs, a picture differs); rc 2 REFUSE: usage, a tree or a tool missing, the road could not measure.
-# One board line a verb: XPCE_KERNEL_BOARD ... ending OK or FAIL. The folders can be named for a test: S4E_XPCE_KERNEL (the top), S4E_XPCE_RECIPE, S4E_XPCE_TREE, S4E_XPCE_STREAM_TREE, S4E_XPCE_CMAKE_HELPERS.
+# One board line a verb: XPCE_KERNEL_BOARD ... ending OK or FAIL. The folders can be named for a test: S4E_XPCE_KERNEL (the top), S4E_XPCE_RECIPE, S4E_XPCE_CENSUS, S4E_XPCE_TREE, S4E_XPCE_STREAM_TREE, S4E_XPCE_CMAKE_HELPERS.
 set -u
 . "${S4E_HARNESS:-/home/harness}/scripts/lib_paths.sh" || { echo "REFUSE(2): lib_paths.sh did not load"; exit 2; }
 RECIPE="${S4E_XPCE_RECIPE:-$S4E_HARNESS/xpce}"
@@ -22,20 +26,22 @@ TREE="${S4E_XPCE_TREE:-/home/resources/xpce-V9.0.4}"
 STREAMS="${S4E_XPCE_STREAM_TREE:-/home/resources/swipl-V9.0.4-os}"
 HELPERS="${S4E_XPCE_CMAKE_HELPERS:-/home/resources/swipl-devel-master}"
 TOP="${S4E_XPCE_KERNEL:-/home/resources/xpce-kernel}"
+CENSUS="${S4E_XPCE_CENSUS:-$S4E_HARNESS/scripts/util_xpce_alloc_census.py}"
 seat="${S4E_SEAT:-$(id -un)}"
 SCRATCH="/tmp/s4e/$seat"
 STREAM_FILES="src/os/pl-stream.c src/os/pl-utf8.c src/os/pl-utf8.h src/os/pl-stream.h src/os/SWI-Stream.h"
 HELPER_FILES="cmake/Utils.cmake cmake/TestBSDSignals.cmake packages/cmake/Sockets.cmake"
-BUILD_FILES="CMakeLists.txt xpce_stream_seams.c xpce_host.c seams/config.h seams/pl-mutex.h seams/pl-error.h seams/os/pl-locale.h"
+BUILD_FILES="CMakeLists.txt ALLOC-CLASSES.tsv xpce_stream_seams.c xpce_host.c seams/config.h seams/pl-mutex.h seams/pl-error.h seams/os/pl-locale.h"
 refuse() { echo "REFUSE(2): $*"; exit 2; }
 board() { echo "XPCE_KERNEL_BOARD $*"; }
 need() {
     local f t
-    for t in gcc cmake sha256sum nm ldd; do command -v "$t" > /dev/null || refuse "no $t on this box"; done
+    for t in gcc cmake sha256sum nm ldd readelf objcopy python3; do command -v "$t" > /dev/null || refuse "no $t on this box"; done
     [ -d "$TREE/src" ] && [ -f "$TREE/cmake/XPCESources.cmake" ] || refuse "no XPCE kernel tree at $TREE (src and cmake/XPCESources.cmake)"
     for f in $STREAM_FILES; do [ -f "$STREAMS/$f" ] || refuse "the stream source $STREAMS/$f is absent"; done
     for f in $HELPER_FILES; do [ -f "$HELPERS/$f" ] || refuse "the cmake helper $HELPERS/$f is absent"; done
     for f in $BUILD_FILES EXPORTS.txt; do [ -f "$RECIPE/$f" ] || refuse "the recipe file $RECIPE/$f is absent"; done
+    [ -f "$CENSUS" ] || refuse "the census tool $CENSUS is absent"
 }
 key() {
     {   gcc --version | head -1; cmake --version | head -1
@@ -43,12 +49,14 @@ key() {
         ( cd "$STREAMS" && sha256sum $STREAM_FILES )
         ( cd "$HELPERS" && sha256sum $HELPER_FILES )
         ( cd "$RECIPE" && sha256sum $BUILD_FILES )
+        ( cd "$(dirname "$CENSUS")" && sha256sum "$(basename "$CENSUS")" )
     } | sha256sum | cut -c1-16
 }
 make_into() {   # <build dir> <log>: configure and build the library there through the batch door; rc 1 with the log's last lines when it fails
     local b="$1" log="$2"
-    cmake -S "$RECIPE" -B "$b" -DCMAKE_BUILD_TYPE=Release -DXPCE_TREE="$TREE" -DSWIPL_OS_TREE="$STREAMS" -DSWIPL_TREE="$HELPERS" > "$log" 2>&1 || { tail -5 "$log"; return 1; }
-    bash "$S4E_HARNESS/scripts/util_batch.sh" cmake --build "$b" -j4 >> "$log" 2>&1 || { grep -m5 -E 'error|Error' "$log"; tail -3 "$log"; return 1; }
+    cmake -S "$RECIPE" -B "$b" -DCMAKE_BUILD_TYPE=Release -DXPCE_TREE="$TREE" -DSWIPL_OS_TREE="$STREAMS" -DSWIPL_TREE="$HELPERS" -DXPCE_CENSUS="$CENSUS" > "$log" 2>&1 || { tail -5 "$log"; return 1; }
+    bash "$S4E_HARNESS/scripts/util_batch.sh" cmake --build "$b" -j4 >> "$log" 2>&1 || { grep -E '^(XPCE-ALLOC|REFUSE|XPCE_ALLOC_BOARD)' "$log" | head -14; grep -m5 -E 'error|Error' "$log"; tail -3 "$log"; return 1; }
+    [ -s "$b/ALLOC-CENSUS.tsv" ] || { echo "the build left no ALLOC-CENSUS.tsv in $b"; return 1; }
     [ -s "$b/libxpce.so" ] || { echo "the build left no libxpce.so in $b"; return 1; }
 }
 undefined_of() { ldd -r "$1" 2>&1 | grep -c 'undefined symbol' || true; }
@@ -69,7 +77,7 @@ do_build() {
     make_into "$b" "$SCRATCH/xpce-kernel-build.$k.$$.log" || { board "key=$k the build failed (log $SCRATCH/xpce-kernel-build.$k.$$.log, tree kept $b) FAIL"; return 1; }
     u="$(undefined_of "$b/libxpce.so")"
     [ "$u" = 0 ] || { board "key=$k the built library names $u undefined name(s) (ldd -r $b/libxpce.so) FAIL"; return 1; }
-    mkdir -p "$s" && cp "$b/libxpce.so" "$s/libxpce.so" && cp "$b/config.h" "$s/config.h" || refuse "cannot stage into $s"
+    mkdir -p "$s" && cp "$b/libxpce.so" "$s/libxpce.so" && cp "$b/config.h" "$s/config.h" && cp "$b/ALLOC-CENSUS.tsv" "$s/ALLOC-CENSUS.tsv" || refuse "cannot stage into $s"
     exports_of "$s/libxpce.so" > "$s/EXPORTS.txt"
     {   printf 'key\t%s\n' "$k"; printf 'sha256\t%s\n' "$(sha256sum "$s/libxpce.so" | cut -d' ' -f1)"
         printf 'built\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"; printf 'seat\t%s\n' "$seat"; printf 'seconds\t%s\n' "$(( $(date +%s) - t0 ))"
@@ -106,6 +114,22 @@ do_check() {
     fi
     board "key=$K sha256=${sha:0:16} exports=$(wc -l < "$RECIPE/EXPORTS.txt") undefined=0 CHECK OK"
 }
+do_classes() {
+    need; local out rc bad n
+    standing || return 1
+    [ "$K" = "$(key)" ] || { board "STALE: CURRENT names $K and today's tree, recipe and compiler make $(key) (run build) CLASSES FAIL"; return 1; }
+    [ -s "$TOP/$K/ALLOC-CENSUS.tsv" ] || { board "key=$K the standing library kept no ALLOC-CENSUS.tsv: it was built before the classes (run build) CLASSES FAIL"; return 1; }
+    out="$(python3 -I "$CENSUS" check "$TOP/$K/ALLOC-CENSUS.tsv" "$RECIPE/ALLOC-CLASSES.tsv" 2>&1)"; rc=$?
+    printf '%s\n' "$out" | tail -8
+    [ "$rc" = 0 ] || return "$rc"
+    bad=""
+    for n in malloc calloc realloc strdup free; do
+        nm -D --undefined-only "$LIB" | awk '{print $NF}' | sed 's/@.*//' | grep -qx "$n" || continue
+        awk -F'\t' -v n="$n" '!/^#/ && $3 == n && ($5 == "XOWNED" || $5 == "DEFAULT") { f = 1 } END { exit !f }' "$RECIPE/ALLOC-CLASSES.tsv" || bad="$bad $n"
+    done
+    [ -z "$bad" ] || { board "key=$K the library imports$bad from libc and no XOWNED or DEFAULT row calls it CLASSES FAIL"; return 1; }
+    board "key=$K $(printf '%s\n' "$out" | sed -n 's/^XPCE_ALLOC_BOARD //p' | tail -1); the library imports from libc only the names its XOWNED and DEFAULT rows call"
+}
 do_hello() {
     need; local t form arg ref i got n=0
     for t in xpce_k_hello.c xpce_k_hello.screen xpce_k_box.screen; do [ -f "$RECIPE/$t" ] || refuse "the witness file $RECIPE/$t is absent"; done
@@ -133,5 +157,6 @@ case "${1:-}" in
     build) do_build ;;
     check) do_check "${2:-}" ;;
     hello) do_hello ;;
-    *) refuse "usage: util_xpce_kernel_build.sh key | build | check [--deep] | hello" ;;
+    classes) do_classes ;;
+    *) refuse "usage: util_xpce_kernel_build.sh key | build | check [--deep] | hello | classes" ;;
 esac

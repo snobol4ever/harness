@@ -8,8 +8,10 @@ int PL_handle_signals(void) { return 0; }                 /* no Prolog signal is
 term_t PL_exception(qid_t qid) { (void)qid; return 0; }   /* no Prolog exception stands on the kernel's side */
 record_t PL_record(term_t t) { (void)t; return 0; }
 void PL_erase(record_t r) { (void)r; }
-void *PL_malloc_uncollectable(size_t n) { return malloc(n); }   /* step 2 of the plan classes this site KERNEL and serves it from the kernel's slots */
-void PL_free(void *p) { free(p); }                              /* the same */
+extern void *pceMalloc(size_t n);   /* the kernel's own layer (itf/interface.c): these two seams are the kernel's class by construction, no direct site */
+extern void pceFree(void *p);
+void *PL_malloc_uncollectable(size_t n) { return pceMalloc(n); }
+void PL_free(void *p) { if ( p ) pceFree(p); }
 PL_locale *acquireLocale(PL_locale *l) { return l; }
 void releaseLocale(PL_locale *l) { (void)l; }
 void initStreamLocale(IOSTREAM *s) { s->locale = NULL; }
