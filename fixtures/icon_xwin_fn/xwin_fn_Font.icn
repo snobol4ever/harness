@@ -1,0 +1,80 @@
+# xwin_fn_Font
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one Font alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("Font");
+   &error := 1;
+   if v := Font(w) then write("Font default", ": ", image(v))
+   else if &error = 0 then write("Font default", ": error ", &errornumber)
+   else write("Font default", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Font(w, "fixed") then write("Font fixed", ": ", image(v))
+   else if &error = 0 then write("Font fixed", ": error ", &errornumber)
+   else write("Font fixed", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Font(w, "mono") then write("Font mono", ": ", image(v))
+   else if &error = 0 then write("Font mono", ": error ", &errornumber)
+   else write("Font mono", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Font(w) then write("Font after mono", ": ", image(v))
+   else if &error = 0 then write("Font after mono", ": error ", &errornumber)
+   else write("Font after mono", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Font(w, "nosuchfont-xyz") then write("Font nosuchfont", ": ", image(v))
+   else if &error = 0 then write("Font nosuchfont", ": error ", &errornumber)
+   else write("Font nosuchfont", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Font(w) then write("Font after a failure", ": ", image(v))
+   else if &error = 0 then write("Font after a failure", ": error ", &errornumber)
+   else write("Font after a failure", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Font(w, 3) then write("Font an integer", ": ", image(v))
+   else if &error = 0 then write("Font an integer", ": error ", &errornumber)
+   else write("Font an integer", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Font() then write("Font no window", ": ", image(v))
+   else if &error = 0 then write("Font no window", ": error ", &errornumber)
+   else write("Font no window", ": failed");
+   &error := 0;
+end

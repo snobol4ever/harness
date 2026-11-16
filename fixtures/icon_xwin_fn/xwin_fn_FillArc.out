@@ -1,0 +1,33 @@
+FillArc: window_1:1(xwin_fn FillArc)
+FillArc: 140 pixels from 0,0 size 14x10
+colour a = 65535,65535,65535
+   aaaaaaaaaaaaaa
+colour b = 0,0,0
+   aaaaaaabaaaaaa
+   aaaabbbbbbbaaa
+   aabbbbbbbbbbba
+   aabbbbbbbbbbba
+   abbbbbbbbbbbba
+   aabbbbbbbbbbba
+   aabbbbbbbbbbba
+   aaaabbbbbbbaaa
+   aaaaaaaaaaaaaa
+FillArc quarter: window_1:1(xwin_fn FillArc)
+quarter: 196 pixels from 15,0 size 14x14
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaabbbbbba
+   aaaaaaabbbbbba
+   aaaaaaabbbbbba
+   aaaaaaabbbbbba
+   aaaaaaabbbbbaa
+   aaaaaaabbbbaaa
+   aaaaaaaaaaaaaa
+FillArc three: window_1:1(xwin_fn FillArc)
+FillArc a string: error 101
+screen none

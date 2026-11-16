@@ -1,0 +1,6 @@
+FreeColor red: "window_1:1(xwin_fn FreeColor)"
+FreeColor two: "window_1:1(xwin_fn FreeColor)"
+FreeColor bad: window_1:1(xwin_fn FreeColor)
+FreeColor none: error 103
+FreeColor no window: error 140
+screen none

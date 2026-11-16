@@ -1,0 +1,27 @@
+EraseArea: window_1:1(xwin_fn EraseArea)
+EraseArea: 56 pixels from 0,0 size 8x7
+colour a = 65535,0,0
+   aaaaaaaa
+   aaaaaaaa
+colour b = 65535,65535,65535
+   aabbbbaa
+   aabbbbaa
+   aabbbbaa
+   aaaaaaaa
+   aaaaaaaa
+EraseArea in blue: window_1:1(xwin_fn EraseArea)
+blue: 16 pixels from 9,9 size 4x4
+   aaaa
+colour c = 0,0,65535
+   acca
+   acca
+   aaaa
+EraseArea three: window_1:1(xwin_fn EraseArea)
+EraseArea a string: error 101
+EraseArea whole: window_1:1(xwin_fn EraseArea)
+whole: 16 pixels from 36,26 size 4x4
+   cccc
+   cccc
+   cccc
+   cccc
+screen none

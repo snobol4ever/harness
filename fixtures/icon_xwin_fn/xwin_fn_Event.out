@@ -1,0 +1,8 @@
+Event with no window: error 140
+Event of a string: error 140
+pending 9
+Event: "a" &x 0 &y 0 &row 0 &col 1 control no shift no meta no
+Event: "b" &x 5 &y 7 &row 1 &col 1 control no shift no meta no
+Event: -1 &x 10 &y 12 &row 1 &col 2 control no shift no meta no
+pending 0
+screen none

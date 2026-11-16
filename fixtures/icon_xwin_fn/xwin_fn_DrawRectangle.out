@@ -1,0 +1,28 @@
+DrawRectangle: window_1:1(xwin_fn DrawRectangle)
+DrawRectangle: 63 pixels from 0,0 size 9x7
+colour a = 65535,65535,65535
+   aaaaaaaaa
+colour b = 0,0,0
+   abbbbbbba
+   abaaaaaba
+   abaaaaaba
+   abaaaaaba
+   abbbbbbba
+   aaaaaaaaa
+DrawRectangle negative: window_1:1(xwin_fn DrawRectangle)
+negative: 42 pixels from 15,6 size 7x6
+   aaaaaaa
+   abbbbba
+   abaaaba
+   abaaaba
+   abbbbba
+   aaaaaaa
+DrawRectangle three: window_1:1(xwin_fn DrawRectangle)
+DrawRectangle a string: error 101
+DrawRectangle whole: window_1:1(xwin_fn DrawRectangle)
+whole: 16 pixels from 36,26 size 4x4
+   aaaa
+   aaaa
+   aaaa
+   aaaa
+screen none

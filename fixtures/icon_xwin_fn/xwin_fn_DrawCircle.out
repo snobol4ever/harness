@@ -1,0 +1,43 @@
+DrawCircle: window_1:1(xwin_fn DrawCircle)
+DrawCircle: 225 pixels from 1,1 size 15x15
+colour a = 65535,65535,65535
+   aaaaaaaaaaaaaaa
+colour b = 0,0,0
+   aaaaabbbbbaaaaa
+   aaabbaaaaabbaaa
+   aabbaaaaaaabbaa
+   aabaaaaaaaaabaa
+   abaaaaaaaaaaaba
+   abaaaaaaaaaaaba
+   abaaaaaaaaaaaba
+   abaaaaaaaaaaaba
+   abaaaaaaaaaaaba
+   aabaaaaaaaaabaa
+   aabbaaaaaaabbaa
+   aaabbaaaaabbaaa
+   aaaaabbbbbaaaaa
+   aaaaaaaaaaaaaaa
+DrawCircle arc: window_1:1(xwin_fn DrawCircle)
+arc: 361 pixels from 19,3 size 19x19
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   abaaaaaaaaaaaaaaaba
+   abaaaaaaaaaaaaaaaba
+   abaaaaaaaaaaaaaaaba
+   aabaaaaaaaaaaaaabaa
+   aabaaaaaaaaaaaaabaa
+   aaabaaaaaaaaaaabaaa
+   aaabbaaaaaaaaabbaaa
+   aaaaabbaaaaabbaaaaa
+   aaaaaaabbbbbaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+DrawCircle two: error 146
+DrawCircle a string: error 102
+screen none

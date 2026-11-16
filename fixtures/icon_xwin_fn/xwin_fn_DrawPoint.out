@@ -1,0 +1,15 @@
+DrawPoint: window_1:1(xwin_fn DrawPoint)
+DrawPoint: 35 pixels from 0,0 size 7x5
+colour a = 65535,65535,65535
+   aaaaaaa
+colour b = 0,0,0
+   ababaaa
+   aaaaaaa
+   aaaaaba
+   aaaaaaa
+DrawPoint odd: error 146
+DrawPoint none: error 146
+DrawPoint a string: error 101
+DrawPoint outside: window_1:1(xwin_fn DrawPoint)
+DrawPoint no window: error 140
+screen none

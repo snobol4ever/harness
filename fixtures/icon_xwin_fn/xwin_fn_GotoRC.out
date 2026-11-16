@@ -1,0 +1,7 @@
+GotoRC: window_1:1(xwin_fn GotoRC)
+2 3 12 24 
+GotoRC defaults: window_1:1(xwin_fn GotoRC)
+1 1 0 11 
+GotoRC a string: error 101
+GotoRC no window: error 140
+screen none

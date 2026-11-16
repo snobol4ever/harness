@@ -1,0 +1,34 @@
+DrawArc: window_1:1(xwin_fn DrawArc)
+DrawArc: 140 pixels from 0,0 size 14x10
+colour a = 65535,65535,65535
+   aaaaaaaaaaaaaa
+colour b = 0,0,0
+   aaaaabbbbbaaaa
+   aaabbaaaaabbaa
+   aabaaaaaaaaaba
+   abaaaaaaaaaaab
+   abaaaaaaaaaaab
+   abaaaaaaaaaaab
+   aabaaaaaaaaaba
+   aaabbaaaaabbaa
+   aaaaabbbbbaaaa
+DrawArc quarter: window_1:1(xwin_fn DrawArc)
+quarter: 196 pixels from 15,0 size 14x14
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaab
+   aaaaaaaaaaaaab
+   aaaaaaaaaaaaab
+   aaaaaaaaaaaaba
+   aaaaaaaaaaabba
+   aaaaaaaaaabbaa
+   aaaaaaabbbaaaa
+DrawArc three: window_1:1(xwin_fn DrawArc)
+DrawArc a string: error 101
+DrawArc no window: error 140
+screen none

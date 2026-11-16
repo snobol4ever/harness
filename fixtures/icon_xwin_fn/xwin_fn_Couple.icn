@@ -1,0 +1,70 @@
+# xwin_fn_Couple
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one Couple alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("Couple");
+   w2 := win("Couple second");
+   Fg(w2, "red");
+   &error := 1;
+   if v := image(w3 := Couple(w, w2)) then write("Couple", ": ", image(v))
+   else if &error = 0 then write("Couple", ": error ", &errornumber)
+   else write("Couple", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Fg(w3) then write("Fg of the couple", ": ", image(v))
+   else if &error = 0 then write("Fg of the couple", ": error ", &errornumber)
+   else write("Fg of the couple", ": failed");
+   &error := 0;
+   DrawPoint(w3, 2, 2);
+   show("drawn by the couple on w", w, 0, 0, 5, 5);
+   show("w2 untouched", w2, 0, 0, 5, 5);
+   &error := 1;
+   if v := Couple(w) then write("Couple one", ": ", image(v))
+   else if &error = 0 then write("Couple one", ": error ", &errornumber)
+   else write("Couple one", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Couple(w, "x") then write("Couple a string", ": ", image(v))
+   else if &error = 0 then write("Couple a string", ": error ", &errornumber)
+   else write("Couple a string", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Couple("x", "y") then write("Couple strings", ": ", image(v))
+   else if &error = 0 then write("Couple strings", ": error ", &errornumber)
+   else write("Couple strings", ": failed");
+   &error := 0;
+end

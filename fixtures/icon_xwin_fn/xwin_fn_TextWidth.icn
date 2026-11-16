@@ -1,0 +1,75 @@
+# xwin_fn_TextWidth
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one TextWidth alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("TextWidth");
+   &error := 1;
+   if v := TextWidth(w, "Hello") then write("TextWidth Hello", ": ", image(v))
+   else if &error = 0 then write("TextWidth Hello", ": error ", &errornumber)
+   else write("TextWidth Hello", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := TextWidth(w, "") then write("TextWidth empty", ": ", image(v))
+   else if &error = 0 then write("TextWidth empty", ": error ", &errornumber)
+   else write("TextWidth empty", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := TextWidth(w, 12345) then write("TextWidth integer", ": ", image(v))
+   else if &error = 0 then write("TextWidth integer", ": error ", &errornumber)
+   else write("TextWidth integer", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := TextWidth(w) then write("TextWidth none", ": ", image(v))
+   else if &error = 0 then write("TextWidth none", ": error ", &errornumber)
+   else write("TextWidth none", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := TextWidth(w, []) then write("TextWidth a list", ": ", image(v))
+   else if &error = 0 then write("TextWidth a list", ": error ", &errornumber)
+   else write("TextWidth a list", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := WAttrib(w, "fwidth") then write("fwidth", ": ", image(v))
+   else if &error = 0 then write("fwidth", ": error ", &errornumber)
+   else write("fwidth", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := TextWidth("abc") then write("TextWidth no window", ": ", image(v))
+   else if &error = 0 then write("TextWidth no window", ": error ", &errornumber)
+   else write("TextWidth no window", ": failed");
+   &error := 0;
+end

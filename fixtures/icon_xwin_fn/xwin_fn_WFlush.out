@@ -1,0 +1,4 @@
+WFlush: "window_1:1(xwin_fn WFlush)"
+WFlush a string: error 140
+WFlush no window: error 140
+screen none

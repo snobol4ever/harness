@@ -1,0 +1,72 @@
+# xwin_fn_DrawLine
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one DrawLine alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("DrawLine");
+   &error := 1;
+   if v := DrawLine(w, 2, 2, 10, 2, 10, 8) then write("DrawLine", ": ", image(v))
+   else if &error = 0 then write("DrawLine", ": error ", &errornumber)
+   else write("DrawLine", ": failed");
+   &error := 0;
+   show("DrawLine", w, 0, 0, 12, 10);
+   &error := 1;
+   if v := DrawLine(w, 1) then write("DrawLine one coordinate", ": ", image(v))
+   else if &error = 0 then write("DrawLine one coordinate", ": error ", &errornumber)
+   else write("DrawLine one coordinate", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := DrawLine(w) then write("DrawLine no coordinates", ": ", image(v))
+   else if &error = 0 then write("DrawLine no coordinates", ": error ", &errornumber)
+   else write("DrawLine no coordinates", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := DrawLine(w, "a", 1, 2, 3) then write("DrawLine a string", ": ", image(v))
+   else if &error = 0 then write("DrawLine a string", ": error ", &errornumber)
+   else write("DrawLine a string", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := DrawLine(w, 1.6, 5.2, 4.9, 5.2) then write("DrawLine real", ": ", image(v))
+   else if &error = 0 then write("DrawLine real", ": error ", &errornumber)
+   else write("DrawLine real", ": failed");
+   &error := 0;
+   show("DrawLine real", w, 0, 4, 6, 2);
+   &error := 1;
+   if v := DrawLine(1, 2, 3, 4) then write("DrawLine no window", ": ", image(v))
+   else if &error = 0 then write("DrawLine no window", ": error ", &errornumber)
+   else write("DrawLine no window", ": failed");
+   &error := 0;
+end

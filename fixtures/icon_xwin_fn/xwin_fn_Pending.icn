@@ -1,0 +1,72 @@
+# xwin_fn_Pending
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one Pending alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("Pending");
+   &error := 1;
+   if v := *Pending(w) then write("Pending size", ": ", image(v))
+   else if &error = 0 then write("Pending size", ": error ", &errornumber)
+   else write("Pending size", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := *Pending(w, "a", 1, 2) then write("Pending add", ": ", image(v))
+   else if &error = 0 then write("Pending add", ": error ", &errornumber)
+   else write("Pending add", ": failed");
+   &error := 0;
+   L := Pending(w);
+   every i := 1 to *L do write("   ", i, " ", image(L[i]));
+   &error := 1;
+   if v := *Pending(w, "b", 3, 4, "c", 5, 6) then write("Pending add more", ": ", image(v))
+   else if &error = 0 then write("Pending add more", ": error ", &errornumber)
+   else write("Pending add more", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := *Pending(w, "d") then write("Pending odd", ": ", image(v))
+   else if &error = 0 then write("Pending odd", ": error ", &errornumber)
+   else write("Pending odd", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Pending("x") then write("Pending a string", ": ", image(v))
+   else if &error = 0 then write("Pending a string", ": error ", &errornumber)
+   else write("Pending a string", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Pending() then write("Pending no window", ": ", image(v))
+   else if &error = 0 then write("Pending no window", ": error ", &errornumber)
+   else write("Pending no window", ": failed");
+   &error := 0;
+end

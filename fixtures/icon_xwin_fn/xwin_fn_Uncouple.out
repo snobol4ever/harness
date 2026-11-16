@@ -1,0 +1,12 @@
+Uncouple: "window"
+Uncouple twice: error 142
+Uncouple a string: error 140
+Uncouple none: error 140
+w still draws: window_1:1(xwin_fn Uncouple)
+w: 9 pixels from 0,0 size 3x3
+colour a = 65535,65535,65535
+   aaa
+colour b = 0,0,0
+   aba
+   aaa
+screen none

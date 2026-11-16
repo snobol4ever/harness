@@ -1,0 +1,84 @@
+# xwin_fn_Bg
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one Bg alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("Bg");
+   &error := 1;
+   if v := Bg(w) then write("Bg default", ": ", image(v))
+   else if &error = 0 then write("Bg default", ": error ", &errornumber)
+   else write("Bg default", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Bg(w, "red") then write("Bg red", ": ", image(v))
+   else if &error = 0 then write("Bg red", ": error ", &errornumber)
+   else write("Bg red", ": failed");
+   &error := 0;
+   EraseArea(w, 0, 0, 2, 2);
+   &error := 1;
+   if v := Bg(w, "#00ff00") then write("Bg #00ff00", ": ", image(v))
+   else if &error = 0 then write("Bg #00ff00", ": error ", &errornumber)
+   else write("Bg #00ff00", ": failed");
+   &error := 0;
+   EraseArea(w, 2, 0, 2, 2);
+   &error := 1;
+   if v := Bg(w, "32768,32768,0") then write("Bg 32768,32768,0", ": ", image(v))
+   else if &error = 0 then write("Bg 32768,32768,0", ": error ", &errornumber)
+   else write("Bg 32768,32768,0", ": failed");
+   &error := 0;
+   EraseArea(w, 4, 0, 2, 2);
+   show("Bg", w, 0, 0, 7, 3);
+   &error := 1;
+   if v := Bg(w, "nosuchcolour") then write("Bg bad", ": ", image(v))
+   else if &error = 0 then write("Bg bad", ": error ", &errornumber)
+   else write("Bg bad", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Bg(w, 3) then write("Bg integer", ": ", image(v))
+   else if &error = 0 then write("Bg integer", ": error ", &errornumber)
+   else write("Bg integer", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Bg(w) then write("Bg after", ": ", image(v))
+   else if &error = 0 then write("Bg after", ": error ", &errornumber)
+   else write("Bg after", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Bg("red") then write("Bg no window", ": ", image(v))
+   else if &error = 0 then write("Bg no window", ": error ", &errornumber)
+   else write("Bg no window", ": failed");
+   &error := 0;
+end

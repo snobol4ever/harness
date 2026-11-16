@@ -1,0 +1,71 @@
+# xwin_fn_CopyArea
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one CopyArea alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("CopyArea");
+   DrawPoint(w, 0, 0, 1, 1, 2, 2);
+   &error := 1;
+   if v := CopyArea(w, 0, 0, 3, 3, 10, 10) then write("CopyArea", ": ", image(v))
+   else if &error = 0 then write("CopyArea", ": error ", &errornumber)
+   else write("CopyArea", ": failed");
+   &error := 0;
+   show("CopyArea", w, 9, 9, 5, 5);
+   w2 := win("CopyArea second");
+   &error := 1;
+   if v := CopyArea(w, w2, 0, 0, 3, 3, 5, 5) then write("CopyArea to another window", ": ", image(v))
+   else if &error = 0 then write("CopyArea to another window", ": error ", &errornumber)
+   else write("CopyArea to another window", ": failed");
+   &error := 0;
+   show("in the other window", w2, 4, 4, 5, 5);
+   &error := 1;
+   if v := CopyArea(w, w2) then write("CopyArea defaults", ": ", image(v))
+   else if &error = 0 then write("CopyArea defaults", ": error ", &errornumber)
+   else write("CopyArea defaults", ": failed");
+   &error := 0;
+   show("defaults", w2, 0, 0, 4, 4);
+   &error := 1;
+   if v := CopyArea(w, "a") then write("CopyArea a string", ": ", image(v))
+   else if &error = 0 then write("CopyArea a string", ": error ", &errornumber)
+   else write("CopyArea a string", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := CopyArea(w, 38, 28, 10, 10, 0, 20) then write("CopyArea past the edge", ": ", image(v))
+   else if &error = 0 then write("CopyArea past the edge", ": error ", &errornumber)
+   else write("CopyArea past the edge", ": failed");
+   &error := 0;
+   show("past the edge", w, 0, 20, 4, 4);
+end

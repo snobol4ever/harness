@@ -1,0 +1,6 @@
+Alert: "window_1:1(xwin_fn Alert)"
+Alert 50: "window_1:1(xwin_fn Alert)"
+Alert -100: "window_1:1(xwin_fn Alert)"
+Alert a string volume: error 101
+Alert no window: error 140
+screen none

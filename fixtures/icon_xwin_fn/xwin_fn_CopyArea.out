@@ -1,0 +1,30 @@
+CopyArea: window_1:1(xwin_fn CopyArea)
+CopyArea: 25 pixels from 9,9 size 5x5
+colour a = 65535,65535,65535
+   aaaaa
+colour b = 0,0,0
+   abaaa
+   aabaa
+   aaaba
+   aaaaa
+CopyArea to another window: window_1:1(xwin_fn CopyArea)
+in the other window: 25 pixels from 4,4 size 5x5
+   aaaaa
+   abaaa
+   aabaa
+   aaaba
+   aaaaa
+CopyArea defaults: window_1:1(xwin_fn CopyArea)
+defaults: 16 pixels from 0,0 size 4x4
+   baaa
+   abaa
+   aaba
+   aaaa
+CopyArea a string: error 101
+CopyArea past the edge: window_1:1(xwin_fn CopyArea)
+past the edge: 16 pixels from 0,20 size 4x4
+   aaaa
+   aaaa
+   aaaa
+   aaaa
+screen none

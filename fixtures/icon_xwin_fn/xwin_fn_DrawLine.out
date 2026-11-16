@@ -1,0 +1,23 @@
+DrawLine: window_1:1(xwin_fn DrawLine)
+DrawLine: 120 pixels from 0,0 size 12x10
+colour a = 65535,65535,65535
+   aaaaaaaaaaaa
+   aaaaaaaaaaaa
+colour b = 0,0,0
+   aabbbbbbbbba
+   aaaaaaaaaaba
+   aaaaaaaaaaba
+   aaaaaaaaaaba
+   aaaaaaaaaaba
+   aaaaaaaaaaba
+   aaaaaaaaaaba
+   aaaaaaaaaaaa
+DrawLine one coordinate: error 146
+DrawLine no coordinates: error 146
+DrawLine a string: error 101
+DrawLine real: window_1:1(xwin_fn DrawLine)
+DrawLine real: 12 pixels from 0,4 size 6x2
+   aaaaaa
+   abbbba
+DrawLine no window: error 140
+screen none

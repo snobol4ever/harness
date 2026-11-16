@@ -1,0 +1,19 @@
+PaletteKey c1 red: "A"
+PaletteKey c1 black: "0"
+PaletteKey c1 white: "6"
+PaletteKey c1 0,32768,65535: "I"
+PaletteKey c1 light blue: "j"
+PaletteKey g16 red: "4"
+PaletteKey g16 black: "0"
+PaletteKey g16 white: "F"
+PaletteKey g16 0,32768,65535: "6"
+PaletteKey g16 light blue: "6"
+PaletteKey c6 red: "\xb4"
+PaletteKey c6 black: "\x00"
+PaletteKey c6 white: "\xd7"
+PaletteKey c6 0,32768,65535: "\x17"
+PaletteKey c6 light blue: "Y"
+PaletteKey bad colour: failed
+PaletteKey bad palette: failed
+PaletteKey no window: "A"
+screen none

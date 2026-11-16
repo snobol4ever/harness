@@ -1,0 +1,7 @@
+GotoXY: window_1:1(xwin_fn GotoXY)
+10 20 2 2 
+GotoXY defaults: window_1:1(xwin_fn GotoXY)
+0 0 0 1 
+GotoXY a string: error 101
+GotoXY no window: error 140
+screen none

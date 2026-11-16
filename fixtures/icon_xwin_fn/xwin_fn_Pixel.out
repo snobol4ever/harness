@@ -1,0 +1,9 @@
+Pixel generation: 1
+65535,65535,65535 65535,0,0 65535,65535,65535 65535,65535,65535 65535,65535,65535 0,0,65535 
+Pixel one: "65535,0,0"
+Pixel default size: 1
+Pixel whole window 1200
+Pixel outside: 1
+Pixel a string: error 101
+Pixel no window: error 140
+screen none

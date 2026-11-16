@@ -1,0 +1,30 @@
+DrawImage g2: &null
+g2: 36 pixels from 0,0 size 6x6
+colour a = 65535,65535,65535
+   aaaaaa
+colour b = 0,0,0
+   abaaba
+   aabbaa
+   abaaba
+   aabbaa
+   aaaaaa
+DrawImage c1: &null
+c1: 20 pixels from 9,0 size 5x4
+   aaaaa
+colour c = 65535,0,32765
+colour d = 10921,21844,0
+colour e = 65535,32765,21844
+   acdea
+   aadca
+   aaaaa
+DrawImage bilevel: &null
+bilevel: 40 pixels from 19,0 size 10x4
+   aaaaaaaaaa
+   abbbbbaaaa
+   abaaaaaaba
+   aaaaaaaaaa
+DrawImage bad spec: failed
+DrawImage bad palette: failed
+DrawImage short: failed
+DrawImage a list: error 103
+screen none

@@ -1,0 +1,4 @@
+WSync: "window_1:1(xwin_fn WSync)"
+WSync a string: error 140
+WSync no window: &null
+screen none

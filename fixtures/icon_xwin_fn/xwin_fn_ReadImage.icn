@@ -1,0 +1,77 @@
+# xwin_fn_ReadImage
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one ReadImage alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("ReadImage");
+   f := open("xwin_fn_ReadImage.gif", "wu") | stop("cannot write the gif");
+   writes(f, "\107\111\106\070\067\141\006\000\004\000\221\000\000\000\000\377\377\377\377\377\000\000\000\000\000\054\000\000\000\000\006\000\004\000\001\002\010\224\203\046\310\001\317\036\050\000\073");
+   close(f);
+   &error := 1;
+   if v := ReadImage(w, "xwin_fn_ReadImage.gif", 2, 2) then write("ReadImage", ": ", image(v))
+   else if &error = 0 then write("ReadImage", ": error ", &errornumber)
+   else write("ReadImage", ": failed");
+   &error := 0;
+   show("ReadImage", w, 1, 1, 8, 6);
+   &error := 1;
+   if v := ReadImage(w, "xwin_fn_ReadImage.gif") then write("ReadImage defaults", ": ", image(v))
+   else if &error = 0 then write("ReadImage defaults", ": error ", &errornumber)
+   else write("ReadImage defaults", ": failed");
+   &error := 0;
+   show("defaults", w, 0, 0, 7, 5);
+   &error := 1;
+   if v := ReadImage(w, "xwin_fn_ReadImage.gif", 20, 20, "c1") then write("ReadImage palette c1", ": ", image(v))
+   else if &error = 0 then write("ReadImage palette c1", ": error ", &errornumber)
+   else write("ReadImage palette c1", ": failed");
+   &error := 0;
+   show("c1", w, 20, 20, 6, 4);
+   remove("xwin_fn_ReadImage.gif");
+   &error := 1;
+   if v := ReadImage(w, "xwin_fn_nosuchfile.gif") then write("ReadImage no such file", ": ", image(v))
+   else if &error = 0 then write("ReadImage no such file", ": error ", &errornumber)
+   else write("ReadImage no such file", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := ReadImage(w) then write("ReadImage no name", ": ", image(v))
+   else if &error = 0 then write("ReadImage no name", ": error ", &errornumber)
+   else write("ReadImage no name", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := ReadImage(w, []) then write("ReadImage a list", ": ", image(v))
+   else if &error = 0 then write("ReadImage a list", ": error ", &errornumber)
+   else write("ReadImage a list", ": failed");
+   &error := 0;
+end

@@ -1,0 +1,26 @@
+DrawString: window_1:1(xwin_fn DrawString)
+DrawString: 256 pixels from 0,0 size 16x16
+colour a = 65535,65535,65535
+   aaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaa
+colour b = 0,0,0
+   aabaaabaaaaaaaaa
+   aabaaabaaabaaaaa
+   aabaaabaaaaaaaaa
+   aabaaabaabbaaaaa
+   aabbbbbaaabaaaaa
+   aabaaabaaabaaaaa
+   aabaaabaaabaaaaa
+   aabaaabaaabaaaaa
+   aabaaabaabbbaaaa
+   aaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaa
+DrawString two strings: window_1:1(xwin_fn DrawString)
+DrawString integer: window_1:1(xwin_fn DrawString)
+DrawString no string: error 146
+DrawString a list: error 103
+DrawString no window: error 140
+screen none

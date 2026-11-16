@@ -1,0 +1,15 @@
+Pattern: window_1:1(xwin_fn Pattern)
+pattern attribute: "4,#5A5A"
+textured: 32 pixels from 0,0 size 8x4
+colour a = 0,0,0
+colour b = 65535,65535,65535
+   abababab
+   babababa
+   abababab
+   babababa
+Pattern grid: window_1:1(xwin_fn Pattern)
+pattern after: "grid"
+Pattern bad: failed
+Pattern bad spec: error 145
+Pattern none: error 103
+screen none

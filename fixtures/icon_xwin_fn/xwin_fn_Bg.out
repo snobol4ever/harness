@@ -1,0 +1,17 @@
+Bg default: "white"
+Bg red: "red"
+Bg #00ff00: "#00ff00"
+Bg 32768,32768,0: "32768,32768,0"
+Bg: 21 pixels from 0,0 size 7x3
+colour a = 65535,0,0
+colour b = 0,65535,0
+colour c = 32767,32767,0
+colour d = 65535,65535,65535
+   aabbccd
+   aabbccd
+   ddddddd
+Bg bad: failed
+Bg integer: "0,0,771"
+Bg after: "0,0,771"
+Bg no window: error 140
+screen none

@@ -1,0 +1,8 @@
+TextWidth Hello: 30
+TextWidth empty: 0
+TextWidth integer: 30
+TextWidth none: error 103
+TextWidth a list: error 103
+fwidth: 6
+TextWidth no window: error 140
+screen none

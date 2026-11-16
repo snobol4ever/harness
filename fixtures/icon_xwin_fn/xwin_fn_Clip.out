@@ -1,0 +1,18 @@
+Clip: window_1:1(xwin_fn Clip)
+2 2 6 4 
+clipped: 80 pixels from 0,0 size 10x8
+colour a = 65535,65535,65535
+   aaaaaaaaaa
+   aaaaaaaaaa
+colour b = 65535,0,0
+   aabbbbbbaa
+   aabbbbbbaa
+   aabbbbbbaa
+   aabbbbbbaa
+   aaaaaaaaaa
+   aaaaaaaaaa
+Clip reset: window_1:1(xwin_fn Clip)
+    
+Clip three: window_1:1(xwin_fn Clip)
+Clip a string: error 101
+screen none

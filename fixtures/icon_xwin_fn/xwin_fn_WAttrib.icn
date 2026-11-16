@@ -1,0 +1,88 @@
+# xwin_fn_WAttrib
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one WAttrib alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   names := ["ascent", "bg", "canvas", "ceol", "cliph", "clipw", "clipx", "clipy", "col", "columns", "cursor", "depth", "descent", "display", "displayheight", "displaywidth", "drawop", "dx", "dy", "echo", "fg", "fheight", "fillstyle", "font", "fwidth", "gamma", "geometry", "height", "iconic", "iconimage", "iconlabel", "iconpos", "image", "label", "leading", "lines", "linestyle", "linewidth", "pattern", "pointer", "pointercol", "pointerrow", "pointerx", "pointery", "pos", "posx", "posy", "resize", "reverse", "row", "rows", "size", "visual", "width", "windowlabel", "x", "y"];
+   w := win("WAttrib");
+   every a := !names do {
+      &error := 1;
+      if v := WAttrib(w, a) then {
+         &error := 0;
+         if a == "display" then write(a, ": a display name of ", *v, " characters")
+         else write(a, ": ", image(v));
+         &error := 1;
+         if r := WAttrib(w, a || "=" || v) then write("   set ", a, ": ", image(r))
+         else if &error = 0 then write("   set ", a, ": error ", &errornumber)
+         else write("   set ", a, ": failed");
+      }
+      else if &error = 0 then write(a, ": error ", &errornumber)
+      else write(a, ": failed");
+      &error := 0;
+   };
+   &error := 1;
+   if v := *[WAttrib(w, "fg", "bg")] then write("generation fg bg", ": ", image(v))
+   else if &error = 0 then write("generation fg bg", ": error ", &errornumber)
+   else write("generation fg bg", ": failed");
+   &error := 0;
+   every writes(WAttrib(w, "fg", "bg", "linewidth"), " ");
+   write();
+   &error := 1;
+   if v := WAttrib(w, "fg=red") then write("set fg=red", ": ", image(v))
+   else if &error = 0 then write("set fg=red", ": error ", &errornumber)
+   else write("set fg=red", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := WAttrib(w, "fg") then write("fg after", ": ", image(v))
+   else if &error = 0 then write("fg after", ": error ", &errornumber)
+   else write("fg after", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := WAttrib(w, "nosuchattribute") then write("no such attribute", ": ", image(v))
+   else if &error = 0 then write("no such attribute", ": error ", &errornumber)
+   else write("no such attribute", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := WAttrib(w, "linewidth=abc") then write("bad value", ": ", image(v))
+   else if &error = 0 then write("bad value", ": error ", &errornumber)
+   else write("bad value", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := WAttrib("x", "fg") then write("WAttrib of a string", ": ", image(v))
+   else if &error = 0 then write("WAttrib of a string", ": error ", &errornumber)
+   else write("WAttrib of a string", ": failed");
+   &error := 0;
+end

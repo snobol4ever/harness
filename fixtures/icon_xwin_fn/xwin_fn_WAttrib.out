@@ -1,0 +1,115 @@
+ascent: 11
+   set ascent: error 147
+bg: "white"
+   set bg: "white"
+canvas: "hidden"
+   set canvas: "hidden"
+ceol: error 145
+cliph: &null
+   set cliph: error 103
+clipw: &null
+   set clipw: error 103
+clipx: &null
+   set clipx: error 103
+clipy: &null
+   set clipy: error 103
+col: 1
+   set col: 1
+columns: 6
+   set columns: 6
+cursor: "off"
+   set cursor: "off"
+depth: 24
+   set depth: error 147
+descent: 2
+   set descent: error 147
+display: a display name of 2 characters
+   set display: failed
+displayheight: 768
+   set displayheight: error 147
+displaywidth: 1024
+   set displaywidth: error 147
+drawop: "copy"
+   set drawop: "copy"
+dx: 0
+   set dx: 0
+dy: 0
+   set dy: 0
+echo: "on"
+   set echo: "on"
+fg: "black"
+   set fg: "black"
+fheight: 13
+   set fheight: error 147
+fillstyle: "solid"
+   set fillstyle: "solid"
+font: "fixed"
+   set font: "fixed"
+fwidth: 6
+   set fwidth: error 147
+gamma: 2.27630272
+   set gamma: 2.27630272
+geometry: failed
+height: 30
+   set height: 30
+iconic: "???"
+   set iconic: failed
+iconimage: ""
+   set iconimage: failed
+iconlabel: failed
+iconpos: "0,0"
+   set iconpos: "0,0"
+image: error 147
+label: "xwin_fn WAttrib"
+   set label: "xwin_fn WAttrib"
+leading: 13
+   set leading: 13
+lines: 3
+   set lines: 3
+linestyle: "solid"
+   set linestyle: "solid"
+linewidth: 1
+   set linewidth: 1
+pattern: "black"
+   set pattern: "black"
+pointer: "left ptr"
+   set pointer: "left ptr"
+pointercol: 2
+   set pointercol: 1
+pointerrow: 0
+   set pointerrow: 0
+pointerx: 1
+   set pointerx: 1
+pointery: 0
+   set pointery: 0
+pos: failed
+posx: failed
+posy: failed
+resize: "off"
+   set resize: "off"
+reverse: "off"
+   set reverse: "off"
+row: 1
+   set row: 1
+rows: 3
+   set rows: 3
+size: "36,39"
+   set size: "36,39"
+visual: "4,8,256"
+   set visual: error 145
+width: 36
+   set width: 36
+windowlabel: "xwin_fn WAttrib"
+   set windowlabel: "xwin_fn WAttrib"
+x: 0
+   set x: 0
+y: 11
+   set y: 11
+generation fg bg: 1
+black white 1 
+set fg=red: "red"
+fg after: "red"
+no such attribute: error 145
+bad value: failed
+WAttrib of a string: error 140
+screen none

@@ -1,0 +1,26 @@
+DrawPolygon: window_1:1(xwin_fn DrawPolygon)
+DrawPolygon: 154 pixels from 0,0 size 14x11
+colour a = 65535,65535,65535
+   aaaaaaaaaaaaaa
+colour b = 0,0,0
+   abbbbbbbbbbbba
+   aabaaaaaaaabaa
+   aabaaaaaaabbaa
+   aaabaaaaaabaaa
+   aaabbaaaabaaaa
+   aaaabaaabaaaaa
+   aaaaababbaaaaa
+   aaaaababaaaaaa
+   aaaaaabaaaaaaa
+   aaaaaaaaaaaaaa
+DrawPolygon two points: window_1:1(xwin_fn DrawPolygon)
+two points: 36 pixels from 0,0 size 6x6
+   aaaaaa
+   abbbbb
+   aabaaa
+   aabbaa
+   aaabaa
+   aaabba
+DrawPolygon odd: error 146
+DrawPolygon a string: error 101
+screen none

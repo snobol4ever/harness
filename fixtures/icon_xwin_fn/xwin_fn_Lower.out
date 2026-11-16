@@ -1,0 +1,4 @@
+Lower: "window_1:1(xwin_fn Lower)"
+Lower a string: error 140
+Lower no window: error 140
+screen none

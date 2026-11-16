@@ -1,0 +1,43 @@
+FillCircle: window_1:1(xwin_fn FillCircle)
+FillCircle: 225 pixels from 1,1 size 15x15
+colour a = 65535,65535,65535
+   aaaaaaaaaaaaaaa
+colour b = 0,0,0
+   aaaaaaabaaaaaaa
+   aaaabbbbbbbaaaa
+   aaabbbbbbbbbaaa
+   aabbbbbbbbbbbaa
+   aabbbbbbbbbbbaa
+   aabbbbbbbbbbbaa
+   abbbbbbbbbbbbaa
+   aabbbbbbbbbbbaa
+   aabbbbbbbbbbbaa
+   aabbbbbbbbbbbaa
+   aaabbbbbbbbbaaa
+   aaaabbbbbbbaaaa
+   aaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaa
+FillCircle arc: window_1:1(xwin_fn FillCircle)
+arc: 361 pixels from 19,3 size 19x19
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   abbbbbbbbbbbbbbbbaa
+   aabbbbbbbbbbbbbbbaa
+   aabbbbbbbbbbbbbbbaa
+   aabbbbbbbbbbbbbbbaa
+   aaabbbbbbbbbbbbbaaa
+   aaabbbbbbbbbbbbbaaa
+   aaaabbbbbbbbbbbaaaa
+   aaaaaabbbbbbbaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaa
+FillCircle two: error 146
+FillCircle a string: error 102
+screen none

@@ -1,0 +1,9 @@
+Font default: "fixed"
+Font fixed: "fixed"
+Font mono: "-misc-fixed-medium-r-normal--14-110-100-100-c-70-iso8859-1"
+Font after mono: "-misc-fixed-medium-r-normal--14-110-100-100-c-70-iso8859-1"
+Font nosuchfont: failed
+Font after a failure: "-misc-fixed-medium-r-normal--14-110-100-100-c-70-iso8859-1"
+Font an integer: failed
+Font no window: error 140
+screen none

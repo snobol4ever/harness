@@ -1,0 +1,6 @@
+NewColor: failed
+NewColor red: failed
+NewColor bad: failed
+NewColor a list: failed
+NewColor no window: error 140
+screen none

@@ -1,0 +1,6 @@
+Active: "window_1:1(xwin_fn Active)"
+the event: "a"
+Active round: "window_1:1(xwin_fn Active)"
+Active round: "window_2:2(xwin_fn Active second)"
+Active round: "window_1:1(xwin_fn Active)"
+screen none

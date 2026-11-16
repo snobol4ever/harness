@@ -1,0 +1,52 @@
+# PARTITION.tsv -- built by util_suite_partition.py (R-1676; ARCH-SUITE-PARTITIONS.md); regenerate, never edit by hand; `util_suite_partition.py check <ALL.csv>` is the gate.
+# params: core_k=3 ubiquitous=0.5 chunk_entries=100 secs=none
+# shape: entries=48 features=1 ubiquitous=1(package) distinctive=0 core=4 clusters=44 chunks=1 sizes=44
+entry	part	cluster	shells
+xwin_fn_Event	core	core	
+xwin_fn_WAttrib	core	core	
+xwin_fn_DrawLine	core	core	
+xwin_fn_Fg	core	core	
+xwin_fn_FillRectangle	chunk:01	family:xwin_fn_FillRectangle	
+xwin_fn_Clone	chunk:01	family:xwin_fn_Clone	
+xwin_fn_CopyArea	chunk:01	family:xwin_fn_CopyArea	
+xwin_fn_WriteImage	chunk:01	family:xwin_fn_WriteImage	
+xwin_fn_DrawPoint	chunk:01	family:xwin_fn_DrawPoint	
+xwin_fn_DrawRectangle	chunk:01	family:xwin_fn_DrawRectangle	
+xwin_fn_DrawArc	chunk:01	family:xwin_fn_DrawArc	
+xwin_fn_FillArc	chunk:01	family:xwin_fn_FillArc	
+xwin_fn_Couple	chunk:01	family:xwin_fn_Couple	
+xwin_fn_DrawCurve	chunk:01	family:xwin_fn_DrawCurve	
+xwin_fn_QueryPointer	chunk:01	family:xwin_fn_QueryPointer	
+xwin_fn_EraseArea	chunk:01	family:xwin_fn_EraseArea	
+xwin_fn_Uncouple	chunk:01	family:xwin_fn_Uncouple	
+xwin_fn_TextWidth	chunk:01	family:xwin_fn_TextWidth	
+xwin_fn_Bg	chunk:01	family:xwin_fn_Bg	
+xwin_fn_ColorValue	chunk:01	family:xwin_fn_ColorValue	
+xwin_fn_GotoXY	chunk:01	family:xwin_fn_GotoXY	
+xwin_fn_Pending	chunk:01	family:xwin_fn_Pending	
+xwin_fn_DrawImage	chunk:01	family:xwin_fn_DrawImage	
+xwin_fn_FillPolygon	chunk:01	family:xwin_fn_FillPolygon	
+xwin_fn_GotoRC	chunk:01	family:xwin_fn_GotoRC	
+xwin_fn_WDefault	chunk:01	family:xwin_fn_WDefault	
+xwin_fn_PaletteChars	chunk:01	family:xwin_fn_PaletteChars	
+xwin_fn_DrawSegment	chunk:01	family:xwin_fn_DrawSegment	
+xwin_fn_Font	chunk:01	family:xwin_fn_Font	
+xwin_fn_DrawCircle	chunk:01	family:xwin_fn_DrawCircle	
+xwin_fn_FillCircle	chunk:01	family:xwin_fn_FillCircle	
+xwin_fn_DrawString	chunk:01	family:xwin_fn_DrawString	
+xwin_fn_Clip	chunk:01	family:xwin_fn_Clip	
+xwin_fn_Color	chunk:01	family:xwin_fn_Color	
+xwin_fn_NewColor	chunk:01	family:xwin_fn_NewColor	
+xwin_fn_Pattern	chunk:01	family:xwin_fn_Pattern	
+xwin_fn_Raise	chunk:01	family:xwin_fn_Raise	
+xwin_fn_WFlush	chunk:01	family:xwin_fn_WFlush	
+xwin_fn_PaletteColor	chunk:01	family:xwin_fn_PaletteColor	
+xwin_fn_PaletteKey	chunk:01	family:xwin_fn_PaletteKey	
+xwin_fn_Active	chunk:01	family:xwin_fn_Active	
+xwin_fn_Alert	chunk:01	family:xwin_fn_Alert	
+xwin_fn_FreeColor	chunk:01	family:xwin_fn_FreeColor	
+xwin_fn_Pixel	chunk:01	family:xwin_fn_Pixel	
+xwin_fn_DrawPolygon	chunk:01	family:xwin_fn_DrawPolygon	
+xwin_fn_ReadImage	chunk:01	family:xwin_fn_ReadImage	
+xwin_fn_Lower	chunk:01	family:xwin_fn_Lower	
+xwin_fn_WSync	chunk:01	family:xwin_fn_WSync	

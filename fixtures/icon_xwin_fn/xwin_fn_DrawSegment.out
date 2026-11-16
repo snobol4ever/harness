@@ -1,0 +1,14 @@
+DrawSegment: window_1:1(xwin_fn DrawSegment)
+DrawSegment: 72 pixels from 0,0 size 12x6
+colour a = 0,0,0
+colour b = 65535,65535,65535
+   aaaaaaaaaaab
+   bbbbbbbbbbbb
+   bbbbbbbbbbbb
+   bbbbbbbbbbbb
+   aaaaaaaaaaab
+   bbbbbbbbbbbb
+DrawSegment odd: error 146
+DrawSegment none: error 146
+DrawSegment a string: error 101
+screen none

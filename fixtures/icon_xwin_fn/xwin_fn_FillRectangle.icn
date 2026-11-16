@@ -1,0 +1,69 @@
+# xwin_fn_FillRectangle
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one FillRectangle alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("FillRectangle");
+   &error := 1;
+   if v := FillRectangle(w, 2, 2, 5, 4) then write("FillRectangle", ": ", image(v))
+   else if &error = 0 then write("FillRectangle", ": error ", &errornumber)
+   else write("FillRectangle", ": failed");
+   &error := 0;
+   show("FillRectangle", w, 0, 0, 9, 8);
+   &error := 1;
+   if v := FillRectangle(w, 8, 7, -3, -2) then write("FillRectangle negative size", ": ", image(v))
+   else if &error = 0 then write("FillRectangle negative size", ": error ", &errornumber)
+   else write("FillRectangle negative size", ": failed");
+   &error := 0;
+   show("negative size", w, 4, 4, 5, 4);
+   &error := 1;
+   if v := FillRectangle(w, 1, 1, 1) then write("FillRectangle three", ": ", image(v))
+   else if &error = 0 then write("FillRectangle three", ": error ", &errornumber)
+   else write("FillRectangle three", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := FillRectangle(w, "a") then write("FillRectangle a string", ": ", image(v))
+   else if &error = 0 then write("FillRectangle a string", ": error ", &errornumber)
+   else write("FillRectangle a string", ": failed");
+   &error := 0;
+   Fg(w, "red");
+   &error := 1;
+   if v := FillRectangle(w) then write("FillRectangle whole", ": ", image(v))
+   else if &error = 0 then write("FillRectangle whole", ": error ", &errornumber)
+   else write("FillRectangle whole", ": failed");
+   &error := 0;
+   show("whole", w, 36, 26, 4, 4);
+end

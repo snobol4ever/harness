@@ -1,0 +1,17 @@
+Clone: "window_1:2(xwin_fn Clone)"
+Fg of w: "black"
+Fg of the clone: "red"
+linewidth of the clone: 3
+drawn by the clone: 55 pixels from 0,2 size 11x5
+colour a = 65535,65535,65535
+   aaaaaaaaaaa
+colour b = 65535,0,0
+   bbbbbbbbbbb
+   bbbbbbbbbbb
+   bbbbbbbbbbb
+   aaaaaaaaaaa
+Clone plain: "window_1:3(xwin_fn Clone)"
+Clone bad attribute: error 145
+Clone bad value: failed
+Clone a string: error 140
+screen none

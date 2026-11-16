@@ -1,0 +1,64 @@
+# xwin_fn_GotoRC
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one GotoRC alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("GotoRC");
+   &error := 1;
+   if v := GotoRC(w, 2, 3) then write("GotoRC", ": ", image(v))
+   else if &error = 0 then write("GotoRC", ": error ", &errornumber)
+   else write("GotoRC", ": failed");
+   &error := 0;
+   every writes(WAttrib(w, "row", "col", "x", "y"), " ");
+   write();
+   &error := 1;
+   if v := GotoRC(w) then write("GotoRC defaults", ": ", image(v))
+   else if &error = 0 then write("GotoRC defaults", ": error ", &errornumber)
+   else write("GotoRC defaults", ": failed");
+   &error := 0;
+   every writes(WAttrib(w, "row", "col", "x", "y"), " ");
+   write();
+   &error := 1;
+   if v := GotoRC(w, "a", 1) then write("GotoRC a string", ": ", image(v))
+   else if &error = 0 then write("GotoRC a string", ": error ", &errornumber)
+   else write("GotoRC a string", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := GotoRC(1, 1) then write("GotoRC no window", ": ", image(v))
+   else if &error = 0 then write("GotoRC no window", ": error ", &errornumber)
+   else write("GotoRC no window", ": failed");
+   &error := 0;
+end

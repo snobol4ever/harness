@@ -1,0 +1,34 @@
+DrawCurve: window_1:1(xwin_fn DrawCurve)
+DrawCurve: 308 pixels from 0,0 size 22x14
+colour a = 65535,65535,65535
+   aaaaaaaaaaaaaaaaaaaaaa
+colour b = 0,0,0
+   aaaaaaaaaaaaaaaaaaaaba
+   aabaaaaaaaaaaaaaaaabaa
+   aabbaaaaaaaaaaaaaabbaa
+   aaabaaaaaaaaaaaaabbaaa
+   aaaabaaaaaaaaaaaabaaaa
+   aaaabaaaaaaaaaaabaaaaa
+   aaaaabaaaaaaaaabaaaaaa
+   aaaaabbaaaaaaabaaaaaaa
+   aaaaaabaaaaaabaaaaaaaa
+   aaaaaaabaaaabbaaaaaaaa
+   aaaaaaaababbbaaaaaaaaa
+   aaaaaaaaaabaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaaaaa
+DrawCurve closed: window_1:1(xwin_fn DrawCurve)
+closed: 120 pixels from 24,19 size 12x10
+   abbbbbbbbbba
+   bbaaaaaaaaab
+   bbaaaaaaaabb
+   abaaaaaaaaba
+   abbaaaaaabba
+   aabaaaaaabaa
+   aabbaaaabbaa
+   aaabbaabbaaa
+   aaaabbbbaaaa
+   aaaaaabaaaaa
+DrawCurve one point: window_1:1(xwin_fn DrawCurve)
+DrawCurve odd: error 146
+DrawCurve a string: error 101
+screen none

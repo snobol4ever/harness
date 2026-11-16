@@ -1,0 +1,61 @@
+# xwin_fn_Active
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one Active alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("Active");
+   put(Pending(w), "a", 0, 0);
+   &error := 1;
+   if v := image(Active()) then write("Active", ": ", image(v))
+   else if &error = 0 then write("Active", ": error ", &errornumber)
+   else write("Active", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := Event(w) then write("the event", ": ", image(v))
+   else if &error = 0 then write("the event", ": error ", &errornumber)
+   else write("the event", ": failed");
+   &error := 0;
+   put(Pending(w), "b", 0, 0);
+   w2 := win("Active second");
+   put(Pending(w2), "c", 0, 0);
+   every 1 to 3 do {
+      &error := 1;
+      if v := image(Active()) then write("Active round", ": ", image(v))
+      else if &error = 0 then write("Active round", ": error ", &errornumber)
+      else write("Active round", ": failed");
+      &error := 0;
+   };
+end

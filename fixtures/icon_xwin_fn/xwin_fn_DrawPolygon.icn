@@ -1,0 +1,62 @@
+# xwin_fn_DrawPolygon
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one DrawPolygon alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("DrawPolygon");
+   &error := 1;
+   if v := DrawPolygon(w, 1, 1, 12, 1, 6, 9) then write("DrawPolygon", ": ", image(v))
+   else if &error = 0 then write("DrawPolygon", ": error ", &errornumber)
+   else write("DrawPolygon", ": failed");
+   &error := 0;
+   show("DrawPolygon", w, 0, 0, 14, 11);
+   &error := 1;
+   if v := DrawPolygon(w, 1, 1, 4, 4) then write("DrawPolygon two points", ": ", image(v))
+   else if &error = 0 then write("DrawPolygon two points", ": error ", &errornumber)
+   else write("DrawPolygon two points", ": failed");
+   &error := 0;
+   show("two points", w, 0, 0, 6, 6);
+   &error := 1;
+   if v := DrawPolygon(w, 1, 1, 2) then write("DrawPolygon odd", ": ", image(v))
+   else if &error = 0 then write("DrawPolygon odd", ": error ", &errornumber)
+   else write("DrawPolygon odd", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := DrawPolygon(w, "a", 1, 2, 3, 4, 5) then write("DrawPolygon a string", ": ", image(v))
+   else if &error = 0 then write("DrawPolygon a string", ": error ", &errornumber)
+   else write("DrawPolygon a string", ": failed");
+   &error := 0;
+end

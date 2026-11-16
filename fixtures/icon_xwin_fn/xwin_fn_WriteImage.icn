@@ -1,0 +1,79 @@
+# xwin_fn_WriteImage
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one WriteImage alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("WriteImage");
+   &error := 1;
+   if v := WriteImage(w) then write("WriteImage no file name", ": ", image(v))
+   else if &error = 0 then write("WriteImage no file name", ": error ", &errornumber)
+   else write("WriteImage no file name", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := WriteImage(w, "/nonexistent/x.gif") then write("WriteImage unwritable", ": ", image(v))
+   else if &error = 0 then write("WriteImage unwritable", ": error ", &errornumber)
+   else write("WriteImage unwritable", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := WriteImage(w, []) then write("WriteImage a list", ": ", image(v))
+   else if &error = 0 then write("WriteImage a list", ": error ", &errornumber)
+   else write("WriteImage a list", ": failed");
+   &error := 0;
+   Fg(w, "red"); FillRectangle(w, 0, 0, 3, 2);
+   Fg(w, "blue"); FillRectangle(w, 3, 2, 3, 2);
+   &error := 1;
+   if v := WriteImage(w, "xwin_fn_WriteImage.gif", 0, 0, 6, 4) then write("WriteImage", ": ", image(v))
+   else if &error = 0 then write("WriteImage", ": error ", &errornumber)
+   else write("WriteImage", ": failed");
+   &error := 0;
+   if f := open("xwin_fn_WriteImage.gif", "ru") then {
+      s := reads(f, 100000);
+      close(f);
+      write("gif bytes ", *s);
+      t := 0;
+      every c := !s do t := (t * 31 + ord(c)) % 1000003;
+      write("gif sum ", t);
+      write("gif head ", image(s[1:7]));
+   };
+   remove("xwin_fn_WriteImage.gif");
+   &error := 1;
+   if v := WriteImage(w, "xwin_fn_WriteImage2.gif") then write("WriteImage whole", ": ", image(v))
+   else if &error = 0 then write("WriteImage whole", ": error ", &errornumber)
+   else write("WriteImage whole", ": failed");
+   &error := 0;
+   if f := open("xwin_fn_WriteImage2.gif", "ru") then { write("whole bytes ", *reads(f, 100000)); close(f); };
+   remove("xwin_fn_WriteImage2.gif");
+end

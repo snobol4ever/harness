@@ -1,0 +1,19 @@
+Fg default: "black"
+Fg red: "red"
+Fg #00ff00: "#00ff00"
+Fg 0,0,65535: "0,0,65535"
+Fg dark grey: "dark grey"
+Fg: 18 pixels from 0,0 size 6x3
+colour a = 65535,65535,65535
+   aaaaaa
+colour b = 65535,0,0
+colour c = 0,65535,0
+colour d = 0,0,65535
+colour e = 21844,21844,21844
+   abcdea
+   aaaaaa
+Fg bad: failed
+Fg integer: "0,0,771"
+Fg after: "0,0,771"
+Fg no window: error 140
+screen none

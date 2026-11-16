@@ -1,0 +1,19 @@
+FillPolygon: window_1:1(xwin_fn FillPolygon)
+FillPolygon: 154 pixels from 0,0 size 14x11
+colour a = 65535,65535,65535
+   aaaaaaaaaaaaaa
+colour b = 0,0,0
+   abbbbbbbbbbbaa
+   aabbbbbbbbbbaa
+   aaabbbbbbbbaaa
+   aaabbbbbbbaaaa
+   aaaabbbbbaaaaa
+   aaaaabbbbaaaaa
+   aaaaabbbaaaaaa
+   aaaaaabaaaaaaa
+   aaaaaaaaaaaaaa
+   aaaaaaaaaaaaaa
+FillPolygon two points: window_1:1(xwin_fn FillPolygon)
+FillPolygon odd: error 146
+FillPolygon a string: error 101
+screen none

@@ -1,0 +1,28 @@
+FillRectangle: window_1:1(xwin_fn FillRectangle)
+FillRectangle: 72 pixels from 0,0 size 9x8
+colour a = 65535,65535,65535
+   aaaaaaaaa
+   aaaaaaaaa
+colour b = 0,0,0
+   aabbbbbaa
+   aabbbbbaa
+   aabbbbbaa
+   aabbbbbaa
+   aaaaaaaaa
+   aaaaaaaaa
+FillRectangle negative size: window_1:1(xwin_fn FillRectangle)
+negative size: 20 pixels from 4,4 size 5x4
+   bbbaa
+   bbbba
+   abbba
+   aaaaa
+FillRectangle three: window_1:1(xwin_fn FillRectangle)
+FillRectangle a string: error 101
+FillRectangle whole: window_1:1(xwin_fn FillRectangle)
+whole: 16 pixels from 36,26 size 4x4
+colour c = 65535,0,0
+   cccc
+   cccc
+   cccc
+   cccc
+screen none

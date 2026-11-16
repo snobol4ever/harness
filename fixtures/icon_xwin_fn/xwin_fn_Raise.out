@@ -1,0 +1,4 @@
+Raise: "window_1:1(xwin_fn Raise)"
+Raise a string: error 140
+Raise no window: error 140
+screen none

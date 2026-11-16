@@ -1,0 +1,65 @@
+# xwin_fn_NewColor
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one NewColor alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("NewColor");
+   &error := 1;
+   if v := NewColor(w) then write("NewColor", ": ", image(v))
+   else if &error = 0 then write("NewColor", ": error ", &errornumber)
+   else write("NewColor", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := NewColor(w, "red") then write("NewColor red", ": ", image(v))
+   else if &error = 0 then write("NewColor red", ": error ", &errornumber)
+   else write("NewColor red", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := NewColor(w, "nosuchcolour") then write("NewColor bad", ": ", image(v))
+   else if &error = 0 then write("NewColor bad", ": error ", &errornumber)
+   else write("NewColor bad", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := NewColor(w, []) then write("NewColor a list", ": ", image(v))
+   else if &error = 0 then write("NewColor a list", ": error ", &errornumber)
+   else write("NewColor a list", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := NewColor() then write("NewColor no window", ": ", image(v))
+   else if &error = 0 then write("NewColor no window", ": error ", &errornumber)
+   else write("NewColor no window", ": failed");
+   &error := 0;
+end

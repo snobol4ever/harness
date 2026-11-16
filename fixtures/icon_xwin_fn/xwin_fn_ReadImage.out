@@ -1,0 +1,28 @@
+ReadImage: &null
+ReadImage: 48 pixels from 1,1 size 8x6
+colour a = 65535,65535,65535
+   aaaaaaaa
+colour b = 65535,0,0
+   abbbaaaa
+   abbbaaaa
+colour c = 0,0,65535
+   aaaaccca
+   aaaaccca
+   aaaaaaaa
+ReadImage defaults: &null
+defaults: 35 pixels from 0,0 size 7x5
+   bbbaaaa
+   bbbaaaa
+   aaaccca
+   aaaccca
+   aaaaacc
+ReadImage palette c1: &null
+c1: 24 pixels from 20,20 size 6x4
+   bbbaaa
+   bbbaaa
+   aaaccc
+   aaaccc
+ReadImage no such file: failed
+ReadImage no name: error 103
+ReadImage a list: error 103
+screen none

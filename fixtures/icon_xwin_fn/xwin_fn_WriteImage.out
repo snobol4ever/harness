@@ -1,0 +1,10 @@
+WriteImage no file name: error 103
+WriteImage unwritable: failed
+WriteImage a list: error 103
+WriteImage: window_1:1(xwin_fn WriteImage)
+gif bytes 47
+gif sum 11670
+gif head "GIF87a"
+WriteImage whole: window_1:1(xwin_fn WriteImage)
+whole bytes 80
+screen none

@@ -1,0 +1,22 @@
+PaletteColor c1 "a": "65535,21845,21845"
+PaletteColor c1 "0": "0,0,0"
+PaletteColor c1 "M": "65535,0,32767"
+PaletteColor c1 "~": failed
+PaletteColor c1 "z": "21845,0,10922"
+PaletteColor c1 "!": "10922,5461,0"
+PaletteColor g16 "a": failed
+PaletteColor g16 "0": "0,0,0"
+PaletteColor g16 "M": failed
+PaletteColor g16 "~": failed
+PaletteColor g16 "z": failed
+PaletteColor g16 "!": failed
+PaletteColor c2 "a": failed
+PaletteColor c2 "0": failed
+PaletteColor c2 "M": failed
+PaletteColor c2 "~": failed
+PaletteColor c2 "z": failed
+PaletteColor c2 "!": failed
+PaletteColor bad palette: failed
+PaletteColor two chars: error 205
+PaletteColor no window: "65535,21845,21845"
+screen none

@@ -1,0 +1,20 @@
+Couple: "window_1:2(xwin_fn Couple)"
+Fg of the couple: "red"
+drawn by the couple on w: 25 pixels from 0,0 size 5x5
+colour a = 65535,65535,65535
+   aaaaa
+   aaaaa
+colour b = 65535,0,0
+   aabaa
+   aaaaa
+   aaaaa
+w2 untouched: 25 pixels from 0,0 size 5x5
+   aaaaa
+   aaaaa
+   aaaaa
+   aaaaa
+   aaaaa
+Couple one: error 140
+Couple a string: error 140
+Couple strings: error 140
+screen none

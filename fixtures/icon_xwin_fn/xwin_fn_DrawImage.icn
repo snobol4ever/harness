@@ -1,0 +1,78 @@
+# xwin_fn_DrawImage
+# The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one DrawImage alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure win(name)
+   return open("xwin_fn " || name, "g", "size=40,30", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+end
+
+procedure main()
+   local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
+   w := win("DrawImage");
+   &error := 1;
+   if v := DrawImage(w, 1, 1, "4,g2,0110100101101001") then write("DrawImage g2", ": ", image(v))
+   else if &error = 0 then write("DrawImage g2", ": error ", &errornumber)
+   else write("DrawImage g2", ": failed");
+   &error := 0;
+   show("g2", w, 0, 0, 6, 6);
+   &error := 1;
+   if v := DrawImage(w, 10, 1, "3,c1,Mrb~rM") then write("DrawImage c1", ": ", image(v))
+   else if &error = 0 then write("DrawImage c1", ": error ", &errornumber)
+   else write("DrawImage c1", ": failed");
+   &error := 0;
+   show("c1", w, 9, 0, 5, 4);
+   &error := 1;
+   if v := DrawImage(w, 20, 1, "8,#1F81") then write("DrawImage bilevel", ": ", image(v))
+   else if &error = 0 then write("DrawImage bilevel", ": error ", &errornumber)
+   else write("DrawImage bilevel", ": failed");
+   &error := 0;
+   show("bilevel", w, 19, 0, 10, 4);
+   &error := 1;
+   if v := DrawImage(w, 0, 0, "nonsense") then write("DrawImage bad spec", ": ", image(v))
+   else if &error = 0 then write("DrawImage bad spec", ": error ", &errornumber)
+   else write("DrawImage bad spec", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := DrawImage(w, 0, 0, "2,c9,ab") then write("DrawImage bad palette", ": ", image(v))
+   else if &error = 0 then write("DrawImage bad palette", ": error ", &errornumber)
+   else write("DrawImage bad palette", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := DrawImage(w, 0, 0, "4,g2,01") then write("DrawImage short", ": ", image(v))
+   else if &error = 0 then write("DrawImage short", ": error ", &errornumber)
+   else write("DrawImage short", ": failed");
+   &error := 0;
+   &error := 1;
+   if v := DrawImage(w, 0, 0, []) then write("DrawImage a list", ": ", image(v))
+   else if &error = 0 then write("DrawImage a list", ": error ", &errornumber)
+   else write("DrawImage a list", ": failed");
+   &error := 0;
+end
