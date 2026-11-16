@@ -41,9 +41,13 @@ def block_entries(lang, d):
         refuse(f"no language {lang!r} in corpus_suite_harness.LANG_CONFIGS")
     src = d / ("ALL" + cfg["ext"])
     ref = d / "ALL.ref"
-    if not src.exists():
+    # A FORMAT-2 FOLDER (ONE-LINERS.EXT, ONE-LINERS.out, MULTI-LINERS.md) holds no ALL.EXT or ALL.ref: read_block_suite hands it to
+    # read_container_dir, so the two existence tests below are the old format's only (jupyter-step-5, the cto's cure of 2026-11-14).
+    if csh.fmt2_dir_of(src) is not None:
+        ref = src.with_suffix(".ref")
+    elif not src.exists():
         refuse(f"{src} does not exist: {lang} has no test master here; build it from program files with the pairs verb")
-    if not ref.exists():
+    elif not ref.exists():
         refuse(f"{ref} does not exist")
     banner = csh.banner_re_for(cfg["comment_open"], cfg["comment_close"])
     try:
@@ -52,8 +56,27 @@ def block_entries(lang, d):
         refuse(f"cannot read the master {src}: {e}")
 
 
-def ref_text(lines):
-    return "".join(line + "\n" for line in lines)
+def ref_text(ref):
+    """An entry of kind line carries its ref as ONE string, its output that string and one LF; a block entry a list of lines."""
+    if isinstance(ref, str):
+        return ref + "\n"
+    return "".join(line + "\n" for line in ref)
+
+
+def unfit(e):
+    """Why a cell cannot be this entry, or "": a cell gives no stdin, no arguments and no companion file, and no cell's correct run ends
+    in an error or a nonzero code (the cao's ruling, 2026-11-16 12:4x CST: a cell is not a program until the session host carries it)."""
+    if e.stdin is not None:
+        return "it reads stdin"
+    if e.argv:
+        return "it takes arguments"
+    if getattr(e, "files", None):
+        return "it reads a companion file"
+    if getattr(e, "want_rc", 0):
+        return f"its correct run exits {e.want_rc}"
+    if getattr(e, "stderr_answer", None):
+        return "its correct run writes stderr"
+    return ""
 
 
 def md_cell(text):
@@ -107,6 +130,9 @@ def cmd_build(a):
         if n not in by_name:
             refuse(f"no entry {n!r} in {d}")
         e = by_name[n]
+        why = unfit(e)
+        if why:
+            refuse(f"entry {n!r} cannot be a cell: {why}")
         items.append((n, "\n".join(e.sno_lines), ref_text(e.ref)))
     return emit(a, items)
 
@@ -198,11 +224,42 @@ def probe():
             out = "".join(c["outputs"][0]["text"])
             if out != expect_out:
                 return bad(f"output of {name} differs from its ref")
-        return ok()
+        return probe_fmt2(d / "fmt2")
     except Exception as e:  # noqa: BLE001 -- a probe reports any failure as bad, never as a crash
         return bad(f"{type(e).__name__}: {e}")
     finally:
         shutil.rmtree(d, ignore_errors=True)
+
+
+def probe_fmt2(d):
+    """THE FORMAT-2 ARM: a planted icon master of one one-liner, one multi-liner and one multi-liner that reads stdin; the first two build
+    into two cells whose outputs are their answers (the one-liner's ONE string plus one LF), and the third is refused rc 2."""
+    d.mkdir(parents=True)
+    (d / "ALL.csv").write_text("rank,entry,kind,group,road,nonl\n1,p_one,line,one,direct,\n2,p_multi,block,multi,direct,\n"
+                               "3,p_stdin,block,multi,direct,\n", encoding="utf-8")
+    (d / "ONE-LINERS.icn").write_text('procedure main(); write("one-liner"); end\n', encoding="utf-8")
+    (d / "ONE-LINERS.out").write_text("one-liner\n", encoding="utf-8")
+    multi = 'procedure main()\n    write("a")\n    write("b")\nend\n'
+    (d / "MULTI-LINERS.md").write_text("## p_multi\n\n```Icon\n" + multi + "```\n\n```stdout\na\nb\n```\n\n"
+                                       "## p_stdin\n\n```Icon\nprocedure main(); write(read()); end\n```\n\n```stdin\nx\n```\n\n"
+                                       "```stdout\nx\n```\n\n", encoding="utf-8")
+    a = argparse.Namespace(lang="icon", title="probe", out=str(d / "probe.ipynb"), master=str(d), entries=["p_one", "p_multi"])
+    if cmd_build_quiet(a) != 0:
+        return bad("the build of the planted format-2 master did not exit 0")
+    with open(d / "probe.ipynb", encoding="utf-8") as f:
+        codes = [c for c in json.load(f)["cells"] if c["cell_type"] == "code"]
+    want = [("%%icon\n" + 'procedure main(); write("one-liner"); end', "one-liner\n"), ("%%icon\n" + multi[:-1], "a\nb\n")]
+    got = [("".join(c["source"]), "".join(c["outputs"][0]["text"])) for c in codes]
+    if got != want:
+        return bad(f"format-2 cells {got!r} are not {want!r}")
+    a.entries = ["p_stdin"]
+    import contextlib
+    import io
+    with contextlib.redirect_stderr(io.StringIO()):
+        rc = cmd_build_quiet(a)
+    if rc != 2:
+        return bad(f"an entry that reads stdin built rc {rc}, not refused rc 2")
+    return ok()
 
 
 def cmd_build_quiet(a):
