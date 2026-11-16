@@ -1,6 +1,6 @@
 rank,entry,path,origin,package,n_lines,want_rc,heap_kb,stack_kb,timeout_s,compile_args,out_files,stderr
 1,xwin_fn_Event,xwin_fn_Event.icn,icon_xwin_fn__xwin_fn_Event,icon_xwin_fn,57,0,131072,4096,120,,screen.dump,
-2,xwin_fn_WAttrib,xwin_fn_WAttrib.icn,icon_xwin_fn__xwin_fn_WAttrib,icon_xwin_fn,88,0,131072,4096,120,,screen.dump,
+2,xwin_fn_WAttrib,xwin_fn_WAttrib.icn,icon_xwin_fn__xwin_fn_WAttrib,icon_xwin_fn,89,0,131072,4096,120,,screen.dump,
 3,xwin_fn_DrawLine,xwin_fn_DrawLine.icn,icon_xwin_fn__xwin_fn_DrawLine,icon_xwin_fn,72,0,131072,4096,120,,screen.dump,
 4,xwin_fn_Fg,xwin_fn_Fg.icn,icon_xwin_fn__xwin_fn_Fg,icon_xwin_fn,90,0,131072,4096,120,,screen.dump,
 5,xwin_fn_FillRectangle,xwin_fn_FillRectangle.icn,icon_xwin_fn__xwin_fn_FillRectangle,icon_xwin_fn,69,0,131072,4096,120,,screen.dump,

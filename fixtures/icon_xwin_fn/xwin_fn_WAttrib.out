@@ -72,16 +72,6 @@ linewidth: 1
    set linewidth: 1
 pattern: "black"
    set pattern: "black"
-pointer: "left ptr"
-   set pointer: "left ptr"
-pointercol: 2
-   set pointercol: 1
-pointerrow: 0
-   set pointerrow: 0
-pointerx: 1
-   set pointerx: 1
-pointery: 0
-   set pointery: 0
 pos: failed
 posx: failed
 posy: failed

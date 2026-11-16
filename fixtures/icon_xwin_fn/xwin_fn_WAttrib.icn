@@ -1,4 +1,5 @@
 # xwin_fn_WAttrib
+# The five pointer attributes (pointer, pointercol, pointerrow, pointerx, pointery) are left out of the walk: on a hidden canvas the oracle's query_pointer fails without writing its point and wattrib reads it anyway, so the oracle's answer is whatever its stack holds (officer_01 2026-11-16 11:20 CST, W5); QueryPointer's witness reads the pointer.
 # The function ladder of the Icon window facility (skill icon reference.md section 9; the cto 09:2x CST 2026-11-16, officer_07): one small witness a window function, this one WAttrib alone, its defaults, its argument checks with the oracle's error numbers (each trapped by &error in main, never inside a co-expression), and a drawing read back with Pixel as letters. Its whole answer is its standard output; its window is a hidden canvas, so its screen line reads none.
 global syms, nsyms
 
@@ -36,7 +37,7 @@ end
 
 procedure main()
    local w, w2, w3, e, a, v, r, f, s, t, c, i, k, n, p, pc, L, names;
-   names := ["ascent", "bg", "canvas", "ceol", "cliph", "clipw", "clipx", "clipy", "col", "columns", "cursor", "depth", "descent", "display", "displayheight", "displaywidth", "drawop", "dx", "dy", "echo", "fg", "fheight", "fillstyle", "font", "fwidth", "gamma", "geometry", "height", "iconic", "iconimage", "iconlabel", "iconpos", "image", "label", "leading", "lines", "linestyle", "linewidth", "pattern", "pointer", "pointercol", "pointerrow", "pointerx", "pointery", "pos", "posx", "posy", "resize", "reverse", "row", "rows", "size", "visual", "width", "windowlabel", "x", "y"];
+   names := ["ascent", "bg", "canvas", "ceol", "cliph", "clipw", "clipx", "clipy", "col", "columns", "cursor", "depth", "descent", "display", "displayheight", "displaywidth", "drawop", "dx", "dy", "echo", "fg", "fheight", "fillstyle", "font", "fwidth", "gamma", "geometry", "height", "iconic", "iconimage", "iconlabel", "iconpos", "image", "label", "leading", "lines", "linestyle", "linewidth", "pattern", "pos", "posx", "posy", "resize", "reverse", "row", "rows", "size", "visual", "width", "windowlabel", "x", "y"];
    w := win("WAttrib");
    every a := !names do {
       &error := 1;
