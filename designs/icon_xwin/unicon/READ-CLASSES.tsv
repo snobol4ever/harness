@@ -25,6 +25,7 @@ read	rxwin.ri	4079	File	1	OWNFILE	the window's own file block, the adapter's pri
 read	rwin3d.ri	382	List	1	V3D	a 3D value read raw (a list, real array, record or procedure block in a 3D arm or under a record argument): left as written and counted, the cto 09:1x (section_length)
 read	rwin3d.ri	405	Record	1	V3D	a 3D value read raw (a list, real array, record or procedure block in a 3D arm or under a record argument): left as written and counted, the cto 09:1x (section_length)
 read	rwin3d.ri	824	Record	1	V3D	a 3D value read raw (a list, real array, record or procedure block in a 3D arm or under a record argument): left as written and counted, the cto 09:1x (settexture)
+read	ropengl.ri	1073	Real	1	V3D	a real list element read through its block under NoDescriptorDouble (the cto 12:0x CST, U3 forms): a 3D arm, refused before it is reached
 read	ropengl.ri	1163	Record	1	V3D	a 3D value read raw (a list, real array, record or procedure block in a 3D arm or under a record argument): left as written and counted, the cto 09:1x (traversefunctionlist)
 read	ropengl.ri	1253	Record	1	V3D	a 3D value read raw (a list, real array, record or procedure block in a 3D arm or under a record argument): left as written and counted, the cto 09:1x (traversefunctionlist)
 read	ropengl.ri	1255	Record	1	V3D	a 3D value read raw (a list, real array, record or procedure block in a 3D arm or under a record argument): left as written and counted, the cto 09:1x (traversefunctionlist)

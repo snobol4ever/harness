@@ -1,4 +1,4 @@
-# DIALECT.tsv -- Unicon 13.3 (the graphics oracle's own source and configuration, its auto.h plus NoConcurrent and NoMultiProgram, proposed by officer_07 09:3x CST on the cto's 09:0x ruling; 3D compiled in); officer_07 2026-11-16
+# DIALECT.tsv -- Unicon 13.3 (the graphics oracle's own source and configuration, its auto.h plus NoConcurrent and NoMultiProgram, and NoDescriptorDouble and NoPosixFns (the cto 12:0x CST, U3 forms), proposed by officer_07 09:3x CST on the cto's 09:0x ruling; 3D compiled in); officer_07 2026-11-16
 src	/home/resources/oracles-graphics/unicon/src
 translator	rtt/urtt
 translator_place	bin/urtt
@@ -19,6 +19,8 @@ config_file	h/auto.h
 config_mode	append
 config	#define NoConcurrent 1
 config	#define NoMultiProgram 1
+config	#define NoDescriptorDouble 1
+config	#define NoPosixFns 1
 carry	gdbm
 carry	libtp
 carry	xpm

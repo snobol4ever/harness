@@ -1,7 +1,7 @@
 # INTERFACE-MEASURED.tsv -- Unicon's window kernel linked as ONE shared object outside every repository of ours (step U1 of the Unicon object, the cto 2026-11-16 11:4x CST, on Lon's ruling of 09:5x: Keep Unicon graphics as a separate replaceable library); written by util_gen_icon_xwin_device.py --dialect unicon --object, held equal by --object-check. Read from nm of the LINKED objects, never from a call-graph walk.
 # source: the Unicon checkout of designs/icon_xwin/unicon/DIALECT.tsv at git d784f580b3003c50b0afffb3f1991364912c435f, translated raw by its own urtt under the dialect's configuration (Unicon's allocator as Unicon wrote it: 72 allocation sites and 82 frees, none converted, step U1 point 2)
 # libunicon_xwin.so: every Z entry exported, linked --gc-sections; libunicon_xwin_2d.so: rooted at Arizona's 48 functions and WindowContents; a third link, the same roots built with NoGL (every Graphics3D arm compiled out), is measurement only. An import's reach: 2d, reached from those roots with no 3D arm; 2d-3d-arm, reached from those roots only through their 3D arms (DrawLine's is_3D arm and kin, which a program that opens no 3D window never runs); 3d, reached only from the 3D functions
-# counts: exports 82; imports 303, of them the Unicon run-time 39 (2d 31, 2d-3d-arm 8); libraries 8
+# counts: exports 82; imports 304, of them the Unicon run-time 40 (2d 32, 2d-3d-arm 8); libraries 8
 # kind <tab> name <tab> C signature (an export's from xfwindow.c, a run-time import's from Unicon's own h/) <tab> defined in or supplied by <tab> reach (2d or 3d)
 export	ZActive	int ZActive(dptr r_args)	xfwindow.c	2d
 export	ZAlert	int ZAlert(int r_nargs, dptr r_args)	xfwindow.c	2d
@@ -193,6 +193,7 @@ import	_setjmp	-	libc.so.6	2d
 import	alcfile	struct b_file *alcfile (FILE *fd,int status,dptr name)	unicon run-time	2d
 import	alclist	struct b_list *alclist (uword size, uword nslots)	unicon run-time	2d
 import	alclisthdr	struct b_list *alclisthdr (uword size, union block *bptr)	unicon run-time	2d-3d-arm
+import	alcreal	struct b_real *alcreal (double val)	unicon run-time	2d
 import	alcrealarray	struct b_realarray *alcrealarray(uword n)	unicon run-time	2d-3d-arm
 import	alcrecd	struct b_record *alcrecd (int nflds,union block *recptr)	unicon run-time	2d-3d-arm
 import	alcstr	char *alcstr (char *s,word slen)	unicon run-time	2d

@@ -1,0 +1,84 @@
+# FORMS-MEASURED.tsv -- every form that crosses between SCRIP and a window object (src/runtime/xwin_interface.tsv form rows, the entry form of a Z function, its signals, the keyword indices), measured from ONE compiled probe (sizeof, offsetof, the constants printed) in Arizona's translated tree of SCRIP (src/runtime/xwin) and in Unicon's translated tree under the dialect's configuration (step U3 point 1, the cto 2026-11-16 11:56 CST; officer_07 12:1x CST). Never read off a header.
+# form <tab> measured name <tab> Arizona (the object SCRIP is built for) <tab> Unicon, the oracle's configuration (auto.h, NoConcurrent, NoMultiProgram) <tab> verdict <tab> Unicon with NoDescriptorDouble and NoPosixFns added (the configuration put to the cto)
+form	descriptor: sizeof word	8	8	EQUAL	8 EQUAL
+form	descriptor: sizeof struct descrip	16	16	EQUAL	16 EQUAL
+form	descriptor: descrip.vword offset	8	8	EQUAL	8 EQUAL
+form	descriptor-type: F_Nqual	0x8000000000000000	0x8000000000000000	EQUAL	0x8000000000000000 EQUAL
+form	descriptor-type: F_Var	0x4000000000000000	0x4000000000000000	EQUAL	0x4000000000000000 EQUAL
+form	descriptor-type: F_Ptr	0x1000000000000000	0x1000000000000000	EQUAL	0x1000000000000000 EQUAL
+form	descriptor-type: F_Typecode	0x2000000000000000	0x2000000000000000	EQUAL	0x2000000000000000 EQUAL
+form	descriptor-type: TypeMask	0x3f	0x3f	EQUAL	0x3f EQUAL
+form	descriptor-type: OffsetMask	0x2fffffffffffffff	0x2fffffffffffffff	EQUAL	0x2fffffffffffffff EQUAL
+form	descriptor-type: T_Null	0	0	EQUAL	0 EQUAL
+form	descriptor-type: T_Integer	1	1	EQUAL	1 EQUAL
+form	descriptor-type: T_Lrgint	2	2	EQUAL	2 EQUAL
+form	descriptor-type: T_Real	3	3	EQUAL	3 EQUAL
+form	descriptor-type: T_Cset	4	4	EQUAL	4 EQUAL
+form	descriptor-type: T_File	5	5	EQUAL	5 EQUAL
+form	descriptor-type: T_Proc	6	6	EQUAL	6 EQUAL
+form	descriptor-type: T_Record	7	7	EQUAL	7 EQUAL
+form	descriptor-type: T_List	8	8	EQUAL	8 EQUAL
+form	descriptor-type: T_Lelem	9	9	EQUAL	9 EQUAL
+form	descriptor-type: T_Set	10	10	EQUAL	10 EQUAL
+form	descriptor-type: T_Table	12	12	EQUAL	12 EQUAL
+form	descriptor-type: T_Coexpr	18	18	EQUAL	18 EQUAL
+form	descriptor-type: T_External	19	19	EQUAL	19 EQUAL
+form	descriptor-type: D_Null	0xa000000000000000	0xa000000000000000	EQUAL	0xa000000000000000 EQUAL
+form	descriptor-type: D_Integer	0xa000000000000001	0xa000000000000001	EQUAL	0xa000000000000001 EQUAL
+form	descriptor-type: D_Lrgint	0xb000000000000002	0xb000000000000002	EQUAL	0xb000000000000002 EQUAL
+form	descriptor-type: D_Real	0xb000000000000003	0xa000000000000003	DIFFERS	0xb000000000000003 EQUAL
+form	descriptor-type: D_Cset	0xb000000000000004	0xb000000000000004	EQUAL	0xb000000000000004 EQUAL
+form	descriptor-type: D_File	0xb000000000000005	0xb000000000000005	EQUAL	0xb000000000000005 EQUAL
+form	descriptor-type: D_Record	0xb000000000000007	0xb000000000000007	EQUAL	0xb000000000000007 EQUAL
+form	descriptor-type: D_List	0xb000000000000008	0xb000000000000008	EQUAL	0xb000000000000008 EQUAL
+form	real: DescriptorDouble	0	1	DIFFERS	0 EQUAL
+form	real: sizeof struct b_real	16	absent	DIFFERS	16 EQUAL
+form	real: b_real.realval offset	8	absent	DIFFERS	8 EQUAL
+form	file-block: sizeof struct b_file	40	48	DIFFERS	40 EQUAL
+form	file-block: b_file.fd offset	8	8	EQUAL	8 EQUAL
+form	file-block: b_file.status offset	16	16	EQUAL	16 EQUAL
+form	file-block: b_file.fname offset	24	32	DIFFERS	24 EQUAL
+form	file-block: Fs_Read	1	1	EQUAL	1 EQUAL
+form	file-block: Fs_Write	2	2	EQUAL	2 EQUAL
+form	file-block: Fs_Window	256	256	EQUAL	256 EQUAL
+form	cset-block: sizeof struct b_cset	48	48	EQUAL	48 EQUAL
+form	cset-block: b_cset.size offset	8	8	EQUAL	8 EQUAL
+form	cset-block: b_cset.bits offset	16	16	EQUAL	16 EQUAL
+form	cset-block: CsetSize	8	8	EQUAL	8 EQUAL
+form	cset-block: sizeof cset word	4	4	EQUAL	4 EQUAL
+form	large-integer-block: sizeof struct b_bignum	40	40	EQUAL	40 EQUAL
+form	large-integer-block: b_bignum.blksize offset	8	8	EQUAL	8 EQUAL
+form	large-integer-block: b_bignum.msd offset	16	16	EQUAL	16 EQUAL
+form	large-integer-block: b_bignum.lsd offset	24	24	EQUAL	24 EQUAL
+form	large-integer-block: b_bignum.sign offset	32	32	EQUAL	32 EQUAL
+form	large-integer-block: b_bignum.digits offset	36	36	EQUAL	36 EQUAL
+form	large-integer-block: sizeof DIGIT	4	4	EQUAL	4 EQUAL
+form	list-block: sizeof struct b_list	40	40	EQUAL	40 EQUAL
+form	list-block: b_list.size offset	8	8	EQUAL	8 EQUAL
+form	list-block: b_list.listhead offset	24	24	EQUAL	24 EQUAL
+form	list-block: b_list.listtail offset	32	32	EQUAL	32 EQUAL
+form	entry-signal: A_Resume	1	1	EQUAL	1 EQUAL
+form	entry-signal: A_Continue	7	7	EQUAL	7 EQUAL
+form	entry-signal: Succeeded	-7	-7	EQUAL	-7 EQUAL
+form	entry-signal: Failed	-5	-5	EQUAL	-5 EQUAL
+form	entry-signal: CvtFail	-2	-2	EQUAL	-2 EQUAL
+form	entry-signal: NoCvt	-4	-4	EQUAL	-4 EQUAL
+form	entry-signal: G_Csusp	1	1	EQUAL	1 EQUAL
+form	entry-signal: the error signal (Error)	-8	-8	EQUAL (one number, Unicon names it RunError)	-8 EQUAL
+form	keyword-index: XKey_Window	0	0	EQUAL	0 EQUAL
+form	keyword-index: XKey_Fg	1	1	EQUAL	1 EQUAL
+form	tended-chain: sizeof struct tend_desc	32	32	EQUAL	32 EQUAL
+form	tended-chain: tend_desc.previous offset	0	0	EQUAL	0 EQUAL
+form	tended-chain: tend_desc.num offset	8	8	EQUAL	8 EQUAL
+form	tended-chain: tend_desc.d offset	16	16	EQUAL	16 EQUAL
+form	real: descrip.vword.realval offset	absent	8	DIFFERS (the double in the value word)	absent (no real in the value word)
+count	forms	65 equal	7 differ	the oracle's configuration	with the two defines: every form equal (the probe of /tmp/s4e/officer_07/xf/forms.c compiled with -DNoDescriptorDouble -DNoPosixFns)
+question	the real	DescriptorDouble, defined by Unicon's config.h on a 64-bit word unless NoDescriptorDouble: D_Real is T_Real|D_Typecode with NO F_Ptr (0xa000000000000003) and the double is the descriptor's value word; Arizona's and SCRIP's adapter: D_Real carries F_Ptr (0xb000000000000003) and the value word points at a 16-byte block, title then the double	SCRIP builds a real argument as the block (src/runtime/icn_extfn.c 211, alcreal) and reads a real answer by the pointer flag (72, 164, 232, 262); a Unicon kernel would read the pointer as the number and hand back a D_Real SCRIP does not recognise; the Unicon kernel takes no alcreal (it is not among its 39 imports) and takes it under NoDescriptorDouble, an import SCRIP offers	RULED (the cto 12:0x CST): the two defines	with NoDescriptorDouble and NoPosixFns in the dialect's config lines (beside NoConcurrent and NoMultiProgram) the kernel translates, compiles and links; its imports change by one, alcreal, which xwin_interface.tsv offers
+question	the file block	PosixFns, defined by Unicon's config.h unless NoPosixFns: struct b_file gains word sock_gen at 24, so 48 bytes with fname at 32; Arizona's and SCRIP's: 40 bytes, fname at 24 (title 0, fd 8, status 16 in both)	SCRIP lines reading a file block past its title: icn_extfn.c 172 (stat at 16 and fp at 8) and 243 (fp at 8) read members at the same offsets in both; icn_extfn.c 86 to 94 BUILD a 40-byte block with fname at 24 when a program hands a plain file to a window function (the kernel reads its fname at 32, past the end); icn_extfn.c 264 to 266 copy 40 bytes and read fname at 24 when a collected generator holds a window (in a Unicon block that is sock_gen and the name's length), and 276 drops that copy; xwin_lang.c and xwin_shim.c are the object's side, replaced by the Unicon shim	RULED (the cto 12:0x CST): the two defines	with NoDescriptorDouble and NoPosixFns in the dialect's config lines (beside NoConcurrent and NoMultiProgram) the kernel translates, compiles and links; its imports change by one, alcreal, which xwin_interface.tsv offers
+switch-arm	DescriptorDouble	rstructs.h 25, 64, 967, 1152; rmacros.h 335, 349, 356, 418, 578	representation	the value word holds the double, or the block the value word points at; the real block, the allocator's slot for alcreal and D_Real's F_Ptr
+switch-arm	DescriptorDouble	rwindow.r 4101 (WAttrib gamma), rwin3d.ri 635 (fov), cnv.r 428 (a real too big for an integer, to a large integer), cnv.r 478 (cnv_real), cnv.r 738 (a real-array element), def.r 114 (def_real)	representation, and ONE BEHAVIOUR ARM	each stores the double in the value word or allocates a real block through alcreal; the block arm alone can be refused, and then returns RunError (rwindow.r 4104) or calls fatalerr(0, NULL) (cnv.r 481, def.r 117), or makes no block at all (rwin3d.ri 638, cnv.r 431, cnv.r 741, no test); the value-word arm cannot be refused; that is the arm put to the cto
+switch-arm	DescriptorDouble	ropengl.ri 1070	representation	reads a real list element by the value word or by its block
+switch-arm	PosixFns	rstructs.h 286	representation	b_file's word sock_gen at 24, which no compiled window source reads (read by grep of the seven sources and their six .ri includes: no sock_gen)
+switch-arm	PosixFns	rt.h 27 (posix.h), grttin.h 305 and 394 (rtt's typedefs), rproto.h 489 (Graphics or PosixFns) and 970, rexterns.h 217 and 394, rmacros.h 61 (Fs_Socket Fs_Buff Fs_Unbuf Fs_Listen), 1055 and 1105 (Concurrent alone), 1204 (A_Trapret A_Trapfail), rstructs.h 685 and 734 (Concurrent alone), config.h 266 (ReadDirectory), feature.h 53 (the _POSIX feature line)	declarations only	no compiled window source names Fs_Socket, Fs_Buff, Fs_Unbuf, Fs_Listen, ReadDirectory, amperErrno, A_Trapret, A_Trapfail, savedbuf, nsaved or any posix_ name (grep, 0 lines); feature.h is read by keyword.r, which the kernel does not compile; findactivewindow stays declared under Graphics
+switch-arm	PosixFns	rmswin.ri 5265	not compiled	the MS Windows source, included under MSWindows alone
+limit	DescriptorDouble	rwin3d.ri 638, cnv.r 431, cnv.r 741	LIMIT (the cto 12:0x CST; no patch line in U3)	alcreal answers NULL on refusal by its contract line, and these three sites do not test it: rwin3d.ri 638 puts a D_Real with a null block into the fov list (a 3D arm, refused in U3 before it is reached); cnv.r 431 hands that descriptor to realtobig, which reads the null block (a fault); cnv.r 741 answers a real-array element as a D_Real with a null block, which its reader then reads (a fault); an out-of-heap run only, the same as Arizona's object, whose tree ends in fatalerr(0) on a refused real (xcnv.c 821)

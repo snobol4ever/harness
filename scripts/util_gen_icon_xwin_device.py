@@ -1389,6 +1389,231 @@ def compare(a, b):
     return sorted((fa | fb) - same)
 
 
+SHIM_SOURCE = "uxwin_shim.c"
+FORMS_TABLE = "FORMS-MEASURED.tsv"
+SHIM_KWD = ("kywd_xwin[XKey_Window]", "kywd_xwin[XKey_Fg]", "amperX", "amperY", "amperCol", "amperRow", "amperInterval", "lastEventWin")
+SHIM_OPEN = ("xwin_list_new", "rt_icn_set_errortext")
+SHIM_LANG = ("xwin_lang_open", "xwin_lang_close", "xwin_lang_write", "xwin_lang_flush", "xwin_lang_read", "xwin_lang_reads", "xwin_lang_image")
+SHIM_LOADER = r'''#include <dlfcn.h>
+#include <stdio.h>
+int main(int argc, char **argv) {
+    if (argc != 3) return 2;
+    if (!dlopen(argv[1], RTLD_NOW | RTLD_GLOBAL)) { printf("SHIM-LOAD RED the runtime: %s\n", dlerror()); return 1; }
+    void *h = dlopen(argv[2], RTLD_NOW | RTLD_LOCAL);
+    if (!h) { printf("SHIM-LOAD RED the object: %s\n", dlerror()); return 1; }
+    const char *want[] = { "bt_DrawLine", "xwin_kywd_addr" };
+    for (int i = 0; i < 2; i++) { if (!dlsym(h, want[i])) { printf("SHIM-LOAD RED no %s\n", want[i]); return 1; } printf("SHIM-LOAD found %s\n", want[i]); }
+    void *(*kw)(int) = (void *(*)(int))dlsym(h, "xwin_kywd_addr");
+    for (int i = 0; i < 8; i++) if (!kw(i)) { printf("SHIM-LOAD RED keyword %d has no address\n", i); return 1; }
+    printf("SHIM-LOAD ok\n");
+    return 0;
+}
+'''
+
+
+def interface_rows(root):
+    p = os.path.join(root, "src", "runtime", "xwin_interface.tsv")
+    if not os.path.isfile(p):
+        raise Refuse("no interface table %s" % p)
+    rows = [l.rstrip("\n").split("\t") for l in open(p) if l.strip() and not l.startswith("#")]
+    return {k: set(r[1] for r in rows if r[0] == k) for k in ("import", "offer", "export", "library")}
+
+
+def shim_entries(src, tree, made, wanted):
+    fsrc = open(os.path.join(src, "runtime", "fwindow.r")).read()
+    rows = []
+    for m in re.finditer(r"(?m)^function\{([^}]*)\}\s*(\w+)\(([^)]*)\)", fsrc):
+        res, name, params = "".join(m.group(1).split()), m.group(2), m.group(3).strip()
+        if name not in wanted:
+            continue
+        proto = re.search(r"(?m)^int Z%s ?\(([^)]*)\);" % name, made)
+        if not proto:
+            raise Refuse("Unicon's fwindow.r declares %s and its translation has no Z%s" % (name, name))
+        nparams = -1 if params == "argv[argc]" else len([p for p in params.split(",") if p.strip()])
+        nums = res.split(",")
+        suspends = "*" in nums or any(x.isdigit() and int(x) > 1 for x in nums)
+        c_args = "r_nargs,r_args" if "int r_nargs" in proto.group(1) else "r_args"
+        rows.append("%s\tZ%s\t%s\t%d\t%s\t%s\t%s" % (name, name, res, nparams, "yes" if suspends else "no", c_args, params or "-"))
+    missing = sorted(set(wanted) - set(r.split("\t")[0] for r in rows))
+    if missing:
+        raise Refuse("the interface asks for functions Unicon's fwindow.r does not define: %s" % " ".join(missing))
+    keep = list(D["export"])
+    D["export"] = keep + [n for n in SHIM_LANG if n not in keep]
+    try:
+        write_builtins(tree, rows)
+    finally:
+        D["export"] = keep
+    return rows
+
+
+def shim_gen(src, tree):
+    lines = ['#include "h/rt.h"'] + own_data(src)
+    roots = [l.rstrip("\n").split("\t") for l in open(D["table"]) if l.startswith("root\t")]
+    descrs = [r[4] for r in roots if r[3] == "descr"]
+    own = set(n for n, s in D["own_data"])
+    lines += ["extern struct descrip %s;" % n for n in descrs if n.split("[")[0] not in own]
+    lines.append("struct descrip *const uxw_root_descrs[] = { %s };" % ", ".join("&%s" % n for n in descrs))
+    lines.append("const long uxw_root_descr_count = %d;" % len(descrs))
+    lines.append("struct descrip *const uxw_kywd[] = { %s };" % ", ".join("&%s" % n for n in SHIM_KWD))
+    with open(os.path.join(tree, "uxwin_gen.c"), "w") as f:
+        f.write("\n".join(lines) + "\n")
+    with open(os.path.join(tree, "uxwin_decl.h"), "w") as f:
+        f.write("struct descrip;\nlong xwin_list_size(struct descrip *d);\n")
+        for name, fn in sorted(D["by_value"].items()):
+            f.write("struct descrip %s(void);\n#define %s %s()\n" % (fn, name, fn))
+    return len(descrs)
+
+
+def cc(args, cwd, what):
+    r = subprocess.run(["bash", CC_SLOT, "gcc"] + args, cwd=cwd, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise Fail("compile %s rc=%d: %s" % (what, r.returncode, tail(r.stderr)))
+
+
+def build_shim_object(src, root, outdir, work, wanted):
+    ir = scrip_ir()
+    scratch = os.path.join(work, "scratch")
+    tree = os.path.join(outdir, "tree")
+    os.makedirs(scratch)
+    os.makedirs(os.path.join(tree, "h"))
+    cfiles = translate(src, scratch, raw=True)
+    rrows = load_reads(D["reads"])
+    rreport = []
+    made = ""
+    for p in cfiles:
+        text = "\n".join(read_pass(post_pass(open(p, errors="surrogateescape").read().split("\n"), scratch, raw=True), p, rrows, rreport))
+        with open(os.path.join(tree, os.path.basename(p)), "w", errors="surrogateescape") as f:
+            f.write(text)
+        if os.path.basename(p) == "xfwindow.c":
+            made = text
+    for n in sorted(os.listdir(os.path.join(scratch, "src", "h"))):
+        if n.endswith(".h"):
+            shutil.copyfile(os.path.join(scratch, "src", "h", n), os.path.join(tree, "h", n))
+    carry_headers(scratch, tree)
+    check_reads(rrows, rreport)
+    patch = os.path.join(DESIGNS, "unicon", "arena.patch")
+    if not os.path.isfile(patch):
+        raise Refuse("no arena patch %s" % patch)
+    r = subprocess.run(["patch", "-p1", "-s", "--fuzz=0", "--no-backup-if-mismatch", "-d", tree, "-i", patch], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise Fail("the arena patch %s does not apply rc=%d: %s" % (patch, r.returncode, tail(r.stdout + r.stderr)))
+    nroots = shim_gen(src, tree)
+    rows = shim_entries(src, tree, made, wanted)
+    defines = list(D["arena_define"])
+    objs = []
+    for p in cfiles:
+        n = os.path.basename(p)
+        o = os.path.join(outdir, n[:-2] + ".o")
+        cc(["-std=c11", "-c", "-w", "-fPIC", "-O0", "-ffunction-sections", "-fdata-sections", "-include", "uxwin_decl.h"] + defines + tree_includes() + [n, "-o", o], tree, n)
+        objs.append(o)
+    for n, flags in (("uxwin_gen.c", ["-std=c11", "-w"]), ("xwin_entries.c", ["-std=gnu11", "-Wall", "-Werror", "-I" + os.path.join(root, "src")])):
+        o = os.path.join(outdir, n[:-2] + ".o")
+        cc(["-c", "-fPIC", "-O0"] + flags + tree_includes() + [n, "-o", o], tree, n)
+        objs.append(o)
+    for n, inc in ((SHIM_SOURCE, ["-I" + os.path.join(root, "src")]), (D["arena_source"] or "uxwin_arena.c", ["-I" + ir])):
+        path = os.path.join(DESIGNS, "unicon", n)
+        if not os.path.isfile(path):
+            raise Refuse("no %s" % path)
+        o = os.path.join(outdir, n[:-2] + ".o")
+        cc(["-std=gnu11", "-c", "-fPIC", "-O0", "-g", "-Wall", "-Werror"] + tree_includes() + inc + [path, "-o", o], tree, n)
+        objs.append(o)
+    so = os.path.join(outdir, "libscrip_xwin.so")
+    r = subprocess.run(["bash", CC_SLOT, "gcc", "-shared", "-Wl,-Bsymbolic", "-Wl,--gc-sections", "-Wl,--version-script=" + os.path.join(tree, "xwin_exports.map"), "-Wl,-soname,libscrip_xwin.so",
+                        "-o", so] + objs + OBJECT_LIBS, cwd=outdir, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise Fail("link %s rc=%d: %s" % (so, r.returncode, tail(r.stderr)))
+    return {"so": so, "tree": tree, "rows": rows, "roots": nroots, "reads": rreport}
+
+
+def forms_probe(tree, work, tag, extra):
+    exe = os.path.join(work, "forms_" + tag)
+    probe = os.path.join(DESIGNS, "unicon", "forms_probe.c")
+    if not os.path.isfile(probe):
+        raise Refuse("no forms probe %s" % probe)
+    cc(["-std=gnu11", "-w"] + extra + [probe, "-o", exe], tree, "the forms probe in " + tag)
+    r = subprocess.run([exe], capture_output=True, text=True, timeout=60)
+    if r.returncode != 0:
+        raise Fail("the forms probe in %s rc=%d" % (tag, r.returncode))
+    return dict(l.split("\t", 1) for l in r.stdout.strip().split("\n"))
+
+
+def shim_main(a):
+    try:
+        load_dialect(a.dialect)
+        if a.dialect != "unicon":
+            raise Refuse("--shim-check is the unicon dialect's verb")
+        root = os.path.abspath(a.shim_check)
+        os.environ.setdefault("S4E_SCRIP", root)
+        for need in (os.path.join(root, "out", "libscrip_rt.so"), os.path.join(root, "src", "runtime", "xwin", "h", "rt.h")):
+            if not os.path.isfile(need):
+                raise Refuse("the SCRIP root lacks %s" % need)
+        src = os.path.abspath(a.src or D["src"])
+        if not os.path.isfile(os.path.join(src, D["translator"])):
+            raise Refuse("the Unicon checkout lacks %s" % D["translator"])
+        if not os.path.isfile(os.path.join(DESIGNS, "unicon", FORMS_TABLE)):
+            raise Refuse("no forms table %s" % FORMS_TABLE)
+        t = interface_rows(root)
+        wanted = sorted(n[3:] for n in t["export"] if n.startswith("bt_"))
+        base = os.path.join("/tmp/s4e", os.environ.get("S4E_SEAT") or "anon", "xwgen")
+        os.makedirs(base, exist_ok=True)
+        work = tempfile.mkdtemp(prefix="xwshim-", dir=base)
+        bad = 0
+        try:
+            out = os.path.abspath(a.object) if a.object else os.path.join(work, "object")
+            os.makedirs(out, exist_ok=True)
+            b = build_shim_object(src, root, out, os.path.join(work, "build"), [n[:-2] if n.endswith("_h") else n for n in wanted])
+            print("SHIM built %s: %d entries, %d root descriptors, reads %s" % (b["so"], len(b["rows"]), b["roots"], " ".join(b["reads"])))
+            und = nm_names(b["so"], True) - {"__gmon_start__", "_ITM_deregisterTMCloneTable", "_ITM_registerTMCloneTable", "__cxa_finalize"}
+            libs = lib_defs(b["so"])
+            for n in sorted(und):
+                if n in t["import"] or n in t["offer"] or n in libs:
+                    continue
+                bad += 1
+                print("SHIM RED the object asks %s, which the interface neither imports nor offers%s" % (n, " (asked of the cto and ruled; OPEN until it lands)" if n in SHIM_OPEN else ""))
+            exp = nm_names(b["so"], False)
+            for n in sorted(t["export"] - exp):
+                bad += 1
+                print("SHIM RED the interface exports %s and the object does not" % n)
+            az = forms_probe(os.path.join(root, "src", "runtime", "xwin"), work, "arizona", ["-I."])
+            un = forms_probe(b["tree"], work, "unicon", tree_includes())
+            alias = {"the error signal (Error)": "the error signal (RunError)"}
+            eq = 0
+            for k, v in sorted(az.items()):
+                u = un.get(alias.get(k, k))
+                if u == v:
+                    eq += 1
+                    continue
+                bad += 1
+                print("SHIM RED form %s: Arizona %s, Unicon %s" % (k, v, u))
+            for k in sorted(set(un) - set(az) - set(alias.values())):
+                bad += 1
+                print("SHIM RED form %s is Unicon's alone: %s" % (k, un[k]))
+            print("SHIM forms equal %d of %d" % (eq, len(az)))
+            c = os.path.join(work, "shim_load.c")
+            with open(c, "w") as f:
+                f.write(SHIM_LOADER)
+            exe = os.path.join(work, "shim_load")
+            cc([c, "-o", exe, "-ldl"], work, "the loader")
+            r = subprocess.run([exe, os.path.join(root, "out", "libscrip_rt.so"), b["so"]], capture_output=True, text=True, timeout=120)
+            print(r.stdout.strip())
+            if r.returncode != 0:
+                bad += 1
+            if bad:
+                print("SHIM FAIL %d" % bad)
+                return 1
+            print("SHIM OK: every name the object asks is imported, offered or a library's, every export the interface names is there, the forms are equal, the object loads beside %s" % root)
+            return 0
+        finally:
+            if not a.keep:
+                shutil.rmtree(work, ignore_errors=True)
+    except Refuse as e:
+        print("REFUSE(2): %s" % e)
+        return 2
+    except Fail as e:
+        print("SHIM FAIL %s" % e)
+        return 1
+
+
 def main():
     ap = argparse.ArgumentParser(description="Regenerate the Icon window facility's tree from the oracle's sources.")
     ap.add_argument("--dialect", default="arizona")
@@ -1407,7 +1632,10 @@ def main():
     ap.add_argument("--object-check", action="store_true")
     ap.add_argument("--arena-check", action="store_true")
     ap.add_argument("--arena-write", action="store_true")
+    ap.add_argument("--shim-check", metavar="ROOT")
     a = ap.parse_args()
+    if a.shim_check:
+        return shim_main(a)
     if a.arena_check or a.arena_write:
         return arena_main(a)
     if a.object is not None or a.object_check:
