@@ -148,3 +148,4 @@ exercism_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/exerci
 aoc2015_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/aoc2015_prolog
 leantap	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/leantap
 icon_apexskier	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_apexskier
+icon_rwl	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_rwl
