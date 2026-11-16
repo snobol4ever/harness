@@ -22,6 +22,13 @@
 #                                               top, could not open it). It also reads the patched trees as $S4E_HARNESS, $S4E_CORPUS and
 #                                               $S4E_HOME/.github, and a SCRIP built at origin/main as $S4E_SCRIP; a longer proof is a script under /home/resources
 #                                               that the command names. A give with no --proof is refused rc 2 and stores nothing.
+#                                               A PATCH THAT DELETES SAYS SO IN NUMBERS (the cio 2026-11-16, on the cto's measurement and ask: corpus 157acb344, five
+#                                               new entries of ipl_gprogs cut as a whole-folder difference from a scratch copy older than the tree, deleted 40 files
+#                                               other owners had landed since and reverted 17 answers, and applied clean with its proof green): give counts, on the
+#                                               patch applied at its base through a private index, the files it deletes and the rows of an ALL.csv (by entry) or an
+#                                               ALL.args (by first column) it drops, and refuses rc 1 unless the giver states exactly those numbers after the proof:
+#                                               --deletes N and --drops K. The same for a file the patch PUTS BACK to a text it had before (its new text equal to
+#                                               one of that file's last twenty versions, as the 17 answers were): --reverts R. A patch that does none needs none.
 #   s4e_take.sh drain [--wait SECONDS]          THE GRADER ONLY: lands EVERY waiting patch that carries a proof, one after another with no turn of the grader
 #                                               between two, each as grader_give.sh landed one (the patches worktree at origin/main, or at the patch's base when it
 #                                               applies only there; s4e_land.sh with the proof as its gate). Oldest first, after the patches a line of FIRST.conf in
@@ -64,8 +71,13 @@ carries() {   # <clone>: what a removal would lose, one word each; empty when no
 take() {
     die "REFUSE(2): no seat holds $1, and nothing was made. Lon 2026-11-14: \"Only ONE maintainer has /home/{.github,corpus,harness} and that is GRADER.\" Read it at $TOP/$1. To change it, give the grader a patch: bash $TOP/harness/scripts/s4e_take.sh give $1 <patch> \"<why>\" (the head of this script says how a patch is written with no clone)." 2
 }
+give_keys() {   # <file name>: the keys of a table on standard input, the entry column of an ALL.csv (its second), the first column of any other
+    case "$1" in *ALL.csv) awk -F, 'NR>1 {print $2}' ;; *) grep -v '^#' | cut -f1 ;; esac
+}
 give() {
-    local r="$1" p="${2:-}" why="${3:-}" pf="${4:-}" proof="${5:-}" seat="${S4E_SEAT:-}" src err="" out base ob hb at ix
+    local r="$1" p="${2:-}" why="${3:-}" pf="${4:-}" proof="${5:-}" seat="${S4E_SEAT:-}" src err="" out base ob hb at ix say_del=0 say_drop=0 say_rev=0 ndel=0 ndrop=0 nrev=0 f nb dl="" dr="" rv=""
+    shift 5 2>/dev/null || shift $#
+    while [ $# -gt 0 ]; do case "$1" in --deletes) say_del="${2:-0}"; shift 2 ;; --drops) say_drop="${2:-0}"; shift 2 ;; --reverts) say_rev="${2:-0}"; shift 2 ;; *) die "REFUSE(2): unknown argument '$1' after the proof (--deletes N, --drops K, --reverts R)" 2 ;; esac; done
     [ -n "$seat" ] || die "REFUSE(2): S4E_SEAT is unset: a patch names its seat" 2
     [ -n "$p" ] && [ -s "$p" ] || die "REFUSE(2): no patch at '$p' (usage: s4e_take.sh give corpus|harness|.github <patch> \"<why>\")" 2
     [ -n "$why" ] || die "REFUSE(2): a patch says why, the row and what the change does (usage: s4e_take.sh give $r <patch> \"<why>\")" 2
@@ -85,12 +97,36 @@ give() {
         rm -f "$ix"
     done
     [ -n "$base" ] || die "REFUSE(1): the patch applies neither to origin/main ${ob:0:10} nor to $src at ${hb:0:10}: $(printf '%s' "$err" | head -1). Nothing given." 1
+    ix="$(mktemp -u "${TMPDIR:-/tmp}/s4e-give-index.XXXXXX")"
+    if GIT_INDEX_FILE="$ix" git -C "$src" read-tree "$base" 2>/dev/null && GIT_INDEX_FILE="$ix" git -C "$src" apply --cached "$p" 2>/dev/null; then
+        while IFS=$'\t' read -r at f; do
+            case "$at" in D) ndel=$((ndel + 1)); [ "$ndel" -gt 5 ] || dl="$dl $f" ;; esac
+            if [ "$at" = M ]; then
+                nb="$(GIT_INDEX_FILE="$ix" git -C "$src" ls-files -s -- "$f" 2>/dev/null | cut -d' ' -f2)"
+                if [ -n "$nb" ] && git -C "$src" log -n 20 --format= --raw --no-abbrev "$base" -- "$f" 2>/dev/null | cut -d' ' -f3 | grep -q -x "$nb"; then nrev=$((nrev + 1)); [ "$nrev" -gt 5 ] || rv="$rv $f"; fi
+            fi
+            case "$at:$f" in M:*ALL.csv|M:*ALL.args)
+                at="$(comm -23 <(git -C "$src" show "$base:$f" 2>/dev/null | give_keys "$f" | sort -u) <(GIT_INDEX_FILE="$ix" git -C "$src" show ":$f" 2>/dev/null | give_keys "$f" | sort -u))"
+                [ -z "$at" ] || { ndrop=$((ndrop + $(printf '%s\n' "$at" | wc -l))); dr="$dr $f:$(printf '%s' "$at" | head -3 | tr '\n' ',')"; } ;;
+            esac
+        done < <(GIT_INDEX_FILE="$ix" git -C "$src" diff-index --cached --name-status "$base" 2>/dev/null)
+    fi
+    rm -f "$ix"
+    [ "$ndel" = "$say_del" ] && [ "$ndrop" = "$say_drop" ] && [ "$nrev" = "$say_rev" ] || die "REFUSE(1): the patch DELETES $ndel file(s)${dl:+ ($dl ...)}, DROPS $ndrop table row(s)${dr:+ ($dr)} and PUTS BACK $nrev file(s) to an older text${rv:+ ($rv ...)}, and you stated --deletes $say_del --drops $say_drop --reverts $say_rev. Nothing given. A patch cut as a whole-folder difference from a scratch copy older than the tree deletes what others landed since (MEASURED 2026-11-16: corpus 157acb344 deleted 40 files of ipl_gprogs and applied clean). Cut the patch again from the files YOU changed, each against /home/$r as it stands now; or, if you mean every one of them, state the numbers after the proof: --deletes $ndel --drops $ndrop --reverts $nrev." 1
     mkdir -p "$GIVES" 2>/dev/null || die "REFUSE(2): cannot make $GIVES" 2
     out="$GIVES/$(date -u +%Y%m%dT%H%M%SZ)-$seat-${r#.}-$$.patch"
     :   # THE PATCH NAMES ITS BASE (the cio 2026-11-14, ruled with the grader): the commit of the one checkout the patch was checked against. A patch that adds an entry to a container renumbers every row below it, so once another such patch lands it applies nowhere but at its base; the grader applies it there, in a worktree, and its landing's rebase merges the container's tables by entry key (util_table_merge.py, s4e_land.sh)
     cp "$p" "$out" && printf '%s\t%s\t%s\t%s\t%s\n' "$(basename "$out")" "$seat" "$r" "$why" "base=$base	proof=$proof" >> "$GIVES/GIVES.tsv" || die "REFUSE(2): cannot store the patch in $GIVES" 2
     echo "GIVEN $out ($r, by $seat, base ${base:0:10}: $why). The grader alone applies it."
-    echo "WAKE: SendMessage to GRADER now with this first line: \"patch $(basename "$out") waits with its proof: run bash $TOP/harness/scripts/s4e_take.sh drain\""
+    if flock -n "$GIVES/.drain.lock" true 2>/dev/null; then echo "WAKE: SendMessage to GRADER now with this first line: \"patch $(basename "$out") waits with its proof: run bash $TOP/harness/scripts/s4e_take.sh drain\""
+    else echo "NO WAKE IS OWED: the grader's drain is running (lock $GIVES/.drain.lock) and lands this patch on its proof with no turn of the grader; a red proof comes back to you by telegram."; fi
+}
+drain_tell() {   # <giver> <patch> <one line>: the giver is told by telegram, by the drain itself (the cio 2026-11-16, MEASURED in the drain's first hour: officer_06's red patch was named only in the drain's own output, which stood in the grader's background); never a reason to stop the drain
+    local giver="$1" b="$2" line="$3" t
+    echo "TELL $giver: $line"
+    t="your-patch-$(printf '%s' "${b%%-*}" | tr 'A-Z' 'a-z')-came-back-from-the-graders-drain"
+    { printf 'From the grader'"'"'s drain (s4e_take.sh drain), %s. %s\n' "$(date -u +%FT%TZ)" "$line"; [ -s "$GIVES/refused/${b%.patch}.why" ] && { echo "THE LAST LINES OF ITS LANDING:"; cat "$GIVES/refused/${b%.patch}.why"; }; echo "The patch stands in $GIVES/refused/$b. Nothing was pushed."; } \
+        | tr -d '`' | sed 's/\$(/(/g' | ( cd "${S4E_HOME:-$WT}" && S4E_SEAT=grader bash "$MSG" send "$giver" "$t" --stdin > /dev/null 2>&1 ) || echo "DRAIN: the telegram to $giver was not sent; pass the TELL line on by hand"
 }
 drain_next() {   # sets NEXT to the next waiting patch that carries a proof and was not tried in this run: FIRST.conf's patches first, then the oldest
     local f b row key first="" rest=""
@@ -116,7 +152,7 @@ drain_one() {   # <given patch>: one landing; rc 0 landed, 1 red (the patch is t
     if ! git -C "$d" apply --index "$g" 2>/dev/null; then
         if [ -n "$base" ] && git -C "$d" checkout -q --detach "$base" 2>/dev/null && git -C "$d" apply --index "$g" 2>/dev/null; then :; else
             git -C "$d" checkout -q --detach origin/main 2>/dev/null; out=red:apply; mv "$g" "$GIVES/refused/"; echo "applies neither at origin/main nor at its base ${base:-(none recorded)}" > "$GIVES/refused/${b%.patch}.why"
-            echo "REFUSED $b by $giver: it applies neither at origin/main nor at its base ${base:0:10}"; echo "TELL $giver: patch $b no longer applies; make it again on today's files and give it again"; fin; return 1
+            echo "REFUSED $b by $giver: it applies neither at origin/main nor at its base ${base:0:10}"; drain_tell "$giver" "$b" "patch $b no longer applies; make it again on today's files and give it again"; fin; return 1
         fi
     fi
     if ! git -C "$d" commit -q -m "$why (given by $giver through the grader: $b)" 2>/dev/null; then
@@ -128,11 +164,11 @@ drain_one() {   # <given patch>: one landing; rc 0 landed, 1 red (the patch is t
     git -C "$d" checkout -q --detach origin/main 2>/dev/null
     if grep -q '^LAND RED' "$log"; then
         out="red:$(grep -o '^LAND RED stage=[a-z:_A-Za-z0-9]*' "$log" | tail -1 | sed 's/.*stage=//')"; mv "$g" "$GIVES/refused/"; tail -5 "$log" | cut -c1-400 > "$GIVES/refused/${b%.patch}.why"
-        echo "REFUSED $b by $giver: $(grep '^LAND RED' "$log" | tail -1 | cut -c1-200); log $log"; echo "TELL $giver: patch $b read red on its own proof ($out); the log is $log; cure it and give it again"; fin; return 1
+        echo "REFUSED $b by $giver: $(grep '^LAND RED' "$log" | tail -1 | cut -c1-200); log $log"; drain_tell "$giver" "$b" "patch $b read red on its own proof ($out); the log is $log; cure it and give it again"; fin; return 1
     fi
     if grep -q 'the gate could not measure' "$log" && awk -F'\t' -v b="$b" '$1==b && $8=="held"' "$GIVES/DRAIN.tsv" 2>/dev/null | grep -q .; then
         out=red:proof-rc2; mv "$g" "$GIVES/refused/"; tail -5 "$log" | cut -c1-400 > "$GIVES/refused/${b%.patch}.why"
-        echo "REFUSED $b by $giver: its proof could not measure twice (rc 2); log $log"; echo "TELL $giver: patch $b: your proof command could not run or measure, twice (rc 2; the log is $log); it runs in the patched repo's top; cure the command and give the patch again"; fin; return 1
+        echo "REFUSED $b by $giver: its proof could not measure twice (rc 2); log $log"; drain_tell "$giver" "$b" "patch $b: your proof command could not run or measure, twice (rc 2; the log is $log); it runs in the patched repo's top; cure the command and give the patch again"; fin; return 1
     fi
     echo "HELD $b: the landing could not measure ($(grep -E '^LAND (REFUSE|stage)' "$log" | tail -1 | cut -c1-160)); the patch waits; log $log"; fin; return 2
 }
@@ -140,7 +176,7 @@ drain() {
     local seat="${S4E_SEAT:-}" wait_s=0 waited=0 g rc n_ok=0 n_red=0 n_held=0 last=0 now sd
     [ "$seat" = grader ] || die "REFUSE(2): only the grader drains the patches (this seat is '${seat:-unset}'); nothing landed. A seat gives: s4e_take.sh give <repo> <patch> \"<why>\" --proof '<command>'." 2
     [ "${1:-}" = --wait ] && wait_s="${2:-0}"; case "$wait_s" in ''|*[!0-9]*) die "usage: s4e_take.sh drain [--wait SECONDS]" 2 ;; esac
-    WT="${S4E_GIVES_WT:-/home/resources/worktrees/grader/wt-gives}"; LANDER="${S4E_TAKE_LANDER:-$HERE/s4e_land.sh}"; TRIED=""; NOGATE=""; NEXT=""
+    WT="${S4E_GIVES_WT:-/home/resources/worktrees/grader/wt-gives}"; LANDER="${S4E_TAKE_LANDER:-$HERE/s4e_land.sh}"; MSG="${S4E_TAKE_MSG:-$HERE/s4e_msg.sh}"; TRIED=""; NOGATE=""; NEXT=""
     [ -d "$WT" ] || die "REFUSE(2): no patches worktree at $WT (S4E_GIVES_WT names another)" 2
     mkdir -p "$GIVES" && exec 9> "$GIVES/.drain.lock" || die "REFUSE(2): cannot open $GIVES/.drain.lock" 2
     flock -n 9 || { echo "DRAIN is already running (lock $GIVES/.drain.lock): it lands every waiting patch that carries a proof, this one too"; return 0; }
@@ -272,7 +308,8 @@ probe() {
     # ARMS 8 TO 10, THE DRAIN (the cio 2026-11-16): a patches worktree of the scratch origin and a stand-in lander that runs the gate on the worktree and pushes on rc 0, as s4e_land.sh does
     rm -f "$T/gives"/*.patch; git -C "$T/top/corpus" checkout -q -- a 2>/dev/null; mkdir -p "$T/wt" && $g clone -q "$T/origin.git" "$T/wt/corpus" 2>/dev/null && git -C "$T/wt/corpus" config user.name probe && git -C "$T/wt/corpus" config user.email probe@localhost
     printf '%s\n' '#!/bin/bash' 'home="$2"; gate="$4"; r="$5"' 'if ( cd "$home" && S4E_HOME="$home" S4E_CORPUS="$home/corpus" bash -c "$gate" ); then git -C "$home/$r" push -q origin HEAD:main 2>/dev/null && echo "LAND ok pushed=$r:$(git -C "$home/$r" rev-parse --short HEAD)"; elif [ $? = 2 ]; then echo "LAND REFUSE(2) the gate could not measure (rc 2): nothing pushed"; exit 2; else echo "LAND RED stage=gate rc=1"; exit 1; fi' > "$T/lander.sh"
-    dr() { SEATAS="${SEATAS:-grader}" run env S4E_GIVES_WT="$T/wt" S4E_TAKE_LANDER="$T/lander.sh" bash "$me" drain "$@"; }
+    printf '%s\n' '#!/bin/bash' 'echo "$S4E_SEAT $*" >> "$(dirname "$0")/told"; cat >> "$(dirname "$0")/told"' > "$T/msg.sh"
+    dr() { SEATAS="${SEATAS:-grader}" run env S4E_GIVES_WT="$T/wt" S4E_TAKE_LANDER="$T/lander.sh" S4E_TAKE_MSG="$T/msg.sh" bash "$me" drain "$@"; }
     $g -C "$T/top/corpus" fetch -q origin; printf 'n1\n' > "$T/n1"; printf 'n2\n' > "$T/n2"; printf 'n3\n' > "$T/n3"
     mk() { ( cd "$T" && diff -u --label /dev/null --label "b/$1" /dev/null "$1" ) > "$T/$1.patch"; }
     mk n1; mk n2; mk n3
@@ -305,14 +342,34 @@ probe() {
     [ "$rc" = 1 ] && [ "$($g --git-dir="$T/origin.git" show main:n4 2>/dev/null)" = n4 ] && printf '%s' "$o" | grep -q '^HELD .*-x-corpus-' && [ "$(ls "$T/gives"/*.patch 2>/dev/null | wc -l)" = 1 ] || why="$why arm 11: a proof written from the repo's top did not land its patch, or a proof that could not measure was not held once (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-160));"
     o="$(dr 2>&1)"; rc=$?
     [ "$rc" = 1 ] && [ -z "$(ls "$T/gives"/*.patch 2>/dev/null)" ] && [ "$(ls "$T/gives/refused"/*.patch | wc -l)" = 2 ] && printf '%s' "$o" | grep -q '^TELL x: .*could not run or measure' && ! $g --git-dir="$T/origin.git" cat-file -e main:n5 2>/dev/null || why="$why arm 12: a patch whose proof could not measure a second time was not returned to its giver (rc $rc);"
-    if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE probe ok arms=12 (a proof runs in the patched repo's top; one that cannot measure is held once and returned the second time; a give carries its proof as a command and one with none is refused; the drain is the grader's alone, one at a time; it lands every waiting patch whose proof reads rc 0 on the patched tree, FIRST.conf's first, refuses the one whose proof reads red and names its giver, leaves the worktree at origin/main and a patch with no proof to the grader's hand; take refuses every seat and makes nothing; give stores a patch that applies with its seat and why and refuses one that does not; apply is the grader's alone; the grader's apply lands the patch on origin and the one checkout holds it; check reads red while a seat root holds one of the three; drop refuses unlanded work and removes a clean folder; a patch is checked against origin first and then the checkout's commit, through a private index)"; return 0; fi
+    grep -q '^grader send x your-patch-.*-came-back-from-the-graders-drain --stdin' "$T/told" 2>/dev/null && grep -q 'read red on its own proof' "$T/told" && grep -q 'LAND RED stage=gate' "$T/told" || why="$why arm 13: the drain did not send the giver of a red patch a telegram as the grader, with the line and the landing's last lines;"
+    printf 'n6\n' > "$T/n6"; mk n6; $g -C "$T/top/corpus" fetch -q origin
+    ( exec 9> "$T/gives/.drain.lock"; flock -n 9; sleep 3 ) &
+    sleep 1; o="$(run bash "$me" give corpus "$T/n6.patch" "adds n6 while a drain runs" --proof 'test -f n6' 2>&1)"; rc=$?; wait
+    [ "$rc" = 0 ] && printf '%s' "$o" | grep -q '^NO WAKE IS OWED' && ! printf '%s' "$o" | grep -q '^WAKE:' || why="$why arm 14: a give while a drain runs still asks for a wake of the grader (rc $rc);"
+    mkdir -p "$T/w/packages/p" && $g -C "$T/w" pull -q origin main 2>/dev/null; printf 'rank,entry\n1,ea\n2,eb\n' > "$T/w/packages/p/ALL.csv" && $g -C "$T/w" add packages && $g -C "$T/w" commit -qm table && $g -C "$T/w" push -q origin HEAD:main 2>/dev/null && $g -C "$T/top/corpus" fetch -q origin
+    ( cd "$T" && printf '%s\n' '--- a/n1' '+++ /dev/null' '@@ -1 +0,0 @@' '-n1' > del.patch; printf '%s\n' '--- a/packages/p/ALL.csv' '+++ b/packages/p/ALL.csv' '@@ -1,3 +1,2 @@' ' rank,entry' ' 1,ea' '-2,eb' > drop.patch )
+    o="$(run bash "$me" give corpus "$T/del.patch" "deletes n1 and does not say so" --proof true 2>&1)"; rc=$?; n0="$(ls "$T/gives"/*.patch 2>/dev/null | wc -l)"
+    [ "$rc" = 1 ] && printf '%s' "$o" | grep -q 'DELETES 1 file' || why="$why arm 15: a patch that deletes a file was taken with no --deletes (rc $rc);"
+    o="$(run bash "$me" give corpus "$T/drop.patch" "drops the row eb and does not say so" --proof true 2>&1)"; rc=$?
+    [ "$rc" = 1 ] && printf '%s' "$o" | grep -q 'DROPS 1 table row' && [ "$(ls "$T/gives"/*.patch 2>/dev/null | wc -l)" = "$n0" ] || why="$why arm 15: a patch that drops a row of an ALL.csv was taken with no --drops (rc $rc);"
+    o="$(run bash "$me" give corpus "$T/del.patch" "deletes n1 and says so" --proof true --deletes 1 2>&1)"; rc=$?; sleep 1
+    [ "$rc" = 0 ] || why="$why arm 16: a patch that states its one deletion was refused (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
+    o="$(run bash "$me" give corpus "$T/drop.patch" "drops the row eb and says so" --proof true --drops 1 2>&1)"; rc=$?
+    [ "$rc" = 0 ] || why="$why arm 16: a patch that states its one dropped row was refused (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
+    printf '%s\n' '--- a/a' '+++ b/a' '@@ -1 +1 @@' '-a3' '+a2' > "$T/back.patch"
+    o="$(run bash "$me" give corpus "$T/back.patch" "puts a back to its older text and does not say so" --proof true 2>&1)"; rc=$?
+    [ "$rc" = 1 ] && printf '%s' "$o" | grep -q 'PUTS BACK 1 file' || why="$why arm 17: a patch that puts a file back to an older text was taken with no --reverts (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
+    o="$(run bash "$me" give corpus "$T/back.patch" "puts a back to its older text and says so" --proof true --reverts 1 2>&1)"; rc=$?
+    [ "$rc" = 0 ] || why="$why arm 17: a patch that states its one revert was refused (rc $rc: $(printf '%s' "$o" | tail -1 | cut -c1-120));"
+    if [ -z "$why" ]; then rm -rf "$T"; echo "TAKE probe ok arms=17 (a patch that puts a file back to an older text says so too; a patch that deletes a file or drops a table row says so in numbers or is refused; a patch that deletes a file or drops a table row says so in numbers or is refused; the drain itself telegrams the giver of a patch that comes back; a give while a drain runs owes no wake; a proof runs in the patched repo's top; one that cannot measure is held once and returned the second time; a give carries its proof as a command and one with none is refused; the drain is the grader's alone, one at a time; it lands every waiting patch whose proof reads rc 0 on the patched tree, FIRST.conf's first, refuses the one whose proof reads red and names its giver, leaves the worktree at origin/main and a patch with no proof to the grader's hand; take refuses every seat and makes nothing; give stores a patch that applies with its seat and why and refuses one that does not; apply is the grader's alone; the grader's apply lands the patch on origin and the one checkout holds it; check reads red while a seat root holds one of the three; drop refuses unlanded work and removes a clean folder; a patch is checked against origin first and then the checkout's commit, through a private index)"; return 0; fi
     echo "TAKE probe RED:$why"; echo "    kept: $T"; return 1
 }
 case "${1:-}" in
     --probe) probe; exit $? ;;
     list) list ;;
     check) check; exit $? ;;
-    give) shift; repo_ok "${1:-}" || die "usage: s4e_take.sh give corpus|harness|.github <patch> \"<why>\" --proof '<command>'" 2; give "$1" "${2:-}" "${3:-}" "${4:-}" "${5:-}" ;;
+    give) shift; repo_ok "${1:-}" || die "usage: s4e_take.sh give corpus|harness|.github <patch> \"<why>\" --proof '<command>'" 2; give "$@" ;;
     drain) shift; drain "$@"; exit $? ;;
     apply) shift; apply "${1:-}" ;;
     base) shift; b="$(awk -F'\t' -v b="$(basename "${1:-}")" '$1==b {print $5}' "$GIVES/GIVES.tsv" 2>/dev/null | tail -1)"; b="${b#base=}"; [ -n "$b" ] || die "REFUSE(1): no base recorded for '${1:-}' in $GIVES/GIVES.tsv (a patch made before 2026-11-14 18:0x names none)" 1; echo "$b" ;;
