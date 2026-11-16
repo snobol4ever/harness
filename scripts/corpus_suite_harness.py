@@ -4307,9 +4307,10 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
         stage_folder(_cdir, Path(entry.name).name, cand.parent)     # ALL.csv fixtures=folder: the entry's own folder beside it, as the deleted demos runner staged it
     elif _cdir and getattr(entry, "fixtures", False):
         stage_fixtures(_cdir, Path(entry.name).name, cand.parent)   # ALL.csv fixtures=staged: NAME.fixtures/ beside the entry's source, as the builder's cut staged it
-    _evs = (Path(_cdir) / (Path(entry.name).name + ".events")) if _cdir else None
-    if _evs is not None and _evs.is_file() and SCREEN_FILE in (getattr(entry, "out_files", None) or []):
-        cand.with_suffix(".events").write_bytes(_evs.read_bytes())   # THE SCREEN ROAD'S EVENT SCRIPT (W7, _screen_wrap): NAME.events beside a graphics entry's source travels beside the staged program
+    for _sx in ((".events", ".cap") if (_cdir and SCREEN_FILE in (getattr(entry, "out_files", None) or [])) else ()):
+        _evs = Path(_cdir) / (Path(entry.name).name + _sx)
+        if _evs.is_file():
+            cand.with_suffix(_sx).write_bytes(_evs.read_bytes())   # THE SCREEN ROAD'S SIDE FILES (_screen_wrap): NAME.events (W7, the event script) and NAME.cap (the entry's own cap) beside a graphics entry's source travel beside the staged program
     for _fn, _body in (getattr(entry, "files", None) or {}).items():   # THE FILE FENCES (CIO-55): the entry's own companions, beside the program
         (cand.parent / _fn).write_bytes(_body.encode("utf-8"))
     # PROGRAM ARGUMENTS THAT NAME A COMPANION (AIS HSORT: its input file name arrives in HOST(0)): an argv token
@@ -7335,10 +7336,21 @@ def _screen_wrap(argv, out_files, src=None):
     out_files road then appends to the answer like any written file. Every other entry's command is returned as it came.
     SCRIPTED EVENTS (W7 of the window facility, skill icon reference.md section 9; the cqo 2026-11-16): when NAME.events stands beside the program
     src (stage_entry copies it there from beside the entry's source), the road is handed it with --events and gives the program that mouse and
-    those keys, one more screen line a step; an entry with no such file runs exactly as before."""
+    those keys, one more screen line a step; an entry with no such file runs exactly as before.
+    AN ENTRY'S OWN CAP (the cqo 2026-11-16, on the coo's measurement: rosetta-icon's mandelbrot-set and galton-box-animation have one picture each and
+    hold still only after 73 and 40 s at load 24, past the road's 30 s, so they read screen unstable): NAME.cap beside the program, one whole number
+    of seconds from 1 to 3600, is handed to the road as --cap, the longest it waits for a still screen (each step of a script has the whole cap).
+    The row's timeout_s must be longer than the cap, or the harness ends the road first. A file that is no such number is refused rc 2."""
     if not out_files or SCREEN_FILE not in out_files: return argv
     _ev = Path(src).with_suffix(".events") if src else None
-    return [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py"), "--out", SCREEN_FILE] + (["--events", str(_ev.resolve())] if _ev is not None and _ev.is_file() else []) + ["--"] + list(argv)
+    _cap = Path(src).with_suffix(".cap") if src else None
+    _capw = []
+    if _cap is not None and _cap.is_file():
+        _n = _cap.read_text(errors="replace").strip()
+        if not _n.isdigit() or not 1 <= int(_n) <= 3600:
+            refuse(f"{_cap}: the screen road's cap is one whole number of seconds from 1 to 3600, and this file reads {_n[:40]!r}")
+        _capw = ["--cap", str(int(_n))]
+    return [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py"), "--out", SCREEN_FILE] + _capw + (["--events", str(_ev.resolve())] if _ev is not None and _ev.is_file() else []) + ["--"] + list(argv)
 def _out_files_clear(cwd, names):
     for n in names or []:
         (Path(cwd) / n).unlink(missing_ok=True)
@@ -8349,10 +8361,11 @@ def screen_events_probe():
     distribution's own xeyes, whose picture follows the pointer; no Icon needed. Six arms: an entry that names no screen.dump is not wrapped; a
     graphics entry with no NAME.events is wrapped exactly as before; stage_entry carries NAME.events beside a graphics entry's staged program and
     beside no other; the wrap then hands it to the road; graded through classify the answer is one screen line a step and the same answer twice;
-    the same program with no script answers its opening line alone. SCREEN_EVENTS ok|RED; rc 0 or 1, 2 cannot measure."""
+    the same program with no script answers its opening line alone; NAME.cap is staged the same way and handed over as --cap, a moving picture
+    then reading unstable at that cap and not at the road's 30 s; a cap that is no number is refused. SCREEN_EVENTS ok|RED; rc 0 or 1, 2 cannot measure."""
     import types
-    if not shutil.which("xeyes") or not shutil.which("Xvfb"):
-        print("REFUSE(2): --probe-screen-events needs xeyes (x11-apps) and Xvfb", file=sys.stderr); return 2
+    if not shutil.which("xeyes") or not shutil.which("Xvfb") or not shutil.which("ico"):
+        print("REFUSE(2): --probe-screen-events needs xeyes and ico (x11-apps) and Xvfb", file=sys.stderr); return 2
     t = Path(tempfile.mkdtemp(prefix="s4e-screen-events.")); why = []
     try:
         pkg, run = t / "pkg", t / "run"; pkg.mkdir(); run.mkdir()
@@ -8370,9 +8383,16 @@ def screen_events_probe():
         if len(ls) != 3 or len(set(ls)) != 3 or not all(l.startswith("screen 1024x768 md5 ") for l in ls) or v2.kind != "PASS": why.append("arm 5: the scripted answer read %r and graded %s against itself" % (ls, v2.kind))
         v3 = classify(_screen_wrap(argv, [SCREEN_FILE]), 120, ls[0], cwd=str(run), out_files=[SCREEN_FILE])
         if v3.kind != "PASS": why.append("arm 6: with no script the answer is not the opening line alone: %r" % (v3.stdout,))
+        (pkg / "moving.cap").write_text("4\n"); (pkg / "plain.cap").write_text("4\n")
+        mcand, _ = stage_entry(mk("moving", [SCREEN_FILE]), str(run), ".icn", str(pkg)); stage_entry(mk("plain", None), str(run), ".icn", str(pkg))
+        ico = ["ico", "-sleep", "0.05"]; wc = _screen_wrap(ico, [SCREEN_FILE], mcand); t0 = time.time()
+        v4 = classify(wc, 120, "screen unstable", cwd=str(run), out_files=[SCREEN_FILE]); took = time.time() - t0
+        if wc != road + ["--cap", "4", "--"] + ico or (run / "plain.cap").exists() or v4.kind != "PASS" or took > 25: why.append("arm 7: NAME.cap did not reach the road as --cap 4 (wrap %r, graded %s in %.0f s)" % (wc, v4.kind, took))
+        (run / "bad.cap").write_text("soon\n"); r5 = subprocess.run([sys.executable, "-c", "import sys; sys.path.insert(0, %r); import corpus_suite_harness as h; h._screen_wrap(['x'], [h.SCREEN_FILE], %r)" % (str(HARNESS_SCRIPTS), str(run / "bad.icn"))], capture_output=True, text=True)
+        if r5.returncode != 2 or "cap" not in r5.stderr: why.append("arm 8: a cap that is no number was not refused rc 2 (rc %s)" % r5.returncode)
     finally:
         shutil.rmtree(t, ignore_errors=True)
-    print("SCREEN_EVENTS ok arms=6 (no screen.dump no wrap; no events file the wrap of before; NAME.events staged beside a graphics entry alone; the wrap hands it to the road; one screen line a step, the same twice; no script the opening line alone)" if not why else "SCREEN_EVENTS RED: " + " ".join(why))
+    print("SCREEN_EVENTS ok arms=8 (no screen.dump no wrap; no events file the wrap of before; NAME.events staged beside a graphics entry alone; the wrap hands it to the road; one screen line a step, the same twice; no script the opening line alone; NAME.cap handed over as --cap; a cap that is no number refused)" if not why else "SCREEN_EVENTS RED: " + " ".join(why))
     return 1 if why else 0
 
 
