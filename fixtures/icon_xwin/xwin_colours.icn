@@ -1,0 +1,69 @@
+# xwin_colours
+# Icon window facility witness (CIO-66 phase 2), group: colours and palettes (Color ColorValue FreeColor NewColor PaletteChars PaletteColor PaletteKey). Runs under a private virtual display, 24-bit, no window manager.
+# Its whole answer is its standard output: every drawing is read back with Pixel and printed as letters, one letter a colour.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure main()
+   local w, c, p, n;
+   w := open("witness colours", "g", "size=80,40", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+   every c := "red" | "green" | "blue" | "white" | "black" | "light gray" | "dark moderate purplish blue" | "#F00" | "#FF8000" |
+              "65535,0,32768" | "pale weak yellow" | "no such colour" | "" do
+      write("ColorValue ", image(c), " = ", ColorValue(w, c) | "failed");
+   every p := "c1" | "c2" | "c3" | "c4" | "c5" | "c6" | "g2" | "g16" | "g64" | "g256" | "nosuch" do
+      write("PaletteChars ", p, " = ", image(PaletteChars(w, p)) | "failed");
+   every c := "0" | "1" | "r" | "g" | "b" | "y" | "A" | "~" do
+      write("PaletteColor c1 ", image(c), " = ", PaletteColor(w, "c1", c) | "failed");
+   every c := "red" | "white" | "dark green" | "65535,65535,0" | "no such colour" do
+      write("PaletteKey c1 ", image(c), " = ", image(PaletteKey(w, "c1", c)) | "failed");
+   write("PaletteKey g16 gray = ", image(PaletteKey(w, "g16", "gray")) | "failed");
+   write("PaletteColor g2 1 = ", PaletteColor(w, "g2", "1") | "failed");
+   n := NewColor(w, "red") | &null;
+   write("NewColor ", (\n & "made a mutable colour") | "failed");
+   if \n then {
+      Fg(w, n);
+      FillRectangle(w, 0, 0, 4, 4);
+      show("mutable red", w, 0, 0, 4, 4);
+      write("Color ", Color(w, n, "blue") | "failed");
+      show("mutable now blue", w, 0, 0, 4, 4);
+      write("Color query ", Color(w, n) | "failed");
+      write("FreeColor ", type(FreeColor(w, n)) | "failed");
+   };
+   write("FreeColor of a name ", type(FreeColor(w, "red")) | "failed");
+   Fg(w, "orange");
+   FillRectangle(w, 10, 0, 4, 4);
+   Fg(w, "dark cyan");
+   FillRectangle(w, 14, 0, 4, 4);
+   show("two named colours", w, 10, 0, 8, 4);
+   &error := 1;
+   write("PaletteChars of a list ", PaletteChars(w, []) | ("error " || &errornumber));
+   close(w);
+   write("done");
+end

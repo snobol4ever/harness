@@ -1,0 +1,5 @@
+image function WFlush
+type procedure
+args -1
+done
+screen none

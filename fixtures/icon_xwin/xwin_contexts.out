@@ -1,0 +1,37 @@
+Clone type window
+window fg black linewidth 1
+clone fg red linewidth 3
+same canvas width 60 height 40
+clone draws on the same canvas: 32 pixels from 0,0 size 8x4
+colour a = 65535,0,0
+colour b = 0,0,0
+   aaaabbbb
+   aaaabbbb
+   aaaabbbb
+   aaaabbbb
+Couple type window
+couple fg blue width 60
+couple draws on the first canvas with the second context: 16 pixels from 8,0 size 4x4
+colour c = 0,0,65535
+   cccc
+   cccc
+   cccc
+   cccc
+second canvas untouched: 16 pixels from 0,0 size 4x4
+colour d = 65535,65535,65535
+   dddd
+   dddd
+   dddd
+   dddd
+couple fg follows its context green
+Uncouple window
+Uncouple clone window
+window still draws window
+after uncouple: 16 pixels from 12,0 size 4x4
+   bbdd
+   bbdd
+   dddd
+   dddd
+Couple with an integer error 140
+done
+screen none

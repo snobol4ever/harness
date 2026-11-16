@@ -1,0 +1,17 @@
+# xwin_w4_open
+# Icon window facility witness, step W4 (the language layer): open with mode g, the keyword &window, type and image of a window, write on a window, close. Runs under a private virtual display.
+procedure main()
+   local w;
+   write("&window before ", image(&window));
+   w := open("witness four", "g", "size=40,20", "canvas=hidden") | stop("no window");
+   write("type ", type(w));
+   write("image ", image(w));
+   &window := w;
+   write("&window after ", image(&window));
+   write("&window is w ", (&window === w & "yes") | "no");
+   write(w, "ab");
+   writes(w, "c");
+   write("close ", type(close(w)) | "failed");
+   write("type after close ", type(w));
+   write("done");
+end

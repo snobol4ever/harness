@@ -1,0 +1,223 @@
+DrawPoint: 48 pixels from 0,0 size 8x6
+colour a = 65535,65535,65535
+   aaaaaaaa
+   aaaaaaaa
+colour b = 0,0,0
+   aababaaa
+   aaaaaaaa
+   aaaaaaba
+   aaaaaaaa
+DrawLine: 64 pixels from 10,0 size 8x8
+   baaaaaab
+   abaaaaab
+   aabaaaab
+   aaabaaab
+   aaaabaab
+   aaaaabab
+   aaaaaabb
+   aaaaaaab
+DrawSegment: 48 pixels from 20,0 size 8x6
+   bbbbbbbb
+   aaaaaaaa
+   aaaaaaaa
+   aaaaaaaa
+   bbbbbbbb
+   aaaaaaaa
+DrawRectangle: 63 pixels from 30,0 size 9x7
+   bbbbbbbba
+   baaaaaaba
+   baaaaaaba
+   baaaaaaba
+   baaaaaaba
+   bbbbbbbba
+   aaaaaaaaa
+FillRectangle: 72 pixels from 40,0 size 12x6
+   bbbbbbaaaaaa
+   bbbbbbaaaaaa
+   bbbbbbaabbba
+   bbbbbbaabbba
+   aaaaaaaabbba
+   aaaaaaaaaaaa
+DrawPolygon: 90 pixels from 60,0 size 10x9
+   bbbbbbbbbb
+   bbaaaaaaba
+   abaaaaaaba
+   abbaaaabaa
+   aabaaabbaa
+   aabbaabaaa
+   aaababaaaa
+   aaabbbaaaa
+   aaaabaaaaa
+FillPolygon: 90 pixels from 72,0 size 10x9
+   bbbbbbbbba
+   abbbbbbbba
+   abbbbbbbaa
+   aabbbbbbaa
+   aabbbbbaaa
+   aaabbbaaaa
+   aaabbbaaaa
+   aaaabaaaaa
+   aaaaaaaaaa
+DrawCircle: 225 pixels from 1,23 size 15x15
+   aaaaaaaaaaaaaaa
+   aaaaabbbbbaaaaa
+   aaabbaaaaabbaaa
+   aabbaaaaaaabbaa
+   aabaaaaaaaaabaa
+   abaaaaaaaaaaaba
+   abaaaaaaaaaaaba
+   abaaaaaaaaaaaba
+   abaaaaaaaaaaaba
+   abaaaaaaaaaaaba
+   aabaaaaaaaaabaa
+   aabbaaaaaaabbaa
+   aaabbaaaaabbaaa
+   aaaaabbbbbaaaaa
+   aaaaaaaaaaaaaaa
+FillCircle: 225 pixels from 21,23 size 15x15
+   aaaaaaaaaaaaaaa
+   aaaaaaabaaaaaaa
+   aaaabbbbbbbaaaa
+   aaabbbbbbbbbaaa
+   aabbbbbbbbbbbaa
+   aabbbbbbbbbbbaa
+   aabbbbbbbbbbbaa
+   abbbbbbbbbbbbaa
+   aabbbbbbbbbbbaa
+   aabbbbbbbbbbbaa
+   aabbbbbbbbbbbaa
+   aaabbbbbbbbbaaa
+   aaaabbbbbbbaaaa
+   aaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaa
+DrawCircle quarter: 225 pixels from 41,23 size 15x15
+   aaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaba
+   aaaaaaaaaaaaaba
+   aaaaaaaaaaaaaba
+   aaaaaaaaaaaabaa
+   aaaaaaaaaaabbaa
+   aaaaaaaaaabbaaa
+   aaaaaaabbbaaaaa
+   aaaaaaaaaaaaaaa
+DrawArc: 187 pixels from 60,24 size 17x11
+   aaaaabbbbbbbaaaaa
+   aaabbaaaaaaabbaaa
+   abbaaaaaaaaaaabba
+   abaaaaaaaaaaaaaba
+   baaaaaaaaaaaaaaab
+   baaaaaaaaaaaaaaab
+   baaaaaaaaaaaaaaab
+   abaaaaaaaaaaaaaba
+   abbaaaaaaaaaaabba
+   aaabbaaaaaaabbaaa
+   aaaaabbbbbbbaaaaa
+FillArc half: 187 pixels from 80,24 size 17x11
+   aaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaa
+   bbbbbbbbbbbbbbbba
+   abbbbbbbbbbbbbbba
+   abbbbbbbbbbbbbbba
+   aabbbbbbbbbbbbbaa
+   aaaabbbbbbbbbaaaa
+   aaaaaaaaaaaaaaaaa
+DrawCurve: 238 pixels from 100,22 size 17x14
+   aaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaa
+   baaaaaaaaaaaaaabb
+   bbaaaaaaaaaaaabba
+   abaaaaaaaaaaaabaa
+   aabaaaaaaaaaabaaa
+   aabbaaaaaaaabbaaa
+   aaabaaaaaaaabaaaa
+   aaabbaaaaaabbaaaa
+   aaaabaaaaaabaaaaa
+   aaaaabaaaabaaaaaa
+   aaaaaabbbbaaaaaaa
+   aaaaaaaabaaaaaaaa
+   aaaaaaaaaaaaaaaaa
+DrawString: 392 pixels from 4,48 size 28x14
+   aaaaaaaaaaaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaaaaaaaaaaa
+   abbbaaaaaaaaaaaaaaaaaaaaaaaa
+   aabaaaaaaaaaaaaaaaaaaaaaaaaa
+   aabaaaaaaaaaaaaaaaaaaaaaaaaa
+   aabaaaabbbaaabbbaababbaaaaaa
+   aabaaabaaababaaababbaabaaaaa
+   aabaaabaaaaabaaababaaabaaaaa
+   aabaaabaaaaabaaababaaabaaaaa
+   aabaaabaaababaaababaaabaaaaa
+   abbbaaabbbaaabbbaabaaabaaaaa
+   aaaaaaaaaaaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaaaaaaaaaaa
+wide line: 147 pixels from 40,47 size 21x7
+   aaaaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaaaa
+   bbbbbbbbbbbbbbbbbbbbb
+   bbbbbbbbbbbbbbbbbbbbb
+   bbbbbbbbbbbbbbbbbbbbb
+   aaaaaaaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaaaaaaa
+dashed line: 93 pixels from 70,49 size 31x3
+   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+   bbbbbaaabbbbbaaabbbbbaaabbbbbaa
+   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+reverse drawop: 144 pixels from 0,80 size 12x12
+colour c = 65535,0,0
+   ccccccccaaaa
+   ccccccccaaaa
+   ccccccccaaaa
+   ccccccccaaaa
+colour d = 0,65535,65535
+   ccccddddbbbb
+   ccccddddbbbb
+   ccccddddbbbb
+   ccccddddbbbb
+   aaaabbbbbbbb
+   aaaabbbbbbbb
+   aaaabbbbbbbb
+   aaaabbbbbbbb
+CopyArea: 144 pixels from 20,80 size 12x12
+   ccccccccaaaa
+   ccccccccaaaa
+   ccccccccaaaa
+   ccccccccaaaa
+   ccccddddbbbb
+   ccccddddbbbb
+   ccccddddbbbb
+   ccccddddbbbb
+   aaaabbbbbbbb
+   aaaabbbbbbbb
+   aaaabbbbbbbb
+   aaaabbbbbbbb
+EraseArea part: 144 pixels from 20,80 size 12x12
+   ccccccccaaaa
+   ccccccccaaaa
+   ccaaaaccaaaa
+   ccaaaaccaaaa
+   ccaaaaddbbbb
+   ccaaaaddbbbb
+   ccccddddbbbb
+   ccccddddbbbb
+   aaaabbbbbbbb
+   aaaabbbbbbbb
+   aaaabbbbbbbb
+   aaaabbbbbbbb
+EraseArea all: 32 pixels from 0,0 size 8x4
+   aaaaaaaa
+   aaaaaaaa
+   aaaaaaaa
+   aaaaaaaa
+DrawLine with one coordinate error 146
+done
+screen none

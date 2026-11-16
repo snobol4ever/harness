@@ -1,0 +1,14 @@
+# xwin_w7_events
+# Icon window facility witness, step W7 (scripted events on the screen road, the cqo): the program draws, reads three real X events with Event (a key, a left press, its release), writes each with &x and &y, and ends by itself. Its events file xwin_w7_events.events stands beside it.
+procedure main()
+   local w, e, n;
+   w := open("witness events", "g", "size=120,80", "fg=black", "bg=white") | stop("no window");
+   FillRectangle(w, 10, 10, 20, 20);
+   WFlush(w);
+   every n := 1 to 3 do {
+      e := Event(w);
+      write("event ", n, " ", image(e), " &x ", &x, " &y ", &y, if e === &lpress then " lpress" else if e === &lrelease then " lrelease" else "");
+   };
+   close(w);
+   write("done");
+end

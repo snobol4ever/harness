@@ -1,0 +1,94 @@
+# xwin_attributes
+# Icon window facility witness (CIO-66 phase 2), group: attributes and window state (WAttrib WDefault WFlush WSync Fg Bg Font Clip Pattern Raise Lower Alert TextWidth GotoRC GotoXY). Runs under a private virtual display, 24-bit, no window manager.
+# Its whole answer is its standard output: every drawing is read back with Pixel and printed as letters, one letter a colour.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure main()
+   local w, a;
+   w := open("witness attributes", "g", "size=200,120", "font=fixed", "fg=black", "bg=white") | stop("no window");
+   write("type ", type(w));
+   every a := "width" | "height" | "fg" | "bg" | "font" | "fheight" | "fwidth" | "ascent" | "descent" | "leading" | "rows" | "columns" |
+              "linewidth" | "linestyle" | "fillstyle" | "drawop" | "dx" | "dy" | "clipx" | "clipy" | "clipw" | "cliph" |
+              "x" | "y" | "row" | "col" | "cursor" | "echo" | "reverse" | "canvas" | "label" | "resize" | "pointer" do
+      write(a, " = ", WAttrib(w, a) | "failed");
+   every write("set ", WAttrib(w, "fg=red", "linewidth=3", "dx=5", "dy=7", "label=renamed"));
+   every write("get ", WAttrib(w, "fg", "linewidth", "dx", "dy", "label"));
+   &error := 1;
+   write("bad attribute ", WAttrib(w, "nosuch=1") | ("error " || &errornumber));
+   &error := 1;
+   write("bad value ", WAttrib(w, "linewidth=wide") | ("error " || &errornumber));
+   &error := 0;
+   WAttrib(w, "dx=0", "dy=0", "linewidth=1");
+   write("Fg ", Fg(w) | "failed");
+   write("Fg blue ", Fg(w, "blue") | "failed");
+   write("Fg numeric ", Fg(w, "65535,32768,0") | "failed");
+   write("Fg bad ", Fg(w, "no such colour") | "failed");
+   write("Bg ", Bg(w) | "failed");
+   write("Bg yellow ", Bg(w, "yellow") | "failed");
+   write("Font ", Font(w) | "failed");
+   write("Font fixed ", Font(w, "fixed") | "failed");
+   write("Font bad ", Font(w, "no such font at all") | "failed");
+   write("TextWidth hello ", TextWidth(w, "hello") | "failed");
+   write("TextWidth empty ", TextWidth(w, "") | "failed");
+   Clip(w, 10, 20, 50, 40);
+   every a := "clipx" | "clipy" | "clipw" | "cliph" do write("clipped ", a, " = ", WAttrib(w, a) | "failed");
+   Fg(w, "black");
+   Bg(w, "white");
+   EraseArea(w);
+   FillRectangle(w, 0, 0, 200, 120);
+   show("fill under a clip", w, 6, 16, 8, 8);
+   Clip(w);
+   every a := "clipx" | "clipy" | "clipw" | "cliph" do write("unclipped ", a, " = ", WAttrib(w, a) | "failed");
+   EraseArea(w);
+   write("Pattern checkers ", type(Pattern(w, "checkers")) | "failed");
+   WAttrib(w, "fillstyle=textured");
+   FillRectangle(w, 0, 0, 16, 16);
+   show("checkers", w, 0, 0, 8, 8);
+   write("Pattern bits ", type(Pattern(w, "4,#9658")) | "failed");
+   FillRectangle(w, 20, 0, 16, 16);
+   show("bits", w, 20, 0, 8, 8);
+   write("Pattern bad ", type(Pattern(w, "no such pattern")) | "failed");
+   WAttrib(w, "fillstyle=solid");
+   GotoRC(w, 2, 3);
+   every a := "row" | "col" | "x" | "y" do write("after GotoRC ", a, " = ", WAttrib(w, a) | "failed");
+   GotoXY(w, 40, 50);
+   every a := "row" | "col" | "x" | "y" do write("after GotoXY ", a, " = ", WAttrib(w, a) | "failed");
+   write("Raise ", type(Raise(w)) | "failed");
+   write("Lower ", type(Lower(w)) | "failed");
+   write("Alert ", type(Alert(w)) | "failed");
+   write("WFlush ", type(WFlush(w)) | "failed");
+   write("WSync ", type(WSync(w)) | "failed");
+   write("WDefault ", WDefault(w, "witness", "font") | "failed");
+   &error := 1;
+   write("Fg of a list ", Fg(w, []) | ("error " || &errornumber));
+   close(w);
+   write("done");
+end

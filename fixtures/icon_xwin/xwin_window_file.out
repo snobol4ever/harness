@@ -1,0 +1,38 @@
+&window before &null
+type window image window_1:1(witness file)
+&window after window_1:1(witness file)
+after write row = 2
+after write col = 1
+after write x = 0
+after write y = 24
+after writes row = 2
+after writes col = 3
+after writes x = 12
+after writes y = 24
+text drawn by write: 224 pixels from 0,0 size 16x14
+colour a = 65535,65535,65535
+   aaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaa
+colour b = 0,0,0
+   aaaaaabaaaaaaaaa
+   aaaaaabaaaaaaaaa
+   aaaaaabaaaaaaaaa
+   abbbaabbbbaaaaaa
+   aaaababaaabaaaaa
+   abbbbabaaabaaaaa
+   baaababaaabaaaaa
+   baabbabaaabaaaaa
+   abbababbbbaaaaaa
+   aaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaa
+   aaaaaaaaaaaaaaaa
+read "hi"
+reads two "xy"
+implicit window Fg blue
+implicit window attribute blue
+open mode x window
+close window
+type after close window
+draw after close error 142
+done
+screen none

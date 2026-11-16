@@ -1,0 +1,31 @@
+upto 1
+upto 2
+upto 3
+upto 4
+count 7
+words word-1-odd
+words word-2-even
+words word-3-odd
+words word-4-even
+words word-5-odd
+words last
+zero fails
+sum100 5050100
+sum3 6003
+nest 1 1
+nest 2 1
+nest 2 2
+nest 3 1
+nest 3 2
+nest 3 3
+echo real 2.5
+echo string "str"
+echo string ""
+echo integer 12345678901234567890123
+echo null &null
+echo file &output
+echo integer 7
+echo real -3.25e+10
+survived word-40-evenx
+echobig 1267650600228229401496703205377
+echobig -2503155504993241601315571986085848

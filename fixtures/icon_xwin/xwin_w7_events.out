@@ -1,0 +1,6 @@
+event 1 "a" &x 39 &y 29
+event 2 -1 &x 39 &y 29 lpress
+event 3 -4 &x 39 &y 29 lrelease
+done
+screen 1024x768 md5 480808c64ce705064c66540be64eb708
+screen 1024x768 md5 480808c64ce705064c66540be64eb708

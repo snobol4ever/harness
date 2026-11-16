@@ -1,0 +1,9 @@
+&window before &null
+type window
+image window_1:1(witness four)
+&window after window_1:1(witness four)
+&window is w yes
+close window
+type after close window
+done
+screen none

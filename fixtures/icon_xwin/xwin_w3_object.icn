@@ -1,0 +1,8 @@
+# xwin_w3_object
+# Icon window facility witness, step W3 (the window object is reached): the program names one window function, and so loads the window object, and calls none.
+procedure main()
+   write("image ", image(WFlush));
+   write("type ", type(WFlush));
+   write("args ", args(WFlush));
+   write("done");
+end

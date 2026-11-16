@@ -1,0 +1,4 @@
+move 40 30
+wait
+key a
+click 1 40 30

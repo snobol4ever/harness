@@ -1,0 +1,79 @@
+DrawImage palette &null
+palette image: 16 pixels from 0,0 size 4x4
+colour a = 10921,21844,0
+colour b = 21844,65535,43689
+colour c = 65535,32765,21844
+colour d = 21844,0,21844
+   abcd
+   abcd
+   cbad
+   cbad
+DrawImage bilevel &null
+bilevel image: 64 pixels from 10,0 size 8x8
+colour e = 0,0,0
+   eeeeeeee
+colour f = 65535,65535,65535
+   effffffe
+   effffffe
+   effffffe
+   effffffe
+   effffffe
+   effffffe
+   eeeeeeee
+DrawImage transparent &null
+transparent rows keep what was there: 16 pixels from 0,0 size 4x4
+   abcd
+   eeee
+   cbad
+   eeee
+DrawImage bad failed
+WriteImage window
+erased: 16 pixels from 0,0 size 4x4
+   ffff
+   ffff
+   ffff
+   ffff
+ReadImage &null
+image read back: 200 pixels from 30,20 size 20x10
+colour g = 10536,21073,0
+colour h = 21073,65535,44460
+colour i = 65535,31610,21073
+colour j = 21073,0,21073
+   ghijffffffeeeeeeeeff
+   eeeeffffffeffffffeff
+   ihgjffffffeffffffeff
+   eeeeffffffeffffffeff
+   ffffffffffeffffffeff
+   ffffffffffeffffffeff
+   ffffffffffeffffffeff
+   ffffffffffeeeeeeeeff
+   ffffffffffffffffffff
+   ffffffffffffffffffff
+ReadImage missing failed
+Pixel 1 10536,21073,0
+Pixel 2 21073,65535,44460
+Pixel 3 65535,31610,21073
+Pixel 4 21073,0,21073
+Pixel 5 0,0,0
+Pixel 6 0,0,0
+Pixel 7 0,0,0
+Pixel 8 0,0,0
+Pixel default area count 6000
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+Pixel across the edge 65535,65535,65535
+done
+screen none

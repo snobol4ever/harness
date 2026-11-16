@@ -1,0 +1,51 @@
+ColorValue "red" = 65535,0,0
+ColorValue "green" = 0,65535,0
+ColorValue "blue" = 0,0,65535
+ColorValue "white" = 65535,65535,65535
+ColorValue "black" = 0,0,0
+ColorValue "light gray" = 43690,43690,43690
+ColorValue "dark moderate purplish blue" = 13653,10922,32767
+ColorValue "#F00" = 65535,0,0
+ColorValue "#FF8000" = 65535,32896,0
+ColorValue "65535,0,32768" = 65535,0,32768
+ColorValue "pale weak yellow" = 57343,57343,51881
+ColorValue "no such colour" = failed
+ColorValue "" = failed
+PaletteChars c1 = "0123456789?!nNAa#@oOBb$%pPCc&|qQDd,.rREe;:sSFf+-tTGg*/uUHh`'vVIi<>wWJj()xXKk[]yYLl{}zZMm^="
+PaletteChars c2 = "kbgcrmywx"
+PaletteChars c3 = "@ABCDEFGHIJKLMNOPQRSTUVWXYZabcd"
+PaletteChars c4 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz{}$%&*+-/?@"
+PaletteChars c5 = "\x00\x01\x02\x03\x04\x05\x06\x07\b\t\n\v\f\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\e\x1c\x1d\x1e\x1f !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\d\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c"
+PaletteChars c6 = "\x00\x01\x02\x03\x04\x05\x06\x07\b\t\n\v\f\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\e\x1c\x1d\x1e\x1f !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\d\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0"
+PaletteChars g2 = "01"
+PaletteChars g16 = "0123456789ABCDEF"
+PaletteChars g64 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz{}"
+PaletteChars g256 = "\x00\x01\x02\x03\x04\x05\x06\x07\b\t\n\v\f\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\e\x1c\x1d\x1e\x1f !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\d\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"
+PaletteChars nosuch = failed
+PaletteColor c1 "0" = 0,0,0
+PaletteColor c1 "1" = 10922,10922,10922
+PaletteColor c1 "r" = 10922,21845,0
+PaletteColor c1 "g" = 21845,65535,43690
+PaletteColor c1 "b" = 65535,32767,21845
+PaletteColor c1 "y" = 21845,0,21845
+PaletteColor c1 "A" = 65535,0,0
+PaletteColor c1 "~" = failed
+PaletteKey c1 "red" = "A"
+PaletteKey c1 "white" = "6"
+PaletteKey c1 "dark green" = "S"
+PaletteKey c1 "65535,65535,0" = "D"
+PaletteKey c1 "no such colour" = failed
+PaletteKey g16 gray = "7"
+PaletteColor g2 1 = 65535,65535,65535
+NewColor failed
+FreeColor of a name window
+two named colours: 32 pixels from 10,0 size 8x4
+colour a = 65535,16382,0
+colour b = 0,43689,43689
+   aaaabbbb
+   aaaabbbb
+   aaaabbbb
+   aaaabbbb
+PaletteChars of a list error 103
+done
+screen none

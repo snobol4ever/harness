@@ -1,0 +1,87 @@
+# xwin_drawing
+# Icon window facility witness (CIO-66 phase 2), group: drawing (DrawArc DrawCircle DrawCurve DrawLine DrawPoint DrawPolygon DrawRectangle DrawSegment DrawString EraseArea FillArc FillCircle FillPolygon FillRectangle CopyArea). Runs under a private virtual display, 24-bit, no window manager.
+# Its whole answer is its standard output: every drawing is read back with Pixel and printed as letters, one letter a colour.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure main()
+   local w;
+   w := open("witness drawing", "g", "size=160,120", "font=fixed", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+   DrawPoint(w, 2, 2, 4, 2, 6, 4);
+   show("DrawPoint", w, 0, 0, 8, 6);
+   DrawLine(w, 10, 0, 17, 7, 17, 0);
+   show("DrawLine", w, 10, 0, 8, 8);
+   DrawSegment(w, 20, 0, 27, 0, 20, 4, 27, 4);
+   show("DrawSegment", w, 20, 0, 8, 6);
+   DrawRectangle(w, 30, 0, 7, 5);
+   show("DrawRectangle", w, 30, 0, 9, 7);
+   FillRectangle(w, 40, 0, 6, 4, 48, 2, 3, 3);
+   show("FillRectangle", w, 40, 0, 12, 6);
+   DrawPolygon(w, 60, 0, 69, 0, 64, 8);
+   show("DrawPolygon", w, 60, 0, 10, 9);
+   FillPolygon(w, 72, 0, 81, 0, 76, 8);
+   show("FillPolygon", w, 72, 0, 10, 9);
+   DrawCircle(w, 8, 30, 6);
+   show("DrawCircle", w, 1, 23, 15, 15);
+   FillCircle(w, 28, 30, 6);
+   show("FillCircle", w, 21, 23, 15, 15);
+   DrawCircle(w, 48, 30, 6, 0, &pi / 2);
+   show("DrawCircle quarter", w, 41, 23, 15, 15);
+   DrawArc(w, 60, 24, 16, 10);
+   show("DrawArc", w, 60, 24, 17, 11);
+   FillArc(w, 80, 24, 16, 10, 0, &pi);
+   show("FillArc half", w, 80, 24, 17, 11);
+   DrawCurve(w, 100, 24, 108, 34, 116, 24);
+   show("DrawCurve", w, 100, 22, 17, 14);
+   DrawString(w, 4, 60, "Icon");
+   show("DrawString", w, 4, 48, 28, 14);
+   WAttrib(w, "linewidth=3");
+   DrawLine(w, 40, 50, 60, 50);
+   show("wide line", w, 40, 47, 21, 7);
+   WAttrib(w, "linewidth=1", "linestyle=dashed");
+   DrawLine(w, 70, 50, 100, 50);
+   show("dashed line", w, 70, 49, 31, 3);
+   WAttrib(w, "linestyle=solid", "fg=red");
+   FillRectangle(w, 0, 80, 8, 8);
+   WAttrib(w, "drawop=reverse", "fg=black");
+   FillRectangle(w, 4, 84, 8, 8);
+   show("reverse drawop", w, 0, 80, 12, 12);
+   WAttrib(w, "drawop=copy");
+   CopyArea(w, w, 0, 80, 12, 12, 20, 80);
+   show("CopyArea", w, 20, 80, 12, 12);
+   EraseArea(w, 22, 82, 4, 4);
+   show("EraseArea part", w, 20, 80, 12, 12);
+   EraseArea(w);
+   show("EraseArea all", w, 0, 0, 8, 4);
+   &error := 1;
+   write("DrawLine with one coordinate ", type(DrawLine(w, 1)) | ("error " || &errornumber));
+   close(w);
+   write("done");
+end

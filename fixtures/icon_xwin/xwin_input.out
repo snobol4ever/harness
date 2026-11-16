@@ -1,0 +1,26 @@
+Pending type list size 0
+Pending size after seven events 21
+Active is the window window_1:1(witness input)
+Event "a"
+   &x 10 &y 20 &row 2 &col 2 &interval 0 &control "off" &shift "off" &meta "off"
+Event -1 lpress
+   &x 30 &y 40 &row 4 &col 6 &interval 0 &control "off" &shift "off" &meta "off"
+Event -7 ldrag
+   &x 31 &y 41 &row 4 &col 6 &interval 0 &control "off" &shift "off" &meta "off"
+Event -4 lrelease
+   &x 32 &y 42 &row 4 &col 6 &interval 0 &control "off" &shift "off" &meta "off"
+Event -2 mpress
+   &x 5 &y 6 &row 1 &col 1 &interval 0 &control "off" &shift "off" &meta "off"
+Event -3 rpress
+   &x 7 &y 8 &row 1 &col 2 &interval 0 &control "off" &shift "off" &meta "off"
+Event -10 resize
+   &x 120 &y 80 &row 7 &col 21 &interval 0 &control "off" &shift "off" &meta "off"
+Pending size after reading 0
+mouse codes -1 -2 -3 -4 -5 -6 -7 -8 -9 -10
+QueryPointer of the window 511
+QueryPointer of the window 383
+QueryPointer of the screen 512
+QueryPointer of the screen 384
+Event of an integer error 140
+done
+screen none

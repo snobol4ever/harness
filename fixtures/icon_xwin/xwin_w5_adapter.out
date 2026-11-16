@@ -1,0 +1,15 @@
+dword of one argument -6917529027641081855
+dword of seventy arguments -6917529027641081855
+Pixel 1 0,0,0
+Pixel 2 0,0,0
+Pixel 3 65535,65535,65535
+Pixel 4 65535,65535,65535
+WAttrib black
+WAttrib white
+WAttrib 8
+WAttrib 4
+QueryPointer 0
+QueryPointer 0
+DrawPoint of seventy coordinates window
+done
+screen none

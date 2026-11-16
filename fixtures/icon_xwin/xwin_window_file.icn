@@ -1,0 +1,61 @@
+# xwin_window_file
+# Icon window facility witness (CIO-66 phase 2), group: the window as a file and &window (open modes g and x, write, writes, read, reads, close, image, type). Runs under a private virtual display, 24-bit, no window manager.
+# Its whole answer is its standard output: every drawing is read back with Pixel and printed as letters, one letter a colour.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure main()
+   local w, x, a, s;
+   write("&window before ", image(&window));
+   w := open("witness file", "g", "size=120,60", "font=fixed", "fg=black", "bg=white") | stop("no window");
+   write("type ", type(w), " image ", image(w));
+   &window := w;
+   write("&window after ", image(&window));
+   write(w, "ab");
+   every a := "row" | "col" | "x" | "y" do write("after write ", a, " = ", WAttrib(a));
+   writes(w, "cd");
+   every a := "row" | "col" | "x" | "y" do write("after writes ", a, " = ", WAttrib(a));
+   show("text drawn by write", w, 0, 0, 16, 14);
+   put(Pending(w), "h", 0, 0, "i", 0, 0, "\r", 0, 0);
+   s := read(w) | "failed";
+   write("read ", image(s));
+   put(Pending(w), "x", 0, 0, "y", 0, 0, "z", 0, 0);
+   write("reads two ", image(reads(w, 2)) | "failed");
+   write("implicit window Fg ", Fg("blue") | "failed");
+   write("implicit window attribute ", WAttrib("fg") | "failed");
+   x := open("witness x mode", "x", "size=40,30") | &null;
+   write("open mode x ", (\x & type(x)) | "failed");
+   close(\x);
+   write("close ", type(close(w)) | "failed");
+   write("type after close ", type(w));
+   &error := 1;
+   write("draw after close ", type(FillRectangle(w, 0, 0, 2, 2)) | ("error " || &errornumber));
+   write("done");
+end

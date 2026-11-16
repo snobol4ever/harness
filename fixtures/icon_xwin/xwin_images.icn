@@ -1,0 +1,64 @@
+# xwin_images
+# Icon window facility witness (CIO-66 phase 2), group: images and pixels (DrawImage ReadImage WriteImage Pixel). Runs under a private virtual display, 24-bit, no window manager.
+# Its whole answer is its standard output: every drawing is read back with Pixel and printed as letters, one letter a colour.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure main()
+   local w, v, c, n;
+   w := open("witness images", "g", "size=100,60", "fg=black", "bg=white", "canvas=hidden") | stop("no window");
+   write("DrawImage palette ", image(DrawImage(w, 0, 0, "4,c1,rgbyrgbybgrybgry")) | "failed");
+   show("palette image", w, 0, 0, 4, 4);
+   write("DrawImage bilevel ", image(DrawImage(w, 10, 0, "8,#FF818181818181FF")) | "failed");
+   show("bilevel image", w, 10, 0, 8, 8);
+   write("DrawImage transparent ", image(DrawImage(w, 0, 0, "4,c1,~~~~0000~~~~0000")) | "failed");
+   show("transparent rows keep what was there", w, 0, 0, 4, 4);
+   write("DrawImage bad ", image(DrawImage(w, 0, 0, "4,nosuch,rgby")) | "failed");
+   write("WriteImage ", type(WriteImage(w, "xwin_images_out.gif", 0, 0, 20, 10)) | "failed");
+   EraseArea(w);
+   show("erased", w, 0, 0, 4, 4);
+   write("ReadImage ", image(ReadImage(w, "xwin_images_out.gif", 30, 20)) | "failed");
+   show("image read back", w, 30, 20, 20, 10);
+   write("ReadImage missing ", image(ReadImage(w, "no_such_file.gif")) | "failed");
+   n := 0;
+   every c := Pixel(w, 30, 20, 4, 2) do {
+      n +:= 1;
+      write("Pixel ", n, " ", c);
+   };
+   n := 0;
+   every Pixel(w) do n +:= 1;
+   write("Pixel default area count ", n);
+   every v := Pixel(w, 98, 58, 4, 4) do write("Pixel across the edge ", v);
+   remove("xwin_images_out.gif");
+   &error := 1;
+   write("DrawImage of an integer spec ", image(DrawImage(w, 0, 0, 7)) | ("error " || &errornumber));
+   close(w);
+   write("done");
+end

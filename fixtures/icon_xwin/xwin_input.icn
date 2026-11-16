@@ -1,0 +1,67 @@
+# xwin_input
+# Icon window facility witness (CIO-66 phase 2), group: input (Active Event Pending QueryPointer) and the event keywords. Runs under a private virtual display, 24-bit, no window manager.
+# Its whole answer is its standard output: every drawing is read back with Pixel and printed as letters, one letter a colour.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure state()
+   write("   &x ", &x, " &y ", &y, " &row ", &row, " &col ", &col, " &interval ", &interval,
+         " &control ", image(&control | "off"), " &shift ", image(&shift | "off"), " &meta ", image(&meta | "off"));
+   return;
+end
+
+procedure main()
+   local w, q, e, a;
+   w := open("witness input", "g", "size=120,80", "font=fixed", "fg=black", "bg=white") | stop("no window");
+   q := Pending(w);
+   write("Pending type ", type(q), " size ", *q);
+   put(q, "a", 10, 20);
+   put(q, &lpress, 30, 40);
+   put(q, &ldrag, 31, 41);
+   put(q, &lrelease, 32, 42);
+   put(q, &mpress, 5, 6, &rpress, 7, 8, &resize, 120, 80);
+   write("Pending size after seven events ", *Pending(w));
+   a := Active() | stop("no active window");
+   write("Active is the window ", image(a === w | "no"));
+   every 1 to 7 do {
+      e := Event(w);
+      write("Event ", image(e), if e === &lpress then " lpress" else if e === &ldrag then " ldrag" else if e === &lrelease then " lrelease"
+            else if e === &mpress then " mpress" else if e === &rpress then " rpress" else if e === &resize then " resize" else "");
+      state();
+   };
+   write("Pending size after reading ", *Pending(w));
+   write("mouse codes ", &lpress, " ", &mpress, " ", &rpress, " ", &lrelease, " ", &mrelease, " ", &rrelease, " ", &ldrag, " ", &mdrag, " ", &rdrag, " ", &resize);
+   every write("QueryPointer of the window ", QueryPointer(w));
+   every write("QueryPointer of the screen ", QueryPointer());
+   &error := 1;
+   write("Event of an integer ", image(Event(3)) | ("error " || &errornumber));
+   close(w);
+   write("done");
+end

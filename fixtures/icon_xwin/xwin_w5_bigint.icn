@@ -1,0 +1,14 @@
+# xwin_w5_bigint
+# Icon window facility witness, step W5 (officer_06 for the cto): a large integer through the window functions, TextWidth and DrawString take it as its digits, DrawLine refuses a 30-digit string with error 101 as iconx does, read through &error so the whole answer is standard output (the error stream and the output stream interleave by buffering, which is no answer).
+procedure main()
+   local w, b;
+   w := open("witness bigint", "g", "size=400,40") | stop("no window");
+   b := 2 ^ 100;
+   write(TextWidth(w, b) = TextWidth(w, "1267650600228229401496703205376"));
+   DrawString(w, 4, 20, b);
+   write(Pixel(w, 0, 0, 1, 1));
+   &error := 1;
+   DrawLine(w, "123456789012345678901234567890", 0, 1, 1) | write("error ", &errornumber, " ", &errortext, " ", image(&errorvalue));
+   close(w);
+   write("done");
+end

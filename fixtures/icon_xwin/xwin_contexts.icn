@@ -1,0 +1,63 @@
+# xwin_contexts
+# Icon window facility witness (CIO-66 phase 2), group: contexts (Clone Couple Uncouple). Runs under a private virtual display, 24-bit, no window manager.
+# Its whole answer is its standard output: every drawing is read back with Pixel and printed as letters, one letter a colour.
+global syms, nsyms
+
+procedure sym(c)
+   /syms := table();
+   /nsyms := 0;
+   if /syms[c] then {
+      nsyms +:= 1;
+      syms[c] := char(96 + nsyms);
+      write("colour ", syms[c], " = ", c);
+   };
+   return syms[c];
+end
+
+procedure show(tag, w, x, y, wd, ht)
+   local pix, s, i;
+   pix := [];
+   every put(pix, Pixel(w, x, y, wd, ht));
+   write(tag, ": ", *pix, " pixels from ", x, ",", y, " size ", wd, "x", ht);
+   s := "";
+   every i := 1 to *pix do {
+      s ||:= sym(pix[i]);
+      if i % wd = 0 then {
+         write("   ", s);
+         s := "";
+      };
+   };
+   if *s > 0 then write("   ", s);
+   return;
+end
+
+procedure main()
+   local w, c, w2, k;
+   w := open("witness contexts", "g", "size=60,40", "fg=black", "bg=white", "linewidth=1", "canvas=hidden") | stop("no window");
+   c := Clone(w, "fg=red", "linewidth=3") | stop("no clone");
+   write("Clone type ", type(c));
+   write("window fg ", Fg(w), " linewidth ", WAttrib(w, "linewidth"));
+   write("clone fg ", Fg(c), " linewidth ", WAttrib(c, "linewidth"));
+   write("same canvas width ", WAttrib(c, "width"), " height ", WAttrib(c, "height"));
+   FillRectangle(c, 0, 0, 4, 4);
+   FillRectangle(w, 4, 0, 4, 4);
+   show("clone draws on the same canvas", w, 0, 0, 8, 4);
+   w2 := open("witness contexts two", "g", "size=30,20", "fg=blue", "bg=white", "canvas=hidden") | stop("no second window");
+   k := Couple(w, w2) | stop("no couple");
+   write("Couple type ", type(k));
+   write("couple fg ", Fg(k), " width ", WAttrib(k, "width"));
+   FillRectangle(k, 8, 0, 4, 4);
+   show("couple draws on the first canvas with the second context", w, 8, 0, 4, 4);
+   show("second canvas untouched", w2, 0, 0, 4, 4);
+   Fg(w2, "green");
+   write("couple fg follows its context ", Fg(k));
+   write("Uncouple ", type(Uncouple(k)) | "failed");
+   write("Uncouple clone ", type(Uncouple(c)) | "failed");
+   write("window still draws ", type(FillRectangle(w, 12, 0, 2, 2)) | "failed");
+   show("after uncouple", w, 12, 0, 4, 4);
+   &error := 1;
+   write("Couple with an integer ", type(Couple(w, 3)) | ("error " || &errornumber));
+   close(w2);
+   close(w);
+   write("done");
+end

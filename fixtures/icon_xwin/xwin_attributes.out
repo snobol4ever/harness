@@ -1,0 +1,114 @@
+type window
+width = 200
+height = 120
+fg = black
+bg = white
+font = fixed
+fheight = 13
+fwidth = 6
+ascent = 11
+descent = 2
+leading = 13
+rows = 10
+columns = 33
+linewidth = 1
+linestyle = solid
+fillstyle = solid
+drawop = copy
+dx = 0
+dy = 0
+clipx = 
+clipy = 
+clipw = 
+cliph = 
+x = 0
+y = 11
+row = 1
+col = 1
+cursor = off
+echo = on
+reverse = off
+canvas = normal
+label = witness attributes
+resize = off
+pointer = left ptr
+set red
+set 3
+set 5
+set 7
+set renamed
+get red
+get 3
+get 5
+get 7
+get renamed
+bad attribute error 145
+bad value error 145
+Fg red
+Fg blue blue
+Fg numeric 65535,32768,0
+Fg bad failed
+Bg white
+Bg yellow yellow
+Font fixed
+Font fixed fixed
+Font bad failed
+TextWidth hello 30
+TextWidth empty 0
+clipped clipx = 10
+clipped clipy = 20
+clipped clipw = 50
+clipped cliph = 40
+fill under a clip: 64 pixels from 6,16 size 8x8
+colour a = 65535,65535,65535
+   aaaaaaaa
+   aaaaaaaa
+   aaaaaaaa
+   aaaaaaaa
+colour b = 0,0,0
+   aaaabbbb
+   aaaabbbb
+   aaaabbbb
+   aaaabbbb
+unclipped clipx = 
+unclipped clipy = 
+unclipped clipw = 
+unclipped cliph = 
+Pattern checkers window
+checkers: 64 pixels from 0,0 size 8x8
+   bbbbaaaa
+   bbbbaaaa
+   bbbbaaaa
+   bbbbaaaa
+   aaaabbbb
+   aaaabbbb
+   aaaabbbb
+   aaaabbbb
+Pattern bits window
+bits: 64 pixels from 20,0 size 8x8
+   baabbaab
+   abbaabba
+   babababa
+   aaabaaab
+   baabbaab
+   abbaabba
+   babababa
+   aaabaaab
+Pattern bad failed
+after GotoRC row = 2
+after GotoRC col = 3
+after GotoRC x = 12
+after GotoRC y = 24
+after GotoXY row = 4
+after GotoXY col = 7
+after GotoXY x = 40
+after GotoXY y = 50
+Raise window
+Lower window
+Alert window
+WFlush window
+WSync window
+WDefault failed
+Fg of a list error 103
+done
+screen none
