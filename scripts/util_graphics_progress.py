@@ -10,7 +10,11 @@ script, NAME.events, and passes with it; the line says how many entries have one
 BUILT EXPLAINS A FLAT WORKS: the steps of the design's step table (step 0, the baseline, left out) whose row is closed, a row named by the step's number
 (column rows, a regular expression with N for the number) standing in QUEUE.done.tsv or its baton reading STATE: DONE or RETIRED:done-green.
 Unicon's graphics are a separate library by Lon's ruling of 2026-11-16 09:5x and are left out (column excluded) until they have a line of their own.
-Read only, nothing run. The table is GRAPHICS_PROGRESS.tsv beside this file: one line a language.
+THE GOAL LINES COME FIRST (Lon 2026-11-16 12:3x CST, in the coo's window, verbatim: "The number to watch as the countdown is Icon demo 10 to 177. Here we go. That
+is the goal." / "Gui pack from 3 to 7 is also the goal."): a line of the table whose first column is goal names a label, a suite key and where its denominator is
+read. The numerator is the suite row's newest pass count in SUITES.tsv, what the cycle graded; the denominator is the count of files a glob names (the library's
+177 graphics programs, so the count has its true end before every program is an entry) or, for -, the row's own total, which grows as entries are cut.
+Read only, nothing run. The table is GRAPHICS_PROGRESS.tsv beside this file: one line a language and one a goal.
   python3 -I util_graphics_progress.py            the header and one line a language; rc 0
   python3 -I util_graphics_progress.py --list     every graphics entry: language, suite key, entry, its newest reading, scripted or not, counted or not
   python3 -I util_graphics_progress.py --probe    five arms on a scratch store, corpus and postoffice; PROBE ok | RED"""
@@ -33,7 +37,7 @@ def table(e):
     for ln in open(e["table"], encoding="utf-8"):
         if ln.startswith("#") or not ln.strip(): continue
         f = ln.rstrip("\n").split("\t")
-        if f[0] == "lang": continue
+        if f[0] in ("lang", "goal"): continue
         f += [""] * (6 - len(f))
         rows.append({"lang": f[0], "label": f[1], "steps": f[2], "rows": f[3], "scripted": set(f[4].split(",")) - {"", "-"}, "excluded": set(f[5].split(",")) - {"", "-"}})
     return rows
@@ -119,8 +123,30 @@ def measure(e):
     return out
 
 
+def goals(e):
+    rows = {}
+    try:
+        for ln in open(os.path.join(e["P"], "SUITES.tsv"), encoding="utf-8"):
+            f = ln.rstrip("\n").split("\t")
+            if len(f) > 9 and not ln.startswith("#"): rows[f[0]] = f
+    except OSError: pass
+    out = []
+    for ln in open(e["table"], encoding="utf-8"):
+        f = ln.rstrip("\n").split("\t")
+        if f[0] != "goal" or len(f) < 4: continue
+        r = rows.get(f[2])
+        have = int(r[8]) if r and r[8].isdigit() else None
+        of = len(glob.glob(f[3])) if f[3] != "-" else (int(r[9]) if r and r[9].isdigit() else None)
+        out.append((f[1], have, of))
+    return out
+
+
 def render(e):
-    lines = ["%-17s%14s%8s  %-22s%s" % ("Graphics", "Works", "Pct", "", "Built")]
+    lines = []
+    for label, have, of in goals(e):
+        if have is None or not of: lines.append("%-17s%14s%8s  %s" % ("GOAL " + label, "?", "-", "the suite row or the library is unread")); continue
+        lines.append("%-17s%14s%8s  %s" % ("GOAL " + label, "%d/%d" % (have, of), "%5.1f%%" % (100.0 * have / of), "%d to go" % (of - have) if of > have else "REACHED"))
+    lines.append("%-17s%14s%8s  %-22s%s" % ("Graphics", "Works", "Pct", "", "Built"))
     for row, detail, b in measure(e):
         n = len(detail); w = sum(1 for d in detail if d[5]); s = sum(1 for d in detail if d[4])
         need = sum(1 for d in detail if d[1] in row["scripted"])
@@ -160,9 +186,16 @@ def probe():
         if g[0] != 0: why += " arm4 a dirty reading and a mode-4 reading read %d works, wanted 0;" % g[0]
         db([("2026-01-01T00:00:00", "s", "c", "g", "package", "rs", "icon", "disp", "m3", "PASS")]); g = works()
         if g[0] != 1: why += " arm5 an entry with NAME.display passing reads %d works, wanted 1;" % g[0]
+        os.makedirs(os.path.join(t, "lib"))
+        for n in "abcde": open(os.path.join(t, "lib", n + ".icn"), "w").write("")
+        open(os.path.join(t, "SUITES.tsv"), "w").write("# h\n" + "\t".join(["pk", "L", "x", "icon", "d", "0", "7", "d", "3", "7", "tree"]) + "\n")
+        open(os.path.join(t, "table.tsv"), "a").write("goal\tIcon demos\tpk\t%s\ngoal\tGUI packs\tpk\t-\ngoal\tNo row\tnone\t-\n" % os.path.join(t, "lib", "*.icn"))
+        g = goals(e)
+        if g != [("Icon demos", 3, 5), ("GUI packs", 3, 7), ("No row", None, None)]: why += " arm6 the goal lines read %r, wanted 3 of 5 by the glob, 3 of 7 by the row, and a missing row unread;" % (g,)
+        if len(measure(e)) != 1: why += " arm6 a goal line was read as a language line;"
     finally:
         shutil.rmtree(t, ignore_errors=True)
-    print("GRAPHICS-PROGRESS PROBE " + ("RED:" + why if why else "ok arms=5 (empty store, the script rule, newest wins, dirty and mode 4 unread, a display entry; steps closed by the done file and by a baton, never by a claim)"))
+    print("GRAPHICS-PROGRESS PROBE " + ("RED:" + why if why else "ok arms=6 (empty store, the script rule, newest wins, dirty and mode 4 unread, a display entry, the goal lines; steps closed by the done file and by a baton, never by a claim)"))
     return 1 if why else 0
 
 

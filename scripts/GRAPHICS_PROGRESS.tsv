@@ -6,3 +6,6 @@
 lang	label	steps	rows	scripted	excluded
 icon	Icon graphics	icon_xwin/STEPS.tsv	^icon-xwin-(w|step-)N-	ipl_gprogs,ipl_gpacks	rosetta-unicon,unitests,unicon-uni,uni_ipl,uni_xml,uni_bench,uni_cs410,uni_ubugger
 prolog	Prolog graphics	prolog_xpce/STEPS.tsv	^prolog-xpce-step-N-	-	-
+# goal lines (Lon 2026-11-16 12:3x CST: "The number to watch as the countdown is Icon demo 10 to 177." / "Gui pack from 3 to 7 is also the goal."): goal, label, the suite key whose newest pass count in SUITES.tsv is the numerator, and the denominator: a glob whose files are counted, or - for the suite row's own total.
+goal	Icon demos	ipl_gprogs	/home/resources/icon-master-x/ipl/gprogs/*.icn
+goal	GUI packs	ipl_gpacks	-
