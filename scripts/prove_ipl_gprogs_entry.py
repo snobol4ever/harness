@@ -21,6 +21,9 @@
 # out_files cell (stdout, then each file's bytes in order; a file not written is <<out_files: N was not written>>), want_rc, and the screen road
 # (util_screen_run.py beside this file): --out screen.dump with NAME.events and NAME.cap when out_files names screen.dump, else --no-screen,
 # which NAME.display must then mark; NAME.depth as --depth either way; NAME.pin's clock and entropy shim on the program.
+# NAME.DISPLAY MARKS A TEXT ENTRY OF THE GRAPHICS FACILITY, run under the road's display whether or not it opens a window (the cto 2026-11-16
+# 15:5x CST, on colorwif: it calls PaletteColor and ColorValue and opens no window; the plain oracle stops it with error 106, so it is cut by the
+# graphics oracle and graded on its text; one mark serves both, no second form).
 # THE WAITING RULE (the ruling of 11:2x, and the cto's (a) of 13:5x: RED with no exemption): an entry the road finds waiting, that is ended by
 # the road at a still screen and not by itself, carries NAME.events, or one line of PKG/EVENTS-NONE.tsv with its reason and then no
 # NAME.events; either fault reads RED. An entry that ends by itself, or that never holds still (screen unstable), needs neither. Which ended it is
