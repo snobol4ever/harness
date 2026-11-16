@@ -26,7 +26,7 @@ sys.path.insert(0, HERE); import harness_paths   # THE ABSOLUTE MODEL (row harne
 SCRIP_DIR = str(harness_paths.scrip())
 VOCABS = ['sno', 'icn', 'pas', 'rk', 'rkm', 'pl']
 CONVS = ['leaf', 'gen', 'open', 'inline']
-FLAGS = {'scan': 1, 'mut': 2, 'visible': 4}
+FLAGS = {'scan': 1, 'mut': 2, 'visible': 4, 'xwin': 8}
 COLS = ['bid', 'vocab', 'name', 'min', 'max', 'entry', 'conv', 'recv', 'flags', 'op', 'src']
 RECVS = ['*', '-', 'Str', 'Int', 'Num', 'Rat', 'Complex', 'Bool', 'List', 'Array', 'Hash', 'Map', 'Range', 'Code', 'Any']
 UNSTATED = -128
