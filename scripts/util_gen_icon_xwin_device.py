@@ -3,7 +3,7 @@
 
 Copies the oracle's sources to scratch, writes define.h as Config linux and Graphics 1, redefines GRFX_ALLOC to the
 collected record allocator, runs the oracle's own translator rtt -x over its six window .r sources (the device layer and
-fwindow.r, the function layer), converts every allocation call by the class its site has in the committed table
+fwindow.r, the function layer) and the conversions cnv.r and def.r, converts every allocation call by the class its site has in the committed table
 designs/icon_xwin/ALLOC-CLASSES.tsv, rewrites the includes so no line names a scratch path, copies the oracle's headers,
 writes xwin_alloc.h (the class macros), xwin_gen.c (the record layouts, the roots, the detached-image hook) and
 xwin_functions.tsv (the 48 functions from their headers), xwin_builtins.tsv (their rows of src/runtime/builtins.tsv)
@@ -37,7 +37,10 @@ CC_SLOT = next(p for p in (os.path.join(HERE, "util_cc_slot.sh"), "/home/harness
 TABLE = os.path.join(HARNESS, "designs", "icon_xwin", "ALLOC-CLASSES.tsv")
 PATCH = os.path.join(HARNESS, "designs", "icon_xwin", "xwin.patch")
 DEFAULT_SRC = "/home/resources/icon-master/src"
-RUN_SOURCES = ["rwindow.r", "rcolor.r", "rimage.r", "rwinrsc.r", "rwinsys.r", "fwindow.r"]
+RUN_SOURCES = ["rwindow.r", "rcolor.r", "rimage.r", "rwinrsc.r", "rwinsys.r", "fwindow.r", "cnv.r", "def.r"]
+OWN_DATA = ("tend", "t_errornumber", "t_errorvalue", "t_have_val")
+OWN_DATA_SOURCE = os.path.join("runtime", "init.r")
+BY_VALUE = {"kywd_prog": "xwin_kywd_prog"}
 RUN_INCLUDES = ["rxwin.ri", "rxrsc.ri"]
 PLAIN_SOURCE = os.path.join("common", "xwindow.c")
 DEFINE_H = "#define Config linux\n#define Graphics 1\n"
@@ -395,6 +398,11 @@ def write_alloc_h(tree, tags, used):
              "void *rt_ws_alloc_raw(size_t nbytes);",
              "struct _XImage;",
              "int xwin_detached_destroy(struct _XImage *im);",
+             "struct descrip;"]
+    for name, fn in sorted(BY_VALUE.items()):
+        lines.append("struct descrip %s(void);" % fn)
+        lines.append("#define %s %s()" % (name, fn))
+    lines += [
 
              "#define XWIN_LW(off, kind) (((uint64_t)(off) << 8) | (uint64_t)(kind))",
              "#define XWIN_LK_PTR 1",
@@ -417,9 +425,21 @@ def write_alloc_h(tree, tags, used):
         f.write("\n".join(lines) + "\n")
 
 
-def write_gen_c(tree, tags, roots, pp, segs, by_source):
+def own_data(src):
+    text = open(os.path.join(src, OWN_DATA_SOURCE)).read()
+    out = []
+    for name in OWN_DATA:
+        m = re.search(r"(?m)^([A-Za-z_][\w ]*?[\s*]+%s\b[^;]*;)" % re.escape(name), text)
+        if not m:
+            raise Refuse("%s has no file-scope definition of %s" % (OWN_DATA_SOURCE, name))
+        out.append(" ".join(m.group(1).split()))
+    return out
+
+
+def write_gen_c(tree, tags, roots, pp, segs, by_source, src):
     types = oracle_types(segs)
     lines = ['#include "xwin_alloc.h"', '#include "h/rt.h"']
+    lines += own_data(src)
     for r in roots:
         text = by_source.get(r["source"], "")
         m = re.search(r"(?m)^([A-Za-z_][\w ]*?[\s*]+)%s\b\s*(=[^;]*)?;" % re.escape(r["name"]), text)
@@ -622,7 +642,7 @@ def generate(src, tree, scratch, table, patch, use_patch, report):
     tags = record_tags(sites)
     write_alloc_h(tree, tags, used)
     pp, segs = preprocess(tree)
-    write_gen_c(tree, tags, roots, pp, segs, by_source)
+    write_gen_c(tree, tags, roots, pp, segs, by_source, src)
     nfun = write_functions(src, tree, made_fwindow)
     if nfun != 48:
         raise Fail("xwin_functions.tsv holds %d functions, wants 48" % nfun)
@@ -668,7 +688,7 @@ def main():
         print("REFUSE(2): give one of --out DIR, --check DIR, --classes")
         return 2
     src = os.path.abspath(a.src)
-    need = ["rtt/rtt", "h/graphics.h", "h/xwin.h", "h/grttin.h", PLAIN_SOURCE] + [os.path.join("runtime", n) for n in RUN_SOURCES + RUN_INCLUDES]
+    need = ["rtt/rtt", "h/graphics.h", "h/xwin.h", "h/grttin.h", PLAIN_SOURCE, OWN_DATA_SOURCE] + [os.path.join("runtime", n) for n in RUN_SOURCES + RUN_INCLUDES]
     missing = [n for n in need if not os.path.isfile(os.path.join(src, n))]
     if missing:
         print("REFUSE(2): the oracle source at %s lacks %s" % (src, " ".join(missing)))
