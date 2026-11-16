@@ -53,6 +53,21 @@ for line in open(src_path, encoding='utf-8', errors='replace'):
         if name.startswith("'"): name = name[1:-1].replace("\\'", "'")
         heads[unit].append(name)
 def norm(name):
+    # @(Name,Bindings): Bindings is plunit's list of the generator's values, so the name ends at the comma before the LAST top-level
+    # list, found by bracket depth from the end (the grader 2026-11-16, MEASURED on prolog_library_collection: a forall test named
+    # 'string_ellipsis(+,+,+)' reads @(string_ellipsis(+,+,+),[monkey,2,m...]) and the first-comma cut kept 'string_ellipsis(+', so 69
+    # of string_ext's 74 cases and all 6 of math_ext's could never meet the shim's bare name)
+    if name.startswith('@(') and name.endswith('])'):
+        depth = 0
+        for i in range(len(name) - 2, 1, -1):
+            if name[i] == ']':
+                depth += 1
+            elif name[i] == '[':
+                depth -= 1
+                if depth == 0:
+                    if name[i - 1] == ',':
+                        return name[2:i - 1]
+                    break
     m = re.match(r'^@\(([^,]+),', name)
     return m.group(1) if m else name
 def split_key(key):
