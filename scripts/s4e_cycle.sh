@@ -411,7 +411,7 @@ if [ "$MODE_ARG" = --next ]; then IFS=$'\t' read -r key kind lang dir cell <<< "
 while :; do
     mapfile -t ALL < <(cells | order_cells); total=${#ALL[@]}
     [ "$total" -gt 0 ] || { log "REFUSED: no cells (SUITE_RUNNERS.tsv or the partitions unreadable)"; exit 2; }
-    if [ "$idx" -eq 0 ] || [ "$idx" -ge "$total" ]; then
+    if { [ "$idx" -eq 0 ] && [ "${topup:-0}" = 0 ]; } || [ "$idx" -ge "$total" ]; then
         [ "$idx" -ge "$total" ] && [ "$lap" -gt 0 ] && log "LAP $lap done cells=$total"
         lap=$(( lap + 1 )); idx=0; lap_start "$lap"
         cp "${S4E_RESULTS:-/home/resources/progress/results.tsv}" "$TMPDIR/cycle/lap.$lap.results" 2>/dev/null; rm -f "$TMPDIR/cycle/lap.$(( lap - 2 )).results"   # the lap's own copy: its end tells the new reds against it
@@ -489,6 +489,19 @@ while :; do
         fi
         [ "$MODE_ARG" = --one ] && { echo "ONE $key $cell rc=$rc secs=$secs"; state_put "$lap" "$((i+1))" "$total" "$key" "$cell" done; exit 0; }
     done
+    # THE LAP TAKES IN WHAT LANDED DURING IT (the grader 2026-11-16, on the coo's ask: lap 43 built its queues at 18:06Z, so every entry and chunk landed
+    # after waited hours for the next lap; the list itself is read live from /home/corpus). When the queues are spent, the list is read again; a cell
+    # with no CELL line in this lap and not held in CYCLE.skip is run before the lap closes, from the first such cell, the ones already graded skipped
+    # as DONE-THIS-LAP; at most three top-ups a lap, so a cell that never logs cannot hold the lap open
+    topup=0
+    if [ "$MODE_ARG" != --one ] && [ "$(grep -c -P "^\S+ TOPUP lap=$lap " "$LOG" 2>/dev/null)" -lt 3 ]; then
+        mapfile -t ALL < <(cells | order_cells); total=${#ALL[@]}; nx=-1
+        for (( j = 0; j < total; j++ )); do IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$j]}"
+            grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null && continue
+            grep -q -P "^\S+ CELL lap=$lap \d+/\d+ \Q$key\E \Q$cell\E rc=" "$LOG" 2>/dev/null && continue
+            nx=$j; break; done
+        if [ "$nx" -ge 0 ]; then log "TOPUP lap=$lap from $((nx+1))/$total $key $cell: cells that landed in the lap"; idx="$nx"; topup=1; state_put "$lap" "$idx" "$total" "$key" "$cell" done; continue; fi
+    fi
     # THE LAP'S NEW REDS (the cio 2026-11-10, CIO-82 on the grading-tube row; Lon's law of CIO-8): one telegram per designer, once a lap, never one per red
     if [ "$MODE_ARG" != --one ]; then
         gk=(); for k in $(printf '%s\n' "${ALL[@]}" | cut -f1 | awk '!s[$0]++'); do graded_this_lap "$k" && gk+=("$k"); done
