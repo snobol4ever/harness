@@ -57,3 +57,5 @@ root	rwindow.r	-	descr	amperCol	ROOT	the keyword &col
 root	rwindow.r	-	descr	amperRow	ROOT	the keyword &row
 root	rwindow.r	-	descr	amperInterval	ROOT	the keyword &interval
 root	rwindow.r	-	descr	lastEventWin	ROOT	the window of the last event
+root	keyword.r	-	descr	kywd_xwin[0]	ROOT	the keyword &window's descriptor (its definition, keyword.r 512, generated into xwin_gen.c), the last two of xwin_root_descrs
+root	keyword.r	-	descr	kywd_xwin[1]	ROOT	the second descriptor of kywd_xwin

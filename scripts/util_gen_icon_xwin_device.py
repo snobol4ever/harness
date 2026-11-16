@@ -8,7 +8,8 @@ designs/icon_xwin/ALLOC-CLASSES.tsv, rewrites the includes so no line names a sc
 writes xwin_alloc.h (the class macros), xwin_gen.c (the record layouts, the roots, the detached-image hook) and
 xwin_functions.tsv (the 48 functions from their headers), xwin_builtins.tsv (their rows of src/runtime/builtins.tsv)
 and xwin_entries.c (one bt_ entry a function, into the adapter rt_xwin_call_h; officer_01's format) and
-xwin_exports.map (the linker version script exporting those 48 entries and nothing else; the cto 08:4x CST), applies designs/icon_xwin/xwin.patch and writes the tree to
+xwin_exports.map (the linker version script exporting those 48 entries and xwin_kywd_addr, the shim's, and nothing else),
+rewrites every read of a list block's size into xwin_list_size (refusing a tree that still reads a list block's member), applies designs/icon_xwin/xwin.patch and writes the tree to
 --out with XWIN-MANIFEST.tsv. xwin_shim.h, W3's shim header, is hand-written: if it stands in the tree the gate does not
 compare it and --out keeps it; the generated files include none of it (h/rt.h declares the runtime names they call). Nothing under the oracle tree is written; the scratch is removed unless --keep.
 
@@ -39,8 +40,10 @@ TABLE = os.path.join(HARNESS, "designs", "icon_xwin", "ALLOC-CLASSES.tsv")
 PATCH = os.path.join(HARNESS, "designs", "icon_xwin", "xwin.patch")
 DEFAULT_SRC = "/home/resources/icon-master/src"
 RUN_SOURCES = ["rwindow.r", "rcolor.r", "rimage.r", "rwinrsc.r", "rwinsys.r", "fwindow.r", "cnv.r", "def.r"]
-OWN_DATA = ("tend", "t_errornumber", "t_errorvalue", "t_have_val")
-OWN_DATA_SOURCE = os.path.join("runtime", "init.r")
+OWN_DATA = (("tend", "init.r"), ("t_errornumber", "init.r"), ("t_errorvalue", "init.r"), ("t_have_val", "init.r"), ("kywd_xwin", "keyword.r"))
+EXTRA_EXPORTS = ("xwin_kywd_addr",)
+LIST_SIZE_RE = re.compile(r"BlkLoc\(")
+LIST_MEMBER_RE = re.compile(r"->list\.\w|BlkD\([^;]*?,\s*List\s*\)\s*->")
 BY_VALUE = {"kywd_prog": "xwin_kywd_prog"}
 RUN_INCLUDES = ["rxwin.ri", "rxrsc.ri"]
 PLAIN_SOURCE = os.path.join("common", "xwindow.c")
@@ -399,7 +402,8 @@ def write_alloc_h(tree, tags, used):
              "void *rt_ws_alloc_raw(size_t nbytes);",
              "struct _XImage;",
              "int xwin_detached_destroy(struct _XImage *im);",
-             "struct descrip;"]
+             "struct descrip;",
+             "long xwin_list_size(struct descrip *d);"]
     for name, fn in sorted(BY_VALUE.items()):
         lines.append("struct descrip %s(void);" % fn)
         lines.append("#define %s %s()" % (name, fn))
@@ -427,13 +431,33 @@ def write_alloc_h(tree, tags, used):
 
 
 def own_data(src):
-    text = open(os.path.join(src, OWN_DATA_SOURCE)).read()
     out = []
-    for name in OWN_DATA:
+    for name, source in OWN_DATA:
+        text = open(os.path.join(src, "runtime", source)).read()
         m = re.search(r"(?m)^([A-Za-z_][\w ]*?[\s*]+%s\b[^;]*;)" % re.escape(name), text)
         if not m:
-            raise Refuse("%s has no file-scope definition of %s" % (OWN_DATA_SOURCE, name))
+            raise Refuse("runtime/%s has no file-scope definition of %s" % (source, name))
         out.append(" ".join(m.group(1).split()))
+    return out
+
+
+def list_pass(lines, path):
+    out = []
+    for line in lines:
+        pos = 0
+        while True:
+            m = LIST_SIZE_RE.search(line, pos)
+            if not m:
+                break
+            cl = balanced(line, m.end() - 1)
+            tail_ = "->list.size"
+            if line[cl + 1:cl + 1 + len(tail_)] == tail_:
+                line = line[:m.start()] + "xwin_list_size(&(" + line[m.end():cl] + "))" + line[cl + 1 + len(tail_):]
+            pos = m.start() + 1
+        out.append(line)
+    for i, line in enumerate(out):
+        if not line.startswith("#") and LIST_MEMBER_RE.search(line):
+            raise Refuse("%s line %d still reads a member of a list block after the list pass: %s" % (os.path.basename(path), i + 1, line.strip()[:100]))
     return out
 
 
@@ -441,7 +465,10 @@ def write_gen_c(tree, tags, roots, pp, segs, by_source, src):
     types = oracle_types(segs)
     lines = ['#include "xwin_alloc.h"', '#include "h/rt.h"']
     lines += own_data(src)
+    own = set(n for n, s in OWN_DATA)
     for r in roots:
+        if r["name"].split("[")[0] in own:
+            continue
         text = by_source.get(r["source"], "")
         m = re.search(r"(?m)^([A-Za-z_][\w ]*?[\s*]+)%s\b\s*(=[^;]*)?;" % re.escape(r["name"]), text)
         if not m:
@@ -489,7 +516,7 @@ def write_builtins(tree, rows):
         f.write("\n".join(tsv) + "\n")
     with open(os.path.join(tree, "xwin_entries.c"), "w") as f:
         f.write("\n".join(c) + "\n")
-    names = []
+    names = list(EXTRA_EXPORTS)
     for r in rows:
         f = r.split("\t")
         names.append("bt_%s_h" % f[0] if f[4] == "yes" else "bt_%s" % f[0])
@@ -562,7 +589,7 @@ def apply_patch(tree, patch):
                 raise Fail("the patch left %s" % os.path.join(dp, n))
 
 
-def write_manifest(tree):
+def write_manifest(tree, roots=()):
     rows = []
     for dp, dn, fn in os.walk(tree):
         dn.sort()
@@ -572,8 +599,12 @@ def write_manifest(tree):
                 continue
             data = open(os.path.join(dp, n), "rb").read()
             rows.append("%s\t%d\t%s" % (rel, data.count(b"\n"), hashlib.md5(data).hexdigest()))
+    order = []
+    for kind, table in (("ptr", "xwin_root_words"), ("descr", "xwin_root_descrs")):
+        for i, r in enumerate([r for r in roots if r["kind"] == kind]):
+            order.append("%s[%d]\troot\t%s" % (table, i, r["name"]))
     with open(os.path.join(tree, MANIFEST), "w") as f:
-        f.write("# path\tlines\tmd5 (util_gen_icon_xwin_device.py; regenerated, never edited)\n" + "\n".join(rows) + "\n")
+        f.write("# path\tlines\tmd5 (util_gen_icon_xwin_device.py; regenerated, never edited); then each root table's index, the word root, and the oracle name it holds\n" + "\n".join(rows + order) + "\n")
     return rows
 
 
@@ -636,7 +667,7 @@ def generate(src, tree, scratch, table, patch, use_patch, report):
     by_source = {}
     made_fwindow = ""
     for p in cfiles:
-        text = "\n".join(post_pass(converted[p], scratch))
+        text = "\n".join(list_pass(post_pass(converted[p], scratch), p))
         name = os.path.basename(p)
         with open(os.path.join(tree, name), "w", errors="surrogateescape") as f:
             f.write(text)
@@ -661,7 +692,7 @@ def generate(src, tree, scratch, table, patch, use_patch, report):
             data = open(os.path.join(dp, n), "rb").read()
             if scratch.encode() in data or (n.endswith((".c", ".h")) and b"/tmp/" in data):
                 raise Refuse("%s names a scratch or /tmp path" % os.path.relpath(os.path.join(dp, n), tree))
-    return write_manifest(tree), len(cfiles)
+    return write_manifest(tree, roots), len(cfiles)
 
 
 def tree_files(t):
@@ -696,7 +727,7 @@ def main():
         print("REFUSE(2): give one of --out DIR, --check DIR, --classes")
         return 2
     src = os.path.abspath(a.src)
-    need = ["rtt/rtt", "h/graphics.h", "h/xwin.h", "h/grttin.h", PLAIN_SOURCE, OWN_DATA_SOURCE] + [os.path.join("runtime", n) for n in RUN_SOURCES + RUN_INCLUDES]
+    need = ["rtt/rtt", "h/graphics.h", "h/xwin.h", "h/grttin.h", PLAIN_SOURCE] + sorted(set(os.path.join("runtime", s) for n, s in OWN_DATA)) + [os.path.join("runtime", n) for n in RUN_SOURCES + RUN_INCLUDES]
     missing = [n for n in need if not os.path.isfile(os.path.join(src, n))]
     if missing:
         print("REFUSE(2): the oracle source at %s lacks %s" % (src, " ".join(missing)))
