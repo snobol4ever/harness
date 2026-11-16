@@ -561,7 +561,7 @@ probe_rerun() {   # THE PROOF OF LAND.conf's SWITCHES (row the-lander-reruns-a-l
     echo "LAND rerun-probe ok arms=5 ledger_lines=$(grep -vc '^#' "$T/po/LANDINGS.tsv") (derived touches kept a gate standing over a race outside the landing's directory and skipped the table stages; tries=1 ran the one serial gate under the lease over a race inside it; touches=declared read the same race affected; width=1 held a landing out with nothing fetched and admitted it once the place was free; a ref moved under the gate by a fetch was read as a move under the lease and cost no round)"
     exit 0
 }
-probe_table_merge() {   # THE KEYED MERGE OF A CONTAINER'S TABLES, on scratch origins: (1) origin gains a row while the landing holds another, both rewrite every rank below: the landing merges and lands, origin holds both rows counted 1..N; (2) both change one cell differently: RED at the rebase, the table named, nothing pushed
+probe_table_merge() {   # THE KEYED MERGE OF A CONTAINER'S TABLES, on scratch origins: (1) origin gains a row while the landing holds another, both rewrite every rank below: the landing merges and lands, origin holds both rows counted 1..N; (2) both change one cell differently: RED at the rebase, the table named, nothing pushed; (3, run between them) two landings each add a line to a package's ALL.rc (a side table of container_table_kind lines): both land
     local T log rc C R want got
     T="$(mktemp -d "/tmp/s4e/$seat/land-tablemerge.XXXXXX")" || refuse "cannot make a scratch directory"
     trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
@@ -584,6 +584,16 @@ probe_table_merge() {   # THE KEYED MERGE OF A CONTAINER'S TABLES, on scratch or
     [ "$rc" = 0 ] && grep '^LAND ok ' "$log" > /dev/null && [ "$got" = "$want" ] || rr "arm 1 (two landings each added a row) rc=$rc: expected both rows on origin, counted 1 to 5, got: $(printf '%s' "$got" | tr '\n' ' ')"
     got="$(git -C "$T/origin/corpus.git" show main:tests/probe_race/PARTITION.tsv 2>/dev/null | grep -c -E '^(race|mine)	')"
     [ "$got" = 2 ] && grep 'merged by entry key' "$log" > /dev/null || rr "arm 1: origin's PARTITION.tsv holds $got of the two new rows, or the landing did not say it merged by entry key"
+    git -C "$R" sparse-checkout add packages/probe_pkg && git -C "$C" sparse-checkout add packages/probe_pkg && git -C "$R" pull -q --ff-only origin main || refuse "probe: cannot widen the clones to packages/probe_pkg"
+    rc_put() { mkdir -p "$1/packages/probe_pkg" && printf "$2" > "$1/packages/probe_pkg/ALL.rc" && git -C "$1" add -A packages/probe_pkg && git -C "$1" commit -q -m "$3"; }
+    rc_put "$R" 'a\t0\nc\t1\n' "probe: the package's ALL.rc is seeded" && git -C "$R" push -q origin HEAD:main && git -C "$C" pull -q --ff-only origin main || refuse "probe: cannot seed the package's ALL.rc"
+    rc_put "$C" 'a\t0\nc\t1\nmine\t0\n' "probe: the landing adds the ALL.rc line of mine" || refuse "probe: cannot commit the landing's ALL.rc line"
+    rc_put "$R" 'a\t0\nc\t1\nrace\t2\n' "probe: origin gains the ALL.rc line of race" && git -C "$R" push -q origin HEAD:main || refuse "probe: cannot push the racer's ALL.rc line"
+    log="$T/arm3.log"; lander --gate true corpus > "$log" 2>&1; rc=$?
+    sed 's/^/    arm3| /' "$log" | grep -E 'stage=rebase|LAND ok|LAND RED|REFUSE' | cut -c1-200 | tail -3
+    got="$(git -C "$T/origin/corpus.git" show main:packages/probe_pkg/ALL.rc 2>/dev/null | sort | tr '\n' ' ')"
+    [ "$rc" = 0 ] && grep '^LAND ok ' "$log" > /dev/null && grep 'packages/probe_pkg/ALL.rc merged by entry key' "$log" > /dev/null && [ "$got" = "$(printf 'a\t0\nc\t1\nmine\t0\nrace\t2\n' | sort | tr '\n' ' ')" ] \
+        || rr "arm 3 (two landings each added a line to a package's ALL.rc) rc=$rc: expected both lines on origin merged by entry key, got: $got"
     git -C "$R" pull -q --ff-only origin main || refuse "probe: the racer cannot reach origin"
     tbl "$C" a:1 race:1 b:LANDING mine:1 c:1 && put "$C" "probe: the landing changes the cell of b" || refuse "probe: cannot commit the landing's cell"
     tbl "$R" a:1 race:1 b:ORIGIN mine:1 c:1 && put "$R" "probe: origin changes the cell of b otherwise" && git -C "$R" push -q origin HEAD:main || refuse "probe: cannot push the racer's cell"
@@ -592,7 +602,7 @@ probe_table_merge() {   # THE KEYED MERGE OF A CONTAINER'S TABLES, on scratch or
     sed 's/^/    arm2| /' "$log" | grep -E 'stage=rebase|LAND ok|LAND RED|REFUSE' | cut -c1-220 | tail -3
     [ "$rc" = 1 ] && grep '^LAND RED stage=rebase .*table=tests/probe_race/ALL.csv' "$log" > /dev/null && [ "$(git -C "$T/origin/corpus.git" rev-parse main)" = "$want" ] && [ "$(git -C "$C" rev-parse HEAD)" = "$got" ] && [ -z "$(git -C "$C" status --porcelain --untracked-files=no)" ] \
         || rr "arm 2 (both changed one cell differently) rc=$rc: expected LAND RED at the rebase with the table named, origin unmoved and the tree as it was"
-    echo "LAND table-merge-probe ok arms=2 (two landings that each added a row to one container both landed, origin's ALL.csv holding both counted 1 to 5 and its PARTITION.tsv both; two that changed one cell differently read RED at the rebase with the table named, nothing pushed, the tree as it was)"
+    echo "LAND table-merge-probe ok arms=3 (two landings that each added a row to one container both landed, origin's ALL.csv holding both counted 1 to 5 and its PARTITION.tsv both; two that each added a line to a package's ALL.rc both landed, merged by entry key; two that changed one cell differently read RED at the rebase with the table named, nothing pushed, the tree as it was)"
     exit 0
 }
 probe_finish() {   # A LANDING THAT HAS PUSHED ONE REPO FINISHES, on scratch origins: the landing changes harness and corpus; a racer lands in the landing's corpus directory during the gate (the one serial round is spent under the lease), a second racer lands there after the lease's fetch (the plant), so harness is pushed and the corpus push is overtaken: the landing rebases, gates once more under the lease and pushes corpus, and origin never stays half-landed
@@ -978,10 +988,11 @@ merged_outputs=0; merged_names=""
 # makes them exact: MEASURED on origin's pascal master, util_build_rungs_suite.py --reindex reproduces ALL.csv byte for byte, and on real history the keyed merge of two real
 # witness additions from their common base equals the ALL.csv that landed when they went one after the other. --probe-table-merge proves it on scratch origins.
 merged_tables=""
-is_container_table() { case "$1" in packages/*/ALL.args|packages/*/NOT-CUT.tsv|packages/*/EXCLUDED.tsv|packages/*/ALL.omit|tests/*/ALL.csv|tests/*/PARTITION.tsv|tests/*/MULTI-LINERS.md|packages/*/ALL.csv|packages/*/PARTITION.tsv|packages/*/MULTI-LINERS.md|demos/*/ALL.csv|demos/*/PARTITION.tsv|demos/*/MULTI-LINERS.md) return 0 ;; esac; return 1; }   # MULTI-LINERS.md too (the cio 2026-11-14, MEASURED after the tables' merge landed: junior_14's pascal witness conflicted in the container itself, two sections placed at one spot): merged by its section headings
+container_table_kind() { case "$1" in tests/*/ALL.csv|packages/*/ALL.csv|demos/*/ALL.csv) echo csv ;; tests/*/PARTITION.tsv|packages/*/PARTITION.tsv|demos/*/PARTITION.tsv) echo partition ;; tests/*/MULTI-LINERS.md|packages/*/MULTI-LINERS.md|demos/*/MULTI-LINERS.md) echo md ;; packages/*/ALL.args|packages/*/NOT-CUT.tsv|packages/*/EXCLUDED.tsv|packages/*/ALL.omit|packages/*/ALL.rc|packages/*/EVENTS-NONE.tsv) echo lines ;; *) return 1 ;; esac; }   # THE ONE PLACE that names a file of a container merged by entry key at the rebase and its kind for util_table_merge.py (csv, partition, md, lines); 1 any other file. A side table joins the lines only when its first column is a unique key in every container on origin and a real conflict was measured in it (the cto 2026-11-16, row harness-the-lander-merges-a-packages-all-rc-and-events-none-by-their-entry-key: ALL.rc and EVENTS-NONE.tsv, two drain patches refused at the rebase; ALL.mask is no key, 30 of its 38 files repeat a first column, and stays a real conflict)
+is_container_table() { container_table_kind "$1" > /dev/null; }   # MULTI-LINERS.md too (the cio 2026-11-14, MEASURED after the tables' merge landed: junior_14's pascal witness conflicted in the container itself, two sections placed at one spot): merged by its section headings
 merge_container_table() {   # <repo> <file>: git's stages 1 (base), 2 (origin, the tree rebased onto) and 3 (the landing's commit) merged into the file and added; rc 1 a real conflict
     local d kind t; d="$(rd "$1")"; t="$LOG/tm.$(printf '%s' "$2" | tr '/' '_')"
-    case "$2" in *PARTITION.tsv) kind=partition ;; *MULTI-LINERS.md) kind=md ;; *ALL.args|*NOT-CUT.tsv|*EXCLUDED.tsv|*ALL.omit) kind=lines ;; *) kind=csv ;; esac   # a package's side tables of one line a key (the cio 2026-11-16: util_table_merge.py lines)
+    kind="$(container_table_kind "$2")" || { echo "$2 is no table merged by entry key" > "$LOG/table_merge"; return 1; }   # its kind from the one place (container_table_kind), never named here
     git -C "$d" show ":1:$2" > "$t.base" 2>/dev/null || : > "$t.base"
     git -C "$d" show ":2:$2" > "$t.ours" 2>/dev/null && git -C "$d" show ":3:$2" > "$t.theirs" 2>/dev/null || { echo "one side deleted $2" > "$LOG/table_merge"; return 1; }
     python3 "$HERE/util_table_merge.py" "$kind" "$t.base" "$t.ours" "$t.theirs" "$d/$2" > "$LOG/table_merge" 2>&1 || return 1
