@@ -146,3 +146,4 @@ pl_icon_examples	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/pl_icon_e
 aoc2017_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/aoc2017_prolog
 exercism_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/exercism_prolog
 aoc2015_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/aoc2015_prolog
+leantap	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/leantap
