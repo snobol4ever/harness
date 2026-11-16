@@ -350,6 +350,44 @@ unicon_bin() {
     fi
     printf '%s\n' "$c"
 }
+# ⭐ THE GRAPHICS ORACLES, BESIDE THE PLAIN ONES AND NEVER IN PLACE (Lon 2026-11-14 15:4x CST, in the grader's window, verbatim: "We are absolutely DOING GRAPHICS, X-windows. Yes? We should be able
+# to do off-line (i.e. without physical window in which a human user is required) GUI tests. Yes?"; row oracle-icon-and-unicon-have-a-graphics-build-under-xvfb; skill icon section 1).
+# Arizona icont/iconx 9.5.25a with X: /home/resources/icon-master-x (the grader 2026-11-14, the fleet's semicolon-required translator). unicon 13.3 with X11, Xft, JPEG, PNG and OpenGL:
+# /home/resources/oracles-graphics/unicon (officer_06 2026-11-16: a git clone of the plain drop /home/resources/unicon at d784f58, its default ./configure, make; the plain drop is untouched).
+# MEASURED 2026-11-16 by officer_06: one probe (WOpen, DrawLine, FillRectangle, DrawCircle, every drawing read back with Pixel as letters, WriteImage) run twice through each under its own
+# Xvfb gave the same text and the same GIF byte for byte; the two oracles print the same letters; with no display each answers "no window". These cut a DISPLAY program's ref only;
+# the plain accessors above stay the oracle of every other program. A graphics oracle is run under a private display alone (graphics_display_run below, or util_screen_run.py for the
+# screen road), never the caller's DISPLAY: a seat's session may carry the desktop's :0, and a window opened there is on Lon's screen.
+GRAPHICS_ICON_ORACLE_DIR="/home/resources/icon-master-x"
+GRAPHICS_UNICON_ORACLE_DIR="/home/resources/oracles-graphics/unicon"
+_graphics_oracle_bin() {
+    local c="$1"
+    if [ ! -x "$c" ]; then
+        printf "⛔ THE GRAPHICS ORACLE IS MISSING: %s\n" "$c" >&2
+        printf "   A display program's ref cut with it absent is not slow, it is ABSENT. Do not fall back to the plain oracle (it has no graphics and answers error 106 or \"no window\")\n" >&2
+        printf "   or to a bare name on PATH -- rebuild the graphics drop beside the plain one (lib_oracle_flags.sh, THE GRAPHICS ORACLES), then re-run.\n" >&2
+        return 1
+    fi
+    printf '%s\n' "$c"
+}
+graphics_icont_bin()  { _graphics_oracle_bin "$GRAPHICS_ICON_ORACLE_DIR/bin/icont"; }
+graphics_iconx_bin()  { _graphics_oracle_bin "$GRAPHICS_ICON_ORACLE_DIR/bin/iconx"; }
+graphics_unicon_bin() { _graphics_oracle_bin "$GRAPHICS_UNICON_ORACLE_DIR/bin/unicon"; }
+# graphics_display_run CMD ARGS...: CMD under an Xvfb of its own (640x480, 24 bits, no TCP), the display number the server picks (-displayfd, so two callers never race for one), DISPLAY
+# set to it and XAUTHORITY and WAYLAND_DISPLAY removed; the server is killed by its pid when CMD ends; the status is CMD's. rc 2 REFUSAL when Xvfb is missing or never answers.
+graphics_display_run() {
+    command -v Xvfb > /dev/null 2>&1 || { printf "REFUSED(2) [graphics_display_run]: no Xvfb on PATH\n" >&2; return 2; }
+    local nf xp n="" i rc
+    nf="$(mktemp "${TMPDIR:-/tmp}/graphics_display.XXXXXX")" || return 2
+    Xvfb -displayfd 3 -screen 0 640x480x24 -nolisten tcp 3> "$nf" > /dev/null 2>&1 &
+    xp=$!
+    for i in $(seq 1 100); do n="$(tr -dc 0-9 < "$nf")"; [ -n "$n" ] && break; kill -0 "$xp" 2> /dev/null || break; sleep 0.1; done
+    rm -f "$nf"
+    if [ -z "$n" ]; then kill "$xp" 2> /dev/null; wait "$xp" 2> /dev/null; printf "REFUSED(2) [graphics_display_run]: Xvfb gave no display number within 10 s\n" >&2; return 2; fi
+    env -u XAUTHORITY -u WAYLAND_DISPLAY DISPLAY=":$n" "$@"; rc=$?
+    kill "$xp" 2> /dev/null; wait "$xp" 2> /dev/null
+    return "$rc"
+}
 # ⛔⭐ JCON RE-EXECS BY NAME, SO THE ACCESSOR EXPORTS PATH -- CALLING IT BY ABSOLUTE PATH ALONE IS NOT ENOUGH (the officer s272,
 # measured: the launcher scripts resolve their siblings off PATH). Use as: eval "$(jcon_path_export)"; then run jcont/jcon.
 jcont_bin() {
