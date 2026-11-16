@@ -1,0 +1,8 @@
+# GRAPHICS_PROGRESS.tsv -- what util_graphics_progress.py counts for the banner's Works and Built lines (Lon 2026-11-16 11:5x CST: "add the Works and Built lines to the banner"). One line a language, tabs between columns.
+# lang: the language column of SUITE_RUNNERS.tsv whose master and pkg containers are searched for graphics entries. label: the line's name on the banner.
+# steps: the design's step table under harness/designs (step 0 left out). rows: a regular expression matched at the start of a row's topic, N standing for the step's number.
+# scripted: containers of programs that wait for a mouse or a key, where a pass on the first picture alone does not count: an entry counts only with its NAME.events. - for none.
+# excluded: containers left out of this line (Unicon's graphics, a separate library by Lon's ruling of 2026-11-16 09:5x). - for none. The lead of a line keeps its row: the cto Icon, the cfo Prolog.
+lang	label	steps	rows	scripted	excluded
+icon	Icon graphics	icon_xwin/STEPS.tsv	^icon-xwin-(w|step-)N-	ipl_gprogs,ipl_gpacks	rosetta-unicon,unitests,unicon-uni,uni_ipl,uni_xml,uni_bench,uni_cs410,uni_ubugger
+prolog	Prolog graphics	prolog_xpce/STEPS.tsv	^prolog-xpce-step-N-	-	-
