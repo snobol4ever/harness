@@ -4307,7 +4307,8 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
         stage_folder(_cdir, Path(entry.name).name, cand.parent)     # ALL.csv fixtures=folder: the entry's own folder beside it, as the deleted demos runner staged it
     elif _cdir and getattr(entry, "fixtures", False):
         stage_fixtures(_cdir, Path(entry.name).name, cand.parent)   # ALL.csv fixtures=staged: NAME.fixtures/ beside the entry's source, as the builder's cut staged it
-    for _sx in ((".events", ".cap", ".depth") if (_cdir and SCREEN_FILE in (getattr(entry, "out_files", None) or [])) else ()):
+    _dsp = bool(_cdir) and (Path(_cdir) / (Path(entry.name).name + ".display")).is_file()   # NAME.display: a text entry that needs the road's display (--no-screen)
+    for _sx in ((".events", ".cap", ".depth") if (_cdir and SCREEN_FILE in (getattr(entry, "out_files", None) or [])) else ((".display", ".depth") if _dsp else ())):
         _evs = Path(_cdir) / (Path(entry.name).name + _sx)
         if _evs.is_file():
             cand.with_suffix(_sx).write_bytes(_evs.read_bytes())   # THE SCREEN ROAD'S SIDE FILES (_screen_wrap): NAME.events (W7, the event script), NAME.cap (the entry's own cap) and NAME.depth (the entry's own depth) beside a graphics entry's source travel beside the staged program
@@ -7343,7 +7344,19 @@ def _screen_wrap(argv, out_files, src=None):
     The row's timeout_s must be longer than the cap, or the harness ends the road first. A file that is no such number is refused rc 2.
     AN ENTRY'S OWN DEPTH (the cto's ruling of 2026-11-16 10:0x CST on officer_06's measurement): NAME.depth beside the program, the one word 8 or 24,
     is handed to the road as --depth; at 8 the display has a colormap, the mutable colours answer, and the road hashes each pixel's colour through
-    the colormap. No file is 24, wrapped as before. A depth-8 entry is an entry of its own, never a second ref. Any other word is refused rc 2."""
+    the colormap. No file is 24, wrapped as before. A depth-8 entry is an entry of its own, never a second ref. Any other word is refused rc 2.
+    A DISPLAY WITHOUT A SCREEN ANSWER (the cqo 2026-11-16, on officer_04's ask for the Prolog graphics team): an entry that names no screen.dump
+    but has NAME.display beside its program (a marker, its text unread) is graded on its text alone and still needs a display: it runs under the
+    road with --no-screen, which gives it the road's own display and never reads the screen or ends the program; NAME.depth applies to it too. An
+    entry that names screen.dump and carries NAME.display asks two things at once and is refused rc 2."""
+    _dsp = Path(src).with_suffix(".display") if src else None
+    if _dsp is not None and _dsp.is_file():
+        if out_files and SCREEN_FILE in out_files:
+            refuse(f"{_dsp}: the entry names {SCREEN_FILE} in out_files and carries NAME.display; the first is graded on its screen, the second on its text alone")
+        _dd = Path(src).with_suffix(".depth"); _dn = _dd.read_text(errors="replace").strip() if _dd.is_file() else None
+        if _dn is not None and _dn not in ("8", "24"):
+            refuse(f"{_dd}: the screen road's depth is 8 or 24, and this file reads {_dn[:40]!r}")
+        return [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py"), "--no-screen"] + (["--depth", _dn] if _dn else []) + ["--"] + list(argv)
     if not out_files or SCREEN_FILE not in out_files: return argv
     _ev = Path(src).with_suffix(".events") if src else None
     _cap = Path(src).with_suffix(".cap") if src else None
@@ -8373,7 +8386,9 @@ def screen_events_probe():
     the same program with no script answers its opening line alone; NAME.cap is staged the same way and handed over as --cap, a moving picture
     then reading unstable at that cap and not at the road's 30 s; a cap that is no number is refused; NAME.depth is staged the same way and handed
     over as --depth, the road's own colormap client then answering at depth 8 where at 24 it has no writable cell and ends with no picture; a depth
-    other than 8 and 24 is refused. SCREEN_EVENTS ok|RED; rc 0 or 1, 2 cannot measure."""
+    other than 8 and 24 is refused; NAME.display beside an entry that names no screen.dump is staged and the entry wrapped --no-screen, a
+    program that holds a still window and then prints keeping its text and status; NAME.display beside a graphics entry is refused.
+    SCREEN_EVENTS ok|RED; rc 0 or 1, 2 cannot measure."""
     import types
     if not shutil.which("xeyes") or not shutil.which("Xvfb") or not shutil.which("ico"):
         print("REFUSE(2): --probe-screen-events needs xeyes and ico (x11-apps) and Xvfb", file=sys.stderr); return 2
@@ -8409,9 +8424,15 @@ def screen_events_probe():
         if wd != road + ["--depth", "8", "--"] + cell or (run / "plain.depth").exists() or not a8.startswith("screen 1024x768 md5 ") or v7.kind != "PASS": why.append("arm 9: NAME.depth did not reach the road as --depth 8 (wrap %r, at 8 %r, at 24 %s)" % (wd, a8, v7.kind))
         (run / "bad2.depth").write_text("16\n"); r6 = subprocess.run([sys.executable, "-c", "import sys; sys.path.insert(0, %r); import corpus_suite_harness as h; h._screen_wrap(['x'], [h.SCREEN_FILE], %r)" % (str(HARNESS_SCRIPTS), str(run / "bad2.icn"))], capture_output=True, text=True)
         if r6.returncode != 2 or "depth" not in r6.stderr: why.append("arm 10: a depth other than 8 and 24 was not refused rc 2 (rc %s)" % r6.returncode)
+        (pkg / "text.display").write_text(""); tcand, _ = stage_entry(mk("text", None), str(run), ".icn", str(pkg))
+        held = ["bash", "-c", "xlogo -geometry 200x200+0+0 & sleep 5; echo done-after-still; kill $!; exit 5"]; wt = _screen_wrap(held, None, tcand)
+        v8 = classify(wt, 120, "done-after-still", cwd=str(run), want_rc=5)
+        if wt != [sys.executable, str(HARNESS_SCRIPTS / "util_screen_run.py"), "--no-screen", "--"] + held or not (run / "text.display").is_file() or v8.kind != "PASS": why.append("arm 11: NAME.display did not run the text entry under --no-screen with its text and status kept (wrap %r, graded %s)" % (wt, v8.kind))
+        (run / "both.display").write_text(""); r7 = subprocess.run([sys.executable, "-c", "import sys; sys.path.insert(0, %r); import corpus_suite_harness as h; h._screen_wrap(['x'], [h.SCREEN_FILE], %r)" % (str(HARNESS_SCRIPTS), str(run / "both.icn"))], capture_output=True, text=True)
+        if r7.returncode != 2 or "display" not in r7.stderr: why.append("arm 12: NAME.display beside an entry that names screen.dump was not refused rc 2 (rc %s)" % r7.returncode)
     finally:
         shutil.rmtree(t, ignore_errors=True)
-    print("SCREEN_EVENTS ok arms=10 (no screen.dump no wrap; no events file the wrap of before; NAME.events staged beside a graphics entry alone; the wrap hands it to the road; one screen line a step, the same twice; no script the opening line alone; NAME.cap handed over as --cap; a cap that is no number refused; NAME.depth handed over as --depth; a depth other than 8 and 24 refused)" if not why else "SCREEN_EVENTS RED: " + " ".join(why))
+    print("SCREEN_EVENTS ok arms=12 (no screen.dump no wrap; no events file the wrap of before; NAME.events staged beside a graphics entry alone; the wrap hands it to the road; one screen line a step, the same twice; no script the opening line alone; NAME.cap handed over as --cap; a cap that is no number refused; NAME.depth handed over as --depth; a depth other than 8 and 24 refused; NAME.display runs a text entry under --no-screen; NAME.display beside a graphics entry refused)" if not why else "SCREEN_EVENTS RED: " + " ".join(why))
     return 1 if why else 0
 
 

@@ -4,6 +4,7 @@ screen shows (Lon 2026-11-14 15:4x CST, in the grader's window, verbatim: "We ar
 able to do off-line (i.e. without physical window in which a human user is required) GUI tests. Yes?"; skill icon section 1).
 
   python3 util_screen_run.py [--out FILE] [--cap S] [--keep DUMP.xwd] [--events SCRIPT] [--depth 8|24] -- CMD ARG...
+  python3 util_screen_run.py --no-screen [--depth 8|24] -- CMD ARG...
   python3 util_screen_run.py --probe
 
 It starts an Xvfb (1024x768, 24 bits, a display number the server picks, no TCP), runs CMD with DISPLAY set and the caller's standard
@@ -29,6 +30,12 @@ blue with Color gives the same pixel bytes. At a depth with a colormap the scree
 bytes resolved through the dump's colormap, row by row, never of the index bytes and never of the colormap itself (its unused entries differ
 from run to run). The values are 8 and 24 alone; 24 is the default and its line is byte for byte what it was. A depth-8 answer belongs to an
 entry of its own, never a second ref of a 24-bit entry.
+
+A DISPLAY WITHOUT A SCREEN ANSWER (--no-screen; the cqo 2026-11-16, on officer_04's ask for the Prolog graphics team): a program graded on its
+text alone that still needs a display (XPCE's test file with its display cases, pixels read back off-screen, timers) runs on the road's own
+display and nothing else of the road touches it: the screen is never read, the program is never ended, its standard input, output, error and
+status pass whole, and no file is written. MEASURED by officer_04 on the road without it: a program that opens a window, waits five seconds on a
+timer and then prints is ended at its still screen and its lines withheld. It takes --depth; --events and --keep are refused with it.
 
 SCRIPTED EVENTS (W7 of the window facility, skill icon reference.md section 9; the cqo 2026-11-16): --events SCRIPT gives the program the
 mouse and the keys a human would, so it is graded past its first picture. The opening still picture writes line 1 exactly as above. Then
@@ -181,6 +188,17 @@ class Injector:
                 if shifted: one(T.XTestFakeKeyEvent, self.shift, 0)
     def close(self):
         if self.dpy: self.X.XCloseDisplay(self.dpy); self.dpy = None
+def run_plain(cmd, depth=24):
+    """--no-screen: CMD on a display of the road's own, and nothing more; the status is CMD's (128 plus the signal for one a signal ended)."""
+    xv, display = start_display(depth)
+    env = dict(os.environ, DISPLAY=display)
+    for k in ("XAUTHORITY", "XENVIRONMENT", "XAPPLRESDIR"): env.pop(k, None)
+    try: rc = subprocess.Popen(cmd, env=env, preexec_fn=with_me).wait()
+    finally:
+        xv.terminate()
+        try: xv.wait(timeout=5)
+        except subprocess.TimeoutExpired: xv.kill()
+    return rc if rc >= 0 else 128 - rc
 def run(cmd, out, cap, keep, steps=None, depth=24):
     libs = xtest_libs() if steps is not None else None
     xv, display = start_display(depth)
@@ -246,7 +264,7 @@ def probe_client(mode):
     if mode == "change": time.sleep(1.0); store(0, 0, 65535)
     while True: time.sleep(3600)
 def probe():
-    """Nineteen arms on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
+    """Twenty-three arms on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
     scripted events xeyes, whose picture follows the pointer, and xev, which prints every event it is sent): no arm needs Icon. rc 0 all green,
     1 an arm red, 2 cannot measure. (xsetroot is no client for this: MEASURED, its colour never reaches the dump of an Xvfb root.)"""
     for c in ("xlogo", "ico", "xeyes", "xev"): which(c) or refuse(f"--probe needs {c} (x11-apps)")
@@ -256,7 +274,7 @@ def probe():
             ev = list(more)
             if events is not None:
                 with open(os.path.join(td, f"{name}.events"), "w") as f: f.write(events)
-                ev = ["--events", f"{name}.events"]
+                ev += ["--events", f"{name}.events"]
             r = subprocess.run([sys.executable, me, "--out", f"{name}.dump", "--cap", cap] + ev + ["--", "bash", "-c", script], cwd=td, capture_output=True, text=True, timeout=180)
             return r.returncode, r.stdout, open(os.path.join(td, f"{name}.dump")).read().strip() if os.path.exists(os.path.join(td, f"{name}.dump")) else "", r.stderr
         def seen(name):
@@ -273,6 +291,10 @@ def probe():
         k1, k2 = go("keep", cl("keep"), more=("--depth", "8")), go("keep2", cl("keep"), more=("--depth", "8"))
         ch, bl = go("change", cl("change"), more=("--depth", "8")), go("blue", cl("blue"), more=("--depth", "8"))
         d16 = go("deep16", "touch deep16.ran", more=("--depth", "16"))
+        held = "xlogo -geometry 200x200+0+0 & sleep 5; echo done-after-still; kill $!; exit 5"
+        n1 = go("plain", held, more=("--no-screen",)); n0 = go("ended", held)
+        n2 = go("plain8", "xdpyinfo | grep -c -E 'dimensions: +1024x768|depth of root window: +8 planes'", more=("--no-screen", "--depth", "8"))
+        n3 = go("plainev", "touch plainev.ran", more=("--no-screen",), events="move 1 1\n")
         kids = lambda pid: [int(q) for q in os.listdir("/proc") if q.isdigit() and (lambda t: t is not None and int(t.rsplit(")", 1)[1].split()[1]) == pid)(read_stat(q))]
         def read_stat(q):
             try: return open(f"/proc/{q}/stat").read()
@@ -304,6 +326,10 @@ def probe():
                 ("depth 8: a colormap display gives a still line, the same twice", k1[0] == 0 and k1[2].startswith("screen 1024x768 md5 ") and k1[2] == k2[2]),
                 ("depth 8: a colour changed in its cell is seen, though no pixel byte moved", ch[2].startswith("screen 1024x768 md5 ") and ch[2] != k1[2]),
                 ("depth 8: the changed colour reads as that colour stored from the start", ch[2] == bl[2] and bl[2] != ""),
+                ("no screen: a program that holds a still window and then prints keeps its text and its status, and no file is written", n1[0] == 5 and n1[1] == "done-after-still\n" and not os.path.exists(os.path.join(td, "plain.dump"))),
+                ("no screen: the same program on the screen road is ended at its still screen, its text withheld", n0[0] == 0 and n0[1] == "" and n0[2].startswith("screen 1024x768 md5 ")),
+                ("no screen: the program has the road's display, at the depth asked", n2[0] == 0 and n2[1] == "2\n"),
+                ("no screen: an events script with it is refused rc 2 before the program starts", n3[0] == 2 and "REFUSE(2)" in n3[3] and not os.path.exists(os.path.join(td, "plainev.ran"))),
                 ("depth: a value other than 8 and 24 is refused rc 2 before the program starts", d16[0] == 2 and "REFUSE(2)" in d16[3] and not os.path.exists(os.path.join(td, "deep16.ran"))),
                 ("events: one line a still picture, and the pointer moved to another place gives another picture", f[0] == 0 and len(fl) == 3 and all(pic(l) for l in fl) and len(set(fl)) == 3),
                 ("events: the same script gives the same lines twice", f[2] == g[2] and f[2] != ""),
@@ -321,15 +347,19 @@ if __name__ == "__main__":
     a = sys.argv[1:]
     if a == ["--probe"]: sys.exit(probe())
     if len(a) == 2 and a[0] == "--probe-client" and a[1] in ("keep", "change", "blue"): probe_client(a[1])
-    out, cap, keep, events, depth = "screen.dump", 30.0, None, None, 24
+    out, cap, keep, events, depth, plain = "screen.dump", 30.0, None, None, 24, False
     while a and a[0] != "--":
         if a[0] == "--out" and len(a) > 1: out = a[1]; a = a[2:]
         elif a[0] == "--cap" and len(a) > 1: cap = float(a[1]); a = a[2:]
         elif a[0] == "--keep" and len(a) > 1: keep = a[1]; a = a[2:]
         elif a[0] == "--events" and len(a) > 1: events = a[1]; a = a[2:]
+        elif a[0] == "--no-screen": plain = True; a = a[1:]
         elif a[0] == "--depth" and len(a) > 1:
             if a[1] not in ("8", "24"): refuse(f"--depth {a[1]!r}: the road's display is 8 or 24 bits deep, no other (the cto's ruling of 2026-11-16)")
             depth = int(a[1]); a = a[2:]
-        else: refuse(f"unknown argument {a[0]!r}; usage: util_screen_run.py [--out FILE] [--cap S] [--keep DUMP.xwd] [--events SCRIPT] [--depth 8|24] -- CMD ARG... | --probe")
+        else: refuse(f"unknown argument {a[0]!r}; usage: util_screen_run.py [--out FILE] [--cap S] [--keep DUMP.xwd] [--events SCRIPT] [--depth 8|24] -- CMD ARG... | --no-screen [--depth 8|24] -- CMD ARG... | --probe")
     if not a or len(a) < 2: refuse("no command after --")
+    if plain:
+        if events is not None or keep is not None: refuse("--no-screen reads no screen: it takes no --events and no --keep")
+        sys.exit(run_plain(a[1:], depth))
     sys.exit(run(a[1:], out, cap, keep, read_events(events) if events is not None else None, depth))
