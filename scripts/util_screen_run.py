@@ -3,7 +3,7 @@
 screen shows (Lon 2026-11-14 15:4x CST, in the grader's window, verbatim: "We are absolutely DOING GRAPHICS, X-windows. Yes? We should be
 able to do off-line (i.e. without physical window in which a human user is required) GUI tests. Yes?"; skill icon section 1).
 
-  python3 util_screen_run.py [--out FILE] [--cap S] [--keep DUMP.xwd] [--events SCRIPT] -- CMD ARG...
+  python3 util_screen_run.py [--out FILE] [--cap S] [--keep DUMP.xwd] [--events SCRIPT] [--depth 8|24] -- CMD ARG...
   python3 util_screen_run.py --probe
 
 It starts an Xvfb (1024x768, 24 bits, a display number the server picks, no TCP), runs CMD with DISPLAY set and the caller's standard
@@ -21,6 +21,14 @@ itself has its standard output passed on whole, its exit status is this script's
 showed, or none. Standard error is passed on as it comes. rc 2 with a REFUSE line when Xvfb or xwd is missing or the display does not
 start: a run that cannot measure never reads as a verdict. The display and the program die with this script, however it dies (with_me), and
 the program is started without XAUTHORITY, XENVIRONMENT and XAPPLRESDIR, so no resource file of the caller's desktop reaches it.
+
+THE DEPTH (the cto's ruling of 2026-11-16 10:0x CST on officer_06's measurement; the road's one writer the cqo): --depth 8 starts the display at
+8 bits, where the default visual is PseudoColor and a program's mutable colours answer (NewColor, Color, FreeColor; at 24 bits NewColor fails).
+There a pixel byte is an index into the colormap, so the bytes are blind to a colour changed in place: MEASURED, a square recoloured from red to
+blue with Color gives the same pixel bytes. At a depth with a colormap the screen line is therefore the md5 of each pixel's red, green and blue
+bytes resolved through the dump's colormap, row by row, never of the index bytes and never of the colormap itself (its unused entries differ
+from run to run). The values are 8 and 24 alone; 24 is the default and its line is byte for byte what it was. A depth-8 answer belongs to an
+entry of its own, never a second ref of a 24-bit entry.
 
 SCRIPTED EVENTS (W7 of the window facility, skill icon reference.md section 9; the cqo 2026-11-16): --events SCRIPT gives the program the
 mouse and the keys a human would, so it is graded past its first picture. The opening still picture writes line 1 exactly as above. Then
@@ -60,11 +68,11 @@ def which(name):
         p = os.path.join(d, name)
         if os.access(p, os.X_OK): return p
     return None
-def start_display():
+def start_display(depth=24):
     xvfb = which("Xvfb") or refuse("no Xvfb on PATH (the virtual display the screen road runs on)")
     which("xwd") or refuse("no xwd on PATH (the screen is read with it)")
     r, w = os.pipe()
-    p = subprocess.Popen([xvfb, "-displayfd", str(w), "-screen", "0", "1024x768x24", "-nolisten", "tcp", "-ac"], pass_fds=(w,),
+    p = subprocess.Popen([xvfb, "-displayfd", str(w), "-screen", "0", f"{WIDE}x{HIGH}x{depth}", "-nolisten", "tcp", "-ac"], pass_fds=(w,),
                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True, preexec_fn=with_me)
     os.close(w); buf = b""; t0 = time.time()
     while b"\n" not in buf:
@@ -85,6 +93,18 @@ def pixels(display):
     hsize, ncolors = struct.unpack(">I", d[:4])[0], struct.unpack(">I", d[76:80])[0]
     w, h = struct.unpack(">II", d[16:24])
     pix = d[hsize + ncolors * 12:]
+    bpp, bpl = struct.unpack(">II", d[44:52])
+    if bpp == 8:
+        # A COLORMAP DISPLAY: each pixel byte is an index, so it is resolved to its colour (the high byte of the entry's red, green and blue),
+        # the padding at the end of a row left out; an index the colormap does not name reads black.
+        tr = [bytearray(256), bytearray(256), bytearray(256)]
+        for i in range(ncolors):
+            px, r, g, b = struct.unpack_from(">IHHH", d, hsize + i * 12)
+            if px < 256: tr[0][px], tr[1][px], tr[2][px] = r >> 8, g >> 8, b >> 8
+        idx = pix if bpl == w else b"".join(pix[y * bpl: y * bpl + w] for y in range(h))
+        rgb = bytearray(3 * len(idx))
+        for k in range(3): rgb[k::3] = idx.translate(bytes(tr[k]))
+        pix = bytes(rgb)
     drawn = len(set(pix[::997])) > 1 or len(set(pix)) > 1
     return (f"{w}x{h}", hashlib.md5(pix).hexdigest(), drawn), d
 def read_events(path):
@@ -161,9 +181,9 @@ class Injector:
                 if shifted: one(T.XTestFakeKeyEvent, self.shift, 0)
     def close(self):
         if self.dpy: self.X.XCloseDisplay(self.dpy); self.dpy = None
-def run(cmd, out, cap, keep, steps=None):
+def run(cmd, out, cap, keep, steps=None, depth=24):
     libs = xtest_libs() if steps is not None else None
-    xv, display = start_display()
+    xv, display = start_display(depth)
     env = dict(os.environ, DISPLAY=display)
     for k in ("XAUTHORITY", "XENVIRONMENT", "XAPPLRESDIR"): env.pop(k, None)
     so = tempfile.TemporaryFile(); inj, lines, sent, ended_by_road, still_dump = None, [], 0, False, b""
@@ -207,15 +227,33 @@ def run(cmd, out, cap, keep, steps=None):
         so.seek(0); sys.stdout.buffer.write(so.read()); sys.stdout.flush()
         return rc if rc >= 0 else 128 - rc
     return 0
+def probe_client(mode):
+    """--probe-client keep|change|blue: the depth probe's own X client, so the probe needs no Icon. On a colormap display it takes one writable
+    colour cell, stores red in it (blue for mode blue), maps a 200 by 200 window whose background is that cell and waits for ever; mode change
+    stores blue into the same cell one second later, so the window's pixel bytes stay what they were while its colour moves. rc 3 where the
+    display gives no writable cell (a 24-bit display)."""
+    X = ctypes.CDLL("libX11.so.6"); V, I, U, L = ctypes.c_void_p, ctypes.c_int, ctypes.c_uint, ctypes.c_ulong
+    class XColor(ctypes.Structure): _fields_ = [("pixel", L), ("red", ctypes.c_ushort), ("green", ctypes.c_ushort), ("blue", ctypes.c_ushort), ("flags", ctypes.c_char), ("pad", ctypes.c_char)]
+    X.XOpenDisplay.restype, X.XOpenDisplay.argtypes = V, [ctypes.c_char_p]
+    X.XDefaultScreen.argtypes = [V]; X.XRootWindow.restype, X.XRootWindow.argtypes = L, [V, I]; X.XDefaultColormap.restype, X.XDefaultColormap.argtypes = L, [V, I]
+    X.XAllocColorCells.argtypes = [V, L, I, ctypes.POINTER(L), U, ctypes.POINTER(L), U]; X.XStoreColor.argtypes = [V, L, ctypes.POINTER(XColor)]
+    X.XCreateSimpleWindow.restype, X.XCreateSimpleWindow.argtypes = L, [V, L, I, I, U, U, U, L, L]; X.XMapWindow.argtypes = [V, L]; X.XFlush.argtypes = [V]
+    dpy = X.XOpenDisplay(None) or sys.exit(2); scr = X.XDefaultScreen(dpy); cmap = X.XDefaultColormap(dpy, scr); cell = L()
+    if not X.XAllocColorCells(dpy, cmap, 0, None, 0, ctypes.byref(cell), 1): sys.exit(3)
+    def store(r, g, b): X.XStoreColor(dpy, cmap, ctypes.byref(XColor(cell.value, r, g, b, b"\x07", b"\x00"))); X.XFlush(dpy)
+    store(0, 0, 65535) if mode == "blue" else store(65535, 0, 0)
+    X.XMapWindow(dpy, X.XCreateSimpleWindow(dpy, X.XRootWindow(dpy, scr), 0, 0, 200, 200, 0, 0, cell.value)); X.XFlush(dpy)
+    if mode == "change": time.sleep(1.0); store(0, 0, 65535)
+    while True: time.sleep(3600)
 def probe():
-    """Fourteen arms on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
+    """Nineteen arms on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
     scripted events xeyes, whose picture follows the pointer, and xev, which prints every event it is sent): no arm needs Icon. rc 0 all green,
     1 an arm red, 2 cannot measure. (xsetroot is no client for this: MEASURED, its colour never reaches the dump of an Xvfb root.)"""
     for c in ("xlogo", "ico", "xeyes", "xev"): which(c) or refuse(f"--probe needs {c} (x11-apps)")
     me = os.path.abspath(__file__); bad = 0
     with tempfile.TemporaryDirectory(prefix="screen_probe_") as td:
-        def go(name, script, cap="25", events=None):
-            ev = []
+        def go(name, script, cap="25", events=None, more=()):
+            ev = list(more)
             if events is not None:
                 with open(os.path.join(td, f"{name}.events"), "w") as f: f.write(events)
                 ev = ["--events", f"{name}.events"]
@@ -230,6 +268,11 @@ def probe():
         c = go("other", "exec xlogo -geometry 300x150+0+0")
         d = go("ends", "echo whole-output; exit 3")
         e = go("moving", "exec ico -sleep 0.05", cap="8")
+        cl = lambda mode: f"exec {sys.executable} {me} --probe-client {mode}"
+        d24 = go("deep24", "exec xlogo -geometry 200x200+0+0", more=("--depth", "24"))
+        k1, k2 = go("keep", cl("keep"), more=("--depth", "8")), go("keep2", cl("keep"), more=("--depth", "8"))
+        ch, bl = go("change", cl("change"), more=("--depth", "8")), go("blue", cl("blue"), more=("--depth", "8"))
+        d16 = go("deep16", "touch deep16.ran", more=("--depth", "16"))
         kids = lambda pid: [int(q) for q in os.listdir("/proc") if q.isdigit() and (lambda t: t is not None and int(t.rsplit(")", 1)[1].split()[1]) == pid)(read_stat(q))]
         def read_stat(q):
             try: return open(f"/proc/{q}/stat").read()
@@ -257,6 +300,11 @@ def probe():
                 ("a program that ends alone keeps its text and its status, screen none", d[0] == 3 and d[1] == "whole-output\n" and d[2] == "screen none"),
                 ("a screen that never holds still is unstable", e[0] == 0 and e[2] == "screen unstable"),
                 ("the road killed outright takes its display and its program with it", len(mine) == 2 and not orphans),
+                ("depth: 24 asked by name answers the line of no option", d24[0] == 0 and d24[2] == a[2] and a[2] != ""),
+                ("depth 8: a colormap display gives a still line, the same twice", k1[0] == 0 and k1[2].startswith("screen 1024x768 md5 ") and k1[2] == k2[2]),
+                ("depth 8: a colour changed in its cell is seen, though no pixel byte moved", ch[2].startswith("screen 1024x768 md5 ") and ch[2] != k1[2]),
+                ("depth 8: the changed colour reads as that colour stored from the start", ch[2] == bl[2] and bl[2] != ""),
+                ("depth: a value other than 8 and 24 is refused rc 2 before the program starts", d16[0] == 2 and "REFUSE(2)" in d16[3] and not os.path.exists(os.path.join(td, "deep16.ran"))),
                 ("events: one line a still picture, and the pointer moved to another place gives another picture", f[0] == 0 and len(fl) == 3 and all(pic(l) for l in fl) and len(set(fl)) == 3),
                 ("events: the same script gives the same lines twice", f[2] == g[2] and f[2] != ""),
                 ("events: a key, a shifted key, a click and a drag reach the program as sent", h[0] == 0 and all(t in hl for t in ("(keysym 0x61, a)", "(keysym 0x42, B)", "(keysym 0xffe1, Shift_L)", "root:(70,80)", "button 1", "button 3", "root:(26,20)", "root:(33,20)", "root:(40,20)")) and hl.count("ButtonPress") == 2 and hl.count("ButtonRelease") == 2),
@@ -272,12 +320,16 @@ def probe():
 if __name__ == "__main__":
     a = sys.argv[1:]
     if a == ["--probe"]: sys.exit(probe())
-    out, cap, keep, events = "screen.dump", 30.0, None, None
+    if len(a) == 2 and a[0] == "--probe-client" and a[1] in ("keep", "change", "blue"): probe_client(a[1])
+    out, cap, keep, events, depth = "screen.dump", 30.0, None, None, 24
     while a and a[0] != "--":
         if a[0] == "--out" and len(a) > 1: out = a[1]; a = a[2:]
         elif a[0] == "--cap" and len(a) > 1: cap = float(a[1]); a = a[2:]
         elif a[0] == "--keep" and len(a) > 1: keep = a[1]; a = a[2:]
         elif a[0] == "--events" and len(a) > 1: events = a[1]; a = a[2:]
-        else: refuse(f"unknown argument {a[0]!r}; usage: util_screen_run.py [--out FILE] [--cap S] [--keep DUMP.xwd] [--events SCRIPT] -- CMD ARG... | --probe")
+        elif a[0] == "--depth" and len(a) > 1:
+            if a[1] not in ("8", "24"): refuse(f"--depth {a[1]!r}: the road's display is 8 or 24 bits deep, no other (the cto's ruling of 2026-11-16)")
+            depth = int(a[1]); a = a[2:]
+        else: refuse(f"unknown argument {a[0]!r}; usage: util_screen_run.py [--out FILE] [--cap S] [--keep DUMP.xwd] [--events SCRIPT] [--depth 8|24] -- CMD ARG... | --probe")
     if not a or len(a) < 2: refuse("no command after --")
-    sys.exit(run(a[1:], out, cap, keep, read_events(events) if events is not None else None))
+    sys.exit(run(a[1:], out, cap, keep, read_events(events) if events is not None else None, depth))
