@@ -5,7 +5,7 @@
 
 For each of the four languages a one-cell notebook is written whose metadata names the language (language_info with the editor mode the extension registers), and
 for the ONE KERNEL, scrip, a notebook of three cells: one with no tag (SNOBOL4), one tagged icon, one tagged prolog, each to be coloured by its own language. JupyterLab is started twice in scratch on a free port with a token, once with the extension copied into its data directory and once
-without, and headless Chrome dumps the page of each notebook. A language is COLOURED when a line of its cell holds a span CodeMirror classed, PLAIN when
+without (and with the extension disabled in the scratch configuration, so a copy the user has installed under the user base does not colour the control arm), and headless Chrome dumps the page of each notebook. A language is COLOURED when a line of its cell holds a span CodeMirror classed, PLAIN when
 its lines hold text alone. One line a language:
   HIGHLIGHT_LOOK lang=NAME with=COLOURED|PLAIN without=COLOURED|PLAIN spans=N
 and HIGHLIGHT_LOOK ok languages=5 when every language reads COLOURED with the extension and PLAIN without it.
@@ -28,6 +28,8 @@ def look(top, ext, chrome):
     data, work = os.path.join(top, "data"), os.path.join(top, "work")
     shutil.rmtree(data, ignore_errors=True); os.makedirs(os.path.join(data, "labextensions")); os.makedirs(work, exist_ok=True)
     if ext: shutil.copytree(ext, os.path.join(data, "labextensions", "scrip-highlight"))
+    off = os.path.join(top, "cfg", "labconfig"); shutil.rmtree(off, ignore_errors=True)
+    if not ext: os.makedirs(off); json.dump({"disabledExtensions": {"scrip-highlight": True}}, open(os.path.join(off, "page_config.json"), "w"))
     for name, (mime, fext, src) in CELLS.items():
         json.dump({"cells": [{"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [], "source": part.splitlines(True)} for part in src.split("\f")],
                    "metadata": {"language_info": {"name": name, "file_extension": fext, "mimetype": mime, "codemirror_mode": name}}, "nbformat": 4, "nbformat_minor": 5}, open(os.path.join(work, name + ".ipynb"), "w"))
