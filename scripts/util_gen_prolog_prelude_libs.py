@@ -966,6 +966,24 @@ def generate(pdir):
     for n, a, i in sorted(((n, a, i) for i, L in enumerate(libs) for n, a in L["exports"]), key=lambda r: (r[0].encode("utf-8"), r[1], r[2])):
         o.append('    { "%s", %d, %d, %d },' % (n.replace("\\", "\\\\").replace('"', '\\"'), len(n.encode("utf-8")), a, i))
     o.append("};")
+    # THE SWI LIBRARY NAMES (DESIGN J16 of the prolog-xpce plan, the cfo 2026-11-16): SWI_LIBRARY_NAMES.txt beside the vendored libraries, written once by
+    # util_swi_library_names.py from the oracle, names every library file of swipl 9.0.4 with its folder; with the vendored libraries' own paths it is the set of
+    # names a library(X) of the SWI dialect may name.  Fixed-width rows (no pointer field, R-1969) and the same set as Prolog facts '$swi_lib'/1 for the run-time
+    # road.  With no such file the table is exactly what it was before it.
+    names_path = os.path.join(pdir, "SWI_LIBRARY_NAMES.txt")
+    if os.path.exists(names_path):
+        names = [ln.strip() for ln in open(names_path) if ln.strip() and not ln.startswith("#")]
+        known = sorted(set(names) | {LIB_PATH.get(L["lib"], L["lib"]) for L in libs})
+        cesc = lambda t: t.replace("\\", "\\\\").replace('"', '\\"')
+        o.append("static const char PL_SWI_LIBRARY_NAMES[][%d] = {" % (1 + max(_bl(n) for n in known)))
+        for n in known:
+            o.append('    "%s",' % cesc(n))
+        o.append('    ""')
+        o.append("};")
+        o.append("#define PL_SWI_LIBRARY_FACTS \\")
+        for n in known:
+            o.append('    "%s\\n" \\' % cesc("'$swi_lib'(" + quote(n) + ")."))
+        o.append('    ""')
     return libs, "\n".join(o) + "\n"
 
 
