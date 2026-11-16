@@ -1,0 +1,17 @@
+box
+15 15 red
+5 5 white
+39 29 red
+40 30 white
+10 10 red
+9 9 white
+line
+0 50 blue
+50 50 blue
+99 50 blue
+50 49 white
+circle
+70 15 green
+60 5 white
+79 24 white
+size 100 60

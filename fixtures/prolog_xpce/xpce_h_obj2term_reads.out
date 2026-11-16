@@ -1,0 +1,22 @@
+reads_var: read(functor)
+read(arity)
+read(arg(1))
+read(arg(2))
+pr(1,2)
+yes
+reads_match: read(functor)
+read(arity)
+read(arg(1))
+read(arg(2))
+yes
+reads_mismatch_arg1: read(functor)
+read(arity)
+read(arg(1))
+no
+reads_mismatch_functor: read(functor)
+read(arity)
+no
+reads_mismatch_arity: read(functor)
+read(arity)
+no
+done

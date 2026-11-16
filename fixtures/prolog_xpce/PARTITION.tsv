@@ -1,0 +1,26 @@
+# PARTITION.tsv -- built by util_suite_partition.py (R-1676; ARCH-SUITE-PARTITIONS.md); regenerate, never edit by hand; `util_suite_partition.py check <ALL.csv>` is the gate.
+# params: core_k=3 ubiquitous=0.5 chunk_entries=100 secs=none
+# shape: entries=22 features=2 ubiquitous=1(package) distinctive=1 core=1 clusters=21 chunks=1 sizes=21
+entry	part	cluster	shells
+xpce_e_await	chunk:01	family:xpce_e_await	
+xpce_e_goal	chunk:01	family:xpce_e_goal	
+xpce_e_loop	chunk:01	family:xpce_e_loop	
+xpce_e_method	chunk:01	family:xpce_e_method	
+xpce_e_pending	chunk:01	family:xpce_e_pending	
+xpce_e_queue	chunk:01	family:xpce_e_queue	
+xpce_e_roots	chunk:01	family:xpce_e_roots	
+xpce_g1_point	chunk:01	family:xpce_g_point	
+xpce_g2_test_xpce	chunk:01	family:xpce_g_test_xpce	
+xpce_g3_test_xpce_display	chunk:01	family:xpce_g_test_xpce_display	
+xpce_g4_readback	chunk:01	family:xpce_g_readback	
+xpce_g5_draw	chunk:01	family:xpce_g_draw	
+xpce_g6_click	chunk:01	family:xpce_g_click	
+xpce_h_obj2term	chunk:01	family:xpce_h_objterm	
+xpce_h_obj2term_reads	chunk:01	family:xpce_h_objterm_reads	
+xpce_h_streams	core	core	want_rc
+xpce_h_term2obj	chunk:01	family:xpce_h_termobj	
+xpce_p_expand	chunk:01	family:xpce_p_expand	
+xpce_p_flags	chunk:01	family:xpce_p_flags	
+xpce_p_load	chunk:01	family:xpce_p_load	
+xpce_p_module	chunk:01	family:xpce_p_module	
+xpce_p_reader	chunk:01	family:xpce_p_reader	

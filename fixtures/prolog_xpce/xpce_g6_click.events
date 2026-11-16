@@ -1,0 +1,9 @@
+# G6: two clicks in the picture, then a, then q (which ends the program)
+click 1 50 40
+wait
+click 1 120 70
+wait
+move 60 50
+key a
+wait
+key q

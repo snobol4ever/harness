@@ -1,0 +1,12 @@
+load(existence_error(source_sink,library(no_such_lib_xyz)))
+1: from_a
+2: from_b
+3: from_c
+4: a===>b
+5: op(700,xfx)
+6: caught(existence_error(source_sink,library(no_such_lib_xyz)))
+no
+7: from_d-from_e
+8: caught(existence_error(source_sink,wroot(no_such_file_xyz)))
+no
+9: again

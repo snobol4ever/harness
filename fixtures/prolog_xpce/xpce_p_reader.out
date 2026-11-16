@@ -1,0 +1,18 @@
+prefix_initialization_ran
+1: *(name)
+2: a*b
+3: x: *(name)
+4: *([int])
+5: *(-name)
+6: ?(@(receiver),selector)
+7: ?(int)
+8: ...(a)
+9: [(-)=button(x),c=d]
+10: :-thread_initialization foo
+11: :-volatile foo/1
+12: :-initialization foo
+13: [-,+,*,?]
+14: f(-,*)
+15: :->(select(item),(item==(-)->true;fail))
+16: *(a*b)
+op_again_ok

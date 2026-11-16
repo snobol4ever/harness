@@ -1,0 +1,15 @@
+point 1 2
+moved 8 3
+exists
+gone
+named @p 3
+class point
+chain 4 [a,b,c,d]
+ends a d
+member_b
+no_z
+string hello world 42
+length 14
+upcase HELLO WORLD 42
+refused
+gone

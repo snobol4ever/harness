@@ -1,0 +1,18 @@
+1: caught(my_ball)
+yes
+2: caught(my_ball)
+yes
+3: g(1)
+no
+4: nested(5)
+caught(inner_ball)
+yes
+5: nested(5)
+caught(inner_ball)
+yes
+6: yes
+g(4)
+7: yes
+unbound
+8: no
+unbound

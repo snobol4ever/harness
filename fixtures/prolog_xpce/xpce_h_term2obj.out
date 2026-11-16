@@ -1,0 +1,32 @@
+atoms: [a,'B c',code_vector]
+texts: [string(s),string(abc),string(xyz),string(hi)]
+numbers: [3,-7,2.5]
+class_args: 3/4
+named: 5
+ref_arg: same
+nested_new: 8
+nested_named: 10/1
+prolog_term: f(A,b,[1])
+prolog_numbers: [3,2.5]
+list_to_chain: [a,b,c]
+vector: 3/b
+code_vector: 2
+wide_atom: [228,8364]
+int_max: [4611686018427387903]
+int_low: float
+int_63: float
+no_class: caught error(pce(no_class,[no_such_class_t2o]),new(no_such_class_t2o(1)))
+failed
+bad_arg_type: caught error(pce(argument_type,[@ref,1,x,'[int]',a]),new(point(a,b)))
+failed
+no_ref: caught error(existence_error(pce(object),@no_such_ref_t2o),A)
+failed
+unbound_arg: caught error(pce(argument_type,[@ref,1,member,'any ...',A]),new(chain(B)))
+failed
+number_class: caught error(type_error(pce(object),3),A)
+failed
+redefined: caught error(pce(redefined_assoc,[@pce/pce,t2o_p]),new(point(1,1)))
+failed
+unknown_functor: caught error(pce(no_class,[f]),new(chain(f(A))))
+failed
+done

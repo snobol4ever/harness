@@ -1,0 +1,9 @@
+emitted(3)
+called_initialization
+1: 1
+2: 2
+3: expanded_hello
+4: no_op_before
+5: pushed(700,xfx)
+6: read(===>,a,b)
+7: no_op_after

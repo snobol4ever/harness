@@ -1,0 +1,33 @@
+var_int: 3
+yes
+match_int: yes
+mismatch_int: no
+real: 2.5
+yes
+name: hello
+yes
+name_match: yes
+name_mismatch: no
+string_var: ref
+yes
+string_desc: string(abc)
+yes
+hostdata: g(1,[x])
+yes
+hostdata_match: yes
+hostdata_mismatch: no
+ref_var: int_ref
+yes
+ref_same: yes
+ref_named: o2t_n
+yes
+ref_named_match: yes
+ref_named_mismatch: no
+struct_match: yes
+struct_mismatch: no
+struct_functor: no
+desc_point: point(3,4)
+yes
+desc_named: point(1,2)
+yes
+done

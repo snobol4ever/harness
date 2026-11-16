@@ -1,0 +1,12 @@
+size(16)
+["line one","zä€ 42"]
+wide_ok
+contents_length(21)
+terms(f(x,[1,2],'A b'),end_of_file)
+double_close(existence_error)
+kernel says hello
+kernel format 7 and word
+before_halt
+prolog_at_halt
+prolog_exit_message(2)
+prolog_exit_message(1)

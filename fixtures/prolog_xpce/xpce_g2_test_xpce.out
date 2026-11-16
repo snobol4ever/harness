@@ -1,0 +1,20 @@
+XPCE/SWI-Prolog test suite. (XPCE version 6.6.6)
+To run all tests run ?- test.
+
+Running test set "name" . done.
+Running test set "wname" ... done.
+Running test set "wstring" ......... done.
+Running test set "fmt" ...... done.
+Running test set "srcsink" .. done.
+Running test set "file" .... done.
+Running test set "unicode_file" .. done.
+Running test set "dir" ..... done.
+Running test set "unicode_dir" ... done.
+Running test set "plterm" . done.
+Running test set "real" ... done.
+Running test set "textbuffer" .... done.
+Running test set "asfile" .... done.
+Running test set "regex" ...................... done.
+Running test set "type" .. done.
+
+All tests passed

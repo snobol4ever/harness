@@ -1,0 +1,12 @@
+op(@,200,fy)
+op(?,250,yfx)
+op(:=,800,xfx)
+no_op(:->)
+no_op(:<-)
+xpce_threaded(false)
+new/2-pce_principal
+send/2-pce_principal
+get/3-pce_principal
+send/3-pce_principal
+sum(7)
+loaded

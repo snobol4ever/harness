@@ -1,0 +1,2 @@
+:- write(plain), nl.
+:- halt.

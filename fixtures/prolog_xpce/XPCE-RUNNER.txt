@@ -1,0 +1,19 @@
+# XPCE-RUNNER.txt: the entries whose run reaches library(pce) (the program names it, or loads test_xpce.pl, which does), so each is graded only on the XPCE runner (step 3); every other entry of ALL.csv is plain and is graded today. One entry a line.
+xpce_e_await
+xpce_e_goal
+xpce_e_loop
+xpce_e_method
+xpce_e_pending
+xpce_e_queue
+xpce_e_roots
+xpce_g1_point
+xpce_g2_test_xpce
+xpce_g3_test_xpce_display
+xpce_g4_readback
+xpce_g5_draw
+xpce_g6_click
+xpce_h_obj2term
+xpce_h_obj2term_reads
+xpce_h_streams
+xpce_h_term2obj
+xpce_p_load
