@@ -276,7 +276,7 @@ def read_contract(pkg_dir):
     ⭐ CIO-22 D (the coo 2026-11-10, on the cio's design; CIO-15 d revised): `units<TAB>generated` with `generator<TAB><module>` -- a per-goal
     suite (INRIA's goals, Logtalk's cases) is a container of GENERATED programs: the module (scripts/<module>.py of the harness) yields each case of the
     package's own table and the builder runs no oracle (see build_generated)."""
-    out = {"argv": "", "stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": "", "path": ""}
+    out = {"argv": "", "stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": "", "path": "", "silent": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -330,6 +330,8 @@ def read_contract(pkg_dir):
             out["unmarked_compile_args"] = f[1].strip()
         elif f[0] == "argv" and f[1] == "name-first":
             out["argv"] = "name-first"   # R-328: NAME.argv is one line NAME<TAB>arg..., the program's own name first, as the deleted test_icon_ipl_suite.sh read it (ipl_argv_read)
+        elif f[0] == "silent" and f[1] == "exit-status":
+            out["silent"] = "exit-status"   # a program the oracle runs silent is an entry graded by its exit status alone (Lon 2026-11-15; the container road's form of --mine-silent-rc)
         elif f[0] == "path" and f[1] == "oracle-bin":
             out["path"] = "oracle-bin"   # the folder of the Icon oracle's translator goes first on PATH for every run of this container, the cut's and the grade's (h.oracle_bin_on_path)
         elif f[0] == "road" and f[1] == "run-files":
@@ -339,7 +341,7 @@ def read_contract(pkg_dir):
             out["stdin"] = f[1].strip()
         else:
             h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, argv=name-first, units=ref-beside,units=plunit,units=tap, units=iso-rejection, dialect=any-fpc-mode, fatal=gradable, bom=as-shipped, units=generated, generator=MODULE, "
-                     f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space, ipath=DIR, lpath=DIR, path=oracle-bin and unmarked_compile_args=--dialect=NAME only")
+                     f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space, ipath=DIR, lpath=DIR, path=oracle-bin, silent=exit-status and unmarked_compile_args=--dialect=NAME only")
     if (out["units"] == "generated") != bool(out["generator"]):
         h.refuse(f"{cf}: units=generated and generator=<module> go together (got units={out['units']!r}, generator={out['generator']!r})")
     if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):
@@ -1075,9 +1077,15 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                                             "not a fact about the program's real output"))
                 print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (empty output, has .dat -- likely needs argv, harness gap)", file=sys.stderr)
                 continue
-            excluded.append((name, "oracle produced EMPTY output -- refusing to mint a vacuous ref"))
-            print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (empty oracle output)", file=sys.stderr)
-            continue
+            if contract["silent"] != "exit-status":
+                excluded.append((name, "oracle produced EMPTY output -- refusing to mint a vacuous ref"))
+                print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (empty oracle output)", file=sys.stderr)
+                continue
+            # ⭐ A SILENT PROGRAM MAY BE GRADED BY ITS EXIT STATUS (Lon 2026-11-15 11:5x CST, in the grader's window, verbatim: "So change the standing order to
+            # allow a silent program to use the return/exit code."; skill suites-and-grading section 4). Under CONTRACT.tsv silent=exit-status the container
+            # road absorbs a program whose two oracle runs print nothing and end alike, as --mine-silent-rc does on the mine road: the answer is empty and
+            # want_rc is the oracle's exit status.
+            print(f"[{i}/{len(srcs)}] {name}: silent, graded by its exit status {ora_rc or 0} alone (CONTRACT.tsv silent=exit-status)", file=sys.stderr)
         # ⭐ A CR IN THE ORACLE'S ANSWER IS THE PROGRAM'S OUTPUT BYTE (R-1926, ruled 2026-10-23, .github fda2eb592; withdraws the coo's
         # exclusion of 2026-10-09): the ref keeps it byte for byte -- the container is read back split on LF only (_read_lf_lines), so a CR
         # stays inside its line, and a container whose ref then carries a CR at end of line is declared in lf_gate_crlf_is_the_subject.tsv.
