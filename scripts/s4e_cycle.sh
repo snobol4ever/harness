@@ -447,6 +447,10 @@ while :; do
     start_cell() {   # <index> <lane>: run a lap cell, or log it skipped
         IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$1]}"
         if grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null; then log "SKIPPED lap=$lap $(($1+1))/$total $key $cell"; return 1; fi
+        # A CELL GRADED ONCE A LAP IS NOT RUN AGAIN IN IT (the grader 2026-11-16, on the coo's measurement: lap 42 had 1231 CELL lines for 1197 cells,
+        # all 34 repeats rosetta-raku's, chunk:13 four times, each pass when the lap's total grew: the list is read again every turn and a new suite sorts
+        # first, so every later cell moves right and the index runs again the cells it had passed)
+        if grep -q -P "^\S+ CELL lap=$lap \d+/\d+ \Q$key\E \Q$cell\E rc=" "$LOG" 2>/dev/null; then log "DONE-THIS-LAP lap=$lap $(($1+1))/$total $key $cell"; return 1; fi
         ( run_cell "$key" "$kind" "$lang" "$dir" "$cell" > "$TMPDIR/cycle/res.$1" ) & RUN[$!]="$1"; LANE[$!]="$2"; return 0; }
     mkdir -p "$RQ/serving" "$RQ/done" 2>/dev/null; for f in "$RQ"/serving/*.req; do [ -f "$f" ] && mv "$f" "$RQ/" 2>/dev/null; done   # a request a dead cycle was serving is pending again
     for (( j = idx; j < total; j++ )); do IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$j]}"; grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null || LEFT[$key]=$(( ${LEFT[$key]:-0} + 1 )); done
