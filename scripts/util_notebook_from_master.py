@@ -13,6 +13,7 @@ entry's ref, cut from the oracle already. The notebook's first cell is a markdow
 import argparse
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -70,6 +71,15 @@ def ref_text(ref):
     return "".join(line + "\n" for line in ref)
 
 
+# A CELL IS NOT A PROGRAM (the cao 2026-11-16, row jupyter-the-icon-and-unicon-notebooks-hold-cells-that-live-in-one-session): every cell of a notebook
+# is one more unit of one live session, so an answer that holds only in a fresh process cannot be a cell's saved output. Read from the text:
+# an image of a list, set, table, co-expression or record prints its serial number, which counts every structure the session made; exit()
+# ends the session; &time and &collections count from the process's start. MEASURED on Icon_in_SCRIP.ipynb: cells 3, 10 and 11 differ by
+# serial numbers alone (list_2 against list_7) and cell 5 ends the session with exit(0).
+FRESH_SERIAL = re.compile(r"\b(?:list|set|table|co-expression)_\d+\b|\brecord [A-Za-z_][A-Za-z_0-9]*_\d+\(")
+FRESH_SOURCE = re.compile(r"\bexit\s*\(|&time\b|&collections\b")
+
+
 def unfit(e, lang=""):
     """Why a cell cannot be this entry, or "": a cell gives no stdin, no arguments and no companion file, and no cell's correct run ends
     in an error or a nonzero code (the cao's ruling, 2026-11-16 12:4x CST: a cell is not a program until the session host carries it)."""
@@ -88,6 +98,12 @@ def unfit(e, lang=""):
         return f"it needs the compile switches {' '.join(extra)}"
     if getattr(e, "mask", None):
         return "its answer is masked (a line belongs to the implementation)"
+    ref = e.ref if isinstance(e.ref, str) else "\n".join(e.ref or [])
+    if FRESH_SERIAL.search(ref):
+        return "its answer prints a structure's serial number, which in a session counts every structure the earlier cells made"
+    src = "\n".join(getattr(e, "sno_lines", None) or [])
+    if FRESH_SOURCE.search(src):
+        return "it ends its process with exit() or reads &time or &collections, an answer that holds only in a fresh process"
     return ""
 
 
@@ -248,13 +264,15 @@ def probe_fmt2(d):
     into two cells whose outputs are their answers (the one-liner's ONE string plus one LF), and the third is refused rc 2."""
     d.mkdir(parents=True)
     (d / "ALL.csv").write_text("rank,entry,kind,group,road,nonl\n1,p_one,line,one,direct,\n2,p_multi,block,multi,direct,\n"
-                               "3,p_stdin,block,multi,direct,\n", encoding="utf-8")
+                               "3,p_stdin,block,multi,direct,\n4,p_serial,block,multi,direct,\n5,p_exit,block,multi,direct,\n", encoding="utf-8")
     (d / "ONE-LINERS.icn").write_text('procedure main(); write("one-liner"); end\n', encoding="utf-8")
     (d / "ONE-LINERS.out").write_text("one-liner\n", encoding="utf-8")
     multi = 'procedure main()\n    write("a")\n    write("b")\nend\n'
     (d / "MULTI-LINERS.md").write_text("## p_multi\n\n```Icon\n" + multi + "```\n\n```stdout\na\nb\n```\n\n"
                                        "## p_stdin\n\n```Icon\nprocedure main(); write(read()); end\n```\n\n```stdin\nx\n```\n\n"
-                                       "```stdout\nx\n```\n\n", encoding="utf-8")
+                                       "```stdout\nx\n```\n\n"
+                                       "## p_serial\n\n```Icon\nprocedure main(); write(image([])); end\n```\n\n```stdout\nlist_1(0)\n```\n\n"
+                                       "## p_exit\n\n```Icon\nprocedure main(); write(\"x\"); exit(0); end\n```\n\n```stdout\nx\n```\n\n", encoding="utf-8")
     a = argparse.Namespace(lang="icon", title="probe", out=str(d / "probe.ipynb"), master=str(d), entries=["p_one", "p_multi"])
     if cmd_build_quiet(a) != 0:
         return bad("the build of the planted format-2 master did not exit 0")
@@ -264,13 +282,14 @@ def probe_fmt2(d):
     got = [("".join(c["source"]), "".join(c["outputs"][0]["text"])) for c in codes]
     if got != want:
         return bad(f"format-2 cells {got!r} are not {want!r}")
-    a.entries = ["p_stdin"]
     import contextlib
     import io
-    with contextlib.redirect_stderr(io.StringIO()):
-        rc = cmd_build_quiet(a)
-    if rc != 2:
-        return bad(f"an entry that reads stdin built rc {rc}, not refused rc 2")
+    for n in ("p_stdin", "p_serial", "p_exit"):
+        a.entries = [n]
+        with contextlib.redirect_stderr(io.StringIO()):
+            rc = cmd_build_quiet(a)
+        if rc != 2:
+            return bad(f"the entry {n} built rc {rc}, not refused rc 2")
     return 0
 
 
