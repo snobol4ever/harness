@@ -53,6 +53,12 @@ if av[:1] == ["-j"]:
 if len(av) < 2: refuse("usage [-j N] PKG NAME...")
 pkg, names = Path(av[0]).resolve(), av[1:]
 M = Path(sh_value('printf %s "$GRAPHICS_ICON_ORACLE_DIR"') or "/home/resources/icon-master-x")
+# THE MONITORS' ORACLE, FOR ipl_mprogs ALONE (officer_04 2026-11-16, row icon-mprogs-step-m1-the-nine-monitors-stand-in-a-container-cut-on-the-monitoring-oracle, the cto's
+# design): an MT-Icon monitor needs event monitoring and multiple programs, which only Arizona 9.4.3 built with EventMon has (/home/resources/icon-943-mt,
+# build_v943mt.sh beside the mprogs ORACLE.md); its IPATH is that build's own lib, its LPATH its own ipl includes (mincl holds evdefs.icn), and a staged .icn
+# other than the entry (its target, the fixture target.icn) is built by the same icont into the icode the entry's ALL.args names.
+MPROGS = pkg.name == "ipl_mprogs"
+if MPROGS: M = Path(os.environ.get("ICON_MONITOR_ORACLE_DIR") or "/home/resources/icon-943-mt")
 IPL = Path(os.environ.get("S4E_CORPUS") or "/home/corpus") / "packages/icon/ipl"
 if not (M / "bin/icont").is_file() or not (M / "bin/iconx").is_file(): refuse(f"no graphics oracle at {M}")
 if not ROAD.is_file(): refuse(f"no road {ROAD}")
@@ -66,6 +72,12 @@ def one_run(c, n):
     d.mkdir()
     d, src = G.stage(c["entry"], d, pkg)
     env = G.oracle_env(M, IPL, d)
+    if MPROGS:
+        env.update({"IPATH": str(M / "lib"), "LPATH": f"{M}/ipl/mincl {M}/ipl/incl {M}/ipl/gincl"})
+        for tg in sorted(Path(d).glob("*.icn")):
+            if tg.name == Path(src).name: continue
+            b = subprocess.run([str(M / "bin/icont"), "-s", "-o", tg.stem, tg.name], cwd=d, env=env, capture_output=True, timeout=300)
+            if b.returncode: raise Refuse(f"{name}: its target {tg.name} does not build: {b.stderr.decode(errors='replace').strip()[:200]}")
     run = G.oracle_build(M, name, src, d, env)
     for o in c["outs"]: (d / o).unlink(missing_ok=True)
     st = work / f"{name}.{n}.status"
