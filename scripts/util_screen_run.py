@@ -3,16 +3,20 @@
 screen shows (Lon 2026-11-14 15:4x CST, in the grader's window, verbatim: "We are absolutely DOING GRAPHICS, X-windows. Yes? We should be
 able to do off-line (i.e. without physical window in which a human user is required) GUI tests. Yes?"; skill icon section 1).
 
-  python3 util_screen_run.py [--out FILE] [--cap S] [--keep DUMP.xwd] [--events SCRIPT] [--depth 8|24] -- CMD ARG...
+  python3 util_screen_run.py [--out FILE] [--cap S] [--still-cpu S] [--keep DUMP.xwd] [--events SCRIPT] [--depth 8|24] -- CMD ARG...
   python3 util_screen_run.py --no-screen [--depth 8|24] -- CMD ARG...
   python3 util_screen_run.py --probe
 
 It starts an Xvfb (1024x768, 24 bits, a display number the server picks, no TCP), runs CMD with DISPLAY set and the caller's standard
 input, and dumps the root window (xwd) every POLL seconds. THE ANSWER is FILE (default screen.dump, in the current directory), one line:
 
-  screen 1024x768 md5 <md5 of the pixel bytes>     the screen held still for STILL readings in a row (three seconds) with something drawn on it
+  screen 1024x768 md5 <md5 of the pixel bytes>     the screen held still for STILL readings in a row (three seconds) with something drawn on it,
+                                                   the program idle at each (THE STILL RULE, idle_reading: its session sleeping, its time
+                                                   under the poll bound, the display server sleeping)
   screen none                                      CMD ended before it ever showed a still, drawn screen
   screen unstable                                  the screen never held still within the cap (an animation has no one picture)
+  screen busy                                      the program was never idle within the cap (still computing its picture, or a box too loaded
+                                                   to let it finish): no picture is read off a program that has not finished drawing
 
 Only the pixel bytes are hashed: the dump's colour table carries padding that differs from run to run (MEASURED 2026-11-14: 256 bytes
 differ between two dumps of one picture). A program that draws and then waits for a mouse or a key never ends by itself, so once its
@@ -66,6 +70,23 @@ with a REFUSE line before the program is started. With --events and --keep, pict
 import ctypes, hashlib, os, signal, struct, subprocess, sys, tempfile, time
 POLL, STILL, PACE, WIDE, HIGH = 0.5, 6, 0.05, 1024, 768
 BOUND = 600   # --probe: the longest any one wait of the probe lasts; past it the probe refuses rc 2 (cannot measure), never a verdict
+IDLE_TICKS_PER_S = 15   # THE STILL RULE's tick bound (run, still_span): MEASURED by the cqo 2026-11-16 (ipl_gprogs_census.tsv and unicon_graphics_census.tsv,
+                        # last_ticks, the CPU ticks of a program's last 2.5 s at its still screen): a program polling at its still picture used at most 10
+                        # ticks in 2.5 s (4 a second: bin/ui, empty, leak of the unicon gui classes; plotter, facebend, colrpick and gamma of ipl at 0 to 2),
+                        # a program computing behind a still picture at least 74 (30 a second: tilescan at load; findtile 103 and 106). 15 sits between.
+                        # A tick is a hundredth of a second on this kernel (getconf CLK_TCK reads 100), the unit of /proc/PID/stat's four times.
+RUNNABLE_FRAC = 0.5     # THE STILL RULE's runnable bound (the cto's ruling 2026-11-16 16:4x CST, the cqo's rule): the scheduler's own account, run time plus time
+                        # waiting for a core (/proc/PID/task/TID/schedstat, every thread), summed over the program's session, as a share of the still run's
+                        # span. MEASURED: a poller at its still screen 0.16 median (the cqo's leak), randweav 0.09, pinned randweav under the road's real
+                        # sleep 0.22 at load 50; a spinning shell starved at nice 19 0.89 at least, kaleid 0.94, findtile 0.90, tilescan 0.92.
+SERVER_FRAC = 0.5       # the display server's runnable share over the same span, read the same way, before each shot: MEASURED by officer_07 2026-11-16 at
+                        # load 48, a still xlogo and the road's own shots (one xwd GetImage each) cost Xvfb 0.016 to 0.249 over six-shot spans (median 0.03
+                        # to 0.08); a server still drawing a program's requests, or starved while it does, reads near 1.
+STILL_CPU_S = 3.0       # THE STILL RULE's second arm (the cto's ruling 2026-11-16 18:5x CST): the still run is measured in the program's own processor time, the
+                        # session's user plus system time over the STILL equal shots reaching this many seconds (the old three-second wall span at a full core),
+                        # so load stretches the wait by the share it takes and a poller that never sleeps passes after three of its own seconds. --still-cpu S
+                        # raises it for a run that is slow in its own processor time (koch under the collector's stress plant is the stress row's).
+PIN_REAL_SLEEP_MS = 10  # told to the NAME.pin shim (S4E_PIN_REAL_SLEEP_MS): under the road a pinned sleep also sleeps for real up to this, so a waiting program gives its core back
 LIBC = ctypes.CDLL(None)
 def with_me():
     """Run in each child before its exec: the kernel kills it when this script dies (PR_SET_PDEATHSIG, SIGKILL), so a road killed outright at a
@@ -206,30 +227,76 @@ def run_plain(cmd, depth=24):
         try: xv.wait(timeout=5)
         except subprocess.TimeoutExpired: xv.kill()
     return rc if rc >= 0 else 128 - rc
+def task_runnable_ns(pid):
+    """The scheduler's account of PID, every thread: run time plus time waiting for a core, nanoseconds (/proc/PID/task/TID/schedstat)."""
+    n = 0
+    try: tids = os.listdir(f"/proc/{pid}/task")
+    except OSError: return 0
+    for t in tids:
+        try: a = open(f"/proc/{pid}/task/{t}/schedstat").read().split(); n += int(a[0]) + int(a[1])
+        except (OSError, IndexError, ValueError): pass
+    return n
+def session_account(sid):
+    """{pid: (ticks, runnable ns)} of every process of session SID, the session the road starts the program in: utime + stime + cutime + cstime
+    of /proc/PID/stat, and task_runnable_ns."""
+    t = {}
+    for q in os.listdir("/proc"):
+        if not q.isdigit(): continue
+        try: f = open(f"/proc/{q}/stat").read().rsplit(")", 1)[1].split()
+        except (OSError, IndexError): continue
+        if len(f) > 14 and int(f[3]) == sid: t[int(q)] = (sum(int(x) for x in f[11:15]), task_runnable_ns(int(q)))
+    return t
+def account_delta(before, now):
+    """(ticks, runnable ns) the session used between two accounts: a process in both counts its growth, one born since counts whole."""
+    dt = dr = 0
+    for q, (tk, rn) in now.items():
+        b = before.get(q, (0, 0)); dt += max(0, tk - b[0]); dr += max(0, rn - b[1])
+    return dt, dr
+def still_span(marks):
+    """THE STILL RULE (the cto's ruling 2026-11-16 16:4x CST, the cqo's rule taken whole: still is a fact about the program, not about the clock):
+    MARKS are the readings of the run of equal shots (the sleep arm reads its last STILL), each (time, ticks, runnable ns, server runnable ns) counted from the program's start. Over the
+    span they cover, the program's session used under IDLE_TICKS_PER_S ticks a second, and its runnable time (run plus waiting for a core, every
+    thread) and the display server's are each under their share of the span. A program waiting for an event, or polling, passes; one computing its
+    picture, or starved of a core while it does, does not, and the road goes on reading. OR THE PROCESSOR ARM (the cto 18:5x CST, after the XPending arm
+    was measured to fail: iconx polls the queue empty while it computes, so nothing outside a program tells a computer from a poller): the session used
+    STILL_CPU_S seconds of its own processor time over the whole run of equal shots, as much as three seconds of a full core, however long the box made that take."""
+    if len(marks) >= 2 and marks[-1][1] - marks[0][1] >= STILL_CPU_S * 100: return True
+    marks = marks[-STILL:]
+    span = marks[-1][0] - marks[0][0]
+    if span <= 0: return False
+    return (marks[-1][1] - marks[0][1] < IDLE_TICKS_PER_S * span and (marks[-1][2] - marks[0][2]) / 1e9 < RUNNABLE_FRAC * span
+            and (marks[-1][3] - marks[0][3]) / 1e9 < SERVER_FRAC * span)
 def run(cmd, out, cap, keep, steps=None, depth=24):
     libs = xtest_libs() if steps is not None else None
     xv, display = start_display(depth)
-    env = dict(os.environ, DISPLAY=display)
+    env = dict(os.environ, DISPLAY=display, S4E_PIN_REAL_SLEEP_MS=str(PIN_REAL_SLEEP_MS))
     for k in ("XAUTHORITY", "XENVIRONMENT", "XAPPLRESDIR"): env.pop(k, None)
     so = tempfile.TemporaryFile(); inj, lines, sent, ended_by_road, still_dump = None, [], 0, False, b""
     try:
         inj = Injector(libs, display, steps) if steps is not None else None
         child = subprocess.Popen(cmd, env=env, stdout=so, start_new_session=True, preexec_fn=with_me)
-        last, run_len, t0 = None, 0, time.time()
+        last, run_len, t0, idle_seen = None, 0, time.time(), False
+        acct, ticks, runnable, prev_t, marks = {}, 0, 0, time.time(), []
         while True:
             alive = child.poll() is None
             if not alive: break
+            server = task_runnable_ns(xv.pid)
             shot, dump = pixels(display)
+            now, now_t = session_account(child.pid), time.time()
+            dt, dr = account_delta(acct, now); acct = now; ticks += dt; runnable += dr
+            if dr / 1e9 < RUNNABLE_FRAC * max(now_t - prev_t, 1e-3): idle_seen = True
+            prev_t = now_t
             if shot and shot[2]:
                 run_len = run_len + 1 if shot == last else 1; last = shot
-                if run_len >= STILL:
+                marks = (marks + [(now_t, ticks, runnable, server)]) if run_len > 1 else [(now_t, ticks, runnable, server)]
+                if run_len >= STILL and still_span(marks):
                     lines.append(f"screen {shot[0]} md5 {shot[1]}"); still_dump = dump
                     if keep and steps is not None:
                         with open(f"{keep}.{len(lines)}", "wb") as f: f.write(dump)
                     if not steps or sent == len(steps): ended_by_road = True; break
-                    inj.send(steps[sent]); sent += 1; last, run_len, t0 = None, 0, time.time()
-            else: last, run_len = None, 0
-            if time.time() - t0 > cap: lines.append("screen unstable"); ended_by_road = True; break
+                    inj.send(steps[sent]); sent += 1; last, run_len, t0, idle_seen = None, 0, time.time(), False
+            else: last, run_len, marks = None, 0, []
+            if time.time() - t0 > cap: lines.append("screen unstable" if idle_seen else "screen busy"); ended_by_road = True; break
             time.sleep(POLL)
         if child.poll() is None:
             for sig in (signal.SIGTERM, signal.SIGKILL):
@@ -243,7 +310,7 @@ def run(cmd, out, cap, keep, steps=None, depth=24):
         xv.terminate()
         try: xv.wait(timeout=5)
         except subprocess.TimeoutExpired: xv.kill()
-    if lines and lines[-1] == "screen unstable" and steps is None: lines = lines[-1:]
+    if lines and lines[-1] in ("screen unstable", "screen busy") and steps is None: lines = lines[-1:]
     if not ended_by_road and lines and steps and sent < len(steps): lines.append(f"screen ended with {len(steps) - sent} of {len(steps)} event steps unsent")
     with open(out, "w") as f: f.write("\n".join(lines or ["screen none"]) + "\n")
     if keep and still_dump:
@@ -299,7 +366,7 @@ def probe_pin():
             X.XNextEvent(dpy, ev)
             if struct.unpack_from("i", ev.raw, 0)[0] == 2: log.write("L\n" if struct.unpack_from("Q", ev.raw, 32)[0] == wl else "R\n"); log.flush()
 def probe():
-    """Twenty-four arms on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
+    """Twenty-six arms on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
     scripted events xeyes, whose picture follows the pointer, and xev, which prints every event it is sent): no arm needs Icon. rc 0 all green,
     1 an arm red, 2 cannot measure. (xsetroot is no client for this: MEASURED, its colour never reaches the dump of an Xvfb root.)"""
     for c in ("xlogo", "ico", "xeyes", "xev"): which(c) or refuse(f"--probe needs {c} (x11-apps)")
@@ -322,6 +389,9 @@ def probe():
         c = go("other", "exec xlogo -geometry 300x150+0+0")
         d = go("ends", "echo whole-output; exit 3")
         e = go("moving", "exec ico -sleep 0.05", cap="8")
+        spin = "systemd-run --user --scope -q -p CPUQuota=20% timeout 6 bash -c 'while :; do :; done'"
+        bz = go("busythen", f"xlogo -geometry 200x200+0+0 & p=$!; {spin}; kill $p; wait $p 2>/dev/null; exec xlogo -geometry 300x150+0+0")
+        bc = go("busycap", "xlogo -geometry 200x200+0+0 & exec bash -c 'while :; do :; done'", cap="2")
         cl = lambda mode: f"exec {sys.executable} {me} --probe-client {mode}"
         d24 = go("deep24", "exec xlogo -geometry 200x200+0+0", more=("--depth", "24"))
         k1, k2 = go("keep", cl("keep"), more=("--depth", "8")), go("keep2", cl("keep"), more=("--depth", "8"))
@@ -386,6 +456,8 @@ def probe():
                 ("another picture gives another line", c[2].startswith("screen 1024x768 md5 ") and c[2] != a[2]),
                 ("a program that ends alone keeps its text and its status, screen none", d[0] == 3 and d[1] == "whole-output\n" and d[2] == "screen none"),
                 ("a screen that never holds still is unstable", e[0] == 0 and e[2] == "screen unstable"),
+                ("the still rule: a picture held while the program computes is not its answer; the picture it finishes on is", bz[0] == 0 and bz[2] == c[2] and c[2] != ""),
+                ("the still rule: a program never idle within the cap answers screen busy, never its half-drawn picture", bc[0] == 0 and bc[2] == "screen busy"),
                 ("the road killed outright takes its display and its program with it", len(mine) == 2 and not orphans),
                 ("depth: 24 asked by name answers the line of no option", d24[0] == 0 and d24[2] == a[2] and a[2] != ""),
                 ("depth 8: a colormap display gives a still line, the same twice", k1[0] == 0 and k1[2].startswith("screen 1024x768 md5 ") and k1[2] == k2[2]),
@@ -418,13 +490,14 @@ if __name__ == "__main__":
     while a and a[0] != "--":
         if a[0] == "--out" and len(a) > 1: out = a[1]; a = a[2:]
         elif a[0] == "--cap" and len(a) > 1: cap = float(a[1]); a = a[2:]
+        elif a[0] == "--still-cpu" and len(a) > 1: STILL_CPU_S = float(a[1]); a = a[2:]
         elif a[0] == "--keep" and len(a) > 1: keep = a[1]; a = a[2:]
         elif a[0] == "--events" and len(a) > 1: events = a[1]; a = a[2:]
         elif a[0] == "--no-screen": plain = True; a = a[1:]
         elif a[0] == "--depth" and len(a) > 1:
             if a[1] not in ("8", "24"): refuse(f"--depth {a[1]!r}: the road's display is 8 or 24 bits deep, no other (the cto's ruling of 2026-11-16)")
             depth = int(a[1]); a = a[2:]
-        else: refuse(f"unknown argument {a[0]!r}; usage: util_screen_run.py [--out FILE] [--cap S] [--keep DUMP.xwd] [--events SCRIPT] [--depth 8|24] -- CMD ARG... | --no-screen [--depth 8|24] -- CMD ARG... | --probe")
+        else: refuse(f"unknown argument {a[0]!r}; usage: util_screen_run.py [--out FILE] [--cap S] [--still-cpu S] [--keep DUMP.xwd] [--events SCRIPT] [--depth 8|24] -- CMD ARG... | --no-screen [--depth 8|24] -- CMD ARG... | --probe")
     if not a or len(a) < 2: refuse("no command after --")
     if plain:
         if events is not None or keep is not None: refuse("--no-screen reads no screen: it takes no --events and no --keep")

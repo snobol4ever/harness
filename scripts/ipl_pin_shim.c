@@ -2,6 +2,7 @@
 /* A program that reads the clock or seeds from entropy is graded by pinning both for BOTH participants: the cutter's iconx and SCRIP */
 /* m3/m4 run under this one shim, so the ref and the run come from the same world. Wall clock: 2001-09-09 01:46:40 UTC (1000000000). */
 /* THE CLOCK IS VIRTUAL (row instruments-the-ipl-pin-shim-advances-its-virtual-clock-through-sleeps, R-1483): it starts at PIN_EPOCH and advances by exactly the slept duration on every sleep entry (nanosleep, clock_nanosleep, usleep, sleep, select and poll with no fds and a timeout) without sleeping for real, and every clock read answers it; a program that reads the clock more than PIN_SPIN_READS times with no sleep between is busy-waiting on it (IPL progs/hr's wait(), a loop on &clock), and each further read advances the clock by PIN_SPIN_TICK_NS, so the spin ends at the same point for both participants while a program that reads the clock a few times sees exactly the slept time -- wall clock PIN_EPOCH + v; monotonic, CPU, times(), clock() and getrusage() v -- so a paced program runs deterministically and at once. Before any sleep every clock reads as it did: wall PIN_EPOCH, the rest zero. /dev/urandom and /dev/random serve a fixed byte stream (an xorshift from a fixed seed) and     */
+/* UNDER THE SCREEN ROAD ALONE A SLEEP ALSO REALLY SLEEPS (the cto's ruling 2026-11-16 16:4x CST, the cqo's proposal, row icon-graphics-the-screen-road-reads-a-picture-as-still-only-when-the-program-is-idle): the road sets S4E_PIN_REAL_SLEEP_MS for the program it runs, and every sleep entry then also sleeps for real the lesser of the slept duration and that many milliseconds, so a pinned program waiting for an event gives its core back and the road's still rule reads it idle (MEASURED: randweav pinned spun a whole core at its still screen, runnable 1.00, and 0.09 without the pin). The virtual clock moves exactly as before, so no answer that reads the clock moves; off the road nothing changes. */
 /* getrandom() the same stream. The host name reads "scriphost" (gethostname, uname), inherited by every command a program pipes to.  */
 /* Built on demand by lib_icon_ipl_isolation.sh (ipl_pin_shim_path); never linked into SCRIP itself.                               */
 #define _GNU_SOURCE
@@ -13,7 +14,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <poll.h>
+#include <stdlib.h>
 #include <sys/random.h>
+#include <sys/syscall.h>
 #include <sys/select.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
@@ -31,7 +34,15 @@ static int64_t pin_vns = 0;
 static long pin_reads = 0;
 #define PIN_SPIN_READS 10000L
 #define PIN_SPIN_TICK_NS 1000000LL
-static void pin_advance(int64_t ns) { if (ns > 0) pin_vns += ns; pin_reads = 0; }
+static int64_t pin_real_cap_ns = -1;
+static void pin_real_sleep(int64_t ns) {
+    if (pin_real_cap_ns < 0) { const char *e = getenv("S4E_PIN_REAL_SLEEP_MS"); long ms = e ? atol(e) : 0; pin_real_cap_ns = ms > 0 && ms <= 1000 ? (int64_t)ms * 1000000LL : 0; }
+    if (pin_real_cap_ns == 0 || ns <= 0) return;
+    if (ns > pin_real_cap_ns) ns = pin_real_cap_ns;
+    struct timespec t = { (time_t)(ns / 1000000000LL), (long)(ns % 1000000000LL) };
+    syscall(SYS_nanosleep, &t, (struct timespec *)0);
+}
+static void pin_advance(int64_t ns) { pin_real_sleep(ns); if (ns > 0) pin_vns += ns; pin_reads = 0; }
 static void pin_read(void) { if (++pin_reads > PIN_SPIN_READS) pin_vns += PIN_SPIN_TICK_NS; }
 static int64_t pin_ts_ns(const struct timespec *t) { return t ? (int64_t)t->tv_sec * 1000000000LL + t->tv_nsec : 0; }
 static int64_t pin_tv_ns(const struct timeval *t) { return t ? (int64_t)t->tv_sec * 1000000000LL + (int64_t)t->tv_usec * 1000LL : 0; }
