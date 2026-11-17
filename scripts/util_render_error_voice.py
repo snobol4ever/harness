@@ -161,6 +161,29 @@ def render_fatal_block(block, oracle):
     return _wrap_spitbol(_fatal_lines_unwrapped(block, oracle))
 
 
+DUMP_HEAD = "dump of natural variables"
+
+
+def insert_fatal_before_dump(got_lines, rendered):
+    """WHERE THE FATAL BLOCK GOES WHEN THE PROGRAM ASKED FOR A TERMINATION DUMP (the cqo 2026-11-17 15:4x CST, ruling on officer_10's measurement of
+    decus_vax84a diag1 and spitbol_88 DEMOS/GOTOS). A SNOBOL4 fatal ends execution and SPITBOL then prints only its termination dump (&DUMP), so on
+    sbl -bf stdout the block stands in FRONT of the dump: MEASURED 2026-11-17 on x64 sbl -bf, diag1.sno (&DUMP = 2, ERROR 022 at statement 93): the program's
+    own output, three empty lines, the error line, five empty lines, in file / in line / in statement, the five run-summary lines, FOUR empty lines, then
+    `dump of natural variables` and the rest of the dump. SCRIP's stdout carries no block (its voice is stderr) and prints three empty lines before
+    the same header, which are the block's own three leading empty lines. So the rendered block replaces those three lines and four empty lines follow
+    it; the dump's lines are SCRIP's own. Found from SCRIP's own dump header: the LAST `dump of natural variables` line that three empty lines
+    precede (a program may print the words itself, never after the termination dump). Returns the new line list, or None when there is no dump, in
+    which case the caller appends the block at the end as before."""
+    k = -1
+    for i in range(len(got_lines) - 1, 2, -1):
+        if got_lines[i] == DUMP_HEAD and got_lines[i - 3:i] == ['', '', '']:
+            k = i
+            break
+    if k < 0:
+        return None
+    return got_lines[:k - 3] + list(rendered) + ['', '', '', ''] + got_lines[k:]
+
+
 def _fatal_lines_unwrapped(block, oracle):
     fields = _fatal_fields(block, oracle)
     if fields is None:

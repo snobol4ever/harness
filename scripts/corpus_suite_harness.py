@@ -1535,6 +1535,10 @@ def _render_fatal_into_stdout(got, err_bytes):
     rendered = _rv.render_fatal_block(block, voice) if hasattr(_rv, "render_fatal_block") else _rv.render(block, voice)
     if not rendered:
         return got, 0
+    if hasattr(_rv, "insert_fatal_before_dump"):
+        placed = _rv.insert_fatal_before_dump(got.split("\n"), rendered)
+        if placed is not None:
+            return "\n".join(placed), len(rendered)
     text = (got + "\n" if got else "") + "\n".join(rendered)
     return text, len(rendered)
 
