@@ -160,6 +160,7 @@ leantap	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/leantap
 prolog_chr_swi	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/prolog_chr_swi
 prolog_yap_bench	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/prolog_yap_bench
 prolog_projog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/prolog_projog
+gnu_fd	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/gnu_fd
 icon_apexskier	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_apexskier
 icon_rwl	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_rwl
 icon_numeronym	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_numeronym
