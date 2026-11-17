@@ -20,7 +20,7 @@ if [ "${1:-}" = --probe-door ] && [ -z "${S4E_DOOR_PROBE_T:-}" ]; then   # THE D
     _T="$(mktemp -d "${TMPDIR:-/tmp}/s4e_probe_door.XXXXXX")" || exit 2; mkdir -p "$_T/prog" "$_T/tmp" "$_T/req" "$_T/run" "$_T/post"; printf 'cores=1\ngrader=1\nwait=600\n' > "$_T/CORES.conf"
     env -u S4E_CORE_HELD -u S4E_RUN_SLOT_HELD -u S4E_SLOT_WAIT_MAX S4E_DOOR_PROBE_T="$_T" S4E_CYCLE_PROG="$_T/prog" S4E_CYCLE_TMP="$_T/tmp" S4E_PROGRESS_DB="$_T/results.tsv" S4E_RESULTS="$_T/results.tsv" \
         S4E_SUITES_TSV="$_T/SUITES.tsv" S4E_SCORE_MD="$_T/SCORE.md" S4E_TEST_REQUEST_DIR="$_T/req" S4E_POST="$_T/post" S4E_POSTOFFICE="$_T/post" S4E_CORES_CONF="$_T/CORES.conf" \
-        S4E_RUN_SLOT_DIR="$_T/run" S4E_SLOT_WAITS="$_T/SLOT_WAITS.tsv" bash "$(readlink -f "${BASH_SOURCE[0]}")" --probe-door; _rc=$?
+        S4E_RUN_SLOT_DIR="$_T/run" S4E_SLOT_WAITS="$_T/SLOT_WAITS.tsv" S4E_SPRINT_CONF="$_T/no-sprint.conf" bash "$(readlink -f "${BASH_SOURCE[0]}")" --probe-door; _rc=$?
     rm -rf "$_T"; exit "$_rc"
 fi
 S4E="${S4E_HOME:-/home/claude_grader}"
@@ -101,12 +101,24 @@ order_write() { awk '$2 == "CELL" && $7 != "rc=2" { v = $8; sub(/^secs=/, "", v)
 # suite was read on the day's graphics landings): CYCLE.first, beside CYCLE.order, one line a suite key or lang:L (# a comment). A named key runs first,
 # in the file's order; then every suite of a named language, the fastest first as below; then the rest as before. An absent or empty file is no change.
 FIRSTF="$PROG/CYCLE.first"
+# THE SPRINT IS READ FROM ITS FILE (part 3 of the cio's row cycle-a-cell-takes-its-core-token-before-its-base-and-its-clock-and-a-request-takes-it-first): while SPRINT.conf
+# stands (the cio's to set; its lang lines name the sprint's languages), order_cells puts the suites of those languages first, after a suite CYCLE.first names, and a lap
+# cell of another language whose last reading took over S4E_CYCLE_SPRINT_SECS (120) is logged SPRINT-HELD and not run (sprint_held); a request is never held. With no file
+# nothing changes. It replaces the SPRINT-HOLD lines the cio wrote into CYCLE.skip by hand that hour (267 cells of long Prolog, Pascal and Raku package chunks).
+SPRINTF="${S4E_SPRINT_CONF:-/home/resources/postoffice/SPRINT.conf}"
+sprint_langs() { awk -F= '!/^#/ && $1 == "lang" { n = split($2, v, /[ ,]+/); for (i = 1; i <= n; i++) if (v[i] != "") print v[i] }' "$SPRINTF" 2> /dev/null | sort -u | tr '\n' ' '; }
+sprint_held() {   # key lang cell secs -> rc 0 when the sprint holds this lap cell
+    local sl; sl="$(sprint_langs)"; [ -n "$sl" ] || return 1
+    case " $sl " in *" $2 "*) return 1;; esac
+    [ "${4:-0}" -gt "${S4E_CYCLE_SPRINT_SECS:-120}" ]
+}
 order_cells() {   # stdin: the cells in the table's order; stdout: the lap's order
-    awk -F'\t' -v OF="$ORDERF" -v FF="$FIRSTF" 'BEGIN { while ((getline l < OF) > 0) { split(l, a, "\t"); s[a[1] "\t" a[2]] = a[3]; have = 1 }
+    awk -F'\t' -v OF="$ORDERF" -v FF="$FIRSTF" -v SL="$(sprint_langs)" 'BEGIN { while ((getline l < OF) > 0) { split(l, a, "\t"); s[a[1] "\t" a[2]] = a[3]; have = 1 }
+            ns = split(SL, sv, " "); for (i = 1; i <= ns; i++) if (sv[i] != "") sl[sv[i]] = 1
             while ((getline l < FF) > 0) { sub(/#.*/, "", l); gsub(/[ \t]/, "", l); if (l == "") continue; n++; if (l ~ /^lang:/) fl[substr(l, 6)] = n; else fk[l] = n } }
         { line[NR] = $0; su[NR] = $1; la[NR] = $3; k = $1 "\t" $5; if (k in s) { tot[$1] += s[k]; seen[$1] = 1 } }
         END { for (i = 1; i <= NR; i++) { r = (!have ? 0 : (su[i] in seen) ? tot[su[i]] + 1 : 0)
-                  if (su[i] in fk) r = -2000000000 + fk[su[i]]; else if (la[i] in fl) r = r - 1000000000
+                  if (su[i] in fk) r = -2000000000 + fk[su[i]]; else if (la[i] in sl) r = r - 1500000000; else if (la[i] in fl) r = r - 1000000000
                   printf "%d\t%d\t%s\n", r, i, line[i] } }' | sort -t "$(printf '\t')" -k1,1n -k2,2n | cut -f3-
 }
 budget() { local T_SCRIP T_CORPUS T_HARNESS T_GITHUB; pin "${3:-$S4E}"; S4E_HOME="${3:-$S4E}" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" python3 -I "$T_HARNESS/scripts/util_grade_job.py" budget --suite "$1" --cell "$2" 2>/dev/null | sed -n 's/.* ttr_s=\([0-9]*\).*/\1/p' | head -1; }   # one-disk: not a path (the pin of the tree it is given: a base's own four repos)
@@ -157,6 +169,18 @@ small_budget() {   # key -> seconds: five times the last graded seconds of the c
 # its run alone. A REQUEST GOES FIRST AT THE DOOR: while it waits it leaves a ticket in $TMPDIR/cycle/door, and a lap cell tries for a token only while no ticket stands,
 # so the next token freed is the request's (a free fast slot already took a pending request before any lap cell; the door now keeps that order). A wait of a second or
 # more is one line of SLOT_WAITS.tsv as before. DOOR_EVENTS, set by --probe-door alone, names a file each step is appended to.
+# THE LANES ARE AS WIDE AS THE DOOR (part 2 of the same row): the fast and slow widths are read from CORES.conf at each turn of the pool, so what cannot have a token waits in
+# the cycle's own queue, where a pending request is served before any lap cell, never at the door holding nothing. grader=G: the slow lane 1 when G is under 6, else 2; the
+# fast lane G less the slow lane less one token left for the patch drain and the row writes, at least 1. S4E_CYCLE_FAST (or S4E_CYCLE_WIDTH) and S4E_CYCLE_SLOW still win when
+# set, and with no CORES.conf grader line the widths are 8 and 2 as before; --one runs one cell in one lane.
+lane_widths() {   # sets WF and WS
+    local g; g="$(s4e_cores_conf grader)"
+    WS="${S4E_CYCLE_SLOW:-}"; case "$WS" in ''|*[!0-9]*) if [ -n "$g" ]; then if [ "$g" -lt 6 ]; then WS=1; else WS=2; fi; else WS=2; fi;; esac
+    WF="${S4E_CYCLE_FAST:-${S4E_CYCLE_WIDTH:-}}"; case "$WF" in ''|*[!0-9]*|0) if [ -n "$g" ]; then WF=$(( g - WS - 1 )); else WF=8; fi;; esac
+    [ "$WF" -ge 1 ] || WF=1
+    [ "${MODE_ARG:-}" = --one ] && { WF=1; WS=0; }
+    return 0
+}
 door_take() {   # cell|request [what] -> rc 0: this shell holds a run token (or there is no pool and it runs unbounded, as util_run_slot.sh does); rc 2: none within the door's bound
     local who="$1" what="${2:-}" t0 rc bound tk="" waited=0
     t0=$(date +%s.%N); mkdir -p "$TMPDIR/cycle/door" 2> /dev/null
@@ -464,8 +488,25 @@ if [ "$MODE_ARG" = --probe-door ]; then   # THE DOOR'S PROBE (row cycle-a-cell-t
     i=0; until compgen -G "$TMPDIR/cycle/door/req.*" > /dev/null || ! kill -0 "$cr" 2> /dev/null; do i=$((i + 1)); [ "$i" -gt 3000 ] && { echo "REFUSE(2): the request neither left a ticket nor ended"; exit 2; }; sleep 0.1; done
     rm -f "$T/hold.b"; wait "$cr" "$cb" "$cc"
     [ "$(grep -m1 '^TOKEN' "$DOOR_EVENTS")" = "TOKEN request probe-req" ] && [ "$(grep -c '^TOKEN cell' "$DOOR_EVENTS")" = 2 ] && v3=ok
-    echo "DOOR_PROBE base_free=$v1 bound_counts_the_run=$v2 request_first=$v3"
-    [ "$v1$v2$v3" = okokok ] && exit 0
+    # arm 4, the lanes: the widths follow CORES.conf's grader line (4: fast 2 and slow 1; 8: fast 5 and slow 2), and S4E_CYCLE_FAST still wins when set
+    v4=RED; c0="$S4E_CORES_CONF"; printf 'cores=8\ngrader=4\n' > "$T/c4"; printf 'cores=12\ngrader=8\n' > "$T/c8"
+    l4="$(S4E_CORES_CONF="$T/c4" bash -c '. "$1"; lane_widths; echo "$WF $WS"' _ <(declare -f lane_widths s4e_cores_conf; echo "S4E_CORES_CONF_DEFAULT=/dev/null"))"
+    l8="$(S4E_CORES_CONF="$T/c8" bash -c '. "$1"; lane_widths; echo "$WF $WS"' _ <(declare -f lane_widths s4e_cores_conf; echo "S4E_CORES_CONF_DEFAULT=/dev/null"))"
+    le="$(S4E_CORES_CONF="$T/c4" S4E_CYCLE_FAST=3 bash -c '. "$1"; lane_widths; echo "$WF $WS"' _ <(declare -f lane_widths s4e_cores_conf; echo "S4E_CORES_CONF_DEFAULT=/dev/null"))"
+    [ "$l4" = "2 1" ] && [ "$l8" = "5 2" ] && [ "$le" = "3 1" ] && v4=ok
+    # arm 5, the sprint: with a scratch SPRINT.conf of lang=snobol4, a prolog cell whose last reading took 500 s is held and a snobol4 cell of 500 s is not, a short prolog cell
+    # (60 s) is not, and order_cells puts the snobol4 suite first; with no file nothing is held
+    v5=RED; printf 'name=PROBE\nlang=snobol4\n' > "$T/sprint.conf"
+    h1=1; SPRINTF="$T/sprint.conf" sprint_held p1 prolog core 500 && h1=0
+    h2=1; SPRINTF="$T/sprint.conf" sprint_held s1 snobol4 core 500 && h2=0
+    h3=1; SPRINTF="$T/sprint.conf" sprint_held p2 prolog core 60 && h3=0
+    h4=1; SPRINTF="$T/none.conf" sprint_held p1 prolog core 500 && h4=0
+    o1="$(printf 'pl_a\tpkg\tprolog\td\tcore\nsno_a\tpkg\tsnobol4\td\tcore\n' | ORDERF="$T/no.order" FIRSTF="$T/no.first" SPRINTF="$T/sprint.conf" order_cells | head -1 | cut -f1)"
+    o0="$(printf 'pl_a\tpkg\tprolog\td\tcore\nsno_a\tpkg\tsnobol4\td\tcore\n' | ORDERF="$T/no.order" FIRSTF="$T/no.first" SPRINTF="$T/none.conf" order_cells | head -1 | cut -f1)"
+    [ "$h1$h2$h3$h4" = 0111 ] && [ "$o1" = sno_a ] && [ "$o0" = pl_a ] && v5=ok
+    echo "DOOR_PROBE base_free=$v1 bound_counts_the_run=$v2 request_first=$v3 lanes=$v4 sprint=$v5"
+    [ "$v4$v5" = okok ] || echo "  lanes: grader=4 -> $l4, grader=8 -> $l8, FAST=3 -> $le; sprint held: $h1$h2$h3$h4 (want 0111), first: $o1 (want sno_a), with no file: $o0 (want pl_a)"
+    [ "$v1$v2$v3$v4$v5" = okokokokok ] && exit 0
     echo "  events:"; sed 's/^/    /' "$DOOR_EVENTS"; for r in a b c; do echo "  res.$r: $(cat "$T/res.$r" 2> /dev/null)"; done; exit 1
 fi
 { [ "${BASH_VERSINFO[0]}" -gt 5 ] || { [ "${BASH_VERSINFO[0]}" -eq 5 ] && [ "${BASH_VERSINFO[1]}" -ge 1 ]; }; } || { echo "REFUSE(2) [cycle]: bash ${BASH_VERSION} has no wait -n -p (5.1 or newer; the rolling pool needs it)"; exit 2; }
@@ -510,9 +551,7 @@ while :; do
     # SLOW lane, S4E_CYCLE_SLOW slots (2), and every other cell and every seat's request in the FAST lane, S4E_CYCLE_FAST slots (8; the graded-runs
     # slice is 10 cores, the coo 18:2x). A free fast slot takes a pending request before any lap cell, so a request waits only for one fast cell to
     # end; a slow cell never takes a fast slot. --one runs one cell in one lane. S4E_CYCLE_WIDTH, the one-lane width before, sets the fast lane if given.
-    WF="${S4E_CYCLE_FAST:-${S4E_CYCLE_WIDTH:-8}}"; WS="${S4E_CYCLE_SLOW:-2}"; SLOWS="${S4E_CYCLE_SLOW_SECS:-600}"
-    case "$WF" in ''|*[!0-9]*|0) WF=8;; esac; case "$WS" in ''|*[!0-9]*) WS=2;; esac; case "$SLOWS" in ''|*[!0-9]*) SLOWS=600;; esac
-    [ "$MODE_ARG" = --one ] && { WF=1; WS=0; }
+    lane_widths; SLOWS="${S4E_CYCLE_SLOW_SECS:-600}"; case "$SLOWS" in ''|*[!0-9]*) SLOWS=600;; esac   # the widths, from CORES.conf (lane_widths), read again at each turn below
     declare -A RUN=() LANE=() LEFT=() CSECS=()
     while IFS=$'\t' read -r ok oc os; do [ -n "$ok" ] && CSECS["$ok"$'\t'"$oc"]="${os%%.*}"; done < "$ORDERF" 2>/dev/null
     FQ=(); SQ=(); fp=0; sp=0
@@ -522,6 +561,7 @@ while :; do
     start_cell() {   # <index> <lane>: run a lap cell, or log it skipped
         IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$1]}"
         if grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null; then log "SKIPPED lap=$lap $(($1+1))/$total $key $cell"; return 1; fi
+        if sprint_held "$key" "$lang" "$cell" "${CSECS["$key"$'\t'"$cell"]:-0}"; then log "SPRINT-HELD lap=$lap $(($1+1))/$total $key $cell lang=$lang secs=${CSECS["$key"$'\t'"$cell"]:-0}: the sprint of $(sprint_langs | sed 's/ $//') stands (SPRINT.conf)"; return 1; fi
         # A CELL GRADED ONCE A LAP IS NOT RUN AGAIN IN IT (the grader 2026-11-16, on the coo's measurement: lap 42 had 1231 CELL lines for 1197 cells,
         # all 34 repeats rosetta-raku's, chunk:13 four times, each pass when the lap's total grew: the list is read again every turn and a new suite sorts
         # first, so every later cell moves right and the index runs again the cells it had passed)
@@ -530,6 +570,7 @@ while :; do
     mkdir -p "$RQ/serving" "$RQ/done" 2>/dev/null; for f in "$RQ"/serving/*.req; do [ -f "$f" ] && mv "$f" "$RQ/" 2>/dev/null; done   # a request a dead cycle was serving is pending again
     for (( j = idx; j < total; j++ )); do IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$j]}"; grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null || LEFT[$key]=$(( ${LEFT[$key]:-0} + 1 )); done
     while :; do
+        lane_widths   # each turn: the lanes follow the door's width (part 2)
         while [ "$(lane_n f)" -lt "$WF" ] && rf="$(next_request)"; do   # a free fast slot takes the oldest pending request before any lap cell
             rn="$(basename "$rf")"; mv "$rf" "$RQ/serving/$rn" 2>/dev/null || break
             ( run_request "$RQ/serving/$rn" > "$TMPDIR/cycle/rres.$rn" ) & RUN[$!]="r:$rn"; LANE[$!]=f
