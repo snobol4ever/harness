@@ -1654,6 +1654,11 @@ def _spitbol_compile_refusal_verdict(out, err, rc, expected_text, want_rc, merge
     through the one error voice equal to the ref's. The rc alone never grades (the cfo's condition). Any other ref: None, graded as before."""
     if FATAL_RENDER.get("voice") != "spitbol" or expected_text is None or not want_rc or merge_stderr:
         return None
+    if _engine() != "scrip":
+        # A PORT PRINTS sbl's LISTING PAGE ON STDOUT, AS sbl DOES, so its refusal is graded byte for byte against the ref under the package's masks (seat jvm
+        # 2026-11-17; the masks of spitbol_testpgms test2 say so: "read only by a port's compile-refusal arm, since SCRIP refuses with nothing on stdout",
+        # CEO-1858, CEO-1864, CEO-1907). MEASURED: this arm read snobol4jvm FAIL on test2 for its 333 bytes of stdout, the (line, code) pairs equal.
+        return None
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import util_spitbol_compile_refusal as _cr
     import util_render_error_voice as _rv
@@ -4578,6 +4583,8 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
     # and the copy lands where the program runs; a flat entry is unchanged.
     _sub = Path(entry.name).parent
     _cdir = (Path(companion_dir) / _sub) if (companion_dir and str(_sub) not in ("", ".")) else companion_dir
+    if getattr(entry, "port_src_dir", None):
+        _cdir = Path(entry.port_src_dir)   # a package read in place under a port engine (_port_src_road): the program's own folder under the source root
     if _cdir != companion_dir:
         _copy_companions(text, companion_dir, cand.parent)   # the suite directory first, as before, so nothing a nested entry found there is lost
     _copy_companions(text, _cdir, cand.parent)               # then the entry's own directory, which wins where both hold the name
@@ -5048,6 +5055,33 @@ def _pkg_env(pd, paths):
             refuse(f"{f}:{n}: not KEY=VALUE: {ln!r}")
         env[k.strip()] = ":".join(str(corpus / x) if x and (corpus / x).exists() else x for x in v.strip().split(":"))
     return env
+
+
+def _port_src_road(paths, run_entries, container_dir):
+    """A PORT ENGINE GRADES A PACKAGE READ IN PLACE ON THE PER-ENTRY ROAD (seat jvm 2026-11-17; Lon, in the JVM window, verbatim: "You need to
+    incorporate the consolidated test-suite cycle-runner and all its container files and get ALL SNOBOL4 tests working with snobol4jvm."). MEASURED
+    before it: 23 of the 32 SNOBOL4 packages SCRIP is graded on carry ALL.source, and this harness refused each under S4E_ENGINE=dotnet or jvm, since
+    scrip --run-files, SCRIP's own switch, was their only road (CIO-122). A port runs each test as its own process anyway, so each entry is given what
+    the switch gives its program: a scratch copy of the folder its program stands in under the source root, as its working folder (fixtures=folder;
+    its own answers never staged), its ALL.stdin file as its standard input, and the package's ALL.env. The collection is never written: the copy is
+    the run's own. -> False, so the caller takes the per-entry road."""
+    n = 0
+    for e in run_entries:
+        if getattr(e, "in_place", None):
+            e.port_src_dir = str(Path(e.in_place).parent)
+            if not getattr(e, "fixtures", None):
+                e.fixtures = "folder"
+            n += 1
+        _sp = getattr(e, "stdin_in_place", None)
+        if _sp:
+            try:
+                e.stdin = Path(_sp).read_bytes().decode("utf-8")
+            except UnicodeDecodeError:
+                refuse(f"{e.name}: its ALL.stdin file {_sp} is not UTF-8, and the per-entry road passes stdin as text -- never a run on altered bytes")
+    os.environ.update(_pkg_env(container_dir, paths))
+    print(f"PORT_SOURCE_ROAD dir={container_dir} engine={paths['engine']} in_place={n} entries={len(run_entries)} -- a package read in place is graded "
+          f"per entry under a port engine, each in a copy of its own folder (seat jvm 2026-11-17)")
+    return False
 
 
 def _screen_entry_of_switch_pkg(e, container_dir):
@@ -6464,8 +6498,11 @@ def cmd_run(args):
             with open(Path(_pd) / "ALL.csv", encoding="utf-8", newline="") as _cf:
                 if any((r.get("stem") or "").strip() for r in _c2.DictReader(_cf)):
                     refuse(f"{_pd}: ALL.csv names a stem for an entry, and scrip --run-files, the only road of a package read in place, reads an answer by its program's stem; a package that runs one program on several inputs is hosted (the grader 2026-11-15)")
-        if modes != ["m3"] or paths["engine"] != "scrip":
+        if paths["engine"] != "scrip" and modes == ["m3"] and not (Path(_pd) / "ALL.launch").is_file():
+            _switch_alone = _port_src_road(paths, run_entries, Path(_pd))
+        elif modes != ["m3"] or paths["engine"] != "scrip":
             refuse(f"{Path(args.sno).parent} holds ALL.source or ALL.launch: only scrip --run-files stages such a package, in mode 3 (CIO-122); asked modes {','.join(modes)}, engine {paths['engine']}")
+    if _switch_alone:
         if not getattr(args, "post", None):
             args.run_files = True
         _cells = [e.name for e in run_entries if getattr(e, "env_cells", None) or getattr(e, "in_files", None)]
