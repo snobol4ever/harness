@@ -198,6 +198,11 @@ def render_settings(root, harness):
     # 160 scripts read their root as the folder two above the script, which is /home since the scripts run from /home/harness, so lib_paths.sh read S4E_SCRIP=/home/SCRIP,
     # a folder that does not exist). The env block of settings.local.json already carries S4E_SEAT to every session; S4E_HOME sits beside it.
     docs["settings.local.json"].setdefault("env", {})["S4E_HOME"] = root
+    # NO SEAT'S SHELL CARRIES THE DESKTOP'S DISPLAY (Lon 2026-11-17 11:0x CST, in the coo's window, verbatim: "On of the seats is running tests that keep popping up windows.
+    # Anyway o run thos hidden?"; MEASURED by the coo: officer_08's A/B script ran gdemos hello.icn bare with DISPLAY=:0 and a window titled Hello stood on his desktop, while
+    # every run through util_screen_run.py drew on an Xvfb of its own). The env block gives every Bash call of a session an empty DISPLAY and WAYLAND_DISPLAY, so a window
+    # program run bare reads "can't open window" and exits, and the screen road, which sets DISPLAY itself, is the one way a seat draws. Built in, never told.
+    docs["settings.local.json"]["env"]["DISPLAY"] = ""; docs["settings.local.json"]["env"]["WAYLAND_DISPLAY"] = ""
     for f, evs in HOOKS.items():
         d = docs[f]; hooks = d.setdefault("hooks", {})
         for ev, (mark, matcher, tmo, msg, cmd) in evs.items():
