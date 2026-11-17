@@ -252,6 +252,99 @@ def _unicon_prebuild(iso, ipath, names):
                 subprocess.run([r.stdout.strip(), "-c", "-s", f.name], cwd=str(iso), capture_output=True, timeout=300)
 
 
+def contract_cells(pkg_dir, check=False):
+    """--contract-cells PKG [--check]: THE COMPILE_ARGS CELL FROM THE CONTRACT, WITH NO ORACLE RUN (officer_04 2026-11-16, the cao's ruling on uflex, CTO-473): every
+    EMPTY cell of PKG/ALL.csv whose entry's source is an Icon file (a path ending .icn, or a container entry) gets the cell the cut writes (line 1475's rule):
+    CONTRACT.tsv's unmarked_compile_args when the source carries no Unicon marker (icn_marked). A cell that holds anything is left as it stands (a seat's choice
+    the cut would not make is never undone here), and so is a row whose path is a data file a driver reads. MEASURED before it: uflex was cut with unicon by its grader's own road, the builder's --only cannot cut it
+    (its entries are named apart from their files and its unicon arm builds no linked module), so its 15 cells stood empty, each entry ran without the
+    dialect and stopped on the Unicon syntax of a linked module, 0 of 15 through the harness and 15 of 15 by hand under --dialect=unicon. Only that cell is
+    written; with --check nothing is written and every row that would change is named. Prints CONTRACT_CELLS changed=N rows=M; rc 0, 1 (--check found one), 2."""
+    import io
+    _one = Path(os.environ.get("S4E_ONE_DISK_TOP", "/home")).resolve() / "corpus"
+    if not check and (pkg_dir == _one or _one in pkg_dir.parents) and os.environ.get("S4E_SEAT", "") != "grader":
+        h.refuse(f"--contract-cells: {pkg_dir} is inside the one-disk corpus checkout {_one}, which only the grader writes -- run it on a scratch copy and give the difference")
+    contract = read_contract(pkg_dir)
+    want = contract["unmarked_compile_args"]
+    p = pkg_dir / "ALL.csv"
+    if not p.is_file():
+        h.refuse(f"--contract-cells: no {p}")
+    text = p.read_text(errors="replace")
+    rows = list(csv.reader(io.StringIO(text)))
+    if not rows or "entry" not in rows[0] or "compile_args" not in rows[0]:
+        h.refuse(f"--contract-cells: {p} has no entry or no compile_args column")
+    hd = rows[0]; ci, ei = hd.index("compile_args"), hd.index("entry"); pi = hd.index("path") if "path" in hd else -1
+    src_of = {}
+    if pi < 0:
+        _c = next((f for f in pkg_dir.glob("ALL.*") if f.suffix in (".icn",)), None)
+        if _c is None:
+            h.refuse(f"--contract-cells: {pkg_dir} has no path column and no ALL.icn")
+        lc = h.LANG_CONFIGS["icon"]
+        for e in h.read_block_suite(str(_c), str(pkg_dir / "ALL.ref"), h.banner_re_for(lc["comment_open"], lc["comment_close"]), in_path=None):
+            src_of[e.name] = "\n".join(e.sno_lines)
+    changed = []
+    for r in rows[1:]:
+        if len(r) <= max(ci, ei, pi):
+            continue
+        if r[ci] != "":
+            continue
+        if pi >= 0:
+            if not r[pi].endswith(".icn"):
+                continue
+            sp = pkg_dir / r[pi]
+            if not sp.is_file():
+                h.refuse(f"--contract-cells: {r[ei]}: no source {sp}")
+            st = sp.read_text(errors="replace")
+        else:
+            st = src_of.get(r[ei], "")
+        cell = want if want and not icn_marked(st) else ""
+        if cell:
+            changed.append(f"{r[ei]}: {r[ci]!r} -> {cell!r}")
+            r[ci] = cell
+    for c in changed:
+        print(f"  {'WOULD CHANGE' if check else 'CHANGED'} {c}")
+    if changed and not check:
+        o = io.StringIO(); csv.writer(o, lineterminator="\n").writerows(rows); p.write_text(o.getvalue())
+    print(f"CONTRACT_CELLS changed={len(changed)} rows={len(rows) - 1} {'(check: nothing written)' if check else ''}".rstrip())
+    return 1 if (check and changed) else 0
+
+
+def probe_contract_cells():
+    """--probe-contract-cells: a scratch files-form package whose CONTRACT.tsv names unmarked_compile_args --dialect=unicon, three rows with empty cells: a
+    markerless program, one with a class header, and one whose only class is a word in a comment, and a row whose path is a data file. After --contract-cells
+    the first and the third read --dialect=unicon, the second and the data row stay empty; --check then reads changed=0; a cell emptied again reads changed=1
+    under --check and nothing is written; a cell holding another value is never changed. ok|RED, rc 0 or 1."""
+    import shutil, subprocess, tempfile
+    seat = os.environ.get("S4E_SEAT") or "probe"
+    base = Path(f"/tmp/s4e/{seat}"); base.mkdir(parents=True, exist_ok=True)
+    d = Path(tempfile.mkdtemp(prefix="contract-cells-probe.", dir=base)) / "pkg"; d.mkdir()
+    (d / "a.icn").write_text("procedure main();\n  write(1);\nend\n")
+    (d / "b.icn").write_text("class C()\nend\nprocedure main();\n  write(2);\nend\n")
+    (d / "c.icn").write_text("# a class is no marker in a comment\nprocedure main();\n  write(3);\nend\n")
+    (d / "CONTRACT.tsv").write_text("unmarked_compile_args\t--dialect=unicon\tthe probe's package is Unicon by its contract\n")
+    (d / "x.xml").write_text("<x/>\n")
+    (d / "ALL.csv").write_text("rank,entry,path,compile_args\n1,a,a.icn,\n2,b,b.icn,\n3,c,c.icn,\n4,x,x.xml,\n5,k,c.icn,--kept\n")
+    me = [sys.executable, str(Path(__file__).resolve())]
+    run = lambda *a: subprocess.run(me + list(a), capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    why = []
+    r = run(str(d), "--contract-cells")
+    got = [ln.split(",")[3] for ln in (d / "ALL.csv").read_text().splitlines()[1:]]
+    if r.returncode != 0 or got != ["--dialect=unicon", "", "--dialect=unicon", "", "--kept"]:
+        why.append(f"the cells read {got} (rc {r.returncode}), want the switch, empty, the switch, empty, --kept")
+    r = run(str(d), "--contract-cells", "--check")
+    if r.returncode != 0 or "changed=0" not in r.stdout:
+        why.append(f"a second --check read {r.stdout.strip()[-80:]!r} (rc {r.returncode}), want changed=0")
+    (d / "ALL.csv").write_text("rank,entry,path,compile_args\n1,a,a.icn,\n2,b,b.icn,\n3,c,c.icn,--dialect=unicon\n4,x,x.xml,\n5,k,c.icn,--kept\n")
+    r = run(str(d), "--contract-cells", "--check")
+    if r.returncode != 1 or "changed=1" not in r.stdout or (d / "ALL.csv").read_text().splitlines()[1] != "1,a,a.icn,":
+        why.append(f"--check of a planted empty cell read {r.stdout.strip()[-80:]!r} (rc {r.returncode}), want changed=1 and nothing written")
+    if why:
+        print("CONTRACT_CELLS_PROBE RED: " + "; ".join(why) + f" (kept {d})"); return 1
+    shutil.rmtree(d.parent, ignore_errors=True)
+    print("CONTRACT_CELLS_PROBE ok (an empty cell of an unmarked entry takes the contract's switch, a marked one none, a class in a comment is no marker; a data row and a cell already set are left; --check writes nothing and names the change)")
+    return 0
+
+
 def _icon_sidecar_declared(src):
     """rc of the builder's question: does this Icon source declare a run sidecar the grade applies (NAME.env, NAME.pin, NAME.shims/, NAME.alone)."""
     s = str(src)[:-len(".icn")] if str(src).endswith(".icn") else ""
@@ -2199,6 +2292,10 @@ def main():
     ap.add_argument("--mine-skip", default="", metavar="FILE",
                     help="under --mine, programs another package grades already: a line is the path from the root, a tab, and where it is graded; "
                          "each reads HELD-ELSEWHERE in the census, is not run and is no entry")
+    if sys.argv[1:] == ["--probe-contract-cells"]:
+        sys.exit(probe_contract_cells())
+    if len(sys.argv) in (3, 4) and sys.argv[2] == "--contract-cells" and sys.argv[3:] in ([], ["--check"]):
+        sys.exit(contract_cells(Path(sys.argv[1]).resolve(), check=sys.argv[3:] == ["--check"]))
     if sys.argv[1:] == ["--probe-icon-sidecar"]:
         sys.exit(probe_icon_sidecar())
     args = ap.parse_args()
