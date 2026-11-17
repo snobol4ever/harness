@@ -1,0 +1,10 @@
+outer(1)
+inner(a)
+same
+same
+outer(2)
+same
+empty
+same
+instantiation_error
+type_error(atom,f(x))

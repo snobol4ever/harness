@@ -245,6 +245,21 @@ argv_usage(M:Level) :-"""),
     ;   true
     ),
 """, "")],
+    "broadcast": [("%s (listen/3)" % WHY_MAIN_META, """\nlisten(Listener0, Templ, Module:Goal) :-""", """\nlisten(Listener0, Templ, Goal) :-
+    Goal \\= _:_,
+    !,
+    listen(Listener0, Templ, user:Goal).
+listen(Listener0, Templ, Module:Goal) :-"""),
+                  ("%s (listen/2)" % WHY_MAIN_META, """listen(Templ, Module:Goal) :-""", """listen(Templ, Goal) :-
+    Goal \\= _:_,
+    !,
+    listen(Templ, user:Goal).
+listen(Templ, Module:Goal) :-"""),
+                  ("%s (unlisten/3)" % WHY_MAIN_META, """unlisten(Listener0, Templ, Module:Goal) :-""", """unlisten(Listener0, Templ, Goal) :-
+    Goal \\= _:_,
+    !,
+    unlisten(Listener0, Templ, user:Goal).
+unlisten(Listener0, Templ, Module:Goal) :-""")],
     "listing": [("%s (portray_clause/3)" % WHY_MAIN_META, """portray_clause(Stream, Term, M:Options) :-""", """portray_clause(Stream, Term, Options) :-
     Options \\= _:_,
     !,
