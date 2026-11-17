@@ -5,7 +5,7 @@ answer_write_options=[quoted(true),portray(true),max_depth(10),spacing(next_argu
 autoload=true
 character_escapes=true
 debug_on_error=true
-editor=pce_emacs
+editor-follows_display
 generate_debug_info=true
 open_shared_object=true
 unix=true

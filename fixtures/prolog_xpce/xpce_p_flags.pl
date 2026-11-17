@@ -8,6 +8,11 @@
 r(x).
 :- unlock_predicate(r/1).
 :- '$set_predicate_attribute'(r(_), hide_childs, false).
+flag(editor) :-
+    !,
+    (   getenv('DISPLAY', D), D \== '' -> W = pce_emacs ; W = default ),
+    current_prolog_flag(editor, V),
+    (   V == W -> writeq(editor-follows_display) ; writeq(editor-V) ), nl.
 flag(F) :-
     (   catch(current_prolog_flag(F, V), error(E, _), (print(F-raised(E)), nl, fail))
     ->  writeq(F = V), nl

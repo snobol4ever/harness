@@ -17,7 +17,7 @@ rank,entry,path,origin,package,n_lines,want_rc,heap_kb,stack_kb,timeout_s,compil
 16,xpce_h_streams,xpce_h_streams.pl,prolog_xpce__xpce_h_streams,prolog_xpce,24,3,131072,4096,120,,,,swi,
 17,xpce_h_term2obj,xpce_h_term2obj.pl,prolog_xpce__xpce_h_term2obj,prolog_xpce,38,0,131072,4096,120,,,,swi,
 18,xpce_p_expand,xpce_p_expand.pl,prolog_xpce__xpce_p_expand,prolog_xpce,20,0,131072,4096,120,,,,swi,
-19,xpce_p_flags,xpce_p_flags.pl,prolog_xpce__xpce_p_flags,prolog_xpce,32,0,131072,4096,120,,,,swi,
+19,xpce_p_flags,xpce_p_flags.pl,prolog_xpce__xpce_p_flags,prolog_xpce,37,0,131072,4096,120,,,,swi,
 20,xpce_p_load,xpce_p_load.pl,prolog_xpce__xpce_p_load,prolog_xpce,24,0,131072,4096,120,,,,swi,
 21,xpce_p_module,xpce_p_module.pl,prolog_xpce__xpce_p_module,prolog_xpce,24,0,131072,4096,120,,,,swi,staged
 22,xpce_p_reader,xpce_p_reader.pl,prolog_xpce__xpce_p_reader,prolog_xpce,30,0,131072,4096,120,,,,swi,

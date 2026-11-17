@@ -153,10 +153,14 @@ run_m3() {  # run_m3 DIR ENTRY [ENV...]: scrip --run in mode 3 in the staged fol
     local d="$1" e="$2"; shift 2
     ( cd "$d" && env "$@" timeout -k 5 "$(cell "$e" timeout_s)" $(xpce_runner "$e") "$S4E_SCRIP/scrip" --run --dialect=swi $(sizes "$e") "$e.pl" < /dev/null > "$e.o" 2> "$e.e"; echo "$?" > "$e.r" )
 }
-run_m4() {  # run_m4 DIR ENTRY [ENV...]: scrip --compile then the binary, mode 4; writes DIR/ENTRY.{o4,e4,r4}
+m4_build() {  # m4_build DIR SRC BIN [SWITCH...]: mode 4 as corpus_suite_harness.py compile_m4 builds it: scrip --compile writes assembler, gcc -c, a gold link against SCRIP's runtime
+    local d="$1" src="$2" bin="$3"; shift 3
+    ( cd "$d" && timeout -k 5 300 "$S4E_SCRIP/scrip" --compile "$@" "$src" --out="$bin.s" < /dev/null > /dev/null 2> "$bin.c4" && gcc -c "$bin.s" -o "$bin.o" 2>> "$bin.c4" && gcc "$bin.o" -fuse-ld=gold -L "$S4E_SCRIP/out" -lscrip_rt -lm -Wl,-rpath,"$S4E_SCRIP/out" -o "$bin" 2>> "$bin.c4" )
+}
+run_m4() {  # run_m4 DIR ENTRY [ENV...]: the entry built by m4_build, then run; writes DIR/ENTRY.{o4,e4,r4}
     local d="$1" e="$2"; shift 2
-    ( cd "$d" && if timeout -k 5 300 "$S4E_SCRIP/scrip" --compile --dialect=swi $(sizes "$e") "$e.pl" --out="$e.m4" < /dev/null > /dev/null 2> "$e.c4"; then
-        env "$@" timeout -k 5 "$(cell "$e" timeout_s)" $(xpce_runner "$e") "./$e.m4" < /dev/null > "$e.o4" 2> "$e.e4"; echo "$?" > "$e.r4"; else : > "$e.o4"; cp "$e.c4" "$e.e4"; echo 2 > "$e.r4"; fi )
+    ( cd "$d" && if m4_build "$d" "$e.pl" "$e.m4" --dialect=swi $(sizes "$e"); then
+        env "$@" timeout -k 5 "$(cell "$e" timeout_s)" $(xpce_runner "$e") "./$e.m4" < /dev/null > "$e.o4" 2> "$e.e4"; echo "$?" > "$e.r4"; else : > "$e.o4"; cp "$e.m4.c4" "$e.e4"; echo 2 > "$e.r4"; fi )
 }
 board() {  # board ENTRIES [ENV...]: grade plain entries by corpus_suite_harness, then their stderr; echo green|red|refuse
     local ents="$1"; shift
@@ -275,7 +279,7 @@ for tok in $probe; do
                if [ "$(cat "$d/m3.rc")" != 0 ] || [ "$(cat "$d/m3.out")" != loaded ] || [ -s "$d/m3.err" ]; then echo "    (b) mode 3: rc $(cat "$d/m3.rc"), out [$(head -c 60 "$d/m3.out" | tr '\n' ' ')], first error line: $(head -1 "$d/m3.err" | cut -c1-110)" >> "$log"; v=red
                elif ! cat "$d"/m3.ld.* 2>/dev/null | grep libscrip_xpce > /dev/null; then echo "    (b) mode 3 printed loaded but mapped no libscrip_xpce.so" >> "$log"; v=red; fi
                if [ "${S4E_MODE4:-0}" = 1 ]; then
-                   ( cd "$d" && timeout -k 5 300 "$S4E_SCRIP/scrip" --compile --dialect=swi xpce_load.pl --out=m4.bin < /dev/null > /dev/null 2>&1 && LD_DEBUG=libs LD_DEBUG_OUTPUT="$d/m4.ld" timeout -k 5 120 ./m4.bin < /dev/null > m4.out 2> m4.err; echo "$?" > m4.rc )
+                   ( m4_build "$d" xpce_load.pl m4.bin --dialect=swi && cd "$d" && LD_DEBUG=libs LD_DEBUG_OUTPUT="$d/m4.ld" timeout -k 5 120 ./m4.bin < /dev/null > m4.out 2> m4.err; echo "$?" > m4.rc )
                    { [ "$(cat "$d/m4.rc")" = 0 ] && [ "$(cat "$d/m4.out")" = loaded ] && [ ! -s "$d/m4.err" ] && cat "$d"/m4.ld.* 2>/dev/null | grep libscrip_xpce > /dev/null; } || { echo "    (b) mode 4: rc $(cat "$d/m4.rc")" >> "$log"; v=red; }
                fi
                ( cd "$d" && LD_DEBUG=libs LD_DEBUG_OUTPUT="$d/pl.ld" timeout -k 5 120 "$S4E_SCRIP/scrip" --run xpce_plain.pl < /dev/null > pl.out 2> pl.err )
