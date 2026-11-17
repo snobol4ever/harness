@@ -17,6 +17,8 @@
 # reads a file of PKG no name in its text gives away reads RED here as it does in the harness. Its cure is the entry's (a fixtures folder, a
 # companion its text names), never this prover's. The answer is compared byte for byte with NAME.out, stricter than the harness on purpose (the
 # same ruling: a ref is the oracle's bytes, and one that differs in a trailing newline or a decoded byte is a miscut ref).
+# THE STDERR CELL (officer_01 2026-11-17, row icon-tess-of-ipl-gprogs-is-graded-on-its-key-and-its-exit): a row whose `stderr` cell is `merged` has its standard error in the
+# answer, before the stdout and the files, as the harness merges it (tess's Execution Interrupted); an empty cell leaves standard error out, as before.
 # It honours what the harness honours beside an entry: its ALL.args line (the program's arguments), NAME.in (its stdin), the
 # out_files cell (stdout, then each file's bytes in order; a file not written is <<out_files: N was not written>>), want_rc, and the screen road
 # (util_screen_run.py beside this file): --out screen.dump with NAME.events and NAME.cap when out_files names screen.dump, else --no-screen,
@@ -89,10 +91,10 @@ def one_run(c, n):
     own = ["/usr/bin/env"] + [f"{k}={v}" for k, v in side.items()] if side else []
     sin = open(pkg / f"{name}.in", "rb") if (pkg / f"{name}.in").is_file() else subprocess.DEVNULL
     try:
-        p = subprocess.run(c["road"] + ["--"] + wrap + own + run + c["args"], cwd=d, env=env, stdin=sin, capture_output=True, timeout=3600)
+        p = subprocess.run(c["road"] + ["--"] + wrap + own + run + c["args"], cwd=d, env=env, stdin=sin, stdout=subprocess.PIPE, stderr=subprocess.STDOUT if c["merged"] else subprocess.PIPE, timeout=3600)
     finally:
         if sin is not subprocess.DEVNULL: sin.close()
-    if p.returncode == 2 and b"REFUSE" in p.stderr: raise Refuse(f"the road refused {name}: {p.stderr.decode(errors='replace').strip()[:200]}")
+    if p.returncode == 2 and b"REFUSE" in (p.stdout if c["merged"] else p.stderr): raise Refuse(f"the road refused {name}: {(p.stdout if c['merged'] else p.stderr).decode(errors='replace').strip()[:200]}")
     ans = p.stdout
     for o in c["outs"]:
         f = d / o
@@ -138,7 +140,7 @@ try:
             road += ["--no-screen"]
         if (pkg / f"{name}.depth").is_file(): road += ["--depth", (pkg / f"{name}.depth").read_text().strip()]
         if name not in ents: refuse(f"{name} is a row of ALL.csv the harness does not read as an entry")
-        cfg.append({"name": name, "row": r, "outs": outs, "screen": screen, "events": events, "road": road, "entry": ents[name], "args": argl.get(name, [])})
+        cfg.append({"name": name, "row": r, "outs": outs, "screen": screen, "events": events, "road": road, "entry": ents[name], "args": argl.get(name, []), "merged": (r.get("stderr") or "") == "merged"})
     def pool(cs, k):
         with ThreadPoolExecutor(max_workers=2 * k) as ex:
             futs = {(c["name"], n): ex.submit(one_run, c, n) for c in cs for n in (1, 2)}
