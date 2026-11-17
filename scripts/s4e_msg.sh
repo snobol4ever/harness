@@ -5604,6 +5604,10 @@ TASKEOF
          # SUCCESS verdict. The wrong one was in the headline. Now: nothing landed => the headline says so.
          # rc is deliberately UNCHANGED -- it still answers "safe to /clear", which is a different question and the
          # one tooling consumes. The banner's TEXT is what Lon reads, and it is now the one that must be earned.
+         # ⏸ A ROW PARKED AT A SAFE POINT IS NOT A FAILURE (Lon 2026-11-17 11:5x CST, in officer_05's window, verbatim: "get banner to not say FAILURE."; on his word of 11:4x to bring a row
+         # that cannot land inside the hour to a safe point and idle): a parked row's DONE-WHEN is red and its LEDGER names a WIP hash on a wip branch, never on origin/main, by the nature of a
+         # safe point; when the seat's last row is PARKED and nothing lives only in this clone, a /clear loses nothing and the word says so.
+         elif [ "$vd" = FAILURE ] && [ "$rowst" = PARKED ] && [ "$onlyhere" -eq 0 ]; then line="⏸ PARKED — $ME — row ${row1} is parked; its work is saved where its LEDGER and RESUME say, nothing lives only here: safe to /clear — $lvl"
          elif [ "$vd" = FAILURE ]; then line="⛔ FAILURE — $ME — row ${row1}: its last DONE-WHEN read red, or a hash its LEDGER names is not on origin/main. Do NOT /clear — $lvl"
          elif [ "$inbx" -gt 0 ]; then line="⏳ IN-PROGRESS — $ME — ${inbx} telegram(s) in the inbox: read, act or reply, clear. Do NOT /clear — $lvl"
          elif [ -n "$row1" ] && [ "$(awk -F'\t' -v t="$row1" '$2==t{print $4; exit}' "$PO/QUEUE.tsv" 2>/dev/null)" = "CLAIMED:$ME" ]; then line="⏳ IN-PROGRESS — $ME — row ${row1} is CLAIMED:$ME and its NEXT is owed: write the NEXT and LEDGER, then park, unclaim or done. Do NOT /clear — $lvl"
@@ -5692,6 +5696,7 @@ TASKEOF
          #     work a failure trains every reader to ignore the one word that should mean something.
          if   [ -n "$diverged" ];   then printf '%s\n' "STOP"
          elif [ "${drain:-0}" -eq 1 ]; then printf '%s\n' "DRAIN"
+         elif [ "${line#⏸ PARKED}" != "$line" ]; then printf '%s\n' "PARKED"
          elif [ "$vd" = FAILURE ]; then printf '%s\n' "FAILURE"
          # ⛔ SUCCESS IS THE CLEAN TREE ONLY (worker_10, 2026-11-06, Lon's "You say you are finished. It says different."): a clone with
          # uncommitted or unpushed work prints IN-PROGRESS whatever the handoff check said. The old test was `hrc -eq 0 || onlyhere -eq 0`,
