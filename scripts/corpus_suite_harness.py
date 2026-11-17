@@ -3874,6 +3874,53 @@ def source_probe():
         shutil.rmtree(t, ignore_errors=True)
 
 
+def one_container_probe():
+    """--probe-one-container (DESIGN-PLAN one-container step 1, the grader 2026-11-17): a scratch hosted package in the files form, three SNOBOL4
+    entries each reading what one new run column gives it: env_key prints HOST(4,'PJ_KEY') under env PJ_KEY=hello; in_beside reads data.txt, placed
+    from beside it by in_files data.txt; in_source reads renamed.txt, placed from fixtures/src.txt by in_files renamed.txt=fixtures/src.txt. ARMS:
+    (1) the three PASS in mode 3 and the package reads byte for byte as it was; (2) env_key with its env cell emptied FAILs (the cell, not the
+    environment, gave the answer); (3) an env cell with no '=' refuses rc 2; (4) an in_files source that is no file refuses rc 2. Prints
+    ONE_CONTAINER_PROBE cells=ok unset=fails bad_env=refused missing_in=refused, rc 0; another word in a cell and rc 1."""
+    t = Path(tempfile.mkdtemp(prefix="one_container_probe_", dir=os.environ.get("TMPDIR") or None))
+    try:
+        pkg = t / "pkg"; (pkg / "fixtures").mkdir(parents=True)
+        (pkg / "env_key.sno").write_text("        OUTPUT = HOST(4,'PJ_KEY')\nEND\n")
+        (pkg / "in_beside.sno").write_text("        INPUT(.IN, 5, 'data.txt')\n        OUTPUT = IN\nEND\n")
+        (pkg / "in_source.sno").write_text("        INPUT(.IN, 5, 'renamed.txt')\n        OUTPUT = IN\nEND\n")
+        (pkg / "data.txt").write_text("beside line\n"); (pkg / "fixtures" / "src.txt").write_text("source line\n")
+        for n, o in (("env_key", "hello"), ("in_beside", "beside line"), ("in_source", "source line")):
+            (pkg / f"{n}.out").write_text(o + "\n")
+        head = "entry,path,timeout_s,heap_kb,stack_kb,compile_args,env,in_files\n"
+        good = {"env_key": "PJ_KEY=hello", "in_beside": "", "in_source": ""}, {"env_key": "", "in_beside": "data.txt", "in_source": "renamed.txt=fixtures/src.txt"}
+        def write(envs, ins):
+            (pkg / "ALL.csv").write_text(head + "".join(f"{n},{n}.sno,60,131072,4096,,{envs[n]},{ins[n]}\n" for n in ("env_key", "in_beside", "in_source")))
+        def snap():
+            return sorted((str(f.relative_to(pkg)), f.read_bytes()) for f in pkg.rglob("*") if f.is_file() and f.name != "ALL.csv")
+        def grade():
+            cmd = [sys.executable, os.path.abspath(__file__), "run", str(pkg / "ALL.sno"), str(pkg / "ALL.ref"), "--lang", "snobol4", "--modes", "m3"]
+            env = {k: v for k, v in os.environ.items() if k != "PJ_KEY"}
+            env.update(S4E_ONE_RUNNER_FIXTURE="--probe-one-container: a planted package of three programs, not a board", S4E_PROGRESS_DB=str(t / "progress.tsv"))
+            r = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env, timeout=1800)
+            m = re.search(r"^SUITE_BOARD .*\bm3_n=(\d+) m3_pass=(\d+)", r.stdout, re.M)
+            return r.returncode, ((int(m.group(1)), int(m.group(2))) if m else None), r.stdout
+        before = snap()
+        write(*good); rc1, g1, l1 = grade()
+        cells = "ok" if (rc1 == 0 and g1 == (3, 3) and snap() == before) else "RED"
+        write({"env_key": "", "in_beside": "", "in_source": ""}, good[1]); rc2, g2, l2 = grade()
+        unset = "fails" if (rc2 == 1 and g2 == (3, 2)) else "RED"
+        write({"env_key": "NOEQUALS", "in_beside": "", "in_source": ""}, good[1]); rc3, g3, l3 = grade()
+        bad_env = "refused" if (rc3 == 2 and g3 is None) else "RED"
+        write(good[0], {"env_key": "", "in_beside": "data.txt", "in_source": "renamed.txt=fixtures/none.txt"}); rc4, g4, l4 = grade()
+        missing_in = "refused" if (rc4 == 2 and g4 is None) else "RED"
+        print(f"ONE_CONTAINER_PROBE cells={cells} unset={unset} bad_env={bad_env} missing_in={missing_in}")
+        for w, rc, g, lg in (("cells", rc1, g1, l1), ("unset", rc2, g2, l2), ("bad_env", rc3, g3, l3), ("missing_in", rc4, g4, l4)):
+            if (w == "cells" and cells != "ok") or (w == "unset" and unset != "fails") or (w == "bad_env" and bad_env != "refused") or (w == "missing_in" and missing_in != "refused"):
+                print("  %s: rc %s board %s\n%s" % (w, rc, g, "\n".join(lg.strip().split("\n")[-6:])))
+        return 0 if (cells, unset, bad_env, missing_in) == ("ok", "fails", "refused", "refused") else 1
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
 def cmd_unpack(args):
     """corpus_suite_harness.py unpack DIR [--dry-run] | unpack --probe: one package from its container (ALL.EXT, ALL.ref, ALL.in,
     ALL.argv) to THE FILES FORM (CIO-59, CIO-60): the program where the distribution put it, NAME.in, NAME.out and NAME.err beside it,
@@ -4532,6 +4579,22 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         _src = str(_origin.resolve()) if (_origin is not None and _origin.is_file()) else None
         if _alone is not None:
             _rc_dir = _alone                                        # NAME.alone: the run directory holds its fixtures alone; the source is named by its full path
+        _run_dir = Path(_rc_dir) if _rc_dir is not None else Path(cand).parent
+        if getattr(entry, "in_files", None):
+            # THE in_files CELL (DESIGN-PLAN one-container step 1, the grader 2026-11-17): each file is placed in the run directory before every
+            # run, an owner-writable copy, so a program that rewrites its input never writes the suite.
+            for _nm, _sr in entry.in_files:
+                _from = (Path(companion_dir) / Path(entry.name).parent / _nm) if _sr is None else (Path(_sr) if _sr.startswith("/") else Path(companion_dir) / _sr)
+                if companion_dir is None or not _from.is_file():
+                    refuse(f"{entry.name}: in_files names {_nm} from {_from}, which is no file -- the entry is never run without the input it declares")
+                shutil.copyfile(_from, _run_dir / _nm); os.chmod(_run_dir / _nm, 0o644)
+        if getattr(entry, "env_cells", None):
+            # THE env CELL (DESIGN-PLAN one-container step 1): its pairs join the side environment; a key a sidecar also sets is two answers to one question.
+            _side = dict(_side or {})
+            for _k, _vl in entry.env_cells:
+                if _k in _side:
+                    refuse(f"{entry.name}: env cell sets {_k}, which its NAME.env, pin or shims sidecar sets too -- one declaration")
+                _side[_k] = _vl.replace("@RUNDIR", str(_run_dir))
         _sf = None
         if getattr(entry, "grader", None) == "swi-cases":
             # ⭐ CIO-21 (three files): a swi-cases entry runs under the one launch as THREE FILES, the plunit shim, the entry's origin file and a
@@ -4609,6 +4672,7 @@ def _batch_m3_eligible(entry, paths):
     no argv, no compile switches, no mask or stream option), graded exactly as run_m3 grades it. Anything else stays per-process."""
     return ("/" not in entry.name and not getattr(entry, "stage_upstream", False) and not getattr(entry, "compile_args", None) and not getattr(entry, "cwd", None)
             and not getattr(entry, "argv", None) and not getattr(entry, "mask", None) and not getattr(entry, "out_files", None)
+            and not getattr(entry, "env_cells", None) and not getattr(entry, "in_files", None)
             and not getattr(entry, "merge_stderr", False) and not getattr(entry, "compare_ws", False)
             and not getattr(entry, "answer_file", None) and not paths.get("scrip_extra") and paths["engine"] == "scrip")
 
@@ -6158,6 +6222,10 @@ def cmd_run(args):
             refuse(f"{Path(args.sno).parent} holds ALL.source or ALL.launch: only scrip --run-files stages such a package, in mode 3 (CIO-122); asked modes {','.join(modes)}, engine {paths['engine']}")
         if not getattr(args, "post", None):
             args.run_files = True
+        _cells = [e.name for e in run_entries if getattr(e, "env_cells", None) or getattr(e, "in_files", None)]
+        if _cells:
+            refuse(f"{Path(args.sno).parent}: {len(_cells)} entr(y/ies) ({', '.join(_cells[:5])}) carry an env or in_files cell, and scrip --run-files, the only road of this "
+                   f"package, does not apply them yet (DESIGN-PLAN one-container step 1: the per-entry road reads them; the switch's reader is a later step) -- never a run without them")
     _files_entries = run_entries
     if _switch_alone:
         _files_entries = [e for e in run_entries if not _screen_entry_of_switch_pkg(e, Path(args.sno).parent)]
@@ -7341,6 +7409,46 @@ def validate_out_files_cell(raw, where):
     return words
 
 
+def validate_env_cell(raw, where):
+    """ONE env cell (DESIGN-PLAN one-container step 1, the grader 2026-11-17; skill suites-and-grading section 10): KEY=VALUE pairs joined by ';',
+    laid over the environment of the entry's runs in every mode and of its oracle cut, as NAME.env is; @RUNDIR in a value is the directory the
+    program runs in. -> [(KEY, VALUE), ...] or None for the empty cell; a pair that is no KEY=VALUE, or a key named twice, refuses rc=2."""
+    v = (raw or "").strip()
+    if not v:
+        return None
+    out, seen = [], set()
+    for part in v.split(";"):
+        k, eq, val = part.strip().partition("=")
+        if not eq or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", k):
+            refuse(f"{where}: env cell part {part!r} is not KEY=VALUE (the cell is KEY=VALUE pairs joined by ';')")
+        if k in seen:
+            refuse(f"{where}: env cell names {k} twice")
+        seen.add(k); out.append((k, val))
+    return out
+
+
+def validate_in_files_cell(raw, where):
+    """ONE in_files cell (DESIGN-PLAN one-container step 1, the grader 2026-11-17): the files placed in the entry's run directory before every run,
+    joined by ';'. NAME is the file NAME beside the program, placed as NAME; NAME=SOURCE places SOURCE as NAME, SOURCE a path relative to the
+    suite's folder (no '..', not absolute) or an absolute path under /home/resources (the data of a package we do not host). NAME is a bare file
+    name, never ALL.*. -> [(NAME, SOURCE), ...] or None for the empty cell; a malformed part refuses rc=2."""
+    v = (raw or "").strip()
+    if not v:
+        return None
+    out, seen = [], set()
+    for part in v.split(";"):
+        name, eq, src = part.strip().partition("=")
+        name = name.strip(); src = src.strip() if eq else None
+        if not name or "/" in name or name.startswith(".") or name.startswith("ALL."):
+            refuse(f"{where}: in_files names {name!r} -- the name it is placed under is a bare file name of the run directory")
+        if eq and (not src or ".." in Path(src).parts or (src.startswith("/") and not src.startswith("/home/resources/"))):
+            refuse(f"{where}: in_files source {src!r} must be a path relative to the suite's folder, without '..', or one under /home/resources")
+        if name in seen:
+            refuse(f"{where}: in_files names {name} twice")
+        seen.add(name); out.append((name, src))
+    return out
+
+
 def validate_compare_cell(raw, where):
     """ONE compare cell: empty = byte for byte (every table before the column existed); "ignore-all-space" = each line compared with its white
     space removed, as `diff -w` compares (XSB's gentest.sh, R-1927); verdict-line = the first stdout line that begins with the ref's first word is
@@ -7616,7 +7724,7 @@ def read_command_line_columns(src_path, entries, modes=None):
     import csv as _csvm
     with open(csv_path, newline="") as f:
         rdr = _csvm.DictReader(f)
-        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s", "grader", "cwd", "stage_name", "dialect", "fixtures") if rdr.fieldnames and c in rdr.fieldnames]
+        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s", "grader", "cwd", "stage_name", "dialect", "fixtures", "env", "in_files") if rdr.fieldnames and c in rdr.fieldnames]
         if not cols:
             return
         rows = [(n, r) for n, r in enumerate(rdr, 2)]
@@ -7649,6 +7757,12 @@ def read_command_line_columns(src_path, entries, modes=None):
         of = validate_out_files_cell(row.get("out_files"), where)
         if of:
             e.out_files = of
+        _ev = validate_env_cell(row.get("env"), where)
+        if _ev:
+            e.env_cells = _ev
+        _inf = validate_in_files_cell(row.get("in_files"), where)
+        if _inf:
+            e.in_files = _inf
         _fx = (row.get("fixtures") or "").strip()
         if _fx not in ("", "staged", "folder"):
             refuse(f"{where}: fixtures {_fx!r} must be staged, folder or empty (staged: the entry's NAME.fixtures/ tree is staged where it runs, as its ref was cut;"
@@ -8645,6 +8759,8 @@ def main():
         sys.exit(tap_cases_probe())
     if sys.argv[1:] == ["--probe-source"]:
         return source_probe()
+    if sys.argv[1:] == ["--probe-one-container"]:
+        return one_container_probe()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
 
