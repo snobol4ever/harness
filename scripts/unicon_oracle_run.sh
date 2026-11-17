@@ -17,7 +17,7 @@ if [ "${1:-}" = --here ]; then
     name="$(basename "${src%.*}")"
     "$U" -s "$src" -o "$work/$name" < /dev/null > "$work/compile.log" 2>&1
     if [ ! -x "$work/$name" ]; then cat "$work/compile.log" >&2; exit 126; fi
-    "$work/$name"; exit $?
+    "$work/$name" "${@:3}"; exit $?
 fi
 src="${1:-}"; [ -f "$src" ] || { echo "unicon_oracle_run.sh: no such file: $src" >&2; exit 127; }
 work=$(mktemp -d) || exit 127

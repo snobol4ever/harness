@@ -1923,7 +1923,7 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=
             with open(sin, "rb") as fin:
                 pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
         elif lang == "icon":
-            argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "unicon_oracle_run.sh"), "--here", name]
+            argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "unicon_oracle_run.sh"), "--here", name, *args]
             with open(sin, "rb") as fin:
                 pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
         elif lang == "prolog" and "--xsb" in flags:
@@ -1961,8 +1961,8 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     fed it, and the third run, which asks whether the answer changes with standard input, is not made."""
     fed = feed[1] if feed else b""
     args = tuple(args or ())
-    if args and lang in ("pascal", "icon"):
-        h.refuse(f"{rel}: ALL.args names arguments, which the mine road passes on the generic oracle road only, after the program and any launch shim (not {lang}'s own road)")
+    if args and lang == "pascal":
+        h.refuse(f"{rel}: ALL.args names arguments, which the mine road passes on the generic oracle road and the icon road only, after the program and any launch shim (not {lang}'s own road)")
     src = root / rel
     at, name = (root, rel) if whole else (src.parent, src.name)
     text = src.read_text(errors="replace")
