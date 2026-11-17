@@ -61,6 +61,12 @@ the run. With no --events the answer is byte for byte what it was. The script, o
                            (Icon's Raise does, rxwin.ri raiseWindow) takes a key in another only after this line (officer_06 2026-11-16,
                            the cto's ruling: one explicit line, no policy, so a script without it sends exactly what it sent before)
   wait                     the end of a step: the screen holds still again and its line is written
+  drawn                    ONLY AS THE SCRIPT'S FIRST LINE, alone (the cto's ruling 2026-11-17, row icon-tess-of-ipl-gprogs-is-graded-on-its-key-and-its-exit):
+                           the first step is sent at the first shot of the screen with something drawn on it, the drawn test the still rule reads, instead of
+                           after a still picture, and no screen line is written for that opening; every later step and every other rule stand. For a program
+                           whose picture never holds still by itself (tess rotates its tesseract every pass until a key freezes it) and that a key ends:
+                           without the line the road waits for a still picture that never comes and reads screen unstable at the cap. A drawn line anywhere
+                           else, with a word after it, or with nothing after it in the script, is rc 2 before the program starts.
 
 The keyboard goes to the window under the pointer (no window manager, so focus follows the pointer): move into the window before a key.
 THE INJECTOR is the X server's own XTEST extension, reached through ctypes on libX11.so.6 and libXtst.so.6: no package and nothing to
@@ -141,10 +147,11 @@ def pixels(display):
     return (f"{w}x{h}", hashlib.md5(pix).hexdigest(), drawn), d
 def read_events(path):
     """The script as its steps: a list of steps, a step the list of sends before one `wait` (or the end of the script). A send is ("m", x, y),
-    ("b", button, down), ("k", key, down) or ("tap", key), a key an X keysym name or, from `type`, a character's own code."""
+    ("b", button, down), ("k", key, down) or ("tap", key), a key an X keysym name or, from `type`, a character's own code. The result is (steps, drawn): drawn
+    is True when the script's first line is `drawn` (the opening step is then sent at the first drawn shot, see run)."""
     try: text = open(path, encoding="utf-8").read()
     except (OSError, UnicodeDecodeError) as e: refuse(f"--events {path}: {e}")
-    steps, cur = [], []
+    steps, cur, drawn, first = [], [], False, True
     def num(w, lo, hi, where, what):
         if not w.isdigit() or not lo <= int(w) <= hi: refuse(f"{where}: {what} {w!r} is no whole number from {lo} to {hi}")
         return int(w)
@@ -152,12 +159,16 @@ def read_events(path):
         line, where = raw.strip(), f"--events {path} line {n}"
         if not line or line.startswith("#"): continue
         w = line.split()
+        if w[0] == "drawn":
+            if not first or len(w) != 1: refuse(f"{where}: `drawn` is the script's first line alone, and nothing else may take it")
+            drawn = True; first = False; continue
+        first = False
         if w[0] == "type":
             body = raw.lstrip()[5:]
             if not body or any(not 0x20 <= ord(c) <= 0x7e for c in body): refuse(f"{where}: type wants printable ASCII text after it")
             cur += [("tap", ord(c)) for c in body]; continue
         need = {"move": 2, "press": 1, "release": 1, "click": 3, "drag": 5, "key": 1, "keydown": 1, "keyup": 1, "focus": 0, "wait": 0}.get(w[0])
-        if need is None: refuse(f"{where}: {w[0]!r} is no send (move press release click drag key keydown keyup focus type wait)")
+        if need is None: refuse(f"{where}: {w[0]!r} is no send (move press release click drag key keydown keyup focus type wait drawn)")
         if len(w) - 1 != need: refuse(f"{where}: {w[0]} takes {need} word(s), {len(w) - 1} given")
         xy = lambda i: (num(w[i], 0, WIDE - 1, where, "x"), num(w[i + 1], 0, HIGH - 1, where, "y"))
         if w[0] == "wait": steps.append(cur); cur = []
@@ -171,7 +182,8 @@ def read_events(path):
         elif w[0] == "key": cur.append(("tap", w[1]))
         else: cur.append(("k", w[1], w[0] == "keydown"))
     if cur: steps.append(cur)
-    return steps
+    if drawn and not steps: refuse(f"--events {path}: `drawn` sends the script's first step at the first drawn picture, and the script has no step after it")
+    return steps, drawn
 def xtest_libs():
     try: return ctypes.CDLL("libX11.so.6"), ctypes.CDLL("libXtst.so.6")
     except OSError as e: refuse(f"--events needs libX11.so.6 and libXtst.so.6 (the XTEST extension's client library): {e}")
@@ -266,7 +278,7 @@ def still_span(marks):
     if span <= 0: return False
     return (marks[-1][1] - marks[0][1] < IDLE_TICKS_PER_S * span and (marks[-1][2] - marks[0][2]) / 1e9 < RUNNABLE_FRAC * span
             and (marks[-1][3] - marks[0][3]) / 1e9 < SERVER_FRAC * span)
-def run(cmd, out, cap, keep, steps=None, depth=24):
+def run(cmd, out, cap, keep, steps=None, depth=24, drawn=False):
     libs = xtest_libs() if steps is not None else None
     xv, display = start_display(depth)
     env = dict(os.environ, DISPLAY=display, S4E_PIN_REAL_SLEEP_MS=str(PIN_REAL_SLEEP_MS))
@@ -286,7 +298,9 @@ def run(cmd, out, cap, keep, steps=None, depth=24):
             dt, dr = account_delta(acct, now); acct = now; ticks += dt; runnable += dr
             if dr / 1e9 < RUNNABLE_FRAC * max(now_t - prev_t, 1e-3): idle_seen = True
             prev_t = now_t
-            if shot and shot[2]:
+            if drawn and shot and shot[2]:
+                inj.send(steps[0]); sent = 1; drawn = False; last, run_len, marks, t0, idle_seen = None, 0, [], time.time(), False   # THE DRAWN LINE: the opening step at the first drawn shot, no line
+            elif shot and shot[2]:
                 run_len = run_len + 1 if shot == last else 1; last = shot
                 marks = (marks + [(now_t, ticks, runnable, server)]) if run_len > 1 else [(now_t, ticks, runnable, server)]
                 if run_len >= STILL and still_span(marks):
@@ -365,8 +379,24 @@ def probe_pin():
         while True:
             X.XNextEvent(dpy, ev)
             if struct.unpack_from("i", ev.raw, 0)[0] == 2: log.write("L\n" if struct.unpack_from("Q", ev.raw, 32)[0] == wl else "R\n"); log.flush()
+def probe_spin():
+    """--probe-client spin: the drawn arm's own X client. One 200 by 200 window that takes a new background colour every frame, so its picture is never
+    still, and that, on a key press, writes got-key to its standard output and ends with status 6. It is an animation that quits on a key, as tess
+    of ipl_gprogs is."""
+    X = ctypes.CDLL("libX11.so.6"); V, I, U, L = ctypes.c_void_p, ctypes.c_int, ctypes.c_uint, ctypes.c_ulong
+    X.XOpenDisplay.restype, X.XOpenDisplay.argtypes = V, [ctypes.c_char_p]; X.XDefaultScreen.argtypes = [V]
+    X.XRootWindow.restype, X.XRootWindow.argtypes = L, [V, I]; X.XCreateSimpleWindow.restype, X.XCreateSimpleWindow.argtypes = L, [V, L, I, I, U, U, U, L, L]
+    X.XSelectInput.argtypes, X.XMapWindow.argtypes, X.XFlush.argtypes, X.XPending.argtypes, X.XNextEvent.argtypes = [V, L, ctypes.c_long], [V, L], [V], [V], [V, ctypes.c_char_p]
+    X.XSetWindowBackground.argtypes, X.XClearWindow.argtypes = [V, L, L], [V, L]
+    dpy = X.XOpenDisplay(None) or sys.exit(2); w = X.XCreateSimpleWindow(dpy, X.XRootWindow(dpy, X.XDefaultScreen(dpy)), 0, 0, 200, 200, 0, 0, 0x404040)
+    X.XSelectInput(dpy, w, 1); X.XMapWindow(dpy, w); X.XFlush(dpy); ev = ctypes.create_string_buffer(192); i = 0
+    while True:
+        while X.XPending(dpy):
+            X.XNextEvent(dpy, ev)
+            if struct.unpack_from("i", ev.raw, 0)[0] == 2: sys.stdout.write("got-key\n"); sys.stdout.flush(); sys.exit(6)
+        i += 1; X.XSetWindowBackground(dpy, w, (i * 0x0b1f3d + 0x101010) & 0xffffff); X.XClearWindow(dpy, w); X.XFlush(dpy); time.sleep(0.05)
 def probe():
-    """Twenty-six arms on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
+    """Thirty arms on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
     scripted events xeyes, whose picture follows the pointer, and xev, which prints every event it is sent): no arm needs Icon. rc 0 all green,
     1 an arm red, 2 cannot measure. (xsetroot is no client for this: MEASURED, its colour never reaches the dump of an Xvfb root.)"""
     for c in ("xlogo", "ico", "xeyes", "xev"): which(c) or refuse(f"--probe needs {c} (x11-apps)")
@@ -451,6 +481,12 @@ def probe():
         pn = go("pinned", f"exec {sys.executable} {me} --probe-client pin", events="move 50 50\nwait\nkey a\nwait\n"); pl = seen("pin.log")
         if os.path.exists(os.path.join(td, "pin.log")): os.remove(os.path.join(td, "pin.log"))
         pf = go("focused", f"exec {sys.executable} {me} --probe-client pin", events="move 50 50\nfocus\nwait\nkey a\nwait\n"); fo = seen("pin.log")
+        sp = f"exec {sys.executable} {me} --probe-client spin"
+        dr = go("drawn", sp, events="drawn\nmove 50 60\nkey q\n")
+        dn = go("undrawn", sp, cap="8", events="move 50 60\nkey q\n")
+        de = go("drawneyes", "exec xeyes -geometry 300x200+0+0", events="drawn\nmove 30 700\nwait\nmove 1000 20\n"); del_ = de[2].split("\n")
+        db = [go("drawnlate", "touch drawnlate.ran", events="move 50 60\ndrawn\nkey q\n"), go("drawnword", "touch drawnword.ran", events="drawn 3\nkey q\n"),
+              go("drawnalone", "touch drawnalone.ran", events="drawn\n")]
         arms = [("a waiting program is ended at its still screen, rc 0, its text withheld", a[0] == 0 and a[1] == "" and a[2].startswith("screen 1024x768 md5 ")),
                 ("the same picture gives the same line twice", a[2] == b[2] and a[2] != ""),
                 ("another picture gives another line", c[2].startswith("screen 1024x768 md5 ") and c[2] != a[2]),
@@ -476,7 +512,11 @@ def probe():
                 ("events: a program that ends with no picture is screen none alone, its text and status kept", n[0] == 3 and n[1] == "whole-output\n" and n[2] == "screen none"),
                 ("events: a line that is no send is refused rc 2 before the program starts", k[0] == 2 and "REFUSE(2)" in k[3] and "line 2" in k[3] and not os.path.exists(os.path.join(td, "badword.ran"))),
                 ("events: a key that is no keysym is refused rc 2 before the program starts", m[0] == 2 and "REFUSE(2)" in m[3] and not os.path.exists(os.path.join(td, "badkey.ran"))),
-                ("events: a pinned focus keeps a key from the window under the pointer until focus returns it there", pn[0] == 0 and pl == "R\n" and pf[0] == 0 and fo == "L\n")]
+                ("events: a pinned focus keeps a key from the window under the pointer until focus returns it there", pn[0] == 0 and pl == "R\n" and pf[0] == 0 and fo == "L\n"),
+                ("drawn: a program whose picture changes every frame is sent its first step at its first drawn picture, and ends by its own key with its own status, screen none", dr[0] == 6 and dr[1] == "got-key\n" and dr[2] == "screen none"),
+                ("drawn: the same script with no drawn line waits for a still picture that never comes, screen unstable, its key never sent", dn[0] == 0 and dn[1] == "" and dn[2] == "screen unstable"),
+                ("drawn: every later step stands, one line a still picture after the opening send, no line for the opening", de[0] == 0 and len(del_) == 2 and all(pic(l) for l in del_) and del_[0] != del_[1]),
+                ("drawn: anywhere but first, with a word, or alone, it is refused rc 2 before the program starts", all(x[0] == 2 and "REFUSE(2)" in x[3] for x in db) and not any(os.path.exists(os.path.join(td, f"{n}.ran")) for n in ("drawnlate", "drawnword", "drawnalone")))]
         for what, ok in arms:
             print(("GREEN " if ok else "RED   ") + what); bad += 0 if ok else 1
     print(f"SCREEN-PROBE arms={len(arms)} red={bad}")
@@ -486,6 +526,7 @@ if __name__ == "__main__":
     if a == ["--probe"]: sys.exit(probe())
     if len(a) == 2 and a[0] == "--probe-client" and a[1] in ("keep", "change", "blue"): probe_client(a[1])
     if a == ["--probe-client", "pin"]: probe_pin()
+    if a == ["--probe-client", "spin"]: probe_spin()
     out, cap, keep, events, depth, plain = "screen.dump", 30.0, None, None, 24, False
     while a and a[0] != "--":
         if a[0] == "--out" and len(a) > 1: out = a[1]; a = a[2:]
@@ -502,4 +543,5 @@ if __name__ == "__main__":
     if plain:
         if events is not None or keep is not None: refuse("--no-screen reads no screen: it takes no --events and no --keep")
         sys.exit(run_plain(a[1:], depth))
-    sys.exit(run(a[1:], out, cap, keep, read_events(events) if events is not None else None, depth))
+    steps, drawn = read_events(events) if events is not None else (None, False)
+    sys.exit(run(a[1:], out, cap, keep, steps, depth, drawn))
