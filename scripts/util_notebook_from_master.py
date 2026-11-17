@@ -74,10 +74,11 @@ def ref_text(ref):
 # A CELL IS NOT A PROGRAM (the cao 2026-11-16, row jupyter-the-icon-and-unicon-notebooks-hold-cells-that-live-in-one-session): every cell of a notebook
 # is one more unit of one live session, so an answer that holds only in a fresh process cannot be a cell's saved output. Read from the text:
 # an image of a list, set, table, co-expression or record prints its serial number, which counts every structure the session made; exit()
-# ends the session; &time and &collections count from the process's start. MEASURED on Icon_in_SCRIP.ipynb: cells 3, 10 and 11 differ by
-# serial numbers alone (list_2 against list_7) and cell 5 ends the session with exit(0).
+# ends the session. MEASURED on Icon_in_SCRIP.ipynb: cells 3, 10 and 11 differ by serial numbers alone (list_2 against list_7) and cell 5
+# ends the session with exit(0). A source that reads &time or &collections is no such answer by itself (MEASURED: Unicon_in_SCRIP.ipynb's
+# coexpr/cobench reads &time and coexpr/stressCollectCo names &collections, and both read the same through the kernel), so the text rule is exit().
 FRESH_SERIAL = re.compile(r"\b(?:list|set|table|co-expression)_\d+\b|\brecord [A-Za-z_][A-Za-z_0-9]*_\d+\(")
-FRESH_SOURCE = re.compile(r"\bexit\s*\(|&time\b|&collections\b")
+FRESH_SOURCE = re.compile(r"\bexit\s*\(")
 
 
 def unfit(e, lang=""):
@@ -103,7 +104,7 @@ def unfit(e, lang=""):
         return "its answer prints a structure's serial number, which in a session counts every structure the earlier cells made"
     src = "\n".join(getattr(e, "sno_lines", None) or [])
     if FRESH_SOURCE.search(src):
-        return "it ends its process with exit() or reads &time or &collections, an answer that holds only in a fresh process"
+        return "it ends its process with exit(), which in a session ends the session"
     return ""
 
 
