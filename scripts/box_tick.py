@@ -4,7 +4,10 @@
 # senior, officer, or your GRANDMOTHER to STOP NOW! I want all seats to RUN at WILL." / "We do not want two or three limiters, we want ONE UNIVERSALALLY resepcted LIMIT.").
 # THE ONE LIMIT: cores=N of /home/resources/postoffice/CORES.conf (S4E_CORES_CONF the seam). Every tick sets s4e.slice, the one slice that holds every process of the fleet, to
 # CPUQuota=N*100% and clears every quota below it (and below app.slice/app-s4e.slice, where the graded runs lived until this row), so the kernel enforces the same number the
-# door's tokens count (lib_slots.sh). The grader width W, the workers awake A and the controller's FLEET live set are gone: nothing else limits and nothing chooses a seat.
+# door's tokens count (lib_slots.sh). SINCE 2026-11-16 20:1x CST THE DOOR ALONE IS THE LIMIT AND EVERY FLEET CPU QUOTA IS CLEARED, s4e.slice's too (Lon, in the coo's window,
+# verbatim: "your damn cgroups have never worked." / "Have you heard of a queue."). MEASURED by the coo 20:11 at cores=10: s4e.slice used 1005% and was throttled 541% of a core
+# over ten seconds while the box stood 34% idle, CPU pressure some avg10 78%, load 49: the quota covers the 18 sessions and their tools, which take no token, so it starved them
+# beside idle cores. A token waits asleep and is no load; the quota's wait is runnable and is. The grader width W, the workers awake A and the controller's FLEET live set are gone: nothing else limits and nothing chooses a seat.
 # With no CORES.conf, or no cores line, the tick sets no quota and clears none (the box of before).
 #   box_tick.py --tick              one tick: sense, enforce the one limit, sync, sweep, print one TICK line; under flock on $TICK_DIR/tick.lock; rc 0
 #   box_tick.py --probe-one-limit   the one limit on the live box and on planted trees; one ONE_LIMIT line, rc 0 ok / 1 red / 2 no number to read
@@ -126,8 +129,8 @@ def one_limit_actions(top, n):
     acts = []
     if not n:
         return acts
-    if _quota(os.path.join(top, FLEET_SLICE)) != n * 100:
-        acts.append((FLEET_SLICE, "%d%%" % (n * 100)))
+    if _quota(os.path.join(top, FLEET_SLICE)) is not None:
+        acts.append((FLEET_SLICE, ""))
     for tree in FLEET_TREES:
         root = os.path.join(top, tree)
         for d, subs, _ in os.walk(root):
@@ -850,9 +853,9 @@ def probe_one_limit(scratch=False):
         plant("s4e.slice/s4e-grader.slice", None); plant("s4e.slice/s4e-runs.slice/s4e-runs-grader.slice", None); plant("app.slice/app-s4e.slice", 1000)
         plant("app.slice/app-gnome.slice", 300)   # outside the fleet: never touched
         got = sorted(one_limit_actions(os.path.join(T, "u"), 14))
-        want = sorted([("s4e.slice", "1400%"), ("s4e-seats.slice", ""), ("s4e-seat-x.scope", ""), ("app-s4e.slice", "")])
+        want = sorted([("s4e.slice", ""), ("s4e-seats.slice", ""), ("s4e-seat-x.scope", ""), ("app-s4e.slice", "")])
         arm("law", got == want, "actions %s, want %s" % (got, want))
-        plant("s4e.slice", 1400)
+        plant("s4e.slice", None)
         for r in ("s4e.slice/s4e-seats.slice", "s4e.slice/s4e-seats.slice/s4e-seat-x.scope", "app.slice/app-s4e.slice"): plant(r, None)
         arm("settled", one_limit_actions(os.path.join(T, "u"), 14) == [], "a tree already at the one limit still asks for acts")
         arm("noconf", one_limit_actions(os.path.join(T, "u"), None) == [], "no number must change nothing")
@@ -922,7 +925,7 @@ def probe_one_limit(scratch=False):
                 print("ONE_LIMIT REFUSE(2): no cores=N line in %s -- there is no one number to read (%s)" % (CORES_CONF, " ".join(arms)))
                 return 2
             q = _quota(os.path.join(U, FLEET_SLICE))
-            arm("kernel", q == n * 100, "%s cpu.max is %s percent, cores=%d" % (FLEET_SLICE, q, n))
+            arm("kernel", q is None, "%s cpu.max is %s percent, the door's cores=%d is the one limit and the kernel holds no CPU quota" % (FLEET_SLICE, q, n))
             acts = [u for u, v in one_limit_actions(U, n) if u != FLEET_SLICE]
             arm("nested", not acts, "%d other quota(s): %s" % (len(acts), ",".join(acts[:6])))
             mn, msv = mem_conf()
