@@ -5719,6 +5719,9 @@ TASKEOF
          # A PORT SEAT CARRIES ITS OWN ENGINE'S GRID (Lon 2026-11-17 17:4x CST, in the JVM window, verbatim: "where is your stop-turn test-suite banner?"; the seat jvm had
          # the verdict word alone, since the grid was the coo's and the grader's): jvm and dotnet show the grid of their own rows suite@<seat>, rendered under S4E_ENGINE=<seat>
          # (util_suite_banner.py prints "11 suites, ... -- snobol4jvm's own readings (engine jvm)"), never SCRIP's.
+         # THE dotnet PORT SEAT TOO (Lon 2026-11-17, in the dotnet window, verbatim: "where is your test-suite stop-turn banner?", after his word there that hour:
+         # "get ALL SNOBOL4 tests working with snobol4dotnet."): a port seat's grid reads its own engine's <key>@<engine> rows alone (util_suite_banner.py GRID_ENGINES)
+         # (harness ace14b06, by dotnet; this comment restored after the jvm landing 2b98ce38 dropped it, that patch having been cut on the text before it)
          _grid=0; _eng=""; case "$ME" in coo|grader) _grid=1 ;; jvm|dotnet) _grid=1; _eng="$ME" ;; esac
          if [ "${S4E_BANNER_GRID:-$_grid}" = 0 ]; then :
          elif [ -f "$_sb" ]; then env ${_eng:+S4E_ENGINE=$_eng} timeout -k 5 30 python3 "$_sb" || printf '%s\n' "⛔ SUITE GRID REFUSED (rc=$?) -- $_sb ran and did not render"
