@@ -1980,6 +1980,8 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # seven rung suites before landing: no entry lists or globs its run directory; three print their own argv[0]
     # (icon 414 prints only its TYPE and length, icon 924 is this row, snobol4 104 prints HOST(0)).
     out_bin = (Path(bin_dir) if bin_dir else tmp_dir) / (Path(sno_path).stem or "t")
+    if out_bin.is_dir():   # an entry DIR/STEM with STEM == DIR (ipl_gpacks ged/ged, vib/vib, htetris, drawtree, xtiles): the run directory's DIR is a directory and ld cannot write it (officer_01 2026-11-16 21:0x CST, gcc link failed, "ged: open: Is a directory"); the binary goes to the harness's own tmp_dir, outside the run directory, and is still invoked by its bare name through PATH
+        out_bin = Path(tmp_dir) / out_bin.name
     skip = compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=compile_args, run_cwd=run_cwd, source_path=source_path, source_files=source_files)
     if skip is not None:
         # ⛔⭐ A COMPILE REFUSAL IS A VERDICT, NOT A SKIP (R-1354, the coo's ask of 2026-09-28 on hq_snobol4's witness; hq_raku
