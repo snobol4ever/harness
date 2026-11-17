@@ -25,7 +25,14 @@ SEM_HOME="${S4E_SEM_HOME:-/tmp/s4e-sem}"
 # snobol4jvm clone with no siblings"): SCRIP is S4E_SCRIP (lib_paths.sh: the root itself once it is the clone, else its sibling); corpus, harness and .github are synced only while the
 # root still holds them as siblings. The one-disk checkouts (/home/corpus, /home/harness, /home/.github) are never a seat's to sync: the grader keeps them at origin.
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh"
-repo_dir() { if [ "$1" = SCRIP ]; then printf '%s' "$S4E_SCRIP"; else printf '%s/%s' "$ROOT" "$1"; fi; }
+repo_dir() { if [ "$1" = SCRIP ]; then printf '%s' "$S4E_SCRIP"; elif [ "$1" = port ]; then printf '%s' "$ROOT"; else printf '%s/%s' "$ROOT" "$1"; fi; }
+# A PORT ROOT SYNCS ITSELF (seat dotnet 2026-11-17, Lon 15:5x CST: "Just like a SCRIP seat, the clone goes directly at the root."; MEASURED: in /home/claude_dotnet this
+# script answered "REFUSE(2): /home/claude_dotnet/SCRIP is not a git repo", lib_paths.sh naming the sibling a port root never holds): a root that is a git clone holding
+# Snobol4.sln (snobol4dotnet) or project.clj (snobol4jvm) and no SCRIP syncs the root's own clone, named port, in SCRIP's place; a SCRIP root reads as before. A corpus, harness
+# or .github is synced beside it only when it is a clone of its own (its own .git): snobol4dotnet tracks an empty corpus gitlink folder, which git reads as the root's repo.
+if [ -z "${S4E_SYNC_REPOS:-}" ] && [ ! -e "$S4E_SCRIP" ] && { [ -f "$ROOT/Snobol4.sln" ] || [ -f "$ROOT/project.clj" ]; } && git -C "$ROOT" rev-parse --git-dir > /dev/null 2>&1; then
+    REPOS=port; for _r in corpus harness .github; do [ -e "$ROOT/$_r/.git" ] && REPOS="$REPOS $_r"; done
+fi
 
 # point_at_store ROOT REPO: the alternates line for one repo, written once (idempotent). NO ROOT BORROWS FROM ANOTHER ROOT (the cio 2026-11-14, row
 # harness-one-disk-step-6-the-cutover; until then the line named /home/claude_coo/<repo>, and this function wrote it back at every sync): SCRIP borrows from the
