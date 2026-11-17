@@ -4611,6 +4611,17 @@ def _batch_m3_eligible(entry, paths):
             and not getattr(entry, "answer_file", None) and not paths.get("scrip_extra") and paths["engine"] == "scrip")
 
 
+def _has_run_sidecar(entry, companion_dir, ext):
+    """AN ENTRY WITH A RUN SIDECAR TAKES THE PER-PROCESS ROAD (the grader 2026-11-16, on officer_04's telegram): the one-process road forks each
+    row from the warm parent with no sidecar applied, so a NAME.env, NAME.pin, NAME.shims/, NAME.alone, NAME.head or NAME.pty beside an Icon
+    source must keep its entry off it. MEASURED on SCRIP e17e70211d: rosetta-icon pythagorean-triples (a .pin) reads PASS with S4E_BATCH=0 and
+    FAIL with S4E_BATCH=1, the cycle's setting, which read it and three more of officer_04's sidecar entries FAIL in lap 44."""
+    if ext != ".icn" or not companion_dir:
+        return False
+    stem = str(Path(companion_dir) / entry.name)
+    return any(Path(stem + x).exists() for x in (".env", ".pin", ".shims", ".alone", ".head", ".pty"))
+
+
 def batch_m3_verdicts(paths, entries, tmp_root, ext, companion_dir):
     """S4E_BATCH=1, mode 3 (DESIGN-PLAN batch-grader step 5): the eligible entries of one partition run as ONE `scrip --harness LIST --record
     REC` process, each row forked from the warm parent (scrip.c scrip_harness_row), with stdout and stderr to files the list names. Each
@@ -4625,6 +4636,8 @@ def batch_m3_verdicts(paths, entries, tmp_root, ext, companion_dir):
     for i, e in enumerate(entries):
         if not _batch_m3_eligible(e, paths) or getattr(e, 'grader', None) or getattr(e, 'cwd', None):
             continue
+        if _has_run_sidecar(e, companion_dir, ext):
+            continue   # its pin, env, shims or alone directory is applied on the per-process road only (side_env_of, alone_dir_for_source)
         with tempfile.TemporaryDirectory(dir=tmp_root) as td:
             cand, expected = stage_entry(e, td, ext, companion_dir)
             if sorted(os.listdir(td)) != [cand.name] or (prog / cand.name).exists():
