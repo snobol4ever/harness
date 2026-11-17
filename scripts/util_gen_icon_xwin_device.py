@@ -754,6 +754,7 @@ def write_gen_c(tree, tags, roots, pp, segs, by_source, src, rtags=()):
 
 
 SEPARATOR = "/*" + "-" * 196 + "*/"
+UNICON_BYVALUE = ("DrawCube", "DrawCylinder", "DrawDisk", "DrawSphere", "DrawTorus", "Eye", "IdentityMatrix", "MatrixMode", "MultMatrix", "Normals", "PopMatrix", "PushMatrix", "PushRotate", "PushScale", "PushTranslate", "Refresh", "Rotate", "Scale", "Texcoord", "Texture", "Translate", "WindowContents", "WSection")
 
 
 def write_builtins(tree, rows):
@@ -762,6 +763,8 @@ def write_builtins(tree, rows):
     for r in rows:
         name, entry, res, nparams, suspends, c_args = r.split("\t")[:6]
         conv = "gen" if suspends == "yes" else "leaf"
+        if D.get("name") == "unicon" and name in UNICON_BYVALUE:
+            entry = "uxw3d_" + name
         tsv.append("-\ticn\t%s\t0\t%s\tbt_%s\t%s\t-\t-\t0\txwin" % (name, nparams, name, conv))
         c.append(SEPARATOR)
         c.append("extern int %s(%s);" % (entry, "int, void *" if c_args == "r_nargs,r_args" else "void *"))
@@ -1393,7 +1396,7 @@ SHIM_SOURCE = "uxwin_shim.c"
 FORMS_TABLE = "FORMS-MEASURED.tsv"
 SHIM_KWD = ("kywd_xwin[XKey_Window]", "kywd_xwin[XKey_Fg]", "amperX", "amperY", "amperCol", "amperRow", "amperInterval", "lastEventWin")
 SHIM_OPEN = ("xwin_list_new", "rt_icn_set_errortext")
-SHIM_LANG = ("xwin_lang_open", "xwin_lang_close", "xwin_lang_write", "xwin_lang_flush", "xwin_lang_read", "xwin_lang_reads", "xwin_lang_image")
+SHIM_LANG = ("xwin_lang_open", "xwin_lang_open3d", "xwin_lang_close", "xwin_lang_write", "xwin_lang_flush", "xwin_lang_read", "xwin_lang_reads", "xwin_lang_image")
 SHIM_LOADER = r'''#include <dlfcn.h>
 #include <stdio.h>
 int main(int argc, char **argv) {
@@ -1459,6 +1462,7 @@ def shim_gen(src, tree):
         f.write("\n".join(lines) + "\n")
     with open(os.path.join(tree, "uxwin_decl.h"), "w") as f:
         f.write("struct descrip;\nlong xwin_list_size(struct descrip *d);\n")
+        f.write("void *uxw_alclist3d(unsigned long size, unsigned long nslots);\nstruct descrip *rec_structor3d(char *name);\n")
         for name, fn in sorted(D["by_value"].items()):
             f.write("struct descrip %s(void);\n#define %s %s()\n" % (fn, name, fn))
     return len(descrs)

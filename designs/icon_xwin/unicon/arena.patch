@@ -18,3 +18,30 @@
     if (im->data == NULL) {
        XDestroyImage(im);
        return NULL;
+@@ -5277,7 +5277,7 @@
+ 
+ #line 183 "rwin3d.ri"
+ 
+-   do {if (((*(struct b_list**)&r_tend.d[0].vword.bptr) = alclist(0, size)) == NULL) {
++   do {if (((*(struct b_list**)&r_tend.d[0].vword.bptr) = uxw_alclist3d(0, size)) == NULL) {
+          tend = r_tend.previous;
+          return RunError;
+          }
+@@ -6251,7 +6251,7 @@
+ 
+ int create_display_list(wbp w, int size)  
+    {
+-   if ((w->window->funclist.vword.bptr = (union block *)alclist(0, size)) == NULL) 
++   if ((w->window->funclist.vword.bptr = (union block *)uxw_alclist3d(0, size)) == NULL) 
+       return Failed;
+ 
+    w->window->funclist.dword = D_List;
+@@ -7142,7 +7142,7 @@
+          GLuint savedhits = 0; 
+          int newnameadded = 0;
+ 
+-         if (((*(struct b_list**)&r_tend.d[0].vword.bptr) = alclist(0, MinListSlots)) == NULL) {
++         if (((*(struct b_list**)&r_tend.d[0].vword.bptr) = uxw_alclist3d(0, MinListSlots)) == NULL) {
+             tend = r_tend.previous;
+ 
+ #line 940 "ropengl.ri"

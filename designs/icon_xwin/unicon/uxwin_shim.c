@@ -80,7 +80,8 @@ char *qsearch(char *key, char *base, int nel, int width, int (*cmp)()) {
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 char *reserve(int region, word nbytes) { (void)region; (void)nbytes; return &uxw_room; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-int interp(int fsig, dptr cargp) { uxw_collect_t *rec = ((uxw_collect_t **)(void *)cargp)[-1]; if (!rec || (fsig != G_Csusp && fsig != G_Fsusp)) return A_Resume; return rec->push(rec, cargp); }
+static void uxw_by_value(dptr d);
+int interp(int fsig, dptr cargp) { uxw_collect_t *rec = ((uxw_collect_t **)(void *)cargp)[-1]; if (!rec || (fsig != G_Csusp && fsig != G_Fsusp)) return A_Resume; uxw_by_value(cargp); return rec->push(rec, cargp); }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 struct descrip xwin_kywd_prog(void) { const char *p = rt_main_progname(); struct descrip d; if (!p) p = ""; StrLen(d) = (word)strlen(p); StrLoc(d) = (char *)p; return d; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -181,17 +182,187 @@ struct b_list *alclisthdr(uword size, union block *bptr) { (void)size; (void)bpt
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 struct b_realarray *alcrealarray(uword n) { (void)n; uxw_no3d(); return (struct b_realarray *)0; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-struct b_record *alcrecd(int nflds, union block *recptr) { (void)nflds; (void)recptr; uxw_no3d(); return (struct b_record *)0; }
-/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 int c_traverse(struct b_list *hp, struct descrip *res, int position) { (void)hp; (void)position; if (res) { res->dword = D_Null; res->vword.integr = 0; } return 1; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 int cplist2realarray(dptr dp, dptr dp2, word i, word j, word skipcopyelements) { (void)dp; (void)dp2; (void)i; (void)j; (void)skipcopyelements; uxw_no3d(); return RunError; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-struct b_proc *dynrecord(dptr s, dptr fields, int n) { (void)s; (void)fields; (void)n; uxw_no3d(); return (struct b_proc *)0; }
+#define UXW_PRIV ((word)0x5558570000000000L)
+#define UXW_OWNED ((word)0x0000000100000000L)
+static word uxw_idc = 1;
+static int uxw_priv_blk(union block *b, word title) { return b && *(word *)b == title && ((*((word *)b + 2)) & ~(UXW_OWNED | 0xffffffffL)) == UXW_PRIV; }
+static int uxw_priv_list(struct b_list *h) { return uxw_priv_blk((union block *)h, T_List); }
+static int uxw_priv_rec(struct b_record *r) { return uxw_priv_blk((union block *)r, T_Record); }
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+static struct b_lelem *uxw_lelem(word n) {
+    struct b_lelem *e = calloc(1, sizeof *e + (size_t)(n > 1 ? n - 1 : 0) * sizeof(struct descrip));
+    if (!e) return (struct b_lelem *)0;
+    e->title = T_Lelem; e->blksize = (word)(sizeof *e + (size_t)(n > 1 ? n - 1 : 0) * sizeof(struct descrip)); e->nslots = n;
+    for (word i = 0; i < n; i++) e->lslots[i].dword = D_Null;
+    return e;
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+struct b_list *uxw_alclist3d(uword size, uword nslots) {
+    struct b_list *h = calloc(1, sizeof *h);
+    struct b_lelem *e = uxw_lelem((word)(nslots < 8 ? 8 : nslots));
+    (void)size;
+    if (!h || !e) { free(h); free(e); return (struct b_list *)0; }
+    h->title = T_List; h->id = UXW_PRIV | UXW_OWNED | (uxw_idc++ & 0xffffffffL); h->listhead = h->listtail = (union block *)e;
+    e->listprev = e->listnext = (union block *)h;
+    return h;
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+struct b_record *alcrecd(int nflds, union block *recptr) {
+    size_t n = sizeof(struct b_record) + (size_t)(nflds > 1 ? nflds - 1 : 0) * sizeof(struct descrip);
+    struct b_record *r = calloc(1, n);
+    if (!r) return (struct b_record *)0;
+    r->title = T_Record; r->blksize = (word)n; r->id = UXW_PRIV | (uxw_idc++ & 0xffffffffL); r->recdesc = recptr;
+    for (int i = 0; i < nflds; i++) r->fields[i].dword = D_Null;
+    return r;
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+struct b_proc *dynrecord(dptr s, dptr fields, int n) {
+    size_t sz = sizeof(struct b_proc) + (size_t)(n > 1 ? n - 1 : 0) * sizeof(struct descrip);
+    struct b_proc *p = calloc(1, sz);
+    if (!p) return (struct b_proc *)0;
+    p->title = T_Proc; p->blksize = (word)sz; p->nfields = n; p->pname = *s;
+    for (int i = 0; i < n; i++) p->lnames[i] = fields[i];
+    return p;
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+static void uxw_own(dptr d);
+static void uxw_own_rec(struct b_record *r) {
+    if (r->id & UXW_OWNED) return;
+    r->id |= UXW_OWNED;
+    word n = ((struct b_proc *)r->recdesc)->nfields;
+    for (word i = 0; i < n; i++) uxw_own(&r->fields[i]);
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+static void uxw_own(dptr d) {
+    if (d->dword == D_Integer || d->dword == D_Null) return;
+    if (!(d->dword & F_Nqual)) {
+        char *q = malloc((size_t)d->dword + 1);
+        if (!q) { d->dword = D_Null; return; }
+        memcpy(q, d->vword.sptr, (size_t)d->dword); q[d->dword] = 0; d->vword.sptr = q;
+        return;
+    }
+    if (d->dword == D_Real) { struct b_real *r = malloc(sizeof *r); if (!r) { d->dword = D_Null; return; } *r = *(struct b_real *)d->vword.bptr; d->vword.bptr = (union block *)r; return; }
+    if (d->dword == D_Record && uxw_priv_rec((struct b_record *)d->vword.bptr)) { uxw_own_rec((struct b_record *)d->vword.bptr); return; }
+    if (d->dword == D_List && uxw_priv_list((struct b_list *)d->vword.bptr)) return;
+    d->dword = D_Null;
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+void uxw_c_put(dptr l, dptr v) {
+    struct b_list *h = (struct b_list *)l->vword.bptr;
+    struct descrip d = *v;
+    if (!uxw_priv_list(h)) { c_put(l, v); return; }
+    uxw_own(&d);
+    struct b_lelem *t = (struct b_lelem *)h->listtail;
+    if (t->nused == t->nslots) {
+        struct b_lelem *e = uxw_lelem(t->nslots * 2);
+        if (!e) return;
+        e->listprev = (union block *)t; e->listnext = (union block *)h; t->listnext = (union block *)e; h->listtail = (union block *)e; t = e;
+    }
+    t->lslots[(t->first + t->nused) % t->nslots] = d; t->nused++; h->size++;
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+static void uxw_free_list(struct b_list *h);
+static void uxw_free_rec(struct b_record *r) {
+    word n = ((struct b_proc *)r->recdesc)->nfields;
+    for (word i = 0; i < n; i++) {
+        dptr d = &r->fields[i];
+        if (d->dword == D_Real) free(d->vword.bptr);
+        else if (d->dword == D_Record && uxw_priv_rec((struct b_record *)d->vword.bptr)) uxw_free_rec((struct b_record *)d->vword.bptr);
+        else if (d->dword == D_List && uxw_priv_list((struct b_list *)d->vword.bptr)) uxw_free_list((struct b_list *)d->vword.bptr);
+        else if (!(d->dword & F_Nqual)) free(d->vword.sptr);
+    }
+    free(r);
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+static void uxw_free_list(struct b_list *h) {
+    struct b_lelem *e = (struct b_lelem *)h->listhead;
+    while (e && (union block *)e != (union block *)h) {
+        struct b_lelem *nx = (struct b_lelem *)e->listnext;
+        for (word i = 0; i < e->nused; i++) {
+            dptr d = &e->lslots[(e->first + i) % e->nslots];
+            if (d->dword == D_Real) free(d->vword.bptr);
+            else if (d->dword == D_Record && uxw_priv_rec((struct b_record *)d->vword.bptr)) uxw_free_rec((struct b_record *)d->vword.bptr);
+            else if (d->dword == D_List && uxw_priv_list((struct b_list *)d->vword.bptr)) uxw_free_list((struct b_list *)d->vword.bptr);
+            else if (!(d->dword & F_Nqual)) free(d->vword.sptr);
+        }
+        free(e);
+        e = nx;
+    }
+    free(h);
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+static void uxw_by_value(dptr d) {
+    struct descrip l;
+    if (d->dword == D_Record && uxw_priv_rec((struct b_record *)d->vword.bptr)) {
+        struct b_record *r = (struct b_record *)d->vword.bptr;
+        l.dword = D_List; l.vword.bptr = xwin_list_new ? (union block *)xwin_list_new() : (union block *)0;
+        if (!l.vword.bptr) return;
+        word n = ((struct b_proc *)r->recdesc)->nfields;
+        for (word i = 0; i < n; i++) { struct descrip f = r->fields[i]; uxw_by_value(&f); c_put(&l, &f); }
+        *d = l;
+    } else if (d->dword == D_List && uxw_priv_list((struct b_list *)d->vword.bptr)) {
+        struct b_list *h = (struct b_list *)d->vword.bptr;
+        l.dword = D_List; l.vword.bptr = xwin_list_new ? (union block *)xwin_list_new() : (union block *)0;
+        if (!l.vword.bptr) return;
+        for (struct b_lelem *e = (struct b_lelem *)h->listhead; e && (union block *)e != (union block *)h; e = (struct b_lelem *)e->listnext)
+            for (word i = 0; i < e->nused; i++) { struct descrip f = e->lslots[(e->first + i) % e->nslots]; uxw_by_value(&f); c_put(&l, &f); }
+        *d = l;
+    }
+}
+extern int ZDrawCube(int, dptr);
+int uxw3d_DrawCube(int n, dptr a) { int r = ZDrawCube(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZDrawCylinder(int, dptr);
+int uxw3d_DrawCylinder(int n, dptr a) { int r = ZDrawCylinder(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZDrawDisk(int, dptr);
+int uxw3d_DrawDisk(int n, dptr a) { int r = ZDrawDisk(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZDrawSphere(int, dptr);
+int uxw3d_DrawSphere(int n, dptr a) { int r = ZDrawSphere(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZDrawTorus(int, dptr);
+int uxw3d_DrawTorus(int n, dptr a) { int r = ZDrawTorus(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZEye(int, dptr);
+int uxw3d_Eye(int n, dptr a) { int r = ZEye(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZIdentityMatrix(int, dptr);
+int uxw3d_IdentityMatrix(int n, dptr a) { int r = ZIdentityMatrix(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZMatrixMode(int, dptr);
+int uxw3d_MatrixMode(int n, dptr a) { int r = ZMatrixMode(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZMultMatrix(int, dptr);
+int uxw3d_MultMatrix(int n, dptr a) { int r = ZMultMatrix(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZNormals(int, dptr);
+int uxw3d_Normals(int n, dptr a) { int r = ZNormals(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZPopMatrix(int, dptr);
+int uxw3d_PopMatrix(int n, dptr a) { int r = ZPopMatrix(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZPushMatrix(int, dptr);
+int uxw3d_PushMatrix(int n, dptr a) { int r = ZPushMatrix(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZPushRotate(int, dptr);
+int uxw3d_PushRotate(int n, dptr a) { int r = ZPushRotate(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZPushScale(int, dptr);
+int uxw3d_PushScale(int n, dptr a) { int r = ZPushScale(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZPushTranslate(int, dptr);
+int uxw3d_PushTranslate(int n, dptr a) { int r = ZPushTranslate(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZRefresh(int, dptr);
+int uxw3d_Refresh(int n, dptr a) { int r = ZRefresh(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZRotate(int, dptr);
+int uxw3d_Rotate(int n, dptr a) { int r = ZRotate(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZScale(int, dptr);
+int uxw3d_Scale(int n, dptr a) { int r = ZScale(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZTexcoord(int, dptr);
+int uxw3d_Texcoord(int n, dptr a) { int r = ZTexcoord(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZTexture(int, dptr);
+int uxw3d_Texture(int n, dptr a) { int r = ZTexture(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZTranslate(int, dptr);
+int uxw3d_Translate(int n, dptr a) { int r = ZTranslate(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZWindowContents(int, dptr);
+int uxw3d_WindowContents(int n, dptr a) { int r = ZWindowContents(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
+extern int ZWSection(int, dptr);
+int uxw3d_WSection(int n, dptr a) { int r = ZWSection(n, a); if (r == A_Continue) uxw_by_value(a); return r; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 static void uxw_gc_roots(void) {
     for (long i = 0; i < uxw_root_descr_count; i++) rt_gc_visit_icnx_descr(uxw_root_descrs[i]);
-    for (wsp ws = wstates; ws; ws = ws->next) { rt_gc_visit_icnx_descr(&ws->filep); rt_gc_visit_icnx_descr(&ws->listp); rt_gc_visit_icnx_descr(&ws->funclist); }
+    for (wsp ws = wstates; ws; ws = ws->next) { rt_gc_visit_icnx_descr(&ws->filep); rt_gc_visit_icnx_descr(&ws->listp); }
     for (wcp wc = wcntxts; wc; wc = wc->next) { const char *const *w[] = { (const char *const *)&wc->normals, (const char *const *)&wc->texcoords }; rt_gc_run_loc_list(w, 2); }
     for (wdp wd = wdsplys; wd; wd = wd->next)
         for (int i = 0; wd->stex && i < wd->ntextures; i++) rt_gc_visit_icnx_descr(&wd->stex[i].d);
@@ -233,11 +404,25 @@ UXW_EXPORT void *xwin_lang_open(char *name, long nlen, void *lblk, void *attr, i
     return fl;
 }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+UXW_EXPORT void *xwin_lang_open3d(char *name, long nlen, void *lblk, void *attr, int n, int *err) {
+    struct descrip fn;
+    FILE *f = wopengl(name, (struct b_list *)lblk, (dptr)attr, n, err);
+    if (!f) return (void *)0;
+    StrLen(fn) = nlen;
+    StrLoc(fn) = alcstr(name, (word)nlen);
+    if (!StrLoc(fn)) return (void *)0;
+    struct b_file *fl = alcfile(f, Fs_Window | Fs_Window3D | Fs_Read | Fs_Write, &fn);
+    if (!fl) return (void *)0;
+    linkfiletowindow((wbp)f, fl);
+    return fl;
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 UXW_EXPORT int xwin_lang_close(void *fblk) {
     struct b_file *f = (struct b_file *)fblk;
     uxw_poll();
     if (f->status == Fs_Window) return 0;
     f->status = Fs_Window;
+    if (f->fd.wb->window->refcount == 1 && uxw_priv_list((struct b_list *)f->fd.wb->window->funclist.vword.bptr)) { uxw_free_list((struct b_list *)f->fd.wb->window->funclist.vword.bptr); f->fd.wb->window->funclist.dword = D_Null; }
     SETCLOSED(f->fd.wb);
     wclose(f->fd.wb);
     return 1;

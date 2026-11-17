@@ -40,6 +40,7 @@ export	xwin_lang_kywd_set
 export	xwin_poll
 functions	82
 arena_source	uxwin_arena.c
+arena_define	-Dc_put=uxw_c_put
 arena_define	-Dmalloc=uxa_malloc
 arena_define	-Dcalloc=uxa_calloc
 arena_define	-Drealloc=uxa_realloc

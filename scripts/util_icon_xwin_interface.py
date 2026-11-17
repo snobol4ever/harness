@@ -44,6 +44,7 @@ CONTRACT = "src/runtime/xwin_interface_contract.tsv"
 RUNTIME = "out/libscrip_rt.so"
 TREE = "src/runtime/xwin"
 UNICON_ONLY = "UNICON-OBJECT-ONLY: "
+UNICON_SHIM = "the Unicon object's uxwin_shim.c (designs/icon_xwin/unicon)"
 UNICON_ENTRIES = "the Unicon object's xwin_entries.c (util_gen_icon_xwin_device.py --dialect unicon --shim-check)"
 OBJECT_SOURCES = ["src/runtime/xwin", "src/runtime/xwin_shim.c", "src/runtime/xwin_shim.h", "src/runtime/xwin_lang.c"]
 FORMS = [
@@ -241,7 +242,11 @@ def measure(root):
     for n in uo:
         if n in exports:
             problems.append("export %s: Arizona's object exports it, so its contract line is not UNICON-OBJECT-ONLY" % n)
-        rows.append(("export", n, "XWIN_EXPORT DESCR_t %s(DESCR_t *args, int nargs%s)" % (n, ", void **hslot" if n.endswith("_h") else ""), UNICON_ENTRIES, ", ".join(users(n, caller_files, root)) or "none in SCRIP's runtime yet", hand[n]))
+        sig, _, text = hand[n][len(UNICON_ONLY):].partition(" | ") if hand[n][len(UNICON_ONLY):].startswith("sig=") else ("", "", "")
+        if sig:
+            rows.append(("export", n, sig[4:], UNICON_SHIM, ", ".join(users(n, caller_files, root)) or "none in SCRIP's runtime yet", UNICON_ONLY + text))
+        else:
+            rows.append(("export", n, "XWIN_EXPORT DESCR_t %s(DESCR_t *args, int nargs%s)" % (n, ", void **hslot" if n.endswith("_h") else ""), UNICON_ENTRIES, ", ".join(users(n, caller_files, root)) or "none in SCRIP's runtime yet", hand[n]))
     for n in sorted(set(hand) - set(exports) - set(imports) - set(uo)):
         if n not in rt_def:
             problems.append("offer %s: the contract table lists it, but libscrip_rt.so does not define and export it" % n)
