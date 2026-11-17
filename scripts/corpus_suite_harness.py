@@ -1271,6 +1271,20 @@ def read_mask_sidecar(ref_path):
                 refuse("%s: an ENGINE-ONLY row removes lines from SCRIP's stream and is admitted only for an implementation-defined variance under "
                        "Lon's 2026-11-13 masking ruling -- its reason must cite LON-2026-11-13-MASK; got %r" % (mp, ln))
             key = ("engine_only", re.compile(parts[1][len("ENGINE-ONLY:"):].rstrip("\r")))
+        elif pat.startswith("PART:"):
+            # ⭐ PART:<python regex> (Lon 2026-11-17 13:4x CST, in the cio's window, verbatim: "remember the masking of machine/system specific is how a test
+            # passes."; the cto's design, row icon-a-mask-row-can-mask-part-of-a-line-so-variable-size-get-is-graded-on-type-and-size): on every line the
+            # regex matches, the text of each capture group that took part becomes the marker and every other character is kept, in both streams, so a
+            # line keeps its type, its size and its words and only the machine's own value is hidden. A regex with no group would be a whole-line mask
+            # under another name, and is refused.
+            try:
+                _prx = re.compile(pat[len("PART:"):].rstrip("\r"))
+            except re.error as e:
+                refuse("%s: a PART row's regex does not compile (%s) -- got %r" % (mp, e, ln))
+            if _prx.groups == 0:
+                refuse("%s: a PART row's regex needs at least one capture group, the text to mask; a regex with none is a whole-line mask and "
+                       "is written as one -- got %r" % (mp, ln))
+            key = ("part", _prx)
         elif pat.startswith("SNO:"):
             # COO-489 (Lon 2026-11-08): SNO:<pattern> = <replacement> is one SNOBOL4 replacement statement, applied by the oracle sbl (see _sno_stream)
             st = pat[len("SNO:"):].strip()
@@ -1341,15 +1355,22 @@ def apply_line_mask(text, patterns, side="both"):
     regardless of content -- see read_mask_sidecar's L<n> form. An ("oracle_only", text) pattern REMOVES the first
     line exactly equal to text, and only when side == "oracle" -- the stream is the oracle's; on our side, or when a
     caller names no side, it does nothing (see read_mask_sidecar). Positional L<n> rows are applied before any
-    removal, so a line number always means the stream as the engine printed it. Returns (text, masked_line_count)."""
+    removal, so a line number always means the stream as the engine printed it. A ("part", rx) pattern, run after every whole-line kind on the lines none
+    of them took, replaces the text of each capture group of rx that took part, in every match, with PART_MARKER and keeps the rest of the line; the line
+    counts in the returned number only when the hidden characters are half its characters or more (part_mask_count says how many were hidden and not counted).
+    Returns (text, masked_line_count)."""
+    r = _line_mask_walk(text, patterns, side)
+    return r[0], r[1]
+def _line_mask_walk(text, patterns, side):
+    """The one walk behind apply_line_mask and part_mask_count -> (text, counted lines, PART lines touched and not counted)."""
     if not patterns or text is None:
-        return text, 0
+        return text, 0, 0
     n = 0
     lines = text.split("\n")
     for i, ln in enumerate(lines):
         for key, _reason in patterns:
             kind, val = key
-            if kind in ("oracle_only", "sno", "engine_only"):
+            if kind in ("oracle_only", "sno", "engine_only", "part"):
                 continue
             if val.search(ln) if kind == "regex" else (val == i + 1):
                 lines[i] = "<<R-409 MASKED IMPLEMENTATION-DEFINED LINE>>"
@@ -1374,7 +1395,59 @@ def apply_line_mask(text, patterns, side="both"):
             if kind == "oracle_only" and val in lines:
                 del lines[lines.index(val)]
                 n += 1
-    return "\n".join(lines), n
+    lines, _pn, _pu = _mask_parts(lines, patterns)
+    return "\n".join(lines), n + _pn, _pu
+PART_MARKER = "<<MASKED>>"
+def _part_spans(ln, patterns):
+    """The character spans of one line that the PART rows hide: every capture group that took part, with at least one character, in every match of
+    each row's regex, the spans of all the rows merged where they touch or overlap."""
+    spans = []
+    for key, _reason in patterns:
+        if key[0] != "part":
+            continue
+        for m in key[1].finditer(ln):
+            for g in range(1, key[1].groups + 1):
+                a, b = m.span(g)
+                if a >= 0 and b > a:
+                    spans.append((a, b))
+    spans.sort()
+    out = []
+    for a, b in spans:
+        if out and a <= out[-1][1]:
+            out[-1] = (out[-1][0], max(out[-1][1], b))
+        else:
+            out.append((a, b))
+    return out
+def _mask_parts(lines, patterns):
+    """THE PART MASK over a list of lines -> (lines, counted, uncounted). A line a whole-line row already took is left alone. On the others each span of
+    _part_spans is replaced by PART_MARKER, right to left so the spans stay valid, every other character kept. THE HALF RULE AT TWO SCALES: a line counts
+    (counted, which guardrail 4 reads) only when the hidden characters, read on the line before the rewrite, are half its characters or more; a line below that
+    is graded and printed (uncounted) but is no part of the fixture's half."""
+    if not any(key[0] == "part" for key, _reason in patterns):
+        return lines, 0, 0
+    counted = uncounted = 0
+    out = list(lines)
+    for i, ln in enumerate(lines):
+        if ln == "<<R-409 MASKED IMPLEMENTATION-DEFINED LINE>>":
+            continue
+        spans = _part_spans(ln, patterns)
+        if not spans:
+            continue
+        hidden = sum(b - a for a, b in spans)
+        for a, b in reversed(spans):
+            ln = ln[:a] + PART_MARKER + ln[b:]
+        out[i] = ln
+        if hidden * 2 >= len(lines[i]):
+            counted += 1
+        else:
+            uncounted += 1
+    return out, counted, uncounted
+def part_mask_count(text, patterns, side="both"):
+    """The lines a PART row touched that apply_line_mask did not count in its n (under half the line hidden): the number a board prints beside the masked
+    count and never adds to it. The same line walk as apply_line_mask, so the two cannot disagree; a SNO row, which has its own count, is left out."""
+    if not patterns or text is None:
+        return 0
+    return _line_mask_walk(text, [p for p in patterns if p[0][0] != "sno"], side)[2]
 # ⛔⭐ A SPITBOL FATAL IS GRADABLE (hq_snobol4's measurement 2026-09-27, the cfo seconding, R-1344, the coo's row
 # instruments-a-spitbol-fatal-is-gradable-...): x64 sbl -bf prints its FATAL BLOCK ON STDOUT as well as stderr, so a ref cut from
 # the oracle for a program that ends in a fatal carries the block, and SCRIP -- whose ONE error voice goes to stderr -- could never
@@ -1615,14 +1688,17 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     exp = expected_text.rstrip("\n") if expected_text is not None else None
     if exp is not None and FATAL_RENDER.get("voice") == "spitbol" and os.environ.get("S4E_FATAL_RENDER") != "0":
         exp = drop_spitbol_throughput(exp)
-    masked_n = 0
+    masked_n = part_n = shown_n = 0
     if mask:
         exp_lines = len(exp.split("\n")) if exp is not None else 0
         _gp = mask_guard_patterns(mask)
         guard_n = max(apply_line_mask(got, _gp, side="scrip")[1], apply_line_mask(exp, _gp, side="oracle")[1])
+        _got_unmasked, _exp_unmasked = got, exp
         got, mg = apply_line_mask(got, mask, side="scrip")
         exp, me = apply_line_mask(exp, mask, side="oracle")
         masked_n = max(mg, me)
+        part_n = max(part_mask_count(_got_unmasked, mask, "scrip"), part_mask_count(_exp_unmasked, mask, "oracle"))
+        shown_n = masked_n + part_n
         if mask_majority(exp_lines, masked_n, guard_n):
             return Verdict("FAIL", out, err, rc, detail="mask covers %d of %d ref lines -- a majority-masked fixture is "
                            "UNGRADABLE and belongs outside the baseline, named, not masked (R-409 guardrail 4)"
@@ -1667,11 +1743,11 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
         _mk = (_ref1.split() or [""])[0]
         _vl = next((ln for ln in got.split("\n") if _mk and ln.split()[:1] == [_mk]), None)
         if _vl is None:
-            oom = _oom_verdict(out, err, rc, masked_n)
+            oom = _oom_verdict(out, err, rc, shown_n)
             if oom is not None:
                 return oom
             v = Verdict("FAIL", out, err, rc, detail=f"no verdict line (no stdout line begins with {_mk!r})")
-            v.masked_lines = masked_n
+            v.masked_lines = shown_n
             return v
         got, exp = _vl, _ref1
     # ⭐ tap (COO-509, the coo 2026-11-11): a program that speaks the Test Anything Protocol is graded on its TESTS, not on its bytes. MEASURED on
@@ -1702,17 +1778,17 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     _same = exp is not None and (got == exp or (bool(ws_blind) and _norm(got) == _norm(exp)))
     if _same:
         if rc is not None and rc != want_rc:
-            return _oom_verdict(out, err, rc, masked_n) or Verdict("FAIL", out, err, rc,
+            return _oom_verdict(out, err, rc, shown_n) or Verdict("FAIL", out, err, rc,
                            detail=f"output matched but rc={rc}, expected {want_rc} (declare want_rc if this is correct)")
         v = Verdict("PASS", out, err, rc)
-        v.masked_lines = masked_n
+        v.masked_lines = shown_n
         return v
     # ⭐ OOM BEFORE FAIL (R-1229 (2)): a run that did not answer and ended in the runtime's own out-of-memory report is that report.
-    oom = _oom_verdict(out, err, rc, masked_n)
+    oom = _oom_verdict(out, err, rc, shown_n)
     if oom is not None:
         return oom
     v = Verdict("FAIL", out, err, rc, detail=("tap: " + _tap_first) if _tap_first else ("output mismatch" if exp is not None else "no expected text"))
-    v.masked_lines = masked_n
+    v.masked_lines = shown_n
     return v
 
 
@@ -1770,6 +1846,50 @@ def sorted_compare_probe():
     want = {"reordered": "PASS", "blank": "PASS", "missing": "FAIL", "duplicate": "FAIL", "changed": "FAIL", "vars": "PASS"}
     print("SORTED_COMPARE_PROBE " + " ".join(f"{n}={v}" for n, v in got) + f" byte_for_byte_reordered={plain}")
     return 0 if all(want[n] == v for n, v in got) and plain == "FAIL" else 1
+
+
+def part_mask_probe():
+    """--probe-part-mask: the PART mask through the real reader and the real grade, on planted answers -> PART_MASK_PROBE a=PASS b=FAIL c=FAIL d=FAIL e=REFUSE2
+    f=FAIL g=PASS, rc 0 when every arm reads as named, rc 1 naming the arm that does not. a: eight lines whose byte counts differ, one PART row, PASS with
+    masked_lines 8; b: one type word different, FAIL; c: one line missing on SCRIP's side, FAIL; d: a number where the oracle printed one is missing, FAIL;
+    e: a PART row with no group is refused rc 2; f: a group that takes half a line or more on half the lines, FAIL with the guardrail 4 detail; g: a
+    whole-line regex row and an L<n> row read as they did before (PASS with masked_lines 1, and a changed unmasked line FAIL)."""
+    import tempfile
+    rows = [("string", 6, 8), ("cset", 0, 48), ("list", 5, 224), ("list", 3, 128), ("list", 7, 144), ("table", 2, 336), ("set", 4, 336), ("real", 1, 16)]
+    fmt = "type=%s *x=%d bytes allocated=%d"
+    ref = "\n".join(fmt % r for r in rows)
+    mine = "\n".join(fmt % (t, x, b + 17) for t, x, b in rows)
+    with tempfile.TemporaryDirectory(prefix="partmask.", dir="/tmp/s4e/" + (os.environ.get("S4E_SEAT") or "unseated") if os.path.isdir("/tmp/s4e") else None) as d:
+        def masks_of(body, name="e"):
+            (Path(d) / "ALL.mask").write_text("# header\n" + body)
+            return masks_for(read_mask_sidecar(str(Path(d) / "ALL.ref")), name)
+        def grade(got, exp, mk):
+            return _grade_output(got.encode(), b"", 0, exp, mask=mk)
+        part = masks_of("e\tPART:^type=\\S+ \\*x=\\S+ bytes allocated=(-?[0-9]+)$\tthe allocator's own byte counts\n")
+        got = {}
+        va = grade(mine, ref, part)
+        got["a"] = (va.kind, va.masked_lines)
+        got["b"] = grade(mine.replace("type=cset", "type=csets", 1), ref, part).kind
+        got["c"] = grade("\n".join(mine.split("\n")[:3] + mine.split("\n")[4:]), ref, part).kind
+        got["d"] = grade(mine.replace("bytes allocated=25", "bytes allocated=", 1), ref, part).kind
+        try:
+            masks_of("e\tPART:^type=\\S+ bytes allocated=-?[0-9]+$\tno group\n")
+            got["e"] = "READ"
+        except SystemExit as ex:
+            got["e"] = "REFUSE%s" % ex.code
+        half = "\n".join(["k=123456789012"] * 4 + ["a long line of its own words that keeps its text k=1"] * 4)
+        vf = grade(half.replace("=1", "=2"), half, masks_of("e\tPART:k=([0-9]+)$\ta value that is most of a line on half the lines\n"))
+        got["f"] = (vf.kind, "guardrail 4" in (vf.detail or ""))
+        whole = masks_of("e\t^[0-9]+ moves in [0-9]+ seconds$\tthe elapsed seconds\ne\tL3\tthe third line\n")
+        wref, wgot = "alpha\n100 moves in 5 seconds\ngamma\ndelta\nepsilon\nzeta", "alpha\n92 moves in 7 seconds\nOTHER\ndelta\nepsilon\nzeta"
+        vg = grade(wgot, wref, whole)
+        got["g"] = (vg.kind, vg.masked_lines, grade(wgot.replace("alpha", "alphA"), wref, whole).kind, apply_line_mask(wgot, whole)[1])
+    want = {"a": ("PASS", 8), "b": "FAIL", "c": "FAIL", "d": "FAIL", "e": "REFUSE2", "f": ("FAIL", True), "g": ("PASS", 2, "FAIL", 2)}
+    print("PART_MASK_PROBE " + " ".join("%s=%s" % (k, v) for k, v in got.items()))
+    bad = [k for k in want if got.get(k) != want[k]]
+    if bad:
+        print("PART_MASK_PROBE RED arm(s): " + ",".join(bad))
+    return 1 if bad else 0
 
 
 TAP_NOTES = {}
@@ -8784,6 +8904,8 @@ def main():
         sys.exit(tap_compare_probe())
     if sys.argv[1:] == ["--probe-sorted-compare"]:
         sys.exit(sorted_compare_probe())
+    if sys.argv[1:] == ["--probe-part-mask"]:
+        sys.exit(part_mask_probe())
     if sys.argv[1:] == ["--probe-tap"]:
         sys.exit(tap_cases_probe())
     if sys.argv[1:] == ["--probe-source"]:

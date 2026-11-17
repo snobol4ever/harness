@@ -13,7 +13,8 @@ Usage:  util_apply_line_mask.py <ref-path> <entry-name> <count-out-path> [--side
 --side names whose stream this is (R-1316 (2)): an ORACLE-ONLY row removes its one line only from --side=oracle, and does
 nothing on --side=scrip or with no side -- a caller that cannot say which stream it holds can never delete a line.
 Writes the masked stream to stdout and the masked-line COUNT to <count-out-path> (guardrail 3: an invisible mask
-is the hiding mechanism, a counted one is a measurement).  REFUSES rc=2 on a malformed sidecar, which is
+is the hiding mechanism, a counted one is a measurement), and to <count-out-path>.part the number of lines a PART row touched and did not count
+(under half the line hidden: printed beside the count, never in it).  REFUSES rc=2 on a malformed sidecar, which is
 read_mask_sidecar()'s own refusal -- not a copy of its policy.  ⭐ And <count-out-path>.major: 1 when guardrail 4 makes THIS stream's
 fixture UNGRADABLE, 0 otherwise, decided by the harness's own mask_majority() over the stream's line count (grep -c '' counts the
 same lines) -- so a bash runner never restates the rule, and an ORACLE-IDENTITY row (R-1351) is exempt there exactly as here.
@@ -39,7 +40,7 @@ except SystemExit:
     raise
 except Exception as e:
     refuse("cannot import corpus_suite_harness.py: %s: %s" % (type(e).__name__, e))
-for fn in ("read_mask_sidecar", "apply_line_mask", "masks_for", "mask_guard_patterns", "mask_majority"):
+for fn in ("read_mask_sidecar", "apply_line_mask", "part_mask_count", "masks_for", "mask_guard_patterns", "mask_majority"):
     if not hasattr(mod, fn):
         refuse("corpus_suite_harness.py has no %s() -- the mask mechanism was renamed or removed; re-derive this "
                "shim rather than grade a name that no longer exists" % fn)
@@ -56,5 +57,6 @@ out, n = mod.apply_line_mask(text, pats, side=side)
 g = mod.apply_line_mask(text, mod.mask_guard_patterns(pats), side=side)[1]
 lines = text.count("\n") + (1 if text and not text.endswith("\n") else 0)
 pathlib.Path(count_out).write_text(str(n))
+pathlib.Path(count_out + ".part").write_text(str(mod.part_mask_count(text, pats, side)))
 pathlib.Path(count_out + ".major").write_text("1" if n and mod.mask_majority(lines, n, g) else "0")
 sys.stdout.buffer.write(out.encode("utf-8", "surrogateescape"))
