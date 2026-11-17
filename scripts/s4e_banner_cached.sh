@@ -69,7 +69,8 @@ if [ -n "$grid" ]; then
     gf="$(timeout -k 2 10 python3 -I "$HERE/util_suite_banner.py" --by-language < /dev/null 2>/dev/null)"; [ -n "$gf" ] && grid="$gf"   # THE SUMMARY BY LANGUAGE, never the whole grid (Lon 2026-11-16 08:3x CST: "stop displaying the entire test suite banner. It is just too big now. Make a summary per language now."); the grid is util_suite_banner.py with no argument
     # WORKS AND BUILT (Lon 2026-11-16 11:5x CST, in the coo's window, verbatim: "add the Works and Built lines to the banner"): under the summary by language, one line for the Icon
     # graphics and one for the Prolog graphics from util_graphics_progress.py: Works, the graphics programs passing of those cut (the percent complete), and Built, the plan's steps closed.
-    gp="$(timeout -k 2 8 python3 -I "$HERE/util_graphics_progress.py" < /dev/null 2>/dev/null)"; [ -n "$gp" ] && grid="$grid
+    # a port seat (dotnet, jvm) grades SNOBOL4 on its own engine and draws nothing: the graphics lines are SCRIP's and stay off its banner
+    case "$seat" in dotnet|jvm) gp="" ;; *) gp="$(timeout -k 2 8 python3 -I "$HERE/util_graphics_progress.py" < /dev/null 2>/dev/null)" ;; esac; [ -n "$gp" ] && grid="$grid
 $gp"
     cc="/tmp/s4e/$seat/cycle_line.cache"; extra="$(timeout -k 2 8 python3 -I "$HERE/util_cycle_countdown.py" < /dev/null 2>/dev/null)"
     if [ -n "$extra" ]; then printf '%s\n' "$extra" > "$cc"

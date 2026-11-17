@@ -5716,7 +5716,9 @@ TASKEOF
          # the banner. It is just too big now for all the seats and one seat will do. The COO." / "Tell CIO to fix all the seats banners."; CIO-129; it narrows CIO-114). The default is the grid for the
          # seat coo and status only for every other seat; S4E_BANNER_GRID=1 asks for the grid anywhere (the banner gate does) and 0 leaves it out anywhere.
          # THE GRADER TOO (Lon 2026-11-12 10:0x CST, in the grader's window, verbatim: "You along with COO should show the test suite banner alongside your status on the stop-turn hook."; it widens CIO-129 by one seat): the grid is the default for coo and grader.
-         _grid=0; case "$ME" in coo|grader) _grid=1 ;; esac
+         # THE dotnet PORT SEAT TOO (Lon 2026-11-17, in the dotnet window, verbatim: "where is your test-suite stop-turn banner?", after his word there that hour:
+         # "get ALL SNOBOL4 tests working with snobol4dotnet."): a port seat's grid reads its own engine's <key>@<engine> rows alone (util_suite_banner.py GRID_ENGINES)
+         _grid=0; case "$ME" in coo|grader|dotnet) _grid=1 ;; esac
          if [ "${S4E_BANNER_GRID:-$_grid}" = 0 ]; then :
          elif [ -f "$_sb" ]; then timeout -k 5 30 python3 "$_sb" || printf '%s\n' "⛔ SUITE GRID REFUSED (rc=$?) -- $_sb ran and did not render"
          else printf '%s\n' "⛔ SUITE GRID MISSING -- no $_sb"; fi

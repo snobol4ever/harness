@@ -951,7 +951,10 @@ def by_language():
     """THE SUMMARY BY LANGUAGE (Lon 2026-11-16 08:3x CST, in the coo's window, verbatim: "stop displaying the entire test suite banner. It is just too big now. Make a
     summary per language now."): one line a language, SCRIP's own rows only: its suites, how many read 100%, the programs passing of the programs graded, the percent.
     The order is MODE's ORDER-OF-WORK, then the rest by name; the last line is the whole table. The grid itself stays the default output for a reader who asks for it."""
-    head,rows=load(); rows=_scrip(rows); by={}
+    # A PORT SEAT'S SUMMARY IS ITS OWN ENGINE'S (seat dotnet 2026-11-17; Lon, in the dotnet window, verbatim: "where is your test-suite stop-turn banner?"): the
+    # <key>@<engine> rows alone, as its grid reads them (GRID_ENGINES), so no SCRIP number reaches a port's banner; every other seat reads SCRIP's rows as before
+    head,rows=load(); eng=_grid_engine(); rows=[r for r in rows if _engine_of(r.get('key',''))==eng] if eng else _scrip(rows); by={}
+    if eng: print(f"{GRID_PROGRAMS.get(_grid_seat(), eng)}'s own readings (engine {eng})")
     for r in rows:
         try: p_=int(r.get('today_pass') or 0); t_=int(r.get('today_total') or 0)
         except ValueError: continue
