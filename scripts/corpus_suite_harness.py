@@ -699,6 +699,57 @@ def run_xsb_gentest(xsb_bin, upstream, run, timeout):
         return kind, (tp.read_bytes() if tp.is_file() else None), err, rc
 
 
+_LINK_UNRESOLVED = re.compile(r"cannot resolve reference to file '([^'/]+?)\.u1?'")
+
+
+def _oracle_translate_linking(argv, timeout, d, translator):
+    """THE ORACLE'S TRANSLATOR IS HANDED THE LIBRARIES ITS PROGRAM LINKS (the grader 2026-11-17, on Lon's order of that day to re-grade every excluded Icon
+    and Unicon program; MEASURED: 30 of the 45 Icon and Unicon programs excluded because the translator refused them stopped at `cannot resolve reference to
+    file 'NAME.u1'` (or 'NAME.u' under unicon) with NAME.icn beside them or on the package's IPATH: arizona_tests' five *_lib_driver, jcon_tests' link1 and
+    load drivers, rosetta-unicon's ten fastprime programs, unicon_uni's eleven shell/dist programs; icont and unicon link a library only from its ucode, and
+    SCRIP links the source). The translation runs as before; only when it fails on an unresolved library does this compile that library with the same
+    translator (-s -c) in the program's folder, from NAME.icn found in the folder, then in the program's own folder when a cut runs it in scratch (S4E_ORACLE_LINK_DIRS), then on IPATH, then in the translator's own uni/lib, and translate again,
+    at most 20 libraries. A refusal of any other kind, or a library found nowhere, returns as it was, so no answer that reads today moves."""
+    kind, out, err, rc = _run_raw(argv, timeout, cwd=str(d))
+    tried = set()
+    while kind == "RAN" and len(tried) < 20:   # whatever the status: unicon reports an unresolved library and exits 0, leaving no executable
+        m = _LINK_UNRESOLVED.search(((err or b"") + (out or b"")).decode("utf-8", "replace"))
+        if not m or m.group(1) in tried:
+            break
+        name = m.group(1); tried.add(name)
+        dirs = [Path(d)] + [Path(x) for x in os.environ.get("S4E_ORACLE_LINK_DIRS", "").split(os.pathsep) if x]   # the program's own folder, when a cut runs it in scratch
+        dirs += [Path(x) for x in re.split(r"[ %s]+" % re.escape(os.pathsep), os.environ.get("IPATH", "")) if x]
+        dirs.append(Path(translator).resolve().parent.parent / "uni" / "lib")
+        src = next((x / (name + ".icn") for x in dirs if (x / (name + ".icn")).is_file()), None)
+        if src is None:
+            break
+        if src.parent.resolve() != Path(d).resolve():
+            shutil.copyfile(src, Path(d) / src.name)
+        c = subprocess.run([translator, "-s", "-c", src.name], cwd=str(d), capture_output=True, timeout=300)
+        if c.returncode != 0:
+            break
+        kind, out, err, rc = _run_raw(argv, timeout, cwd=str(d))
+    return kind, out, err, rc
+
+
+def oracle_link_probe():
+    """--probe-oracle-link (the grader 2026-11-17): a planted program that links a library standing beside it as source alone is translated by each oracle's
+    translator through its built runner and answers its line, never TRANSLATE: Icon (run_icon_built_oracle, icont) and Unicon (run_unicon_built_oracle).
+    Prints ORACLE_LINK_PROBE icon=ok unicon=ok rc 0, RED rc 1 (the retry of _oracle_translate_linking removed, both read TRANSLATE)."""
+    t = Path(tempfile.mkdtemp(prefix="oracle_link_probe_", dir=os.environ.get("TMPDIR") or None)); v = {}
+    try:
+        for name, fn in (("icon", run_icon_built_oracle), ("unicon", run_unicon_built_oracle)):
+            d = t / name; d.mkdir()
+            (d / "probelib.icn").write_text('procedure greet();\n   return "linked";\nend\n')
+            (d / "prog.icn").write_text('link probelib\nprocedure main();\n   write(greet());\nend\n')
+            text, rc, kind = fn({}, d / "prog.icn", 60)
+            v[name] = "ok" if (kind != "TRANSLATE" and text.strip() == "linked") else "RED(%s: %s)" % (kind, text[:80])
+        print("ORACLE_LINK_PROBE icon=%s unicon=%s" % (v["icon"], v["unicon"]))
+        return 0 if v["icon"] == v["unicon"] == "ok" else 1
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
 def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, side_env=None, run_cwd=None, merge_stderr=True, full_refusal=False):
     """THE ICON ORACLE AS THE ICON PACKAGES' OWN HARNESS RUNS IT, for a package whose CONTRACT.tsv merges stderr (the coo
     2026-10-01, measured on jcon_tests): `icont -s -o <stem> <name>` in the file's own directory, its stderr kept apart, then
@@ -714,7 +765,7 @@ def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=N
     r = subprocess.run(["bash", "-c", f". '{lib}' && icont_bin"], capture_output=True, text=True)
     if r.returncode != 0 or not r.stdout.strip():
         refuse(f"lib_oracle_flags.sh refused (icont_bin): {r.stderr.strip()}")
-    kind, out, err, rc = _run_raw([r.stdout.strip(), "-s", "-o", stem, src_path.name], timeout, cwd=str(d))
+    kind, out, err, rc = _oracle_translate_linking([r.stdout.strip(), "-s", "-o", stem, src_path.name], timeout, d, r.stdout.strip())
     if kind != "RAN" or rc != 0:
         first = ((err or b"") + (out or b"")).decode("utf-8", "replace").strip()
         if not full_refusal: first = first.split("\n")[0]
@@ -772,7 +823,7 @@ def run_unicon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args
     r = subprocess.run(["bash", "-c", f". '{lib}' && {_acc}"], capture_output=True, text=True)
     if r.returncode != 0 or not r.stdout.strip():
         refuse(f"lib_oracle_flags.sh refused ({_acc}): {r.stderr.strip()}")
-    kind, out, err, rc = _run_raw([r.stdout.strip(), "-s", "-o", stem, src_path.name] + unicon_link_units(src_path), timeout, cwd=str(d))
+    kind, out, err, rc = _oracle_translate_linking([r.stdout.strip(), "-s", "-o", stem, src_path.name] + unicon_link_units(src_path), timeout, d, r.stdout.strip())
     if kind != "RAN" or rc != 0:
         first = ((err or b"") + (out or b"")).decode("utf-8", "replace").strip()
         if not full_refusal: first = first.split("\n")[0]
@@ -9083,6 +9134,8 @@ def main():
         sys.exit(tap_cases_probe())
     if sys.argv[1:] == ["--probe-source"]:
         sys.exit(source_probe())
+    if sys.argv[1:] == ["--probe-oracle-link"]:
+        sys.exit(oracle_link_probe())
     if sys.argv[1:] == ["--probe-one-container"]:
         sys.exit(one_container_probe())
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

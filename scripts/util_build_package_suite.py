@@ -1035,6 +1035,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                 if h.stage_fixtures(src.parent, src.stem, Path(_iso_dir)):   # NAME.fixtures/ staged where the oracle runs; the fixtures cell tells stage_entry to stage it to grade
                     FX_STAGED.add(name)
                 _iso_src.write_bytes(src.read_bytes())
+                os.environ["S4E_ORACLE_LINK_DIRS"] = str(src.parent)   # the oracle's translator may compile a library its program links from the program's own folder (_oracle_translate_linking)
                 if name in FX_FOLDER:
                     h.stage_folder(src.parent, src.stem, Path(_iso_dir))
                 if lang == "icon" and merged and contract["oracle"] == "unicon" and contract["prebuild"]:
