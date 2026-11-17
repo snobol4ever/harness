@@ -76,6 +76,11 @@ $gp"
     elif [ -s "$cc" ]; then extra="$(cat "$cc")
 (the cycle line above was rendered at $(date -r "$cc" +%H:%M); the live read did not finish in 8 s)"; fi
 fi
+# THE SPRINT'S COUNTDOWN TO ZERO (Lon 2026-11-17 14:3x CST, in the cio's window, verbatim: "Since all the bugs are accounted for and assigned, install a stop-turn banner to show the countdown to ZERO."):
+# two lines under the verdict word, from util_sprint_countdown.py, for the seats the one switch /home/resources/postoffice/SPRINT.conf names on its show line (grid or no grid); the tool prints
+# nothing for any other seat and nothing when the switch is absent, so the banner is then as it was. It counts the same suite rows the summary by language reads, never a set of its own.
+sp="$(timeout -k 2 8 python3 -I "$HERE/util_sprint_countdown.py" "$seat" < /dev/null 2>/dev/null)"; [ -n "$sp" ] && extra="${extra:+$extra
+}$sp"
 # NO VERDICT IS NEVER SHOWN (Lon 2026-11-14, verbatim: "get stop-turn banner to not say NO VERDICT."): when the verb printed no verdict word this turn (it ran over its budget under load), the last verdict in the cache is shown, and only with no cache at all PENDING, the banner is still being made.
 [ -n "$word" ] || word="$(grep -xE 'SUCCESS|IN-PROGRESS|DRAIN|STOP|FAILURE' "$c" 2>/dev/null | tail -1)"; [ -n "$word" ] || word="PENDING"
 # COLOUR AND A FIRST NEW LINE (Lon 2026-11-11 13:1x CST, in officer_04's window, verbatim: "Notice the Stop says: forgot the new line and the color is gray not green."): the client prints hook text
