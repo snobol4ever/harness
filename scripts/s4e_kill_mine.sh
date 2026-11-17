@@ -97,6 +97,10 @@ probe() {
   o="$(bash "$(dirname "${BASH_SOURCE[0]}")/util_run_slot.sh" --bg sleep 600 2>&1)" || { echo "KILL-MINE PROBE RED: util_run_slot.sh --bg refused [$o]"; exit 1; }
   id="$(printf '%s\n' "$o" | sed -n 's/^BG handle=\([^ ]*\) .*/\1/p')"; pid="$(printf '%s\n' "$o" | sed -n 's/.* pid=\([0-9]*\) .*/\1/p')"
   [ -n "$id" ] && [ -n "$pid" ] || { echo "KILL-MINE PROBE RED: no BG handle line [$o]"; exit 1; }
+  # the dry-run arm: --explain-only signals nothing with --pid or --handle, on either side of them (MEASURED 2026-11-17: it killed with --pid)
+  o="$(bash "${BASH_SOURCE[0]}" --explain-only --pid "$pid" 2>&1)"; printf '%s\n' "$o" | grep -q "^EXPLAIN-ONLY pid=$pid " && [ -d "/proc/$pid" ] || why="$why --explain-only --pid signalled its pid or said nothing [$o];"
+  o="$(bash "${BASH_SOURCE[0]}" --pid "$pid" --explain-only 2>&1)"; printf '%s\n' "$o" | grep -q "^EXPLAIN-ONLY pid=$pid " && [ -d "/proc/$pid" ] || why="$why --pid --explain-only signalled its pid or said nothing [$o];"
+  o="$(bash "${BASH_SOURCE[0]}" --handle "$id" --explain-only 2>&1)"; printf '%s\n' "$o" | grep -q "^EXPLAIN-ONLY pid=$pid handle=$id " && [ -d "/proc/$pid" ] && [ -f "$(hfile "$id")" ] || why="$why --handle --explain-only signalled its run or retired its handle [$o];"
   o="$(bash "${BASH_SOURCE[0]}" --handle "$id" 2>&1)"; printf '%s\n' "$o" | grep -q "^KILL-MINE pid=$pid " || why="$why --handle did not kill its own run [$o];"
   [ -d "/proc/$pid" ] && why="$why pid $pid is still alive after --handle;"
   [ -f "$(hfile "$id")" ] && why="$why the handle file was not retired;"
@@ -112,9 +116,13 @@ probe() {
   if [ -z "$sp" ]; then why="$why the scope arm could not start a run in s4e-mem-${me_seat}-killprobe-$$;"
   else o="$(bash "${BASH_SOURCE[0]}" --pid "$sp" 2>&1)"; printf '%s\n' "$o" | grep -q "^KILL-MINE pid=$sp .*cgroup s4e-mem-${me_seat}-killprobe" || why="$why a run in the seat's own scope (cwd /, no handle) was not killed as the seat's [$o];"
     [ -d "/proc/$sp" ] && { kill -KILL "$sp" 2>/dev/null; why="$why the scope arm's pid $sp is still alive;"; }; fi
-  [ -z "$why" ] && { echo "KILL-MINE probe ok handle=$id own_pid=$pid killed=yes foreign_refused=pid1${other:+,pid$other} unknown_handle_refused=yes own_scope_killed=yes root=$S4E"; exit 0; }
+  [ -z "$why" ] && { echo "KILL-MINE probe ok dry_run_signals_nothing=yes handle=$id own_pid=$pid killed=yes foreign_refused=pid1${other:+,pid$other} unknown_handle_refused=yes own_scope_killed=yes root=$S4E"; exit 0; }
   echo "KILL-MINE PROBE RED:$why"; exit 1; }
 explain_only=""
+# --explain-only binds WHEREVER IT STANDS ON THE LINE, and it binds --pid and --handle too (the grader 2026-11-17, MEASURED: `--explain-only --pid 382874`
+# signalled TERM and killed the live cycle mid-lap, since the --pid branch killed at once and the flag was read only by the pattern form). So the line is
+# read for it first, and under it --pid and --handle print what they would signal and signal nothing.
+for _a in "$@"; do [ "$_a" = --explain-only ] && explain_only=1; done
 named_root=""
 pattern=""
 while [ $# -gt 0 ]; do
@@ -123,10 +131,12 @@ while [ $# -gt 0 ]; do
     --handle) h="${2:-}"; [ -n "$h" ] || { echo "refuse: --handle needs the id a BG line printed -- rc=2" >&2; exit 2; }
       [ -f "$(hfile "$h")" ] || { echo "refuse: no handle $h under $bgdir (not this seat's background run) -- rc=2, nothing signalled" >&2; exit 2; }
       hp="$(sed -n 's/^pid=\([0-9]*\) .*/\1/p' "$(hfile "$h")")"
-      if ! w="$(mine_pid "$hp")"; then rm -f "$(hfile "$h")"; echo "refuse: handle $h: $w (the handle is retired) -- rc=2, nothing signalled" >&2; exit 2; fi
+      if ! w="$(mine_pid "$hp")"; then [ -n "$explain_only" ] || rm -f "$(hfile "$h")"; echo "refuse: handle $h: $w (the handle is retired) -- rc=2, nothing signalled" >&2; exit 2; fi
+      [ -n "$explain_only" ] && { echo "EXPLAIN-ONLY pid=$hp handle=$h ($w): it would be signalled; nothing was signalled"; exit 0; }
       kill_one "$hp" "handle=$h ($w)"; rm -f "$(hfile "$h")"; exit 0 ;;
     --pid) hp="${2:-}"; [[ "$hp" =~ ^[0-9]+$ ]] || { echo "refuse: --pid needs a number -- rc=2" >&2; exit 2; }
       w="$(mine_pid "$hp")" || { echo "refuse: pid $hp: $w -- rc=2, nothing signalled" >&2; exit 2; }
+      [ -n "$explain_only" ] && { echo "EXPLAIN-ONLY pid=$hp ($w): it would be signalled; nothing was signalled"; exit 0; }
       kill_one "$hp" "pid=$hp ($w)"; exit 0 ;;
     --explain-only) explain_only=1; shift ;;
     --root) named_root="${2:-}"; shift 2 || { echo "refuse: --root needs a directory" >&2; exit 2; } ;;
