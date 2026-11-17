@@ -37,6 +37,7 @@ by_value	kywd_prog xwin_kywd_prog
 export	xwin_kywd_addr
 export	xwin_kywd_mods
 export	xwin_lang_kywd_set
+export	xwin_poll
 functions	82
 arena_source	uxwin_arena.c
 arena_define	-Dmalloc=uxa_malloc
