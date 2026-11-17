@@ -168,3 +168,4 @@ icon_numeronym	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_numero
 uni_cs410	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/uni_cs410
 uni_ubugger	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/uni_ubugger
 icon_lane_tools	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_lane_tools
+ipl_v88	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/ipl_v88
