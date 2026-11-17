@@ -191,7 +191,10 @@ sweep_dead() {
         # under the cycle at about 17:2xZ; no baton named it after the cutover, a base's folder mtime does not move while chunks read it, so it read unnamed and idle, and no
         # log named the remover). The sweep never takes wt-base<N> under the grader's top (s4e_cycle.sh makes and retires its own bases), never a worktree whose .s4e-hold is
         # held by a live process (a chunk holds its base shared for its life), and writes one line a removal.
-        case "$owner/$name" in grader/base[0-9]*) continue ;; esac
+        # THE DRAIN'S LANES ARE THE DRAIN'S (the grader 2026-11-16, MEASURED twice that evening: s4e_worktree.sh new, run by the grader, swept wt-gives and
+        # wt-gives2, idle between patches and named by no baton; the running drain then logged "lane K has no worktree ... it runs no patch" and landed nothing
+        # until the grader made them again and restarted it). s4e_take.sh drain makes and keeps wt-gives and its siblings wt-gives<K> itself.
+        case "$owner/$name" in grader/base[0-9]*|grader/gives|grader/gives[0-9]*) continue ;; esac
         [ -e "$d/.s4e-hold" ] && ! flock -n "$d/.s4e-hold" true 2>/dev/null && continue
         b="$(grep -lxF "WORKTREE: $d" "$BATONS"/*.task.md 2>/dev/null | head -1)"
         if [ -z "$b" ]; then cls=unnamed; floor=7200
