@@ -17,7 +17,7 @@
 # --paths prints the same file and checks nothing (hq_dotnet's addition): the fingerprints, the progress digest and the tree pin read it
 # at the END of a board too, where a source edited mid-run must not turn the jar it graded into "the binary moved".
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SJ="$(cd "$HERE/../.." && pwd)/snobol4jvm"
+SJ="${S4E_JVM_ROOT:-/home/claude_jvm}"   # the jvm seat's root IS the snobol4jvm clone (Lon 2026-11-17: "the clone goes directly at the root"); before, a folder beside the harness, which the one-disk layout does not hold
 J="$(ls -t "$SJ"/target/uberjar/*-standalone.jar 2>/dev/null | head -1)"
 [ "${1:-}" = "--paths" ] && { [ -n "$J" ] && printf '%s\n' "$J"; exit 0; }
 [ -f "$J" ] || { echo "⛔ REFUSE(rc=2): no snobol4jvm jar under $SJ/target/uberjar -- build it: bash $HERE/build_snobol4jvm.sh" >&2; exit 2; }

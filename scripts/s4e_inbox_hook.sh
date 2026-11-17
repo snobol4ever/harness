@@ -48,8 +48,8 @@ if [ -z "$ME" ]; then case "$S4E" in
     /home/claude_collector)        ME=hq_collector;;
     /home/claude_zetas)            ME=hq_zetas;;
     /home/claude_packages)         ME=hq_packages;;
-    /home/claude_dotnet)           ME=hq_dotnet;;
-    /home/claude_jvm)              ME=hq_jvm;;
+    /home/claude_dotnet)           ME=dotnet;;
+    /home/claude_jvm)              ME=jvm;;
     # the nine lettered HQ roots were renamed by language on 2026-09-16 (R-767, Lon's word); hq_R folded into hq_prolog, hq_U into the cto, hq_V into the cfo
     /home/claude[0-9][0-9]) ME="seat${S4E#/home/claude}";;
     /home/claude[1-9])      ME="seat0${S4E#/home/claude}";;

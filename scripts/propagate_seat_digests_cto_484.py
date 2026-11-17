@@ -97,12 +97,12 @@ SEATS = {
 - `corpus/packages/<lang>/`: the vendored suites, their runners `test_<lang>_<pkg>_suite.sh`, their EXCLUDED and CONTAINERS lists, their oracle-cut refs; `install_*` scripts fetch an upstream drop into `/home/resources`. A package's oracle is one, named in its runner through the accessors in `lib_oracle_flags.sh`, never a bare name; a program the oracle cannot answer is excluded, never debt. GOAL-HQ-PACKAGES.md is the cursor.
 - Skills: `/suites-and-grading` and `/gates-and-witnesses` first, then the language of the package. Manuals: `/home/resources/manuals/<lang>/`.
 """, None),
-    "dotnet": ("port", """## THIS ROOT IS THE hq_dotnet SEAT (postoffice identity `hq_dotnet`): THE .NET PORT
-- `snobol4dotnet/` (C#) is its repo, a sibling in this root; its rows are `<suite>@dotnet` under `S4E_ENGINE=dotnet`, graded by the fleet's runners against the same SPITBOL refs as SCRIP; speed by instruction count against `sbl`. SNOBOL4 is its language. GOAL-HQ-DOTNET.md is the cursor. Stood down while SCRIP climbs to 100; its rows stay in place.
+    "dotnet": ("port", """## THIS ROOT IS THE dotnet SEAT (postoffice identity `dotnet`, window DOTNET): THE .NET PORT
+- This root IS the snobol4dotnet clone (C#; `Snobol4.sln` at its top), as a SCRIP seat's root is its SCRIP clone (Lon 2026-11-17: "Just like a SCRIP seat, the clone goes directly at the root."); its rows are `<suite>@dotnet` under `S4E_ENGINE=dotnet`, graded by the fleet's runners against the same SPITBOL refs as SCRIP; speed by instruction count against `sbl`. SNOBOL4 is its language. Seated Opus 5.5 high on Lon's word of 2026-11-17.
 - Skills: `/ports` and `/snobol4`.
 """, None),
-    "jvm": ("port", """## THIS ROOT IS THE hq_jvm SEAT (postoffice identity `hq_jvm`): THE JVM PORT
-- `snobol4jvm/` (Clojure) is its repo, a sibling in this root; its rows are `<suite>@jvm` under `S4E_ENGINE=jvm` for SNOBOL4, Snocone and Rebus, graded by the fleet's runners against the same refs as SCRIP. GOAL-HQ-JVM.md is the cursor. Stood down while SCRIP climbs to 100; its rows stay in place.
+    "jvm": ("port", """## THIS ROOT IS THE jvm SEAT (postoffice identity `jvm`, window JVM): THE JVM PORT
+- This root IS the snobol4jvm clone (Clojure; `project.clj` at its top), as a SCRIP seat's root is its SCRIP clone (Lon 2026-11-17: "Just like a SCRIP seat, the clone goes directly at the root."); its rows are `<suite>@jvm` under `S4E_ENGINE=jvm` for SNOBOL4, Snocone and Rebus, graded by the fleet's runners against the same refs as SCRIP. Seated Opus 5.5 high on Lon's word of 2026-11-17.
 - Skills: `/ports` and `/snobol4`.
 """, None),
 }

@@ -8,7 +8,7 @@
 # Prints one BUILT line naming the tree, the jar and the archive; rc 2 on any refusal.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SJ="$(cd "$HERE/../.." && pwd)/snobol4jvm"
+SJ="${S4E_JVM_ROOT:-/home/claude_jvm}"   # the jvm seat's root IS the snobol4jvm clone (Lon 2026-11-17: "the clone goes directly at the root"); before, a folder beside the harness, which the one-disk layout does not hold
 [ -f "$SJ/project.clj" ] || { echo "⛔ REFUSE(rc=2): no snobol4jvm checkout at $SJ"; exit 2; }
 command -v lein >/dev/null 2>&1 || { echo "⛔ REFUSE(rc=2): no lein on the PATH"; exit 2; }
 (cd "$SJ" && lein uberjar) || { echo "⛔ REFUSE(rc=2): lein uberjar failed in $SJ"; exit 2; }

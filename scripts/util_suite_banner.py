@@ -712,7 +712,7 @@ def engines(plain=False):
     def rule(l,m,rr): return l + m.join("\u2500"*(w[c]) for c in range(cols)) + rr
     NUM={2,3,5}
     def line(cs, h=False): return "\u2502" + "\u2502".join(((rpad if (c in NUM and not h) else pad)(cs[c], w[c]-1) + " ") for c in range(cols)) + "\u2502"
-    print("ENGINE LEADERBOARD -- SCRIP against snobol4dotnet (hq_dotnet) and snobol4jvm (hq_jvm), every suite a port engine grades; date = the day the row was last written from its readings")
+    print("ENGINE LEADERBOARD -- SCRIP against snobol4dotnet (dotnet) and snobol4jvm (jvm), every suite a port engine grades; date = the day the row was last written from its readings")
     print(rule("\u250c","\u252c","\u2510")); print(line(hdr, True)); print(rule("\u251c","\u253c","\u2524"))
     for r in data: print(line(r))
     print(rule("\u2514","\u2534","\u2518"))

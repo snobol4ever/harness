@@ -22,10 +22,10 @@
 # -- (the one the harness writes after the source) is dropped here and any later one reaches the program.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENGINE="$(cd "$HERE/../.." && pwd)/snobol4dotnet"
+ENGINE="${S4E_DOTNET_ROOT:-/home/claude_dotnet}"   # the dotnet seat's root IS the snobol4dotnet clone (Lon 2026-11-17: "the clone goes directly at the root"); before, a folder beside the harness, which the one-disk layout does not hold
 DLL="$ENGINE/Snobol4/bin/Release/net10.0/Snobol4.dll"
 RT="$ENGINE/Snobol4/bin/Release/net10.0/Snobol4.Common.dll"
-BUILD="dotnet build snobol4dotnet/Snobol4/Snobol4.csproj -c Release"
+BUILD="cd $ENGINE && dotnet build Snobol4/Snobol4.csproj -c Release"
 if [ "${1:-}" = --paths ]; then
     printf '%s\n%s\n' "$DLL" "$RT"
     exit 0
