@@ -7804,9 +7804,9 @@ def validate_args_cell(raw, col, where):
     words = t.split()
     if col == "compile_args":
         for w in words:
-            if w not in COMPILE_ARGS_ADMITTED:
+            if w not in COMPILE_ARGS_ADMITTED and not re.fullmatch(r"-t[1-9][0-9]*", w):
                 refuse(f"{where}: compile_args word {w!r} is not a compile switch a unit may declare "
-                       f"({', '.join(COMPILE_ARGS_ADMITTED)}) -- heap and stack are heap_kb and stack_kb, the program's own "
+                       f"({', '.join(COMPILE_ARGS_ADMITTED)}, -t<columns>) -- heap and stack are heap_kb and stack_kb, the program's own "
                        f"arguments are run_args, and a switch joins the list once it is proven honoured at the compile step "
                        f"in both modes")
     return words
