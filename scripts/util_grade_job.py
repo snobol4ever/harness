@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # util_grade_job.py -- THE CELL BUDGET (DESIGN-PLAN test-cycle step 1, CTO-522; the cio 2026-11-05; skill suites-and-grading section 7). The grade tube, its jobs and
 # their puts are RETIRED (bus-one-queue, CIO-82, 2026-11-10: the cycle is the one grading road and serves the test requests itself); what stays is the budget a
-# cell is run under: the launch (120 s) plus every row's timeout_s of the cell's entries from the suite's ALL.csv (60 s when the table declares none). The table
+# cell is run under: the launch (120 s) plus every row's timeout_s of the cell's entries from the suite's ALL.csv (60 s when the table declares none), plus
+# the slowest entry's timeout and its longer retry, so a hang is graded HANG within the cell (budget(), below). The table
 # is the one harness/scripts/SUITE_RUNNERS.tsv names for the key: kind master or port -> corpus/tests/<lang>; kind pkg -> the row's table column; kind small ->
 # its table column, or no table (3600 s). A cell is core | shell:F | chunk:NN | entry:a,b,... | all for a small suite.
 #   util_grade_job.py budget --suite KEY [--cell CELL]  (no cell: core)  prints "BUDGET suite= cell= entries=N ttr_s=N declared=N"
@@ -71,7 +72,12 @@ def budget(key, cell):
         ttr = SMALL_TTR_S if d is None else LAUNCH_S + DEFAULT_TIMEOUT_S * len(_all_rows(d))
         return lang, ents, ttr, 0
     to, declared = timeouts(key)
-    ttr = LAUNCH_S + sum(to.get(e, DEFAULT_TIMEOUT_S) for e in ents)
+    # A HANG IS GRADED, NEVER KILLED WITH ITS CELL (the grader 2026-11-16): a program that times out runs its timeout T on the batch road, T again on
+    # the per-process road and once more at lib_timeout_retry.longer(T), so the cell holds T + longer(T) beyond the sum for its slowest entry. MEASURED
+    # in CYCLE.log laps 40 to 43: 13 one-entry cells a lap (puzzles, xsb; timeout_s 300, budget 420) died rc=124 at 421 s and no reading was written.
+    ts = [to.get(e, DEFAULT_TIMEOUT_S) for e in ents]
+    import lib_timeout_retry
+    ttr = LAUNCH_S + sum(ts) + (int(max(ts) + lib_timeout_retry.longer(max(ts))) if ts else 0)
     return lang, ents, ttr, sum(1 for e in ents if e in to and declared)
 def main(a):
     if not a or a[0] != "budget": refuse("usage: util_grade_job.py budget --suite KEY [--cell CELL] (the grade tube's put, put-many and probes are retired, CIO-82)")
