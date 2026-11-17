@@ -1792,10 +1792,13 @@ def from_progress_table(corpus, key):
     full, key = key, key.partition("@")[0]   # a port key (sno-rungs@dotnet) reads its bare key's table; its progress name keeps the engine
     if key in FROM_PROGRESS_MASTERS:
         return os.path.join(corpus, FROM_PROGRESS_MASTERS[key]), _aud.dbname(full)
+    # A DEMOS FOLDER IN THE FILES FORM IS A PACKAGE FOR A PORT KEY TOO (seat dotnet 2026-11-17, MEASURED: corpus_suite_harness.py files
+    # snobol4-demos@dotnet's readings under the container's entry names, calculator/calculator-1, and this table's census branch read the old
+    # runner's names, demos/snobol4/calculator/calculator-1.sno, so the port's row read its 2026-10-31 readings and never today's 24)
+    if _demos_container(corpus, key):
+        return _demos_container(corpus, key), _aud.dbname(full)   # a demos folder in the files form is a package (its ALL.csv entries)
     if "@" in full and key in FROM_PROGRESS_CENSUS and os.path.isdir(os.path.join(corpus, FROM_PROGRESS_CENSUS[key])):
         return os.path.join(corpus, FROM_PROGRESS_CENSUS[key]), _aud.dbname(full)
-    if "@" not in full and _demos_container(corpus, key):
-        return _demos_container(corpus, key), _aud.dbname(full)   # a demos folder in the files form is a package (its ALL.csv entries)
     if "@" not in full and key in FROM_PROGRESS_RUNNER_POP and os.path.isdir(os.path.join(corpus, FROM_PROGRESS_RUNNER_POP[key][0])):
         return os.path.join(corpus, FROM_PROGRESS_RUNNER_POP[key][0]), _aud.dbname(full)
     if key in FROM_PROGRESS_PACKAGES and os.path.exists(os.path.join(corpus, FROM_PROGRESS_PACKAGES[key], "ALL.csv")):
@@ -1888,7 +1891,7 @@ def cmd_from_progress(a):
             print(_rp)
             return 2
         pop, rr_excl = _rp
-    elif key in FROM_PROGRESS_CENSUS:
+    elif key in FROM_PROGRESS_CENSUS and not _demos_container(corpus, key):
         pop = _census_population(tdir, key)
     else:
         with open(os.path.join(tdir, "ALL.csv"), encoding="utf-8", errors="replace", newline="") as f:
