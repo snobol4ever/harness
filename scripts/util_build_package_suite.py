@@ -682,7 +682,7 @@ FX_FOLDER = set()   # the entries whose table row declares fixtures=folder: the 
 FX_STAGED = set()   # the entries whose cut ran over their NAME.fixtures/ tree (h.stage_fixtures): their ALL.csv fixtures cell reads staged, so stage_entry stages the same tree to grade
 
 
-def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None, any_fpc_mode=False):
+def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None, any_fpc_mode=False, stage_shipped=False):
     _c0 = read_contract(pkg_dir)
     if _c0["units"] == "generated":
         return build_generated(pkg_dir, lang, out_prefix, _c0, only)
@@ -995,7 +995,10 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                 # stage_entry writes <name><ext> (ALL.sno's .sno), so a ref cut from the shipped .sbl or .spt name prints &FILE and &LASTFILE
                 # the graded run can never print, and the three read FAIL on those two lines alone. Under --src-ext the source is staged as
                 # <stem><ext>, byte for byte; with no --src-ext the name is unchanged.
-                _iso_src = Path(_iso_dir) / (src.name if src_ext == ext else src.stem + ext)
+                # ⛔ A FILES-FORM CUT STAGES THE PROGRAM UNDER ITS SHIPPED NAME, AS THE GRADE DOES (officer_06 2026-11-17, row snobol4-spitbol-x64-tests-kwic2-align-and-cfreq-are-converted-and-cut-again-in-the-corpus,
+                # the cqo's ruling; MEASURED: spitbol_x64_tests cfreq, demos/align and demos/kwic2 were cut under STEM.sno and their error blocks name it, while the grade, through
+                # _pkg_stage_name, runs cfreq.sbl and prints cfreq.sbl(12)). The stem-plus-container-extension staging above stands for a container package, graded as ALL.sno.
+                _iso_src = Path(_iso_dir) / (src.name if (src_ext == ext or stage_shipped) else src.stem + ext)
                 # ⭐ COMPANIONS TRAVEL WITH THE SOURCE (row aisnobol-all-eight-..., cto 2026-09-07): a program that
                 # -INCLUDEs a vendored module (SIR/TEST -> SPITCORE.sno) or opens a vendored data file by name
                 # (spitlib.spt / spitlib.idx) died in the one-file isolation and was filed "oracle died" for want of
@@ -1159,7 +1162,11 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
             time.sleep(max(0.0, math.floor(_t_first) + 1.05 - time.time()))
         _run2 = _oracle_isolated(_fl)[:2] if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") else (ora_text, ora_rc)
         _mrows = h.masks_for(_entry_masks, name)
-        if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") and (h.apply_line_mask(_run2[0], _mrows, "oracle")[0], _run2[1]) != (h.apply_line_mask(ora_text, _mrows, "oracle")[0], ora_rc):
+        # ⛔ A SNOBOL4 FATAL BLOCK'S THROUGHPUT LINES ARE LEFT OUT OF THE TWO-RUN COMPARE, AS THE GRADER LEAVES THEM OUT (officer_06 2026-11-17, same row; MEASURED: cfreq's first run
+        # printed `execution time msec  7` and SPITBOL's three throughput lines, its second `execution time msec  0` and none; the mask rows cover the msec line alone, so a
+        # slow first run read as "differs on two runs" and the entry was excluded; the census road below drops them since the grader's 2026-11-16 fix).
+        _tp = h.drop_spitbol_throughput if lang == "snobol4" else (lambda s: s)
+        if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") and (h.apply_line_mask(_tp(_run2[0]), _mrows, "oracle")[0], _run2[1]) != (h.apply_line_mask(_tp(ora_text), _mrows, "oracle")[0], ora_rc):
             excluded.append((name, "the oracle answers differently on two runs (time, randomness or addresses in its output) -- no one ground truth"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle nondeterministic)", file=sys.stderr)
             continue
@@ -1687,7 +1694,7 @@ def build_files_form(pkg_dir, lang, twice=False, only=None, src_ext=None):
                     prog.with_suffix(_suf).unlink()
         h._fmt2_write_csv(pkg_dir, [c for c in fields if c != "path"], [{k: v for k, v in r.items() if k != "path"} for r in rows])
         print(f"files form: {pkg_dir.name} packed to its container for the cut ({len(entries)} entries, {len(made)} sidecar(s) written for it)", file=sys.stderr)
-        result = build(pkg_dir, lang, twice=twice, only=only, src_ext=src_ext)
+        result = build(pkg_dir, lang, twice=twice, only=only, src_ext=src_ext, stage_shipped=True)
         for _p in made:
             if _p.exists():
                 _p.unlink()
