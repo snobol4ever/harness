@@ -144,7 +144,7 @@ for _n in range(1, 21):
 """ % (_seat.upper(), _seat), None)
 for _n in range(1, 13):
     _seat = "officer_%02d" % _n
-    SEATS[_seat] = ("officer", """## THIS ROOT IS SEAT %s (postoffice identity `%s`): AN OPUS 5.5 HIGH OFFICER, ONE OF TWELVE (officer_01 to officer_12; 09 to 12 seated 2026-11-16 16:2x CST on Lon's word in the coo's window: "The four folders are ready. Fire away."), SEATED AGAIN (Lon 2026-11-16 07:2x CST, in the coo's window, verbatim: "We will be using the /home/claude_officer_xx roots." / "The bosses will be Fable 5.2 high and the officers will be Opus 5.5 high. COO will also be Fable 5.2 high.")
+    SEATS[_seat] = ("officer", """## THIS ROOT IS SEAT %s (postoffice identity `%s`): AN OFFICER, ONE OF TWELVE, ITS MODEL THE ONE TIERS.tsv NAMES (Sonnet 5.5 high since Lon's word of 2026-11-17 11:5x CST; the seating quoted below is history) (officer_01 to officer_12; 09 to 12 seated 2026-11-16 16:2x CST on Lon's word in the coo's window: "The four folders are ready. Fire away."), SEATED AGAIN (Lon 2026-11-16 07:2x CST, in the coo's window, verbatim: "We will be using the /home/claude_officer_xx roots." / "The bosses will be Fable 5.2 high and the officers will be Opus 5.5 high. COO will also be Fable 5.2 high.")
 - A row ASSIGNED to it is the go; what it cannot land goes to the coo by telegram with the measurement (skill `fleet-bus` sections 1 and 7).
 - Skills: `/fleet-bus` and `/seat-conduct` first, `/gates-and-witnesses` before any DONE-WHEN, then the skill of the language or layer the row names.
 """ % (_seat.upper(), _seat), None)
