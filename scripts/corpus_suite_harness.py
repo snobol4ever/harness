@@ -4746,6 +4746,35 @@ def _pkg_env(pd, paths):
     return env
 
 
+def _screen_entry_of_switch_pkg(e, container_dir):
+    """A SCREEN ENTRY OF A FILES-FORM PACKAGE TAKES THE PER-ENTRY ROAD UNDER THE SCREEN WRAP (the cqo's ruling of 2026-11-17 00:4x CST, skill
+    suites-and-grading; officer_12's measurement: scrip --run-files starts no display, so in unicon_uni, whose ALL.source sends every row to the switch,
+    all 34 entries naming screen.dump read red before their first draw, xpmtoims "can't open display", gui/guidemos/lines "couldn't open/show window",
+    while each equals its ref on the screen road by hand). True for an entry the package holds (never one read in place from its source root) whose
+    out_files names screen.dump or which carries NAME.display beside its source; every other entry keeps the switch."""
+    if getattr(e, "in_place", None):
+        return False
+    if SCREEN_FILE in (getattr(e, "out_files", None) or []):
+        return True
+    return (Path(container_dir) / Path(e.name).parent / (Path(e.name).name + ".display")).is_file()
+
+
+def _pkg_screen_road(paths, run_entries, files_entries, container_dir):
+    """The per-entry road of the screen entries of a package the switch alone stages, given what the switch gives its programs: a copy of the
+    program's own folder as its working folder (fixtures=folder, its own answers never staged), IPATH and LPATH from CONTRACT.tsv (_pkg_ipath_for,
+    already in the environment) and the package's ALL.env."""
+    keep = {e.name for e in files_entries}
+    n = 0
+    for e in run_entries:
+        if e.name in keep:
+            continue
+        if not getattr(e, "fixtures", None):
+            e.fixtures = "folder"
+        n += 1
+    os.environ.update(_pkg_env(container_dir, paths))
+    print(f"SCREEN_ROAD_BOARD dir={container_dir} screen_entries={n} switch_entries={len(files_entries)} -- a screen entry of a package the switch stages runs per entry under the screen wrap (the cqo 2026-11-17)")
+
+
 def run_files_leftovers(paths, args, run_entries, graded, tmp_root):
     """A PACKAGE THE SWITCH ALONE CAN STAGE (ALL.source or ALL.launch, CIO-122): a test the first pass did not grade (TIMEOUT, HANG, DEFERRED, REFUSED,
     an EXIT of 127, or no report line) is run again by scrip --run-files, alone, at twice its time limit, and graded by the post step; what is still
@@ -6129,14 +6158,21 @@ def cmd_run(args):
             refuse(f"{Path(args.sno).parent} holds ALL.source or ALL.launch: only scrip --run-files stages such a package, in mode 3 (CIO-122); asked modes {','.join(modes)}, engine {paths['engine']}")
         if not getattr(args, "post", None):
             args.run_files = True
-    if getattr(args, "run_files", False):
-        args.post = run_files_switch(paths, args, run_entries, len(entries), modes, tmp_root)
+    _files_entries = run_entries
+    if _switch_alone:
+        _files_entries = [e for e in run_entries if not _screen_entry_of_switch_pkg(e, Path(args.sno).parent)]
+        if len(_files_entries) != len(run_entries):
+            _pkg_screen_road(paths, run_entries, _files_entries, Path(args.sno).parent)
+    if getattr(args, "run_files", False) and _files_entries:
+        args.post = run_files_switch(paths, args, _files_entries, len(entries), modes, tmp_root)
     if getattr(args, "post", None):
         if "m3" not in modes:
             refuse("--post reads the switches' mode-3 outputs: --modes must include m3")
-        _batch_m3 = post_m3_verdicts(paths, run_entries, [(Path(o), Path(r)) for o, r in args.post])
+        _batch_m3 = post_m3_verdicts(paths, _files_entries, [(Path(o), Path(r)) for o, r in args.post])
         if _switch_alone:
-            _batch_m3.update(run_files_leftovers(paths, args, run_entries, _batch_m3, tmp_root))
+            _batch_m3.update(run_files_leftovers(paths, args, _files_entries, _batch_m3, tmp_root))
+    elif _switch_alone:
+        _batch_m3 = {}
     else:
         _batch_m3 = batch_m3_verdicts(paths, run_entries, tmp_root, ext, Path(args.sno).parent) if (os.environ.get("S4E_BATCH") == "1" and "m3" in modes) else {}
     if os.environ.get("S4E_BATCH") == "1" and "m4" in modes:
