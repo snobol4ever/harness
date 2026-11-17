@@ -584,7 +584,7 @@ def oracle_diagnostic(oracle_bin, flags, sno_path, timeout, stdin_text=None, pro
     return ""
 
 
-def run_oracle(oracle_bin, flags, sno_path, timeout, stdin_text=None, prog_args=None, out_files=None, merge_stderr=False):
+def run_oracle(oracle_bin, flags, sno_path, timeout, stdin_text=None, prog_args=None, out_files=None, merge_stderr=False, size_kb=None):
     """One live oracle invocation. stdin is `/dev/null` unless the caller passes stdin_text -- the
     one caller that does is cmd_capture_oracle_refs, feeding a loose companion resolved by
     loose_stdin_companion(); every other oracle/scrip call in this file
@@ -598,7 +598,7 @@ def run_oracle(oracle_bin, flags, sno_path, timeout, stdin_text=None, prog_args=
     will echo later for the SAME witness. Passing just the name, from the right cwd, is what makes
     that echoed text reproducible and comparable to a frozen .ref at all."""
     sno_path = Path(sno_path)
-    argv = [oracle_bin] + flags.split() + _host_u_switch(sno_path, prog_args) + [sno_path.name] + (list(prog_args) if prog_args else [])
+    argv = [oracle_bin] + flags.split() + (_size_switches(*size_kb) if size_kb else []) + _host_u_switch(sno_path, prog_args) + [sno_path.name] + (list(prog_args) if prog_args else [])
     if sno_path.with_suffix(".xpce").is_file():   # an XPCE entry: the runner, oracle side, inside its screen road (_xpce_wrap)
         argv = _screen_wrap(_xpce_wrap(argv, sno_path, oracle=True, stdin_text=stdin_text), out_files, sno_path)
     _out_files_clear(sno_path.parent, out_files)

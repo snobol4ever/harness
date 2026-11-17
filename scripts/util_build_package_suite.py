@@ -721,12 +721,14 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
     # in the table as it stands are read here, before any oracle run, used for the cut, and written back.
     _decl = {}
     _decl_cols = []
+    _oracle_kb = {}
     if (pkg_dir / f"{out_prefix}.csv").is_file():
         with open(pkg_dir / f"{out_prefix}.csv", newline="") as _f:
             _rdr = csv.DictReader(_f)
             _decl_cols = [c for c in ("out_files", "stderr", "timeout_s", "fixtures") if c in (_rdr.fieldnames or [])]
             for _row in _rdr:
                 _decl[_row.get("entry")] = {c: (_row.get(c) or "").strip() for c in _decl_cols}
+                _oracle_kb[_row.get("entry")] = (int((_row.get("heap_kb") or "").strip() or 131072), int((_row.get("stack_kb") or "").strip() or 4096))
     if merged:
         print("contract: stderr merged (CONTRACT.tsv) -- every ref is cut from stdout and stderr as one stream", file=sys.stderr)
     if contract["fatal"] == "gradable":
@@ -1065,7 +1067,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                                                               prog_args=prog_args, out_files=out_files, merge_stderr=_ms)
                 else:
                     return h.run_oracle(oracle_bin, flags, _iso_src, paths["timeout"], stdin_text=stdin_text,
-                                                              prog_args=prog_args, out_files=out_files, merge_stderr=_ms)
+                                                              prog_args=prog_args, out_files=out_files, merge_stderr=_ms, size_kb=(_oracle_kb.get(name, (131072, 4096)) if lang in ("", "snobol4") else None))
         # ⭐ EVERY FPC DIALECT, ISO FIRST (Lon 2026-10-09, in-chat to the coo, verbatim: "I suspect you should ignore the compiler directives
         # suggesting and hinting at the dialect. Let's get all those rosetta programs working if they run and give reasonable results, REF
         # file, from the oracle."): under CONTRACT.tsv dialect=any-fpc-mode a Pascal program fpc refuses to compile under -Miso (the wrapper's
@@ -1886,7 +1888,7 @@ def mine_read_launch(pkg_dir, lang, dialects):
     return got
 
 
-def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=(), outf=None):
+def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=(), outf=None, sizes=None):
     """One oracle run of NAME in a scratch copy of FOLDER (subfolders included; the collection is never written to), from the top of that
     copy: the program's own folder and its bare name, or under copy root and cwd root the whole collection and the path from its root (CTO-591).
     The copy is made once per worker and folder and made again after any run that changed a file in it (CTO-583 (2)), so a run always starts
@@ -1929,7 +1931,7 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=
             argv = ["bash", os.path.join(HERE, "util_oracle.sh"), "xsb", "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_XSB_FLAGS, "-e", goal]
             pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
         else:
-            argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *flags, *files, *args]
+            argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *(h._size_switches(*sizes) if (sizes and lang in ("", "snobol4")) else ()), *flags, *files, *args]
             pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
         here = (str(work / "f") + "/").encode()
         there = (str(work / "launch") + "/").encode()
@@ -1951,7 +1953,7 @@ def _mine_scratch_drop():
     MINE_SCRATCH.clear()
 
 
-def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=None, args=None, outf=None):
+def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=None, args=None, outf=None, sizes=None):
     """The census verdict of one program (the mining rows' classes). -> (verdict, note, rc, stdout bytes). FEED is (what it is, its bytes) when the
     package names the program's standard input (ALL.stdin, a file of the collection by its path; or our own NAME.in in the package): both runs are
     fed it, and the third run, which asks whether the answer changes with standard input, is not made."""
@@ -1971,7 +1973,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     flags = ()
     for dialect, flag in (ladder or MINE_LADDER.get(lang) or (("", ""),)):
         flags = (flag,) if flag else ()
-        rc1, out1, err1 = _mine_run(lang, at, name, cap, fed, flags, launch, args, outf)
+        rc1, out1, err1 = _mine_run(lang, at, name, cap, fed, flags, launch, args, outf, sizes)
         t1 = time.time()
         if not (lang == "pascal" and rc1 == 126):
             if dialect:
@@ -2006,7 +2008,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     if lang == "raku" and rc1 == 2 and first.startswith("Usage:"):
         return "NEEDS-INPUT", "it asks for arguments (rakudo prints its usage, exit 2)", None, b""
     time.sleep(max(0.0, math.floor(t1) + 1.05 - time.time()))
-    rc2, out2, err2 = _mine_run(lang, at, name, cap, fed, flags, launch, args, outf)
+    rc2, out2, err2 = _mine_run(lang, at, name, cap, fed, flags, launch, args, outf, sizes)
     # A COMPILE REFUSAL'S LISTING CARRIES THE CLOCK (MEASURED 2026-11-15 on DECUS palin.sno, exit 231 twice, 319 and 319 bytes: the two runs differ in the one
     # line `x86-64  Sun Nov 15 13:34:22 2026` of the listing's page header, and the census read DIFFERS-BETWEEN-RUNS). The grader reads such a ref by the line
     # and code of each diagnostic alone (corpus_suite_harness.py _spitbol_compile_refusal_verdict), so the two runs are compared with that line left out.
@@ -2021,7 +2023,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     if (rc2, _same(out2)) != (rc1, _same(out1)):
         return "DIFFERS-BETWEEN-RUNS", f"exit {rc1} and {rc2}, {len(out1)} and {len(out2)} bytes", None, b""
     if not feed:
-        rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags, launch, args, outf)
+        rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags, launch, args, outf, sizes)
         if (rc3, _same(out3)) != (rc1, _same(out1)):
             return "NEEDS-INPUT", "its answer changes with what standard input holds", None, b""
     if not out1.strip():
@@ -2175,9 +2177,10 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
     margs = _mine_args(pkg_dir, root, {k: v for k, v in stems.items() if v in rels}, under)
     moutf = _mine_outfiles(pkg_dir, root, {k: v for k, v in stems.items() if v in rels}, under)
     launch = mine_read_launch(pkg_dir, lang, dialects)
+    msize = {x["path"]: (int((x.get("heap_kb") or "").strip() or 131072), int((x.get("stack_kb") or "").strip() or 4096)) for x in (h._fmt2_read_csv(pkg_dir)[1] if (pkg_dir / "ALL.csv").is_file() else []) if x.get("path")}
     try:
         with ThreadPoolExecutor(max_workers=jobs) as ex:
-            got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder, feeds.get(r), launch, margs.get(r), moutf.get(r)), rels))
+            got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder, feeds.get(r), launch, margs.get(r), moutf.get(r), msize.get(r, (131072, 4096))), rels))
     finally:
         _mine_scratch_drop()
     unfed = [f"{r} ({feeds[r][0] if r in feeds else 'ALL.args ' + ' '.join(margs[r])}): {v}: {note}" for r, (v, note, rc, out) in zip(rels, got) if (r in feeds or r in margs) and v != "ENTRY"]
