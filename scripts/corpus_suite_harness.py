@@ -1505,10 +1505,22 @@ def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, 
     return v2
 
 
+_IN_FILES_AT = {}
+
+
+def _in_files_place(cwd):
+    # THE in_files CELL IS PLACED BEFORE EVERY RUN, AFTER THE out_files CLEAR (the grader 2026-11-17, on Peter Lane's wiki_highlight and diary-index
+    # of icon_lane_tools: each rewrites the file it is given in place). The clear deleted a file both cells name, and a copy placed once per entry
+    # would give a second run the file the first had rewritten; so the entry's setup registers its files by run directory and each run places them afresh here.
+    for _dst, _src in _IN_FILES_AT.get(str(Path(cwd).resolve()) if cwd else "", ()):
+        shutil.copyfile(_src, _dst); os.chmod(_dst, 0o644)
+
+
 def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
     _out_files_clear(cwd, out_files)
     if answer_file:
         _out_files_clear(cwd, [answer_file])
+    _in_files_place(cwd)
     kind, out, err, rc = _run_raw(argv, timeout, cwd=cwd, env=env, stdin_text=stdin_text, merge_stderr=merge_stderr)
     out = _out_files_append(out, cwd, out_files) if out_files else out
     if answer_file:
@@ -3880,14 +3892,16 @@ def one_container_probe():
     from beside it by in_files data.txt; in_source reads renamed.txt, placed from fixtures/src.txt by in_files renamed.txt=fixtures/src.txt. ARMS:
     (1) the three PASS in mode 3 and the package reads byte for byte as it was; (2) env_key with its env cell emptied FAILs (the cell, not the
     environment, gave the answer); (3) an env cell with no '=' refuses rc 2; (4) an in_files source that is no file refuses rc 2. Prints
-    ONE_CONTAINER_PROBE cells=ok unset=fails bad_env=refused missing_in=refused, rc 0; another word in a cell and rc 1."""
+    ONE_CONTAINER_PROBE cells=ok unset=fails bad_env=refused missing_in=refused rewrite=ok, rc 0; (5) rewrite: an entry
+    whose in_files and out_files name one file, which it rewrites, PASSes in mode 3 (each run is given the source afresh, after the clear); another word in a cell and rc 1."""
     t = Path(tempfile.mkdtemp(prefix="one_container_probe_", dir=os.environ.get("TMPDIR") or None))
     try:
         pkg = t / "pkg"; (pkg / "fixtures").mkdir(parents=True)
         (pkg / "env_key.sno").write_text("        OUTPUT = HOST(4,'PJ_KEY')\nEND\n")
         (pkg / "in_beside.sno").write_text("        INPUT(.IN, 5, 'data.txt')\n        OUTPUT = IN\nEND\n")
         (pkg / "in_source.sno").write_text("        INPUT(.IN, 5, 'renamed.txt')\n        OUTPUT = IN\nEND\n")
-        (pkg / "data.txt").write_text("beside line\n"); (pkg / "fixtures" / "src.txt").write_text("source line\n")
+        (pkg / "rewrite.sno").write_text("        INPUT(.IN, 5, 'doc.txt')\n        LINE = IN\n        ENDFILE(5)\n        OUTPUT(.OUT, 6, 'doc.txt')\n        OUT = 'rewritten ' LINE\nEND\n")
+        (pkg / "data.txt").write_text("beside line\n"); (pkg / "fixtures" / "src.txt").write_text("source line\n"); (pkg / "fixtures" / "doc.txt").write_text("source doc\n")
         for n, o in (("env_key", "hello"), ("in_beside", "beside line"), ("in_source", "source line")):
             (pkg / f"{n}.out").write_text(o + "\n")
         head = "entry,path,timeout_s,heap_kb,stack_kb,compile_args,env,in_files\n"
@@ -3904,6 +3918,16 @@ def one_container_probe():
             m = re.search(r"^SUITE_BOARD .*\bm3_n=(\d+) m3_pass=(\d+)", r.stdout, re.M)
             return r.returncode, ((int(m.group(1)), int(m.group(2))) if m else None), r.stdout
         before = snap()
+        # (5) rewrite: in_files and out_files name one file; the run reads the source the cell places, never deleted by the out_files clear
+        (pkg / "rewrite.out").write_text("rewritten source doc\n")
+        (pkg / "ALL.csv").write_text("entry,path,timeout_s,heap_kb,stack_kb,in_files,out_files\nrewrite,rewrite.sno,60,131072,4096,doc.txt=fixtures/doc.txt,doc.txt\n")
+        _c5 = [sys.executable, os.path.abspath(__file__), "run", str(pkg / "ALL.sno"), str(pkg / "ALL.ref"), "--lang", "snobol4", "--modes", "m3"]
+        _e5 = dict(os.environ, S4E_ONE_RUNNER_FIXTURE="--probe-one-container: a planted package, not a board", S4E_PROGRESS_DB=str(t / "progress.tsv"))
+        r5 = subprocess.run(_c5, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=_e5, timeout=1800)
+        m5 = re.search(r"^SUITE_BOARD .*\bm3_n=(\d+) m3_pass=(\d+)", r5.stdout, re.M)
+        rc5, g5, l5 = r5.returncode, (tuple(int(x) for x in m5.groups()) if m5 else None), r5.stdout
+        (pkg / "rewrite.out").unlink()
+        rewrite = "ok" if (rc5 == 0 and g5 == (1, 1) and snap() == before) else "RED"
         write(*good); rc1, g1, l1 = grade()
         cells = "ok" if (rc1 == 0 and g1 == (3, 3) and snap() == before) else "RED"
         write({"env_key": "", "in_beside": "", "in_source": ""}, good[1]); rc2, g2, l2 = grade()
@@ -3912,11 +3936,11 @@ def one_container_probe():
         bad_env = "refused" if (rc3 == 2 and g3 is None) else "RED"
         write(good[0], {"env_key": "", "in_beside": "data.txt", "in_source": "renamed.txt=fixtures/none.txt"}); rc4, g4, l4 = grade()
         missing_in = "refused" if (rc4 == 2 and g4 is None) else "RED"
-        print(f"ONE_CONTAINER_PROBE cells={cells} unset={unset} bad_env={bad_env} missing_in={missing_in}")
-        for w, rc, g, lg in (("cells", rc1, g1, l1), ("unset", rc2, g2, l2), ("bad_env", rc3, g3, l3), ("missing_in", rc4, g4, l4)):
-            if (w == "cells" and cells != "ok") or (w == "unset" and unset != "fails") or (w == "bad_env" and bad_env != "refused") or (w == "missing_in" and missing_in != "refused"):
+        print(f"ONE_CONTAINER_PROBE cells={cells} unset={unset} bad_env={bad_env} missing_in={missing_in} rewrite={rewrite}")
+        for w, rc, g, lg in (("cells", rc1, g1, l1), ("unset", rc2, g2, l2), ("bad_env", rc3, g3, l3), ("missing_in", rc4, g4, l4), ("rewrite", rc5, g5, l5)):
+            if (w == "cells" and cells != "ok") or (w == "unset" and unset != "fails") or (w == "bad_env" and bad_env != "refused") or (w == "missing_in" and missing_in != "refused") or (w == "rewrite" and rewrite != "ok"):
                 print("  %s: rc %s board %s\n%s" % (w, rc, g, "\n".join(lg.strip().split("\n")[-6:])))
-        return 0 if (cells, unset, bad_env, missing_in) == ("ok", "fails", "refused", "refused") else 1
+        return 0 if (cells, unset, bad_env, missing_in, rewrite) == ("ok", "fails", "refused", "refused", "ok") else 1
     finally:
         shutil.rmtree(t, ignore_errors=True)
 
@@ -4580,14 +4604,19 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         if _alone is not None:
             _rc_dir = _alone                                        # NAME.alone: the run directory holds its fixtures alone; the source is named by its full path
         _run_dir = Path(_rc_dir) if _rc_dir is not None else Path(cand).parent
+        _IN_FILES_AT.clear()
         if getattr(entry, "in_files", None):
             # THE in_files CELL (DESIGN-PLAN one-container step 1, the grader 2026-11-17): each file is placed in the run directory before every
-            # run, an owner-writable copy, so a program that rewrites its input never writes the suite.
+            # run, an owner-writable copy, so a program that rewrites its input never writes the suite; the run step places it again before
+            # each run (_in_files_place), so a file it also names in out_files is its input every run and its answer after.
+            _placed = []
             for _nm, _sr in entry.in_files:
                 _from = (Path(companion_dir) / Path(entry.name).parent / _nm) if _sr is None else (Path(_sr) if _sr.startswith("/") else Path(companion_dir) / _sr)
                 if companion_dir is None or not _from.is_file():
                     refuse(f"{entry.name}: in_files names {_nm} from {_from}, which is no file -- the entry is never run without the input it declares")
                 shutil.copyfile(_from, _run_dir / _nm); os.chmod(_run_dir / _nm, 0o644)
+                _placed.append((_run_dir / _nm, _from))
+            _IN_FILES_AT[str(_run_dir.resolve())] = _placed
         if getattr(entry, "env_cells", None):
             # THE env CELL (DESIGN-PLAN one-container step 1): its pairs join the side environment; a key a sidecar also sets is two answers to one question.
             _side = dict(_side or {})
@@ -8758,9 +8787,9 @@ def main():
     if sys.argv[1:] == ["--probe-tap"]:
         sys.exit(tap_cases_probe())
     if sys.argv[1:] == ["--probe-source"]:
-        return source_probe()
+        sys.exit(source_probe())
     if sys.argv[1:] == ["--probe-one-container"]:
-        return one_container_probe()
+        sys.exit(one_container_probe())
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
 
