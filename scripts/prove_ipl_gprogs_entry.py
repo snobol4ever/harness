@@ -20,7 +20,7 @@
 # It honours what the harness honours beside an entry: its ALL.args line (the program's arguments), NAME.in (its stdin), the
 # out_files cell (stdout, then each file's bytes in order; a file not written is <<out_files: N was not written>>), want_rc, and the screen road
 # (util_screen_run.py beside this file): --out screen.dump with NAME.events and NAME.cap when out_files names screen.dump, else --no-screen,
-# which NAME.display must then mark; NAME.depth as --depth either way; NAME.pin's clock and entropy shim on the program.
+# which NAME.display must then mark; NAME.depth as --depth either way; an entry's RUN SIDECARS (NAME.env, NAME.pin, NAME.shims/) from the harness's own reader, side_env_for_source of corpus_suite_harness.py (ipl_env_apply of lib_icon_ipl_isolation.sh), laid on the program by env(1) after the road's two dashes, as _screen_parts lays them, so the road never runs under them and this prover keeps no copy of the pin code (the cto 2026-11-17, row icon-the-one-prover-of-ipl-gprogs-applies-run-sidecars-through-the-one-reader, on officer_07's finding: mover's listing is fixed by mover.shims/ls, which the harness applied and this prover did not). A reader refusal is this prover's rc 2. Each run's folder sits in a folder of its own (NAME.N/run) because the shims are copied beside it, in NAME.N/.ipl_shims.
 # NAME.DISPLAY MARKS A TEXT ENTRY OF THE GRAPHICS FACILITY, run under the road's display whether or not it opens a window (the cto 2026-11-16
 # 15:5x CST, on colorwif: it calls PaletteColor and ColorValue and opens no window; the plain oracle stops it with error 106, so it is cut by the
 # graphics oracle and graded on its text; one mark serves both, no second form).
@@ -70,7 +70,7 @@ work = Path(tempfile.mkdtemp(prefix="prove_ipl_gprogs.", dir=base))
 def one_run(c, n):
     name, d = c["name"], work / f"{c['name']}.{n}"
     d.mkdir()
-    d, src = G.stage(c["entry"], d, pkg)
+    d, src = G.stage(c["entry"], d / "run", pkg)
     env = G.oracle_env(M, IPL, d)
     if MPROGS:
         env.update({"IPATH": str(M / "lib"), "LPATH": f"{M}/ipl/mincl {M}/ipl/incl {M}/ipl/gincl"})
@@ -82,9 +82,14 @@ def one_run(c, n):
     for o in c["outs"]: (d / o).unlink(missing_ok=True)
     st = work / f"{name}.{n}.status"
     wrap = ["/bin/sh", "-c", '"$@"; r=$?; echo "$r" > "$0"; exit "$r"', str(st)]
+    try:
+        side = H.side_env_for_source(G.source_of(pkg, c["row"]), d)
+    except SystemExit as ex:
+        raise Refuse(f"{name}: the one reader refused its run sidecars (rc {ex.code})")
+    own = ["/usr/bin/env"] + [f"{k}={v}" for k, v in side.items()] if side else []
     sin = open(pkg / f"{name}.in", "rb") if (pkg / f"{name}.in").is_file() else subprocess.DEVNULL
     try:
-        p = subprocess.run(c["road"] + ["--"] + wrap + c["pin"] + run + c["args"], cwd=d, env=env, stdin=sin, capture_output=True, timeout=3600)
+        p = subprocess.run(c["road"] + ["--"] + wrap + own + run + c["args"], cwd=d, env=env, stdin=sin, capture_output=True, timeout=3600)
     finally:
         if sin is not subprocess.DEVNULL: sin.close()
     if p.returncode == 2 and b"REFUSE" in p.stderr: raise Refuse(f"the road refused {name}: {p.stderr.decode(errors='replace').strip()[:200]}")
@@ -110,7 +115,7 @@ try:
         for l in (pkg / "EVENTS-NONE.tsv").read_text().split("\n"):
             f = l.split("\t")
             if l and not l.startswith("#") and len(f) > 1 and f[1].strip(): none[f[0]] = f[1]
-    pin, cfg = None, []
+    cfg = []
     for name in dict.fromkeys(names):
         r = rows.get(name) or refuse(f"{name} has no row in {pkg}/ALL.csv")
         if not (pkg / f"{name}.out").is_file(): refuse(f"{name} has no {name}.out")
@@ -128,13 +133,8 @@ try:
         else:
             road += ["--no-screen"]
         if (pkg / f"{name}.depth").is_file(): road += ["--depth", (pkg / f"{name}.depth").read_text().strip()]
-        p = []
-        if (pkg / f"{name}.pin").is_file():
-            if pin is None: pin = sh_value("ipl_pin_shim_path")
-            if not pin: refuse("no pin shim (ipl_pin_shim_path)")
-            p = ["env", "LD_PRELOAD=" + pin]
         if name not in ents: refuse(f"{name} is a row of ALL.csv the harness does not read as an entry")
-        cfg.append({"name": name, "row": r, "outs": outs, "screen": screen, "events": events, "road": road, "pin": p, "entry": ents[name], "args": argl.get(name, [])})
+        cfg.append({"name": name, "row": r, "outs": outs, "screen": screen, "events": events, "road": road, "entry": ents[name], "args": argl.get(name, [])})
     def pool(cs, k):
         with ThreadPoolExecutor(max_workers=2 * k) as ex:
             futs = {(c["name"], n): ex.submit(one_run, c, n) for c in cs for n in (1, 2)}
