@@ -9,6 +9,9 @@ ONE FILE IS THE SWITCH: /home/resources/postoffice/SPRINT.conf, key=value a line
     started=11-17 13:01        when that was measured (free text)
     show=cio coo grader cqo    the seats whose banner carries the lines; any other seat prints nothing
 With no file, no lang, or a seat the show line does not name, it prints nothing and the banner is as it was. To end the countdown delete the file.
+SEVERAL SPRINTS, ONE FILE (Lon 2026-11-17 17:0x CST, in the cio's window, verbatim: "Okay then, get the banner to show 3 sprints: SNOBOL4, Icon, and Unicon."): each name= line opens a sprint of its own, with its own
+lang, start and started, and two optional lines that pick its suites by their key in the suite table: keys=REGEX (the key must match) and nokeys=REGEX (the key must not), so the Icon suites and the
+Unicon suites, which share the language icon, are two sprints (keys=^(uni|rosetta-unicon) and nokeys= the same). The show line is the file's, for every sprint. A file with one name= reads as before.
 ONE DB (Lon 2026-11-12, skill suites-and-grading section 3): the count is read from the same rows the grid and the summary by language read,
 /home/resources/progress/SUITES.tsv: a bug is an entry of a suite of the language that the row's newest reading does not pass, today_total less
 today_pass, so the countdown moves when the cycle rewrites a row and never before, and it can go up as well as down. Read only, nothing run.
@@ -21,19 +24,30 @@ SUITES = os.environ.get("S4E_SUITES_TSV", "/home/resources/progress/SUITES.tsv")
 
 
 def read_conf(path):
-    c = {}
+    """-> (the file's own keys, [one dict a sprint]); a name= line opens a sprint, a key before the first name= is the file's, and show is the file's wherever it stands"""
+    top, sprints, cur = {}, [], None
     try:
         for ln in open(path, encoding="utf-8", errors="replace"):
             ln = ln.strip()
             if ln and not ln.startswith("#") and "=" in ln:
                 k, _, v = ln.partition("=")
-                c[k.strip()] = v.strip()
+                k, v = k.strip(), v.strip()
+                if k == "name":
+                    cur = {}
+                    sprints.append(cur)
+                if k == "show" or cur is None:
+                    top[k] = v
+                else:
+                    cur[k] = v
     except OSError:
-        return {}
-    return c
+        return {}, []
+    if not sprints and top.get("lang"):
+        sprints = [dict(top)]
+    return top, sprints
 
 
-def read_rows(path, lang):
+def read_rows(path, lang, keys="", nokeys=""):
+    import re
     rows, head = [], None
     for ln in open(path, encoding="utf-8", errors="replace"):
         if ln.startswith("#") or not ln.strip():
@@ -44,6 +58,8 @@ def read_rows(path, lang):
             continue
         r = dict(zip(head, cells))
         if r.get("lang") != lang or "@" in r.get("key", ""):
+            continue
+        if (keys and not re.search(keys, r.get("key", ""))) or (nokeys and re.search(nokeys, r.get("key", ""))):
             continue
         try:
             p, t = int(r.get("today_pass") or 0), int(r.get("today_total") or 0)
@@ -66,11 +82,20 @@ def bar(done, total, width=20):
 
 
 def lines(seat, conf_path=None, suites_path=None, stamp=True):
-    c = read_conf(conf_path or CONF)
-    lang, name = c.get("lang", ""), c.get("name", "")
-    if not lang or seat not in c.get("show", "").split():
+    top, sprints = read_conf(conf_path or CONF)
+    if seat not in top.get("show", "").split():
         return []
-    rows = read_rows(suites_path or SUITES, lang)
+    out = []
+    for c in sprints:
+        out += one_sprint(c, suites_path, stamp)
+    return out
+
+
+def one_sprint(c, suites_path=None, stamp=True):
+    lang, name = c.get("lang", ""), c.get("name", "")
+    if not lang:
+        return []
+    rows = read_rows(suites_path or SUITES, lang, c.get("keys", ""), c.get("nokeys", ""))
     if not rows:
         return [f"{name or lang} SPRINT COUNTDOWN: the suite table holds no row of language {lang}"]
     togo = sum(t - p for _, p, t in rows)
@@ -116,9 +141,21 @@ def probe():
     o = lines("cio", conf, tsv, stamp=False)
     if not (o and "▌ 𝟰 FAILING TESTS LEFT, of 𝟵 at the start ▐" in o[0] and "1 of 2 suites at 100%" in o[0] and o[1] == "   failing tests by suite: Beta 4"):
         bad.append(("up_again", o))                     # arm 5: a suite that falls back is counted again
+    open(tsv, "w").write("# a comment line\n" + head + "\n" + "alpha\tSnoAlpha\tx\tsnobol4\td\t0\t0\td\t10\t10\th\n" + "gamma\tIcnGamma\tx\ticon\td\t0\t0\td\t8\t9\th\n"
+                         + "uni_one\tUniOne\tx\ticon\td\t0\t0\td\t4\t7\th\n" + "rosetta-unicon\tUniRosetta\tx\ticon\td\t0\t0\td\t2\t2\th\n")
+    open(conf, "w").write("show=cio coo\nname=SNOBOL4\nlang=snobol4\nstart=9\nstarted=13:01\nname=ICON\nlang=icon\nnokeys=^(uni|rosetta-unicon)\nstart=5\nstarted=12:5x\n"
+                          "name=UNICON\nlang=icon\nkeys=^(uni|rosetta-unicon)\nstart=10\nstarted=15:01\n")
+    o = lines("cio", conf, tsv, stamp=False)
+    ok = (len(o) == 5 and o[0].startswith("🏁 SNOBOL4 SPRINT: ZERO.") and "▌ 𝟭 FAILING TESTS LEFT, of 𝟱 at the start ▐" in o[1] and "8 of 9 ICON tests pass" in o[1]
+          and o[2] == "   failing tests by suite: IcnGamma 1" and "▌ 𝟯 FAILING TESTS LEFT, of 𝟭𝟬 at the start ▐" in o[3] and "6 of 9 UNICON tests pass" in o[3] and "1 of 2 suites at 100%" in o[3]
+          and o[4] == "   failing tests by suite: One 3")
+    if not ok:
+        bad.append(("three_sprints", o))                # arm 6: three sprints in one file, two of them splitting one language by the suite key
+    if lines("officer_04", conf, tsv, stamp=False) != []:
+        bad.append(("three_sprints_seat_not_shown", "printed"))
     for name, got in bad:
         print(f"SPRINT_COUNTDOWN_PROBE RED arm={name} got={got!r}")
-    print(f"SPRINT_COUNTDOWN_PROBE arms=5 red={len(bad)}")
+    print(f"SPRINT_COUNTDOWN_PROBE arms=6 red={len(bad)}")
     return 1 if bad else 0
 
 
