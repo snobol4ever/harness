@@ -722,6 +722,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
     _decl = {}
     _decl_cols = []
     _oracle_kb = {}
+    _oracle_t = {}
     if (pkg_dir / f"{out_prefix}.csv").is_file():
         with open(pkg_dir / f"{out_prefix}.csv", newline="") as _f:
             _rdr = csv.DictReader(_f)
@@ -729,6 +730,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
             for _row in _rdr:
                 _decl[_row.get("entry")] = {c: (_row.get(c) or "").strip() for c in _decl_cols}
                 _oracle_kb[_row.get("entry")] = (int((_row.get("heap_kb") or "").strip() or 131072), int((_row.get("stack_kb") or "").strip() or 4096))
+                _oracle_t[_row.get("entry")] = [_w for _w in (_row.get("compile_args") or "").split() if re.fullmatch(r"-t[1-9][0-9]*", _w)]
     if merged:
         print("contract: stderr merged (CONTRACT.tsv) -- every ref is cut from stdout and stderr as one stream", file=sys.stderr)
     if contract["fatal"] == "gradable":
@@ -1066,7 +1068,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     return h.run_oracle("bash", str(h.HARNESS_SCRIPTS / "gprolog_oracle_run.sh"), _iso_src, paths["timeout"], stdin_text=stdin_text,
                                                               prog_args=prog_args, out_files=out_files, merge_stderr=_ms)
                 else:
-                    return h.run_oracle(oracle_bin, flags, _iso_src, paths["timeout"], stdin_text=stdin_text,
+                    return h.run_oracle(oracle_bin, " ".join([flags] + (_oracle_t.get(name, []) if lang in ("", "snobol4") else [])), _iso_src, paths["timeout"], stdin_text=stdin_text,
                                                               prog_args=prog_args, out_files=out_files, merge_stderr=_ms, size_kb=(_oracle_kb.get(name, (131072, 4096)) if lang in ("", "snobol4") else None))
         # ⭐ EVERY FPC DIALECT, ISO FIRST (Lon 2026-10-09, in-chat to the coo, verbatim: "I suspect you should ignore the compiler directives
         # suggesting and hinting at the dialect. Let's get all those rosetta programs working if they run and give reasonable results, REF
