@@ -16,6 +16,13 @@
 # at the cell after the last finished one; a cell found "running" at start killed the process, its count in CYCLE.crash rises, and at three it is skipped
 # for good (named in CYCLE.skip, one line each) so no cell can hold the cycle forever.
 set -u
+if [ "${1:-}" = --probe-port ] && [ -z "${S4E_DOOR_PROBE_T:-}" ]; then   # THE PORTS' PROBE, IN A SANDBOX OF ITS OWN as --probe-door's: scratch progress, tmp, requests, one token, an empty PORTS_TOP
+    _T="$(mktemp -d "${TMPDIR:-/tmp}/s4e_probe_port.XXXXXX")" || exit 2; mkdir -p "$_T/prog" "$_T/tmp" "$_T/req" "$_T/run" "$_T/post" "$_T/ports"; printf 'cores=1\ngrader=1\nwait=600\n' > "$_T/CORES.conf"
+    env -u S4E_CORE_HELD -u S4E_RUN_SLOT_HELD -u S4E_SLOT_WAIT_MAX -u S4E_CYCLE_PORTS S4E_DOOR_PROBE_T="$_T" S4E_CYCLE_PROG="$_T/prog" S4E_CYCLE_TMP="$_T/tmp" S4E_PROGRESS_DB="$_T/results.tsv" S4E_RESULTS="$_T/results.tsv" \
+        S4E_SUITES_TSV="$_T/SUITES.tsv" S4E_SCORE_MD="$_T/SCORE.md" S4E_TEST_REQUEST_DIR="$_T/req" S4E_POST="$_T/post" S4E_POSTOFFICE="$_T/post" S4E_CORES_CONF="$_T/CORES.conf" \
+        S4E_RUN_SLOT_DIR="$_T/run" S4E_SLOT_WAITS="$_T/SLOT_WAITS.tsv" S4E_SPRINT_CONF="$_T/no-sprint.conf" S4E_CYCLE_PORTS_TOP="$_T/ports" S4E_CYCLE_PORT_URL="$_T/no-origin" bash "$(readlink -f "${BASH_SOURCE[0]}")" --probe-port; _rc=$?
+    rm -rf "$_T"; exit "$_rc"
+fi
 if [ "${1:-}" = --probe-door ] && [ -z "${S4E_DOOR_PROBE_T:-}" ]; then   # THE DOOR'S PROBE RUNS IN A SANDBOX OF ITS OWN (skill suites-and-grading 9): scratch progress, tmp, requests and one core token
     _T="$(mktemp -d "${TMPDIR:-/tmp}/s4e_probe_door.XXXXXX")" || exit 2; mkdir -p "$_T/prog" "$_T/tmp" "$_T/req" "$_T/run" "$_T/post"; printf 'cores=1\ngrader=1\nwait=600\n' > "$_T/CORES.conf"
     env -u S4E_CORE_HELD -u S4E_RUN_SLOT_HELD -u S4E_SLOT_WAIT_MAX S4E_DOOR_PROBE_T="$_T" S4E_CYCLE_PROG="$_T/prog" S4E_CYCLE_TMP="$_T/tmp" S4E_PROGRESS_DB="$_T/results.tsv" S4E_RESULTS="$_T/results.tsv" \
@@ -41,7 +48,7 @@ pin() { T_SCRIP="$(td "$1" SCRIP)"; T_CORPUS="$(td "$1" corpus)"; T_HARNESS="$(t
 export S4E_SEAT=grader S4E_CLASS=grader S4E_BATCH="${S4E_BATCH:-1}" S4E_MODES="${S4E_MODES:-m3}" TMPDIR="${S4E_CYCLE_TMP:-/tmp/s4e/grader}"   # S4E_MODES exported: the cells and the suite row (util_score_row.py from-progress) read the same modes, m3 alone under Lon's mode-3-only order   # one-disk: not a path (the pin: the graded tree's own four repos, by design (lines 20-22))
 PROG="${S4E_CYCLE_PROG:-/home/resources/progress}"
 STATE="$PROG/CYCLE.state"; LOG="$PROG/CYCLE.log"; PIDF="$PROG/CYCLE.pid"; CRASH="$PROG/CYCLE.crash"; SKIP="$PROG/CYCLE.skip"
-RUNNERS="$S4E_HARNESS/scripts/SUITE_RUNNERS.tsv"
+RUNNERS="${S4E_CYCLE_RUNNERS:-$S4E_HARNESS/scripts/SUITE_RUNNERS.tsv}"   # S4E_CYCLE_RUNNERS: a probe's own table, never the live cycle's
 mkdir -p "$TMPDIR/cycle" "$PROG" || exit 2
 # THE CYCLE RENDERS INTO ITS SCRATCH, NEVER INTO A TRACKED FILE OF THE ROOT (the cio 2026-11-12, row cycle-score-md-dirties-the-grader-root; MEASURED
 # 13:5x: the grader root's .github read M SCORE.md between laps, so next refused that seat's jobs rc 2): util_score_row.py and util_suite_banner.py
@@ -65,14 +72,69 @@ log() { printf '%s %s\n' "$(now)" "$*" >> "$LOG"; }
 state_get() { sed -n "s/^$1=//p" "$STATE" 2>/dev/null | head -1; }
 state_put() {   # lap idx total suite cell status
     printf 'lap=%s\nidx=%s\ntotal=%s\nsuite=%s\ncell=%s\nstatus=%s\nsince=%s\npid=%s\n' "$1" "$2" "$3" "$4" "$5" "$6" "$(now)" "$$" > "$STATE.tmp" && mv "$STATE.tmp" "$STATE"; }
+# THE PORT ROWS ARE CELLS OF THE CYCLE (row cycle-the-port-rows-are-cells-of-the-cycle; Lon 2026-11-17 16:4x and 17:0x CST, in the jvm and dotnet windows, verbatim:
+# "You need to incorporate the consolidated test-suite cycle-runner and all its container files and get ALL SNOBOL4 tests working with snobol4jvm." / "... with
+# snobol4dotnet."; the design dotnet's, /home/resources/progress/ports-2026-11-17/dotnet/CYCLE-PORT-DESIGN.md, with the cio's three changes and jvm's part (f)).
+# A port row <key>@<engine> of SUITE_RUNNERS.tsv whose runner is corpus_suite_harness.py is a cell like a pkg row, launched under S4E_ENGINE=<engine>. The engine it
+# grades is THE CYCLE'S OWN BUILD of the port at its origin's head, PORTS_TOP/<repo>-<sha10>, never the seat's root (MEASURED by jvm: the seat's root is dirty or
+# ahead of origin while it works, so a reading there is UNREAD, or refused by --binaries at its start). The head is read by git ls-remote of the seat root's own
+# origin url; a head with no built folder is cloned and built in the background at a lap's start (port_refresh) while the newest built folder serves; the two newest
+# are kept. A port with no built folder, or whose runner refuses its --binaries check, emits no cells and one PORT-SKIPPED line a lap naming why. A port cell is a
+# slow-lane cell after every SCRIP slow cell, one at a time for both engines, its token through door_take, started only while no request is pending, and never a
+# sprint cell. Proof: --probe-port.
+CYCLE_PORTS="${S4E_CYCLE_PORTS:-jvm dotnet}"
+PORTS_TOP="${S4E_CYCLE_PORTS_TOP:-/home/resources/worktrees/grader/ports}"
+port_repo() { case "$1" in jvm) echo snobol4jvm;; dotnet) echo snobol4dotnet;; esac; }
+port_root_var() { case "$1" in jvm) echo S4E_JVM_ROOT;; dotnet) echo S4E_DOTNET_ROOT;; esac; }
+port_ready() {   # engine -> prints the newest built folder of the port; rc 1 when none is built
+    local r d; r="$(port_repo "$1")"; [ -n "$r" ] || return 1
+    d="$(ls -dt "$PORTS_TOP/$r"-*/.built 2>/dev/null | head -1)"; [ -n "$d" ] || return 1
+    printf '%s' "${d%/.built}"
+}
+port_ok() {   # engine -> rc 0 when a built folder stands and the engine's runner passes its own --binaries check on it; else rc 1 and the reason on stdout
+    local e="$1" d c; d="$(port_ready "$e")" || { echo "no built folder of the port under $PORTS_TOP (port_refresh builds origin's head in the background)"; return 1; }
+    c="${S4E_CYCLE_PORT_CHECK:-bash $S4E_HARNESS/scripts/run_snobol4$e.sh}"
+    env "$(port_root_var "$e")=$d" $c --binaries --lang snobol4 > /dev/null 2>&1 || { echo "its runner refused --binaries on $d"; return 1; }
+    return 0
+}
+port_refresh() {   # engine: build the port at its origin's head in PORTS_TOP when no folder holds it, under a lock of its own; run in the background
+    local e="$1" r url head d; r="$(port_repo "$e")"; [ -n "$r" ] || return 2
+    mkdir -p "$PORTS_TOP" || return 2
+    url="${S4E_CYCLE_PORT_URL:-$(git -C "/home/claude_$e" remote get-url origin 2>/dev/null)}"; [ -n "$url" ] || { log "PORT $e: no origin url (/home/claude_$e)"; return 2; }
+    head="$(timeout -k 5 60 git ls-remote "$url" refs/heads/main 2>/dev/null | cut -c1-10)"; [ -n "$head" ] || { log "PORT $e: git ls-remote read no head of $url"; return 2; }
+    [ -f "$PORTS_TOP/$r-$head/.built" ] && return 0
+    ( flock -n 9 || exit 0
+      d="$PORTS_TOP/$r-$head"; rm -rf "$d"
+      git clone -q "$url" "$d" 2> /dev/null && git -C "$d" checkout -q --detach "$head" 2> /dev/null || { log "PORT $e: clone of $head failed"; exit 1; }
+      case "$e" in
+          jvm) S4E_JVM_ROOT="$d" timeout -k 30 1800 nice -n 10 bash "$S4E_HARNESS/scripts/build_snobol4jvm.sh" ;;
+          dotnet) ( cd "$d" && timeout -k 30 1800 nice -n 10 dotnet build Snobol4/Snobol4.csproj -c Release ) ;;
+      esac > "$d/.build.log" 2>&1 < /dev/null || { log "PORT $e: build of $head failed ($d/.build.log)"; exit 1; }
+      : > "$d/.built"; log "PORT $e built $head ($d)"
+      ls -dt "$PORTS_TOP/$r"-*/ 2> /dev/null | tail -n +3 | while read -r o; do o="${o%/}"; fuser -s -m "$o" 2> /dev/null || rm -rf "$o"; done ) 9> "$PORTS_TOP/.$r.build.lock"
+}
+port_env() {   # key -> the env words of a port cell (S4E_ENGINE and the engine's root on the cycle's newest build); rc 2 when no build stands
+    local e="${1##*@}" d; d="$(port_ready "$e")" || return 2
+    printf 'S4E_ENGINE=%s %s=%s' "$e" "$(port_root_var "$e")" "$d"
+}
+ports_on() {   # -> the engines of CYCLE_PORTS whose port_ok passes, space-separated; each other one logs PORT-SKIPPED once a lap when PORT_NOTE_LAP is set
+    local e why on=""
+    for e in $CYCLE_PORTS; do
+        if why="$(port_ok "$e")"; then on="$on $e"
+        elif [ -n "${PORT_NOTE_LAP:-}" ] && ! grep -q -P "^\S+ PORT-SKIPPED lap=$PORT_NOTE_LAP engine=$e: " "$LOG" 2> /dev/null; then log "PORT-SKIPPED lap=$PORT_NOTE_LAP engine=$e: $why; its rows emit no cells this lap"; fi
+    done
+    printf '%s ' "$on"
+}
 cells() {   # one line per cell: key kind lang dir cell (dir: the suite's container directory; for a small row the runner's own command words, its cell the one name all); core first, then chunk:NN in order, per the row order of SUITE_RUNNERS.tsv
     # THE PARTITION IS READ WHERE THE CORPUS LIVES; THE CELL KEEPS THE ROOT'S SPELLING (the cio 2026-11-14, row harness-one-disk-step-6-the-cutover; MEASURED 08:30 CST: with the
     # grader's root cut the first lap read cells=8 where the lap before read 1092, since every PARTITION.tsv was looked for under S4E/corpus, a folder the root no longer holds,
     # and only the small rows were left). dir stays S4E/corpus/... (not a path: tp respells it for the tree a chunk runs on); the file is read from S4E_CORPUS.
-    awk -F'\t' -v S="$S4E" -v C="$S4E_CORPUS" '
-        !/^#/ && NF >= 5 && ($2 == "master" || $2 == "pkg") {
+    awk -F'\t' -v S="$S4E" -v C="$S4E_CORPUS" -v PE=" $(ports_on)" '
+        function port_on(k,  e) { e = k; sub(/^[^@]*@/, "", e); return (k ~ /@/) && index(PE, " " e " ") > 0 }
+        !/^#/ && NF >= 5 && ($2 == "master" || $2 == "pkg" || ($2 == "port" && $4 == "corpus_suite_harness.py" && $5 ~ /^corpus\// && port_on($1))) {
             row++; dir = ($2 == "master") ? S "/corpus/tests/" $3 : S "/" $5
-            real = ($2 == "master") ? C "/tests/" $3 : S "/" $5; if ($2 == "pkg" && $5 ~ /^corpus\//) real = C "/" substr($5, 8)
+            real = ($2 == "master") ? C "/tests/" $3 : S "/" $5; if (($2 == "pkg" || $2 == "port") && $5 ~ /^corpus\//) real = C "/" substr($5, 8)
+            if ($2 == "port" && $5 == "corpus/tests/" $3) { dir = S "/corpus/tests/" $3; real = C "/tests/" $3 }
             f = real "/PARTITION.tsv"; ip = 0; delete seen
             while ((getline line < f) > 0) {
                 if (line ~ /^#/) continue
@@ -109,6 +171,7 @@ SPRINTF="${S4E_SPRINT_CONF:-/home/resources/postoffice/SPRINT.conf}"
 sprint_langs() { awk -F= '!/^#/ && $1 == "lang" { n = split($2, v, /[ ,]+/); for (i = 1; i <= n; i++) if (v[i] != "") print v[i] }' "$SPRINTF" 2> /dev/null | sort -u | tr '\n' ' '; }
 sprint_held() {   # key lang cell secs -> rc 0 when the sprint holds this lap cell
     local sl; sl="$(sprint_langs)"; [ -n "$sl" ] || return 1
+    case "$1" in *@*) return 1;; esac   # a port cell is never a sprint cell (it waits in the slow lane behind every SCRIP cell)
     case " $sl " in *" $2 "*) return 1;; esac
     [ "${4:-0}" -gt "${S4E_CYCLE_SPRINT_SECS:-120}" ]
 }
@@ -118,7 +181,7 @@ order_cells() {   # stdin: the cells in the table's order; stdout: the lap's ord
             while ((getline l < FF) > 0) { sub(/#.*/, "", l); gsub(/[ \t]/, "", l); if (l == "") continue; n++; if (l ~ /^lang:/) fl[substr(l, 6)] = n; else fk[l] = n } }
         { line[NR] = $0; su[NR] = $1; la[NR] = $3; k = $1 "\t" $5; if (k in s) { tot[$1] += s[k]; seen[$1] = 1 } }
         END { for (i = 1; i <= NR; i++) { r = (!have ? 0 : (su[i] in seen) ? tot[su[i]] + 1 : 0)
-                  if (su[i] in fk) r = -2000000000 + fk[su[i]]; else if (la[i] in sl) r = r - 1500000000; else if (la[i] in fl) r = r - 1000000000
+                  if (su[i] ~ /@/) r = 1000000000 + r; else if (su[i] in fk) r = -2000000000 + fk[su[i]]; else if (la[i] in sl) r = r - 1500000000; else if (la[i] in fl) r = r - 1000000000   # a port cell after every SCRIP cell
                   printf "%d\t%d\t%s\n", r, i, line[i] } }' | sort -t "$(printf '\t')" -k1,1n -k2,2n | cut -f3-
 }
 budget() { local T_SCRIP T_CORPUS T_HARNESS T_GITHUB; pin "${3:-$S4E}"; S4E_HOME="${3:-$S4E}" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" python3 -I "$T_HARNESS/scripts/util_grade_job.py" budget --suite "$1" --cell "$2" 2>/dev/null | sed -n 's/.* ttr_s=\([0-9]*\).*/\1/p' | head -1; }   # one-disk: not a path (the pin of the tree it is given: a base's own four repos)
@@ -139,8 +202,8 @@ suite_on_disk() {   # dir alls -> 0 when the launch can read a suite there
 # run-switches step 12, CIO-118): a package in the files form whose CONTRACT.tsv carries the row road<TAB>run-files<TAB>evidence is run by the package
 # switch (the launch takes --run-files: mode 3 in one scrip process, graded from its OUT directory); no row is the per-process road. The row is written
 # only after the package read equal entry for entry on both roads; the evidence names that reading. The switch runs mode 3, so the flag needs m3.
-road_flag() {   # dir -> prints --run-files when the package declares that road
-    local d="$1"
+road_flag() {   # dir -> prints --run-files when the package declares that road (never under a port engine: the switch is SCRIP's own)
+    local d="$1"; [ -n "${PORT_ENV:-}" ] && return 0
     [ -f "$d/CONTRACT.tsv" ] && [ -f "$d/ALL.csv" ] || return 0
     case ",${S4E_MODES:-m3}," in *,m3,*) ;; *) return 0;; esac
     head -1 "$d/ALL.csv" | tr -d '\r' | tr ',' '\n' | grep -qx path || return 0
@@ -181,6 +244,11 @@ lane_widths() {   # sets WF and WS
     [ "${MODE_ARG:-}" = --one ] && { WF=1; WS=0; }
     return 0
 }
+port_may_start() {   # slow_next slow_total slow_running port_running WS -> rc 0 when a port cell may start now: every slow cell started, the slow lane and the port's
+    # one place free (a port cell counts in the slow lane's width), and no request pending (a request goes first, at the lanes as at the door)
+    [ "$1" -ge "$2" ] && [ "$4" -lt 1 ] && [ $(( $3 + $4 )) -lt "${5:-1}" ] || return 1
+    ! next_request > /dev/null 2>&1
+}
 door_take() {   # cell|request [what] -> rc 0: this shell holds a run token (or there is no pool and it runs unbounded, as util_run_slot.sh does); rc 2: none within the door's bound
     local who="$1" what="${2:-}" t0 rc bound tk="" waited=0
     t0=$(date +%s.%N); mkdir -p "$TMPDIR/cycle/door" 2> /dev/null
@@ -208,6 +276,8 @@ run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23
     out="$TMPDIR/cycle/$key.$cell.log"
     door_take cell "$key $cell" || { echo "REFUSE(2): no run token within the door's bound (CORES.conf wait); nothing ran (door_take)" > "$out"; echo "2 0"; return 2; }   # the token first, then the base and the clock
     t0=$(date +%s)
+    local PORT_ENV=""
+    if [ "$kind" = port ]; then PORT_ENV="$(port_env "$key")" || { echo "REFUSE(2): no build of the port for $key under $PORTS_TOP (port_refresh; CYCLE.log PORT lines)" > "$out"; echo "2 0"; return 2; }; fi
     if [ "$kind" = small ]; then
         ttr="$(small_budget "$key")"; nw=""; grep -q -- '--no-write' "$S4E_HARNESS/scripts/${dir%% *}" 2>/dev/null && nw=--no-write
         ( cd "$S4E" && timeout -k 30 "$ttr" bash "$S4E_HARNESS/scripts/util_run_slot.sh" bash "$S4E_HARNESS"/scripts/$dir $nw ) > "$out" 2>&1 < /dev/null; rc=$?
@@ -216,9 +286,9 @@ run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23
     local T_SCRIP T_CORPUS T_HARNESS T_GITHUB
     on_base; pin "$BASE"; dir="$(tp "$BASE" "$dir")"; alls="$dir/ALL.$(ext_of "$lang")"   # a master or pkg cell runs on a base at origin's newest heads (choose_base)
     ttr="$(budget "$key" "$cell" "$BASE")"; [ -n "$ttr" ] || ttr=3600
-    echo "CELL_BASE $BASE SCRIP=$(git -C "$T_SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$T_CORPUS" rev-parse --short=10 HEAD) binary=$SBIN" > "$out"
+    echo "CELL_BASE $BASE SCRIP=$(git -C "$T_SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$T_CORPUS" rev-parse --short=10 HEAD) binary=$SBIN${PORT_ENV:+ port=$PORT_ENV}" > "$out"
     if ! suite_on_disk "$dir" "$alls"; then echo "REFUSE(2): no suite in $dir: no container ($alls and ALL.ref), no format 2 (MULTI-LINERS.md or ONE-LINERS.$(ext_of "$lang")), no files form (a path column in ALL.csv) -- the unified layout is owed (util_build_package_suite.py)" > "$out"; echo "2 0"; return 2; fi
-    ( cd "$BASE" && S4E_HOME="$BASE" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash "$T_HARNESS/scripts/util_run_slot.sh" python3 "$T_HARNESS/scripts/corpus_suite_harness.py" run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
+    ( cd "$BASE" && env $PORT_ENV S4E_HOME="$BASE" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash "$T_HARNESS/scripts/util_run_slot.sh" python3 "$T_HARNESS/scripts/corpus_suite_harness.py" run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
     echo "$rc $(( $(date +%s) - t0 ))"
 }
 # THE TEST REQUESTS (the cio 2026-11-10, row bus-one-queue-the-grading-tube-retires-the-cycle-serves-the-test-requests-itself, CIO-82; the grade tube,
@@ -325,9 +395,10 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     local f="$1" name key ents row kind lang dir alls ttr t0 rc out
     name="$(basename "$f")"; out="$TMPDIR/cycle/req.$name.log"; t0=$(date +%s)
     key="$(sed -n 's/^suite=//p' "$f" | head -1)"; ents="$(sed -n 's/^entries=//p' "$f" | head -1 | tr -s ' ,' '\n\n' | grep -v '^$' | tr '\n' ',' | sed 's/,$//')"
-    row="$(awk -F'\t' -v k="$key" '!/^#/ && $1 == k && ($2 == "master" || $2 == "pkg") {print $2 "\t" $3 "\t" $5; exit}' "$RUNNERS")"
+    row="$(awk -F'\t' -v k="$key" '!/^#/ && $1 == k && ($2 == "master" || $2 == "pkg" || ($2 == "port" && $4 == "corpus_suite_harness.py" && $5 ~ /^corpus\//)) {print $2 "\t" $3 "\t" $5; exit}' "$RUNNERS")"
+    local PORT_ENV=""; case "$row" in port*) PORT_ENV="$(port_env "$key")" || { echo "REQUEST_PORT: no build of the port for $key under $PORTS_TOP; it is pending again" > "$out"; echo "3 $(( $(date +%s) - t0 ))"; return; };; esac
     [ -n "$row" ] && [ -n "$ents" ] || { echo "REFUSE(2): suite $key has no master or pkg row of SUITE_RUNNERS.tsv, or the request names no entries" > "$out"; echo "2 0"; return; }
-    IFS=$'\t' read -r kind lang dir <<< "$row"; [ "$kind" = master ] && dir="$S4E/corpus/tests/$lang" || dir="$S4E/$dir"   # one-disk: not a path (the root's spelling, as cells writes it; column 5 of SUITE_RUNNERS.tsv is a path from the root; tp respells it for the base below)
+    IFS=$'\t' read -r kind lang dir <<< "$row"; { [ "$kind" = master ] || [ "$dir" = "corpus/tests/$lang" ]; } && dir="$S4E/corpus/tests/$lang" || dir="$S4E/$dir"   # one-disk: not a path (the root's spelling, as cells writes it; column 5 of SUITE_RUNNERS.tsv is a path from the root; tp respells it for the base below)
     alls="$dir/ALL.$(ext_of "$lang")"
     # A REQUEST READS THE TREE THAT HOLDS ITS LANDING (junior_09 2026-11-13, MEASURED: request 20261113T223938-junior_09-gate_cases_snobol4-493276 was
     # graded at 22:40:46Z on corpus bc7da5229 although origin held the cure b30cac7ee since 22:38:47Z, the root fetched it at 22:39:53Z, and base 1 was
@@ -348,8 +419,8 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     # THE BOUND IS READ FROM THE BASE THE REQUEST RUNS ON (senior_01 2026-11-13, MEASURED: it was read from the grader root's ALL.csv before the forward, so
     # puzzles hakank_swi_euler14, whose timeout_s origin had raised to 3600 at corpus dd98b6587, was killed at ttr 420 s though it answers in 299 s)
     ttr="$(budget "$key" "entry:$ents" "$BASE")"; [ -n "$ttr" ] || ttr=1800
-    ( cd "$BASE" && S4E_HOME="$BASE" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 bash "$T_HARNESS/scripts/util_run_slot.sh" timeout -k 30 "$ttr" python3 "$T_HARNESS/scripts/corpus_suite_harness.py" run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
-    [ "$kind" = master ] && record_suite "$lang"; [ "$kind" = pkg ] && record_pkg "$key"
+    ( cd "$BASE" && env $PORT_ENV S4E_HOME="$BASE" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 bash "$T_HARNESS/scripts/util_run_slot.sh" timeout -k 30 "$ttr" python3 "$T_HARNESS/scripts/corpus_suite_harness.py" run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
+    [ "$kind" = master ] && record_suite "$lang"; { [ "$kind" = pkg ] || [ "$kind" = port ]; } && record_pkg "$key"
     echo "$rc $(( $(date +%s) - t0 ))"; }
 finish_request() {   # name rc secs: the file lands in done/ with its per-entry verdicts and one served= line
     local name="$1" rc="$2" secs="$3" s="$RQ/serving/$1" e erc body tree n=0
@@ -433,6 +504,8 @@ graded_this_lap() {   # key -> rc 0 when a cell of this lap graded that suite (r
     grep -qE " CELL lap=$lap [0-9]+/[0-9]+ $(printf '%s' "$1" | sed 's/[.[\*^$]/\\&/g') [^ ]+ rc=[01] " "$LOG" 2>/dev/null
 }
 lap_start() {
+    PORT_NOTE_LAP="$1"   # ports_on logs PORT-SKIPPED once this lap for an engine that emits no cells
+    local _pe; for _pe in $CYCLE_PORTS; do ( port_refresh "$_pe" ) > /dev/null 2>&1 < /dev/null & done   # a port at origin's head is built in the background while the newest built folder serves
     local sy mk
     # THE GRADER ROOT'S OWN RENDERING NEVER BLOCKS ITS SYNC (the cio 2026-11-10; MEASURED: sync_rc=1 at every lap start since lap 2, sync.log
     # "Your local changes to the following files would be overwritten by merge: SCORE.md", the grader root's .github held at 75efb44b0 while origin
@@ -459,6 +532,41 @@ lap_start() {
 }
 if [ "$MODE_ARG" = --record ]; then k="${2:?usage: s4e_cycle.sh --record KEY}"; record_row "$k"; grep -P "^\Q$k\E\t" "$PROG/CYCLE.refused" 2>/dev/null && exit 1; echo "RECORDED $k"; exit 0; fi   # one row written as the cycle writes it (the grader 2026-11-13)
 if [ "$MODE_ARG" = --list ]; then cells | order_cells; echo "CELLS $(cells | wc -l)"; exit 0; fi
+if [ "$MODE_ARG" = --probe-port ]; then   # THE PORTS' PROBE (row cycle-the-port-rows-are-cells-of-the-cycle): an order of events and of lists, never a clock
+    [ -n "${S4E_DOOR_PROBE_T:-}" ] || { echo "REFUSE(2): --probe-port runs only in the sandbox its own first lines make"; exit 2; }
+    T="$S4E_DOOR_PROBE_T"; a1=RED; a2=RED; a3=RED; a4=RED
+    # arm 1, the order: a port cell waits for every slow cell to start, for the slow lane and its own place, and for a pending request; and it sorts after every
+    # SCRIP cell, a sprint of its own language notwithstanding
+    o1=""; port_may_start 0 2 0 0 1 && o1="${o1}slow-left "; port_may_start 2 2 1 0 1 && o1="${o1}slow-busy "; port_may_start 2 2 0 1 2 && o1="${o1}port-busy "
+    : > "$RQ/probe.req"; port_may_start 2 2 0 0 1 && o1="${o1}request "; rm -f "$RQ/probe.req"; port_may_start 2 2 0 0 1 || o1="${o1}clear-held "
+    printf 'name=PROBE\nlang=snobol4\n' > "$T/sprint.conf"
+    f1="$(printf 'x@jvm\tport\tsnobol4\td\tcore\ny\tpkg\tprolog\td\tcore\nz\tpkg\tsnobol4\td\tcore\n' | ORDERF="$T/no.order" FIRSTF="$T/no.first" SPRINTF="$T/sprint.conf" order_cells | cut -f1 | tr '\n' ' ')"
+    h1=0; SPRINTF="$T/sprint.conf" sprint_held x@jvm prolog core 900 && h1=1
+    [ -z "$o1" ] && [ "$f1" = "z y x@jvm " ] && [ "$h1" = 0 ] && a1=ok
+    # arm 2, the list: with no port built, the lap's cells are the cells with no port at all; with one built and its check passing, its cells join the list
+    printf '# probe table\nsnoflake\tpkg\tsnobol4\tcorpus_suite_harness.py\tcorpus/packages/snobol4/snoflake_suite\nsnoflake@jvm\tport\tsnobol4\tcorpus_suite_harness.py\tcorpus/packages/snobol4/snoflake_suite\n' > "$T/runners.tsv"
+    l0="$(RUNNERS="$T/runners.tsv" CYCLE_PORTS="" cells | md5sum)"; lnone="$(RUNNERS="$T/runners.tsv" CYCLE_PORTS="jvm dotnet" cells | md5sum)"
+    mkdir -p "$PORTS_TOP/snobol4jvm-probe0001"; : > "$PORTS_TOP/snobol4jvm-probe0001/.built"
+    lb="$(RUNNERS="$T/runners.tsv" CYCLE_PORTS="jvm" S4E_CYCLE_PORT_CHECK=true cells | grep -c '^snoflake@jvm	port	')"
+    lbad="$(RUNNERS="$T/runners.tsv" CYCLE_PORTS="jvm" S4E_CYCLE_PORT_CHECK=false cells | grep -c '^snoflake@jvm	')"
+    [ "$l0" = "$lnone" ] && [ "$lb" -ge 1 ] && [ "$lbad" = 0 ] && a2=ok
+    # arm 3, the launch: a port cell runs under S4E_ENGINE, the build folder and mode 3, on a stand-in base whose harness writes what it was given
+    mkdir -p "$T/base/harness/scripts" "$T/base/corpus/pkg" "$T/base/SCRIP" "$T/base/.github"; : > "$T/base/corpus/pkg/ALL.sno"; : > "$T/base/corpus/pkg/ALL.ref"
+    printf '#!/bin/bash\nexec "$@"\n' > "$T/base/harness/scripts/util_run_slot.sh"
+    printf 'import os, sys\nopen(os.environ["PROBE_OUT"], "w").write("engine=%%s root=%%s args=%%s\\n" %% (os.environ.get("S4E_ENGINE", ""), os.environ.get("S4E_JVM_ROOT", ""), " ".join(sys.argv[1:])))\nprint("SUITE_BOARD probe m3_n=1 m3_pass=1")\n' > "$T/base/harness/scripts/corpus_suite_harness.py"
+    on_base() { BASE="$T/base"; SBIN=/bin/true; RTD="$T"; }; budget() { echo 60; }
+    ( PROBE_OUT="$T/launch" run_cell snoflake@jvm port snobol4 "$T/base/corpus/pkg" core > "$T/res.l" 2> /dev/null ); read -r rcl _ < "$T/res.l"
+    g3="$(cat "$T/launch" 2> /dev/null)"
+    case "$g3" in "engine=jvm root=$PORTS_TOP/snobol4jvm-probe0001 args="*"--modes m3"*) [ "$rcl" = 0 ] && a3=ok;; esac
+    # arm 4, the note: an engine with no built folder logs one PORT-SKIPPED line a lap, never two
+    rm -rf "$PORTS_TOP"/snobol4jvm-*; : > "$LOG"
+    PORT_NOTE_LAP=7 ports_on > /dev/null; PORT_NOTE_LAP=7 ports_on > /dev/null
+    n4="$(grep -c 'PORT-SKIPPED lap=7 engine=jvm: ' "$LOG")"; d4="$(grep -c 'PORT-SKIPPED lap=7 engine=dotnet: ' "$LOG")"
+    [ "$n4" = 1 ] && [ "$d4" = 1 ] && a4=ok
+    echo "PORT_PROBE order=$a1 list=$a2 launch=$a3 skipped=$a4"
+    [ "$a1$a2$a3$a4" = okokokok ] && exit 0
+    echo "  order: held-wrongly=[$o1] sorted=[$f1] sprint-held=$h1; list: none-equal=$([ "$l0" = "$lnone" ] && echo yes || echo no) built=$lb refused=$lbad; launch: rc=$rcl [$g3]; skipped: jvm=$n4 dotnet=$d4"; exit 1
+fi
 if [ "$MODE_ARG" = --probe-door ]; then   # THE DOOR'S PROBE (row cycle-a-cell-takes-its-core-token-before-its-base-and-its-clock-and-a-request-takes-it-first): an order of events, never a clock
     [ -n "${S4E_DOOR_PROBE_T:-}" ] || { echo "REFUSE(2): --probe-door runs only in the sandbox its own first lines make"; exit 2; }
     T="$S4E_DOOR_PROBE_T"; export DOOR_EVENTS="$T/events"; : > "$DOOR_EVENTS"
@@ -554,9 +662,9 @@ while :; do
     lane_widths; SLOWS="${S4E_CYCLE_SLOW_SECS:-600}"; case "$SLOWS" in ''|*[!0-9]*) SLOWS=600;; esac   # the widths, from CORES.conf (lane_widths), read again at each turn below
     declare -A RUN=() LANE=() LEFT=() CSECS=()
     while IFS=$'\t' read -r ok oc os; do [ -n "$ok" ] && CSECS["$ok"$'\t'"$oc"]="${os%%.*}"; done < "$ORDERF" 2>/dev/null
-    FQ=(); SQ=(); fp=0; sp=0
+    FQ=(); SQ=(); PQ=(); fp=0; sp=0; pp=0
     for (( j = idx; j < total; j++ )); do IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$j]}"
-        if [ "$WS" -gt 0 ] && [ "${CSECS["$key"$'\t'"$cell"]:-0}" -gt "$SLOWS" ]; then SQ+=("$j"); else FQ+=("$j"); fi; done
+        if [ "$kind" = port ]; then PQ+=("$j"); elif [ "$WS" -gt 0 ] && [ "${CSECS["$key"$'\t'"$cell"]:-0}" -gt "$SLOWS" ]; then SQ+=("$j"); else FQ+=("$j"); fi; done
     lane_n() { local n=0 v; for v in "${LANE[@]}"; do [ "$v" = "$1" ] && n=$((n + 1)); done; echo "$n"; }
     start_cell() {   # <index> <lane>: run a lap cell, or log it skipped
         IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$1]}"
@@ -577,8 +685,9 @@ while :; do
         done
         while [ "$fp" -lt "${#FQ[@]}" ] && [ "$(lane_n f)" -lt "$WF" ]; do start_cell "${FQ[$fp]}" f; fp=$(( fp + 1 )); done
         while [ "$sp" -lt "${#SQ[@]}" ] && [ "$(lane_n s)" -lt "$WS" ]; do start_cell "${SQ[$sp]}" s; sp=$(( sp + 1 )); done
+        while [ "$pp" -lt "${#PQ[@]}" ] && port_may_start "$sp" "${#SQ[@]}" "$(lane_n s)" "$(lane_n p)" "$WS"; do start_cell "${PQ[$pp]}" p; pp=$(( pp + 1 )); done   # a port cell after every slow cell, one at a time, never past a pending request
         [ "${#RUN[@]}" -gt 0 ] || break
-        low="$total"; [ "$fp" -lt "${#FQ[@]}" ] && low="${FQ[$fp]}"; [ "$sp" -lt "${#SQ[@]}" ] && [ "${SQ[$sp]}" -lt "$low" ] && low="${SQ[$sp]}"
+        low="$total"; [ "$fp" -lt "${#FQ[@]}" ] && low="${FQ[$fp]}"; [ "$pp" -lt "${#PQ[@]}" ] && [ "${PQ[$pp]}" -lt "$low" ] && low="${PQ[$pp]}"; [ "$sp" -lt "${#SQ[@]}" ] && [ "${SQ[$sp]}" -lt "$low" ] && low="${SQ[$sp]}"
         for i in "${RUN[@]}"; do case "$i" in r:*) ;; *) [ "$i" -lt "$low" ] && low="$i";; esac; done
         if [ "$low" -lt "$total" ]; then IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$low]}"; state_put "$lap" "$low" "$total" "$key" "$cell" running; fi
         dp=""; wait -n -p dp "${!RUN[@]}"; [ -n "$dp" ] && [ -n "${RUN[$dp]:-}" ] || continue

@@ -54,7 +54,8 @@ snoflake@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/sno
 csnobol4@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/csnobol4_suite
 aisnobol@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/aisnobol
 gimpel@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gimpel
-snobol4-demos@dotnet	port	snobol4	test_demos_suite.sh snobol4	-
+snobol4-demos@dotnet	port	snobol4	corpus_suite_harness.py	corpus/demos/snobol4
+gate_cases_snobol4@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gate_cases_snobol4
 testpgms@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_testpgms
 snobol4-bench-ref@dotnet	port	snobol4	test_snobol4_bench_suite.sh	-
 x32tests@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_x32_tests
