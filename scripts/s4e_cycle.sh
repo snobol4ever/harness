@@ -16,6 +16,13 @@
 # at the cell after the last finished one; a cell found "running" at start killed the process, its count in CYCLE.crash rises, and at three it is skipped
 # for good (named in CYCLE.skip, one line each) so no cell can hold the cycle forever.
 set -u
+if [ "${1:-}" = --probe-door ] && [ -z "${S4E_DOOR_PROBE_T:-}" ]; then   # THE DOOR'S PROBE RUNS IN A SANDBOX OF ITS OWN (skill suites-and-grading 9): scratch progress, tmp, requests and one core token
+    _T="$(mktemp -d "${TMPDIR:-/tmp}/s4e_probe_door.XXXXXX")" || exit 2; mkdir -p "$_T/prog" "$_T/tmp" "$_T/req" "$_T/run" "$_T/post"; printf 'cores=1\ngrader=1\nwait=600\n' > "$_T/CORES.conf"
+    env -u S4E_CORE_HELD -u S4E_RUN_SLOT_HELD -u S4E_SLOT_WAIT_MAX S4E_DOOR_PROBE_T="$_T" S4E_CYCLE_PROG="$_T/prog" S4E_CYCLE_TMP="$_T/tmp" S4E_PROGRESS_DB="$_T/results.tsv" S4E_RESULTS="$_T/results.tsv" \
+        S4E_SUITES_TSV="$_T/SUITES.tsv" S4E_SCORE_MD="$_T/SCORE.md" S4E_TEST_REQUEST_DIR="$_T/req" S4E_POST="$_T/post" S4E_POSTOFFICE="$_T/post" S4E_CORES_CONF="$_T/CORES.conf" \
+        S4E_RUN_SLOT_DIR="$_T/run" S4E_SLOT_WAITS="$_T/SLOT_WAITS.tsv" bash "$(readlink -f "${BASH_SOURCE[0]}")" --probe-door; _rc=$?
+    rm -rf "$_T"; exit "$_rc"
+fi
 S4E="${S4E_HOME:-/home/claude_grader}"
 # THE TREE GRADED NAMES ALL FOUR REPOS (officer_02 2026-11-13, row harness-corpus-and-harness-live-once-on-disk-one-seat-owns-them): lib_paths.sh and harness_paths.py read /home/corpus,
 # /home/harness and /home/.github once each is a checkout, so every run here pins S4E_SCRIP, S4E_CORPUS, S4E_HARNESS and S4E_GITHUB to the tree it grades (a base, or this root), and a
@@ -27,6 +34,7 @@ S4E="${S4E_HOME:-/home/claude_grader}"
 # T_HARNESS and T_GITHUB, so every launch below pins the four to the tree it grades whichever kind it is.
 export S4E_HOME="$S4E"; unset S4E_SCRIP S4E_CORPUS S4E_HARNESS S4E_GITHUB
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_paths.sh"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_slots.sh"   # s4e_slot_hold: a cell takes its run token itself (door_take)
 td() { if [ "$1" = "$S4E" ]; then case "$2" in SCRIP) printf '%s' "$S4E_SCRIP";; corpus) printf '%s' "$S4E_CORPUS";; harness) printf '%s' "$S4E_HARNESS";; .github) printf '%s' "$S4E_GITHUB";; esac; else printf '%s/%s' "$1" "$2"; fi; }
 tp() { local rel r; case "$2" in "$S4E"/*) rel="${2#"$S4E"/}"; r="${rel%%/*}"; if [ "$r" = "$rel" ]; then td "$1" "$r"; else printf '%s/%s' "$(td "$1" "$r")" "${rel#*/}"; fi;; *) printf '%s' "$2";; esac; }
 pin() { T_SCRIP="$(td "$1" SCRIP)"; T_CORPUS="$(td "$1" corpus)"; T_HARNESS="$(td "$1" harness)"; T_GITHUB="$(td "$1" .github)"; }
@@ -140,9 +148,42 @@ small_budget() {   # key -> seconds: five times the last graded seconds of the c
     case "$s" in ''|*[!0-9]*) echo 3600; return;; esac
     s=$(( s * 5 )); [ "$s" -lt 300 ] && s=300; [ "$s" -gt 3600 ] && s=3600; echo "$s"
 }
+# THE DOOR COMES FIRST: TOKEN, THEN BASE, THEN CLOCK (the cio 2026-11-17 14:5x CST, row cycle-a-cell-takes-its-core-token-before-its-base-and-its-clock-and-a-request-takes-it-first,
+# built by the grader). MEASURED that hour: CORES.conf cores=8 grader=4, so the grader holds four tokens while the cycle runs eight fast cells, two slow ones and the requests,
+# each of which took a base, started its clock and only then waited at the door inside util_run_slot.sh; SLOT_WAITS.tsv 20:00Z to 20:52Z read grader run waits n=110, median
+# 46 s, max 1078 s; in lap 48 cells of seconds ended rc 124 having spent their bound at the door (art_of_prolog core 600 s, 8 s the lap before), and no base forwarded from
+# 20:30Z to 20:50Z, all four pinned by waiters. So a cell or a request takes its run token in its own shell (s4e_slot_hold run, which exports S4E_RUN_SLOT_HELD and
+# S4E_CORE_HELD, so util_run_slot.sh and the harness take no second one) before it holds a base and before its timeout starts: a waiter holds no base, and its bound counts
+# its run alone. A REQUEST GOES FIRST AT THE DOOR: while it waits it leaves a ticket in $TMPDIR/cycle/door, and a lap cell tries for a token only while no ticket stands,
+# so the next token freed is the request's (a free fast slot already took a pending request before any lap cell; the door now keeps that order). A wait of a second or
+# more is one line of SLOT_WAITS.tsv as before. DOOR_EVENTS, set by --probe-door alone, names a file each step is appended to.
+door_take() {   # cell|request [what] -> rc 0: this shell holds a run token (or there is no pool and it runs unbounded, as util_run_slot.sh does); rc 2: none within the door's bound
+    local who="$1" what="${2:-}" t0 rc bound tk="" waited=0
+    t0=$(date +%s.%N); mkdir -p "$TMPDIR/cycle/door" 2> /dev/null
+    if [ "$who" = request ]; then
+        tk="$TMPDIR/cycle/door/req.$BASHPID"; : > "$tk"; [ -n "${DOOR_EVENTS:-}" ] && echo "WAIT request $what" >> "$DOOR_EVENTS"
+        s4e_slot_hold run; rc=$?; rm -f "$tk"
+    else
+        bound="$(s4e_cores_conf wait)"; bound="${bound:-1800}"
+        while :; do
+            if ! compgen -G "$TMPDIR/cycle/door/req.*" > /dev/null; then
+                S4E_SLOT_WAIT_MAX=0 S4E_SLOT_WAITS=/dev/null s4e_slot_hold run 2> /dev/null; rc=$?
+                [ "$rc" = 2 ] || break
+            fi
+            [ "$waited" = 0 ] && { waited=1; [ -n "${DOOR_EVENTS:-}" ] && echo "WAIT cell $what" >> "$DOOR_EVENTS"; }
+            awk -v a="$t0" -v b="$(date +%s.%N)" -v m="$bound" 'BEGIN {exit !(b - a >= m)}' && { rc=2; break; }
+            sleep 0.5
+        done
+    fi
+    [ "$rc" = 2 ] && { s4e_slot_note run-refused "$t0" "cycle $who $what"; return 2; }
+    s4e_slot_note run "$t0" "cycle $who $what"; [ -n "${DOOR_EVENTS:-}" ] && echo "TOKEN $who $what" >> "$DOOR_EVENTS"
+    return 0
+}
 run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23:0x, in the coo's window, verbatim: "We want ONE UNIFIED test suite system. The same ALL.tsv files etc. Same layout in corpus. Same script. Same spec on attributes and environment." / "Get those deleted and get to work with a complete test suite system."): every cell, master or pkg, is corpus_suite_harness.py run over the suite's container ALL.<ext> and ALL.ref; a suite without one refuses rc 2, named, until its container is built
     local key="$1" kind="$2" lang="$3" dir="$4" cell="$5" ttr alls rc t0 out nw
-    out="$TMPDIR/cycle/$key.$cell.log"; t0=$(date +%s)
+    out="$TMPDIR/cycle/$key.$cell.log"
+    door_take cell "$key $cell" || { echo "REFUSE(2): no run token within the door's bound (CORES.conf wait); nothing ran (door_take)" > "$out"; echo "2 0"; return 2; }   # the token first, then the base and the clock
+    t0=$(date +%s)
     if [ "$kind" = small ]; then
         ttr="$(small_budget "$key")"; nw=""; grep -q -- '--no-write' "$S4E_HARNESS/scripts/${dir%% *}" 2>/dev/null && nw=--no-write
         ( cd "$S4E" && timeout -k 30 "$ttr" bash "$S4E_HARNESS/scripts/util_run_slot.sh" bash "$S4E_HARNESS"/scripts/$dir $nw ) > "$out" 2>&1 < /dev/null; rc=$?
@@ -182,7 +223,7 @@ next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && request_ready 
 # under one lock (choose_base): the root fetches origin (refs and objects, its working tree untouched; at most every S4E_CYCLE_FETCH_SECS, 20); the
 # current base is taken when it holds origin's four heads; else a base no chunk holds is forwarded to them (checkout detached, MEASURED 1 s), its binary
 # found in the build cache by its SCRIP tree's key (else built once there, make -j8), and made current; with none free the chunk takes the current one,
-# a turn behind. A chunk holds its base shared on fd 8 for its life and a forward takes a base exclusive, so a base never moves under a chunk. The binary
+# a turn behind. A chunk holds its base shared on fd 5 for its life (fd 8 until 2026-11-17, when the run token of lib_slots.sh, which is fd 8, came to be taken in the same shell) and a forward takes a base exclusive, so a base never moves under a chunk. The binary
 # runs in place from the cache entry (SCRIP=, RT_DIR=; MEASURED: copying an entry out took 69 s). With no base to be had a chunk runs on the root, as before.
 # THE BASES LIVE WHERE s4e_worktree.sh MAKES THEM, LINKED (officer_02 2026-11-13, row worktrees-live-on-home-and-hard-link-their-build, on the coo's ask: wt-base1
 # and wt-base2 held 3.0 GB each of a /tmp under its floor): base_new makes a base by s4e_worktree.sh new --link, now on /home with its corpus, harness and .github
@@ -223,7 +264,7 @@ base_new() {   # N -> wt-base<N> made at origin's heads; rc 2 when it cannot be 
     git -C "$b/corpus" sparse-checkout add /demos/ >> "$TMPDIR/cycle/base$1.new.log" 2>&1   # sparse, demos in (pkg rows); benchmarks out (small rows run on the root). MEASURED 2026-11-13: --full made a 3014 MB base from the full root, sparse plus demos 1542 MB
     : > "$b/.s4e-hold"; log "BASE $b made $(du -sm "$b" 2>/dev/null | cut -f1) MB"; return 0
 }
-choose_base() {   # sets BASE, SBIN and RTD, and holds BASE shared on fd 8 until this shell exits; rc 2 (a line on stderr) when no base holds a build
+choose_base() {   # sets BASE, SBIN and RTD, and holds BASE shared on fd 5 until this shell exits; rc 2 (a line on stderr) when no base holds a build
     local now last want cur n b r bb
     exec 6> "$TMPDIR/cycle/base.lock"; flock -x 6
     now=$(date +%s); last=$(stat -c %Y "$TMPDIR/cycle/base.fetched" 2>/dev/null || echo 0)
@@ -233,18 +274,18 @@ choose_base() {   # sets BASE, SBIN and RTD, and holds BASE shared on fd 8 until
         for (( n = 1; n <= NBASES; n++ )); do
             b="$BASE_TOP/wt-base$n"; [ "$b" = "$cur" ] && continue
             base_new "$n" 2>> "$TMPDIR/cycle/base.log" || continue
-            exec 8< "$b/.s4e-hold"; flock -n -x 8 || { exec 8<&-; continue; }
+            exec 5< "$b/.s4e-hold"; flock -n -x 5 || { exec 5<&-; continue; }
             for r in SCRIP harness corpus .github; do git -C "$b/$r" checkout -q --detach origin/main 2>> "$TMPDIR/cycle/base.log" || break; done
             bb=1; [ "$(heads_of "$b")" = "$want" ] && { flock -u 6; base_bin "$b" > "$b/.s4e-bin.tmp" 2>> "$TMPDIR/cycle/base.log" && bb=0; flock -x 6; }   # the make (a fetch, about a minute) runs with the base held exclusive and the lock open, so other chunks launch meanwhile
             if [ "$bb" = 0 ]; then
-                mv -f "$b/.s4e-bin.tmp" "$b/.s4e-bin"; printf '%s\n' "$b" > "$TMPDIR/cycle/base.current"; cur="$b"; flock -s 8
+                mv -f "$b/.s4e-bin.tmp" "$b/.s4e-bin"; printf '%s\n' "$b" > "$TMPDIR/cycle/base.current"; cur="$b"; flock -s 5
                 log "BASE $b forward SCRIP=$(git -C "$b/SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$b/corpus" rev-parse --short=10 HEAD) harness=$(git -C "$b/harness" rev-parse --short=10 HEAD)"; break
             fi
-            rm -f "$b/.s4e-bin" "$b/.s4e-bin.tmp"; exec 8<&-
+            rm -f "$b/.s4e-bin" "$b/.s4e-bin.tmp"; exec 5<&-
         done
     fi
     [ -n "$cur" ] && [ -f "$cur/.s4e-bin" ] && grep -q "^$cur/SCRIP/scrip " "$cur/.s4e-bin" || { flock -u 6; exec 6>&-; echo "REFUSE(2): no base holds a build of its own (base.log)" >&2; return 2; }   # a lap cell then runs on the root (on_base), a request waits
-    [ "$(readlink -f "/proc/$BASHPID/fd/8" 2>/dev/null)" = "$(readlink -f "$cur/.s4e-hold")" ] || { exec 8< "$cur/.s4e-hold"; flock -s 8; }
+    [ "$(readlink -f "/proc/$BASHPID/fd/5" 2>/dev/null)" = "$(readlink -f "$cur/.s4e-hold")" ] || { exec 5< "$cur/.s4e-hold"; flock -s 5; }
     BASE="$cur"; read -r SBIN RTD < "$cur/.s4e-bin"; flock -u 6; exec 6>&-; return 0
 }
 base_holds() {   # base "SCRIP harness corpus .github heads" -> 0 when every one of those heads is an ancestor of (or is) the base's own head in that repo
@@ -269,13 +310,14 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     # forwarded to it at 22:40:35Z: base 1 was held when the request chose, so it took base 2 a turn behind and read a false FAIL). A request fetches
     # origin at once, whatever the rate, and waits until its base holds every head origin had then (each an ancestor of the base's head), trying every
     # 15 s for S4E_REQ_FRESH_WAIT seconds (900); only past that does it grade a turn behind, and the log says REQUEST_BASE_STALE.
+    door_take request "$name" || { echo "REQUEST_DOOR: no run token within the door's bound; it is pending again" >> "$out"; echo "3 $(( $(date +%s) - t0 ))"; return; }   # the token first, then the base and the clock
     rm -f "$TMPDIR/cycle/base.fetched"
     local want0 tq; tq=$(( $(date +%s) + ${S4E_REQ_FRESH_WAIT:-900} ))
     choose_base 2>> "$out" || { echo "3 $(( $(date +%s) - t0 ))"; return; }   # a request runs on origin's newest heads, never the root's (no fallback); 3: no base yet, it is pending again
     want0="$(heads_of "$S4E" origin/main)"
     until base_holds "$BASE" "$want0"; do
         [ "$(date +%s)" -ge "$tq" ] && { echo "REQUEST_BASE_STALE $BASE: no base reached origin's heads of the request ($want0) in ${S4E_REQ_FRESH_WAIT:-900} s; graded a turn behind" >> "$out"; break; }
-        exec 8<&-; sleep 15; choose_base 2>> "$out" || { echo "3 $(( $(date +%s) - t0 ))"; return; }
+        exec 5<&-; sleep 15; choose_base 2>> "$out" || { echo "3 $(( $(date +%s) - t0 ))"; return; }
     done
     local T_SCRIP T_CORPUS T_HARNESS T_GITHUB; pin "$BASE"
     dir="$(tp "$BASE" "$dir")"; alls="$(tp "$BASE" "$alls")"; echo "REQUEST_BASE $BASE SCRIP=$(git -C "$T_SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$T_CORPUS" rev-parse --short=10 HEAD) binary=$SBIN" >> "$out"
@@ -393,6 +435,39 @@ lap_start() {
 }
 if [ "$MODE_ARG" = --record ]; then k="${2:?usage: s4e_cycle.sh --record KEY}"; record_row "$k"; grep -P "^\Q$k\E\t" "$PROG/CYCLE.refused" 2>/dev/null && exit 1; echo "RECORDED $k"; exit 0; fi   # one row written as the cycle writes it (the grader 2026-11-13)
 if [ "$MODE_ARG" = --list ]; then cells | order_cells; echo "CELLS $(cells | wc -l)"; exit 0; fi
+if [ "$MODE_ARG" = --probe-door ]; then   # THE DOOR'S PROBE (row cycle-a-cell-takes-its-core-token-before-its-base-and-its-clock-and-a-request-takes-it-first): an order of events, never a clock
+    [ -n "${S4E_DOOR_PROBE_T:-}" ] || { echo "REFUSE(2): --probe-door runs only in the sandbox its own first lines make"; exit 2; }
+    T="$S4E_DOOR_PROBE_T"; export DOOR_EVENTS="$T/events"; : > "$DOOR_EVENTS"
+    # the stand-ins: a base whose launch is a harness that checks it runs under the cell's own token and grades in a second; the bound of a cell is 2 s
+    mkdir -p "$T/base/harness/scripts" "$T/base/corpus/pkg" "$T/base/SCRIP" "$T/base/.github"; : > "$T/base/corpus/pkg/ALL.sno"; : > "$T/base/corpus/pkg/ALL.ref"
+    printf '#!/bin/bash\n[ -n "${S4E_RUN_SLOT_HELD:-}" ] && [ -n "${S4E_CORE_HELD:-}" ] || { echo "NO TOKEN HELD BY THE CELL"; exit 9; }\nexec "$@"\n' > "$T/base/harness/scripts/util_run_slot.sh"
+    printf 'import time\ntime.sleep(1)\nprint("SUITE_BOARD probe m3_n=1 m3_pass=1")\n' > "$T/base/harness/scripts/corpus_suite_harness.py"
+    on_base() { echo "BASE $BASHPID" >> "$DOOR_EVENTS"; BASE="$T/base"; SBIN=/bin/true; RTD="$T"; }
+    choose_base() { on_base; }
+    budget() { echo 2; }
+    hold() { : > "$T/hold.$1"; ( exec 9>> "$S4E_RUN_SLOT_DIR/slot0"; flock 9; : > "$T/held.$1"; while [ -f "$T/hold.$1" ]; do sleep 0.1; done ) & }
+    until_ev() { local i=0; until grep -q -E -- "$1" "$DOOR_EVENTS" 2> /dev/null || [ -f "$T/$1" ]; do i=$((i + 1)); [ "$i" -gt 3000 ] && return 1; sleep 0.1; done; }   # a guard of 300 s on the setup, never a verdict
+    mkdir -p "$S4E_RUN_SLOT_DIR"; v1=RED; v2=RED; v3=RED
+    # arms 1 and 2: the probe holds the one token; a cell waits at the door holding no base, waits past its 2 s bound, and when the token is freed takes it, then its base, and grades rc 0
+    hold a; until_ev held.a || { echo "REFUSE(2): the plant took no token"; exit 2; }
+    ( run_cell probe pkg snobol4 "$T/base/corpus/pkg" core > "$T/res.a" 2> /dev/null ) & ca=$!
+    until_ev "WAIT cell probe core|^BASE" || { echo "REFUSE(2): the cell neither reached the door nor took a base"; exit 2; }   # a base taken while the probe holds the token is the red of arm 1
+    sleep 3; grep -q '^BASE' "$DOOR_EVENTS" && b1=held || b1=free
+    rm -f "$T/hold.a"; wait "$ca"; read -r rca _ < "$T/res.a"
+    [ "$b1" = free ] && grep -n . "$DOOR_EVENTS" | awk -F: '/WAIT cell/{w=$1} /TOKEN cell/{t=$1} /^[0-9]+:BASE/{b=$1} END{exit !(w && t > w && b > t)}' && v1=ok
+    [ "$rca" = 0 ] && v2=ok
+    # arm 3: with the token held, two lap cells wait at the door, then a request is filed; the token freed goes to the request first
+    : > "$DOOR_EVENTS"; hold b; until_ev held.b || { echo "REFUSE(2): the plant took no token"; exit 2; }
+    ( run_cell probe pkg snobol4 "$T/base/corpus/pkg" chunk:01 > "$T/res.b" 2> /dev/null ) & cb=$!; ( run_cell probe pkg snobol4 "$T/base/corpus/pkg" chunk:02 > "$T/res.c" 2> /dev/null ) & cc=$!
+    until_ev "WAIT cell probe chunk:01|^BASE" && until_ev "WAIT cell probe chunk:02|^BASE.*\n.*^BASE|^BASE" || { echo "REFUSE(2): the cells neither reached the door nor took a base"; exit 2; }
+    ( door_take request probe-req && sleep 1 ) & cr=$!
+    i=0; until compgen -G "$TMPDIR/cycle/door/req.*" > /dev/null || ! kill -0 "$cr" 2> /dev/null; do i=$((i + 1)); [ "$i" -gt 3000 ] && { echo "REFUSE(2): the request neither left a ticket nor ended"; exit 2; }; sleep 0.1; done
+    rm -f "$T/hold.b"; wait "$cr" "$cb" "$cc"
+    [ "$(grep -m1 '^TOKEN' "$DOOR_EVENTS")" = "TOKEN request probe-req" ] && [ "$(grep -c '^TOKEN cell' "$DOOR_EVENTS")" = 2 ] && v3=ok
+    echo "DOOR_PROBE base_free=$v1 bound_counts_the_run=$v2 request_first=$v3"
+    [ "$v1$v2$v3" = okokok ] && exit 0
+    echo "  events:"; sed 's/^/    /' "$DOOR_EVENTS"; for r in a b c; do echo "  res.$r: $(cat "$T/res.$r" 2> /dev/null)"; done; exit 1
+fi
 { [ "${BASH_VERSINFO[0]}" -gt 5 ] || { [ "${BASH_VERSINFO[0]}" -eq 5 ] && [ "${BASH_VERSINFO[1]}" -ge 1 ]; }; } || { echo "REFUSE(2) [cycle]: bash ${BASH_VERSION} has no wait -n -p (5.1 or newer; the rolling pool needs it)"; exit 2; }
 if [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF" 2>/dev/null)" 2>/dev/null && [ "$(cat "$PIDF")" != "$$" ]; then echo "REFUSE(2) [cycle]: already running as pid $(cat "$PIDF")"; exit 2; fi
 echo $$ > "$PIDF"
