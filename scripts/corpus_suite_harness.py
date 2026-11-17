@@ -1510,7 +1510,7 @@ def _render_merged_stream(got):
     return "\n".join(_rv.replace_fatal_in_text(lines, voice, True) if voice == "spitbol" else _rv.render(lines, voice))
 
 
-def _render_fatal_into_stdout(got, err_bytes):
+def _render_fatal_into_stdout(got, err_bytes, trail=0):
     """Append SCRIP's rendered error block (if stderr holds one) to the graded stdout text. Returns (text, n_lines_appended)."""
     voice = FATAL_RENDER.get("voice")
     if not voice or os.environ.get("S4E_FATAL_RENDER") == "0":
@@ -1539,7 +1539,7 @@ def _render_fatal_into_stdout(got, err_bytes):
         placed = _rv.insert_fatal_before_dump(got.split("\n"), rendered)
         if placed is not None:
             return "\n".join(placed), len(rendered)
-    text = (got + "\n" if got else "") + "\n".join(rendered)
+    text = got + "\n" * (trail if trail > 0 else (1 if got else 0)) + "\n".join(rendered)
     return text, len(rendered)
 
 
@@ -1673,7 +1673,9 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     _crv = _spitbol_compile_refusal_verdict(out, err, rc, expected_text, want_rc, merge_stderr)
     if _crv is not None:
         return _crv
-    got = out.decode("utf-8", "replace").rstrip("\n")
+    _raw = out.decode("utf-8", "replace")
+    got = _raw.rstrip("\n")
+    _trail = len(_raw) - len(got)
     if merge_stderr:
         got = _render_merged_stream(got)
     # ⛔ RENDER ONLY WHAT THE REF CARRIES: the block is appended when the oracle's ref itself holds a fatal line (`<file>(<n>) : ERROR
@@ -1684,7 +1686,7 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     # step 1 (SCRIP 6635f5f3f, 2026-11-04) a SNOBOL4 run-time fatal exits by &CODE as sbl -bf does (0 by default), and the rc is still
     # graded against the declared want_rc.
     if expected_text is not None and FATAL_REF_LINE.search(expected_text):
-        got, _fatal_n = _render_fatal_into_stdout(got, err)
+        got, _fatal_n = _render_fatal_into_stdout(got, err, _trail)
         # THE rc CLAUSE OF THE SAME LIST (measured 2026-09-28): sbl -bf EXITS 0 after a run-time fatal, SCRIP's one voice exits 1;
         # an entry whose ref was cut from the oracle declares want_rc 0, so a rendered fatal at rc 1 is the declared rc.
         if _fatal_n and rc == 1 and want_rc == 0:
