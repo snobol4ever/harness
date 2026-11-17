@@ -29,10 +29,10 @@ DISPATCHER = os.environ.get("S4E_DISPATCHER") or (TICK if os.path.isfile(TICK) e
 STOP_GATE = os.path.join(str(HP.harness()), "scripts", "s4e_stop_gate.sh")
 HEADER = ["seat", "name", "root", "model", "effort", "color", "tier", "role"]
 TIER_MODEL = {"1": "claude-opus-5-5","2": "claude-opus-5-5", "3": "claude-sonnet-5-5", "4": "claude-haiku-5-5"}
-SEAT_MODEL = {"cto": "claude-fable-5-2", "cio": "claude-fable-5-2", "cfo": "claude-fable-5-2", "cqo": "claude-fable-5-2", "cao": "claude-fable-5-2", "coo": "claude-fable-5-2"}
+SEAT_MODEL = {"cio": "claude-fable-5-2", "coo": "claude-fable-5-2", "officer_01": "claude-sonnet-5-5", "officer_02": "claude-sonnet-5-5", "officer_03": "claude-sonnet-5-5", "officer_04": "claude-sonnet-5-5", "officer_05": "claude-sonnet-5-5", "officer_06": "claude-sonnet-5-5", "officer_07": "claude-sonnet-5-5", "officer_08": "claude-sonnet-5-5", "officer_09": "claude-sonnet-5-5", "officer_10": "claude-sonnet-5-5", "officer_11": "claude-sonnet-5-5", "officer_12": "claude-sonnet-5-5"}
 EFFORTS = {"xhigh", "high", "medium"}
 BANNED_TIERS = {"3", "4"}
-BANNED_MODELS = ("haiku", "sonnet")
+BANNED_MODELS = ("haiku",)   # Sonnet 5.5 is the officers' model again on Lon's word of 2026-11-17 11:5x CST; no junior, no senior, no Haiku
 BANNED_ROLES = {"junior", "senior", "worker"}
 COLORS = {"red", "green", "yellow", "purple", "cyan"}
 CLASS_GLOBS = ["hq_*", "worker_[0-9]"]
@@ -70,7 +70,7 @@ def load():
         seen_seat.add(r["seat"])
         seen_name.add(r["name"])
         if r["tier"] in BANNED_TIERS or any(w in r["model"] for w in BANNED_MODELS) or r["role"] in BANNED_ROLES:
-            problems.append("seat %s: tier %s, model %s, role %s: the fleet has no junior and no senior seat and no Haiku and no Sonnet model, EVER AGAIN (Lon 2026-11-14 16:0x CST) (line %d)" % (r["seat"], r["tier"], r["model"], r["role"], r["line"]))
+            problems.append("seat %s: tier %s, model %s, role %s: the fleet has no junior and no senior seat and no Haiku model (Lon 2026-11-14 16:0x CST; Sonnet 5.5 came back for the officers alone, Lon 2026-11-17 11:5x CST) (line %d)" % (r["seat"], r["tier"], r["model"], r["role"], r["line"]))
         if r["tier"] not in TIER_MODEL:
             problems.append("seat %s: tier %r is not 1-4 (line %d)" % (r["seat"], r["tier"], r["line"]))
         elif r["model"] != SEAT_MODEL.get(r["seat"], TIER_MODEL[r["tier"]]):
