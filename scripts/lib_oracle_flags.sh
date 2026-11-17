@@ -355,7 +355,8 @@ unicon_bin() {
 # Arizona icont/iconx 9.5.25a with X: /home/resources/icon-master-x (the grader 2026-11-14, the fleet's semicolon-required translator). unicon 13.3 with X11, Xft, JPEG, PNG and OpenGL:
 # /home/resources/oracles-graphics/unicon (officer_06 2026-11-16: a git clone of the plain drop /home/resources/unicon at d784f58, its default ./configure, make; the plain drop is untouched).
 # MEASURED 2026-11-16 by officer_06: one probe (WOpen, DrawLine, FillRectangle, DrawCircle, every drawing read back with Pixel as letters, WriteImage) run twice through each under its own
-# Xvfb gave the same text and the same GIF byte for byte; the two oracles print the same letters; with no display each answers "no window". These cut a DISPLAY program's ref only;
+# Xvfb gave the same text and the same GIF byte for byte; the two oracles print the same letters; with no display each answers "no window". These cut a DISPLAY program's ref only, and the graphics unicon an SSL program's too (the plain unicon was built
+# --disable-graphics and has no OpenSSL; unicon_tests crypto/, the grader 2026-11-17, Lon's choice in the grader's window);
 # the plain accessors above stay the oracle of every other program. A graphics oracle is run under a private display alone (graphics_display_run below, or util_screen_run.py for the
 # screen road), never the caller's DISPLAY: a seat's session may carry the desktop's :0, and a window opened there is on Lon's screen.
 GRAPHICS_ICON_ORACLE_DIR="/home/resources/icon-master-x"
