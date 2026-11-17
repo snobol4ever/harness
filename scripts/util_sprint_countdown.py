@@ -83,10 +83,11 @@ def lines(seat, conf_path=None, suites_path=None, stamp=True):
         return [f"🏁 {name} SPRINT: ZERO. Every one of the {len(rows)} suites reads 100%{since}.{when}"]
     pre = os.path.commonprefix([n for n, _, _ in rows]) if len(rows) > 1 else ""
     left = sorted(((t - p, n[len(pre):] or n) for n, p, t in rows if t - p > 0), key=lambda x: (-x[0], x[1]))
-    head = f"▌ {bold(togo)} / {bold(start)} TO GO ▐" if start.isdigit() else f"▌ {bold(togo)} TO GO ▐"
-    fixed = f"   {bar(int(start) - togo, int(start))}  {int(start) - togo} fixed" if start.isdigit() else ""
-    return [f"⏬ {name} SPRINT  {head}{fixed}  ·  {at100} of {len(rows)} suites at 100%  ·  from {c.get('started', '?')}{when}",
-            "   to go: " + " · ".join(f"{n} {k}" for k, n in left)]
+    npass, ntot = sum(p for _, p, _ in rows), sum(t for _, _, t in rows)
+    head = f"▌ {bold(togo)} FAILING TESTS LEFT, of {bold(start)} at the start ▐" if start.isdigit() else f"▌ {bold(togo)} FAILING TESTS LEFT ▐"
+    fixed = f"   {bar(int(start) - togo, int(start))}  {int(start) - togo} closed (cured or declared out)" if start.isdigit() else ""
+    return [f"⏬ {name} SPRINT  {head}{fixed}  ·  {npass} of {ntot} {name} tests pass  ·  {at100} of {len(rows)} suites at 100%  ·  since {c.get('started', '?')}{when}",
+            "   failing tests by suite: " + " · ".join(f"{n} {k}" for k, n in left)]
 
 
 def probe():
@@ -100,8 +101,8 @@ def probe():
     bad = []
     table(7, 3)
     o = lines("cio", conf, tsv, stamp=False)
-    want0 = "⏬ SNOBOL4 SPRINT  ▌ 𝟱 / 𝟵 TO GO ▐   █████████░░░░░░░░░░░  4 fixed  ·  0 of 2 suites at 100%  ·  from 11-17 13:01"
-    if o != [want0, "   to go: Alpha 3 · Beta 2"]:
+    want0 = "⏬ SNOBOL4 SPRINT  ▌ 𝟱 FAILING TESTS LEFT, of 𝟵 at the start ▐   █████████░░░░░░░░░░░  4 closed (cured or declared out)  ·  10 of 15 SNOBOL4 tests pass  ·  0 of 2 suites at 100%  ·  since 11-17 13:01"
+    if o != [want0, "   failing tests by suite: Alpha 3 · Beta 2"]:
         bad.append(("counts", o))                       # arm 1: the count, the port row and the other language left out, the names shortened
     if lines("officer_04", conf, tsv, stamp=False) != []:
         bad.append(("seat_not_shown", "printed"))       # arm 2: a seat the show line does not name prints nothing
@@ -113,7 +114,7 @@ def probe():
         bad.append(("zero", o))                         # arm 4: zero is said as zero
     table(10, 1)
     o = lines("cio", conf, tsv, stamp=False)
-    if not (o and "▌ 𝟰 / 𝟵 TO GO ▐" in o[0] and "1 of 2 suites at 100%" in o[0] and o[1] == "   to go: Beta 4"):
+    if not (o and "▌ 𝟰 FAILING TESTS LEFT, of 𝟵 at the start ▐" in o[0] and "1 of 2 suites at 100%" in o[0] and o[1] == "   failing tests by suite: Beta 4"):
         bad.append(("up_again", o))                     # arm 5: a suite that falls back is counted again
     for name, got in bad:
         print(f"SPRINT_COUNTDOWN_PROBE RED arm={name} got={got!r}")
