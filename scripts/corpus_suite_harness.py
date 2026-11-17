@@ -699,7 +699,7 @@ def run_xsb_gentest(xsb_bin, upstream, run, timeout):
         return kind, (tp.read_bytes() if tp.is_file() else None), err, rc
 
 
-def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, side_env=None, run_cwd=None, merge_stderr=True):
+def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, side_env=None, run_cwd=None, merge_stderr=True, full_refusal=False):
     """THE ICON ORACLE AS THE ICON PACKAGES' OWN HARNESS RUNS IT, for a package whose CONTRACT.tsv merges stderr (the coo
     2026-10-01, measured on jcon_tests): `icont -s -o <stem> <name>` in the file's own directory, its stderr kept apart, then
     `iconx <stem> args < in > out 2>&1` (iconx handed the bare icode name, so &progname reads the stem; exec'd through PATH
@@ -716,7 +716,8 @@ def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=N
         refuse(f"lib_oracle_flags.sh refused (icont_bin): {r.stderr.strip()}")
     kind, out, err, rc = _run_raw([r.stdout.strip(), "-s", "-o", stem, src_path.name], timeout, cwd=str(d))
     if kind != "RAN" or rc != 0:
-        first = ((err or b"") + (out or b"")).decode("utf-8", "replace").strip().split("\n")[0]
+        first = ((err or b"") + (out or b"")).decode("utf-8", "replace").strip()
+        if not full_refusal: first = first.split("\n")[0]
         return first, rc, ("TRANSLATE" if kind == "RAN" else kind)
     r = subprocess.run(["bash", "-c", f". '{lib}' && iconx_bin"], capture_output=True, text=True)
     if r.returncode != 0 or not r.stdout.strip():
@@ -731,7 +732,7 @@ def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=N
     return out.decode("utf-8", "replace").rstrip("\n"), rc, kind
 
 
-def run_unicon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, merge_stderr=True, side_env=None):
+def run_unicon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, merge_stderr=True, side_env=None, full_refusal=False):
     """THE UNICON ORACLE AS UNICON'S OWN tests/Makefile.test RUNS IT (hq_unicon, R-2072): the translator with -s -o <stem> <name> in the file's own
     directory through unicon_bin() (never a bare name, never -E), then `./<stem> args < in > out 2>&1`. Returns (text, rc, kind) as
     run_icon_built_oracle does; a translation that fails returns kind "TRANSLATE" and the translator's first line as text. A compile that
@@ -747,10 +748,12 @@ def run_unicon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args
         refuse(f"lib_oracle_flags.sh refused (unicon_bin): {r.stderr.strip()}")
     kind, out, err, rc = _run_raw([r.stdout.strip(), "-s", "-o", stem, src_path.name], timeout, cwd=str(d))
     if kind != "RAN" or rc != 0:
-        first = ((err or b"") + (out or b"")).decode("utf-8", "replace").strip().split("\n")[0]
+        first = ((err or b"") + (out or b"")).decode("utf-8", "replace").strip()
+        if not full_refusal: first = first.split("\n")[0]
         return first, rc, ("TRANSLATE" if kind == "RAN" else kind)
     if not (d / stem).is_file():
-        first = ((err or b"") + (out or b"")).decode("utf-8", "replace").strip().split("\n")[0]
+        first = ((err or b"") + (out or b"")).decode("utf-8", "replace").strip()
+        if not full_refusal: first = first.split("\n")[0]
         return first or "the translator left no executable", rc, "TRANSLATE"
     _out_files_clear(d, out_files)
     kind, out, _err, rc = _run_raw(["./" + stem] + [str(a) for a in (prog_args or [])], timeout, cwd=str(d),

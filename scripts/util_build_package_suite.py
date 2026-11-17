@@ -1048,7 +1048,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     # --dialect=unicon by the same contract, answered 1 and read red. The entry's own stderr cell decides the stream (_ms), and
                     # its run sidecars reach the program as they reach the grade (side_env_for_source).
                     return h.run_unicon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text, prog_args=prog_args, out_files=out_files,
-                                                                         merge_stderr=_ms, side_env=h.side_env_for_source(src, Path(_iso_dir)))
+                                                                         merge_stderr=_ms, side_env=h.side_env_for_source(src, Path(_iso_dir)), full_refusal=(contract["fatal"] == "gradable"))
                 elif lang == "icon" and (merged or _icon_sidecar_declared(src)):
                     # ⭐ AN ENTRY THAT DECLARES A SIDECAR IS CUT HERE WHATEVER THE PACKAGE'S STDERR CELL (officer_04 2026-11-16, row
                     # rosetta-icon-ten-entries-answer-the-clock-the-directory-or-iconxs-stack-and-are-cut-under-sidecars, the cfo's design): NAME.env, NAME.pin,
@@ -1063,7 +1063,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     # h.alone_dir_for_source makes it and stages the fixtures there; MEASURED before it: progs/gcomp was cut listing the package's progs folder.
                     _alone = h.alone_dir_for_source(src, Path(_iso_dir))
                     return h.run_icon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text, prog_args=prog_args, out_files=out_files,
-                                                                         side_env=h.side_env_for_source(src, _alone or Path(_iso_dir)), run_cwd=_alone, merge_stderr=_ms)
+                                                                         side_env=h.side_env_for_source(src, _alone or Path(_iso_dir)), run_cwd=_alone, merge_stderr=_ms, full_refusal=(contract["fatal"] == "gradable"))
                 elif lang == "prolog" and name in gnu_cells:
                     return h.run_oracle("bash", str(h.HARNESS_SCRIPTS / "gprolog_oracle_run.sh"), _iso_src, paths["timeout"], stdin_text=stdin_text,
                                                               prog_args=prog_args, out_files=out_files, merge_stderr=_ms)
@@ -1162,19 +1162,20 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
         # seeds from the wall clock in whole seconds, both runs of a sub-second compile-and-run drew the same seed and the program was absorbed
         # with a ref from one accident; three hand runs 2.5 s apart printed 1500363, 1498900, 1499633 wakings). A program seeded from time(NULL)
         # repeats itself inside one second, so the rerun waits until the clock has passed the second the first run ended in.
-        if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW"):
+        _no_second = ("HANG", "UNPROVEN", "OVERFLOW") + (() if (lang == "icon" and contract["fatal"] == "gradable") else ("TRANSLATE",))
+        if twice and ora_kind not in _no_second:
             time.sleep(max(0.0, math.floor(_t_first) + 1.05 - time.time()))
-        _run2 = _oracle_isolated(_fl)[:2] if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") else (ora_text, ora_rc)
+        _run2 = _oracle_isolated(_fl)[:2] if twice and ora_kind not in _no_second else (ora_text, ora_rc)
         _mrows = h.masks_for(_entry_masks, name)
         # ⛔ A SNOBOL4 FATAL BLOCK'S THROUGHPUT LINES ARE LEFT OUT OF THE TWO-RUN COMPARE, AS THE GRADER LEAVES THEM OUT (officer_06 2026-11-17, same row; MEASURED: cfreq's first run
         # printed `execution time msec  7` and SPITBOL's three throughput lines, its second `execution time msec  0` and none; the mask rows cover the msec line alone, so a
         # slow first run read as "differs on two runs" and the entry was excluded; the census road below drops them since the grader's 2026-11-16 fix).
         _tp = h.drop_spitbol_throughput if lang == "snobol4" else (lambda s: s)
-        if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") and (h.apply_line_mask(_tp(_run2[0]), _mrows, "oracle")[0], _run2[1]) != (h.apply_line_mask(_tp(ora_text), _mrows, "oracle")[0], ora_rc):
+        if twice and ora_kind not in _no_second and (h.apply_line_mask(_tp(_run2[0]), _mrows, "oracle")[0], _run2[1]) != (h.apply_line_mask(_tp(ora_text), _mrows, "oracle")[0], ora_rc):
             excluded.append((name, "the oracle answers differently on two runs (time, randomness or addresses in its output) -- no one ground truth"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle nondeterministic)", file=sys.stderr)
             continue
-        if ora_kind == "TRANSLATE":
+        if ora_kind == "TRANSLATE" and "TRANSLATE" in _no_second:
             excluded.append((name, f"the oracle's translator refused it: {ora_text}"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle translation failed)", file=sys.stderr)
             continue
@@ -1510,6 +1511,20 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
             h.refuse(f"splice gate: the container in {d} does not read: {_e}")
     def _shape(es):
         return {e.name: (e.seq, list(e.sno_lines), list(e.ref), e.stdin) for e in es}
+    def _old_banners(path):
+        out = {}
+        if bre is None or not path.is_file(): return out
+        for _ln in path.read_bytes().split(b"\n"):
+            _mo = bre.match(_ln.decode("utf-8", "replace"))
+            if _mo: out[_mo.group("name")] = _ln
+        return out
+    def _keep_banners(new, old_map):
+        if bre is None or not new.is_file() or not old_map: return
+        _res = []
+        for _ln in new.read_bytes().split(b"\n"):
+            _mo = bre.match(_ln.decode("utf-8", "replace"))
+            _res.append(old_map.get(_mo.group("name"), _ln) if _mo else _ln)
+        new.write_bytes(b"\n".join(_res))
     names = {e.name for e in entries} | {n for n, _w in excluded}
     old = _read(pkg_dir)
     old_names = [e.name for e in old]
@@ -1527,6 +1542,8 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
         (_td / "as-is").mkdir()
         (_td / "spliced").mkdir()
         h.write_suite(list(old), str(_td / "as-is" / f_src), str(_td / "as-is" / f_ref), out_in=str(_td / "as-is" / f_in), lang=lang)
+        _ob = {_f: _old_banners(pkg_dir / _f) for _f in (f_src, f_ref, f_in)}
+        for _f in (f_src, f_ref, f_in): _keep_banners(_td / "as-is" / _f, _ob[_f])
         for _f in (f_src, f_ref, f_in):
             _a = (pkg_dir / _f).read_bytes() if (pkg_dir / _f).is_file() else b""
             _b = (_td / "as-is" / _f).read_bytes() if (_td / "as-is" / _f).is_file() else b""
@@ -1536,6 +1553,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
         for seq, e in enumerate(merged_entries, 1):
             e.seq = seq
         wrote_in = h.write_suite(merged_entries, str(_td / "spliced" / f_src), str(_td / "spliced" / f_ref), out_in=str(_td / "spliced" / f_in), lang=lang)
+        for _f in (f_src, f_ref, f_in): _keep_banners(_td / "spliced" / _f, _ob[_f])
         after = _shape(_read(_td / "spliced"))
         for n in old_names:
             if n not in names and after.get(n) != before[n]:
