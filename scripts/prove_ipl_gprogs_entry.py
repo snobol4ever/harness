@@ -20,7 +20,7 @@
 # It honours what the harness honours beside an entry: its ALL.args line (the program's arguments), NAME.in (its stdin), the
 # out_files cell (stdout, then each file's bytes in order; a file not written is <<out_files: N was not written>>), want_rc, and the screen road
 # (util_screen_run.py beside this file): --out screen.dump with NAME.events and NAME.cap when out_files names screen.dump, else --no-screen,
-# which NAME.display must then mark; NAME.depth as --depth either way; an entry's RUN SIDECARS (NAME.env, NAME.pin, NAME.shims/) from the harness's own reader, side_env_for_source of corpus_suite_harness.py (ipl_env_apply of lib_icon_ipl_isolation.sh), laid on the program by env(1) after the road's two dashes, as _screen_parts lays them, so the road never runs under them and this prover keeps no copy of the pin code (the cto 2026-11-17, row icon-the-one-prover-of-ipl-gprogs-applies-run-sidecars-through-the-one-reader, on officer_07's finding: mover's listing is fixed by mover.shims/ls, which the harness applied and this prover did not). A reader refusal is this prover's rc 2. Each run's folder sits in a folder of its own (NAME.N/run) because the shims are copied beside it, in NAME.N/.ipl_shims.
+# which NAME.display must then mark; NAME.depth as --depth either way; an entry's RUN SIDECARS (NAME.env, NAME.pin, NAME.shims/) from the harness's own reader, side_env_for_source of corpus_suite_harness.py (ipl_env_apply of lib_icon_ipl_isolation.sh), laid on the program by env(1) after the road's two dashes, as _screen_parts lays them, so the road never runs under them and this prover keeps no copy of the pin code (the cto 2026-11-17, row icon-the-one-prover-of-ipl-gprogs-applies-run-sidecars-through-the-one-reader, on officer_07's finding: mover's listing is fixed by mover.shims/ls, which the harness applied and this prover did not). A reader refusal is this prover's rc 2. THE ENTRY'S LINE MASKS (ALL.mask, through the harness's own read_mask_sidecar, masks_for and apply_line_mask) are applied to both streams of each comparison, as the harness applies them: a line the entry declares the machine's own (spider's elapsed seconds under the pin's virtual clock, 92, 95 and 97 on runs of one script) is no difference, and a line it does not mask still is one. Each run's folder sits in a folder of its own (NAME.N/run) because the shims are copied beside it, in NAME.N/.ipl_shims.
 # NAME.DISPLAY MARKS A TEXT ENTRY OF THE GRAPHICS FACILITY, run under the road's display whether or not it opens a window (the cto 2026-11-16
 # 15:5x CST, on colorwif: it calls PaletteColor and ColorValue and opens no window; the plain oracle stops it with error 106, so it is cut by the
 # graphics oracle and graded on its text; one mark serves both, no second form).
@@ -102,9 +102,13 @@ def one_run(c, n):
     shutil.rmtree(work / f"{name}.{n}", ignore_errors=True)
     return p.returncode, ans, waited
 bad, verdicts = 0, {}
+def norm(name, b):
+    m = H.masks_for(MASKS, name)
+    return H.apply_line_mask(b.decode("utf-8", "replace"), m)[0].encode("utf-8") if m else b
 try:
     shutil.copytree(pkg, work / "pkg")
     pkg = work / "pkg"
+    MASKS = H.read_mask_sidecar(str(pkg / "ALL.ref"))
     rows = {r["entry"]: r for r in csv.DictReader(io.StringIO((pkg / "ALL.csv").read_text()))}
     try:
         ents = {e.name: e for e in H.read_package_dir(pkg, ".icn")}
@@ -144,7 +148,8 @@ try:
                 for f in futs.values(): f.cancel()
                 refuse(str(e))
     def shaky(c, a, b):
-        return a[:2] != b[:2] or a[1] != (pkg / f"{c['name']}.out").read_bytes() or b"screen unstable" in a[1] or b"screen unstable" in b[1]
+        n, ref = c["name"], (pkg / f"{c['name']}.out").read_bytes()
+        return a[0] != b[0] or norm(n, a[1]) != norm(n, b[1]) or norm(n, a[1]) != norm(n, ref) or b"screen unstable" in a[1] or b"screen unstable" in b[1]
     res = pool(cfg, jobs)
     retried = []
     if jobs > 1:
@@ -157,8 +162,8 @@ try:
         if name in retried: print(f"RETRIED-ALONE {name}")
         why = []
         if (a[2] or b[2]) and not c["events"] and name not in none: why.append(f"it waits for an event and carries no {name}.events and no EVENTS-NONE.tsv line")
-        if a[:2] != b[:2]: why.append("the two runs differ")
-        if a[1] != (pkg / f"{name}.out").read_bytes(): why.append(f"the answer differs from {name}.out")
+        if a[0] != b[0] or norm(name, a[1]) != norm(name, b[1]): why.append("the two runs differ")
+        if norm(name, a[1]) != norm(name, (pkg / f"{name}.out").read_bytes()): why.append(f"the answer differs from {name}.out")
         if str(a[0]) != (r.get("want_rc") or "0"): why.append(f"status {a[0]}, want_rc {r.get('want_rc')}")
         if why: verdicts[name] = f"RED {name}: " + "; ".join(why)
         elif name in none: verdicts[name] = f"NAMED {name}: EVENTS-NONE.tsv, its still picture stands; twice equal, its {name}.out, status {a[0]}"
