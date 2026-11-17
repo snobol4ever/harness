@@ -23,9 +23,18 @@ import re, sys
 DIAG = re.compile(r'^\S.*?\((\d+)(?:,\d+)?\) : ERROR (\d+) -- ')
 POST_MORTEM = re.compile(r'^(in statement \d+|stmts executed|memory used \(bytes\)|memory left \(bytes\))')
 
+def unwrapped(lines):
+    out = []; i = 0
+    while i < len(lines):
+        l = lines[i]
+        while len(l) == 120 and i + 1 < len(lines):
+            i += 1; l += lines[i]
+        out.append(l); i += 1
+    return out
+
 def pairs_of(lines):
     out = set()
-    for l in lines:
+    for l in unwrapped(lines):
         m = DIAG.match(l)
         if m: out.add((int(m.group(1)), int(m.group(2))))
     return sorted(out)
