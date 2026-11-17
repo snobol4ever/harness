@@ -7,7 +7,7 @@ red:rebase): one new entry renumbers the rank column of every row below it and m
 
     util_table_merge.py csv BASE OURS THEIRS OUT          ALL.csv: rows keyed by the `entry` column
     util_table_merge.py partition BASE OURS THEIRS OUT    PARTITION.tsv: rows keyed by their first column, comment lines kept from OURS
-    util_table_merge.py lines BASE OURS THEIRS OUT        a package's side table of one line a key (ALL.args, NOT-CUT.tsv, EXCLUDED.tsv, ALL.omit): lines keyed by their
+    util_table_merge.py lines BASE OURS THEIRS OUT        a package's side table of one line a key (ALL.args, ALL.units, NOT-CUT.tsv, EXCLUDED.tsv, ALL.omit): lines keyed by their
                                                           first column; a line both sides changed differently is a real conflict (the cio 2026-11-16, MEASURED in the
                                                           drain's first hour: two of nine corpus patches of ipl_gprogs read red:rebase on ALL.args and NOT-CUT.tsv alone,
                                                           seven owners each adding a line to the one and deleting a line of the other)

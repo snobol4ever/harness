@@ -34,7 +34,7 @@ import csv, fnmatch, os, shutil, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROLES = ("INDEX", "PROGRAM", "STREAM", "PART", "TABLE", "DOCUMENT", "CONTAINER", "OMITTED", "LOOSE")
-INDEX = ("ALL.csv", "ALL.args", "ALL.omit", "ALL.mask", "ALL.rc", "ALL.source", "ALL.launch", "ALL.stdin")
+INDEX = ("ALL.csv", "ALL.args", "ALL.units", "ALL.omit", "ALL.mask", "ALL.rc", "ALL.source", "ALL.launch", "ALL.stdin")
 TABLES = ("CONTRACT.tsv", "CONTAINERS.tsv", "PARTITION.tsv", "SOURCES.tsv", "DRIVERS.tsv")
 CONTAINER_EXT = (".sno", ".icn", ".pl", ".raku", ".pas", ".sc", ".reb")
 CONTAINER = ("ALL.ref", "ALL.in", "ALL.argv", "ALL.prelude") + tuple("ALL" + x for x in CONTAINER_EXT)

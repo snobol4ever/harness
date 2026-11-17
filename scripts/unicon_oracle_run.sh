@@ -10,14 +10,26 @@ U="$(unicon_bin)" || exit 127
 # --here SRC (the coo 2026-11-11, the miner's Icon arm): SRC is translated where it stands, in the caller's current directory (a scratch copy of the
 # program's own folder, so the files it links from that folder are found), the executable goes to the private directory, and the program runs from
 # the caller's directory with the caller's stdin. The translator's .u files land in that scratch copy, never beside a collection's source.
+# --here SRC [--units U1,U2,...] [ARGS...] (officer_04 2026-11-17, row unicon-uni-all-units-names-an-entrys-units-to-the-grader-and-the-mine-road): an entry built
+# from several units names them in ALL.units, and the mine road hands the same list here as ONE flag directly after SRC, never in the argument list, since every
+# word after SRC (and after the flag) is a program argument. The translator is `unicon -s SRC U1 U2 -o`: the units are files of the caller's current directory,
+# the program's own folder in its scratch copy, and the one executable is named after SRC (a unit list holds one main).
 if [ "${1:-}" = --here ]; then
     src="${2:-}"; [ -f "$src" ] || { echo "unicon_oracle_run.sh: no such file: $src" >&2; exit 127; }
+    shift 2
+    units=()
+    if [ "${1:-}" = --units ]; then
+        [ -n "${2:-}" ] || { echo "unicon_oracle_run.sh: --units names no file" >&2; exit 127; }
+        IFS=, read -r -a units <<< "$2"
+        for u in "${units[@]}"; do [ -f "$u" ] || { echo "unicon_oracle_run.sh: no such unit: $u" >&2; exit 127; }; done
+        shift 2
+    fi
     work=$(mktemp -d) || exit 127
     trap 'rm -rf "$work"' EXIT
     name="$(basename "${src%.*}")"
-    "$U" -s "$src" -o "$work/$name" < /dev/null > "$work/compile.log" 2>&1
+    "$U" -s "$src" ${units[@]+"${units[@]}"} -o "$work/$name" < /dev/null > "$work/compile.log" 2>&1
     if [ ! -x "$work/$name" ]; then cat "$work/compile.log" >&2; exit 126; fi
-    "$work/$name" "${@:3}"; exit $?
+    "$work/$name" "$@"; exit $?
 fi
 src="${1:-}"; [ -f "$src" ] || { echo "unicon_oracle_run.sh: no such file: $src" >&2; exit 127; }
 work=$(mktemp -d) || exit 127

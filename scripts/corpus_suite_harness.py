@@ -2304,6 +2304,8 @@ class Entry:
                                    # all (identical to pre-sidecar behaviour). DECLARED in <family>.argv,
                                    # never inferred -- an entry's own text cannot say what it should be RUN
                                    # with. See sidecar_argv_path() for why discovery beats a flag.
+        self.units = None         # list[(file name, absolute path)] of the OTHER units a program built from several files is given with its own
+                                   # text (ALL.units of a files-form package, _pkg_read_units), or None = the program is one file. DECLARED, never inferred.
         self.mask = None          # list[(compiled regex, reason)] from <family>.mask, or None. R-409: a line
                                    # whose value belongs to the IMPLEMENTATION (a clock reading, an allocator's
                                    # free-space count) is masked AT THE LINE so the rest of the fixture keeps
@@ -3599,6 +3601,46 @@ def _pkg_read_args(d, entries):
         by_name[parts[0]].argv = parts[1:]
 
 
+def _pkg_read_units(d, entries, src_root):
+    """ALL.units at the package root (officer_04 2026-11-17, row unicon-uni-all-units-names-an-entrys-units-to-the-grader-and-the-mine-road; officer_06's
+    form of 2026-11-14, senior_01's measurement: `scrip --run m.icn h.icn` and `unicon -s m.icn h.icn` both answer, each file alone stops at error 106):
+    one line an entry that is built from several files, the entry's name and then each OTHER unit's file name after a tab. A unit is a sibling of the
+    entry's program, a file of the folder the program stands in, read from the package and, when the package holds none, from its source root; a name
+    with a slash, the program's own name, a name given twice, a line with no unit and a unit that is no file refuse. The grader stages the units beside
+    the program and hands [program, unit, ...] to scrip in both modes, and the builder's mine road hands the same list to the oracle
+    (util_build_package_suite.py _mine_units), so one list cuts the ref and grades the answer; it is a flag, never part of ALL.args. A line naming an
+    entry ALL.omit leaves out is passed over, as ALL.stdin passes it (the entry is not graded yet). A unit list holds one main."""
+    p = Path(d) / "ALL.units"
+    if not p.is_file():
+        return
+    by_name = {e.name: e for e in entries}
+    omitted = _pkg_omitted(d)
+    seen = set()
+    for n, raw in enumerate(p.read_bytes().decode("utf-8").split("\n"), 1):
+        if not raw.strip() or raw.startswith("#"):
+            continue
+        parts = raw.split("\t")
+        if parts[0] not in by_name:
+            if parts[0] in omitted:
+                continue
+            raise ValueError(f"{p}:{n}: units for {parts[0]!r}, which is no entry of the package")
+        if parts[0] in seen or len(parts) < 2 or not all(parts[1:]):
+            raise ValueError(f"{p}:{n}: {parts[0]!r} is named twice or carries no unit (a line is an entry and then each unit's file name after a tab)")
+        seen.add(parts[0])
+        e = by_name[parts[0]]
+        folder, own = Path(e.pkg_rel).parent, Path(e.pkg_rel).name
+        units, names = [], set()
+        for u in parts[1:]:
+            if "/" in u or u in (".", "..") or u == own or u in names:
+                raise ValueError(f"{p}:{n}: {u!r} is no unit of {e.name}: a unit is the file name of a sibling of {own}, not the program itself, a path or a repeat")
+            names.add(u)
+            found = next((r / folder / u for r in (Path(d), src_root) if r is not None and (r / folder / u).is_file()), None)
+            if found is None:
+                refuse(f"{p}:{n}: {e.name} names the unit {u}, which is no file beside {e.pkg_rel} in the package nor in its source root -- a missing unit is a refusal, never a run without it")
+            units.append((u, str(found)))
+        e.units = units
+
+
 def _pkg_read_stdin(d, entries, src_root):
     """ALL.stdin at the package root (COO-514 (3), the grader 2026-11-11): one line an entry whose standard input is a FILE OF THE COLLECTION, the
     entry's name, one tab, the file's path from the collection's root; blank lines and lines beginning with # ignored. The file is never copied
@@ -3752,9 +3794,11 @@ def read_package_dir(d, ext, modes=None):
         _sn = _pkg_stage_name(name, rel, ext)
         if _sn:
             e.stage_name = _sn
+        e.pkg_rel = rel
         entries.append(e)
     src = str(d / ("ALL" + ext))
     _pkg_read_args(d, entries)
+    _pkg_read_units(d, entries, src_root)
     _pkg_read_stdin(d, entries, src_root)
     read_wantrc_sidecar(sidecar_wantrc_path(src), entries)
     read_command_line_columns(src, entries, modes)
@@ -4788,6 +4832,21 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
             (Path(td) / "wrap.pl").write_text("main :- run_tests.\n:- initialization(main).\n")
             _sf = [str(_shim), str(_org.resolve()), str(Path(td) / "wrap.pl")]
             _src = None
+        if getattr(entry, "units", None):
+            # THE UNITS A PROGRAM IS BUILT FROM (ALL.units, _pkg_read_units; officer_04 2026-11-17, senior_01's measurement: `scrip --run m.icn h.icn` answers
+            # where each file alone stops at error 106): each unit is staged, an owner-writable copy, beside the program, and both modes are given
+            # [program, unit, ...] as their source files, by bare name when the program runs in its own staging folder and by full path when a cwd or alone
+            # folder is its run directory. A name already standing there (a companion, a fixture) is two answers to one question.
+            if _sf is not None:
+                refuse(f"{entry.name}: ALL.units names units for an entry that already runs as several files by its grader")
+            _udir = Path(cand).parent
+            _unames = []
+            for _nm, _ap in entry.units:
+                if (_udir / _nm).exists() and (_udir / _nm).read_bytes() != Path(_ap).read_bytes():
+                    refuse(f"{entry.name}: the unit {_nm} is already standing beside the program with other bytes (a companion or a fixture of the same name) -- one declaration")
+                shutil.copyfile(_ap, _udir / _nm); os.chmod(_udir / _nm, 0o644)
+                _unames.append(_nm)
+            _sf = ([Path(cand).name] + _unames) if _rc_dir is None else [str(Path(cand).resolve())] + [str((_udir / _nm).resolve()) for _nm in _unames]
         def _go(_ms, _cwd, _tmo):
             return run_all_modes(paths, cand, expected, Path(td), _ms, stdin_text=entry.stdin, run_cwd=_cwd, source_path=_src, source_files=_sf,
                                  want_rc=_want, prog_argv=getattr(entry, 'argv', None),
@@ -4853,7 +4912,7 @@ def _batch_m3_eligible(entry, paths):
     no argv, no compile switches, no mask or stream option), graded exactly as run_m3 grades it. Anything else stays per-process."""
     return ("/" not in entry.name and not getattr(entry, "stage_upstream", False) and not getattr(entry, "compile_args", None) and not getattr(entry, "cwd", None)
             and not getattr(entry, "argv", None) and not getattr(entry, "mask", None) and not getattr(entry, "out_files", None)
-            and not getattr(entry, "env_cells", None) and not getattr(entry, "in_files", None)
+            and not getattr(entry, "env_cells", None) and not getattr(entry, "in_files", None) and not getattr(entry, "units", None)
             and not getattr(entry, "merge_stderr", False) and not getattr(entry, "compare_ws", False)
             and not getattr(entry, "answer_file", None) and not paths.get("scrip_extra") and paths["engine"] == "scrip")
 
@@ -5007,17 +5066,23 @@ def _screen_entry_of_switch_pkg(e, container_dir):
 def _pkg_screen_road(paths, run_entries, files_entries, container_dir):
     """The per-entry road of the screen entries of a package the switch alone stages, given what the switch gives its programs: a copy of the
     program's own folder as its working folder (fixtures=folder, its own answers never staged), IPATH and LPATH from CONTRACT.tsv (_pkg_ipath_for,
-    already in the environment) and the package's ALL.env."""
+    already in the environment) and the package's ALL.env. AN ENTRY THAT NAMES UNITS (ALL.units, _pkg_read_units) takes this road too (officer_04 2026-11-17):
+    scrip --run-files runs one program file, so an entry built from several files is run per entry, its units staged beside it and handed to both modes
+    with the program (run_suite_entry), under the same environment; a units entry that is no screen entry gets no folder fixture, its units being the only
+    files it is given beside itself."""
     keep = {e.name for e in files_entries}
-    n = 0
+    n = u = 0
     for e in run_entries:
         if e.name in keep:
             continue
-        if not getattr(e, "fixtures", None):
-            e.fixtures = "folder"
-        n += 1
+        if _screen_entry_of_switch_pkg(e, container_dir):
+            if not getattr(e, "fixtures", None):
+                e.fixtures = "folder"
+            n += 1
+        if getattr(e, "units", None):
+            u += 1
     os.environ.update(_pkg_env(container_dir, paths))
-    print(f"SCREEN_ROAD_BOARD dir={container_dir} screen_entries={n} switch_entries={len(files_entries)} -- a screen entry of a package the switch stages runs per entry under the screen wrap (the cqo 2026-11-17)")
+    print(f"SCREEN_ROAD_BOARD dir={container_dir} screen_entries={n} units_entries={u} switch_entries={len(files_entries)} -- a screen entry of a package the switch stages runs per entry under the screen wrap (the cqo 2026-11-17), and so does an entry built from several units (ALL.units)")
 
 
 def run_files_leftovers(paths, args, run_entries, graded, tmp_root):
@@ -6409,7 +6474,7 @@ def cmd_run(args):
                    f"package, does not apply them yet (DESIGN-PLAN one-container step 1: the per-entry road reads them; the switch's reader is a later step) -- never a run without them")
     _files_entries = run_entries
     if _switch_alone:
-        _files_entries = [e for e in run_entries if not _screen_entry_of_switch_pkg(e, Path(args.sno).parent)]
+        _files_entries = [e for e in run_entries if not (_screen_entry_of_switch_pkg(e, Path(args.sno).parent) or getattr(e, "units", None))]
         if len(_files_entries) != len(run_entries):
             _pkg_screen_road(paths, run_entries, _files_entries, Path(args.sno).parent)
     if getattr(args, "run_files", False) and _files_entries:

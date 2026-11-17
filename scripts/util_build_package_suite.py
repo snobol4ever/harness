@@ -1890,7 +1890,7 @@ def mine_read_launch(pkg_dir, lang, dialects):
     return got
 
 
-def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=(), outf=None, sizes=None):
+def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=(), outf=None, sizes=None, units=()):
     """One oracle run of NAME in a scratch copy of FOLDER (subfolders included; the collection is never written to), from the top of that
     copy: the program's own folder and its bare name, or under copy root and cwd root the whole collection and the path from its root (CTO-591).
     The copy is made once per worker and folder and made again after any run that changed a file in it (CTO-583 (2)), so a run always starts
@@ -1923,7 +1923,7 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=
             with open(sin, "rb") as fin:
                 pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
         elif lang == "icon":
-            argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "unicon_oracle_run.sh"), "--here", name, *args]
+            argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "unicon_oracle_run.sh"), "--here", name, *(["--units", ",".join(units)] if units else []), *args]   # the units ride a flag, never the arguments (ALL.units, _mine_units)
             with open(sin, "rb") as fin:
                 pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
         elif lang == "prolog" and "--xsb" in flags:
@@ -1955,7 +1955,7 @@ def _mine_scratch_drop():
     MINE_SCRATCH.clear()
 
 
-def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=None, args=None, outf=None, sizes=None):
+def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=None, args=None, outf=None, sizes=None, units=None):
     """The census verdict of one program (the mining rows' classes). -> (verdict, note, rc, stdout bytes). FEED is (what it is, its bytes) when the
     package names the program's standard input (ALL.stdin, a file of the collection by its path; or our own NAME.in in the package): both runs are
     fed it, and the third run, which asks whether the answer changes with standard input, is not made."""
@@ -1963,8 +1963,11 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     args = tuple(args or ())
     if args and lang == "pascal":
         h.refuse(f"{rel}: ALL.args names arguments, which the mine road passes on the generic oracle road and the icon road only, after the program and any launch shim (not {lang}'s own road)")
+    if units and lang != "icon":
+        h.refuse(f"{rel}: ALL.units names units, which the mine road hands to the Icon and Unicon oracle only (not {lang}'s road)")
     src = root / rel
     at, name = (root, rel) if whole else (src.parent, src.name)
+    units = tuple((str(Path(rel).parent / u) if whole else u) for u in (units or ()))   # a unit is a sibling: from the program's own folder, or from the collection's root with the program's directory in front
     text = src.read_text(errors="replace")
     if lang == "icon" and not re.search(r"^\s*procedure\s+main\s*\(", text, re.M):
         return "LIBRARY", "no procedure main", None, b""
@@ -1975,7 +1978,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     flags = ()
     for dialect, flag in (ladder or MINE_LADDER.get(lang) or (("", ""),)):
         flags = (flag,) if flag else ()
-        rc1, out1, err1 = _mine_run(lang, at, name, cap, fed, flags, launch, args, outf, sizes)
+        rc1, out1, err1 = _mine_run(lang, at, name, cap, fed, flags, launch, args, outf, sizes, units)
         t1 = time.time()
         if not (lang == "pascal" and rc1 == 126):
             if dialect:
@@ -2010,7 +2013,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     if lang == "raku" and rc1 == 2 and first.startswith("Usage:"):
         return "NEEDS-INPUT", "it asks for arguments (rakudo prints its usage, exit 2)", None, b""
     time.sleep(max(0.0, math.floor(t1) + 1.05 - time.time()))
-    rc2, out2, err2 = _mine_run(lang, at, name, cap, fed, flags, launch, args, outf, sizes)
+    rc2, out2, err2 = _mine_run(lang, at, name, cap, fed, flags, launch, args, outf, sizes, units)
     # A COMPILE REFUSAL'S LISTING CARRIES THE CLOCK (MEASURED 2026-11-15 on DECUS palin.sno, exit 231 twice, 319 and 319 bytes: the two runs differ in the one
     # line `x86-64  Sun Nov 15 13:34:22 2026` of the listing's page header, and the census read DIFFERS-BETWEEN-RUNS). The grader reads such a ref by the line
     # and code of each diagnostic alone (corpus_suite_harness.py _spitbol_compile_refusal_verdict), so the two runs are compared with that line left out.
@@ -2025,7 +2028,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     if (rc2, _same(out2)) != (rc1, _same(out1)):
         return "DIFFERS-BETWEEN-RUNS", f"exit {rc1} and {rc2}, {len(out1)} and {len(out2)} bytes", None, b""
     if not feed:
-        rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags, launch, args, outf, sizes)
+        rc3, out3, err3 = _mine_run(lang, at, name, cap, b"1\n2\n3\n", flags, launch, args, outf, sizes, units)
         if (rc3, _same(out3)) != (rc1, _same(out1)):
             return "NEEDS-INPUT", "its answer changes with what standard input holds", None, b""
     if not out1.strip():
@@ -2061,6 +2064,36 @@ def _mine_args(pkg_dir, root, stems, under):
         if stems[c[0]] in out:
             h.refuse(f"{f}:{n}: {c[0]!r} is named twice")
         out[stems[c[0]]] = c[1:]
+    return out
+
+
+def _mine_units(pkg_dir, root, stems, under):
+    """THE UNITS THE PACKAGE NAMES FOR A PROGRAM BUILT FROM SEVERAL FILES (officer_04 2026-11-17, row unicon-uni-all-units-names-an-entrys-units-to-the-grader-and-the-mine-road;
+    officer_06's form of 2026-11-14, senior_01's measurement: `unicon -s m.icn h.icn` and `scrip --run m.icn h.icn` answer where each file alone stops at error 106). ALL.units at
+    the package root, the form the grader reads (corpus_suite_harness.py _pkg_read_units): one line an entry, the entry's name (its path from the collection's root without the
+    extension), then each OTHER unit's file name after a tab, a sibling of the program in its folder; written by a person, never by the census. Both runs and the stdin probe hand
+    the list to the oracle as ONE flag, `unicon_oracle_run.sh --here SRC --units U1,U2`, never among the program's arguments. -> {program's path from the root: [unit, ...]}.
+    Refuses a malformed line, an entry named twice, a name that is no program the census reads (under --mine-under a line for another folder is left alone), and a unit that
+    is a path, the program itself, a repeat or no file of the program's folder."""
+    out = {}
+    f = pkg_dir / "ALL.units"
+    for n, raw in enumerate(f.read_text().split("\n") if f.is_file() else (), 1):
+        if not raw.strip() or raw.startswith("#"):
+            continue
+        c = raw.split("\t")
+        if len(c) < 2 or not all(c[1:]):
+            h.refuse(f"{f}:{n}: a line of ALL.units is an entry and then each unit's file name after a tab; read {raw[:80]!r}")
+        if c[0] not in stems:
+            if under and not c[0].startswith(under.rstrip("/") + "/"):
+                continue
+            h.refuse(f"{f}:{n}: {c[0]!r} is no program the census reads under {root} (an entry's name is its path from the root without the extension)")
+        rel = stems[c[0]]
+        if rel in out:
+            h.refuse(f"{f}:{n}: {c[0]!r} is named twice")
+        for u in c[1:]:
+            if "/" in u or u in (".", "..") or u == os.path.basename(rel) or c[1:].count(u) > 1 or not (root / os.path.dirname(rel) / u).is_file():
+                h.refuse(f"{f}:{n}: {u!r} is no unit of {c[0]!r}: a unit is the file name of another file of {os.path.dirname(rel) or '.'}/ under {root}, named once")
+        out[rel] = c[1:]
     return out
 
 
@@ -2177,12 +2210,13 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
         ladder = tuple((d, known[d]) for d in dialects)
     feeds = _mine_feeds(pkg_dir, root, {k: v for k, v in stems.items() if v in rels}, under)
     margs = _mine_args(pkg_dir, root, {k: v for k, v in stems.items() if v in rels}, under)
+    munits = _mine_units(pkg_dir, root, {k: v for k, v in stems.items() if v in rels}, under)
     moutf = _mine_outfiles(pkg_dir, root, {k: v for k, v in stems.items() if v in rels}, under)
     launch = mine_read_launch(pkg_dir, lang, dialects)
     msize = {x["path"]: (int((x.get("heap_kb") or "").strip() or 131072), int((x.get("stack_kb") or "").strip() or 4096)) for x in (h._fmt2_read_csv(pkg_dir)[1] if (pkg_dir / "ALL.csv").is_file() else []) if x.get("path")}
     try:
         with ThreadPoolExecutor(max_workers=jobs) as ex:
-            got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder, feeds.get(r), launch, margs.get(r), moutf.get(r), msize.get(r, (131072, 4096))), rels))
+            got = list(ex.map(lambda r: _mine_one(lang, root, r, cap, whole, ladder, feeds.get(r), launch, margs.get(r), moutf.get(r), msize.get(r, (131072, 4096)), munits.get(r)), rels))
     finally:
         _mine_scratch_drop()
     unfed = [f"{r} ({feeds[r][0] if r in feeds else 'ALL.args ' + ' '.join(margs[r])}): {v}: {note}" for r, (v, note, rc, out) in zip(rels, got) if (r in feeds or r in margs) and v != "ENTRY"]
