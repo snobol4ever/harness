@@ -11,6 +11,8 @@ with the code, skill seat-conduct section 2), so the seat that changes the inter
           the file, what in SCRIP calls it, and its contract (a bt_ entry's from xwin_functions.tsv)
   import  every name the object takes from the runtime (nm -D -u of the object met by nm -D of out/libscrip_rt.so): its C
           signature read from the runtime source that defines it, the file, the object's files that use it, and its contract
+  export  also each name whose contract line begins UNICON-OBJECT-ONLY: the Unicon window object alone exports it (the 3D functions of unicon's fwindow.r, skill
+          unicon section 8 U5); Arizona's object does not, and the Unicon object is built from the interface's export rows, so its builder links each
   offer   every name the hand-written contract table lists that the object neither exports nor imports: a name SCRIP's runtime
           offers to any window library (a Unicon object binds it, Arizona's does not), its C signature read from the runtime source
           that defines it, the file, and its contract; libscrip_rt.so must define and export it (the cto 12:1x CST 2026-11-16, on
@@ -41,6 +43,8 @@ TABLE = "src/runtime/xwin_interface.tsv"
 CONTRACT = "src/runtime/xwin_interface_contract.tsv"
 RUNTIME = "out/libscrip_rt.so"
 TREE = "src/runtime/xwin"
+UNICON_ONLY = "UNICON-OBJECT-ONLY: "
+UNICON_ENTRIES = "the Unicon object's xwin_entries.c (util_gen_icon_xwin_device.py --dialect unicon --shim-check)"
 OBJECT_SOURCES = ["src/runtime/xwin", "src/runtime/xwin_shim.c", "src/runtime/xwin_shim.h", "src/runtime/xwin_lang.c"]
 FORMS = [
     ("descriptor", "src/runtime/icn_extfn.c", r"typedef struct \{ icnx_word_t dword, vword; \} icnx_descr_t;"),
@@ -233,7 +237,12 @@ def measure(root):
             problems.append("import %s: no definition or declaration in the runtime's sources" % n)
         rows.append(("import", n, sig or "-", where or "-", ", ".join(users(n, obj_files, root)) or "-", con.get(n, "")))
     hand = contracts(root)
-    for n in sorted(set(hand) - set(exports) - set(imports)):
+    uo = sorted(n for n in hand if hand[n].startswith(UNICON_ONLY))
+    for n in uo:
+        if n in exports:
+            problems.append("export %s: Arizona's object exports it, so its contract line is not UNICON-OBJECT-ONLY" % n)
+        rows.append(("export", n, "XWIN_EXPORT DESCR_t %s(DESCR_t *args, int nargs%s)" % (n, ", void **hslot" if n.endswith("_h") else ""), UNICON_ENTRIES, ", ".join(users(n, caller_files, root)) or "none in SCRIP's runtime yet", hand[n]))
+    for n in sorted(set(hand) - set(exports) - set(imports) - set(uo)):
         if n not in rt_def:
             problems.append("offer %s: the contract table lists it, but libscrip_rt.so does not define and export it" % n)
         sig, where = signature(n, rt_files, root)
