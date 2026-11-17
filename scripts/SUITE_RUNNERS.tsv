@@ -61,7 +61,7 @@ x32tests@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbo
 x64tests@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_x64_tests
 dotnet@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/dotnet
 snobol4-bench-ref@jvm	port	snobol4	test_snobol4_bench_suite.sh	-
-snobol4-demos@jvm	port	snobol4	test_demos_suite.sh snobol4	-
+snobol4-demos@jvm	port	snobol4	corpus_suite_harness.py	corpus/demos/snobol4
 csnobol4@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/csnobol4_suite
 testpgms@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_testpgms
 x32tests@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_x32_tests
@@ -170,3 +170,27 @@ uni_ubugger	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/uni_ubugger
 icon_lane_tools	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_lane_tools
 ipl_v88	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/ipl_v88
 icon_v8_tests	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_v8_tests
+vanilla@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/vanilla
+snolib@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snolib
+exercism_snobol4@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/exercism_snobol4
+slobol_tests@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/slobol_tests
+setl4_spitbol@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/setl4_spitbol
+snoboldump@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snoboldump
+sno_bintree@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/sno_bintree
+sno_procmail@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/sno_procmail
+strange_code_book@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/strange_code_book
+cbrooker_snobol@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/cbrooker_snobol
+exs_sno@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/exs_sno
+snobol_playground@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snobol_playground
+matrixmike_tests@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/matrixmike_tests
+tkslide_examples@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/tkslide_examples
+snobol4hs_examples@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snobol4hs_examples
+begoon_snobol@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/begoon_snobol
+decus_vax84a@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/decus_vax84a
+jmu_cs430@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/jmu_cs430
+spitbol_88@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_88
+mdhender_sil@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/mdhender_sil
+mikebeer_snobol@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/mikebeer_snobol
+sw_cor24_snobol4@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/sw_cor24_snobol4
+gate_cases_snobol4@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gate_cases_snobol4
+rosetta-snobol4@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/rosetta-snobol4
