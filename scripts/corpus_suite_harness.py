@@ -1500,8 +1500,12 @@ def _merged_render_voice_for(lang, suite=""):
     return "icon" if lang == "icon" else ("spitbol" if lang in ("", "snobol4", "snocone") else None)
 
 
-def _render_merged_stream(got):
-    voice = FATAL_RENDER.get("merged_voice")
+def _entry_merged_voice(compile_args):
+    return "unicon" if FATAL_RENDER.get("merged_voice") == "icon" and "--dialect=unicon" in (compile_args or []) else None
+
+
+def _render_merged_stream(got, voice=None):
+    voice = voice or FATAL_RENDER.get("merged_voice")
     if not voice or os.environ.get("S4E_FATAL_RENDER") == "0":
         return got
     try:
@@ -1556,7 +1560,7 @@ def _timeout_load():
         return 0.0, os.cpu_count() or 1
 
 
-def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
+def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, voice=None):
     # ⛔ A TIMEOUT UNDER LOAD MEASURED THE SCHEDULER, NOT THE PROGRAM (R-1335; the coo 2026-10-09): at load 39 two Prolog rung
     # entries that run in 0.1 to 0.6 s read m4 TIMEOUT, and at load ~25 pass 42's RakBench lost point_class_add's iter angle the same
     # way. When a program times out while the 1-minute load exceeds the cores, the reading is COULD NOT MEASURE: the program is run
@@ -1565,7 +1569,7 @@ def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, 
     # as before -- a timeout scaled by load is NOT the cure (it would hide a real hang at high load). S4E_TIMEOUT_RETRY=0 disables
     # the retry (the gate's fail-once arm).
     v = _classify_run(argv, timeout, expected_text, cwd=cwd, env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask,
-                      out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+                      out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file, voice=voice)
     # ⛔⭐ SUPERSEDED IN PART (Lon 2026-10-15 15:3x CDT, in-chat to the coo, verbatim: "So timeout SHOULD NOT count as valid." and "The
     # strategy should be to accumulate a list of timeouts, and do a retry with longer timeouts."): EVERY timeout is retried once,
     # whatever the load, at lib_timeout_retry.longer(timeout) -- six times the first limit, capped at 600 s -- and only a timeout at
@@ -1577,7 +1581,7 @@ def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, 
     import lib_timeout_retry as _ltr
     at = _ltr.longer(timeout)
     v2 = _classify_run(argv, at, expected_text, cwd=cwd, env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask,
-                       out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+                       out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file, voice=voice)
     l2, _n = _timeout_load()
     v2.retry = "retried=1 load1=%.2f/%.2f nproc=%d at=%gs" % (l1, l2, n, at)
     if v2.kind == "HANG":
@@ -1596,7 +1600,7 @@ def _in_files_place(cwd):
         shutil.copyfile(_src, _dst); os.chmod(_dst, 0o644)
 
 
-def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
+def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, voice=None):
     _out_files_clear(cwd, out_files)
     if answer_file:
         _out_files_clear(cwd, [answer_file])
@@ -1618,7 +1622,7 @@ def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=N
         return Verdict("UNPROVEN", out, err, None, detail=err.decode("utf-8", "replace"))
     if rc is not None and rc < 0:
         return Verdict("ABORT" if -rc == 6 else "CRASH", out, err, rc, detail=f"signal {-rc}")
-    return _grade_output(out, err, rc, expected_text, want_rc=want_rc, mask=mask, merge_stderr=merge_stderr, ws_blind=ws_blind)
+    return _grade_output(out, err, rc, expected_text, want_rc=want_rc, mask=mask, merge_stderr=merge_stderr, ws_blind=ws_blind, voice=voice)
 
 
 FRESH_VAR_RX = re.compile(r"(?<![A-Za-z0-9_])_[A-Za-z]?[0-9]+(?![A-Za-z0-9_])")
@@ -1675,7 +1679,7 @@ def _spitbol_compile_refusal_verdict(out, err, rc, expected_text, want_rc, merge
     return Verdict("FAIL", out, err, rc, detail="spitbol-compile-refusal: want (line, code) %s, got %s, stdout %d bytes, rc %s" % (want, got, len(out or b""), rc))
 
 
-def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stderr=False, ws_blind=False):
+def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stderr=False, ws_blind=False, voice=None):
     """The grade of a process that ended (no hang, no signal): its stdout against the ONE ref through the masks and the one error voice,
     its rc against the declared want_rc. Shared by every run and by a mode-4 compile refusal (R-1354), so the two cannot disagree."""
     _crv = _spitbol_compile_refusal_verdict(out, err, rc, expected_text, want_rc, merge_stderr)
@@ -1685,7 +1689,7 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     got = _raw.rstrip("\n")
     _trail = len(_raw) - len(got)
     if merge_stderr:
-        got = _render_merged_stream(got)
+        got = _render_merged_stream(got, voice)
     # ⛔ RENDER ONLY WHAT THE REF CARRIES: the block is appended when the oracle's ref itself holds a fatal line (`<file>(<n>) : ERROR
     # nnn -- ...`). A ref cut without one (snocone ladder__rung23_..._stlimit_halts_a_loop_body: ref `before`, want_rc 1, the halt
     # graded by rc alone) must not gain a block it never had -- the first rung suites pass after the render landed read that entry
@@ -2029,7 +2033,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     # anywhere else. Consistent for suite entries too: run_suite_entry materializes the entry into a
     # temp dir and passes THAT path, so parent is the temp dir -- exactly where it copies companions.
     argv, env = _screen_parts(_xpce_wrap(argv, sno_path, stdin_text=stdin_text), out_files, sno_path, env, side_env)
-    return classify(argv, timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    return classify(argv, timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file, voice=_entry_merged_voice(compile_args))
 
 
 def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
@@ -2163,7 +2167,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # Same rule as run_m3 above: the compiled binary's relative opens must resolve against the
     # SOURCE's directory, not the harness's cwd. out_bin is an absolute path, so moving cwd is safe.
     argv, env = _screen_parts(_xpce_wrap(argv, sno_path, stdin_text=stdin_text), out_files, sno_path, env, side_env)
-    return classify(argv, timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    return classify(argv, timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file, voice=_entry_merged_voice(compile_args))
 
 
 # ⛔⭐ run_ast TAKES NO prog_argv AND MUST NOT -- NOT AN OVERSIGHT. `--dump-ast` never executes the
