@@ -4435,6 +4435,32 @@ def stage_fixtures(src_dir, stem, dest):
         if q.is_symlink() or not (q.is_file() or q.is_dir()):
             refuse(f"{q} is not a plain regular file or directory: a fixture tree never carries a symlink or a special file")
     shutil.copytree(d, Path(dest), dirs_exist_ok=True, copy_function=_copy2_own)
+    _stage_fixed_mtime(d, Path(dest))
+    return True
+
+
+def _stage_fixed_mtime(fx, dest):
+    """A FIXTURE TREE MAY FIX THE TIMES OF ITS STAGED FILES (the cto 2026-11-17, row unicon-gui-demos-editlisttest-explorer-and-ttexplorer-read-their-refs,
+    on officer_09's measurement: a gui demo that lists a folder shows each entry's date, and a landed file's mtime is the day its checkout wrote it, so the
+    same fixture read differently in every base). Opt-in: a file NAME.fixtures/.mtime holding one decimal integer (seconds since the epoch) sets the access
+    and modification time of every file and directory staged from the tree to that value, bottom-up so a directory's own time is set after its children's,
+    and the marker itself is never left in the run directory. A tree with no marker is staged exactly as before. A marker that is not one decimal integer
+    refuses rc 2, so a bad marker never reads as a SCRIP red. stage_fixtures is the one function the builder's cut and stage_entry both call, so a ref and
+    its grade see the same times."""
+    mk = Path(fx) / ".mtime"
+    if not mk.is_file():
+        return False
+    raw = mk.read_text().strip()
+    if not re.fullmatch(r"[0-9]+", raw):
+        refuse(f"{mk} must hold one decimal integer, the seconds since the epoch every staged fixture gets (it holds {raw[:40]!r})")
+    v = int(raw)
+    (Path(dest) / ".mtime").unlink(missing_ok=True)
+    for q in sorted(Path(fx).rglob("*"), key=lambda x: len(x.parts), reverse=True):
+        if q.parent == Path(fx) and q.name == ".mtime":
+            continue
+        t = Path(dest) / q.relative_to(fx)
+        if t.exists() or t.is_symlink():
+            os.utime(t, (v, v), follow_symlinks=False)
     return True
 
 
