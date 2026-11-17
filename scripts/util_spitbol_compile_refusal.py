@@ -23,11 +23,17 @@ import re, sys
 DIAG = re.compile(r'^\S.*?\((\d+)(?:,\d+)?\) : ERROR (\d+) -- ')
 POST_MORTEM = re.compile(r'^(in statement \d+|stmts executed|memory used \(bytes\)|memory left \(bytes\))')
 
+CARET = re.compile(r' *!')
+
 def unwrapped(lines):
+    """A line of exactly 120 columns continues on the next only when it is a diagnostic or a wrapped listing text; the caret line sbl prints under a
+    refused statement is spaces and one `!`, and when the column is 120 it is not a wrapped line (MEASURED 2026-11-17 on gate_cases_snobol4
+    test_gate_s4e_donewhen_runs_the_whole_criterion__w: the caret line of (105,112) was 120 columns, was joined with the diagnostic under it, and the pair
+    (105, 233) was lost from the oracle's list: the only ref of every package and master that holds one)."""
     out = []; i = 0
     while i < len(lines):
         l = lines[i]
-        while len(l) == 120 and i + 1 < len(lines):
+        while len(l) == 120 and i + 1 < len(lines) and not CARET.fullmatch(l):
             i += 1; l += lines[i]
         out.append(l); i += 1
     return out
