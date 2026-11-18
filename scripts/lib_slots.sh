@@ -34,6 +34,9 @@ S4E_CORES_CONF_DEFAULT=/home/resources/postoffice/CORES.conf
 s4e_cores_conf() {   # <key> -- the key's whole number in CORES.conf; nothing when the file, the key or a number is absent
     awk -F= -v k="$1" '!/^#/ && $1 == k { v = $2 } END { if (v ~ /^[0-9]+$/) print v }' "${S4E_CORES_CONF:-$S4E_CORES_CONF_DEFAULT}" 2>/dev/null
 }
+s4e_cores_word() {   # <key> -- the key's raw word in CORES.conf (weights=on); nothing when the file or the key is absent
+    awk -F= -v k="$1" '!/^#/ && $1 == k { v = $2 } END { print v }' "${S4E_CORES_CONF:-$S4E_CORES_CONF_DEFAULT}" 2>/dev/null
+}
 s4e_slot_seat() { if [ -n "${S4E_SEAT:-}" ]; then printf '%s' "$S4E_SEAT"; else pwd -P | sed -n 's|^/home/\([^/]*\).*|\1|p' | grep . || printf 'seat'; fi; }
 s4e_slot_note() {   # <kind> <t0> <cmd>... -- one line per wait of a second or more
     local f w k="$1" t0="$2"; shift 2
@@ -47,6 +50,7 @@ s4e_slot_note() {   # <kind> <t0> <cmd>... -- one line per wait of a second or m
 # rc 1 the pool directory cannot be made (the caller runs unbounded, as before). Exports S4E_RUN_SLOT_HELD=1 for a run slot.
 s4e_slot_hold() {
     local kind="$1" dir n cap lo hi seat sfd pfd i t0 grader=0
+    shift
     case "$kind" in
         cc)  dir="${S4E_CC_SLOT_DIR:-/tmp/s4e-cc-slots}"; n="${S4E_CC_SLOTS:-$S4E_CC_POOL_DEFAULT}"; cap="${S4E_CC_SEAT_CAP:-$S4E_CC_SEAT_CAP_DEFAULT}"; pfd=9; hi=$((n - 1)) ;;
         run) dir="${S4E_RUN_SLOT_DIR:-/tmp/s4e-run-slots}"; n="${S4E_RUN_SLOTS:-$S4E_RUN_POOL_DEFAULT}"; cap="${S4E_RUN_SEAT_CAP:-$S4E_RUN_SEAT_CAP_DEFAULT}"; pfd=8
@@ -66,6 +70,7 @@ s4e_slot_hold() {
         slo="$(s4e_cores_conf seats)"; slo="${slo:-0}"; [ "$slo" -le $((n - res)) ] || slo=$((n - res))
     fi
     sfd=7; seat="$(s4e_slot_seat)"
+    if [ "$one" = 1 ] && [ "$(s4e_cores_word weights)" = on ]; then s4e_weights_hold "$kind" "$grader" "$seat" "$@"; return $?; fi   # THE WEIGHTED DOOR (step 4 of 7), behind the one line weights=on: nothing below runs
     mkdir -p "$dir/seat/$seat" 2>/dev/null || return 1
     t0=$(date +%s.%N); local bound; bound="${S4E_SLOT_WAIT_MAX:-}"
     if [ -z "$bound" ] && [ "$one" = 1 ]; then bound="$(s4e_cores_conf wait)"; bound="${bound:-1800}"; fi   # with one count the rest wait: the bound is the file's, long, the same for a compile and a run
@@ -103,6 +108,32 @@ s4e_slot_hold() {
     done
     [ "$kind" = run ] && export S4E_RUN_SLOT_HELD=1
     [ "$one" = 1 ] && export S4E_CORE_HELD=1
+    S4E_SLOT_T0="$t0"
+    return 0
+}
+
+# s4e_weights_hold <kind> <grader 0|1> <seat> <cmd>... -- THE WEIGHTED DOOR, STEP 4 OF 7 (lib_weights.py carries the design): the taker's shell holds one file (fd 8 for a run, 9 for a compile) flock'd for
+# the life of its command, and lib_weights.py writes the take's measured weight into it once its turn comes; the command inherits the descriptor, as it inherited a token's. rc 0 held, 1 no door directory
+# (the caller runs unbounded, as before), 2 refused at the bound. Exports S4E_CORE_HELD (no nested take), S4E_RUN_SLOT_HELD for a run, S4E_TAKE_MC (the weight in millicores) and S4E_TAKE_CAP_S (a multiple of the key's seconds).
+s4e_weights_hold() {
+    local kind="$1" grader="$2" seat="$3" pfd out rc here W bound w m cap t0
+    shift 3
+    here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    case "$kind" in cc) pfd=9;; *) pfd=8;; esac
+    W="${S4E_RUN_SLOT_DIR:-/tmp/s4e-run-slots}/w"
+    mkdir -p "$W/h" "$W/q" 2>/dev/null || return 1
+    eval "exec $pfd<>\"$W/h/$$.$RANDOM\"" || return 1
+    flock -n "$pfd" || return 1
+    t0=$(date +%s.%N); bound="${S4E_SLOT_WAIT_MAX:-}"
+    out="$(python3 -I -S "$here/lib_weights.py" admit --class "$kind" --seat "$seat" $([ "$grader" = 1 ] && echo --grader) --holder-fd "$pfd" ${bound:+--bound "$bound"} -- "$@")"; rc=$?
+    if [ "$rc" != 0 ]; then
+        eval "exec $pfd>&-"
+        [ "$rc" = 2 ] && { s4e_slot_note "$kind-refused" "$t0" "weights bound"; printf 'REFUSE(2) [util_%s_slot]: no turn at the weighted door for %s within its bound: the box is over-admitted, nothing ran (weights=on).\n' "$kind" "$seat" >&2; return 2; }
+        return 1
+    fi
+    set -- $out; w="$1"; m="$2"; cap="$3"
+    [ "$kind" = run ] && export S4E_RUN_SLOT_HELD=1
+    export S4E_CORE_HELD=1 S4E_TAKE_MC="$w"; [ "${cap:-0}" -gt 0 ] && export S4E_TAKE_CAP_S="$cap"
     S4E_SLOT_T0="$t0"
     return 0
 }

@@ -12,6 +12,8 @@
 #   bash ../harness/scripts/util_run_slot.sh ./old.bin -d64m
 [ "$#" -gt 0 ] || { echo "usage: util_run_slot.sh <command> <args>... | util_run_slot.sh --bg [--probe] <command> <args>... | util_run_slot.sh --admit <compile|run> <command>... | util_run_slot.sh --probe-sem | util_run_slot.sh --probe-wake-take" >&2; exit 2; }
 # --probe-sem (fleet-queue step 18): util_slot_probe.sh proves the sem pools on a scratch home through the real takers, then prints one `SLOT by=sem class=... id=... cap=... timeout_s=...` line per pool class of SLOTS.tsv.
+# --probe-weights (the weighted door, step 4 of 7): lib_weights.py's probe on a scratch pool, a scratch CORES.conf and a scratch ledger; prints one WEIGHTS_PROBE line, rc 0 green, 1 red naming the arm, 2 cannot measure
+[ "$1" = --probe-weights ] && exec python3 -I -S "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_weights.py" --probe
 [ "$1" = --probe-sem ] && exec bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_slot_probe.sh"
 # --probe-wake-take (the weighted door, a wake is a take): util_wake_take.sh proves the take on a scratch pool and a scratch CORES.conf, five arms; prints WAKE-TAKE probe ok, rc 0, or RED, rc 1
 [ "$1" = --probe-wake-take ] && exec bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_wake_take.sh" --probe
@@ -58,6 +60,6 @@ fi
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_slots.sh"
 # THE COSTS LEDGER (the weighted door, step 1): the run is waited by util_cost_run.py, which appends one line of what the kernel counted for it to COSTS.tsv (S4E_COSTS=off, or no python3, execs the command bare as before); python3 -I -S, since the site import alone is 20 M instructions of the 46 M the wrapper costs.
 _s4e_cost_exec() { _cc="$1"; shift; _cr="$(dirname "$(readlink -f "$0")")/util_cost_run.py"; if [ "${S4E_COSTS:-}" != off ] && [ -f "$_cr" ] && command -v python3 >/dev/null 2>&1; then exec python3 -I -S "$_cr" --class "$_cc" --key auto -- "$@"; fi; exec "$@"; }
-s4e_slot_hold run; _rc=$?; [ "$_rc" = 2 ] && exit 2; [ "$_rc" = 0 ] || _s4e_cost_exec run "$@"
+s4e_slot_hold run "$@"; _rc=$?; [ "$_rc" = 2 ] && exit 2; [ "$_rc" = 0 ] || _s4e_cost_exec run "$@"
 s4e_slot_note run "$S4E_SLOT_T0" "$@"
 _s4e_cost_exec run "$@"

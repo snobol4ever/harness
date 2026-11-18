@@ -1112,11 +1112,40 @@ class _SlotHold:
                     f.close()
                 except OSError:
                     pass
-def _run_slot():
+def _weights_on():
+    try:
+        for line in open(os.environ.get("S4E_CORES_CONF") or "/home/resources/postoffice/CORES.conf"):
+            if re.match(r"^weights=on\s*$", line):
+                return True
+    except OSError:
+        pass
+    return False
+def _weights_hold(argv):
+    """THE WEIGHTED DOOR, STEP 4 OF 7 (lib_weights.py), the harness's taker: one hold file flock'd for the life of the run, its weight the measured one of its key (class graded; a key never run takes the class's 90th percentile); None when the door has no directory"""
+    import fcntl
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import lib_weights as _w
+    d = _w.door_dir()
+    try:
+        os.makedirs(os.path.join(d, "h"), exist_ok=True)
+        f = open(os.path.join(d, "h", "%d.%d" % (os.getpid(), int.from_bytes(os.urandom(2), "big"))), "a+b")
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        return None
+    from util_cost_run import auto_key
+    rc, _ = _w.admit("graded", auto_key([str(a) for a in (argv or [])]) if argv else "", _slot_seat(), os.environ.get("S4E_CLASS") == "grader", f.fileno(),
+                     int(os.environ["S4E_SLOT_WAIT_MAX"]) if os.environ.get("S4E_SLOT_WAIT_MAX") else None)
+    if rc != 0:
+        f.close()
+        refuse("no turn at the weighted door for %s within its bound: the box is over-admitted, nothing ran (weights=on)" % _slot_seat())
+    return _SlotHold(None, f)
+def _run_slot(argv=None):
     if os.environ.get("S4E_RUN_SLOT_HELD") or os.environ.get("S4E_CORE_HELD"):
         return None
     import fcntl, random, time
     k = _slot_knobs(); one = _cores_conf()
+    if one and _weights_on():
+        return _weights_hold(argv)
     try:
         n = max(1, int(os.environ.get("S4E_RUN_SLOTS", str(k["S4E_RUN_POOL_DEFAULT"]))))
         cap = max(1, int(os.environ.get("S4E_RUN_SEAT_CAP", str(k["S4E_RUN_SEAT_CAP_DEFAULT"]))))
@@ -1220,7 +1249,7 @@ def _bounded_run(argv, timeout, cwd, env, stdin_bytes, merge_stderr):
     big = _big_mem_door(argv)
     if big is not None:
         env = dict(env if env is not None else os.environ, S4E_BIG_MEM_HELD="1")
-    slot = _run_slot()
+    slot = _run_slot(argv)
     try:
         return _bounded_run_in_slot(argv, timeout, cwd, dict(env if env is not None else os.environ, S4E_RUN_SLOT_HELD="1") if slot else env, stdin_bytes, merge_stderr)
     finally:

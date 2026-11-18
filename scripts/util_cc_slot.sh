@@ -13,6 +13,6 @@ case "$#:${2:-}" in 2:--version|2:-dumpversion|2:-dumpfullversion|2:-dumpmachine
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_slots.sh"
 # THE COSTS LEDGER (the weighted door, step 1): the run is waited by util_cost_run.py, which appends one line of what the kernel counted for it to COSTS.tsv (S4E_COSTS=off, or no python3, execs the command bare as before); python3 -I -S, since the site import alone is 20 M instructions of the 46 M the wrapper costs.
 _s4e_cost_exec() { _cc="$1"; shift; _cr="$(dirname "$(readlink -f "$0")")/util_cost_run.py"; if [ "${S4E_COSTS:-}" != off ] && [ -f "$_cr" ] && command -v python3 >/dev/null 2>&1; then exec python3 -I -S "$_cr" --class "$_cc" --key auto -- "$@"; fi; exec "$@"; }
-s4e_slot_hold cc; _rc=$?; [ "$_rc" = 2 ] && exit 2; [ "$_rc" = 0 ] || _s4e_cost_exec cc "$@"
+s4e_slot_hold cc "$@"; _rc=$?; [ "$_rc" = 2 ] && exit 2; [ "$_rc" = 0 ] || _s4e_cost_exec cc "$@"
 s4e_slot_note cc "$S4E_SLOT_T0" "$@"
 _s4e_cost_exec cc "$@"
