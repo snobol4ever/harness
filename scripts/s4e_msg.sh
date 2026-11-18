@@ -1569,7 +1569,21 @@ s4e_next_plant_serve() {   # step 32's probe on a scratch postoffice: next write
     printf '%s\nRUNNING\n' "$ME" > "$w/claims/$x.claim"; printf '%s\nRUNNING\n' "$ME" > "$w/claims/$y.claim"; printf '%s\nASSIGNED-BY coo 2026-11-04T11:00:00Z\n' "$ME" > "$w/claims/$z.claim"
     o="$(run claim "$z")"; grep -qx RUNNING "$w/claims/$z.claim" || why="$why claim of an assigned row was refused past two live claims (the cap counted it) [$(printf '%s' "$o" | grep -m1 REFUSED | cut -c1-100)];"
     o="$(run claim "$c")"; grep -qx RUNNING "$w/claims/$c.claim" 2>/dev/null && why="$why a fourth live claim of a FREE row passed the cap of two;"
-    [ -z "$why" ] && { echo "NEXT writes=0 order=assign-time counted_live=0 (probe: two assigned rows served newest-assign first with no write, a FREE row served unlocked, an assigned row claimed past two live claims, a free row refused)"; exit 0; }
+    # THE PARKED ARM (the chairman 2026-11-18, on the cao's report from developer_11): a row assigned to this seat and then parked around its claim (the claim keeps ASSIGNED-BY and gains PARKED-AROUND, the row reads PARKED-LON-HOLD:<why> or PARKED) is served to nobody, and the older live assign beside it is served; with only parked rows left next serves neither
+    local h p k
+    h="serve-lon-hold-$$"; p="serve-parked-$$"; k="serve-live-k-$$"; rm -f "$w"/claims/*.claim
+    printf '# plant queue\n1\t%s\t%s\tPARKED-LON-HOLD:plant-hold\n1\t%s\t%s\tPARKED\n2\t%s\t%s\tASSIGNED:%s\n' "$h" "$ME" "$p" "$ME" "$k" "$ME" "$ME" > "$w/QUEUE.tsv"
+    for t in "$h" "$p" "$k"; do printf '# TASK %s\nGOAL: plant\nDONE-WHEN: false\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$t" > "$w/tasks/$t.task.md"; done
+    printf '%s\nASSIGNED-BY coo 2026-11-04T13:00:00Z\nPARKED-AROUND by coo 2026-11-04T13:10Z (claim preserved; holder done still works)\n' "$ME" > "$w/claims/$h.claim"
+    printf '%s\nASSIGNED-BY coo 2026-11-04T12:30:00Z\nPARKED-AROUND by coo 2026-11-04T12:40Z (claim preserved; holder done still works)\n' "$ME" > "$w/claims/$p.claim"
+    printf '%s\nASSIGNED-BY coo 2026-11-04T09:00:00Z\n' "$ME" > "$w/claims/$k.claim"
+    before="$(cat "$w/QUEUE.tsv" "$w"/claims/*.claim | md5sum)"; o="$(run next)"; after="$(cat "$w/QUEUE.tsv" "$w"/claims/*.claim | md5sum)"
+    [ "$before" = "$after" ] || why="$why next wrote to the queue or a claim on the parked arm;"
+    printf '%s\n' "$o" | grep -qE "^(ASSIGNED|RESUME|FREE|RESERVED|LOCKED) ($h|$p) " && why="$why a row assigned and then parked was served [$(printf '%s' "$o" | grep -m1 -E "^(ASSIGNED|RESUME|FREE|RESERVED|LOCKED) ($h|$p) " | cut -c1-80)];"
+    printf '%s\n' "$o" | grep -q "^ASSIGNED $k " || why="$why the live assign ($k) behind two parked rows was not served [$(printf '%s' "$o" | grep -m1 '^ASSIGNED\|^RESUME\|^FREE\|^LOCKED' | cut -c1-80)];"
+    rm -f "$w/claims/$k.claim"; printf '# plant queue\n1\t%s\t%s\tPARKED-LON-HOLD:plant-hold\n1\t%s\t%s\tPARKED\n' "$h" "$ME" "$p" "$ME" > "$w/QUEUE.tsv"
+    o="$(run next)"; printf '%s\n' "$o" | grep -qE "^(ASSIGNED|RESUME|FREE|RESERVED|LOCKED) ($h|$p) " && why="$why with only parked rows left one was served [$(printf '%s' "$o" | grep -m1 -E "^(ASSIGNED|RESUME|FREE|RESERVED|LOCKED) ($h|$p) " | cut -c1-80)];"
+    [ -z "$why" ] && { echo "NEXT writes=0 order=assign-time counted_live=0 parked_served=0 (probe: two assigned rows served newest-assign first with no write, a FREE row served unlocked, an assigned row claimed past two live claims, a free row refused, a row assigned and then parked served to nobody)"; exit 0; }
     echo "NEXT PROBE RED:$why"; exit 1; }
 s4e_next_probe_no_tier() {   # next --probe-no-tier (the cio's design 2026-11-08 08:4x CST, cut by officer_03 under COO-484): a seat the ROSTER names but the TIERS table lacks is REFUSED rc 2 by next, the cure (util_sync_root.sh) named and no FREE row served; the control arm, the same scratch postoffice with the seat in TIERS at tier 4, reaches the reserve over its own tubes (nothing ready in seat-<me>) and is not refused. A scratch postoffice, a scratch TIERS.tsv and the file road (the live queue is never touched). One NEXT_NO_TIER line; rc 0 only when every check holds
     local w t o rc cure free same ctl why="" before
@@ -5016,6 +5030,8 @@ TASKEOF
            # ⛔ THE LOCK ALREADY EXISTS, so the refusal cannot decline to take it; the analogue is to decline to
            # START -- the row stays ASSIGNED, unflipped, un-served, and the seat reads why. Refusing to serve is
            # not unclaiming: putting the row back is the HQ's call or an explicit `unclaim`, never a side effect.
+           # A ROW PARKED AROUND ITS ASSIGNED CLAIM IS SERVED TO NOBODY (the chairman 2026-11-18 14:3x CST; the cao's report from developer_11, MEASURED that hour: park keeps the holder's claim and appends PARKED-AROUND, so the claim still reads ASSIGNED-BY with no RUNNING, and this pass read the claim alone, never the row; seven rows parked PARKED-LON-HOLD stood so under developer_02, 04, 11 and 15, each the first thing its seat's next served). The row's state is the word: a parked, blocked or closed row is left to PASS 2, which says SKIP and keeps the claim as the record. Probe: next --probe-serve, the parked arm.
+           case "$(qrow "$t" | cut -f4)" in PARKED*|BLOCKED-ON:*|DONE*) continue;; esac
            s4e_premise_gate "$t" next || continue
            s4e_cross_lane_notice "$t" assigned
            serve "$t" "ASSIGNED" "(assigned by $(grep -m1 '^ASSIGNED-BY ' "$c" | cut -d' ' -f2) at $(grep -m1 '^ASSIGNED-BY ' "$c" | cut -d' ' -f3); newest assign first; start it: s4e_msg.sh claim $t)"; exit 0
