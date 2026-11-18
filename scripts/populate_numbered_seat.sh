@@ -15,7 +15,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; STORE="${S4E_SCRIP_STORE:-/home/SCRIP.git}"; GH="${S4E_GITHUB:-/home/.github}"
 NN="${1:-}"; FROM=/home/claude_cio; [ "${2:-}" = --from ] && FROM="${3:?--from ROOT}"
 # grader: the grade workers own root, which nothing but the controller syncs and builds (the coo 2026-11-07 16:23: a cio landing rebuilt the binary under job 1221)
-case "$NN" in [0-9][0-9]) seat="junior_$NN";; junior_[0-9][0-9]|officer_[0-9][0-9]|senior_[0-9][0-9]|grader) seat="$NN";; *) echo "usage: populate_numbered_seat.sh NN|officer_NN|senior_NN [--from ROOT]  (NN two digits: the seat is worker_NN; a named numbered seat is itself; Lon 2026-11-07 15:4x: the Opus designers and Sonnet seniors)"; exit 2;; esac
+case "$NN" in [0-9][0-9]) seat="junior_$NN";; junior_[0-9][0-9]|developer_[0-9][0-9]|officer_[0-9][0-9]|senior_[0-9][0-9]|grader) seat="$NN";; *) echo "usage: populate_numbered_seat.sh NN|developer_NN|senior_NN [--from ROOT]  (NN two digits: the seat is worker_NN; a named numbered seat is itself; Lon 2026-11-07 15:4x: the Opus designers and Sonnet seniors)"; exit 2;; esac
 root="/home/claude_$seat"; PO=/home/resources/postoffice
 [ -d "$root" ] || { echo "REFUSE(1): $root does not exist -- Lon creates the folder (/home is root's)"; exit 1; }
 [ -z "$(ls -A "$root")" ] || { echo "REFUSE(1): $root is not empty -- this script fills an empty folder only"; exit 1; }
