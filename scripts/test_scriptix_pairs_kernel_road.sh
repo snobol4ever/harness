@@ -7,7 +7,9 @@
 # A pair with a red of its own on the file road or the session host is skipped and counted, never read as a green.
 #   one line a pair: SAME, DIFFERS (the first differing line and the cell's stderr), SKIP (which road), UNMEASURED; then REALKERNEL pairs= same= differs= skipped_for_a_red_of_their_own= unmeasured=
 #   rc 0 every measured pair equal; rc 1 a pair differs; rc 2 could not measure (no binary, no jupyter, no pairs, no kernel, a spec that does not resolve to the scratch folder).
-#   PAIRS_JOBS (default 4) runs that many notebooks at once; REALKERNEL_ONLY (a space list of set/NAME) limits the run to those pairs.
+#   PAIRS_JOBS (default 4) runs that many notebooks at once; REALKERNEL_ONLY (a space list of set/NAME) limits the run to those pairs; an argument, variables or functions, limits the run to that set.
+#   THE READING IS RECORDED (the grader's ruling 2026-11-18, the second road of one entry is its own suite key): each measured pair is a row of the progress table, suite scriptix-<set>@kernel, mode m3,
+#   program the entry name, outcome PASS for SAME and FAIL for DIFFERS, through util_progress_append.py (S4E_PROGRESS_OFF=1 records nothing, S4E_PROGRESS_DB redirects the table); a skipped pair is no reading.
 : "${S4E_SCRIP:?REFUSE(2): S4E_SCRIP unset}"
 HARN="${S4E_HARNESS:-/home/harness}"
 . "$HARN/scripts/lib_paths.sh"
@@ -67,6 +69,8 @@ fi
 [ -r "$DRIVE/util_pairs_session_drive.py" ] || { echo "REFUSE(2): no session driver util_pairs_session_drive.py under $DRIVE"; exit 2; }
 command -v jupyter > /dev/null 2>&1 || { echo "REFUSE(2): no jupyter on the box"; exit 2; }
 [ -d "$TOP/variables" ] && [ -d "$TOP/functions" ] || { echo "REFUSE(2): no tests/scriptix pairs under $TOP"; exit 2; }
+SETS="${1:-variables functions}"
+case "$SETS" in variables|functions|"variables functions") ;; *) echo "REFUSE(2): the set is variables or functions, not $SETS"; exit 2;; esac
 W="$(mktemp -d /tmp/s4e/${S4E_SEAT:-seat}-realkernel.XXXXXX)"
 trap 'rm -rf "$W"' EXIT
 "$S" --kernel-install "$W/spec/kernels" > "$W/install.log" 2>&1 || { echo "REFUSE(2): scrip --kernel-install did not install the kernel: $(tail -1 "$W/install.log")"; exit 2; }
@@ -84,7 +88,7 @@ if not argv or os.path.realpath(argv[0]) != want_bin:
 ' "$W/spec/kernels/scrip" "$S" 2>&1)" || { echo "REFUSE(2): $rs"; exit 2; }
 export S4E_SCRIP S4E_CORPUS
 : > "$W/list"
-for set_ in variables functions; do
+for set_ in $SETS; do
   for f in "$TOP/$set_"/*.ipynb; do
     n="$(basename "$f" .ipynb)"
     if [ -n "$REALKERNEL_ONLY" ]; then case " $REALKERNEL_ONLY " in *" $set_/$n "*) ;; *) continue;; esac; fi
@@ -96,5 +100,7 @@ xargs -P "${PAIRS_JOBS:-4}" -L1 bash -c 'bash "$0" --one "$1" "$2" "$3"' "$0" < 
 same=$(grep -c '^SAME ' "$W/results"); differs=$(grep -c '^DIFFERS ' "$W/results"); skip=$(grep -c '^SKIP ' "$W/results"); unm=$(grep -c '^UNMEASURED ' "$W/results")
 sort "$W/results"
 echo "REALKERNEL pairs=$(wc -l < "$W/list") same=$same differs=$differs skipped_for_a_red_of_their_own=$skip unmeasured=$unm"
+awk '$1 == "SAME" || $1 == "DIFFERS" { split($2, a, "-"); n = substr($2, length(a[1]) + 2); printf "package\tscriptix-%s@kernel\tscriptix\t%s\tm3\t%s\t0\t\tshipped\n", a[1], n, ($1 == "SAME" ? "PASS" : "FAIL") }' "$W/results" > "$W/progress.tsv"
+python3 "$HARN/scripts/util_progress_append.py" rows-tsv "$W/progress.tsv" || { echo "REFUSE(2): the readings could not be recorded"; exit 2; }
 [ "$unm" = 0 ] && [ $((same + differs)) -gt 0 ] || { echo "REFUSE(2): pairs could not be measured"; exit 2; }
 [ "$differs" = 0 ]
