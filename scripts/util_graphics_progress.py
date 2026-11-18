@@ -20,7 +20,7 @@ graphics programs, so the count has its true end before every program is an entr
 the row's own total, which grows as entries are cut. A SCOPE IN SEVERAL CONTAINERS (the Unicon demos: the programs of unicon_uni and unicon_tests named
 NEEDS_GRAPHICS_FACILITY and the screen entries of rosetta-unicon) has no one suite row, since a row counts every entry of its container: its numerator is
 works:LABEL, the Works count of the language line of that label, and its denominator is the sum of the cells after it, each a glob, a lines:FILE:REGEX or
-entries:KEY, the graphics entries cut in container KEY. THE END OF THE ICON DEMOS IS 149, NOT 177 (the cto and officer_04, MEASURED 2026-11-16 12:5x CST): ipl/gprogs
+entries:KEY, the graphics entries cut in container KEY, or cut:LABEL, every entry the language line LABEL counts. GOAL Icon graphics (Lon 2026-11-18 13:0x CST, in the president's window, on the line that read ? : rename it and put a measurement there) is works:Icon graphics over cut:Icon graphics, the Works count of the Icon line over its entries, every Icon container at once; the line it replaces, Icon demos, was the suite row of ipl_gprogs alone and reached 149 of 149 on 2026-11-17. THE END OF THE ICON DEMOS WAS 149, NOT 177 (the cto and officer_04, MEASURED 2026-11-16 12:5x CST): ipl/gprogs
 holds 177 files and 149 of them call a window function, the gprogs lines of the package ipl's EXCLUDED.tsv; the other 28 draw nothing and are graded in ipl.
 Read only, nothing run. The table is GRAPHICS_PROGRESS.tsv beside this file: one line a language and one a goal.
   python3 -I util_graphics_progress.py            the header and one line a language; rc 0
@@ -136,9 +136,10 @@ def measure(e):
 
 
 def goals(e, m=None):
-    rows, works, cut = {}, {}, {}
+    rows, works, cut, total = {}, {}, {}, {}
     for row, detail, _b in (measure(e) if m is None else m):
         works[row["label"]] = sum(1 for d in detail if d[5])
+        total[row["label"]] = len(detail)
         cut.update({(d[1], d[2]): 1 for d in detail})
     per = {}
     for key, _name in cut: per[key] = per.get(key, 0) + 1
@@ -160,6 +161,7 @@ def goals(e, m=None):
                 try: return sum(1 for x in open(fn, encoding="utf-8", errors="replace") if re.search(rx, x))
                 except OSError: return None
             if c.startswith("entries:"): return per.get(c[8:], 0)   # entries:KEY, the graphics entries cut in container KEY
+            if c.startswith("cut:"): return total.get(c[4:])   # cut:LABEL, every graphics entry the language line LABEL counts (its own denominator)
             return len(glob.glob(c)) if c != "-" else (int(r[9]) if r and r[9].isdigit() else None)
         parts = [term(c) for c in f[3:] if c]
         of = None if not parts or any(x is None for x in parts) else sum(parts)
