@@ -4944,7 +4944,7 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
     elif _cdir and getattr(entry, "fixtures", False):
         stage_fixtures(_cdir, Path(entry.name).name, cand.parent)   # ALL.csv fixtures=staged: NAME.fixtures/ beside the entry's source, as the builder's cut staged it
     _dsp = bool(_cdir) and (Path(_cdir) / (Path(entry.name).name + ".display")).is_file()   # NAME.display: a text entry that needs the road's display (--no-screen)
-    for _sx in ((".events", ".cap", ".depth") if (_cdir and SCREEN_FILE in (getattr(entry, "out_files", None) or [])) else ((".display", ".depth") if _dsp else ())):
+    for _sx in ((".events", ".cap", ".depth") if (_cdir and SCREEN_FILE in (getattr(entry, "out_files", None) or [])) else ((".pty", ".keys", ".cap") if (_cdir and PTY_FILE in (getattr(entry, "out_files", None) or [])) else ((".display", ".depth") if _dsp else ()))):
         _evs = Path(_cdir) / (Path(entry.name).name + _sx)
         if _evs.is_file():
             cand.with_suffix(_sx).write_bytes(_evs.read_bytes())   # THE SCREEN ROAD'S SIDE FILES (_screen_wrap): NAME.events (W7, the event script), NAME.cap (the entry's own cap) and NAME.depth (the entry's own depth) beside a graphics entry's source travel beside the staged program
@@ -5443,7 +5443,7 @@ def _screen_entry_of_switch_pkg(e, container_dir):
     out_files names screen.dump or which carries NAME.display beside its source; every other entry keeps the switch."""
     if getattr(e, "in_place", None):
         return False
-    if SCREEN_FILE in (getattr(e, "out_files", None) or []):
+    if SCREEN_FILE in (getattr(e, "out_files", None) or []) or PTY_FILE in (getattr(e, "out_files", None) or []):
         return True
     return (Path(container_dir) / Path(e.name).parent / (Path(e.name).name + ".display")).is_file()
 
@@ -8221,6 +8221,31 @@ def validate_stderr_cell(raw, where):
 
 
 SCREEN_FILE = "screen.dump"
+PTY_FILE = "pty.dump"
+def _pty_wrap(argv, out_files, src=None):
+    """THE TERMINAL ROAD (skill suites-and-grading section 4, the cqo's design of 2026-11-17; Lon: "well that is simply Poppycock. Get those tests cut,
+    graded, and scored."): an entry whose out_files names pty.dump is a program that needs a terminal. Its command runs under util_pty_run.py, on a
+    pseudo-terminal of 24 rows and 80 columns with TERM vt100 and one fixed termcap entry; that script writes the screen at each still point to
+    pty.dump, which the out_files road appends to the answer like any written file, and with NAME.keys beside the program (staged there from beside
+    the entry's source) it types those steps after each still point. NAME.cap (one whole number of seconds from 1 to 3600) is the longest it waits
+    for a still screen, as the screen road's. THE MARKER IS NAME.pty: it must stand beside an entry that names pty.dump, and a NAME.pty whose entry
+    does not name it, or an entry that names both pty.dump and screen.dump, is refused rc 2. Returns None for every other entry, and the caller goes on."""
+    _mk = Path(src).with_suffix(".pty") if src else None
+    _has = bool(out_files) and PTY_FILE in out_files
+    if _mk is not None and _mk.is_file() and not _has:
+        refuse(f"{_mk}: NAME.pty marks a terminal entry and the entry does not name {PTY_FILE} in out_files")
+    if not _has: return None
+    if SCREEN_FILE in out_files:
+        refuse(f"{src}: the entry names {PTY_FILE} and {SCREEN_FILE} in out_files; a terminal and a window are two roads, one entry each")
+    _cap = Path(src).with_suffix(".cap") if src else None
+    _capw = []
+    if _cap is not None and _cap.is_file():
+        _n = _cap.read_text(errors="replace").strip()
+        if not _n.isdigit() or not 1 <= int(_n) <= 3600:
+            refuse(f"{_cap}: the terminal road's cap is one whole number of seconds from 1 to 3600, and this file reads {_n[:40]!r}")
+        _capw = ["--cap", str(int(_n))]
+    _ky = Path(src).with_suffix(".keys") if src else None
+    return [sys.executable, str(HARNESS_SCRIPTS / "util_pty_run.py"), "--out", PTY_FILE] + _capw + (["--keys", str(_ky.resolve())] if _ky is not None and _ky.is_file() else []) + ["--"] + list(argv)
 def _screen_wrap(argv, out_files, src=None):
     """THE SCREEN ROAD (Lon 2026-11-14: "We are absolutely DOING GRAPHICS, X-windows." / "We should be able to do off-line ... GUI tests."; skill icon
     section 1): an entry whose out_files names screen.dump is a graphics program. Its command runs under util_screen_run.py, on a virtual X display
@@ -8240,6 +8265,8 @@ def _screen_wrap(argv, out_files, src=None):
     but has NAME.display beside its program (a marker, its text unread) is graded on its text alone and still needs a display: it runs under the
     road with --no-screen, which gives it the road's own display and never reads the screen or ends the program; NAME.depth applies to it too. An
     entry that names screen.dump and carries NAME.display asks two things at once and is refused rc 2."""
+    _pt = _pty_wrap(argv, out_files, src)
+    if _pt is not None: return _pt
     _dsp = Path(src).with_suffix(".display") if src else None
     if _dsp is not None and _dsp.is_file():
         if out_files and SCREEN_FILE in out_files:
