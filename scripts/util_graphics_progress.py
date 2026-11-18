@@ -25,7 +25,7 @@ holds 177 files and 149 of them call a window function, the gprogs lines of the 
 Read only, nothing run. The table is GRAPHICS_PROGRESS.tsv beside this file: one line a language and one a goal.
   python3 -I util_graphics_progress.py            the header and one line a language; rc 0
   python3 -I util_graphics_progress.py --list     every graphics entry: language, suite key, entry, its newest reading, scripted or not, counted or not
-  python3 -I util_graphics_progress.py --probe    eight arms on a scratch store, corpus and postoffice; PROBE ok | RED"""
+  python3 -I util_graphics_progress.py --probe    nine arms on a scratch store, corpus and postoffice; PROBE ok | RED"""
 import csv, glob, os, re, shutil, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -62,7 +62,7 @@ def containers(e, lang, excluded, only=()):
     return out
 
 
-def entries(key, d):
+def entries(key, d, aside_ok=False):
     out = []
     try:
         rd = list(csv.DictReader(open(os.path.join(d, "ALL.csv"), encoding="utf-8", errors="replace")))
@@ -70,11 +70,17 @@ def entries(key, d):
         return out
     # THE STAND-IN (the cto 2026-11-18, row ipl-gprogs-the-last-four-scripts-ruled): an entry named in its container's EVENTS-NONE.tsv whose reason carries the
     # word STAND-IN counts on its mode-3 pass, its still picture being all a test can read of it; a plain EVENTS-NONE line still waits on a script.
-    stand = set()
+    # THE SET-ASIDE (the cqo 2026-11-18, row unicon-graphics-the-measure-prints-a-set-aside-entry-and-leaves-it-out-of-the-goal; Lon 13:0x CST: "You can forget
+    # about writing scripts for the huge apps since I will try/test those by hand."): on the UNICON line alone (aside_ok, the line that names its containers in
+    # the column only) an entry named in its container's EVENTS-NONE.tsv with a measured reason, and no STAND-IN in it, is SET-ASIDE: it is printed so by --list
+    # and leaves the numerator and the denominator of the line and of its goal, which names how many are set aside. A STAND-IN line is the Icon rule above and
+    # stays one on every line (it counts on its mode-3 pass), so the two rules never meet on an entry; the Icon line's containers are never set aside.
+    stand, aside = set(), set()
     try:
         for ln in open(os.path.join(d, "EVENTS-NONE.tsv"), encoding="utf-8", errors="replace"):
             f = ln.rstrip("\n").split("\t")
             if len(f) > 1 and not ln.startswith("#") and "STAND-IN" in f[1]: stand.add(f[0].strip())
+            elif aside_ok and len(f) > 1 and not ln.startswith("#") and f[0].strip() and f[1].strip(): aside.add(f[0].strip())
     except OSError:
         pass
     for r in rd:
@@ -83,7 +89,7 @@ def entries(key, d):
         stems = [os.path.join(d, name)]
         if r.get("path"): stems.insert(0, os.path.join(d, os.path.splitext(r["path"])[0]))
         if "screen.dump" not in (r.get("out_files") or "").split() and not any(os.path.isfile(s + ".display") for s in stems): continue
-        out.append((key, name, any(os.path.isfile(s + ".events") for s in stems), name in stand))
+        out.append((key, name, any(os.path.isfile(s + ".events") for s in stems), name in stand, name in aside))
     return out
 
 
@@ -133,23 +139,24 @@ def measure(e):
     out = []
     for row in table(e):
         ents = []
-        for key, d in containers(e, row["lang"], row["excluded"], row.get("only") or ()): ents += entries(key, d)
-        new = readings(e, {k for k, _n, _s, _t in ents})
+        for key, d in containers(e, row["lang"], row["excluded"], row.get("only") or ()): ents += entries(key, d, bool(row.get("only")))
+        new = readings(e, {k for k, _n, _s, _t, _a in ents})
         detail = []
-        for key, name, scr, std in ents:
+        for key, name, scr, std, aside in ents:
             rd = new.get((key, name), ("", "UNREAD"))[1]
             need = key in row["scripted"]
-            detail.append((row["lang"], key, name, rd, scr, rd == "PASS" and (scr or std or not need)))
+            detail.append((row["lang"], key, name, rd, scr, rd == "PASS" and (scr or std or not need) and not aside, aside))
         out.append((row, detail, built(e, row)))
     return out
 
 
 def goals(e, m=None):
-    rows, works, cut, total = {}, {}, {}, {}
+    rows, works, cut, total, aside = {}, {}, {}, {}, {}
     for row, detail, _b in (measure(e) if m is None else m):
         works[row["label"]] = sum(1 for d in detail if d[5])
-        total[row["label"]] = len(detail)
-        cut.update({(d[1], d[2]): 1 for d in detail})
+        total[row["label"]] = sum(1 for d in detail if not d[6])
+        aside[row["label"]] = sum(1 for d in detail if d[6])
+        cut.update({(d[1], d[2]): 1 for d in detail if not d[6]})
     per = {}
     for key, _name in cut: per[key] = per.get(key, 0) + 1
     try:
@@ -174,21 +181,21 @@ def goals(e, m=None):
             return len(glob.glob(c)) if c != "-" else (int(r[9]) if r and r[9].isdigit() else None)
         parts = [term(c) for c in f[3:] if c]
         of = None if not parts or any(x is None for x in parts) else sum(parts)
-        out.append((f[1], have, of))
+        out.append((f[1], have, of, aside.get(f[2][6:], 0) if f[2].startswith("works:") else 0))
     return out
 
 
 def render(e):
     lines = []; m = measure(e)
-    for label, have, of in goals(e, m):
+    for label, have, of, nas in goals(e, m):
         if have is None or not of: lines.append("%-17s%14s%8s  %s" % ("GOAL " + label, "?", "-", "the suite row or the library is unread")); continue
-        lines.append("%-17s%14s%8s  %s" % ("GOAL " + label, "%d/%d" % (have, of), "%5.1f%%" % (100.0 * have / of), "%d to go" % (of - have) if of > have else "REACHED"))
+        lines.append("%-17s%14s%8s  %s" % ("GOAL " + label, "%d/%d" % (have, of), "%5.1f%%" % (100.0 * have / of), ("%d to go" % (of - have) if of > have else "REACHED") + (", %d set aside" % nas if nas else "")))
     lines.append("%-17s%14s%8s  %-22s%s" % ("Graphics", "Works", "Pct", "", "Built"))
     for row, detail, b in m:
-        n = len(detail); w = sum(1 for d in detail if d[5]); s = sum(1 for d in detail if d[4])
+        n = sum(1 for d in detail if not d[6]); w = sum(1 for d in detail if d[5]); s = sum(1 for d in detail if d[4] and not d[6]); na = len(detail) - n
         need = sum(1 for d in detail if d[1] in row["scripted"])
         pct = "%5.1f%%" % (100.0 * w / n) if n else "    -"
-        note = "none cut yet" if not n else ("%d of %d scripted" % (sum(1 for d in detail if d[4] and d[1] in row["scripted"]), need) if need else "%d scripted" % s)
+        note = "none cut yet" if not n and not na else ("%d of %d scripted" % (sum(1 for d in detail if d[4] and d[1] in row["scripted"] and not d[6]), need) if need else "%d scripted" % s) + (", %d set aside" % na if na else "")
         bt = "no step table" if b is None else "%d/%d steps" % b
         lines.append("%-17s%14s%8s  %-22s%s" % (row["label"], "%d/%d" % (w, n), pct, note, bt))
     return lines
@@ -235,8 +242,8 @@ def probe():
         g = goals(e)
         open(os.path.join(t, "scope.tsv"), "w").write("# c\ngprogs/a.icn\tX\ngprogs/b.icn\tY\nprogs/c.icn\tX\n")
         open(os.path.join(t, "table.tsv"), "a").write("goal\tBy lines\tpk\tlines:%s:^gprogs/\n" % os.path.join(t, "scope.tsv"))
-        if goals(e)[-1] != ("By lines", 3, 2): why += " arm6 a lines denominator reads %r, wanted 3 of 2 lines found;" % (goals(e)[-1],)
-        g = goals(e)[:3]
+        if goals(e)[-1][:3] != ("By lines", 3, 2): why += " arm6 a lines denominator reads %r, wanted 3 of 2 lines found;" % (goals(e)[-1],)
+        g = [x[:3] for x in goals(e)[:3]]
         if g != [("Icon demos", 3, 5), ("GUI packs", 3, 7), ("No row", None, None)]: why += " arm6 the goal lines read %r, wanted 3 of 5 by the glob, 3 of 7 by the row, and a missing row unread;" % (g,)
         if len(measure(e)) != 1: why += " arm6 a goal line was read as a language line;"
         d2 = os.path.join(t, "corpus/packages/icon/un"); os.makedirs(d2)
@@ -248,7 +255,7 @@ def probe():
             ("2026-01-01T00:00:00", "s", "c", "g", "package", "pk", "icon", "a", "m3", "PASS")])
         mm = measure(e); g = [(r["label"], sum(1 for d in det if d[5]), len(det)) for r, det, _b in mm]
         if g != [("Icon graphics", 1, 5), ("Unicon graphics", 1, 2)]: why += " arm7 the two lines read %r, wanted Icon 1 of 5 with un left out and Unicon 1 of 2 from un alone;" % (g,)
-        g = goals(e, mm)[-2:]
+        g = [x[:3] for x in goals(e, mm)[-2:]]
         if g != [("Unicon demos", 1, 4), ("No line", None, 2)]: why += " arm7 the scope goal reads %r, wanted 1 of 4 (two lines found and two entries cut) and a line nobody has unread;" % (g,)
         os.makedirs(os.path.join(t, "designs/y"))
         open(os.path.join(t, "designs/y/STEPS.tsv"), "w").write("# c\nstep\tslug\trow\n0\tbaseline\t-\n1\tone\t-\n2\ttwo\tun-a-row-of-another-name\n3\tthree\tun-open-row\n")
@@ -257,9 +264,20 @@ def probe():
         open(os.path.join(t, "table.tsv"), "w").write(tb)
         b = [bb for r, _d, bb in measure(e) if r["label"] == "Unicon graphics"]
         if b != [(2, 3)]: why += " arm8 a step closed by its number's row and one closed by the row its table names read %r, wanted 2 of 3;" % (b,)
+        open(os.path.join(d2, "EVENTS-NONE.tsv"), "w").write("# h\nua\tMEASURED: tested by hand\nuz\t\n")
+        open(os.path.join(d, "EVENTS-NONE.tsv"), "w").write("# h\na\tMEASURED: waits for a script\n")
+        db([("2026-01-01T00:00:00", "s", "c", "g", "package", "un", "icon", "ua", "m3", "PASS"), ("2026-01-01T00:00:00", "s", "c", "g", "package", "pk", "icon", "a", "m3", "PASS")])
+        mm = measure(e); lst = {(r["label"], d_[2]): d_ for r, det, _b in mm for d_ in det}
+        if not lst[("Unicon graphics", "ua")][6] or lst[("Unicon graphics", "ub")][6] or lst[("Unicon graphics", "ua")][5]: why += " arm9 an entry with a measured EVENTS-NONE line on the Unicon line reads set aside %r, one without reads %r, a set-aside entry counted as working %r (wanted True, False, False);" % (lst[("Unicon graphics", "ua")][6], lst[("Unicon graphics", "ub")][6], lst[("Unicon graphics", "ua")][5])
+        if lst[("Icon graphics", "a")][6]: why += " arm9 an EVENTS-NONE line in an Icon container read set aside (the Icon line is the cto's, wanted not);"
+        g = [x for x in goals(e, mm) if x[0] == "Unicon demos"][0]
+        if g != ("Unicon demos", 0, 3, 1): why += " arm9 the scope goal reads %r, wanted 0 of 3 with 1 set aside (ub, one line found and one entry cut, ua left out);" % (g,)
+        open(os.path.join(d2, "EVENTS-NONE.tsv"), "w").write("# h\nua\tSTAND-IN: ruled by the cto\n")
+        db([("2026-01-01T00:00:00", "s", "c", "g", "package", "un", "icon", "ua", "m3", "PASS")]); mm = measure(e)
+        if [(sum(1 for x in det if x[5]), sum(1 for x in det if x[6])) for r, det, _b in mm if r["label"] == "Unicon graphics"] != [(1, 0)]: why += " arm9 a STAND-IN line on the Unicon line was set aside, wanted counted;"
     finally:
         shutil.rmtree(t, ignore_errors=True)
-    print("GRAPHICS-PROGRESS PROBE " + ("RED:" + why if why else "ok arms=8 (empty store, the script rule, newest wins, dirty and mode 4 unread, a display entry, the goal lines, a line of named containers and its scope goal, a step's row named by its table; steps closed by the done file and by a baton, never by a claim)"))
+    print("GRAPHICS-PROGRESS PROBE " + ("RED:" + why if why else "ok arms=9 (empty store, the script rule, newest wins, dirty and mode 4 unread, a display entry, the goal lines, a line of named containers and its scope goal, a step's row named by its table, a Unicon entry set aside by a measured EVENTS-NONE line and never an Icon one; steps closed by the done file and by a baton, never by a claim)"))
     return 1 if why else 0
 
 
@@ -268,7 +286,7 @@ if __name__ == "__main__":
     e = env()
     if "--list" in sys.argv:
         for row, detail, _b in measure(e):
-            for lang, key, name, rd, scr, cnt in detail: print("\t".join((lang, key, name, rd, "scripted" if scr else "-", "WORKS" if cnt else "-")))
+            for lang, key, name, rd, scr, cnt, aside in detail: print("\t".join((lang, key, name, rd, "scripted" if scr else "-", "SET-ASIDE" if aside else "WORKS" if cnt else "-")))
         sys.exit(0)
     try:
         print("\n".join(render(e)))
