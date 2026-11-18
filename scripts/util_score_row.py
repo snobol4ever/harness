@@ -1784,6 +1784,127 @@ def _gimpel_population(tdir):
     return sorted(pre + f for f in libs), {pre + f for f in driven}
 
 
+# ⭐⭐ THE ONE COUNTER OF LINES OF CODE (Lon 2026-11-18 10:1x CST, in the president's window, verbatim: "regarding the test-suite banners, the summary and detail versions,
+# include lines-of-code, LoC, in addition to number of test programs/snippets."; row harness-the-suite-banners-show-lines-of-code-beside-the-count-of-programs). THE LoC OF A
+# SUITE is the count of non-blank lines of the program text of the entries of its DENOMINATOR, the same members its Total counts (from-progress hands them here as it
+# has just read them: an excluded program is never one of them), never a ref, an input or an answer file, and never a companion or an include (a unit, ALL.units). THE
+# READER OF ENTRIES IS THE HARNESS'S OWN, corpus_suite_harness.py's, the one authority for the three forms: read_block_suite for a language that has a comment grammar
+# (raku, rebus, pascal, prolog, icon, snocone, scriptix), read_suite for snobol4 and unicon, which reads format 2 (ONE-LINERS / MULTI-LINERS.md), the files form of a
+# package (the program is the file the path column names; an unhosted package's root is ALL.source's) and the old container (ALL.<ext> with its banners) alike, so the banner
+# and the grader never disagree on what an entry is, and no second parser of containers stands here. A member no entry names (a bench or demos suite, whose programs are files
+# beside its folder) is the file of that name beside the table, and one that is neither is MISSING: it is counted by name in the line SUITE_ROW_LOC, never as a silent zero.
+# A suite whose reader refuses reports `unread` and leaves its cell as it was: a wrong number is never written.
+# THE CACHE (a corpus folder's tree hash, git's own, plus the members): the row is rewritten after every chunk, and reading a 1,900-entry package takes seconds; a folder
+# that has not changed since its last count is read again from /home/resources/progress/loc-cache, and an unhosted package (ALL.source) is read again at least once a day.
+_LOC_VERSION = 1   # part of the cache key: a change to the counting rules bumps it, so no old count outlives the rule that made it
+_LOC_EXTS = (".sno", ".spt", ".sbl", ".icn", ".pl", ".pas", ".raku", ".sc", ".reb", ".md", ".inc", ".INC", ".pp", ".p")
+
+
+def _loc_nonblank(lines):
+    return sum(1 for l in lines if l.strip())
+
+
+def _loc_entries(tdir, lang):
+    """{entry name: its non-blank program lines} read by the harness's own reader for this table directory, or None when the directory holds no container or index at all."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import corpus_suite_harness as _h
+    from pathlib import Path as _P
+    d = _P(tdir)
+    if not ((d / "ALL.csv").is_file() or (d / "MULTI-LINERS.md").is_file()):
+        return None
+    cfg = _h.LANG_CONFIGS.get(lang)
+    ext = cfg["ext"] if cfg else {"snobol4": ".sno", "unicon": ".icn"}.get(lang, ".sno")
+    src = str(d / ("ALL" + ext))
+    if _h.fmt2_dir_of(src) is None and _h.pkg_dir_of(src) is None and not os.path.isfile(src):
+        return None   # an index with no container beside it (GNU Prolog's table names files in folders): its members are the files themselves
+    kw = dict(in_path=_h.sidecar_in_path(src), x_path=_h.sidecar_xfail_path(src), w_path=_h.sidecar_wantrc_path(src), a_path=_h.sidecar_argv_path(src))
+    if cfg:
+        es = _h.read_block_suite(src, str(d / "ALL.ref"), _h.banner_re_for(cfg["comment_open"], cfg["comment_close"]), **kw)
+    else:
+        es = _h.read_suite(src, str(d / "ALL.ref"), **kw)
+    return {e.name: _loc_nonblank(e.sno_lines) for e in es}
+
+
+def _loc_sig(corpus, tdir, lang, members):
+    """the cache key: git's tree hash of the table folder (none when it is no tracked folder of a clean corpus, so a scratch corpus or an edited folder is never cached) and the members"""
+    import hashlib
+    try:
+        rel = os.path.relpath(os.path.realpath(tdir), os.path.realpath(corpus))
+        if rel.startswith(".."):
+            return None
+        if subprocess.run(["git", "-C", corpus, "status", "--porcelain", "--", rel], capture_output=True, text=True, timeout=60).stdout.strip():
+            return None
+        t = subprocess.run(["git", "-C", corpus, "rev-parse", "HEAD:" + rel], capture_output=True, text=True, timeout=60)
+        if t.returncode != 0 or not t.stdout.strip():
+            return None
+        h = hashlib.sha1((str(_LOC_VERSION) + "\0" + t.stdout.strip() + "\0" + lang + "\0" + "\n".join(sorted(members))).encode("utf-8", "replace")).hexdigest()
+        if os.path.exists(os.path.join(tdir, "ALL.source")):   # its programs live outside the corpus repo: read again at least once a day
+            h += ":" + str(int(time.time() // 86400))
+        return h
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def suite_loc(corpus, key, tdir, lang, members, cases=False):
+    """(loc, missing names) for a suite's denominator MEMBERS, or a string saying why it could not be counted. Never reads a ref, an input, an include or a companion."""
+    import json
+    cdir = os.path.join(os.path.dirname(os.path.abspath(SUITES_TSV)), "loc-cache")
+    sig = _loc_sig(corpus, tdir, lang, members)
+    cf = os.path.join(cdir, re.sub(r"[^A-Za-z0-9_.@-]", "_", key) + ".json")
+    if sig:
+        try:
+            c = json.load(open(cf, encoding="utf-8"))
+            if c.get("sig") == sig:
+                return int(c["loc"]), list(c.get("missing", []))
+        except (OSError, ValueError, KeyError):
+            pass
+    try:
+        table = _loc_entries(tdir, lang)
+    except (SystemExit, Exception) as ex:   # the harness's refuse() raises SystemExit: a reader that refused is no count
+        return "the harness's reader of %s refused (%s: %s)" % (os.path.relpath(tdir, corpus), type(ex).__name__, str(ex)[:120])
+    keyed, bk = {}, None
+    if table and os.sep + os.path.join("packages", "icon") + os.sep in os.path.realpath(tdir) + os.sep:
+        from lib_package_keys import board_key as _bk   # an Icon library is graded through its driver and keyed by the library's name
+        for e in table:
+            keyed.setdefault(_bk(tdir, "icon", e), e)
+    import corpus_suite_harness as _hh
+    _lcfg = _hh.LANG_CONFIGS.get(lang)
+    _lext = (_lcfg["ext"],) if _lcfg else ((".sno",) if lang == "snobol4" else (".icn",) if lang == "unicon" else ())
+    seen, loc, missing = set(), 0, []
+    for m in members:
+        b = m
+        if cases:
+            b = b.split(":", 1)[0]
+            b = b[:-3] if b.endswith(".pl") else b
+        elif key == "logtalk":
+            mm = re.match(r"^(.*)#\d+$", b)
+            b = mm.group(1) if mm and m not in (table or {}) else b
+        name = b if table is not None and b in table else (keyed.get(b) if table else None)
+        if name is not None:
+            if name not in seen:
+                seen.add(name)
+                loc += table[name]
+            continue
+        _xs = _lext + tuple(x for x in _LOC_EXTS if x not in _lext)   # the language's own extension first: a snocone benchmark stands beside its transpiled .sno
+        _cands = [os.path.join(tdir, b + x) for x in ("",) + _xs]
+        _cands += [os.path.join(tdir, sub, b + x) for sub in (sorted(os.listdir(tdir)) if os.path.isdir(tdir) else []) if os.path.isdir(os.path.join(tdir, sub)) for x in _xs]   # a bench folder's programs one folder down
+        found = next((c for c in _cands if os.path.isfile(c)), None)
+        if found is None:
+            missing.append(m)
+        elif found not in seen:
+            seen.add(found)
+            loc += _loc_nonblank(open(found, encoding="utf-8", errors="replace").read().split("\n"))
+    if sig:
+        try:
+            os.makedirs(cdir, exist_ok=True)
+            tmp = cf + ".%d.tmp" % os.getpid()
+            json.dump({"sig": sig, "loc": loc, "missing": missing[:50]}, open(tmp, "w", encoding="utf-8"))
+            os.replace(tmp, cf)
+        except OSError:
+            pass
+    return loc, missing
+
+
 def from_progress_table(corpus, key):
     """(table dir, progress suite name) for a SUITES.tsv key: the seven masters by name, a package by the harness's own key rule
     (PROGRESS_PACKAGE_KEYS: a package directory's progress key, else its name), or (None, None)."""
@@ -1866,7 +1987,42 @@ def wall_cell(mins):
     return str(int(round(sum(mins)))) if mins else "none"
 
 
+def backfill_loc(a):
+    """from-progress --backfill-loc: fill the loc cell of EVERY row once and touch no reading (the grader runs it once after the LoC landing). The column is added first (the banner's
+    --add-loc-column, idempotent), then each bare row is counted by the one counter on its own denominator and set with --set-loc, then each port engine's row takes its bare key's cell."""
+    import copy
+    env = dict(os.environ); env["S4E_SUITES_TSV"] = SUITES_TSV; env["S4E_SCORE_MD"] = SCORE_MD
+    r = subprocess.run([sys.executable, SUITE_BANNER, "--add-loc-column"], capture_output=True, text=True, env=env)
+    sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
+    if r.returncode != 0:
+        return r.returncode
+    rows, err = suites_rows()
+    if err:
+        print("REFUSE(2): from-progress --backfill-loc: %s" % err)
+        return 2
+    bad = []
+    for k in [x["key"] for x in rows if "@" not in x.get("key", "")]:
+        ns = copy.copy(a); ns.suite = k; ns.backfill_loc = False; ns.loc_only = True; ns.dry_run = False; ns.reds = False; ns.wall_only = False
+        rc = cmd_from_progress(ns)
+        if rc != 0:
+            bad.append(k)
+    rows, _ = suites_rows()
+    barec = {x["key"]: (x.get("loc") or "").strip() for x in rows if "@" not in x.get("key", "")}
+    for x in rows:
+        k = x.get("key", "")
+        if "@" in k and barec.get(k.partition("@")[0], "").isdigit():
+            r = subprocess.run([sys.executable, SUITE_BANNER, "--set-loc", k, barec[k.partition("@")[0]]], capture_output=True, text=True, env=env)
+            sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
+    print("BACKFILL_LOC rows=%d unread=%d%s" % (len([x for x in rows if "@" not in x.get("key", "")]), len(bad), (": " + " ".join(bad)) if bad else ""))
+    return 1 if bad else 0
+
+
 def cmd_from_progress(a):
+    if getattr(a, "backfill_loc", False):
+        return backfill_loc(a)
+    if not a.suite:
+        print("REFUSE(2): from-progress needs --suite KEY (or --backfill-loc)")
+        return 2
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import csv as _csv, collections as _c
     import util_suite_rows_vs_progress as _aud
@@ -2168,6 +2324,31 @@ def cmd_from_progress(a):
           "(PASS %d FAIL %d OUTSIDE %d UNGRADABLE %d UNGRADED %d DEFERRED %d) timed=%d"
           % (full_key, cnt["PASS"], total, len(d), len(unread), len(halfread), oldest[1], oldest[0], newest[1], newest[0], wall, dbsuite,
              os.path.relpath(tdir, corpus), cnt["PASS"], cnt["FAIL"], cnt["OUTSIDE"], cnt["UNGRADABLE"], cnt["UNGRADED"], cnt["DEFERRED"], timed))
+    # ⭐ THE LoC OF THE ROW, COUNTED FROM THE DENOMINATOR JUST READ (suite_loc above): every write counts it and sets the loc cell in the same write as the reading; a --dry-run counts it
+    # only when asked (--loc), so the DONE-WHEN reads of other rows, which run --reds --dry-run, stay fast; a port's row carries the loc of its bare key (the same suite, another engine).
+    loc_val = None
+    if not getattr(a, "wall_only", False) and (not a.dry_run or getattr(a, "loc", False) or getattr(a, "loc_only", False)):
+        _lrows, _lerr = suites_rows()
+        _bare = next((r for r in _lrows if r.get("key") == key), {})
+        if port:
+            _v = (_bare.get("loc") or "").strip()
+            loc_val = int(_v) if _v.isdigit() else None
+            print("SUITE_ROW_LOC suite=%s loc=%s (a port engine's row carries the loc of its bare key %s)" % (full_key, "-" if loc_val is None else loc_val, key))
+        else:
+            _lr = suite_loc(corpus, key, tdir, (_bare.get("lang") or "").strip(), sorted(pkg_pop) if pkg else list(pop), cases=_cases)
+            if isinstance(_lr, str):
+                print("SUITE_ROW_LOC suite=%s unread: %s (the loc cell is left as it was)" % (full_key, _lr))
+            else:
+                loc_val, _lmiss = _lr
+                print("SUITE_ROW_LOC suite=%s loc=%d members=%d missing=%d%s" % (full_key, loc_val, total, len(_lmiss), (": " + " ".join(_lmiss[:10])) if _lmiss else ""))
+    if getattr(a, "loc_only", False):
+        # --backfill-loc: the cell alone, no reading touched
+        if loc_val is None:
+            return 0 if port else 1
+        _env = dict(os.environ); _env["S4E_SUITES_TSV"] = SUITES_TSV; _env["S4E_SCORE_MD"] = SCORE_MD
+        _r = subprocess.run([sys.executable, SUITE_BANNER, "--set-loc", full_key, str(loc_val)], capture_output=True, text=True, env=_env)
+        sys.stdout.write(_r.stdout); sys.stderr.write(_r.stderr)
+        return _r.returncode
     if getattr(a, "reds", False):
         # ⭐ --reds (the coo 2026-10-22; R-1886, Lon's order to send the cto the red entry lists of the near-100 suites): every member of the row's
         # population that is not PASS in every mode, with each mode's newest reading and its tree, read from the population the count reads; the
@@ -2250,6 +2431,8 @@ def cmd_from_progress(a):
     # suite's time printed as all of it (IcnRungs read WALL=221s from one tier-2 subset, 2026-10-11 14:1x); until then the row keeps its own
     if excluded is not None:
         cmd += ["--excluded", str(excluded)]
+    if loc_val is not None:
+        cmd += ["--loc", str(loc_val)]
     r = subprocess.run(cmd, capture_output=True, text=True, env=env)
     sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
     if r.returncode == 0:
@@ -5651,13 +5834,15 @@ def main():
     s = sub.add_parser("selftest", help="prove rewrite-in-place and every refusal path, on a scratch copy")
     s.set_defaults(fn=cmd_selftest)
     fp = sub.add_parser("from-progress", help="assemble ONE SUITE TABLE row from the latest per-program readings in the progress DB (R-1676 row (b)): the AND per program over m3 and m4 at each entry's newest reading, any tree; prints SUITE_ROW with the oldest and newest reading's tree (and per partition part); runs no suite")
-    fp.add_argument("--suite", required=True, help="the SUITES.tsv key (reb-rungs, swi, ...)")
+    fp.add_argument("--suite", default="", help="the SUITES.tsv key (reb-rungs, swi, ...); not needed with --backfill-loc")
+    fp.add_argument("--loc", action="store_true", help="with --dry-run, also count the row's lines of code and print SUITE_ROW_LOC (a write always counts and sets it)")
+    fp.add_argument("--backfill-loc", action="store_true", help="fill the loc cell of every row once and touch no reading (adds the column first); the grader runs it once after the LoC landing")
     fp.add_argument("--dry-run", action="store_true", help="print the row and the population it read; write nothing")
     fp.add_argument("--reds", action="store_true", help="also print SUITE_ROW_RED <entry> <mode>=<outcome>@<tree>... for every member not PASS in every mode (with --dry-run, writes nothing); refuses rc 2 when the list's length is not total - pass")
     fp.add_argument("--criterion-changed", default="", metavar="'YYYY-MM-DD:reason'", help="stamp a criterion change on the row (passed to util_suite_banner.py --set; S4E_CRITERION_CHANGED fills it)")
     fp.add_argument("--partial", action="store_true", help="write the row while entries are unread or read in one mode only, counting them as not passing (the total is the whole population, so a partial row never reads higher than a full one); the cycle passes it so every chunk reports as it comes (Lon 2026-11-12)")
     fp.add_argument("--wall-only", action="store_true", help="set ONLY the row's Wall (the sum of each member's minimum time) and nothing else: no pass, total, date or tree; needs the minimum-seconds ledger")
-    fp.set_defaults(fn=cmd_from_progress)
+    fp.set_defaults(fn=cmd_from_progress, loc_only=False)
     n = sub.add_parser("seat-name", help="print THE ONE seat identity derived from the root path; runs no suite")
     n.set_defaults(fn=cmd_seat_name)
     a = p.parse_args()
