@@ -5,7 +5,7 @@ able to do off-line (i.e. without physical window in which a human user is requi
 
   python3 util_screen_run.py [--out FILE] [--cap S] [--still-cpu S] [--keep DUMP.xwd] [--events SCRIPT] [--depth 8|24] -- CMD ARG...
   python3 util_screen_run.py --no-screen [--depth 8|24] -- CMD ARG...
-  python3 util_screen_run.py --probe
+  python3 util_screen_run.py --probe | --probe-wm
 
 It starts an Xvfb (1024x768, 24 bits, a display number the server picks, no TCP), runs CMD with DISPLAY set and the caller's standard
 input, and dumps the root window (xwd) every POLL seconds. THE ANSWER is FILE (default screen.dump, in the current directory), one line:
@@ -60,6 +60,17 @@ the run. With no --events the answer is byte for byte what it was. The script, o
   focus                    the input focus back to the pointer (X PointerRoot): a program that pins the focus to one window of its own
                            (Icon's Raise does, rxwin.ri raiseWindow) takes a key in another only after this line (officer_06 2026-11-16,
                            the cto's ruling: one explicit line, no policy, so a script without it sends exactly what it sent before)
+  resize W H               the program's top-level window to W by H pixels (W 1 to 1024, H 1 to 768), as a window manager resizes it: one XResizeWindow on
+                           the window, so the program is sent its ConfigureNotify and the Expose for what the new size shows (THE WINDOW MANAGER'S WORDS, the
+                           cto's baton B 2026-11-18, row icon-graphics-the-screen-road-learns-resize-cover-and-close-as-a-window-manager-sends-them)
+  cover                    a window of the road's own, black, over the whole of the program's top-level window and on top of it, as another window or a
+                           desktop's panel covers it (the program is sent its VisibilityNotify); one cover at a time
+  uncover                  that window taken away: the server sends the program the Expose for what was covered, and the program redraws. Only after a cover
+  close                    the window manager's close button: when the window's WM_PROTOCOLS names WM_DELETE_WINDOW the road sends that ClientMessage, and
+                           the program answers it as it chooses; when it does not (Arizona's X facility never answers it: rxwin.ri handles Expose and
+                           ConfigureNotify alone) the road does what every window manager does then and kills the client (XKillClient), so the program's
+                           connection breaks and it ends by itself, its text and its status kept. No window of the program to act on: a line on standard
+                           error and the send is skipped
   wait                     the end of a step: the screen holds still again and its line is written
   drawn                    ONLY AS THE SCRIPT'S FIRST LINE, alone (the cto's ruling 2026-11-17, row icon-tess-of-ipl-gprogs-is-graded-on-its-key-and-its-exit):
                            the first step is sent at the first shot of the screen with something drawn on it, the drawn test the still rule reads, instead of
@@ -151,7 +162,7 @@ def read_events(path):
     is True when the script's first line is `drawn` (the opening step is then sent at the first drawn shot, see run)."""
     try: text = open(path, encoding="utf-8").read()
     except (OSError, UnicodeDecodeError) as e: refuse(f"--events {path}: {e}")
-    steps, cur, drawn, first = [], [], False, True
+    steps, cur, drawn, first, covered = [], [], False, True, False
     def num(w, lo, hi, where, what):
         if not w.isdigit() or not lo <= int(w) <= hi: refuse(f"{where}: {what} {w!r} is no whole number from {lo} to {hi}")
         return int(w)
@@ -167,12 +178,20 @@ def read_events(path):
             body = raw.lstrip()[5:]
             if not body or any(not 0x20 <= ord(c) <= 0x7e for c in body): refuse(f"{where}: type wants printable ASCII text after it")
             cur += [("tap", ord(c)) for c in body]; continue
-        need = {"move": 2, "press": 1, "release": 1, "click": 3, "drag": 5, "key": 1, "keydown": 1, "keyup": 1, "focus": 0, "wait": 0}.get(w[0])
-        if need is None: refuse(f"{where}: {w[0]!r} is no send (move press release click drag key keydown keyup focus type wait drawn)")
+        need = {"move": 2, "press": 1, "release": 1, "click": 3, "drag": 5, "key": 1, "keydown": 1, "keyup": 1, "focus": 0, "wait": 0, "resize": 2, "cover": 0, "uncover": 0, "close": 0}.get(w[0])
+        if need is None: refuse(f"{where}: {w[0]!r} is no send (move press release click drag key keydown keyup focus type resize cover uncover close wait drawn)")
         if len(w) - 1 != need: refuse(f"{where}: {w[0]} takes {need} word(s), {len(w) - 1} given")
         xy = lambda i: (num(w[i], 0, WIDE - 1, where, "x"), num(w[i + 1], 0, HIGH - 1, where, "y"))
         if w[0] == "wait": steps.append(cur); cur = []
         elif w[0] == "focus": cur.append(("f",))
+        elif w[0] == "resize": cur.append(("r", num(w[1], 1, WIDE, where, "width"), num(w[2], 1, HIGH, where, "height")))
+        elif w[0] == "cover":
+            if covered: refuse(f"{where}: `cover` while the window is covered already: one cover at a time, `uncover` first")
+            covered = True; cur.append(("cv",))
+        elif w[0] == "uncover":
+            if not covered: refuse(f"{where}: `uncover` with nothing covered: it follows a `cover`")
+            covered = False; cur.append(("uc",))
+        elif w[0] == "close": cur.append(("x",))
         elif w[0] == "move": cur.append(("m",) + xy(1))
         elif w[0] in ("press", "release"): cur.append(("b", num(w[1], 1, 5, where, "button"), w[0] == "press"))
         elif w[0] == "click": b = num(w[1], 1, 5, where, "button"); cur += [("m",) + xy(2), ("b", b, True), ("b", b, False)]
@@ -184,6 +203,15 @@ def read_events(path):
     if cur: steps.append(cur)
     if drawn and not steps: refuse(f"--events {path}: `drawn` sends the script's first step at the first drawn picture, and the script has no step after it")
     return steps, drawn
+class WinAttr(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_int), ("y", ctypes.c_int), ("width", ctypes.c_int), ("height", ctypes.c_int), ("border_width", ctypes.c_int), ("depth", ctypes.c_int), ("visual", ctypes.c_void_p),
+                ("root", ctypes.c_ulong), ("cls", ctypes.c_int), ("bit_gravity", ctypes.c_int), ("win_gravity", ctypes.c_int), ("backing_store", ctypes.c_int), ("backing_planes", ctypes.c_ulong),
+                ("backing_pixel", ctypes.c_ulong), ("save_under", ctypes.c_int), ("colormap", ctypes.c_ulong), ("map_installed", ctypes.c_int), ("map_state", ctypes.c_int),
+                ("all_event_masks", ctypes.c_long), ("your_event_mask", ctypes.c_long), ("do_not_propagate_mask", ctypes.c_long), ("override_redirect", ctypes.c_int), ("screen", ctypes.c_void_p)]
+class SetAttr(ctypes.Structure):
+    _fields_ = [("background_pixmap", ctypes.c_ulong), ("background_pixel", ctypes.c_ulong), ("border_pixmap", ctypes.c_ulong), ("border_pixel", ctypes.c_ulong), ("bit_gravity", ctypes.c_int),
+                ("win_gravity", ctypes.c_int), ("backing_store", ctypes.c_int), ("backing_planes", ctypes.c_ulong), ("backing_pixel", ctypes.c_ulong), ("save_under", ctypes.c_int),
+                ("event_mask", ctypes.c_long), ("do_not_propagate_mask", ctypes.c_long), ("override_redirect", ctypes.c_int), ("colormap", ctypes.c_ulong), ("cursor", ctypes.c_ulong)]
 def xtest_libs():
     try: return ctypes.CDLL("libX11.so.6"), ctypes.CDLL("libXtst.so.6")
     except OSError as e: refuse(f"--events needs libX11.so.6 and libXtst.so.6 (the XTEST extension's client library): {e}")
@@ -197,6 +225,14 @@ class Injector:
         X.XkbKeycodeToKeysym.restype, X.XkbKeycodeToKeysym.argtypes = L, [V, U, I, I]
         X.XSync.argtypes, X.XCloseDisplay.argtypes = [V, I], [V]
         X.XSetInputFocus.argtypes = [V, L, I, L]
+        X.XDefaultRootWindow.restype, X.XDefaultRootWindow.argtypes = L, [V]
+        X.XQueryTree.argtypes = [V, L, ctypes.POINTER(L), ctypes.POINTER(L), ctypes.POINTER(ctypes.POINTER(L)), ctypes.POINTER(U)]
+        X.XFree.argtypes = [V]; X.XGetWindowAttributes.argtypes = [V, L, V]; X.XResizeWindow.argtypes = [V, L, U, U]
+        X.XCreateSimpleWindow.restype, X.XCreateSimpleWindow.argtypes = L, [V, L, I, I, U, U, U, L, L]
+        X.XChangeWindowAttributes.argtypes = [V, L, L, V]; X.XMapRaised.argtypes = [V, L]; X.XUnmapWindow.argtypes = [V, L]; X.XDestroyWindow.argtypes = [V, L]
+        X.XInternAtom.restype, X.XInternAtom.argtypes = L, [V, ctypes.c_char_p, I]; X.XKillClient.argtypes = [V, L]
+        X.XGetWMProtocols.argtypes = [V, L, ctypes.POINTER(ctypes.POINTER(L)), ctypes.POINTER(I)]; X.XSendEvent.argtypes = [V, L, I, ctypes.c_long, V]
+        self.cover = None
         T.XTestQueryExtension.argtypes = [V] + [ctypes.POINTER(I)] * 4
         T.XTestFakeMotionEvent.argtypes, T.XTestFakeButtonEvent.argtypes, T.XTestFakeKeyEvent.argtypes = [V, I, I, I, L], [V, U, I, L], [V, U, I, L]
         self.dpy = X.XOpenDisplay(display.encode()) or refuse(f"--events: no connection to the road's display {display}")
@@ -213,6 +249,39 @@ class Injector:
         if X.XkbKeycodeToKeysym(self.dpy, code, 0, 0) == sym or not tap: return code, False
         if X.XkbKeycodeToKeysym(self.dpy, code, 0, 1) == sym and self.shift: return code, True
         refuse(f"--events: {name} needs a modifier other than Shift on the display's keyboard")
+    def target(self):
+        """THE PROGRAM'S TOP-LEVEL WINDOW, as a window manager finds it: of the root's children (listed bottom to top) the topmost that is viewable and no override-redirect window, never the road's own cover. (window, x, y, width, height) or None."""
+        X, d = self.X, self.dpy; L, U = ctypes.c_ulong, ctypes.c_uint
+        root, parent, kids, n = L(), L(), ctypes.POINTER(L)(), U()
+        if not X.XQueryTree(d, X.XDefaultRootWindow(d), ctypes.byref(root), ctypes.byref(parent), ctypes.byref(kids), ctypes.byref(n)): return None
+        got = None
+        for i in range(n.value):
+            w, at = kids[i], WinAttr()
+            if w != self.cover and X.XGetWindowAttributes(d, w, ctypes.byref(at)) and at.map_state == 2 and not at.override_redirect: got = (w, at.x, at.y, at.width, at.height)
+        if kids: X.XFree(kids)
+        return got
+    def wm(self, kind, arg=None):
+        """One window-manager send (resize, cover, uncover, close); a program with no window to act on gets a line on standard error and nothing else."""
+        X, d = self.X, self.dpy; L = ctypes.c_ulong
+        if kind == "uc":
+            if self.cover: X.XUnmapWindow(d, self.cover); X.XDestroyWindow(d, self.cover); self.cover = None
+            return
+        tgt = self.target()
+        if not tgt: print(f"util_screen_run: no top-level window of the program to {dict(r='resize', cv='cover', x='close')[kind]}", file=sys.stderr); return
+        win, x, y, w, h = tgt
+        if kind == "r": X.XResizeWindow(d, win, arg[0], arg[1])
+        elif kind == "cv":
+            self.cover = X.XCreateSimpleWindow(d, X.XDefaultRootWindow(d), x, y, w, h, 0, 0, 0)
+            at = SetAttr(); at.override_redirect = 1; X.XChangeWindowAttributes(d, self.cover, 1 << 9, ctypes.byref(at)); X.XMapRaised(d, self.cover)
+        else:
+            proto, delete = X.XInternAtom(d, b"WM_PROTOCOLS", 0), X.XInternAtom(d, b"WM_DELETE_WINDOW", 0)
+            names, count, asked = ctypes.POINTER(L)(), ctypes.c_int(), False
+            if X.XGetWMProtocols(d, win, ctypes.byref(names), ctypes.byref(count)):
+                asked = any(names[i] == delete for i in range(count.value)); X.XFree(names)
+            if asked:
+                ev = ctypes.create_string_buffer(192); struct.pack_into("iLiPLLi5l", ev, 0, 33, 0, 1, d, win, proto, 32, delete, 0, 0, 0, 0)
+                X.XSendEvent(d, win, 0, 0, ev)
+            else: X.XKillClient(d, win)
     def send(self, step):
         X, T, d = self.X, self.T, self.dpy
         def one(f, *a): f(d, *a, 0); X.XSync(d, 0); time.sleep(PACE)
@@ -221,6 +290,7 @@ class Injector:
             elif s[0] == "b": one(T.XTestFakeButtonEvent, s[1], int(s[2]))
             elif s[0] == "k": one(T.XTestFakeKeyEvent, self.keys[s[1]][0], int(s[2]))
             elif s[0] == "f": X.XSetInputFocus(d, 1, 1, 0); X.XSync(d, 0); time.sleep(PACE)   # PointerRoot, RevertToPointerRoot, CurrentTime
+            elif s[0] in ("r", "cv", "uc", "x"): self.wm(s[0], s[1:]); X.XSync(d, 0); time.sleep(PACE)
             else:
                 code, shifted = self.keys[s[1]]
                 if shifted: one(T.XTestFakeKeyEvent, self.shift, 1)
@@ -395,24 +465,67 @@ def probe_spin():
             X.XNextEvent(dpy, ev)
             if struct.unpack_from("i", ev.raw, 0)[0] == 2: sys.stdout.write("got-key\n"); sys.stdout.flush(); sys.exit(6)
         i += 1; X.XSetWindowBackground(dpy, w, (i * 0x0b1f3d + 0x101010) & 0xffffff); X.XClearWindow(dpy, w); X.XFlush(dpy); time.sleep(0.05)
+def probe_tools(td, me):
+    """The two helpers of the probes: go(name, script, cap, events, more) runs the road on a bash script in the probe's folder and answers (status, standard output, its answer file, standard error); seen(file) reads a file the program wrote."""
+    def go(name, script, cap="25", events=None, more=()):
+        ev = list(more)
+        if events is not None:
+            with open(os.path.join(td, f"{name}.events"), "w") as f: f.write(events)
+            ev += ["--events", f"{name}.events"]
+        try: r = subprocess.run([sys.executable, me, "--out", f"{name}.dump", "--cap", cap] + ev + ["--", "bash", "-c", script], cwd=td, capture_output=True, text=True, timeout=2 * BOUND)
+        except subprocess.TimeoutExpired: refuse(f"--probe: arm {name} ran past {2 * BOUND} s, so the probe cannot measure")
+        return r.returncode, r.stdout, open(os.path.join(td, f"{name}.dump")).read().strip() if os.path.exists(os.path.join(td, f"{name}.dump")) else "", r.stderr
+    def seen(name):
+        try: return open(os.path.join(td, name)).read()
+        except OSError: return ""
+    return go, seen
+def probe_bare():
+    """--probe-client bare: the close arm's own X client, a window that names no WM_PROTOCOLS, so a window manager can only kill it. One 200 by 200 window, nothing else; waits for ever."""
+    X = ctypes.CDLL("libX11.so.6"); V, I, U, L = ctypes.c_void_p, ctypes.c_int, ctypes.c_uint, ctypes.c_ulong
+    X.XOpenDisplay.restype, X.XOpenDisplay.argtypes = V, [ctypes.c_char_p]; X.XDefaultScreen.argtypes = [V]
+    X.XRootWindow.restype, X.XRootWindow.argtypes = L, [V, I]; X.XCreateSimpleWindow.restype, X.XCreateSimpleWindow.argtypes = L, [V, L, I, I, U, U, U, L, L]
+    X.XMapWindow.argtypes, X.XFlush.argtypes, X.XNextEvent.argtypes = [V, L], [V], [V, ctypes.c_char_p]
+    dpy = X.XOpenDisplay(None) or sys.exit(2); w = X.XCreateSimpleWindow(dpy, X.XRootWindow(dpy, X.XDefaultScreen(dpy)), 0, 0, 200, 200, 0, 0, 0x404040)
+    X.XMapWindow(dpy, w); X.XFlush(dpy); ev = ctypes.create_string_buffer(192)
+    while True: X.XNextEvent(dpy, ev)
+def wm_arms(go, seen, td):
+    """THE WINDOW MANAGER'S WORDS, one arm each way (resize, cover and uncover, close with and without WM_DELETE_WINDOW, and the lines the road refuses), on xev, which logs every event it is sent, and on probe_bare."""
+    pic = lambda l: l.startswith("screen 1024x768 md5 ")
+    xev = lambda n: f"stdbuf -oL xev -geometry 200x200+0+0 > {n}.log 2>&1"
+    me = os.path.abspath(__file__)
+    r1 = go("wmresize", xev("wmresize"), events="resize 320 240\n"); l1 = r1[2].split("\n"); log1 = seen("wmresize.log")
+    r2 = go("wmresize2", xev("wmresize2"), events="resize 320 240\n")
+    cv = go("wmcover", xev("wmcover"), events="cover\nwait\nuncover\n"); lc = cv[2].split("\n"); logc = seen("wmcover.log")
+    cx = go("wmclose", "exec xev -geometry 200x200+0+0 > wmclose.log 2>&1", events="close\n"); logx = seen("wmclose.log")
+    bk = go("wmkill", f"exec {sys.executable} {me} --probe-client bare", events="close\n")
+    bad = [go("wmbad1", "touch wmbad1.ran", events="resize 0 10\n"), go("wmbad2", "touch wmbad2.ran", events="resize 5\n"),
+           go("wmbad3", "touch wmbad3.ran", events="uncover\n"), go("wmbad4", "touch wmbad4.ran", events="cover\ncover\n")]
+    obscured = min([i for i in (logc.find("VisibilityPartiallyObscured"), logc.find("VisibilityFullyObscured")) if i >= 0] or [-1])
+    return [("resize: the program is sent a ConfigureNotify of the size asked and its picture changes", r1[0] == 0 and len(l1) == 2 and all(pic(l) for l in l1) and l1[0] != l1[1] and "ConfigureNotify" in log1 and "width 320, height 240" in log1),
+            ("resize: the same script gives the same lines twice", r1[2] == r2[2] and r1[2] != ""),
+            ("cover and uncover: the covered picture is not the first, the uncovered one is the first byte for byte", cv[0] == 0 and len(lc) == 3 and all(pic(l) for l in lc) and lc[1] != lc[0] and lc[2] == lc[0]),
+            ("cover and uncover: the program is told it is obscured and sent an Expose after the uncover", obscured >= 0 and "Expose event" in logc[obscured:]),
+            ("close: a program that names WM_DELETE_WINDOW is sent that ClientMessage and ends by itself with its status", cx[0] == 0 and "ClientMessage" in logx and "WM_DELETE_WINDOW" in logx),
+            ("close: a program that does not is killed as a window manager kills it, its connection breaks and it ends by itself", bk[0] != 0 and "broken" in bk[1] + bk[3]),
+            ("a resize of 0 or of one word, an uncover with nothing covered and a second cover are refused rc 2 before the program starts", all(x[0] == 2 and "REFUSE(2)" in x[3] for x in bad) and not any(os.path.exists(os.path.join(td, f"wmbad{i}.ran")) for i in (1, 2, 3, 4)))]
+def probe_wm():
+    """--probe-wm: the window manager's words alone (resize, cover, uncover, close), the arms of wm_arms; they are also the last arms of --probe. rc 0 all green, 1 an arm red, 2 cannot measure."""
+    for c in ("xev", "stdbuf"): which(c) or refuse(f"--probe-wm needs {c}")
+    me = os.path.abspath(__file__); bad = 0
+    with tempfile.TemporaryDirectory(prefix="screen_wm_probe_") as td:
+        go, seen = probe_tools(td, me)
+        arms = wm_arms(go, seen, td)
+    for what, ok in arms: print(("GREEN " if ok else "RED   ") + what); bad += 0 if ok else 1
+    print(f"SCREEN-WM-PROBE arms={len(arms)} red={bad}")
+    return 1 if bad else 0
 def probe():
-    """Thirty arms on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
+    """Thirty-seven arms (the last seven are wm_arms, the window manager's words: --probe-wm runs them alone) on scratch with the X distribution's own demo clients (xlogo, a still picture that waits for ever; ico, an animation; for the
     scripted events xeyes, whose picture follows the pointer, and xev, which prints every event it is sent): no arm needs Icon. rc 0 all green,
     1 an arm red, 2 cannot measure. (xsetroot is no client for this: MEASURED, its colour never reaches the dump of an Xvfb root.)"""
     for c in ("xlogo", "ico", "xeyes", "xev"): which(c) or refuse(f"--probe needs {c} (x11-apps)")
     me = os.path.abspath(__file__); bad = 0
     with tempfile.TemporaryDirectory(prefix="screen_probe_") as td:
-        def go(name, script, cap="25", events=None, more=()):
-            ev = list(more)
-            if events is not None:
-                with open(os.path.join(td, f"{name}.events"), "w") as f: f.write(events)
-                ev += ["--events", f"{name}.events"]
-            try: r = subprocess.run([sys.executable, me, "--out", f"{name}.dump", "--cap", cap] + ev + ["--", "bash", "-c", script], cwd=td, capture_output=True, text=True, timeout=2 * BOUND)
-            except subprocess.TimeoutExpired: refuse(f"--probe: arm {name} ran past {2 * BOUND} s, so the probe cannot measure")
-            return r.returncode, r.stdout, open(os.path.join(td, f"{name}.dump")).read().strip() if os.path.exists(os.path.join(td, f"{name}.dump")) else "", r.stderr
-        def seen(name):
-            try: return open(os.path.join(td, name)).read()
-            except OSError: return ""
+        go, seen = probe_tools(td, me)
         pic = lambda l: l.startswith("screen 1024x768 md5 ")
         a = go("still", "echo printed-before; exec xlogo -geometry 200x200+0+0")
         b = go("still2", "exec xlogo -geometry 200x200+0+0")
@@ -517,6 +630,7 @@ def probe():
                 ("drawn: the same script with no drawn line waits for a still picture that never comes, screen unstable, its key never sent", dn[0] == 0 and dn[1] == "" and dn[2] == "screen unstable"),
                 ("drawn: every later step stands, one line a still picture after the opening send, no line for the opening", de[0] == 0 and len(del_) == 2 and all(pic(l) for l in del_) and del_[0] != del_[1]),
                 ("drawn: anywhere but first, with a word, or alone, it is refused rc 2 before the program starts", all(x[0] == 2 and "REFUSE(2)" in x[3] for x in db) and not any(os.path.exists(os.path.join(td, f"{n}.ran")) for n in ("drawnlate", "drawnword", "drawnalone")))]
+        arms += wm_arms(go, seen, td)
         for what, ok in arms:
             print(("GREEN " if ok else "RED   ") + what); bad += 0 if ok else 1
     print(f"SCREEN-PROBE arms={len(arms)} red={bad}")
@@ -524,6 +638,8 @@ def probe():
 if __name__ == "__main__":
     a = sys.argv[1:]
     if a == ["--probe"]: sys.exit(probe())
+    if a == ["--probe-wm"]: sys.exit(probe_wm())
+    if a == ["--probe-client", "bare"]: probe_bare()
     if len(a) == 2 and a[0] == "--probe-client" and a[1] in ("keep", "change", "blue"): probe_client(a[1])
     if a == ["--probe-client", "pin"]: probe_pin()
     if a == ["--probe-client", "spin"]: probe_spin()
