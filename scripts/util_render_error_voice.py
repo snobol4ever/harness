@@ -45,8 +45,10 @@ THE CODE RANGES THE VOICE RESERVES (src/runtime/core/core.c icn_errmsg_known is 
   700-799  compile-time semantic refusals of ANY language: a program refused before it runs (the cto's ruling on hq_raku's
            ask, 2026-10-11 04:xx CDT). The voice's located form, then exit 1: mode 3 before execution, mode 4's compile writes
            no .s. Taken: 701 a call that can never succeed against its callee's declared signature (Raku, lower_raku_refuse).
-           702 is kept for the SNOBOL4 draft. 703 is Icon's compile refusal (the parser's oracle line): under icon and unicon it
-           renders as the one line "File <basename>; Line <n> # <text>", with no blank line, no Run-time error line and no Traceback.
+           702 is kept for the SNOBOL4 draft. 703 is Icon's compile refusal (the parser's oracle line): under icon it renders as the one line
+           "File <basename>; Line <n> # <text>", under unicon as "<basename>:<n>: # <text>" (MEASURED by officer_02 on the 17 translator refusals of
+           rosetta-unicon: unicon 13.3 prints arrays.icn:1: # "L" invalid declaration where Arizona prints File arrays.icn; Line 1 # ...; the cto's
+           CTO-639 hypothesis that the two shapes are one is refuted), with no blank line, no Run-time error line and no Traceback.
 """
 import re, sys, os
 
@@ -76,7 +78,7 @@ def render(lines, oracle):
             else: break
             j += 1
         if oracle in ('icon', 'unicon') and code == 703 and not startup and at:
-            out.append('File %s; Line %s # %s' % (os.path.basename(at.group(1)), at.group(2), text))
+            out.append('%s:%s: # %s' % (os.path.basename(at.group(1)), at.group(2), text) if oracle == 'unicon' else 'File %s; Line %s # %s' % (os.path.basename(at.group(1)), at.group(2), text))
         elif oracle in ('icon', 'unicon'):
             if startup:
                 out += ['', 'Run-time error %d in startup code' % code, text]
@@ -256,8 +258,27 @@ FATAL_SUMMARY_MASKS = (   # each admits the oracle's number and the renderer's d
 )
 
 
+def probe():
+    cases = [
+        ('unicon', 'scrip: error 703: "L" invalid declaration\n  at /x/arrays.icn:1\n', 'arrays.icn:1: # "L" invalid declaration\n'),
+        ('icon', 'scrip: error 703: "x": missing right parenthesis\n  at /x/p.icn:4\n', 'File p.icn; Line 4 # "x": missing right parenthesis\n'),
+        ('unicon', 'scrip: error 101: integer expected\n  at /x/p.icn:2\n', None),
+    ]
+    bad = 0
+    for oracle, src, want in cases:
+        lines = src.split('\n')[:-1]
+        got = '\n'.join(render(lines, oracle)) + '\n'
+        ok = (got == want) if want is not None else (got.startswith('\nRun-time error 101') and 'Traceback:' in got)
+        print('%s %s -> %r' % ('ok ' if ok else 'RED', oracle, got[:120]))
+        bad += 0 if ok else 1
+    print('RENDER_VOICE_PROBE arms=%d red=%d (703 under unicon is basename:line: # text, under icon File basename; Line n # text, a run-time error keeps its block)' % (len(cases), bad))
+    return 1 if bad else 0
+
+
 if __name__ == '__main__':
     args = sys.argv[1:]
+    if args == ['--probe']:
+        sys.exit(probe())
     fatal = None
     if '--fatal-merged' in args:
         args.remove('--fatal-merged'); fatal = 'merged'
