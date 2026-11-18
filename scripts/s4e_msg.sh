@@ -571,7 +571,7 @@ BODY
     printf 'MINT refuses_bare_inversion=%d accepts_lawful=%d premise_rc2_is_refuse=%d\n' "$_rb" "$_al" "$_rq"
     [ "$_rb" = 1 ] && [ "$_al" = 1 ] && [ "$_rq" = 1 ]; exit $?; }
 s4e_mint_probe_baton() {
-    local _w _x _b _h _exp _nx _n _tl _g1=0 _g2=0 _g3=0
+    local _w _x _b _h _exp _nx _n _tl _g1=0 _g2=0 _g3=0 _g4=0
     _h='cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" &&'
     _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_mint_baton.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
     mkdir -p "$_w/tasks" "$_w/claims" "$_w/cfo/inbox"; : > "$_w/QUEUE.tsv"; : > "$_w/BOARD.md"; cp "$PO/MODE" "$_w/MODE" 2>/dev/null || printf 'TENET\n' > "$_w/MODE"
@@ -592,13 +592,29 @@ BODY
 GOAL: probe goal two. Second sentence here.
 DONE-WHEN: $_h test -f /no-such-mint-baton-two-$$
 BODY
-    _exp="$(printf 'probe goal two\nDONE-WHEN: %s test -f /no-such-mint-baton-two-%s' "$_h" "$$")"
+    _exp="$(printf 'probe goal two\nDONE-WHEN-BODY: %s test -f /no-such-mint-baton-two-%s' "$_h" "$$")"
     _nx="$(awk '/^## NEXT/{f=1;next} /^## /{f=0} f' "$_b" 2>/dev/null)"
     [ "$_nx" = "$_exp" ] && _g3=1
+    # ARM body_label (the chairman 2026-11-18): a criterion line under the NEXT is a copy and is labelled one, so each baton carries ONE column-0 DONE-WHEN: and ONE PREMISE-WHEN:, the header's
+    _x="mint-baton-label-$$"; _b="$_w/tasks/$_x.task.md"
+    S4E_POST="$_w" S4E_SEAT=cfo S4E_NO_BANNER=1 S4E_HOME="$S4E" bash "$0" mint "$_x" --owner cfo --stdin > /dev/null 2>&1 <<BODY
+GOAL: probe goal three.
+DONE-WHEN: $_h test -f /no-such-mint-baton-three-$$
+PREMISE-WHEN: $_h test -d /
+## NEXT
+PROVE: step one.
+DONE-WHEN: $_h test -f /no-such-mint-baton-three-$$
+PREMISE-WHEN: $_h test -d /
+BODY
+    _exp="$(printf 'PROVE: step one.\nDONE-WHEN-BODY: %s test -f /no-such-mint-baton-three-%s\nPREMISE-WHEN-BODY: %s test -d /' "$_h" "$$" "$_h")"
+    _nx="$(awk '/^## NEXT/{f=1;next} /^## /{f=0} f' "$_b" 2>/dev/null)"
+    [ "$_nx" = "$_exp" ] && [ "$(grep -c '^PREMISE-WHEN:' "$_b" 2>/dev/null)" = 1 ] && _g4=1
+    for _x in "$_w"/tasks/mint-baton-*.task.md; do [ "$(grep -c '^DONE-WHEN:' "$_x" 2>/dev/null)" = 1 ] || _g4=0; done
+    [ "$(ls "$_w"/tasks/mint-baton-*.task.md 2>/dev/null | wc -l)" = 3 ] || _g4=0
     _tl="$(cat "$_w"/tasks/*.task.md 2>/dev/null | grep -c 'Distill a real first step' 2>/dev/null)"; _tl="${_tl:-0}"
     rm -rf "$_w"
-    printf 'MINT goal_once=%d next_from_goal=%d template_lines=%d\n' "$_g1" "$((_g2 * _g3))" "$_tl"
-    [ "$_g1" = 1 ] && [ "$_g2" = 1 ] && [ "$_g3" = 1 ] && [ "$_tl" = 0 ]; exit $?; }
+    printf 'MINT goal_once=%d next_from_goal=%d template_lines=%d body_label=%d\n' "$_g1" "$((_g2 * _g3))" "$_tl" "$_g4"
+    [ "$_g1" = 1 ] && [ "$_g2" = 1 ] && [ "$_g3" = 1 ] && [ "$_tl" = 0 ] && [ "$_g4" = 1 ]; exit $?; }
 # ⭐ picker-skips-blocked-rows (2026-08-28) -- SHARED BY next()'s PASS 3. Is the topic named by a
 # BLOCKED-ON:/PARKED-AWAITING: state DONE? `done` appends the DONE marker to the claim; the sweep then deletes
 # the row, its task file and its claim, so a blocker with no QUEUE.tsv row is a finished one (Lon 2026-11-10).
@@ -4778,6 +4794,8 @@ MINTED-WITHOUT-CRITERION: ${S4E_MINT_NO_CRITERION} (S4E_MINT_NO_CRITERION; R-138
          # ⭐ THE NEXT IS THE BODY'S BLOCK VERBATIM, ELSE THE GOAL'S FIRST SENTENCE AND THE DONE-WHEN LINE -- never the template (box-scheduler step 33).
          if [ -n "$next_body" ]; then next_text="$next_body"
          else _first="$(printf '%s' "$goal" | tr '\n' ' ')"; next_text="$(printf '%s\n%s' "${_first%%. *}" "$(printf '%s\n' "$dw_block" | sed -n '1p')")"; fi
+         # ⛔ A CRITERION LINE UNDER THE NEXT IS A COPY, AND IS LABELLED ONE (the chairman 2026-11-18, on the president's measurement of eleven rows minted that morning: the line above wrote the header's DONE-WHEN a second time at column 0, so every later verb warned that the baton carries 2 lines labelled DONE-WHEN and only the first is read). The label is recut's: the text stays and nothing reads it as a criterion. A NEXT the body carries is relabelled the same way.
+         next_text="$(printf '%s\n' "$next_text" | sed -e 's/^DONE-WHEN:/DONE-WHEN-BODY:/' -e 's/^PREMISE-WHEN:/PREMISE-WHEN-BODY:/')"
          cat > "$b" <<TASKEOF
 # TASK $topic
 GOAL: $goal
