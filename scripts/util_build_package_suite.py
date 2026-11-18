@@ -692,7 +692,7 @@ FX_FOLDER = set()   # the entries whose table row declares fixtures=folder: the 
 FX_STAGED = set()   # the entries whose cut ran over their NAME.fixtures/ tree (h.stage_fixtures): their ALL.csv fixtures cell reads staged, so stage_entry stages the same tree to grade
 
 
-def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None, any_fpc_mode=False, stage_shipped=False):
+def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None, any_fpc_mode=False, stage_shipped=False, names_by_path=None):
     _c0 = read_contract(pkg_dir)
     if _c0["units"] == "generated":
         return build_generated(pkg_dir, lang, out_prefix, _c0, only)
@@ -806,12 +806,23 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
     # ⭐ THE SOURCES' EXTENSION MAY DIFFER FROM THE CONTAINER'S (measured 2026-11-08): SPITBOL's own test suite ships 36 .sbl programs,
     # and the container it grades is ALL.sno, the harness's SNOBOL4 extension. src_ext names what the package ships; ext names the container.
     src_ext = src_ext or ext
-    def _name_of(s):
+    _np = names_by_path or {}
+    _np_names = set(_np.values())
+    def _stem_name_of(s):
         if plunit:
             return s.relative_to(pkg_dir).with_suffix("").as_posix()
         if len(s.relative_to(pkg_dir).parts) > 2:
             return s.relative_to(pkg_dir).with_suffix("").as_posix()   # a program two or more folders down is named by its path from the package, as the files form names every entry; only a splice names one (below)
         return f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem
+    def _name_of(s):
+        # ⭐ AN ENTRY WHOSE PATH IS NOT ITS NAME (the files form, uni_bench: entry binary-trees-concurrent, program run_binary-trees-concurrent.icn): the program is named by the entry that owns
+        # its path, which build_files_form hands on from the package's ALL.csv; a file that is no entry's but whose stem is an entry's name (the module concord.icn beside the driver
+        # run_concord.icn) is named by its path with the extension, so it is never taken for that entry
+        _rel = s.relative_to(pkg_dir).as_posix()
+        if _rel in _np:
+            return _np[_rel]
+        _n = _stem_name_of(s)
+        return _rel if _n in _np_names else _n
     if plunit:
         _ctn = pkg_dir / "CONTAINERS.tsv"
         _cont = {_ln.split("\t")[0] for _ln in (_ctn.read_text().splitlines() if _ctn.is_file() else []) if _ln.strip() and not _ln.startswith("#")}
@@ -1150,12 +1161,12 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
             xsbold.append((name, _chk))
             if _r["kind"] == "wfs":
                 text = wfs_entry.wfs_entry_text(pkg_dir, name, _r["cmd"].rstrip().rstrip("."))
-            e = h.Entry("block", len(entries) + 1, name, text.splitlines(), _L1, stdin=None, want_rc=0)
+            e = h.Entry("block", len(entries) + 1, name, h._lf_lines(text), _L1, stdin=None, want_rc=0)
             entries.append(e)
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (XSB, {len(_L1)} lines, NAME_old {_chk.split(' ')[0]})", file=sys.stderr)
             continue
         if name in pkg_refusals:
-            entries.append(h.Entry("block", len(entries) + 1, name, read_src_text(src).splitlines(), [""], stdin=stdin_text, want_rc=0))
+            entries.append(h.Entry("block", len(entries) + 1, name, h._lf_lines(read_src_text(src)), [""], stdin=stdin_text, want_rc=0))
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (expected refusal, ISO_EXPECTED_REFUSALS.tsv)", file=sys.stderr)
             continue
         if iso_rej and name.startswith("iso7185prt") and src.with_suffix(".ecp").is_file() and name not in iso_acc:
@@ -1171,7 +1182,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                 excluded.append((name, "NO_ORACLE_ANSWER: no marked line in its .ecp and no ISO 7185 reference in its header (R-1696)"))
                 print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (no marked line and no clause)", file=sys.stderr)
                 continue
-            entries.append(h.Entry("block", len(entries) + 1, name, read_src_text(src).splitlines(), [""], stdin=stdin_text, want_rc=0))
+            entries.append(h.Entry("block", len(entries) + 1, name, h._lf_lines(read_src_text(src)), [""], stdin=stdin_text, want_rc=0))
             iso_rej_names.append((name, _w))
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (iso-rejection, {_w})", file=sys.stderr)
             continue
@@ -1277,7 +1288,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
         # stays inside its line, and a container whose ref then carries a CR at end of line is declared in lf_gate_crlf_is_the_subject.tsv.
         want_rc = ora_rc if ora_rc else 0
         _exp = src.with_suffix(".ref").read_bytes().decode("utf-8", "replace") if _drv else ora_text   # the beside ref is the oracle's bytes, decoded as the harness decodes a program's output before the comparison (utf-8, replace; corpus_suite_harness._read_stream_lines), never latin-1: a latin-1 decode re-encoded every byte 0x80-0xFF as two UTF-8 bytes and read the ipl drivers abkform_driver and pbkform_driver, whose answers are binary records, red against a correct SCRIP (officer_07 2026-11-13, row ipl-red-procs-abkform)
-        e = h.Entry("block", len(entries) + 1, name, text.splitlines(), _exp.split("\n"),
+        e = h.Entry("block", len(entries) + 1, name, h._lf_lines(text), _exp.split("\n"),
                      stdin=stdin_text, want_rc=want_rc)
         entries.append(e)
         if len(_ladder) > 1:
@@ -1300,7 +1311,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
         h.refuse(f"population arithmetic broken: {len(entries)} absorbed + {len(excluded)} excluded != {tot} shipped")
     if only is not None:
         return splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract, merged, staged, all_srcs,
-                      iso_rej_names=iso_rej_names if iso_rej else None)
+                      iso_rej_names=iso_rej_names if iso_rej else None, names_by_path=names_by_path)
 
     out_sno = pkg_dir / f"{out_prefix}{ext}"
     out_ref = pkg_dir / f"{out_prefix}.ref"
@@ -1527,7 +1538,7 @@ def _keyed_text(old, header, rows, names, sep):
     return "\n".join(out) + "\n"
 
 
-def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract, merged, staged, all_srcs, iso_rej_names=None):
+def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract, merged, staged, all_srcs, iso_rej_names=None, names_by_path=None):
     sno = lang in ("", "snobol4")
     lc = None if sno else h.LANG_CONFIGS.get(lang)
     if lc is None and not sno:
@@ -1637,7 +1648,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
         if e.name in row_at:
             prev = rows[row_at[e.name]]
             v["rank"] = prev[ix["rank"]]
-            for c in ("heap_kb", "stack_kb", "compile_args", "run_args", "mode_gap_s", "timeout_s") + (() if e.name in dialect_cell else ("dialect",)):
+            for c in ("heap_kb", "stack_kb", "compile_args", "run_args", "mode_gap_s", "timeout_s", "stderr") + (() if e.name in dialect_cell else ("dialect",)):
                 if c in ix and prev[ix[c]].strip():
                     v[c] = prev[ix[c]].strip()
             out_lines[row_at[e.name] + 1] = _fmt(v)
@@ -1660,7 +1671,14 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
         # programs out of ISO_ACCEPTS.tsv re-cut them with empty refs and left ISO_EXPECTED_REFUSALS.tsv without them, so each graded rc 1 against
         # want 0): the named entries' lines of the refusal file are rewritten from this census, as a whole build writes the file.
         _keyed("ISO_EXPECTED_REFUSALS.tsv", [ISO_REFUSALS_HEADER], [f"{n}\t{w}" for n, w in iso_rej_names], names)
-    _src_of = {(s.relative_to(pkg_dir).with_suffix("").as_posix() if len(s.relative_to(pkg_dir).parts) > 2 else (f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem)): s for s in all_srcs}   # the splice names a deep program by its path, as _name_of does
+    _np = names_by_path or {}
+    def _src_key(s):
+        _rel = s.relative_to(pkg_dir).as_posix()
+        if _rel in _np:
+            return _np[_rel]
+        _k = s.relative_to(pkg_dir).with_suffix("").as_posix() if len(s.relative_to(pkg_dir).parts) > 2 else (f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem)
+        return _rel if _k in set(_np.values()) else _k
+    _src_of = {_src_key(s): s for s in all_srcs}   # the splice names a deep program by its path, as _name_of does
     _mask_rows = []
     for e in entries:
         _mp = _src_of[e.name].with_suffix(".mask")
@@ -1675,9 +1693,23 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
         _keyed(f"{out_prefix}.mask", ["# ALL.mask -- R-409 line masks for this container (entry<TAB>L<n>-or-python-regex<TAB>reason); the rows of an entry",
                                       "# whose program ships a <stem>.mask are written from it by util_build_package_suite.py under the entry's name."],
                _mask_rows, {r.split("\t", 1)[0] for r in _mask_rows})
-    _ex = [ln for ln in _lines(pkg_dir / f"{out_prefix}.omit") if ln.split(": ", 1)[0] not in names]
-    _ex = sorted(_ex + [f"{n}: {w}" for n, w in excluded], key=lambda ln: (ln.split(": ", 1)[0], ln))
-    staged_files[f"{out_prefix}.omit"] = ("\n".join(_ex) + "\n").encode() if _ex else None
+    _new_omit = {}
+    for n, w in excluded:
+        _new_omit.setdefault(n, f"{n}: {w}")
+    _ex, _put = [], set()
+    for ln in _lines(pkg_dir / f"{out_prefix}.omit"):
+        _k = ln.split(": ", 1)[0]
+        if _is_row(ln) and _k in names:
+            if _k in _new_omit and _k not in _put:
+                _ex.append(_new_omit[_k])
+                _put.add(_k)
+            continue
+        _ex.append(ln)
+    _ex += [_new_omit[n] for n in sorted(_new_omit) if n not in _put]
+    if _ex == [""] and not _new_omit:
+        _ex = []   # an ALL.omit of no bytes has no line, and stays as it is
+    if _ex or not ((pkg_dir / f"{out_prefix}.omit").is_file() and (pkg_dir / f"{out_prefix}.omit").stat().st_size == 0):
+        staged_files[f"{out_prefix}.omit"] = ("\n".join(_ex) + "\n").encode() if _ex else None
     for _f, _b in staged_files.items():
         if _b is None:
             if (pkg_dir / _f).exists():
@@ -1695,6 +1727,10 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
 
 def _same_but_trailing_newlines(a, b):
     return a.rstrip(b"\n") == b.rstrip(b"\n")
+
+
+def _same_text_as_the_harness_reads_it(a, b):
+    return a.decode("utf-8", "replace").rstrip("\n") == b.decode("utf-8", "replace").rstrip("\n")
 
 
 def build_files_form(pkg_dir, lang, twice=False, only=None, src_ext=None):
@@ -1752,26 +1788,39 @@ def build_files_form(pkg_dir, lang, twice=False, only=None, src_ext=None):
                     prog.with_suffix(_suf).unlink()
         h._fmt2_write_csv(pkg_dir, [c for c in fields if c != "path"], [{k: v for k, v in r.items() if k != "path"} for r in rows])
         print(f"files form: {pkg_dir.name} packed to its container for the cut ({len(entries)} entries, {len(made)} sidecar(s) written for it)", file=sys.stderr)
-        result = build(pkg_dir, lang, twice=twice, only=only, src_ext=src_ext, stage_shipped=True)
+        _names = {e.name for e in entries}
+        _by_path = {path_of[n]: n for n in _names if path_of.get(n) and Path(path_of[n]).with_suffix("").as_posix() != n}
+        result = build(pkg_dir, lang, twice=twice, only=only, src_ext=src_ext, stage_shipped=True, names_by_path=_by_path)
         for _p in made:
             if _p.exists():
                 _p.unlink()
         try:
-            counts, n = h.unpack_dir(pkg_dir)
+            counts, n = h.unpack_dir(pkg_dir, path_of=path_of)
         except ValueError as _e:
             h.refuse(f"files form: the cut container of {pkg_dir.name} does not take the files form again: {_e}")
         kept = 0
         for _old in bak.rglob("*"):
             if _old.suffix in (".out", ".err") and _old.is_file():
                 _new = pkg_dir / _old.relative_to(bak)
-                if _new.is_file() and _new.read_bytes() != _old.read_bytes() and _same_but_trailing_newlines(_new.read_bytes(), _old.read_bytes()):
+                if _new.is_file() and _new.read_bytes() != _old.read_bytes() and (_same_but_trailing_newlines(_new.read_bytes(), _old.read_bytes()) or _same_text_as_the_harness_reads_it(_new.read_bytes(), _old.read_bytes())):
                     _new.write_bytes(_old.read_bytes())
                     kept += 1
+        # ⭐ AN EMPTY ANSWER FILE IS KEPT (row harness-the-package-builders-round-trip-loses-empty-out-files-and-omit-lines, (b)): the pack deletes every NAME.out and NAME.err beside the programs and
+        # the unpack writes one only for a non-empty answer, so an empty one that stood there was lost, silently. An empty NAME.out or NAME.err of a program of the package that the unpack did not
+        # write again is the answer that stands (empty), so it is put back as it was: a silent program's exit-status entry names its empty answer by that file.
+        _stems = {str(h._pkg_stem(pkg_dir, _p)) for _p in path_of.values() if _p}
+        _empty = 0
+        for _old in bak.rglob("*"):
+            if _old.suffix in (".out", ".err") and _old.is_file() and _old.stat().st_size == 0:
+                _new = pkg_dir / _old.relative_to(bak)
+                if not _new.exists() and str(_new.with_suffix("")) in _stems:
+                    _new.write_bytes(b"")
+                    _empty += 1
         _left = [x for x in ("ALL" + ext, "ALL.ref", "ALL.in", "ALL.argv") if (pkg_dir / x).exists()]
         if _left or h.pkg_dir_of(str(src)) is None:
             h.refuse(f"files form: {pkg_dir.name} did not come back to the files form (container files left: {_left})")
         print(f"files form: {pkg_dir.name} is in the files form again: {n} entries, in={counts['in']} out={counts['out']} err={counts['err']} "
-              f"args={counts['args']}; {kept} stream file(s) kept the oracle's own trailing bytes", file=sys.stderr)
+              f"args={counts['args']}; {kept} stream file(s) kept the oracle's own trailing bytes, {_empty} empty answer file(s) put back", file=sys.stderr)
         return result
     except BaseException:
         for _c in list(pkg_dir.iterdir()):
@@ -2395,6 +2444,112 @@ def _write_dump_cells(pkg_dir, names, level):
     print(f"DUMP_CELLS n={n} level={level} ({f})", file=sys.stderr)
 
 
+def probe_round_trip():
+    """--probe-round-trip: the files-form round trip of --only keeps every byte of what the cut did not change. It builds a scratch Icon package of the
+    files form under /tmp/s4e/SEAT, one for a control and one for each of the five defects of this builder, re-cuts one program of each with --only (the
+    tool run as a subprocess, as a seat runs it) and reads the whole folder before and after: a re-cut of an unchanged program must change no file.
+    ARMS: (b) an entry with an empty NAME.out keeps that empty file; (c) ALL.omit of several lines in a set order is written back byte for byte, and an
+    empty one stays empty; (f) an answer file of raw bytes that are no UTF-8 (a PBM image) keeps its bytes, which the harness's own read and write
+    turn into U+FFFD (a sixth defect, found on uni_bench's run_mandelbrot.out when the five were cured);
+    (a) a program of CRLF lines is cut, and its file keeps its bytes; (d) a row whose stderr cell is merged keeps it; (e) an entry whose program is
+    run_NAME.icn (its entry NAME) is cut and keeps its path. rc 0 when every arm keeps its bytes, rc 1 naming each arm that loses, changes or refuses,
+    rc 2 when the control package cannot be built or cut (a stale binary, no oracle): that is no reading of an arm. It writes only scratch."""
+    import shutil
+    import subprocess
+    seat = os.environ.get("S4E_SEAT") or "probe"
+    base = Path(f"/tmp/s4e/{seat}")
+    base.mkdir(parents=True, exist_ok=True)
+    top = Path(tempfile.mkdtemp(prefix="round-trip-probe.", dir=base))
+    hdr = ["rank", "entry", "path", "origin", "package", "n_lines", "want_rc", "heap_kb", "stack_kb", "timeout_s", "compile_args", "stderr"]
+    hello = 'procedure main();\n  write("hello");\nend\n'
+    quiet = 'procedure main();\n  return;\nend\n'
+    omit_lines = ["zeta: EMPTY (the oracle prints nothing)", "alpha: NO_ORACLE_ANSWER (two runs differ)", "mid: NEEDS_NETWORK (a socket)"]
+
+    def make(arm):
+        d = top / arm / "pk"
+        d.mkdir(parents=True)
+        rows = []
+
+        def add(name, path, text, out=None, stderr="", crlf=False):
+            (d / path).write_bytes((text.replace("\n", "\r\n") if crlf else text).encode())
+            if out is not None:
+                (d / (path[:-len(".icn")] + ".out")).write_bytes(out if isinstance(out, bytes) else out.encode())
+            rows.append([len(rows) + 1, name, path, f"pk__{name}", "pk", text.count("\n"), 0, 262144, 8192, 60, "", stderr])
+        target = "hello"
+        if arm in ("ctl", "d"):
+            add("hello", "hello.icn", hello, "hello\n", stderr="merged" if arm == "d" else "")
+        elif arm == "b":
+            add("hello", "hello.icn", hello, "hello\n")
+            add("quiet", "quiet.icn", quiet, "")
+        elif arm == "c":
+            add("hello", "hello.icn", hello, "hello\n")
+            for ln in omit_lines:
+                add(ln.split(":")[0], ln.split(":")[0] + ".icn", quiet)
+            (d / "ALL.omit").write_text("\n".join(omit_lines) + "\n")
+        elif arm == "o":
+            add("hello", "hello.icn", hello, "hello\n")
+            (d / "ALL.omit").write_bytes(b"")
+        elif arm == "f":
+            add("hello", "hello.icn", hello, "hello\n")
+            add("raw", "raw.icn", hello, b"P4\n2 2\n\xf0\x01\xff\x00\x80")
+        elif arm == "a":
+            add("crlf", "crlf.icn", hello, "hello\n", crlf=True)
+            target = "crlf"
+        elif arm == "e":
+            add("wide", "run_wide.icn", hello, "hello\n")
+            target = "wide"
+        s = io.StringIO()
+        w = csv.writer(s, lineterminator="\n")
+        w.writerow(hdr)
+        w.writerows(rows)
+        (d / "ALL.csv").write_text(s.getvalue())
+        return d, target
+
+    def snap(d):
+        return {p.relative_to(d).as_posix(): p.read_bytes() for p in sorted(d.rglob("*")) if p.is_file()}
+
+    def cut(d, target):
+        r = subprocess.run([sys.executable, str(Path(__file__).resolve()), str(d), "--lang", "icon", "--only", target], capture_output=True, text=True,
+                           stdin=subprocess.DEVNULL, timeout=900)
+        lines = (r.stderr or r.stdout).strip().splitlines()
+        return r.returncode, next((ln for ln in lines if "REFUSING" in ln or "UNPROVEN" in ln), lines[-1] if lines else "")
+
+    def read(arm):
+        d, target = make(arm)
+        before = snap(d)
+        rc, why = cut(d, target)
+        after = snap(d)
+        gone = sorted(set(before) - set(after))
+        added = sorted(set(after) - set(before))
+        changed = sorted(n for n in before if n in after and before[n] != after[n])
+        return rc, why, gone, added, changed, d
+    named = (("b", "(b) an empty NAME.out is kept"), ("c", "(c) ALL.omit keeps its lines and its order"), ("o", "(c) an empty ALL.omit stays empty"), ("f", "(f) an answer file that is no UTF-8 keeps its bytes"), ("a", "(a) a CRLF program is cut and keeps its bytes"),
+             ("d", "(d) a merged stderr cell stays merged"), ("e", "(e) a run_NAME program is cut under its entry's name and path"))
+    try:
+        rc0, why0, gone0, added0, changed0, _d0 = read("ctl")
+        if rc0 != 0 or gone0 or added0 or changed0:
+            print(f"ROUND_TRIP_PROBE REFUSE(2): the control package (one entry hello) could not be re-cut by --only: rc {rc0}: {why0.strip()[:220]} gone={gone0} added={added0} changed={changed0}")
+            return 2
+        bad = []
+        for arm, label in named:
+            rc, why, gone, added, changed, d = read(arm)
+            if rc == 0 and not (gone or added or changed):
+                print(f"ok  {label}")
+                continue
+            part = ([f"the tool refused it (rc {rc}): {why.strip()[:200]}"] if rc != 0 else []) + ([f"lost {gone}"] if gone else []) + ([f"wrote {added}"] if added else []) + ([f"changed {changed}"] if changed else [])
+            bad.append(arm)
+            print(f"RED {label}: " + "; ".join(part))
+        if bad:
+            print(f"ROUND_TRIP_PROBE RED: arm(s) {','.join(bad)} lose or change what the cut did not touch (scratch kept in {top})")
+            return 1
+        shutil.rmtree(top, ignore_errors=True)
+        print("ROUND_TRIP_PROBE ok (all seven arms keep their bytes through --only on a files-form package)")
+        return 0
+    except Exception as e:
+        print(f"ROUND_TRIP_PROBE REFUSE(2): {type(e).__name__}: {e}")
+        return 2
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("package_dir")
@@ -2433,6 +2588,8 @@ def main():
         sys.exit(contract_cells(Path(sys.argv[1]).resolve(), check=sys.argv[3:] == ["--check"]))
     if sys.argv[1:] == ["--probe-icon-sidecar"]:
         sys.exit(probe_icon_sidecar())
+    if sys.argv[1:] == ["--probe-round-trip"]:
+        sys.exit(probe_round_trip())
     args = ap.parse_args()
     global MINE_SILENT_RC, MINE_FATAL_GRADABLE, MINE_MASKS
     MINE_SILENT_RC = bool(args.mine_silent_rc)

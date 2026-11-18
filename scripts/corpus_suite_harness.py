@@ -4177,7 +4177,7 @@ def _pkg_find_program(d, name, ext, files):
     return c[0] if len(c) == 1 else None
 
 
-def unpack_dir(d, dry_run=False):
+def unpack_dir(d, dry_run=False, path_of=None):
     """A package from its container to the files form (the verb unpack). -> (counts, n) or raises ValueError naming every case that
     refuses; nothing is written in D unless a scratch copy first took the files form and read back equal in every attribute."""
     d = Path(d).resolve()
@@ -4206,11 +4206,14 @@ def unpack_dir(d, dry_run=False):
         for n in names:
             rel = os.path.relpath(os.path.join(root, n), d)
             files.setdefault(os.path.splitext(rel)[0], []).append(rel)
-    path_of = {e.name: _pkg_find_program(d, e.name, ext, files) for e in old}
+    given = path_of or {}   # an entry whose program is not ENTRY.EXT (uni_bench: run_NAME.icn) is found by the path the caller holds, the files form's own path column the pack dropped
+    def _found(n):
+        return given[n] if given.get(n) and (d / given[n]).is_file() else _pkg_find_program(d, n, ext, files)
+    path_of = {e.name: _found(e.name) for e in old}
     none = [n for n, p in path_of.items() if not p]
     for r in rows:
         if r.get("entry") and r.get("entry") not in path_of:
-            path_of[r.get("entry")] = _pkg_find_program(d, r.get("entry"), ext, files)
+            path_of[r.get("entry")] = _found(r.get("entry"))
     if old and len(none) == len(old):
         why.append("the package holds no program file for any entry")
     elif none:
