@@ -73,6 +73,9 @@ kill_ledger_append() {  # kill_ledger_append <pid> <signal> <target-cwd> <target
   fi
 }
 me_seat="${S4E_SEAT:-$(printf '%s' "$S4E" | sed -n 's|^/home/claude_\(.*\)$|\1|p')}"; bgdir="${S4E_KEEP:-/home/resources/keep}/${me_seat:-seat}/bg"; oldbg="/tmp/s4e/${me_seat:-seat}/bg"   # the handles live on /home (util_run_slot.sh --bg, Lon 2026-11-14); oldbg is where a run started before that wrote its handle
+# THE SEAT'S NAME BEFORE THE RENAME (the chairman 2026-11-18, on the president's measurement: pids 524971 and 528268, 19 hours old, ran on in s4e-seat-officer_04.scope, a scope made
+# before officer_NN became developer_NN that morning, and developer_04's kill read them "not mine"): developer_01 to developer_12 own what a scope named for officer_01 to officer_12 holds.
+old_seat=""; case "$me_seat" in developer_0[1-9]|developer_1[0-2]) old_seat="officer_${me_seat#developer_}" ;; esac; seat_re="${me_seat}${old_seat:+|$old_seat}"
 hfile() { if [ -f "$bgdir/$1.handle" ]; then printf '%s' "$bgdir/$1.handle"; else printf '%s' "$oldbg/$1.handle"; fi; }
 mine_pid() {  # mine_pid <pid> -> 0 when the pid carries one of this seat's handles or runs under this root; prints why
   local env h cwd; [ -d "/proc/$1" ] || { echo "pid $1 is not alive"; return 1; }
@@ -81,7 +84,7 @@ mine_pid() {  # mine_pid <pid> -> 0 when the pid carries one of this seat's hand
   cwd=$(readlink -f "/proc/$1/cwd" 2>/dev/null); case "$cwd" in "$S4E"|"$S4E"/*) echo "cwd $cwd under $S4E"; return 0 ;; esac
   # THE SEAT'S OWN SCOPE (the coo 2026-11-14, on officer_05's measurement: a seat's sandbox cannot read /proc/<pid>/environ or cwd, so all 6 of its orphaned reduce runs read
   # "not mine" and were killed by hand; /proc/<pid>/cgroup is world-readable there): a pid in s4e-seat-<seat>.scope or in one of the seat's s4e-mem-<seat>-* scopes is the seat's
-  [ -n "$me_seat" ] && grep -qE "/(s4e-seat-${me_seat}\.scope|s4e-mem-${me_seat}-[^/]*\.scope)(/|\$)" "/proc/$1/cgroup" 2>/dev/null && { echo "cgroup $(sed -n 's|^0::||p' "/proc/$1/cgroup" | sed 's|.*/||') of $me_seat"; return 0; }
+  [ -n "$me_seat" ] && grep -qE "/(s4e-seat-(${seat_re})\.scope|s4e-mem-(${seat_re})-[^/]*\.scope)(/|\$)" "/proc/$1/cgroup" 2>/dev/null && { echo "cgroup $(sed -n 's|^0::||p' "/proc/$1/cgroup" | sed 's|.*/||') of $me_seat"; return 0; }
   # THE SEAT'S OWN SLICE (the coo 2026-11-16, on the grader's measurement: the cycle's cells run in s4e-grader.slice/s4e-cycle-<N>.scope, which is neither scope of the arm above,
   # so the grader's kill of two held cells of its own cycle was refused "not mine" and it sent the TERM by hand): a pid in a scope of the slice named for the seat, s4e-<seat>.slice, is the seat's
   [ -n "$me_seat" ] && grep -qE "/s4e-${me_seat}\.slice/[^/]*\.scope(/|\$)" "/proc/$1/cgroup" 2>/dev/null && { echo "cgroup $(sed -n 's|^0::||p' "/proc/$1/cgroup" | sed 's|.*/||') in s4e-${me_seat}.slice of $me_seat"; return 0; }
