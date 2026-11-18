@@ -5274,6 +5274,15 @@ def _screen_entry_of_switch_pkg(e, container_dir):
     return (Path(container_dir) / Path(e.name).parent / (Path(e.name).name + ".display")).is_file()
 
 
+def _dump_entry_of_switch_pkg(e):
+    """AN ENTRY GRADED BY ITS TERMINATION DUMP TAKES THE PER-ENTRY ROAD (the grader 2026-11-18; Lon 2026-11-17: a silent program is graded by its dump).
+    MEASURED before it: scrip --run-files reads ALL.csv's compile_args but no dump cell, so the 88 SNOBOL4 entries of eight packages read in place,
+    cut with sbl -bf -D1, all read FAIL with SCRIP's output empty (d41d8cd9), while scrip --run --dump=1 --stlimit printed the dump by hand. True for an
+    entry whose compile switches carry the dump cell's --dump=N (read from ALL.csv by the reader); such an entry is run per entry as a port runs one
+    (_port_src_road): a copy of its own folder under the source root as its working folder, its ALL.stdin file as its standard input."""
+    return any(str(a).startswith("--dump=") for a in (getattr(e, "compile_args", None) or []))
+
+
 def _pkg_screen_road(paths, run_entries, files_entries, container_dir):
     """The per-entry road of the screen entries of a package the switch alone stages, given what the switch gives its programs: a copy of the
     program's own folder as its working folder (fixtures=folder, its own answers never staged), IPATH and LPATH from CONTRACT.tsv (_pkg_ipath_for,
@@ -5282,7 +5291,7 @@ def _pkg_screen_road(paths, run_entries, files_entries, container_dir):
     with the program (run_suite_entry), under the same environment; a units entry that is no screen entry gets no folder fixture, its units being the only
     files it is given beside itself."""
     keep = {e.name for e in files_entries}
-    n = u = 0
+    n = u = dm = 0
     for e in run_entries:
         if e.name in keep:
             continue
@@ -5292,8 +5301,20 @@ def _pkg_screen_road(paths, run_entries, files_entries, container_dir):
             n += 1
         if getattr(e, "units", None):
             u += 1
+        if _dump_entry_of_switch_pkg(e):
+            if getattr(e, "in_place", None):
+                e.port_src_dir = str(Path(e.in_place).parent)
+                if not getattr(e, "fixtures", None):
+                    e.fixtures = "folder"
+            _sp = getattr(e, "stdin_in_place", None)
+            if _sp:
+                try:
+                    e.stdin = Path(_sp).read_bytes().decode("utf-8")
+                except UnicodeDecodeError:
+                    refuse(f"{e.name}: its ALL.stdin file {_sp} is not UTF-8, and the per-entry road passes stdin as text -- never a run on altered bytes")
+            dm += 1
     os.environ.update(_pkg_env(container_dir, paths))
-    print(f"SCREEN_ROAD_BOARD dir={container_dir} screen_entries={n} units_entries={u} switch_entries={len(files_entries)} -- a screen entry of a package the switch stages runs per entry under the screen wrap (the cqo 2026-11-17), and so does an entry built from several units (ALL.units)")
+    print(f"SCREEN_ROAD_BOARD dir={container_dir} screen_entries={n} units_entries={u} dump_entries={dm} switch_entries={len(files_entries)} -- a screen entry of a package the switch stages runs per entry under the screen wrap (the cqo 2026-11-17), and so does an entry built from several units (ALL.units) and one graded by its dump (the grader 2026-11-18)")
 
 
 def run_files_leftovers(paths, args, run_entries, graded, tmp_root):
@@ -6690,7 +6711,7 @@ def cmd_run(args):
                    f"package, does not apply them yet (DESIGN-PLAN one-container step 1: the per-entry road reads them; the switch's reader is a later step) -- never a run without them")
     _files_entries = run_entries
     if _switch_alone:
-        _files_entries = [e for e in run_entries if not (_screen_entry_of_switch_pkg(e, Path(args.sno).parent) or getattr(e, "units", None))]
+        _files_entries = [e for e in run_entries if not (_screen_entry_of_switch_pkg(e, Path(args.sno).parent) or getattr(e, "units", None) or (_dump_entry_of_switch_pkg(e) and not (Path(pkg_dir_of(args.sno)) / "ALL.launch").is_file()))]
         if len(_files_entries) != len(run_entries):
             _pkg_screen_road(paths, run_entries, _files_entries, Path(args.sno).parent)
     if getattr(args, "run_files", False) and _files_entries:

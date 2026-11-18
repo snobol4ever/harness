@@ -1977,7 +1977,7 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=
             argv = ["bash", os.path.join(HERE, "util_oracle.sh"), "xsb", "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_XSB_FLAGS, "-e", goal]
             pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
         else:
-            argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *(h._size_switches(*sizes) if (sizes and lang in ("", "snobol4")) else ()), *flags, *files, *args]
+            argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *(("-D" + DUMP_ONLY,) if (DUMP_ONLY and lang in ("", "snobol4")) else ()), *(h._size_switches(*sizes) if (sizes and lang in ("", "snobol4")) else ()), *flags, *files, *args]
             pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
         here = (str(work / "f") + "/").encode()
         there = (str(work / "launch") + "/").encode()
@@ -2314,6 +2314,10 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
                      "timeout_s": cap, "compile_args": ""})
         was = old_by_path.get(r) or {}
         rows[-1].update({c: was[c] for c in ("heap_kb", "stack_kb", "timeout_s", "compile_args", *extra) if (was.get(c) or "") != ""})
+        if DUMP_ONLY:   # --dump N on the mine road: the program was cut with sbl -bf -DN, so its row says so and the grade runs scrip --dump=N --stlimit
+            rows[-1]["dump"] = DUMP_ONLY
+            if "dump" not in extra:
+                extra.append("dump")
         if moutf.get(r):
             rows[-1]["out_files"] = " ".join(moutf[r])
             if "out_files" not in extra:
@@ -2437,7 +2441,12 @@ def main():
     MINE_MASKS = h.read_mask_sidecar(pkg_dir / "ALL.ref")
     if args.mine and args.mine_add and not args.mine_under:
         h.refuse("--mine-add adds one folder to a mined package: it needs --mine-under FOLDER")
+    global DUMP_ONLY
     if args.mine:
+        if args.dump:   # one program at a time on the mine road (the grader 2026-11-18): the 168 SNOBOL4 entries graded by their exit status alone take the dump cell
+            if args.lang != "snobol4" or not (args.mine_under and args.mine_add and (Path(mine_read_source(pkg_dir)["root"]) / args.mine_under.strip("/")).is_file()):
+                h.refuse("--dump N on the mine road goes with --mine-under PROGRAM --mine-add, one SNOBOL4 program (sbl's -D# switch)")
+            DUMP_ONLY = args.dump
         sys.exit(mine(pkg_dir, args.lang, args.mine, cap=args.mine_cap, jobs=args.mine_jobs, under=args.mine_under or None, skip=args.mine_skip or None,
                       dialects=[d.strip() for d in args.mine_dialects.split(",") if d.strip()] or None, add=args.mine_add))
     only = None
@@ -2445,7 +2454,6 @@ def main():
         only = [n.strip() for a in args.only for n in a.split(",") if n.strip()]
         if not only:
             h.refuse("--only names no program")
-    global DUMP_ONLY
     if args.dump:
         if not only or args.lang != "snobol4":
             h.refuse("--dump N goes with --only NAMES, for SNOBOL4 (sbl's -D# switch)")
