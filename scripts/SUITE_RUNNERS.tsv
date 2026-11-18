@@ -128,6 +128,7 @@ power_of_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/power_
 aleph	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/aleph
 metalevel_contests	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/metalevel_contests
 rosetta-snobol4	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/rosetta-snobol4
+aoc2022_snobol	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/aoc2022_snobol
 rosetta-icon	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/rosetta-icon
 rosetta-unicon	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/rosetta-unicon
 uni_ipl	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/uni_ipl
