@@ -45,7 +45,7 @@ THE CODE RANGES THE VOICE RESERVES (src/runtime/core/core.c icn_errmsg_known is 
   700-799  compile-time semantic refusals of ANY language: a program refused before it runs (the cto's ruling on hq_raku's
            ask, 2026-10-11 04:xx CDT). The voice's located form, then exit 1: mode 3 before execution, mode 4's compile writes
            no .s. Taken: 701 a call that can never succeed against its callee's declared signature (Raku, lower_raku_refuse).
-           702 is kept for the SNOBOL4 draft. 703 is Icon's compile refusal (the parser's oracle line): under icon it renders as the one line
+           702 is kept for the SNOBOL4 draft. 704 is the translator-back-end refusal of icont, which unicon hands its translation to (a name declared twice: "main": inconsistent redeclaration), and renders as "File <basename>; Line <n> # <text>" under icon and unicon alike, one line a redeclaration. 703 is Icon's compile refusal (the parser's oracle line): under icon it renders as the one line
            "File <basename>; Line <n> # <text>", under unicon as "<basename>:<n>: # <text>" (MEASURED by officer_02 on the 17 translator refusals of
            rosetta-unicon: unicon 13.3 prints arrays.icn:1: # "L" invalid declaration where Arizona prints File arrays.icn; Line 1 # ...; the cto's
            CTO-639 hypothesis that the two shapes are one is refuted; a refusal with no place, unicon's istop of an empty file, is code 703 at line 0 and renders as "error: <text>"), with no blank line, no Run-time error line and no Traceback.
@@ -77,7 +77,9 @@ def render(lines, oracle):
             elif l.startswith('  in '): frames.append(l[5:])
             else: break
             j += 1
-        if oracle in ('icon', 'unicon') and code == 703 and not startup and at:
+        if oracle in ('icon', 'unicon') and code == 704 and not startup and at:
+            out.append('File %s; Line %s # %s' % (os.path.basename(at.group(1)), at.group(2), text))
+        elif oracle in ('icon', 'unicon') and code == 703 and not startup and at:
             out.append(('error: %s' % text if at.group(2) == '0' else '%s:%s: # %s' % (os.path.basename(at.group(1)), at.group(2), text)) if oracle == 'unicon' else 'File %s; Line %s # %s' % (os.path.basename(at.group(1)), at.group(2), text))
         elif oracle in ('icon', 'unicon'):
             if startup:
@@ -262,6 +264,8 @@ def probe():
     cases = [
         ('unicon', 'scrip: error 703: "L" invalid declaration\n  at /x/arrays.icn:1\n', 'arrays.icn:1: # "L" invalid declaration\n'),
         ('unicon', 'scrip: error 703: empty file\n  at /x/d.icn:0\n', 'error: empty file\n'),
+        ('unicon', 'scrip: error 704: "main": inconsistent redeclaration\n  at /x/w.icn:32\nscrip: error 704: "getdirs": inconsistent redeclaration\n  at /x/w.icn:44\n', 'File w.icn; Line 32 # "main": inconsistent redeclaration\nFile w.icn; Line 44 # "getdirs": inconsistent redeclaration\n'),
+        ('icon', 'scrip: error 704: "p": inconsistent redeclaration\n  at /x/d.icn:4\n', 'File d.icn; Line 4 # "p": inconsistent redeclaration\n'),
         ('icon', 'scrip: error 703: "x": missing right parenthesis\n  at /x/p.icn:4\n', 'File p.icn; Line 4 # "x": missing right parenthesis\n'),
         ('unicon', 'scrip: error 101: integer expected\n  at /x/p.icn:2\n', None),
     ]
