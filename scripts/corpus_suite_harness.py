@@ -895,8 +895,10 @@ def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=N
         refuse(f"lib_oracle_flags.sh refused (iconx_bin): {r.stderr.strip()}")
     _rd = Path(run_cwd) if run_cwd else d                           # NAME.alone (alone_dir_for_source): iconx runs there, handed the icode by its full path
     _out_files_clear(_rd, out_files)
-    kind, out, _err, rc = _run_raw([r.stdout.strip(), (str((d / stem).resolve()) if run_cwd else stem)] + [str(a) for a in (prog_args or [])], timeout, cwd=str(_rd),
-                                   env=(dict(os.environ, **side_env) if side_env else None), stdin_text=stdin_text, merge_stderr=merge_stderr)   # merge_stderr: the entry's own stream (a merged package's every entry; an entry that declares a sidecar in a stdout-only one, util_build_package_suite.py)
+    _oargv, _oenv = [r.stdout.strip(), (str((d / stem).resolve()) if run_cwd else stem)] + [str(a) for a in (prog_args or [])], (dict(os.environ, **side_env) if side_env else None)
+    if out_files and PTY_FILE in out_files:   # THE TERMINAL ROAD (_pty_wrap): the cut runs the program on the pseudo-terminal the grade runs it on, its pin and shims on the program and not on the road
+        _oargv, _oenv = _screen_parts(_oargv, out_files, src_path, dict(os.environ, **(side_env or {})), side_env or {})
+    kind, out, _err, rc = _run_raw(_oargv, timeout, cwd=str(_rd), env=_oenv, stdin_text=stdin_text, merge_stderr=merge_stderr)   # merge_stderr: the entry's own stream (a merged package's every entry; an entry that declares a sidecar in a stdout-only one, util_build_package_suite.py)
     out = _out_files_append(out, _rd, out_files) if out_files else out
     if kind == "RAN" and rc is not None and rc < 0:
         kind = "CRASH"
@@ -5119,14 +5121,14 @@ def alone_dir_for_source(src, parent):
     NAME.fixtures/ staged into it, as ipl_isolation_run made its own ($work/.alone). Returns the directory, or None when the source declares
     nothing. The grader's entry and the builder's oracle cut both call this, so the ref and the grade list the same files. MEASURED before it:
     progs/gcomp prints the files of its current directory; its container section was cut in the package's progs folder, 1,000 names, where
-    the ref beside the source reads .hidden, alpha.txt and gamma.dat. NAME.head and NAME.pty are not applied yet: a source that carries one
-    refuses, rc 2, never a run without it (none is in a container today; progs/noise carries the one .head). NAME.mask is the line mask
+    the ref beside the source reads .hidden, alpha.txt and gamma.dat. NAME.head is not applied yet: a source that carries one
+    refuses, rc 2, never a run without it (none is in a container today; progs/noise carries the one .head). NAME.pty is the terminal road's marker (_pty_wrap) and refuses nothing here. NAME.mask is the line mask
     this grader already reads (ALL.mask, or the stem's own beside the case), so it is no refusal."""
     src = Path(src)
     if src.suffix != ".icn":
         return None
     stem = str(src)[:-len(".icn")]
-    for _x in (".head", ".pty"):
+    for _x in (".head",):
         if Path(stem + _x).exists():
             refuse(f"{src.name}: it declares {src.stem}{_x} beside {src}, a run sidecar this grader does not apply yet -- never a run without it")
     if not Path(stem + ".alone").is_file():

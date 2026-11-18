@@ -1074,6 +1074,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                 if h.stage_fixtures(src.parent, src.stem, Path(_iso_dir)):   # NAME.fixtures/ staged where the oracle runs; the fixtures cell tells stage_entry to stage it to grade
                     FX_STAGED.add(name)
                 _iso_src.write_bytes(src.read_bytes())
+                for _sx in ((".pty", ".keys", ".cap") if (out_files and h.PTY_FILE in out_files) else ()):   # THE TERMINAL ROAD'S SIDE FILES (_pty_wrap) beside the staged source, as stage_entry puts them beside the graded one
+                    if src.with_suffix(_sx).is_file(): (Path(_iso_dir) / (_iso_src.stem + _sx)).write_bytes(src.with_suffix(_sx).read_bytes())
                 os.environ["S4E_ORACLE_LINK_DIRS"] = str(src.parent)   # the oracle's translator may compile a library its program links from the program's own folder (_oracle_translate_linking)
                 if name in FX_FOLDER:
                     h.stage_folder(src.parent, src.stem, Path(_iso_dir))
@@ -1552,10 +1554,13 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
         _i = d / f_in
         try:
             if sno:
-                return h.read_suite(str(d / f_src), str(d / f_ref), in_path=str(_i) if _i.is_file() else None)
-            return h.read_block_suite(str(d / f_src), str(d / f_ref), bre, in_path=str(_i) if _i.is_file() else None)
+                _es = h.read_suite(str(d / f_src), str(d / f_ref), in_path=str(_i) if _i.is_file() else None)
+            else:
+                _es = h.read_block_suite(str(d / f_src), str(d / f_ref), bre, in_path=str(_i) if _i.is_file() else None)
         except ValueError as _e:
             h.refuse(f"splice gate: the container in {d} does not read: {_e}")
+        if d != pkg_dir: h.read_binary_stdin_beside(str(pkg_dir / f_src), _es)
+        return _es
     def _shape(es):
         return {e.name: (e.seq, list(e.sno_lines), list(e.ref), e.stdin) for e in es}
     def _old_banners(path):
