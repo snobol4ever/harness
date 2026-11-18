@@ -7,6 +7,10 @@
 #   S4E_CORPUS   $S4E_CORPUS when set, else /home/corpus once it is a checkout (it holds .git) and the home is a seat's (S4E_HOME unset or /home/claude_<seat>), else <root>/corpus
 #   S4E_HARNESS  $S4E_HARNESS when set, else /home/harness once it is a checkout, else <root>/harness
 #   S4E_GITHUB   $S4E_GITHUB when set, else /home/.github once it is a checkout, else <root>/.github
+#   S4E_PACKAGES the home of every package the corpus does not host, read and graded in place: $S4E_PACKAGES when set, else /home/packages (Lon 2026-11-18, in the
+#                chairman's window, verbatim: "I created /home/packages for a home for all /home/resources/packages and /home/resources/collections folders." / "be sure
+#                to remove all symlinks, soft or hard." / "We use proper pathnames and environment variables."). A tool names a package by $S4E_PACKAGES/<lang>/<pkg> or
+#                by the root its ALL.source gives, a full path; no link stands in for either.
 # <root> is $S4E_HOME, else the root this script sits in. Each falls back to the sibling while its absolute checkout is absent, so sourcing this moves nothing on a
 # box that has not moved. harness_paths.py is the same rule for Python; the two agree (bash lib_paths.sh --selftest).
 #   bash lib_paths.sh --show       one line, each variable and where it came from (env, root, sibling, one-disk)
@@ -31,7 +35,8 @@ else S4E_SCRIP="$_s4e_paths_root/SCRIP"; _s4e_scrip_from=sibling; fi
 IFS=$'\t' read -r S4E_CORPUS _s4e_corpus_from <<< "$(_s4e_paths_pick "${S4E_CORPUS:-}" "$_s4e_paths_top/corpus" "$_s4e_paths_root/corpus")"
 IFS=$'\t' read -r S4E_HARNESS _s4e_harness_from <<< "$(_s4e_paths_pick "${S4E_HARNESS:-}" "$_s4e_paths_top/harness" "$_s4e_paths_root/harness")"
 IFS=$'\t' read -r S4E_GITHUB _s4e_github_from <<< "$(_s4e_paths_pick "${S4E_GITHUB:-}" "$_s4e_paths_top/.github" "$_s4e_paths_root/.github")"
-export S4E_SCRIP S4E_CORPUS S4E_HARNESS S4E_GITHUB
+S4E_PACKAGES="${S4E_PACKAGES:-$_s4e_paths_top/packages}"
+export S4E_SCRIP S4E_CORPUS S4E_HARNESS S4E_GITHUB S4E_PACKAGES
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
     case "${1:-}" in
         --show) echo "S4E_SCRIP=$S4E_SCRIP ($_s4e_scrip_from) S4E_CORPUS=$S4E_CORPUS ($_s4e_corpus_from) S4E_HARNESS=$S4E_HARNESS ($_s4e_harness_from) S4E_GITHUB=$S4E_GITHUB ($_s4e_github_from)"; exit 0 ;;

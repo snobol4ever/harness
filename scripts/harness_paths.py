@@ -64,6 +64,12 @@ def github(root=None):
     return _pick("S4E_GITHUB", ".github", root)[0]
 
 
+def packages():
+    """The home of every package the corpus does not host (Lon 2026-11-18): $S4E_PACKAGES when set, else /home/packages, as lib_paths.sh sets it."""
+    v = os.environ.get("S4E_PACKAGES")
+    return Path(v) if v else Path(os.environ.get("S4E_ONE_DISK_TOP", "/home")) / "packages"
+
+
 def one_disk(name, root=None):
     return _pick({"corpus": "S4E_CORPUS", "harness": "S4E_HARNESS", ".github": "S4E_GITHUB"}[name], name, root)[1] == "one-disk"
 
