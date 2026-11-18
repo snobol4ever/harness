@@ -23,9 +23,10 @@ root="/home/claude_$seat"; PO=/home/resources/postoffice
 [ -d "$GH/skills" ] || { echo "REFUSE(1): no skills at $GH/skills"; exit 1; }
 [ -f "$FROM/.claude/settings.json" ] && [ -f "$FROM/.claude/settings.local.json" ] || { echo "REFUSE(1): $FROM/.claude has no settings to template"; exit 1; }
 src_seat="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["env"]["S4E_SEAT"])' "$FROM/.claude/settings.local.json")"
+# THE ROOT IS THE CLONE (Lon 2026-11-14: "The /home/claude_cto folder IS the SCRIP clone from github." / "There is no folder name SCRIP inside the /home/claude folders anymore."; the cio 2026-11-18, MEASURED on developer_13 to 16: this script still cloned into $root/SCRIP, the layout of before the cut, and the cio moved the four clones up by hand): git clones into the empty folder itself.
 # THE CLONE BORROWS THE STORE'S OBJECTS (clone --shared writes the alternates line), origin is github, and main stands at origin's newest head.
-git clone -q --shared --no-checkout "$STORE" "$root/SCRIP" && git -C "$root/SCRIP" remote set-url origin "$(git --git-dir="$STORE" remote get-url origin)" || exit 1
-git -C "$root/SCRIP" config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' && git -C "$root/SCRIP" fetch -q origin && git -C "$root/SCRIP" checkout -q -B main origin/main && git -C "$root/SCRIP" branch -q --set-upstream-to=origin/main main || exit 1
+git clone -q --shared --no-checkout "$STORE" "$root" && git -C "$root" remote set-url origin "$(git --git-dir="$STORE" remote get-url origin)" || exit 1
+git -C "$root" config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' && git -C "$root" fetch -q origin && git -C "$root" checkout -q -B main origin/main && git -C "$root" branch -q --set-upstream-to=origin/main main || exit 1
 mkdir -p "$root/.claude" "/tmp/s4e/$seat" "$PO/$seat/inbox" "$PO/$seat/archive"
 [ -d "$PO/$seat/HQ" ] && rmdir "$PO/$seat/HQ"; echo cio > "$PO/$seat/HQ"
 sed "s#$FROM#$root#g; s#\b$src_seat\b#$seat#g" "$FROM/.claude/settings.json" > "$root/.claude/settings.json"
@@ -47,4 +48,4 @@ mkdir -p "$root/.claude/skills" && for s in "$GH/skills"/*/; do n="$(basename "$
 fi
 python3 "$HERE/propagate_seat_digests_cto_484.py" --apply "--root=$seat" | tail -1
 echo "POPULATED $seat at $root: $(du -sh "$root" | cut -f1) (its SCRIP clone alone; S4E_SEAT=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["env"]["S4E_SEAT"])' "$root/.claude/settings.local.json"))"
-echo "NEXT, BY HAND: add $seat to ROSTER and FLEET: IDLE EXCEPT on MODE; reown the retired HQ's open rows to $seat; (cd $root/SCRIP && make -j4) under a run slot"
+echo "NEXT, BY HAND: add $seat to ROSTER and FLEET: IDLE EXCEPT on MODE; reown the retired HQ's open rows to $seat; the seat builds at its first sitting (make -j8 in $root, skill fleet-bus section 7)"
