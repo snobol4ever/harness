@@ -701,6 +701,38 @@ def run_xsb_gentest(xsb_bin, upstream, run, timeout):
 
 _LINK_UNRESOLVED = re.compile(r"cannot resolve reference to file '([^'/]+?)\.u1?'")
 _IMPORT_UNRESOLVED = re.compile(r'Unable to import \(\d+\) package "([^"]+)"')
+_CLASS_SPEC_UNRESOLVED = re.compile(r"can't read spec for class (\w+)")
+_INCLUDE_UNRESOLVED = re.compile(r'\$include: cannot open "([^"\n]+)"')
+
+
+def _link_dirs(d):
+    dirs = [Path(d)] + [Path(x) for x in os.environ.get("S4E_ORACLE_LINK_DIRS", "").split(os.pathsep) if x]
+    return dirs + [Path(x) for x in re.split(r"[ %s]+" % re.escape(os.pathsep), os.environ.get("IPATH", "")) if x]
+
+
+def _compile_class_unit(translator, d, cname, tried):
+    """A SUPERCLASS IN A SIBLING FILE IS COMPILED FIRST (developer_09 2026-11-18, row icon-unicon-library-drivers-the-rest-of-unicon-uni-unicon-tests-and-ipl-gprocs, on
+    developer_07's measurement of ide/ivib/canvasborder_driver: `link canvasborder` is refused with fatal: can't read spec for class CanvasComponent, the class standing in
+    canvascomponent.icn beside it, and unicon -c reads a superclass only from the spec an earlier -c of its file left in uniclass.dir). The file of the folder, of
+    S4E_ORACLE_LINK_DIRS and of IPATH that declares `class CNAME` is compiled with the same translator (-s -c) in the program's folder; one that stops on a superclass of its
+    own compiles that class first (TRIED shared, so a cycle ends). True when the file compiled."""
+    decl = re.compile(r"(?m)^[ \t]*class[ \t]+%s\b" % re.escape(cname))
+    q = next((q for x in _link_dirs(d) if x.is_dir() for q in sorted(x.glob("*.icn")) if decl.search(q.read_text(errors="replace"))), None)
+    if q is None:
+        return False
+    if q.parent.resolve() != Path(d).resolve():
+        shutil.copyfile(q, Path(d) / q.name)
+    for _ in range(2):
+        c = subprocess.run([translator, "-s", "-c", q.name], cwd=str(d), capture_output=True, timeout=300)
+        m = _CLASS_SPEC_UNRESOLVED.search((c.stdout + c.stderr).decode("utf-8", "replace"))
+        if c.returncode == 0 and not m:
+            return True
+        if not m or m.group(1) in tried:
+            return False
+        tried.add(m.group(1))
+        if not _compile_class_unit(translator, d, m.group(1), tried):
+            return False
+    return False
 
 
 def _compile_package_units(translator, d, name, tried):
@@ -746,11 +778,28 @@ def _oracle_translate_linking(argv, timeout, d, translator):
     translator (-s -c) in the program's folder, from NAME.icn found in the folder, then in the program's own folder when a cut runs it in scratch (S4E_ORACLE_LINK_DIRS), then on IPATH, then in the translator's own uni/lib, and translate again,
     at most 20 libraries. A refusal of any other kind, or a library found nowhere, returns as it was, so no answer that reads today moves."""
     kind, out, err, rc = _run_raw(argv, timeout, cwd=str(d))
-    tried = set()
+    tried, inc_tried = set(), set()
     while kind == "RAN" and len(tried) < 20:   # whatever the status: unicon reports an unresolved library and exits 0, leaving no executable
         _msg = ((err or b"") + (out or b"")).decode("utf-8", "replace")
         m = _LINK_UNRESOLVED.search(_msg)
         if not m:
+            mn = _INCLUDE_UNRESOLVED.search(_msg)
+            if mn and mn.group(1) not in inc_tried and len(inc_tried) < 64 and not Path(mn.group(1)).is_absolute() and ".." not in Path(mn.group(1)).parts:
+                inc_tried.add(mn.group(1))
+                q = next((x / mn.group(1) for x in _link_dirs(d) if (x / mn.group(1)).is_file()), None)
+                if q is None:
+                    break
+                (Path(d) / mn.group(1)).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(q, Path(d) / mn.group(1))
+                kind, out, err, rc = _run_raw(argv, timeout, cwd=str(d))
+                continue
+            mc = _CLASS_SPEC_UNRESOLVED.search(_msg)
+            if mc and mc.group(1) not in tried:
+                tried.add(mc.group(1))
+                if _compile_class_unit(translator, d, mc.group(1), tried):
+                    kind, out, err, rc = _run_raw(argv, timeout, cwd=str(d))
+                    continue
+                break
             mi = _IMPORT_UNRESOLVED.search(_msg)
             if not mi or mi.group(1) in tried or not _compile_package_units(translator, d, mi.group(1), tried | {mi.group(1)}):
                 break
