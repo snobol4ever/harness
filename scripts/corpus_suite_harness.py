@@ -4875,7 +4875,36 @@ def stage_fixtures(src_dir, stem, dest):
         if q.is_symlink() or not (q.is_file() or q.is_dir()):
             refuse(f"{q} is not a plain regular file or directory: a fixture tree never carries a symlink or a special file")
     shutil.copytree(d, Path(dest), dirs_exist_ok=True, copy_function=_copy2_own)
+    _stage_fixed_mode(d, Path(dest))
     _stage_fixed_mtime(d, Path(dest))
+    return True
+
+
+def _stage_fixed_mode(fx, dest):
+    """A FIXTURE TREE MAY FIX THE MODES OF ITS STAGED FILES (developer_09 2026-11-18, row unicon-graphics-explorer-and-ttexplorer-are-scripted-on-the-fixture-and-count;
+    the cqo's ruling is in that row's LEDGER). MEASURED: ttexplorer and explorer draw each fixture file's mode bits, and a staged copy keeps its source's mode (made
+    owner-writable, _stage_own), which is not one value: 664 in /home/corpus and in a seat's clone, and 444 in the grader's gate worktree, whose clean files are
+    read-only hard links of the pristine, so the same fixture staged at 644 there; the refs were cut at 664 and both entries read PASS in the cycle's bases and
+    FAIL (fp=b256bbdd, fp=747f3354) at the gate, git recording only the executable bit. Opt-in, as the times are: a file NAME.fixtures/.mode holding two octal
+    numbers, the mode of every staged file and then of every staged directory (664 775 is what the stored refs were cut at), sets them after the copy; the marker
+    itself is never left in the run directory. A tree with no marker is staged exactly as before, so no stored answer moves. A marker that is not two octal
+    numbers refuses rc 2, so a bad marker never reads as a SCRIP red. stage_fixtures is the one function the builder's cut and stage_entry both call, so a ref and
+    its grade see the same modes."""
+    mk = Path(fx) / ".mode"
+    if not mk.is_file():
+        return False
+    raw = mk.read_text().split()
+    if len(raw) != 2 or not all(re.fullmatch(r"[0-7]{3,4}", w) for w in raw):
+        refuse(f"{mk} must hold two octal numbers, the mode of every staged file and of every staged directory (it holds {mk.read_text().strip()[:40]!r})")
+    fm, dm = int(raw[0], 8), int(raw[1], 8)
+    (Path(dest) / ".mode").unlink(missing_ok=True)
+    for q in Path(fx).rglob("*"):
+        if q.parent == Path(fx) and q.name in (".mode", ".mtime"):
+            continue
+        t = Path(dest) / q.relative_to(fx)
+        if t.is_symlink() or not t.exists():
+            continue
+        os.chmod(t, dm if q.is_dir() else fm)
     return True
 
 
