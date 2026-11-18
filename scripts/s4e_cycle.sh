@@ -247,7 +247,7 @@ lane_widths() {   # sets WF and WS
 port_may_start() {   # slow_next slow_total slow_running port_running WS -> rc 0 when a port cell may start now: every slow cell started, the slow lane and the port's
     # one place free (a port cell counts in the slow lane's width), and no request pending (a request goes first, at the lanes as at the door)
     [ "$1" -ge "$2" ] && [ "$4" -lt 1 ] && [ $(( $3 + $4 )) -lt "${5:-1}" ] || return 1
-    ! next_request > /dev/null 2>&1
+    ! next_request f > /dev/null 2>&1 && ! next_request s > /dev/null 2>&1
 }
 door_take() {   # cell|request [what] -> rc 0: this shell holds a run token (or there is no pool and it runs unbounded, as util_run_slot.sh does); rc 2: none within the door's bound
     local who="$1" what="${2:-}" t0 rc bound tk="" waited=0
@@ -306,7 +306,30 @@ request_ready() {   # pending file -> 0: every request is ready. It used to wait
     # so the entry a seat just landed is there, and an entry origin lacks is refused rc 2 by the harness on that base, in seconds.
     return 0
 }
-next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && request_ready "$f" && { printf '%s\n' "$f"; return 0; }; done; return 1; }
+# ONE REQUEST A SEAT AT A TIME, AND A LONG REQUEST IN THE SLOW LANE (the cio 2026-11-18 00:0x UTC, built by the grader; MEASURED 23:49:51Z to 23:59Z: no CELL and no
+# REQUEST line, both fast lanes held by two requests of ONE seat, officer_02's rosetta-unicon prime programs, eight entries each under a 1020 s bound, a third of
+# the same seat waiting behind them and officer_08's crypto request, which frees 22 programs, with no lane): next_request LANE passes over a pending request whose
+# seat (the second field of its file name) already has one in serving, so one seat's burst never holds every lane; and a request any of whose entries declares
+# timeout_s over S4E_CYCLE_LONG_REQ_SECS (300) in its suite's ALL.csv is a slow-lane job (req_long), served by `next_request s`, every other by `next_request f`.
+req_seat() { basename "$1" | cut -d- -f2; }
+req_long() {   # request file -> rc 0 when an entry it names declares timeout_s over S4E_CYCLE_LONG_REQ_SECS in its suite's ALL.csv
+    local key ents dir csv
+    key="$(sed -n 's/^suite=//p' "$1" | head -1)"; ents="$(sed -n 's/^entries=//p' "$1" | head -1)"
+    dir="$(awk -F'\t' -v k="$key" '!/^#/ && $1 == k { d = ($2 == "master") ? "corpus/tests/" $3 : $5; print d; exit }' "$RUNNERS")"
+    csv="$S4E_CORPUS/${dir#corpus/}/ALL.csv"; [ -n "$dir" ] && [ -f "$csv" ] || return 1
+    awk -F, -v ents=",$(printf '%s' "$ents" | tr -s ' ' ',')," -v lim="${S4E_CYCLE_LONG_REQ_SECS:-300}" 'NR == 1 { for (i = 1; i <= NF; i++) { if ($i == "entry") ie = i; if ($i == "timeout_s") it = i }; next }
+        ie && it && index(ents, "," $ie ",") && ($it + 0) > lim { f = 1 } END { exit !f }' "$csv"
+}
+next_request() {   # [f|s] -> the oldest pending request for that lane (f, the default: the short ones; s: the long ones) whose seat has none in serving
+    local f lane="${1:-f}" seat
+    for f in "$RQ"/*.req; do
+        [ -f "$f" ] && request_ready "$f" || continue
+        seat="$(req_seat "$f")"; compgen -G "$RQ/serving/*-$seat-*.req" > /dev/null && continue
+        if req_long "$f"; then [ "$lane" = s ] || continue; else [ "$lane" = f ] || continue; fi
+        printf '%s\n' "$f"; return 0
+    done
+    return 1
+}
 # THE BASE MOVES FORWARD EVERY CHUNK (the grader 2026-11-13; Lon, via the coo 12:1x, verbatim: "The cycle runner should be running chunks through and
 # updating the code continuously every turn."; skill suites-and-grading section 9). MEASURED that noon by the coo: the lap cells graded on the grader root,
 # which syncs only at a lap start, and lap 28 ran 1083 cells over about 11 hours, so 3273 of 3277 grader readings since 17:00Z were on SCRIP 530c2543b5,
@@ -612,9 +635,19 @@ if [ "$MODE_ARG" = --probe-door ]; then   # THE DOOR'S PROBE (row cycle-a-cell-t
     o1="$(printf 'pl_a\tpkg\tprolog\td\tcore\nsno_a\tpkg\tsnobol4\td\tcore\n' | ORDERF="$T/no.order" FIRSTF="$T/no.first" SPRINTF="$T/sprint.conf" order_cells | head -1 | cut -f1)"
     o0="$(printf 'pl_a\tpkg\tprolog\td\tcore\nsno_a\tpkg\tsnobol4\td\tcore\n' | ORDERF="$T/no.order" FIRSTF="$T/no.first" SPRINTF="$T/none.conf" order_cells | head -1 | cut -f1)"
     [ "$h1$h2$h3$h4" = 0111 ] && [ "$o1" = sno_a ] && [ "$o0" = pl_a ] && v5=ok
-    echo "DOOR_PROBE base_free=$v1 bound_counts_the_run=$v2 request_first=$v3 lanes=$v4 sprint=$v5"
+    # arm 6, the requests: with seat A's first request in serving, A's second is passed over and B's served; a request naming an entry whose timeout_s is over
+    # 300 s is the slow lane's, never the fast lane's
+    v6=RED; mkdir -p "$RQ/serving" "$T/rcorpus/packages/longpkg"; rm -f "$RQ"/*.req "$RQ"/serving/*.req
+    for r in 20000101T000001-seatA-x-1 20000101T000002-seatA-x-2 20000101T000003-seatB-x-3; do printf 'suite=nosuch\nentries=a\n' > "$RQ/$r.req"; done
+    q1="$(basename "$(next_request f)")"; mv "$RQ/$q1" "$RQ/serving/$q1"; q2="$(basename "$(next_request f)")"; rm -f "$RQ"/*.req "$RQ"/serving/*.req
+    printf 'longpkg\tpkg\tsnobol4\tcorpus_suite_harness.py\tcorpus/packages/longpkg\n' > "$T/rrunners.tsv"; printf 'entry,timeout_s\nbig,600\nsmall,30\n' > "$T/rcorpus/packages/longpkg/ALL.csv"
+    printf 'suite=longpkg\nentries=big\n' > "$RQ/20000101T000004-seatC-longpkg-4.req"
+    q3f="$(RUNNERS="$T/rrunners.tsv" S4E_CORPUS="$T/rcorpus" next_request f)"; q3s="$(basename "$(RUNNERS="$T/rrunners.tsv" S4E_CORPUS="$T/rcorpus" next_request s)")"; rm -f "$RQ"/*.req
+    [ "$q1" = 20000101T000001-seatA-x-1.req ] && [ "$q2" = 20000101T000003-seatB-x-3.req ] && [ -z "$q3f" ] && [ "$q3s" = 20000101T000004-seatC-longpkg-4.req ] && v6=ok
+    echo "DOOR_PROBE base_free=$v1 bound_counts_the_run=$v2 request_first=$v3 lanes=$v4 sprint=$v5 requests=$v6"
+    [ "$v6" = ok ] || echo "  requests: first=$q1 second=$q2 (want seatB) long-in-fast=[$q3f] long-in-slow=$q3s"
     [ "$v4$v5" = okok ] || echo "  lanes: grader=4 -> $l4, grader=8 -> $l8, FAST=3 -> $le; sprint held: $h1$h2$h3$h4 (want 0111), first: $o1 (want sno_a), with no file: $o0 (want pl_a)"
-    [ "$v1$v2$v3$v4$v5" = okokokokok ] && exit 0
+    [ "$v1$v2$v3$v4$v5$v6" = okokokokokok ] && exit 0
     echo "  events:"; sed 's/^/    /' "$DOOR_EVENTS"; for r in a b c; do echo "  res.$r: $(cat "$T/res.$r" 2> /dev/null)"; done; exit 1
 fi
 { [ "${BASH_VERSINFO[0]}" -gt 5 ] || { [ "${BASH_VERSINFO[0]}" -eq 5 ] && [ "${BASH_VERSINFO[1]}" -ge 1 ]; }; } || { echo "REFUSE(2) [cycle]: bash ${BASH_VERSION} has no wait -n -p (5.1 or newer; the rolling pool needs it)"; exit 2; }
@@ -679,7 +712,11 @@ while :; do
     for (( j = idx; j < total; j++ )); do IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$j]}"; grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null || LEFT[$key]=$(( ${LEFT[$key]:-0} + 1 )); done
     while :; do
         lane_widths   # each turn: the lanes follow the door's width (part 2)
-        while [ "$(lane_n f)" -lt "$WF" ] && rf="$(next_request)"; do   # a free fast slot takes the oldest pending request before any lap cell
+        while [ "$(lane_n s)" -lt "$WS" ] && rf="$(next_request s)"; do   # a long request takes the slow lane before any slow lap cell
+            rn="$(basename "$rf")"; mv "$rf" "$RQ/serving/$rn" 2>/dev/null || break
+            ( run_request "$RQ/serving/$rn" > "$TMPDIR/cycle/rres.$rn" ) & RUN[$!]="r:$rn"; LANE[$!]=s
+        done
+        while [ "$(lane_n f)" -lt "$WF" ] && rf="$(next_request f)"; do   # a free fast slot takes the oldest pending request before any lap cell
             rn="$(basename "$rf")"; mv "$rf" "$RQ/serving/$rn" 2>/dev/null || break
             ( run_request "$RQ/serving/$rn" > "$TMPDIR/cycle/rres.$rn" ) & RUN[$!]="r:$rn"; LANE[$!]=f
         done
