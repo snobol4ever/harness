@@ -15,12 +15,27 @@ Unicon suites, which share the language icon, are two sprints (keys=^(uni|rosett
 ONE DB (Lon 2026-11-12, skill suites-and-grading section 3): the count is read from the same rows the grid and the summary by language read,
 /home/resources/progress/SUITES.tsv: a bug is an entry of a suite of the language that the row's newest reading does not pass, today_total less
 today_pass, so the countdown moves when the cycle rewrites a row and never before, and it can go up as well as down. Read only, nothing run.
+THE WHOLE COUNT (Lon 2026-11-18 11:5x CST, in the chairman's window; he had asked "Figure out why the Icon and Unicon will not converge to zero failures. Do we have a design flaw?", was shown that
+the count of failing entries rises each time excluded programs are released into the suites while cures hold (Icon 134 cures against 6 passing tests gone red, Unicon 278 against 3, since 11-17 noon), and
+said, verbatim: "do as you suggest regarding reporting." and "since they are NOT actually sprints add Prolog."): a name= block that carries a debt= line is shown in the whole form, three piles and their sum:
+    failing           entries whose newest mode 3 reading in the store (results.tsv) is not PASS, never more than the suite row's total less pass
+    not yet graded    the rest of total less pass: entries on the suite table the cycle has not read since they were cut
+    excluded          the row's today_excluded, less the rows of the package's EXCLUDED.tsv whose class is settled (settled= of the switch file, or SETTLED below: a cross-reference to another
+                      package's entry, a program no oracle answers, a ruling of Lon's by name); a suite with no class file counts every excluded program
+TO GO is their sum, so a program released from the excluded pile moves between two piles and the sum does not move; it falls at a cure and rises only when a program is added, said beside it as added.
+    debt=402 all=3801 debt_started=11-18 12:1x      the sum, and total plus counted excluded, when the whole count was opened (python3 -I util_sprint_countdown.py --baseline prints the lines)
+A block with no debt= line reads in the old form, byte for byte. The word SPRINT is not said in the whole form.
   python3 -I util_sprint_countdown.py SEAT      the two lines, or nothing; rc 0
-  python3 -I util_sprint_countdown.py --probe   five arms on a scratch table and a scratch switch; rc 0 green, rc 1 red"""
+  python3 -I util_sprint_countdown.py --baseline   each block's debt= all= line as measured now; rc 0
+  python3 -I util_sprint_countdown.py --probe   seven arms on a scratch table and a scratch switch; rc 0 green, rc 1 red"""
 import os, sys, tempfile, time
 
 CONF = os.environ.get("S4E_SPRINT_CONF", "/home/resources/postoffice/SPRINT.conf")
 SUITES = os.environ.get("S4E_SUITES_TSV", "/home/resources/progress/SUITES.tsv")
+STORE = os.environ.get("S4E_RESULTS_TSV", "/home/resources/progress/results.tsv")
+RUNNERS = os.environ.get("S4E_SUITE_RUNNERS", os.path.join(os.path.dirname(os.path.abspath(__file__)), "SUITE_RUNNERS.tsv"))
+CORPUS = os.environ.get("S4E_CORPUS", "/home/corpus")
+SETTLED = "GRADED_IN_ANOTHER_PACKAGE NO_ORACLE_ANSWER NOT_SPITBOL_DIALECT SCRIP_EXTENSION_KEPT_BY_LON SCRIP_EXCEEDS_ORACLE FAKEABLE_NO_OBSERVABLE *_BY_LON"
 
 
 def read_conf(path):
@@ -95,6 +110,8 @@ def one_sprint(c, suites_path=None, stamp=True):
     lang, name = c.get("lang", ""), c.get("name", "")
     if not lang:
         return []
+    if "debt" in c:
+        return whole_count(c, suites_path, stamp)
     rows = read_rows(suites_path or SUITES, lang, c.get("keys", ""), c.get("nokeys", ""))
     if not rows:
         return [f"{name or lang} SPRINT COUNTDOWN: the suite table holds no row of language {lang}"]
@@ -113,6 +130,132 @@ def one_sprint(c, suites_path=None, stamp=True):
     fixed = f"   {bar(int(start) - togo, int(start))}  {int(start) - togo} closed (cured or declared out)" if start.isdigit() else ""
     return [f"⏬ {name} SPRINT  {head}{fixed}  ·  {npass} of {ntot} {name} tests pass  ·  {at100} of {len(rows)} suites at 100%  ·  since {c.get('started', '?')}{when}",
             "   failing tests by suite: " + " · ".join(f"{n} {k}" for k, n in left)]
+
+
+def read_suites(path, lang, keys="", nokeys=""):
+    """-> [(key, nick, pass, total, excluded)] of the language's own rows"""
+    import re
+    rows, head = [], None
+    for ln in open(path, encoding="utf-8", errors="replace"):
+        if ln.startswith("#") or not ln.strip():
+            continue
+        cells = ln.rstrip("\n").split("\t")
+        if head is None:
+            head = cells
+            continue
+        r = dict(zip(head, cells))
+        k = r.get("key", "")
+        if r.get("lang") != lang or "@" in k or (keys and not re.search(keys, k)) or (nokeys and re.search(nokeys, k)):
+            continue
+        try:
+            p, t = int(r.get("today_pass") or 0), int(r.get("today_total") or 0)
+        except ValueError:
+            continue
+        x = (r.get("today_excluded") or "").strip()
+        rows.append((k, r.get("nick") or k, p, t, int(x) if x.isdigit() else 0))
+    return rows
+
+
+_RED = {}
+
+
+def store_reds(path):
+    """-> {suite key: entries whose mode 3 reading is neither PASS nor a named leave (UNGRADED, SKIP)}; read once a process, {} when the store cannot be read"""
+    if path not in _RED:
+        d = {}
+        try:
+            for ln in open(path, encoding="utf-8", errors="replace"):
+                c = ln.split("\t", 10)
+                if len(c) > 9 and c[8] == "m3" and c[9] not in ("PASS", "UNGRADED", "SKIP", "outcome"):
+                    d[c[5]] = d.get(c[5], 0) + 1
+        except OSError:
+            pass
+        _RED[path] = d
+    return _RED[path]
+
+
+_DIR = {}
+
+
+def settled_count(key, words, runners=None, corpus=None):
+    """-> the rows of the suite's EXCLUDED.tsv whose class is one of words (a word *TAIL matches by its end); 0 when the suite has no class file"""
+    runners, corpus = runners or RUNNERS, corpus or CORPUS
+    if runners not in _DIR:
+        d = {}
+        try:
+            for ln in open(runners, encoding="utf-8", errors="replace"):
+                c = ln.rstrip("\n").split("\t")
+                if not ln.startswith("#") and len(c) >= 5 and c[4].startswith("corpus/"):
+                    d[c[0]] = c[4][len("corpus/"):]
+        except OSError:
+            pass
+        _DIR[runners] = d
+    rel = _DIR[runners].get(key)
+    if not rel:
+        return 0
+    n = 0
+    try:
+        for ln in open(os.path.join(corpus, rel, "EXCLUDED.tsv"), encoding="utf-8", errors="replace"):
+            c = ln.split("\t")
+            if ln.startswith("#") or len(c) < 2:
+                continue
+            k = c[1].strip()
+            if any(k == w or (w.startswith("*") and k.endswith(w[1:])) for w in words):
+                n += 1
+    except OSError:
+        return 0
+    return n
+
+
+def piles(c, suites_path=None, store=None, runners=None, corpus=None):
+    """-> [(nick, pass, total, failing, not yet graded, excluded counted, excluded settled)] a suite"""
+    words = (c.get("settled") or SETTLED).split()
+    red = store_reds(store or STORE)
+    out = []
+    for key, nick, p, t, x in read_suites(suites_path or SUITES, c.get("lang", ""), c.get("keys", ""), c.get("nokeys", "")):
+        f = min(max(t - p, 0), red.get(key, 0))
+        s = min(x, settled_count(key, words, runners, corpus))
+        out.append((nick, p, t, f, max(t - p, 0) - f, x - s, s))
+    return out
+
+
+def whole_count(c, suites_path=None, stamp=True, store=None, runners=None, corpus=None):
+    name = c.get("name") or c.get("lang", "")
+    rows = piles(c, suites_path, store, runners, corpus)
+    if not rows:
+        return [f"{name}: the suite table holds no row of language {c.get('lang', '')}"]
+    fail, wait, excl, aside = (sum(r[i] for r in rows) for i in (3, 4, 5, 6))
+    togo, allnow = fail + wait + excl, sum(r[2] for r in rows) + excl
+    npass, ntot = sum(r[1] for r in rows), sum(r[2] for r in rows)
+    at100 = sum(1 for r in rows if r[1] == r[2] and r[2] > 0)
+    when = time.strftime("   [%m-%d %H:%M %Z]") if stamp else ""
+    d0, a0 = c.get("debt", ""), c.get("all", "")
+    since = c.get("debt_started", "?")
+    added = max(0, allnow - int(a0)) if a0.isdigit() else 0
+    prog = ""
+    if d0.isdigit():
+        base = int(d0) + added
+        done = base - togo
+        prog = f"   {bar(done, base)}  {done} done of {base} since {since}" + (f" (+{added} programs added)" if added else "")
+    side = f" ({aside} more set aside by ruling)" if aside else ""
+    if togo == 0:
+        return [f"🏁 {name}: ZERO. Nothing failing, nothing waiting to be graded, nothing excluded{side}; {npass} of {ntot} tests pass in {len(rows)} suites.{prog}{when}"]
+    pre = os.path.commonprefix([r[0] for r in rows]) if len(rows) > 1 else ""
+    def by(i, most=6):
+        v = sorted(((r[i], r[0][len(pre):] or r[0]) for r in rows if r[i] > 0), key=lambda x: (-x[0], x[1]))
+        return (" · ".join(f"{n} {k}" for k, n in v[:most]) + (f" · {len(v) - most} more suites {sum(k for k, _ in v[most:])}" if len(v) > most else "")) or "none"
+    return [f"⏬ {name}  ▌ {bold(togo)} TO GO ▐  failing {bold(fail)} · not yet graded {bold(wait)} · excluded {bold(excl)}{side}{prog}  ·  {npass} of {ntot} graded tests pass  ·  {at100} of {len(rows)} suites at 100%{when}",
+            f"   failing: {by(3)}  |  not yet graded: {by(4)}  |  excluded: {by(5)}"]
+
+
+def baseline(conf_path=None, suites_path=None):
+    """the debt= all= line of each block as measured now, for the switch file"""
+    _, sprints = read_conf(conf_path or CONF)
+    for c in sprints:
+        rows = piles(c, suites_path)
+        excl = sum(r[5] for r in rows)
+        print(f"name={c.get('name', '')}\tdebt={sum(r[3] + r[4] for r in rows) + excl}\tall={sum(r[2] for r in rows) + excl}\tfailing={sum(r[3] for r in rows)}\tnot_yet_graded={sum(r[4] for r in rows)}\texcluded={excl}\tset_aside={sum(r[6] for r in rows)}")
+    return 0
 
 
 def probe():
@@ -153,15 +296,46 @@ def probe():
         bad.append(("three_sprints", o))                # arm 6: three sprints in one file, two of them splitting one language by the suite key
     if lines("officer_04", conf, tsv, stamp=False) != []:
         bad.append(("three_sprints_seat_not_shown", "printed"))
+    # arm 7, the whole count: three piles and their sum; a release moves a program between piles and the sum stands; a cure lowers it; an added program is said; zero is said as zero
+    store, runners, corp = os.path.join(d, "results.tsv"), os.path.join(d, "RUNNERS.tsv"), os.path.join(d, "corpus")
+    os.makedirs(os.path.join(corp, "packages/icon/gamma"))
+    open(runners, "w").write("# the runner table\ngamma\tpkg\ticon\tcorpus_suite_harness.py\tcorpus/packages/icon/gamma\n")
+    open(os.path.join(corp, "packages/icon/gamma/EXCLUDED.tsv"), "w").write("# classes\na\tGRADED_IN_ANOTHER_PACKAGE\tgraded as ipl entry a\nb\tNOT_A_UNIT_TEST\tx\nc\tNEEDS_NETWORK\tx\nd\tTHREADS_EXCLUDED_BY_LON\tx\n")
+    h2 = head + "\tcriterion_changed\ttoday_excluded"
+    def whole(p, t, x, reds, conf_more=""):
+        open(tsv, "w").write(h2 + "\n" + f"gamma\tIcnGamma\tx\ticon\td\t0\t0\td\t{p}\t{t}\th\t\t{x}\n" + "delta\tIcnDelta\tx\ticon\td\t0\t0\td\t5\t5\th\t\t\n")
+        open(store, "w").write("ts_utc\tscrip\tcorpus\tmeasurer\tclass\tsuite\tlang\tprogram\tmode\toutcome\tsecs\n" + "".join(f"t\ts\tc\tg\tpkg\tgamma\ticon\tp{i}\tm3\tFAIL\t1\n" for i in range(reds))
+                          + "t\ts\tc\tg\tpkg\tgamma\ticon\tq\tm4\tFAIL\t1\n" + "t\ts\tc\tg\tpkg\tgamma\ticon\tu\tm3\tUNGRADED\t1\n")
+        _RED.clear(); _DIR.clear()
+        _, sp = read_conf(conf)
+        return whole_count(sp[0], tsv, False, store, runners, corp)
+    open(conf, "w").write("show=chairman\nname=ICON\nlang=icon\ndebt=7\nall=16\ndebt_started=11-18 12:1x\n")
+    o1 = whole(6, 9, 4, 2)          # 3 not passing: 2 measured, 1 not yet graded; 4 excluded, 2 of them settled
+    w1 = "⏬ ICON  ▌ 𝟱 TO GO ▐  failing 𝟮 · not yet graded 𝟭 · excluded 𝟮 (2 more set aside by ruling)   ██████░░░░░░░░░░░░░░  2 done of 7 since 11-18 12:1x  ·  11 of 14 graded tests pass  ·  1 of 2 suites at 100%"
+    if o1 != [w1, "   failing: Gamma 2  |  not yet graded: Gamma 1  |  excluded: Gamma 2"]:
+        bad.append(("whole_count", o1))
+    o2 = whole(6, 10, 3, 2)         # one excluded program released into the suite, not yet graded: the sum stands at 5
+    if not (o2 and "▌ 𝟱 TO GO ▐  failing 𝟮 · not yet graded 𝟮 · excluded 𝟭" in o2[0] and "2 done of 7" in o2[0]):
+        bad.append(("release_moves_no_sum", o2))
+    o3 = whole(6, 11, 3, 3)         # a program added to the suite, failing: said as added, the sum up by one and the done count as it was
+    if not (o3 and "▌ 𝟲 TO GO ▐" in o3[0] and "2 done of 8 since 11-18 12:1x (+1 programs added)" in o3[0]):
+        bad.append(("added_is_said", o3))
+    os.remove(os.path.join(corp, "packages/icon/gamma/EXCLUDED.tsv"))
+    open(os.path.join(corp, "packages/icon/gamma/EXCLUDED.tsv"), "w").write("a\tGRADED_IN_ANOTHER_PACKAGE\tgraded as ipl entry a\n")
+    o4 = whole(9, 9, 1, 0)
+    if not (len(o4) == 1 and o4[0].startswith("🏁 ICON: ZERO. Nothing failing, nothing waiting to be graded, nothing excluded (1 more set aside by ruling); 14 of 14 tests pass in 2 suites.")):
+        bad.append(("whole_zero", o4))
     for name, got in bad:
         print(f"SPRINT_COUNTDOWN_PROBE RED arm={name} got={got!r}")
-    print(f"SPRINT_COUNTDOWN_PROBE arms=6 red={len(bad)}")
+    print(f"SPRINT_COUNTDOWN_PROBE arms=7 red={len(bad)}")
     return 1 if bad else 0
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--probe":
         sys.exit(probe())
+    if len(sys.argv) > 1 and sys.argv[1] == "--baseline":
+        sys.exit(baseline())
     try:
         for ln in lines(sys.argv[1] if len(sys.argv) > 1 else os.environ.get("S4E_SEAT", "")):
             print(ln)
