@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # s4e_test_request.sh -- ASK THE coo FOR NAMED TESTS (R-1806; Lon 2026-10-15, verbatim: "The COO will have two work inputs, the round-robin and the
 # recently requested from other officers and HQ's."). The coo's loop has exactly two inputs: these requests, served FIRST and oldest first, then its round
-# robin. A request names a suite and its tests; the loop grades them one test at a time in both modes on origin HEAD, writes each test's row to the progress
+# robin. A request names a suite and its tests; the loop grades them one test at a time in mode 3 (mode 4 is not graded: corpus_suite_harness.py mode3_only, Lon 2026-11-18) on origin HEAD, writes each test's row to the progress
 # database tagged req=<your seat>, assembles the suite's row, and telegrams you every verdict. A landing's core-plus-shell check is its lander's request.
 #
 #   s4e_test_request.sh <suite-key> <entry>...     file a request (the entries as the suite's ALL.csv and PARTITION.tsv name them)
@@ -238,5 +238,5 @@ mkdir -p "$REQ_DIR" || refuse "cannot create $REQ_DIR"
 id="$(date -u +%Y%m%dT%H%M%S)-$who-$key-$$"
 tmp="$REQ_DIR/.$id.tmp"
 { echo "seat=$who"; echo "suite=$key"; echo "table=$tab"; echo "filed=$(date '+%F %T %Z')"; echo "entries=$(printf '%s ' $ents | sed 's/ $//')"; } > "$tmp" && mv "$tmp" "$REQ_DIR/$id.req" || refuse "could not write the request"
-echo "REQUESTED $id: $n test(s) of $key for $who. The coo's loop grades them ahead of its round robin, one test at a time in both modes, rows tagged req=$who, and telegrams you the verdicts. Pending now: $(ls "$REQ_DIR"/*.req 2>/dev/null | wc -l)."
+echo "REQUESTED $id: $n test(s) of $key for $who. The coo's loop grades them ahead of its round robin, one test at a time in mode 3 (mode 4 is not graded: corpus_suite_harness.py mode3_only, Lon 2026-11-18), rows tagged req=$who, and telegrams you the verdicts. Pending now: $(ls "$REQ_DIR"/*.req 2>/dev/null | wc -l)."
 echo "WAIT: a verdict's telegram wakes nobody. Run this in the background and stop; its end wakes your session with the verdict: bash $HERE/s4e_test_request.sh --wait $id"
