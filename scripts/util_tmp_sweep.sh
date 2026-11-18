@@ -39,6 +39,11 @@
 #   */5 * * * * XDG_RUNTIME_DIR=/run/user/1000 systemd-run --user --scope --slice=s4e-batch.slice -q flock -n /home/resources/progress/.tmp-sweep.lock bash /home/harness/scripts/util_tmp_sweep.sh
 #               --apply --if-over 70 --dead-sessions-hours 6 >> /home/resources/progress/TMP-SWEEP.cron.log 2>&1
 # The receipt adds used_before=<pct> pressure=<pct> bulk=<n> bulk_mb=<mb> used_after=<pct>; a bulk deletion prints as class "bulk".
+# (8) THE PRESSURE ARM READS INSIDE /tmp/s4e/<seat> TOO (the chairman 2026-11-18; MEASURED 12:32 CST: /tmp 83 then 85 percent, developer_10 and developer_03 each
+# 12 GB of run outputs under /tmp/s4e/<seat>, written 09:05 to 09:56 and idle since; rule (7) holds a named entry there to the 48 h cutoff and rule (6) kept the
+# whole of /tmp/s4e as one name, so with every seat's scratch moved under it the pressure arm found bulk=0 while the box filled and the president had to ask each
+# seat by telegram): at or over --pressure each entry of /tmp/s4e/<seat> is a candidate of the idle bulk as a top-level entry is, by the same --bulk-mb, --idle-min
+# and no live cwd or open file inside, largest first, its line carrying the seat.
 # USE: bash harness/scripts/util_tmp_sweep.sh            # dry run: what would go, by class, with bytes
 #      bash harness/scripts/util_tmp_sweep.sh --apply    # delete it, print the receipt line, append it to the ledger
 # RECEIPT: TMP_SWEEP applied=<0|1> cutoff_hours=<h> entries=<n> freed_mb=<mb> sessions=<n> session_mb=<mb> free_after=<...>
@@ -194,6 +199,16 @@ if est >= press:
         p = "/tmp/" + name
         if name.startswith(KEEP_PREFIX) or name in KEEP_NAMES or p in gone or not os.path.isdir(p): continue
         if free_of_procs(p) and idle(p): cand.append(p)
+    if os.path.isdir(s4e):
+        for seat in sorted(os.listdir(s4e)):
+            sd = os.path.join(s4e, seat)
+            if not os.path.isdir(sd) or os.path.islink(sd): continue
+            try: ents = sorted(os.listdir(sd))
+            except OSError: continue
+            for e in ents:
+                q = os.path.join(sd, e)
+                if q in gone or os.path.islink(q): continue
+                if free_of_procs(q) and idle(q): cand.append(q); owner[q] = seat
     if os.path.isdir(root):
         for seat in sorted(os.listdir(root)):
             sd = os.path.join(root, seat)
@@ -218,7 +233,7 @@ if est >= press:
     sized = sorted([x for x in sized if x[0] >= bulk_kb], reverse=True)
     for kb, p in sized:
         if est < low: break
-        print("%-8s %8.1fM %6.1fh %s" % ("bulk", kb / 1024, (now - newest_in(p)) / 3600, p))
+        print("%-8s %8.1fM %6.1fh %s%s" % ("bulk", kb / 1024, (now - newest_in(p)) / 3600, p, "  [%s]" % owner[p] if p in owner else ""))
         if apply:
             if not rescue(p): continue
             try:
