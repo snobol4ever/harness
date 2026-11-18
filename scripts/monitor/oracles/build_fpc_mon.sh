@@ -4,7 +4,7 @@
 # monitor inside FPC just like officer did for Icon and Prolog"; the standard is MONITOR-BINARY-DESIGN.md section THE ORACLES ARE
 # INSTRUMENTED IN THEIR OWN SOURCE, R-1189; the precedents SCRIP d85e6186d (Icon) and 4a9d5a698 (GNU Prolog)).
 #
-# From the pristine /home/resources/FPCSource drop (main, 3.3.1; the recorded oracle /usr/bin/fpc is 3.2.2, which is also the
+# From the pristine /home/packages/pascal/FPCSource drop (main, 3.3.1; the recorded oracle /usr/bin/fpc is 3.2.2, which is also the
 # starting compiler) plus fpc-mon.patch and three new files (monitor_fpx_nmonipc.pas -> compiler/nmonipc.pas, the injector;
 # monitor_fpx_monipc.inc / monitor_fpx_monipch.inc -> rtl/inc/, the fire-points speaking the wire in Pascal with the system
 # unit's own syscalls, since an FPC program links no libc). The fork's compiler takes -gi: every element of every statement

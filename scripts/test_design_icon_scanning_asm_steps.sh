@@ -26,7 +26,7 @@ BENCH="$S4E_CORPUS/benchmarks/icon"
 STEPS="$HERE/../designs/scanning_asm/STEPS.tsv"   # moved from corpus/tests/icon/scanning_asm (the coo 2026-11-11, CIO-56: a language folder is its container and config alone)  # one-disk: not a path
 OUT=""
 SUITES=/home/resources/progress/SUITES.tsv
-ICONT=/home/resources/icon-master/bin/icont
+ICONT=/home/packages/icon/icon-master/bin/icont
 ALLF="rt_scan_enter rt_scan_leave rt_scan_sync_in rt_scan_sync_out rt_scan_live_subj rt_scan_reenter_live rt_scan_needle rt_icn_cset_bits_d rt_icn_cset_member_n rt_keyword_var rt_substr"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 . "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"

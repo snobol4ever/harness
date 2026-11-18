@@ -233,13 +233,13 @@ gprolog_output_filter() {
 # ⛔ CALLERS MUST REFUSE, NOT FALL BACK -- same law as every accessor above.  A missing icont/iconx
 # must be LOUD on stderr with a non-zero return, never a silent empty string a caller can string-
 # concat into a broken command line.
-# Canonical shared build (verified executable this session): /home/resources/icon-master/bin/{icont,iconx}.
+# Canonical shared build (verified executable this session): /home/packages/icon/icon-master/bin/{icont,iconx}.
 # ⭐ ONE PATH, NO ALIAS (R-1853, 2026-10-21; Lon in-chat, verbatim: "We use proper absolute and relative paths."
 # · "I am concerned only with ones we create."): /home/resources/icon-build was a symlink to icon-master that hq_C made in s266
-# so callers defaulting to it would land on the one tree. Every caller now names /home/resources/icon-master and the link is
+# so callers defaulting to it would land on the one tree. Every caller now names /home/packages/icon/icon-master and the link is
 # removed; test_gate_no_symlinks.sh ARM 5 keeps the top level of /home/resources free of links we make.
 icont_bin() {
-    local c="/home/resources/icon-master/bin/icont"
+    local c="${S4E_PACKAGES:-/home/packages}/icon/icon-master/bin/icont"
     if [ ! -x "$c" ]; then
         printf "⛔ THE SHARED ICON ORACLE (icont) IS MISSING: %s\n" "$c" >&2
         printf "   Grading or timing an Icon harness with it absent prints a full, plausible, entirely false all-FAIL table.\n" >&2
@@ -255,7 +255,7 @@ icont_bin() {
 # ⛔ This does NOT deprecate icont_bin/iconx_bin: a BENCHMARK must keep the compile and the run separate so it
 # times only the run, and this driver folds the two together by design. Grading wants one step; timing wants two.
 icon_bin() {
-    local c="/home/resources/icon-master/bin/icon"
+    local c="${S4E_PACKAGES:-/home/packages}/icon/icon-master/bin/icon"
     if [ ! -x "$c" ]; then
         printf "⛔ THE SHARED ICON ORACLE (icon, one-step driver) IS MISSING: %s\n" "$c" >&2
         printf "   Grading an Icon harness with it absent prints a full, plausible, entirely false all-FAIL table.\n" >&2
@@ -265,7 +265,7 @@ icon_bin() {
     printf '%s\n' "$c"
 }
 iconx_bin() {
-    local c="/home/resources/icon-master/bin/iconx"
+    local c="${S4E_PACKAGES:-/home/packages}/icon/icon-master/bin/iconx"
     if [ ! -x "$c" ]; then
         printf "⛔ THE SHARED ICON ORACLE (iconx) IS MISSING: %s\n" "$c" >&2
         printf "   Grading or timing an Icon harness with it absent prints a full, plausible, entirely false all-FAIL table.\n" >&2
@@ -319,11 +319,11 @@ gplc_bin() {
     printf '%s\n' "$w"
 }
 # ⛔⭐⭐⭐ XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB PACKAGE (Lon 2026-10-23 11:3x CDT, in-chat to the cfo, verbatim: "Since SWIPL does not have all XSB, we should begin
-# to use XSB system as the third oracle."; R-1927, RULES.md § Oracles FACT RULE of the same name). XSB 5.0.0 (Green Tea, built 2026-09-13) under /home/resources/prologs/xsb
+# to use XSB system as the third oracle."; R-1927, RULES.md § Oracles FACT RULE of the same name). XSB 5.0.0 (Green Tea, built 2026-09-13) under /home/packages/prolog/xsb
 # grades packages/prolog/xsb_tests alone, each program run as XSB's own gentest.sh runs it ([NAME]. tell(temp). GOAL. told. on stdin of "xsb -e segfault_handler(warn).",
 # testall.sh's options); swi_tests/xsb and every other Prolog package keep their oracle. XSB_ORACLE_BIN is the launcher XSB ships (bin/xsb, a script that finds its own
 # install); nothing under ../harness/scripts/ names it any other way (test_gate_no_bare_xsb_outside_the_accessor.sh).
-XSB_ORACLE_BIN="/home/resources/prologs/xsb/XSB/bin/xsb"
+XSB_ORACLE_BIN="${S4E_PACKAGES:-/home/packages}/prolog/xsb/XSB/bin/xsb"
 xsb_bin() {
     local c="$XSB_ORACLE_BIN"
     if [ ! -x "$c" ]; then
@@ -336,10 +336,10 @@ xsb_bin() {
 }
 # ⛔⭐⭐⭐ UNICON IS THE ORACLE FOR UNICON-ONLY PROGRAMS (Lon 2026-10-31, in-chat, verbatim: "Let's extend Icon to Unicon with a command-line switch, or if it is a super set then a switch is not needed."; R-2072,
 # which supersedes the 2026-09-11 "Do not use Unicon for anything" ruling (R-570) for the superset's own surface and for nothing else). The Unicon translator `unicon` (the Unicon git drop d784f58, built in place under
-# /home/resources/unicon by build_unicon_oracle.sh) cuts the refs of the programs that carry the Unicon markers (class, package, import, method); Arizona icont/iconx (icont_bin/iconx_bin above) stay the oracle of plain Icon.
+# /home/packages/icon/unicon by build_unicon_oracle.sh) cuts the refs of the programs that carry the Unicon markers (class, package, import, method); Arizona icont/iconx (icont_bin/iconx_bin above) stay the oracle of plain Icon.
 # ⛔ The 2026-09-11 ruling's SECOND reason stands: Unicon is NEVER a normalizer. `unicon -E` rewrites a source (it inserts the semicolons the Icon reader leaves implicit), and a rewrite applied at grade time means the artifact graded
 # is not the artifact in the repo -- the source in the corpus IS the source (R-567). test_gate_no_bare_unicon_outside_the_accessor.sh holds both: the oracle is named one way, and no script runs it with -E. ORACLES.md, UNICON.
-UNICON_ORACLE_BIN="/home/resources/unicon/bin/unicon"
+UNICON_ORACLE_BIN="${S4E_PACKAGES:-/home/packages}/icon/unicon/bin/unicon"
 unicon_bin() {
     local c="$UNICON_ORACLE_BIN"
     if [ ! -x "$c" ]; then
@@ -353,7 +353,7 @@ unicon_bin() {
 # ⭐ THE GRAPHICS ORACLES, BESIDE THE PLAIN ONES AND NEVER IN PLACE (Lon 2026-11-14 15:4x CST, in the grader's window, verbatim: "We are absolutely DOING GRAPHICS, X-windows. Yes? We should be able
 # to do off-line (i.e. without physical window in which a human user is required) GUI tests. Yes?"; row oracle-icon-and-unicon-have-a-graphics-build-under-xvfb; skill icon section 1).
 # Arizona icont/iconx 9.5.25a with X: /home/resources/icon-master-x (the grader 2026-11-14, the fleet's semicolon-required translator). unicon 13.3 with X11, Xft, JPEG, PNG and OpenGL:
-# /home/resources/oracles-graphics/unicon (officer_06 2026-11-16: a git clone of the plain drop /home/resources/unicon at d784f58, its default ./configure, make; the plain drop is untouched).
+# /home/resources/oracles-graphics/unicon (officer_06 2026-11-16: a git clone of the plain drop /home/packages/icon/unicon at d784f58, its default ./configure, make; the plain drop is untouched).
 # MEASURED 2026-11-16 by officer_06: one probe (WOpen, DrawLine, FillRectangle, DrawCircle, every drawing read back with Pixel as letters, WriteImage) run twice through each under its own
 # Xvfb gave the same text and the same GIF byte for byte; the two oracles print the same letters; with no display each answers "no window". These cut a DISPLAY program's ref only, and the graphics unicon an SSL program's too (the plain unicon was built
 # --disable-graphics and has no OpenSSL; unicon_tests crypto/, the grader 2026-11-17, Lon's choice in the grader's window);

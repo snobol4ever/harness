@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ⛔⛔⛔ WITHDRAWN 2026-09-11 BY LON, CEO-570 -- verbatim: "Do not use Unicon for anything. We do not
 # want you getting confused and using it to add semi-colons on the fly versus adding the files to the
-# corpus repo." DO NOT RUN THIS. The build it produced (/home/resources/unicon/) is reference material
+# corpus repo." DO NOT RUN THIS. The build it produced (/home/packages/icon/unicon/) is reference material
 # only: not an oracle, not a cross-check, not a rival, not a preprocessor. See /home/resources/ORACLES.md
 # (the UNICON IS NOT AN ORACLE section) for the two measured reasons -- it DELEGATES to icont, and the
 # semicolon-normalizer use Lon forbade would make the graded artifact differ from the committed one.
@@ -24,7 +24,7 @@ exit 2
 #       route, never a baseline change. ⛔ If Unicon and icont disagree, ICONT WINS, and the divergence
 #       is recorded with both outputs.
 set -euo pipefail
-DEST=/home/resources/unicon
+DEST=/home/packages/icon/unicon
 SRC=https://github.com/uniconproject/unicon.git
 say() { printf '\n=== %s\n' "$*"; }
 [ -e "$DEST" ] && { echo "⛔ REFUSED: $DEST already exists. This script never overwrites an oracle tree."; echo "   Remove it deliberately, or edit DEST, then re-run."; exit 2; }

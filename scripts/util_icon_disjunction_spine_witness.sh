@@ -14,7 +14,7 @@
 #                        pops the inner disjunction's selector and the subscript's carves with it, and the consumer's own carves then overwrite them before the
 #                        arm's beta carves the region back. The TO arms of the first witness survive the pop only because a TO box keeps its counter in an rbp
 #                        local. So the nested case is the OPEN question for hq_icon's resumable-arm design, reported here and never required to read 0.
-# The refs are cut from the oracle (/home/resources/icon-master/bin/iconx), which agrees with SCRIP's stock output on both.
+# The refs are cut from the oracle (/home/packages/icon/icon-master/bin/iconx), which agrees with SCRIP's stock output on both.
 # What this script measures, per witness: (a) the program's output equals the ref in mode 3 and in mode 4, (b) scrip --dump-homes prints no IR_DISJUNCTION home
 # whose reason is retaining-disjunction (the RBP frame word the planner gives a disjunction with a resumable arm). (a) is required for both witnesses; (b) is
 # required to read 0 for icn_dj_spine_alt only (today 2) and is reported for icn_dj_spine_nested (today 2) as the open case.

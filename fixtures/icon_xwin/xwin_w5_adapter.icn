@@ -2,7 +2,7 @@
 # Icon window facility witness, step W5 (the adapter widened): a loaded C function called with seventy arguments, more than the adapter's 64 slots, and the window functions that suspend (Pixel, WAttrib, QueryPointer) read through the collecting hook. Runs under a private virtual display.
 procedure main()
    local f, w, n, c;
-   f := loadfunc("/home/resources/icon-master/bin/libcfunc.so", "dword") | stop("no dword");
+   f := loadfunc("/home/packages/icon/icon-master/bin/libcfunc.so", "dword") | stop("no dword");
    write("dword of one argument ", f(7));
    write("dword of seventy arguments ", f(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70));
    w := open("witness five", "g", "size=8,4", "fg=black", "bg=white", "canvas=hidden") | stop("no window");

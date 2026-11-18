@@ -17,7 +17,7 @@ the origin and the source text.
 
 ⛔⛔ THE REF IS ORACLE-CUT, NEVER HAND-TYPED AND NEVER FROM SCRIP (hq_B's own constraint, verbatim: "refs
 cut from icont and iconx by absolute path, never from SCRIP"). This script invokes the shared oracle
-(icon_bin() in lib_oracle_flags.sh -> /home/resources/icon-master/bin/icon, the one-step icont+iconx
+(icon_bin() in lib_oracle_flags.sh -> /home/packages/icon/icon-master/bin/icon, the one-step icont+iconx
 driver -- "grading wants one step; timing wants two", per that file's own header) directly, TWICE, and
 REFUSES on disagreement between the two runs (nondeterminism) exactly as util_cut_icon_ipl_refs.sh does
 for the same reason. want_rc is the oracle's OWN observed exit code -- never a caller-supplied guess.
@@ -61,7 +61,7 @@ import corpus_suite_harness as csh  # noqa: E402  -- the ONE authority for Entry
 import harness_paths  # noqa: E402  -- the absolute model: where corpus lives
 S4E_CORPUS = harness_paths.corpus()
 ORACLE = {
-    "icon": ["/home/resources/icon-master/bin/icon"],  # icont+iconx, one step -- grading wants one step
+    "icon": ["/home/packages/icon/icon-master/bin/icon"],  # icont+iconx, one step -- grading wants one step
     "snobol4": ["/home/resources/x64/bin/sbl", "-bf"],  # THE one SNOBOL4 oracle (Lon 2026-09-07/08, RULES sec
     "snocone": ["/home/resources/x64/bin/sbl", "-bf"],  # ⛔ NOT RUNNABLE ON THE WITNESS -- see SNOCONE SUPPORT below
     "raku": ["/home/resources/rakudo-local/bin/raku"],  # Rakudo 2026.05, the ONE Raku oracle (rakudo_bin() in lib_oracle_flags.sh

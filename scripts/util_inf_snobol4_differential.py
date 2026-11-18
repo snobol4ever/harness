@@ -42,7 +42,7 @@ sys.path.insert(0, HERE)
 import harness_paths
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
 INF = os.path.join(str(harness_paths.corpus()), 'demos', 'scriptix', 'infinite_snobol4')
-ICONT = '/home/resources/icon-master/bin/icont'
+ICONT = '/home/packages/icon/icon-master/bin/icont'
 SBL = '/home/resources/x64/bin/sbl'
 
 def refuse(why):

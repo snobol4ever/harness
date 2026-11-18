@@ -37,8 +37,8 @@ ROOT="$(cd "$S4E_SCRIP" && pwd)"
 S4E="${S4E_HOME:-$(dirname "$S4E_SCRIP")}"
 GATE_NAME=util_icon_ref_provenance
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || true
-ICONT="$(command -v icont_bin >/dev/null 2>&1 && icont_bin || echo /home/resources/icon-master/bin/icont)"
-ICONX="$(command -v iconx_bin >/dev/null 2>&1 && iconx_bin || echo /home/resources/icon-master/bin/iconx)"
+ICONT="$(command -v icont_bin >/dev/null 2>&1 && icont_bin || echo /home/packages/icon/icon-master/bin/icont)"
+ICONX="$(command -v iconx_bin >/dev/null 2>&1 && iconx_bin || echo /home/packages/icon/icon-master/bin/iconx)"
 PKGNAME="${1:-}"; NAMES=0; [ "${2:-}" = "--names" ] && NAMES=1
 [ -n "$PKGNAME" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: name a package under ${S4E_CORPUS##*/}/packages/icon/ (e.g. jcon_tests)"; exit 2; }
 PK="$S4E_CORPUS/packages/icon/$PKGNAME"

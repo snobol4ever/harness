@@ -121,7 +121,7 @@ def selftest():
         ('SW="$(swipl_bin)" || exit 2', False, 1), ('"$(sbl_correctness_bin)" -bf x.sno < /dev/null', False, 1),
         ("timeout -k 5 60 /home/resources/x64/bin/sbl -bf x.sno", False, 1), ('B=$(rakudo_bin); "$B" t.raku', False, 1),
         ('run(["/usr/bin/swipl", "-q", p])', True, 1), ("bash \"$HERE/oracle_gprolog.sh\" --consult x.pl", False, 1),
-        ("ICONT=/home/resources/icon-master/bin/icont", False, 1),
+        ("ICONT=/home/packages/icon/icon-master/bin/icont", False, 1),
         ("# swipl_bin is the accessor", False, 0), ('echo "use $(swipl_bin) here"', False, 0), ("x = 1  # not swipl_bin", True, 1),
         ('"""swipl_bin in a docstring"""', True, 0), ("$swipl_binary --version", False, 0), ("my_swipl_bin_count=3", False, 0),
         ('"$(sbl_clean_bin)" -bf k.sno', False, 0), ("bash util_oracle.sh swipl -- -q -g main x.pl", False, 0), ("swipl -q x.pl", False, 0),

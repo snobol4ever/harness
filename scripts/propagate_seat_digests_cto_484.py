@@ -99,7 +99,7 @@ LANES = {
                 "SPITBOL, `/home/resources/x64/bin/sbl -bf` through `sbl_correctness_bin()` (Snocone and Rebus are SNOBOL4 in another syntax)", "snobol4",
                 "`/snocone-parser-patterns` first (a bootstrap parser is one Snocone pattern), `/snobol4` § 10", "snocone", "sc"),
     "icon": ("THE ICON LANE", "IcnRungs IcnDemo IcnBench IPL Jcon Zona", "GOAL-ICON-100.md",
-             "Arizona Icon 9.5.25a, `/home/resources/icon-master/bin/icont` through `icont_bin()`; semicolons are settled law", "icon",
+             "Arizona Icon 9.5.25a, `/home/packages/icon/icon-master/bin/icont` through `icont_bin()`; semicolons are settled law", "icon",
              "`/icon` first (reference § 8-9), `/rtx-asm-leaves` for a generator leaf", "icon", "icn"),
     "unicon": ("THE UNICON LANE (the Icon superset: one front end with hq_icon's, no switch; a class, package, import or method header marks a Unicon program)", "UniTests (Unicon's own tests, refs cut through `unicon_bin()`); the Icon suites stay at 100 and are hq_icon's", "GOAL-UNICON-100.md",
                "Unicon through `unicon_bin()`; Icon's `icont_bin()` for what both share", "icon",

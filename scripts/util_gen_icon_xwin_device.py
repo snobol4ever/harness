@@ -1091,7 +1091,7 @@ def arizona_functions():
     path = os.path.join(DESIGNS, "arizona", "FUNCTIONS-48.tsv")
     if os.path.isfile(path):
         return [l.split("\t")[0] for l in open(path) if l.strip() and not l.startswith("#")]
-    src = "/home/resources/icon-master/src/runtime/fwindow.r"
+    src = "/home/packages/icon/icon-master/src/runtime/fwindow.r"
     names = re.findall(r"(?m)^function\{[^}]*\}\s*(\w+)\(", open(src).read())
     return [n for n in names if not n.startswith("Win")]
 

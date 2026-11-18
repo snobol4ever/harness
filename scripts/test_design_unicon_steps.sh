@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate test_design_unicon_steps || exit 2
 # test_design_unicon_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: unicon (the cto, 2026-10-31, R-2072; .github/ARCH-UNICON.md). The plan is
-# harness/designs/unicon/STEPS.tsv (moved from corpus/tests/icon/unicon 2026-11-12); the witnesses are entries unicon__NAME of the icon master, or the package witnesses still loose in corpus/tests/icon/unicon, each with a .ref cut from unicon 13.3 (/home/resources/unicon/bin/unicon,
+# harness/designs/unicon/STEPS.tsv (moved from corpus/tests/icon/unicon 2026-11-12); the witnesses are entries unicon__NAME of the icon master, or the package witnesses still loose in corpus/tests/icon/unicon, each with a .ref cut from unicon 13.3 (/home/packages/icon/unicon/bin/unicon,
 # the Unicon oracle through unicon_bin()), except the plain-Icon fallback witness whose ref Arizona icont/iconx cut because unicon refuses that program;
 # uni_pkg_shapes.icn is the package file the import witness loads from the folder, not a witness of its own.
 #

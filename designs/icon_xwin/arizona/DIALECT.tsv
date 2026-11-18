@@ -1,5 +1,5 @@
 # DIALECT.tsv -- what util_gen_icon_xwin_device.py reads for one dialect; key <tab> value, a key may repeat (officer_07 2026-11-16, the cto ruling 08:5x CST: one script, one folder a dialect)
-src	/home/resources/icon-master/src
+src	/home/packages/icon/icon-master/src
 translator	rtt/rtt
 translator_place	src/rtt/rtt
 translator_args	-x

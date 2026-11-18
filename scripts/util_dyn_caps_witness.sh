@@ -69,8 +69,8 @@ compile)
 runtime)
   [ -x ./scrip ] || { echo "REFUSE(2): no ./scrip"; exit 2; }
   python3 "$S4E_HARNESS/scripts/util_dyn_caps_gen.py" "$T/w" || exit 2
-  ICONT=/home/resources/icon-master/bin/icont; [ -x "$ICONT" ] || { echo "REFUSE(2): no icont oracle at $ICONT"; exit 2; }
-  ( cd "$T/w" && "$ICONT" -s -o args70x args70.icn > /dev/null 2>&1 && PATH=/home/resources/icon-master/bin:$PATH ./args70x > "$T/c.ref" 2>&1 ) || { echo "REFUSE(2): the oracle could not run args70.icn"; exit 2; }
+  ICONT=/home/packages/icon/icon-master/bin/icont; [ -x "$ICONT" ] || { echo "REFUSE(2): no icont oracle at $ICONT"; exit 2; }
+  ( cd "$T/w" && "$ICONT" -s -o args70x args70.icn > /dev/null 2>&1 && PATH=/home/packages/icon/icon-master/bin:$PATH ./args70x > "$T/c.ref" 2>&1 ) || { echo "REFUSE(2): the oracle could not run args70.icn"; exit 2; }
   timeout -k 5 60 ./scrip --run "$T/w/args70.icn" < /dev/null > "$T/c.out" 2> "$T/c.err"
   if cmp -s "$T/c.ref" "$T/c.out"; then echo "PASS args70.icn: a 70-argument call reads $(tr -d '\n' < "$T/c.ref") in both"; else echo "RED args70.icn: iconx prints $(tr -d '\n' < "$T/c.ref"), scrip prints '$(head -c 40 "$T/c.out" | tr -d '\n')' -- $(head -c 140 "$T/c.err" | tr '\n' ' ')"; red=1; fi
   RAKUDO=$(rakudo_bin) || exit 2

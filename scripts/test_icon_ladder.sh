@@ -12,7 +12,7 @@
 # EACH WITNESS RUNS ALONE IN BOTH MODES:  m3 = scrip --run  ·  m4 = scrip --compile --out=x.s + as --64 + gcc -no-pie + run
 # Verdict per witness per mode: stdout byte-equal to the .ref AND rc equal to the declared rc (ALL.rc, keyed
 # on the entry NAME; default 0). A timeout is a FAIL(rc=124), never a hang.
-# ⭐ THE ORACLE THAT MUST CUT THIS LANGUAGE'S REFS: the Icon v9.5.25a oracle `/home/resources/icon-master/bin/icont` + `iconx` (`icont_bin()` / `iconx_bin()`
+# ⭐ THE ORACLE THAT MUST CUT THIS LANGUAGE'S REFS: the Icon v9.5.25a oracle `/home/packages/icon/icon-master/bin/icont` + `iconx` (`icont_bin()` / `iconx_bin()`
 # in lib_oracle_flags.sh). ⛔ SCRIP Icon is SEMICOLON-REQUIRED -- witnesses carry explicit semicolons, since the front end
 # does zero newline processing and icont-style Beginner/Ender insertion is forbidden.
 # ⛔ STATE OF THIS LADDER RIGHT NOW (hq_T 2026-09-03, measured): corpus/tests/icon/ALL.csv carries ZERO

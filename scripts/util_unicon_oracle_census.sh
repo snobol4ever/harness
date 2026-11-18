@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # util_unicon_oracle_census.sh -- HOW MANY OF UNICON'S OWN TEST PROGRAMS DOES THE UNICON ORACLE ITSELF ANSWER (R-2072; the NO_ORACLE_ANSWER census of R-1696; hq_icon 2026-10-31).
 # A program the oracle gives NO OUTPUT for (it refuses, crashes, aborts, hangs past its time) or whose answer no two runs reproduce leaves a suite's denominator as an EXCLUDED row of class NO_ORACLE_ANSWER;
-# every program the oracle DOES answer stays as debt.  This census runs each .icn directly under /home/resources/unicon/tests/<category>/ the way Unicon's own tests/Makefile.test runs it -- compile with the
+# every program the oracle DOES answer stays as debt.  This census runs each .icn directly under /home/packages/icon/unicon/tests/<category>/ the way Unicon's own tests/Makefile.test runs it -- compile with the
 # oracle, run with data/NAME.dat on stdin when it exists (else /dev/null), stdout and stderr together, in the category's own directory -- in a SCRATCH COPY (the shared drop is not written), TWICE, and
 # diffs the first run against stand/NAME.std when Unicon ships one (informational: a diff is the oracle disagreeing with its own ref, which is a finding, not a grading).
 # CLASSES: ANSWERED (compiled, ran, not killed, output present and the two runs equal) - COMPILE_REFUSED - HANG (run past the timeout) - CRASH (killed by a signal) - NO_OUTPUT (nothing written, rc != 0) -
@@ -15,7 +15,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_oracle_flags.sh"
 UC="${CENSUS_UNICON_BIN:-$(unicon_bin)}" || exit 2
-SRC=/home/resources/unicon/tests
+SRC=/home/packages/icon/unicon/tests
 [ -d "$SRC" ] || { echo "REFUSED(2) [census]: no Unicon tests at $SRC"; exit 2; }
 TMO=20; OUT=""; CATS=()
 while [ $# -gt 0 ]; do case "$1" in --timeout) TMO="$2"; shift 2;; --out) OUT="$2"; shift 2;; --cat) CATS+=("$2"); shift 2;; *) echo "REFUSED(2) [census]: unknown argument $1"; exit 2;; esac; done

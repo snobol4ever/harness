@@ -159,7 +159,7 @@ roast_resolve_population() {  # $1=ROOT -> sets ROAST and MANIFEST, or refuses r
   local root="$1"
   MANIFEST=$(resolve_pop "${RAKU_ROAST_MANIFEST:-}" "$root/refs/rakudo-main/t/spectest.data.6.c" /home/resources/rakudo-main/t/spectest.data.6.c) || {
     echo "⛔ REFUSE(2) [roast]: no spectest manifest -- tried \$RAKU_ROAST_MANIFEST, $root/refs/rakudo-main/t/spectest.data.6.c, /home/resources/rakudo-main/t/spectest.data.6.c" >&2; return 2; }
-  ROAST=$(resolve_pop "${RAKU_ROAST_TREE:-}" "$root/refs/roast" /home/resources/roast-master) || {
-    echo "⛔ REFUSE(2) [roast]: no roast tree -- tried \$RAKU_ROAST_TREE, $root/refs/roast, /home/resources/roast-master" >&2; return 2; }
+  ROAST=$(resolve_pop "${RAKU_ROAST_TREE:-}" "$root/refs/roast" /home/packages/raku/roast) || {
+    echo "⛔ REFUSE(2) [roast]: no roast tree -- tried \$RAKU_ROAST_TREE, $root/refs/roast, /home/packages/raku/roast" >&2; return 2; }
   return 0
 }

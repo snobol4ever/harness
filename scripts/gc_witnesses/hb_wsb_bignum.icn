@@ -5,7 +5,7 @@
 # and rt_big_str's two scratch buffers (the uint32_t limb copy and the decimal char buffer, both reached by
 # string(c) and by write(a)). `a` is held across 400 churn allocations, so a lost or unrelocated BIG_t block
 # prints poison or a short number instead of the 121 digits of 2^400.
-# The .ref is cut from the Arizona oracle (/home/resources/icon-master/bin/icont -s -x), not from ./scrip.
+# The .ref is cut from the Arizona oracle (/home/packages/icon/icon-master/bin/icont -s -x), not from ./scrip.
 procedure main();
    local a, b, c, i, churn, s;
    a := 2 ^ 400;

@@ -10,7 +10,7 @@ THE POPULATION, three parts, every unit named by a durable key:
     rungs:<entry>     every entry of the corpus's tests/raku/ALL.raku, extracted alone (a rung suite is a CONTAINER of
                        programs, never one program) through corpus_suite_harness.py's own suite readers
     bench:<file>       every *.raku kernel under the corpus's benchmarks/raku
-    roast:<relpath>    every *.t file under the roast checkout (/home/resources/roast-master)
+    roast:<relpath>    every *.t file under the roast checkout (/home/packages/raku/roast)
 
 THE ORACLE is Rakudo's syntax check, `raku -c FILE` (v2022.12 on the box), run with the file at its own path so
 a roast file's `use lib $*PROGRAM.parent(2).add(...)` resolves. Its verdict per unit is CACHED in
@@ -36,7 +36,7 @@ CORPUS = _hp.corpus()
 RUNGS = CORPUS / "tests" / "raku" / "ALL.raku"
 RUNGS_REF = CORPUS / "tests" / "raku" / "ALL.ref"
 BENCH = CORPUS / "benchmarks" / "raku"
-ROAST = Path(os.environ.get("RAKU_ROAST_DIR", "/home/resources/roast-master"))
+ROAST = Path(os.environ.get("RAKU_ROAST_DIR", "/home/packages/raku/roast"))
 CACHE = _hp.harness() / "designs" / "raku_ladder" / "RAKUDO-SYNTAX-VERDICTS.tsv"   # moved from the corpus's tests/raku/config (the cfo 2026-11-12, CIO-55)
 RAKU = os.environ.get("RAKU_BIN", "/usr/bin/raku")
 SCRIP = SCRIP_DIR / "scrip"

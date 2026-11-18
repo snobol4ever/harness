@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# build_unicon_oracle.sh -- BUILD THE UNICON ORACLE IN PLACE FROM THE DROP AT /home/resources/unicon (R-2072, Lon 2026-10-31; hq_icon, row
+# build_unicon_oracle.sh -- BUILD THE UNICON ORACLE IN PLACE FROM THE DROP AT /home/packages/icon/unicon (R-2072, Lon 2026-10-31; hq_icon, row
 # icon-unicon-the-oracle-unicon-is-built-from-home-resources-unicon-and-reached-only-through-unicon-bin-in-lib-oracle-flags-r-2072).
-# The drop is the Unicon git tree (revision d784f58, 2026-09-06), configured and built in place as /home/resources/icon-master was.  `make Unicon` builds the interpreter
+# The drop is the Unicon git tree (revision d784f58, 2026-09-06), configured and built in place as /home/packages/icon/icon-master was.  `make Unicon` builds the interpreter
 # (icont, iconx), the Icon program library and the OO translator uni/unicon into the drop's bin/.  IDEMPOTENT: on a built drop it finds nothing to do and only verifies.
 # THE VERIFY STEP is the DONE-WHEN of the row: unicon translates, links and runs a one-line program.  Nothing here installs outside the drop.
 # Usage: bash ../harness/scripts/build_unicon_oracle.sh        rc 0 built and verified - rc 1 the build or the verify failed - rc 2 REFUSAL (no drop, no compiler)
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-U=/home/resources/unicon
+U=/home/packages/icon/unicon
 refuse() { echo "REFUSED(2) [build_unicon_oracle]: $*"; exit 2; }
 [ -d "$U" ] || refuse "no Unicon drop at $U"
 [ -f "$U/Makefile" ] || refuse "$U has no Makefile -- the drop is not configured: run ./configure there (unicon's README, Build Instructions)"
