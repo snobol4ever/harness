@@ -3967,6 +3967,7 @@ def unpack_dir(d, dry_run=False):
         _sn = _pkg_stage_name(e.name, path_of[e.name], ext)
         if _sn and not getattr(e, "stage_name", None):
             e.stage_name = _sn
+        e.pkg_rel = path_of[e.name]
     work = Path(tempfile.mkdtemp(prefix="unpack_", dir=os.environ.get("TMPDIR") or None))
     try:
         shutil.copytree(d, work, dirs_exist_ok=True, copy_function=_copy2_own)
