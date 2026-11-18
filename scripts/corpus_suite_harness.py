@@ -732,21 +732,47 @@ def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=N
     return out.decode("utf-8", "replace").rstrip("\n"), rc, kind
 
 
-def run_unicon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, merge_stderr=True, side_env=None, full_refusal=False):
+def unicon_link_units(src_path):
+    """THE SOURCES A UNICON PROGRAM LINKS, BESIDE IT (the cto 2026-11-17, row icon-unicon-the-builder-cuts-a-unicon-library-driver-in-unicon-uni, on officer_09's
+    measurement of unicon_uni unidep/util_driver, which says link util: the translator stopped at icont: cannot resolve reference to file util.u, since a link is
+    read from ucode and nothing had compiled util.icn): every NAME that a link line of the program, or of a source already found, names and whose NAME.icn
+    stands in the program's own directory, in the order met, each once. A name with no source beside the program (a library the oracle's own IPATH holds) is left to the
+    translator. A program with no such link answers []."""
+    src_path = Path(src_path)
+    d = src_path.parent
+    rx = re.compile(r"^[ \t]*link[ \t]+([^#\n]*)", re.M)
+    seen, found, queue = {src_path.stem}, [], [src_path]
+    while queue:
+        cur = queue.pop(0)
+        for m in rx.finditer(cur.read_text(errors="replace")):
+            for w in re.split(r"[ \t,]+", m.group(1).strip()):
+                w = w.strip("\"'")
+                if w and "/" not in w and w not in seen and (d / f"{w}.icn").is_file():
+                    seen.add(w)
+                    found.append(f"{w}.icn")
+                    queue.append(d / f"{w}.icn")
+    return found
+
+
+def run_unicon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None, merge_stderr=True, side_env=None, full_refusal=False, graphics=False):
     """THE UNICON ORACLE AS UNICON'S OWN tests/Makefile.test RUNS IT (hq_unicon, R-2072): the translator with -s -o <stem> <name> in the file's own
     directory through unicon_bin() (never a bare name, never -E), then `./<stem> args < in > out 2>&1`. Returns (text, rc, kind) as
     run_icon_built_oracle does; a translation that fails returns kind "TRANSLATE" and the translator's first line as text. A compile that
     returns rc 0 and leaves no executable (a library module linking sibling .u files) is also "TRANSLATE".
     merge_stderr=False is the package whose contract does not merge stderr: the answer is stdout alone. side_env is the entry's run
     sidecars (side_env_for_source: NAME.env, NAME.pin, NAME.shims/), laid over the program's run only, never the translator's, so a ref is
-    cut under the sidecars its grade applies, as run_icon_built_oracle cuts it (the cio 2026-11-15, row uni_ipl-red-progs-dd2res)."""
+    cut under the sidecars its grade applies, as run_icon_built_oracle cuts it (the cio 2026-11-15, row uni_ipl-red-progs-dd2res).
+    THE SOURCES IT LINKS BESIDE IT are compiled with it (unicon_link_units), so a driver that says link util needs no util.u beforehand. graphics=True takes
+    graphics_unicon_bin() in place of unicon_bin(): the graphics build resolves the package gui, which the plain build cannot (officer_12 2026-11-17: Unable to
+    import package gui); the caller states the fact, the screen road's (an entry that names screen.dump or carries NAME.display) or the CONTRACT's graphics_oracle."""
     src_path = Path(src_path)
     d, stem = src_path.parent, src_path.stem
     lib = HARNESS_SCRIPTS / "lib_oracle_flags.sh"
-    r = subprocess.run(["bash", "-c", f". '{lib}' && unicon_bin"], capture_output=True, text=True)
+    _acc = "graphics_unicon_bin" if graphics else "unicon_bin"
+    r = subprocess.run(["bash", "-c", f". '{lib}' && {_acc}"], capture_output=True, text=True)
     if r.returncode != 0 or not r.stdout.strip():
-        refuse(f"lib_oracle_flags.sh refused (unicon_bin): {r.stderr.strip()}")
-    kind, out, err, rc = _run_raw([r.stdout.strip(), "-s", "-o", stem, src_path.name], timeout, cwd=str(d))
+        refuse(f"lib_oracle_flags.sh refused ({_acc}): {r.stderr.strip()}")
+    kind, out, err, rc = _run_raw([r.stdout.strip(), "-s", "-o", stem, src_path.name] + unicon_link_units(src_path), timeout, cwd=str(d))
     if kind != "RAN" or rc != 0:
         first = ((err or b"") + (out or b"")).decode("utf-8", "replace").strip()
         if not full_refusal: first = first.split("\n")[0]

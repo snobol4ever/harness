@@ -409,7 +409,7 @@ def read_contract(pkg_dir):
     ⭐ CIO-22 D (the coo 2026-11-10, on the cio's design; CIO-15 d revised): `units<TAB>generated` with `generator<TAB><module>` -- a per-goal
     suite (INRIA's goals, Logtalk's cases) is a container of GENERATED programs: the module (scripts/<module>.py of the harness) yields each case of the
     package's own table and the builder runs no oracle (see build_generated)."""
-    out = {"argv": "", "stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": "", "path": "", "silent": ""}
+    out = {"argv": "", "stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "graphics_oracle": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": "", "path": "", "silent": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -461,6 +461,8 @@ def read_contract(pkg_dir):
             out["not_shipped"] = f[1].strip()
         elif f[0] == "unmarked_compile_args" and f[1].startswith("--dialect="):
             out["unmarked_compile_args"] = f[1].strip()
+        elif f[0] == "graphics_oracle":
+            out["graphics_oracle"] = " ".join(x for x in (out["graphics_oracle"], f[1].strip()) if x)   # the cto 2026-11-17: path globs of the entries cut from the graphics unicon though they draw nothing (a gui library driver); a screen entry needs no line
         elif f[0] == "argv" and f[1] == "name-first":
             out["argv"] = "name-first"   # R-328: NAME.argv is one line NAME<TAB>arg..., the program's own name first, as the deleted test_icon_ipl_suite.sh read it (ipl_argv_read)
         elif f[0] == "silent" and f[1] == "exit-status":
@@ -1047,8 +1049,10 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     # there and 1 under unicon (set(&null) is the empty set in Icon and a set of one member in Unicon), and SCRIP, told
                     # --dialect=unicon by the same contract, answered 1 and read red. The entry's own stderr cell decides the stream (_ms), and
                     # its run sidecars reach the program as they reach the grade (side_env_for_source).
+                    import fnmatch
+                    _gfx = bool(out_files and h.SCREEN_FILE in out_files) or (src.parent / f"{src.stem}.display").is_file() or any(fnmatch.fnmatch(name, g) for g in contract["graphics_oracle"].split())
                     return h.run_unicon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text, prog_args=prog_args, out_files=out_files,
-                                                                         merge_stderr=_ms, side_env=h.side_env_for_source(src, Path(_iso_dir)), full_refusal=(contract["fatal"] == "gradable"))
+                                                                         merge_stderr=_ms, side_env=h.side_env_for_source(src, Path(_iso_dir)), full_refusal=(contract["fatal"] == "gradable"), graphics=_gfx)
                 elif lang == "icon" and (merged or _icon_sidecar_declared(src)):
                     # ⭐ AN ENTRY THAT DECLARES A SIDECAR IS CUT HERE WHATEVER THE PACKAGE'S STDERR CELL (officer_04 2026-11-16, row
                     # rosetta-icon-ten-entries-answer-the-clock-the-directory-or-iconxs-stack-and-are-cut-under-sidecars, the cfo's design): NAME.env, NAME.pin,
