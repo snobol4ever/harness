@@ -1194,7 +1194,10 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
             excluded.append((name, "the oracle answers differently on two runs (time, randomness or addresses in its output) -- no one ground truth"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle nondeterministic)", file=sys.stderr)
             continue
-        if ora_kind == "TRANSLATE" and "TRANSLATE" in _no_second:
+        if ora_kind == "TRANSLATE" and ("TRANSLATE" in _no_second or re.search(r"Unable to import|cannot resolve reference|Unable to open|cannot open", ora_text)):
+            # ⭐ UNDER fatal gradable A TRANSLATOR'S REFUSAL IS AN ANSWER, EXCEPT THAT AN UNRESOLVED IMPORT OR LINK IS THE CUT'S OWN FAULT (the cto 2026-11-17, row
+            # icon-unicon-the-builder-cuts-a-unicon-library-driver-in-unicon-uni, on officer_09's measurement: unicon_uni ulsp/lsif_driver was absorbed with the answer
+            # Unable to import (1) package UniDoc, a package the cut did not put beside it; a syntax error in the library (tstmeth: unclosed list) is the library's answer and stays one)
             excluded.append((name, f"the oracle's translator refused it: {ora_text}"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle translation failed)", file=sys.stderr)
             continue
