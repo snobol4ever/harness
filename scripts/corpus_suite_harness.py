@@ -6862,6 +6862,22 @@ def cmd_run(args):
             refuse(f"{_xr_path} names {len(_stale)} entr(ies) this suite does not carry: {', '.join(_stale[:10])}")
         print(f"EXPECTED_REFUSALS n={len(expected_refusals)} from {_xr_path} -- each PASSes in a mode only when refused with /{_xr_re}/ (R-1228)")
     _xr_rx = re.compile(_xr_re.encode()) if expected_refusals else None
+    # ⭐ A SNOBOL4++ EXTENSION IS A PASS ON ITS PORT (Lon 2026-11-18 10:5x CST, in the JVM window, verbatim: "Well, no, we are not going to patch the oracle with
+    # SCRIP enhancements. You handle the difference in the test suite as a PASS, since the oracle is unable to grade."): an entry EXCLUDED.<engine>.tsv beside the
+    # container declares SNOBOL4PP_EXTENSION_KEPT_BY_LON turns on a SPITBOL restriction the port lifts, so sbl -bf ends in an error the port runs past and the
+    # difference is no defect the oracle can name. Under that engine the entry is graded and its output mismatch is recorded PASS, detail snobol4pp-extension;
+    # a crash, a hang or an out-of-memory stays what it is, the ref is never touched, and the entry stays in the denominator (util_score_row.py).
+    port_extensions = set()
+    if _engine() != "scrip":
+        _pe_path = Path(args.sno).with_name(f"EXCLUDED.{_engine()}.tsv")
+        if _pe_path.is_file():
+            for _l in _pe_path.read_text(encoding="utf-8", errors="replace").splitlines():
+                _cols = _l.split("\t")
+                if len(_cols) >= 2 and not _l.startswith("#") and _cols[1].strip() == "SNOBOL4PP_EXTENSION_KEPT_BY_LON":
+                    _c = _cols[0].strip()
+                    port_extensions.add(_c[:-len(ext)] if ext and _c.endswith(ext) else _c)
+            if port_extensions:
+                print(f"PORT_EXTENSIONS n={len(port_extensions)} from {_pe_path} -- each entry's output mismatch is a PASS under S4E_ENGINE={_engine()} (Lon 2026-11-18)")
     tmp_root = Path(tempfile.mkdtemp(prefix="csh_run_"))
     # ⭐ S4E_BATCH=1 (step 5): mode 3 of every eligible entry of this partition runs in ONE scrip --harness process, before the loop (see batch_m3_verdicts)
     _switch_alone = pkg_dir_of(args.sno) is not None and pkg_runs_by_the_switch_alone(pkg_dir_of(args.sno))
@@ -6939,6 +6955,12 @@ def cmd_run(args):
                     verdicts[m] = Verdict("PASS", _v.stdout, _v.stderr, _v.returncode, detail="expected-refusal") if _refused else \
                         Verdict("FAIL", _v.stdout, _v.stderr, _v.returncode, detail="expected-refusal-not-refused-with-the-standard-diagnostic")
                     verdicts[m].secs = _v.secs
+            if e.name in port_extensions:
+                for m in modes:
+                    _v = verdicts[m]
+                    if _v.kind == "FAIL":
+                        verdicts[m] = Verdict("PASS", _v.stdout, _v.stderr, _v.returncode, detail="snobol4pp-extension")
+                        verdicts[m].secs = _v.secs
             _cases_entry = getattr(e, "grader", None) == "swi-cases"
             _tap_entry = getattr(e, "grader", None) == "tap-cases"
             for m in modes:
