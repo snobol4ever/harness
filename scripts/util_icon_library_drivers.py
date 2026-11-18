@@ -10,6 +10,7 @@ the next driver, written by hand, as the Arizona and IPL packages have them.
 
     python3 util_icon_library_drivers.py ROOT            write the drivers under ROOT; prints one DRIVER line a file and a board line
     python3 util_icon_library_drivers.py ROOT --check    write nothing; rc 1 when a driver is missing or would change
+    --unicon-library                                     ROOT is Unicon's own library folder (unicon_uni lib; a ROOT whose real path ends unicon_uni/lib, or that holds uniclass.dir, is read so without the flag)
 
 A file is skipped, by name, when it declares procedure main (it is a program), when it declares nothing this tool can name, or when it is itself a
 driver (NAME_driver.icn). ROOT is a copy the caller owns, never a collection read in place. Exit 0 written or current, 1 --check found a
@@ -158,6 +159,11 @@ def main(argv):
             for x in needs_of(s, depth + 1) + [s]:
                 if x not in out and x != n: out.append(x)
         return out
+    # THE UNICON LIBRARY FOLDER ITSELF HAS NO needs LINKS (the cto 2026-11-18, row icon-unicon-library-drivers-unicon-uni-lib, on the 74 stored drivers of unicon_uni lib that the links
+    # of 03487283 would have changed): unicon_uni lib is unicon's own library on its default path, where unicon finds a superclass through the folder's class database (MEASURED for
+    # file_dlg: class FileDialog : _Dialog is found in lib/gui.icn with IPATH and LPATH unset, 55 fields). A link to the superclass's file would hide that road, so a driver of that folder
+    # keeps the text it was cut with. Every other folder (udb lib among them, where the oracle refused without the links: 15 of 41 drivers) keeps them.
+    unicon_lib = "--unicon-library" in argv or os.path.isfile(os.path.join(root, "uniclass.dir")) or os.path.realpath(root).endswith("/unicon_uni/lib")
     pkg_of = {os.path.basename(f)[:-4]: (PACKAGE.search(codes[f]).group(1) if PACKAGE.search(codes[f]) else None) for f in files}
     wrote = same = skipped = differ = 0
     for f in files:
@@ -166,7 +172,7 @@ def main(argv):
         top, hops = name, 0
         while top in includer and includer[top] != top and hops < 20:
             top, hops = includer[top], hops + 1
-        drv, why = driver_text(name, text, via=(top, pkg_of.get(top)) if top != name else None, needs=needs_of(name))
+        drv, why = driver_text(name, text, via=(top, pkg_of.get(top)) if top != name else None, needs=() if unicon_lib else needs_of(name))
         rel = os.path.relpath(f, root)
         out = f[:-4] + "_driver.icn"
         if drv is None:
