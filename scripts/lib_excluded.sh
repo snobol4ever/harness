@@ -85,6 +85,10 @@ inventory_excluded_names() {
         [ "$f" = "$d/EXCLUDED.scrip.tsv" ] && continue
         [ -f "$f" ] || continue
         extra=""; [ "$f" = "$d/EXCLUDED.dotnet.tsv" ] && extra=LON_UNICODE_BY_DESIGN
+        # Class SNOBOL4PP_EXTENSION_KEPT_BY_LON is admitted on EXCLUDED.jvm.tsv and nowhere else (seat jvm 2026-11-17; Lon 18:1x CST, in the JVM window, verbatim:
+        # "let's do more of a SNOBOL4++ where it has all extensions and keeps the dynamic power of SNOBOL4. Have the INPUT and HOST be just like SPITBOL."): an
+        # entry whose sbl -bf answer turns on a SPITBOL restriction snobol4jvm lifts (OPSYN of unary ^, CSNOBOL4's &DIGITS), its evidence the oracle's answer.
+        [ "$f" = "$d/EXCLUDED.jvm.tsv" ] && extra=SNOBOL4PP_EXTENSION_KEPT_BY_LON
         miss=""
         while IFS=$'\t' read -r nm pk en; do
             [ -n "$pk" ] && [ -n "$en" ] && [ -f "$(dirname "$d")/$pk/ALL.csv" ] && awk -F, -v e="$en" 'NR > 1 && $2 == e { f = 1 } END { exit !f }' "$(dirname "$d")/$pk/ALL.csv" || miss="$miss $nm"
