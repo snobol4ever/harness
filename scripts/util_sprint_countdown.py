@@ -114,23 +114,23 @@ def one_sprint(c, suites_path=None, stamp=True):
         return whole_count(c, suites_path, stamp)
     rows = read_rows(suites_path or SUITES, lang, c.get("keys", ""), c.get("nokeys", ""))
     if not rows:
-        return [f"{name or lang} SPRINT COUNTDOWN: the suite table holds no row of language {lang}"]
+        return [f"{name or lang}: the suite table holds no row of language {lang}"]
     togo = sum(t - p for _, p, t in rows)
     at100 = sum(1 for _, p, t in rows if p == t and t > 0)
-    when = time.strftime("   [%m-%d %H:%M %Z]") if stamp else ""
+    when = time.strftime("  [%H:%M]") if stamp else ""
     start = c.get("start", "")
-    since = f" of {start} at the start ({c.get('started', '?')})" if start.isdigit() else ""
+    since = f" (of {start}, since {c.get('started', '?')})" if start.isdigit() else ""
     gone = f", {int(start) - togo} gone" if start.isdigit() else ""
     if togo == 0:
-        return [f"🏁 {name} SPRINT: ZERO. Every one of the {len(rows)} suites reads 100%{since}.{when}"]
+        return [f"🏁 {name}: ZERO, all {len(rows)} suites 100%{since}.{when}"]
     pre = os.path.commonprefix([n for n, _, _ in rows]) if len(rows) > 1 else ""
     left = sorted(((t - p, n[len(pre):] or n) for n, p, t in rows if t - p > 0), key=lambda x: (-x[0], x[1]))
     npass, ntot = sum(p for _, p, _ in rows), sum(t for _, _, t in rows)
-    head = f"▌ {bold(togo)} FAILING TESTS LEFT, of {bold(start)} at the start ▐" if start.isdigit() else f"▌ {bold(togo)} FAILING TESTS LEFT ▐"
-    fixed = f"   {bar(int(start) - togo, int(start))}  {int(start) - togo} closed (cured or declared out)" if start.isdigit() else ""
-    return [f"⏬ {name} SPRINT  {head}{fixed}  ·  {npass} of {ntot} {name} tests pass  ·  {at100} of {len(rows)} suites at 100%  ·  since {c.get('started', '?')}{when}",
-            "   failing tests by suite: " + " · ".join(f"{n} {k}" for k, n in left)]
-
+    head = f"{bold(togo)} failing, start {bold(start)}  {bar(int(start) - togo, int(start))}" if start.isdigit() else f"{bold(togo)} failing"
+    more = left[6:]
+    tail = f" · +{len(more)} suites ({sum(k for k, _ in more)})" if more else ""
+    return [f"⏬ {name}  {head}  {npass}/{ntot} pass  {at100}/{len(rows)} suites 100%  since {c.get('started', '?')}{when}",
+            "   " + " · ".join(f"{n} {k}" for k, n in left[:6]) + tail]
 
 def read_suites(path, lang, keys="", nokeys=""):
     """-> [(key, nick, pass, total, excluded)] of the language's own rows"""
@@ -269,8 +269,8 @@ def probe():
     bad = []
     table(7, 3)
     o = lines("chairman", conf, tsv, stamp=False)
-    want0 = "⏬ SNOBOL4 SPRINT  ▌ 𝟱 FAILING TESTS LEFT, of 𝟵 at the start ▐   █████████░░░░░░░░░░░  4 closed (cured or declared out)  ·  10 of 15 SNOBOL4 tests pass  ·  0 of 2 suites at 100%  ·  since 11-17 13:01"
-    if o != [want0, "   failing tests by suite: Alpha 3 · Beta 2"]:
+    want0 = "⏬ SNOBOL4  𝟱 failing, start 𝟵  █████████░░░░░░░░░░░  10/15 pass  0/2 suites 100%  since 11-17 13:01"
+    if o != [want0, "   Alpha 3 · Beta 2"]:
         bad.append(("counts", o))                       # arm 1: the count, the port row and the other language left out, the names shortened
     if lines("officer_04", conf, tsv, stamp=False) != []:
         bad.append(("seat_not_shown", "printed"))       # arm 2: a seat the show line does not name prints nothing
@@ -278,20 +278,20 @@ def probe():
         bad.append(("no_switch", "printed"))            # arm 3: no switch file, nothing
     table(10, 5)
     o = lines("president", conf, tsv, stamp=False)
-    if o != ["🏁 SNOBOL4 SPRINT: ZERO. Every one of the 2 suites reads 100% of 9 at the start (11-17 13:01)."]:
+    if o != ["🏁 SNOBOL4: ZERO, all 2 suites 100% (of 9, since 11-17 13:01)."]:
         bad.append(("zero", o))                         # arm 4: zero is said as zero
     table(10, 1)
     o = lines("chairman", conf, tsv, stamp=False)
-    if not (o and "▌ 𝟰 FAILING TESTS LEFT, of 𝟵 at the start ▐" in o[0] and "1 of 2 suites at 100%" in o[0] and o[1] == "   failing tests by suite: Beta 4"):
+    if not (o and "𝟰 failing, start 𝟵 " in o[0] and "1/2 suites 100%" in o[0] and o[1] == "   Beta 4"):
         bad.append(("up_again", o))                     # arm 5: a suite that falls back is counted again
     open(tsv, "w").write("# a comment line\n" + head + "\n" + "alpha\tSnoAlpha\tx\tsnobol4\td\t0\t0\td\t10\t10\th\n" + "gamma\tIcnGamma\tx\ticon\td\t0\t0\td\t8\t9\th\n"
                          + "uni_one\tUniOne\tx\ticon\td\t0\t0\td\t4\t7\th\n" + "rosetta-unicon\tUniRosetta\tx\ticon\td\t0\t0\td\t2\t2\th\n")
     open(conf, "w").write("show=chairman president\nname=SNOBOL4\nlang=snobol4\nstart=9\nstarted=13:01\nname=ICON\nlang=icon\nnokeys=^(uni|rosetta-unicon)\nstart=5\nstarted=12:5x\n"
                           "name=UNICON\nlang=icon\nkeys=^(uni|rosetta-unicon)\nstart=10\nstarted=15:01\n")
     o = lines("chairman", conf, tsv, stamp=False)
-    ok = (len(o) == 5 and o[0].startswith("🏁 SNOBOL4 SPRINT: ZERO.") and "▌ 𝟭 FAILING TESTS LEFT, of 𝟱 at the start ▐" in o[1] and "8 of 9 ICON tests pass" in o[1]
-          and o[2] == "   failing tests by suite: IcnGamma 1" and "▌ 𝟯 FAILING TESTS LEFT, of 𝟭𝟬 at the start ▐" in o[3] and "6 of 9 UNICON tests pass" in o[3] and "1 of 2 suites at 100%" in o[3]
-          and o[4] == "   failing tests by suite: One 3")
+    ok = (len(o) == 5 and o[0].startswith("🏁 SNOBOL4: ZERO,") and "⏬ ICON  𝟭 failing, start 𝟱 " in o[1] and "8/9 pass" in o[1]
+          and o[2] == "   IcnGamma 1" and "⏬ UNICON  𝟯 failing, start 𝟭𝟬 " in o[3] and "6/9 pass" in o[3] and "1/2 suites 100%" in o[3]
+          and o[4] == "   One 3")
     if not ok:
         bad.append(("three_sprints", o))                # arm 6: three sprints in one file, two of them splitting one language by the suite key
     if lines("officer_04", conf, tsv, stamp=False) != []:
