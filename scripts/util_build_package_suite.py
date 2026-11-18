@@ -414,7 +414,7 @@ def read_contract(pkg_dir):
     ⭐ CIO-22 D (the coo 2026-11-10, on the cio's design; CIO-15 d revised): `units<TAB>generated` with `generator<TAB><module>` -- a per-goal
     suite (INRIA's goals, Logtalk's cases) is a container of GENERATED programs: the module (scripts/<module>.py of the harness) yields each case of the
     package's own table and the builder runs no oracle (see build_generated)."""
-    out = {"argv": "", "stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "graphics_oracle": "", "ipath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": "", "path": "", "silent": ""}
+    out = {"argv": "", "stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "graphics_oracle": "", "ipath": "", "fpath": "", "not_shipped": "", "prebuild": "", "fatal": "", "bom": "", "generator": "", "path": "", "silent": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -455,6 +455,9 @@ def read_contract(pkg_dir):
         elif f[0] == "ipath":
             if not (pkg_dir / f[1]).is_dir(): h.refuse(f"{cf}:{n}: ipath {f[1]!r} names no directory beside the package (the run cannot find its imports)")
             out["ipath"] = os.pathsep.join(x for x in (out["ipath"], str((pkg_dir / f[1]).resolve())) if x)
+        elif f[0] == "fpath":
+            if not (pkg_dir / f[1]).is_dir(): h.refuse(f"{cf}:{n}: fpath {f[1]!r} names no directory (the oracle's own build of the C library a loadfunc call opens must stand there)")
+            out["fpath"] = os.pathsep.join(x for x in (out["fpath"], str((pkg_dir / f[1]).resolve())) if x)
         elif f[0] == "lpath":
             if not (pkg_dir / f[1]).is_dir(): h.refuse(f"{cf}:{n}: lpath {f[1]!r} names no directory (the grader could not find the package's $include files there)")
         elif f[0] == "prebuild":
@@ -481,7 +484,7 @@ def read_contract(pkg_dir):
             out["stdin"] = f[1].strip()
         else:
             h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, argv=name-first, units=ref-beside,units=plunit,units=tap, units=iso-rejection, dialect=any-fpc-mode, fatal=gradable, bom=as-shipped, units=generated, generator=MODULE, "
-                     f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space, ipath=DIR, lpath=DIR, path=oracle-bin, silent=exit-status and unmarked_compile_args=--dialect=NAME only")
+                     f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space, ipath=DIR, fpath=DIR, lpath=DIR, path=oracle-bin, silent=exit-status and unmarked_compile_args=--dialect=NAME only")
     if (out["units"] == "generated") != bool(out["generator"]):
         h.refuse(f"{cf}: units=generated and generator=<module> go together (got units={out['units']!r}, generator={out['generator']!r})")
     if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):
@@ -750,6 +753,9 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
     tap = contract["units"] == "tap"
     if lang == "icon" and contract["ipath"] and contract["oracle"] != "unicon":
         os.environ["IPATH"] = os.pathsep.join(x for x in (contract["ipath"], os.environ.get("IPATH", "")) if x)
+    if lang == "icon" and contract["fpath"]:
+        os.environ["FPATH"] = os.pathsep.join(x for x in (contract["fpath"], os.environ.get("FPATH", "")) if x)
+        print("contract: fpath (CONTRACT.tsv) -- " + os.environ["FPATH"] + " is FPATH for every run, the cut's and the grade's", file=sys.stderr)
     if lang == "icon" and contract["path"] == "oracle-bin":
         h.oracle_bin_on_path()
         print("contract: path oracle-bin (CONTRACT.tsv) -- the Icon oracle's folder is first on PATH for every run, as the grade runs it", file=sys.stderr)
@@ -887,7 +893,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                                    f"driver, an include through its includer) or not at all (CONTRACT.tsv units=ref-beside)"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (no .ref beside it, units=ref-beside)", file=sys.stderr)
             continue
-        if src.with_suffix(".clib").is_file():
+        if src.with_suffix(".clib").is_file() and not contract["fpath"]:
             # ⛔ A PROGRAM THAT LOADS C IS GRADED WHERE ITS LIBRARY IS BUILT (the coo 2026-10-01, measured on arizona_tests: cfuncs,
             # cfunc_driver, extlvals): its <stem>.clib names the vendored C sources, which test_icon_arizona_suite.sh builds through
             # declared_clib_beside and hands to both modes as FPATH; a container entry carries no FPATH contract, so cut here it
