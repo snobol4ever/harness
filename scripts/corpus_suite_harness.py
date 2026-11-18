@@ -3488,6 +3488,10 @@ def _fmt2_lines_text(lines):
     return "".join(l + "\n" for l in lines)
 
 
+def _fmt2_bytes(text):
+    return text.encode("utf-8", "surrogateescape")   # a byte that is no UTF-8 was held as a lone surrogate (read_src_text, _read_lf_lines) and goes out as itself
+
+
 def _fmt2_is_one(e):
     """CIO-24 f and CIO-34 (2): one program line, exactly one stdout line, no stdin, no arguments, exit status 0; nothing else of the
     entry may need a part ONE cannot hold (an XFAIL flag, merged stderr)."""
@@ -3807,9 +3811,16 @@ def _fmt2_vars(e):
     return {k: v for k, v in vars(e).items() if k != "seq"}
 
 
+def _fmt2_graded_view(k, v):
+    if k not in ("ref", "stderr_answer"):
+        return v
+    _g = lambda x: x.encode("utf-8", "surrogateescape").decode("utf-8", "replace") if isinstance(x, str) else x
+    return [_g(x) for x in v] if isinstance(v, list) else _g(v)
+
+
 def fmt2_identity(old, new):
     """[] when NEW is OLD entry for entry (name, order, kind, program, answer, stdin, arguments and every attribute), else the first
-    differences, named."""
+    differences, named. An answer is compared as the grade reads it (utf-8, replace), so a raw byte that is no UTF-8 reads alike on both sides."""
     diffs = []
     if [e.name for e in old] != [e.name for e in new]:
         a, b = [e.name for e in old], [e.name for e in new]
@@ -3818,7 +3829,7 @@ def fmt2_identity(old, new):
     for o, n in zip(old, new):
         vo, vn = _fmt2_vars(o), _fmt2_vars(n)
         ks = sorted(set(vo) | set(vn))
-        bad = [k for k in ks if vo.get(k) != vn.get(k)]
+        bad = [k for k in ks if _fmt2_graded_view(k, vo.get(k)) != _fmt2_graded_view(k, vn.get(k))]
         if bad:
             diffs.append(f"{o.name}: " + "; ".join(f"{k} {vo.get(k)!r} -> {vn.get(k)!r}" for k in bad[:3]))
             if len(diffs) >= 10:
@@ -4134,7 +4145,7 @@ def write_package_dir(entries, d, ext, path_of):
                  (".err", getattr(e, "stderr_answer", None) or "", bool(getattr(e, "stderr_answer", None))))
         for suf, body, there in parts:
             t = Path(str(stem) + suf)
-            if t.is_file() and t.read_bytes() != body.encode("utf-8"):
+            if t.is_file() and t.read_bytes() != _fmt2_bytes(body):
                 raise ValueError(f"{d}: {t.relative_to(d)} exists with other bytes than entry {e.name}'s")
         if e.argv:
             if any(("\t" in a or "\n" in a) for a in e.argv):
@@ -4149,10 +4160,10 @@ def write_package_dir(entries, d, ext, path_of):
     for e, rel, prog, text, stem, parts in plan:
         if text is not None:
             prog.parent.mkdir(parents=True, exist_ok=True)
-            prog.write_bytes(text.encode("utf-8"))
+            prog.write_bytes(_fmt2_bytes(text))
         for suf, body, there in parts:
             if there:
-                Path(str(stem) + suf).write_bytes(body.encode("utf-8"))
+                Path(str(stem) + suf).write_bytes(_fmt2_bytes(body))
                 counts[suf[1:]] += 1
     if args_lines:
         (d / "ALL.args").write_bytes(("\n".join(args_lines) + "\n").encode("utf-8"))
@@ -4308,6 +4319,39 @@ def unpack_probe():
         shutil.rmtree(t, ignore_errors=True)
 
 
+def unpack_probe_raw():
+    """unpack --probe-raw: a planted package whose container holds an answer of raw bytes that are no UTF-8 (a PBM-like image) is unpacked by the verb, and
+    NAME.out must then hold those bytes as they are (the row harness-the-package-builders-round-trip-loses-empty-out-files-and-omit-lines, its sixth defect;
+    MEASURED on uni_bench's run_mandelbrot.out: 5011 raw bytes came out 8972 with U+FFFD through the harness's own read and write). Prints UNPACK_PROBE raw
+    ok, rc 0; rc 1 naming what the verb did instead (it raised, or wrote other bytes); rc 2 when the container cannot be planted."""
+    t = Path(tempfile.mkdtemp(prefix="unpack_raw_probe_", dir=os.environ.get("TMPDIR") or None))
+    try:
+        d = t / "raw_pkg"
+        d.mkdir()
+        raw = b"P4\n2 2\n\xf0\x01\xff\x00\x80\n"
+        prog = ["procedure main();", '  write("x");', "end"]
+        (d / "raw.icn").write_text("".join(l + "\n" for l in prog))
+        (d / "ALL.csv").write_text("rank,entry,origin,package,n_lines,want_rc,heap_kb,stack_kb\n1,raw,raw_pkg__raw,raw_pkg,3,0,131072,4096\n")
+        write_suite([Entry("block", 1, "raw", prog, _lf_lines(raw.decode("utf-8", "surrogateescape")))], str(d / "ALL.icn"), str(d / "ALL.ref"), out_in=str(d / "ALL.in"), lang="icon")
+        if raw not in (d / "ALL.ref").read_bytes():
+            print("REFUSE(2): unpack --probe-raw could not plant a container holding the raw answer", file=sys.stderr)
+            return 2
+        try:
+            unpack_dir(d)
+        except Exception as ex:
+            print("UNPACK_PROBE raw RED: the verb did not take a container whose answer is raw bytes: %s: %s" % (type(ex).__name__, str(ex)[:160]))
+            return 1
+        out = d / "raw.out"
+        got = out.read_bytes() if out.is_file() else None
+        if got != raw:
+            print("UNPACK_PROBE raw RED: raw.out holds %s, not the %d raw bytes of the answer" % ("no file" if got is None else "%d other bytes" % len(got), len(raw)))
+            return 1
+        print("UNPACK_PROBE raw ok (an answer of raw bytes is written as it is, %d bytes)" % len(raw))
+        return 0
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
 def source_probe():
     """--probe-source (the mining tool row, CIO-92, CIO-122): a scratch collection of two programs, one in a subfolder reading a data file beside
     it, stands OUTSIDE a scratch package whose ALL.source names it and which holds only the index and the answers; run grades both PASS in mode 3
@@ -4418,6 +4462,8 @@ def cmd_unpack(args):
     """corpus_suite_harness.py unpack DIR [--dry-run] | unpack --probe: one package from its container (ALL.EXT, ALL.ref, ALL.in,
     ALL.argv) to THE FILES FORM (CIO-59, CIO-60): the program where the distribution put it, NAME.in, NAME.out and NAME.err beside it,
     ALL.csv with a path column, one ALL.args. Refuses rc 2 with nothing written, naming each case. --dry-run changes nothing."""
+    if args.probe_raw:
+        sys.exit(unpack_probe_raw())   # main drops a verb's return value, so the probe exits itself
     if args.probe:
         return unpack_probe()
     if not args.dir:
@@ -9515,6 +9561,7 @@ def main():
     up.add_argument("dir", nargs="?", help="the package directory holding ALL.EXT, ALL.ref and ALL.csv")
     up.add_argument("--dry-run", action="store_true", help="take the files form in a scratch copy and print the counts; the directory is untouched")
     up.add_argument("--probe", action="store_true", help="grade a planted package of three programs as a container and again from its files")
+    up.add_argument("--probe-raw", action="store_true", help="unpack a planted container whose answer is raw bytes that are no UTF-8 and read NAME.out byte for byte")
     up.set_defaults(func=cmd_unpack)
     ug = sub.add_parser("ungroup", help="FORMAT 2 BACK TO THE OLD FILES (CIO-45 (1) b): ALL.EXT, ALL.ref, ALL.in from ONE-LINERS.EXT, ONE-LINERS.out and MULTI-LINERS.md, refusing unless the read-back is identical")
     ug.add_argument("dir")
