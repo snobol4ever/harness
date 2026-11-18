@@ -806,6 +806,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
     def _name_of(s):
         if plunit:
             return s.relative_to(pkg_dir).with_suffix("").as_posix()
+        if len(s.relative_to(pkg_dir).parts) > 2:
+            return s.relative_to(pkg_dir).with_suffix("").as_posix()   # a program two or more folders down is named by its path from the package, as the files form names every entry; only a splice names one (below)
         return f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem
     if plunit:
         _ctn = pkg_dir / "CONTAINERS.tsv"
@@ -818,9 +820,16 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                       if not p.stem.startswith(out_prefix) and not any(str(p.relative_to(pkg_dir)).startswith(d + "/") for d in contract["not_shipped"].split()))
     if not srcs:
         h.refuse(f"no {src_ext} files under {pkg_dir} (direct or one level down)")
+    if only is not None and stage_shipped and not plunit:
+        # ⭐ A SPLICE INTO THE FILES FORM MAY NAME A PROGRAM AT ANY DEPTH, BY ITS PATH FROM THE PACKAGE (the cto 2026-11-17, row icon-unicon-the-builder-cuts-a-unicon-library-driver-in-unicon-uni,
+        # on officer_09's and officer_07's measurements: the 130 drivers of unicon_uni ide/ivib/ and the 8 of shell/dist and unidoc/parlett sit beside their libraries two folders down and
+        # --only said does not ship). The census above stays one level down, so no whole build and no other name moves; each name of --only that has two or more slashes and a source
+        # of that path under the package is added to the candidates, named by that path (_name_of), the name the files form already gives every entry.
+        _ns = [d + "/" for d in contract["not_shipped"].split()]
+        srcs = sorted(srcs + [q for q in (pkg_dir / (_n + src_ext) for _n in set(only) if _n.count("/") >= 2) if q.is_file() and not q.stem.startswith(out_prefix) and not any(q.relative_to(pkg_dir).as_posix().startswith(d) for d in _ns)])
     all_srcs = srcs
     if only is not None:
-        _by_name = {(f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem): s for s in srcs}
+        _by_name = {_name_of(s): s for s in srcs}
         _unknown = sorted(set(only) - set(_by_name))
         if _unknown:
             h.refuse(f"--only names {len(_unknown)} program(s) {pkg_dir.name} does not ship: {', '.join(_unknown)}")
@@ -1634,7 +1643,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
         # programs out of ISO_ACCEPTS.tsv re-cut them with empty refs and left ISO_EXPECTED_REFUSALS.tsv without them, so each graded rc 1 against
         # want 0): the named entries' lines of the refusal file are rewritten from this census, as a whole build writes the file.
         _keyed("ISO_EXPECTED_REFUSALS.tsv", [ISO_REFUSALS_HEADER], [f"{n}\t{w}" for n, w in iso_rej_names], names)
-    _src_of = {f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem: s for s in all_srcs}
+    _src_of = {(s.relative_to(pkg_dir).with_suffix("").as_posix() if len(s.relative_to(pkg_dir).parts) > 2 else (f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem)): s for s in all_srcs}   # the splice names a deep program by its path, as _name_of does
     _mask_rows = []
     for e in entries:
         _mp = _src_of[e.name].with_suffix(".mask")
