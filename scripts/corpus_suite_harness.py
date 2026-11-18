@@ -4579,6 +4579,17 @@ def _copy_companions(text, companion_dir, dest_dir):
     # reproducing 1421/0 first as the positive control for the experiment itself.
     _cfg = Path(companion_dir) / "config"
     companion_dirs = [Path(companion_dir)] + ([_cfg] if _cfg.is_dir() else [])
+    # ⭐ THE SHARED INCLUDE FOLDER LAST (seat dotnet 2026-11-18, on the grader's ruling "a ref is graded under what it was cut under"): the
+    # builder cut a package's answers with each -INCLUDE file staged beside the program, so the program names it as written (gimpel
+    # dextern_driver: "dextern.inc(11) : ERROR 116", "in file dextern.inc"). Left to the search path (SNO_LIB, SPITBOL's SETL4PATH), an
+    # engine names the path it opened, as sbl's sysif.c does ("/home/corpus/include/dextern.inc(11)"). So a companion found in neither
+    # folder above is copied from the corpus include folder, for every engine; beside-first, so a package's own copy still wins.
+    try:
+        _inc = Path(resolve_paths()["inc"])
+        if _inc.is_dir() and all(_inc.resolve() != d.resolve() for d in companion_dirs):
+            companion_dirs.append(_inc)
+    except Exception:
+        pass
     import shutil
     # ⭐ TRANSITIVE CLOSURE, NOT ONE LEVEL (row harness-copies-companions-to-closure-not-just-the-first-
     # level, hq_T 2026-09-05, on seat06's FINDING-2026-09-04-seat06-corpus-suite-harness-transitive-
