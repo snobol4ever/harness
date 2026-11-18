@@ -80,7 +80,7 @@ declare -F inventory_refuse >/dev/null 2>&1 || inventory_refuse() { echo "⛔ IN
 # "Continue having snobol4dotnet support Unicode as designed."): a program whose only difference from sbl -bf is bytes against characters, its
 # evidence the measured difference. util_score_row.py from-progress reads the same file for an <engine> key.
 inventory_excluded_names() {
-    local d="${1:-${INV_DIR:-}}" f e="${S4E_ENGINE:-scrip}" extra miss nm pk en
+    local d="${1:-${INV_DIR:-}}" f e="${S4E_ENGINE:-scrip}" extra extra2 miss nm pk en
     for f in "$d/EXCLUDED.tsv" "$d/EXCLUDED.$e.tsv"; do
         [ "$f" = "$d/EXCLUDED.scrip.tsv" ] && continue
         [ -f "$f" ] || continue
@@ -89,14 +89,18 @@ inventory_excluded_names() {
         # "let's do more of a SNOBOL4++ where it has all extensions and keeps the dynamic power of SNOBOL4. Have the INPUT and HOST be just like SPITBOL."): an
         # entry whose sbl -bf answer turns on a SPITBOL restriction snobol4jvm lifts (OPSYN of unary ^, CSNOBOL4's &DIGITS), its evidence the oracle's answer.
         [ "$f" = "$d/EXCLUDED.jvm.tsv" ] && extra=SNOBOL4PP_EXTENSION_KEPT_BY_LON
+        # Class NO_CASE_FOLDING_BY_LON is admitted on EXCLUDED.jvm.tsv and nowhere else (seat jvm 2026-11-17; Lon 18:2x CST, in the JVM window, verbatim: "We WILL
+        # NEVER support case-folding. We will always have upper-case built-in keywords and functions."): an entry whose sbl -bf answer turns on the case folding a
+        # -CASE card or &CASE turns on, which snobol4jvm never does; its evidence the oracle's answer and the port's.
+        extra2=""; [ "$f" = "$d/EXCLUDED.jvm.tsv" ] && extra2=NO_CASE_FOLDING_BY_LON
         miss=""
         while IFS=$'\t' read -r nm pk en; do
             [ -n "$pk" ] && [ -n "$en" ] && [ -f "$(dirname "$d")/$pk/ALL.csv" ] && awk -F, -v e="$en" 'NR > 1 && $2 == e { f = 1 } END { exit !f }' "$(dirname "$d")/$pk/ALL.csv" || miss="$miss $nm"
         done < <(awk -F'\t' '$0 !~ /^#/ && $2 == "GRADED_IN_ANOTHER_PACKAGE" { n = split($3, w, " "); p = ""; e = ""; for (i = 1; i + 4 <= n; i++) if (w[i] == "graded" && w[i + 1] == "as" && w[i + 3] == "entry") { p = w[i + 2]; e = w[i + 4]; sub(/[:;,.]+$/, "", e); break } print $1 "\t" p "\t" e }' "$f")
         [ -z "$miss" ] || { inventory_refuse "$f: GRADED_IN_ANOTHER_PACKAGE row(s)$miss name no entry that stands in the named package's ALL.csv (the reason must read: graded as PACKAGE entry NAME)"; return 2; }
-        awk -F'\t' -v extra="${extra:-\001}" '
+        awk -F'\t' -v extra="${extra:-\001}" -v extra2="${extra2:-\001}" '
             $0 ~ /^#/ || NF == 0 { next }
-            NF < 3 || ($2 != "RUNS_TOO_LONG_RULED_OUT_BY_LON" && $2 != "SCRIP_EXTENSION_KEPT_BY_LON" && $2 != "THREADS_RULED_OUT_BY_LON" && $2 != "VARIANCE_OR_TRACE_RULED_OUT_BY_LON" && $2 != "NOT_SPITBOL_DIALECT" && $2 != "NEEDS_GRAPHICS_FACILITY" && $2 != "NEEDS_TERMINAL" && $2 != "NEEDS_NETWORK" && $2 != "NEEDS_C_LIBRARY" && $2 != "NEEDS_LOADFUNC" && $2 != "DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27" && $2 != "OUTSIDE_CLPFD" && $2 != "NO_ORACLE_ANSWER" && $2 != "THREADS_EXCLUDED_BY_LON" && $2 != "S17_CLOSED_BY_LON" && $2 != "SCRIP_EXCEEDS_ORACLE" && $2 != "FAKEABLE_NO_OBSERVABLE" && $2 != "NOT_A_UNIT_TEST" && $2 != "GRADED_IN_ANOTHER_PACKAGE" && $2 != "ANGLE_SUBSCRIPTS_RULED_OUT_BY_LON" && $2 != "INLINE_ASSEMBLER_RULED_OUT_BY_LON" && $2 != extra) || length($3) < 60 { bad = bad " " $1 "(" NF " fields, class " $2 ")"; next }
+            NF < 3 || ($2 != "RUNS_TOO_LONG_RULED_OUT_BY_LON" && $2 != "SCRIP_EXTENSION_KEPT_BY_LON" && $2 != "THREADS_RULED_OUT_BY_LON" && $2 != "VARIANCE_OR_TRACE_RULED_OUT_BY_LON" && $2 != "NOT_SPITBOL_DIALECT" && $2 != "NEEDS_GRAPHICS_FACILITY" && $2 != "NEEDS_TERMINAL" && $2 != "NEEDS_NETWORK" && $2 != "NEEDS_C_LIBRARY" && $2 != "NEEDS_LOADFUNC" && $2 != "DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27" && $2 != "OUTSIDE_CLPFD" && $2 != "NO_ORACLE_ANSWER" && $2 != "THREADS_EXCLUDED_BY_LON" && $2 != "S17_CLOSED_BY_LON" && $2 != "SCRIP_EXCEEDS_ORACLE" && $2 != "FAKEABLE_NO_OBSERVABLE" && $2 != "NOT_A_UNIT_TEST" && $2 != "GRADED_IN_ANOTHER_PACKAGE" && $2 != "ANGLE_SUBSCRIPTS_RULED_OUT_BY_LON" && $2 != "INLINE_ASSEMBLER_RULED_OUT_BY_LON" && $2 != extra && $2 != extra2) || length($3) < 60 { bad = bad " " $1 "(" NF " fields, class " $2 ")"; next }
             { print $1 }
             END { if (bad != "") { print "MALFORMED:" bad > "/dev/stderr"; exit 2 } }' "$f" || { inventory_refuse "$f carries a malformed row (name<TAB>NOT_SPITBOL_DIALECT, NEEDS_GRAPHICS_FACILITY, NEEDS_TERMINAL, NEEDS_C_LIBRARY, NEEDS_NETWORK, NEEDS_LOADFUNC, DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27, OUTSIDE_CLPFD, NO_ORACLE_ANSWER, GRADED_IN_ANOTHER_PACKAGE, THREADS_EXCLUDED_BY_LON, VARIANCE_OR_TRACE_RULED_OUT_BY_LON, S17_CLOSED_BY_LON, SCRIP_EXCEEDS_ORACLE, FAKEABLE_NO_OBSERVABLE or ANGLE_SUBSCRIPTS_RULED_OUT_BY_LON (and LON_UNICODE_BY_DESIGN on EXCLUDED.dotnet.tsv alone)<TAB>evidence of 60+ chars naming the feature and the oracle's verdict)"; return 2; }
     done
