@@ -1281,7 +1281,7 @@ def _run_raw(argv, timeout, cwd=None, env=None, stdin_text=None, merge_stderr=Fa
     # ⭐ merge_stderr: the unit's answer is stdout and stderr as ONE stream, interleaved as the shell's `> out 2>&1` writes it --
     # the contract of a package whose own harness cut its refs that way (ALL.csv's stderr column, read_command_line_columns).
     try:
-        rc, out, err, why = _bounded_run(argv, timeout, cwd, env, None if stdin_text is None else stdin_text.encode(), merge_stderr)
+        rc, out, err, why = _bounded_run(argv, timeout, cwd, env, None if stdin_text is None else stdin_bytes(stdin_text), merge_stderr)
     except FileNotFoundError as e:
         return "UNPROVEN", b"", str(e).encode(), None
     if why == "OVERFLOW":
@@ -2012,6 +2012,47 @@ def sorted_compare_probe():
     want = {"reordered": "PASS", "blank": "PASS", "missing": "FAIL", "duplicate": "FAIL", "changed": "FAIL", "vars": "PASS"}
     print("SORTED_COMPARE_PROBE " + " ".join(f"{n}={v}" for n, v in got) + f" byte_for_byte_reordered={plain}")
     return 0 if all(want[n] == v for n, v in got) and plain == "FAIL" else 1
+
+
+def binary_stdin_probe():
+    """--probe-binary-stdin: an old container whose entry's stdin is not UTF-8, through the real writer, reader and feeder -> BINARY_STDIN_PROBE written=PASS read=PASS
+    text_beside_ignored=PASS feed=PASS, rc 0 when every arm reads as named, rc 1 naming the arm that does not. written: ALL.in stays UTF-8 text and holds no block for the binary entry
+    while the text entry keeps its block; read: the entry's stdin is the bytes of the NAME.in beside its program (a NUL, a carriage return, a vertical tab, a file separator, a lone
+    0x80 and 0xFF, a bad UTF-8 pair); text_beside_ignored: an UTF-8 NAME.in beside an entry ALL.in gives no block is never read as its stdin, so no text entry moves; feed: the
+    harness's own feeder hands a child exactly those bytes."""
+    import tempfile
+    raw = bytes([0x4d, 0x54, 0x68, 0x64, 0x00, 0xff, 0x80, 0x0d, 0x0b, 0x1c, 0x0a, 0xc3, 0x28, 0x85, 0x0c])
+    got = {}
+    _sd = "/tmp/s4e/" + (os.environ.get("S4E_SEAT") or "unseated")
+    with tempfile.TemporaryDirectory(prefix="binstdin.", dir=_sd if os.path.isdir(_sd) else None) as td:
+        d = Path(td)
+        (d / "progs").mkdir()
+        mk = lambda i, n, si: Entry("block", i, n, ["procedure main();", "end;"], ["x"], stdin=si)
+        ents = [mk(1, "progs/bin", raw.decode("utf-8", "surrogateescape")), mk(2, "progs/txt", "a\nb\n"), mk(3, "progs/none", None)]
+        (d / "progs" / "bin.in").write_bytes(raw)
+        (d / "progs" / "none.in").write_bytes(b"text beside an entry with no stdin\n")
+        sp = d / "ALL.icn"
+        try:
+            write_block_suite(ents, str(sp), str(d / "ALL.ref"), "#", "", out_in=str(d / "ALL.in"))
+        except UnicodeEncodeError:
+            (d / "ALL.in").write_text("")
+        try:
+            ain = (d / "ALL.in").read_bytes().decode("utf-8")
+            got["written"] = "PASS" if "progs/txt" in ain and "progs/bin" not in ain else "FAIL"
+        except (UnicodeDecodeError, OSError):
+            got["written"] = "FAIL"
+        try:
+            back = {e.name: e for e in read_block_suite(str(sp), str(d / "ALL.ref"), banner_re_for("#", ""), in_path=sidecar_in_path(str(sp)))}
+            got["read"] = "PASS" if back["progs/bin"].stdin is not None and stdin_bytes(back["progs/bin"].stdin) == raw and back["progs/txt"].stdin == "a\nb\n" else "FAIL"
+            got["text_beside_ignored"] = "PASS" if back["progs/none"].stdin is None else "FAIL"
+            _k, out, _e, _rc = _run_raw(["cat"], 20, stdin_text=back["progs/bin"].stdin)
+            got["feed"] = "PASS" if out == raw else "FAIL"
+        except Exception as ex:
+            print("BINARY_STDIN_PROBE error: %s: %s" % (type(ex).__name__, ex))
+            for k in ("read", "text_beside_ignored", "feed"):
+                got.setdefault(k, "FAIL")
+    print("BINARY_STDIN_PROBE " + " ".join(f"{k}={got[k]}" for k in ("written", "read", "text_beside_ignored", "feed")))
+    return 0 if all(v == "PASS" for v in got.values()) else 1
 
 
 def part_mask_probe():
@@ -2880,6 +2921,39 @@ def loose_stdin_companion(src):
 STDIN_NO_FINAL_NEWLINE = "\\ No newline at end of file"
 
 
+def stdin_bytes(s):
+    """THE BYTES AN ENTRY'S STDIN IS (the harness, developer_13 2026-11-18, row ipl-owed-midisig-gets-its-binary-stdin-byte-for-byte): an entry's stdin is a str, and a byte that is no
+    UTF-8 is held in it as a lone surrogate (surrogateescape, as read_src_text holds a source), so encoding it back with the same handler gives exactly the file's bytes; a UTF-8 text encodes as it always did."""
+    return s.encode("utf-8", "surrogateescape")
+
+
+def stdin_is_binary(s):
+    """True when S holds a byte that is no UTF-8 (a lone surrogate): such a stdin is never written to a text cell (ALL.in), it is the file NAME.in beside the program (read_binary_stdin_beside)."""
+    try:
+        s.encode("utf-8")
+    except UnicodeEncodeError:
+        return True
+    return False
+
+
+def read_binary_stdin_beside(src_path, entries):
+    """An entry whose stdin is not UTF-8 carries it as its own NAME.in beside the program in the package, fed byte for byte, never through ALL.in (the president's ruling on row
+    ipl-owed-midisig-gets-its-binary-stdin-byte-for-byte; MEASURED: ALL.in is read as text lines, strict UTF-8, and cut at every line boundary of str.splitlines, and ALL.in is one text file git merges by line,
+    which a binary block would make binary). Read only for an entry ALL.in gives no block, and only when the file is not UTF-8: a text stdin stays in ALL.in as before, so no entry that reads today moves."""
+    d = Path(src_path).parent
+    for e in entries:
+        if e.stdin is not None or ".." in e.name.split("/"):
+            continue
+        p = d / (e.name + ".in")
+        if not p.is_file():
+            continue
+        raw = p.read_bytes()
+        try:
+            raw.decode("utf-8")
+        except UnicodeDecodeError:
+            e.stdin = raw.decode("utf-8", "surrogateescape")
+
+
 def read_stdin_sidecar(in_path, banner_re, entries):
     """Attach .in blocks to entries BY NAME. Absent file, or an entry with no block, leaves
     entry.stdin as None (= /dev/null). Refuses on a block naming no entry -- the shape a rename or
@@ -2914,7 +2988,7 @@ def read_stdin_sidecar(in_path, banner_re, entries):
 
 def write_stdin_sidecar(entries, out_in, comment_open, comment_close):
     """Write family.in iff at least one entry carries stdin. Returns True if written."""
-    withio = [e for e in entries if e.stdin is not None]
+    withio = [e for e in entries if e.stdin is not None and not stdin_is_binary(e.stdin)]
     if not withio:
         return False
     # ⛔⭐ ONE-LINERS CARRY STDIN TOO (Lon 2026-09-08, in-chat to hq_T: "Ensure all has sister (side cars)
@@ -3263,6 +3337,7 @@ def read_suite(sno_path, ref_path, in_path=None, x_path=None, w_path=None, a_pat
             entries.append(Entry("line", seq, lname, [lraw], ref_line.replace("\\n", "\n")))
         i = j
     read_stdin_sidecar(in_path, BANNER_RE, entries)
+    read_binary_stdin_beside(sno_path, entries)
     read_xfail_sidecar(x_path, BANNER_RE, entries)
     read_wantrc_sidecar(w_path, entries)
     read_argv_sidecar(a_path, entries, modes)
@@ -3305,6 +3380,7 @@ def read_block_suite(src_path, ref_path, banner_re, in_path=None, x_path=None, w
         seq += 1
         entries.append(Entry("block", seq, name, body, ref_lines[seg_start:ri], xfail=xfail))
     read_stdin_sidecar(in_path, banner_re, entries)
+    read_binary_stdin_beside(src_path, entries)
     read_xfail_sidecar(x_path, banner_re, entries)
     read_wantrc_sidecar(w_path, entries)
     read_argv_sidecar(a_path, entries, modes)
@@ -5136,7 +5212,7 @@ def batch_m3_verdicts(paths, entries, tmp_root, ext, companion_dir):
         stdin_p = ""
         if e.stdin is not None:
             stdin_p = str(outd / f"{i}.in")
-            Path(stdin_p).write_bytes(e.stdin.encode())
+            Path(stdin_p).write_bytes(stdin_bytes(e.stdin))
         _ex = getattr(e, "expect", None)
         want = _ex.rc if (_ex is not None and _ex.ending == "EXIT" and _ex.rc is not None) else getattr(e, "want_rc", 0)
         t = (None if ("TIMEOUT" in os.environ or not getattr(e, "timeout_s", None)) else e.timeout_s) or paths["timeout"]
@@ -8336,7 +8412,7 @@ def cmd_batch_list(args):
         stdin_p = ""
         if e.stdin is not None:
             stdin_p = str(work / ("%04d.in" % i))
-            Path(stdin_p).write_bytes(e.stdin.encode())
+            Path(stdin_p).write_bytes(stdin_bytes(e.stdin))
         t = (None if ("TIMEOUT" in os.environ or not getattr(e, "timeout_s", None)) else e.timeout_s) or paths["timeout"]
         sw = _compile_switches(paths, e.compile_args) + _size_switches(e.heap_kb, e.stack_kb) + _host_u_switch(cand, e.argv)
         f = ["name=" + e.name] + (["stdin=" + stdin_p] if stdin_p else []) + ["stdout=" + str(work / ("%04d.out" % i)),
@@ -9249,6 +9325,8 @@ def main():
         sys.exit(sorted_compare_probe())
     if sys.argv[1:] == ["--probe-part-mask"]:
         sys.exit(part_mask_probe())
+    if sys.argv[1:] == ["--probe-binary-stdin"]:
+        sys.exit(binary_stdin_probe())
     if sys.argv[1:] == ["--probe-tap"]:
         sys.exit(tap_cases_probe())
     if sys.argv[1:] == ["--probe-source"]:

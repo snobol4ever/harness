@@ -967,12 +967,20 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     continue
                 prog_args = prog_args[1:]
         stdin_text, stdin_latin1 = read_text_tolerant(stdin_path) if stdin_path else (None, False)
+        stdin_binary = False
         if stdin_latin1:
-            excluded.append((name, f"stdin {stdin_path.name} is not valid UTF-8 (binary or 8-bit data) -- the container's stdin cell is text, "
-                                        "so it would not be byte-identical to the file the ref was cut from (the same rule as a non-UTF-8 source)"))
-            print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (non-UTF-8 stdin {stdin_path.name})", file=sys.stderr)
-            continue
-        if stdin_text is not None and any(_c in stdin_text for _c in "\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029"):
+            # ⭐ A STDIN THAT IS BYTES IS THE FILE NAME.in BESIDE THE PROGRAM, FED BYTE FOR BYTE (developer_13 2026-11-18, row ipl-owed-midisig-gets-its-binary-stdin-byte-for-byte;
+            # the president's ruling): ALL.in is a text cell, so the container never holds it; the grader reads <package>/<entry>.in as bytes for an entry ALL.in gives no block
+            # (corpus_suite_harness.read_binary_stdin_beside), and the cut feeds the oracle the very same bytes (held in the str as lone surrogates, stdin_bytes puts them back).
+            if stdin_path == pkg_dir / (name + ".in"):
+                stdin_text, stdin_binary = stdin_path.read_bytes().decode("utf-8", "surrogateescape"), True
+                print(f"[{i}/{len(srcs)}] {name}: its stdin {stdin_path.name} is not UTF-8; fed byte for byte, carried as the file beside the program, never by ALL.in", file=sys.stderr)
+            else:
+                excluded.append((name, f"stdin {stdin_path.name} is not valid UTF-8 (binary or 8-bit data) -- the grader reads a non-UTF-8 stdin only as the file {name}.in beside the program, "
+                                            f"fed byte for byte; copy {stdin_path.name} to {name}.in in the package and cut it again"))
+                print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (non-UTF-8 stdin {stdin_path.name}, not {name}.in)", file=sys.stderr)
+                continue
+        if stdin_text is not None and not stdin_binary and any(_c in stdin_text for _c in "\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029"):
             # ⛔ THE CUT FEEDS THE STDIN THE CONTAINER FEEDS (the grader 2026-11-15, on the cfo's measurement of ipl progs/literat): ALL.in is read as text
             # lines (read_stdin_sidecar: read_text and splitlines), so a carriage return, a form feed or another line boundary in a stdin file reaches the
             # graded run as a newline, and one that ends the file is dropped. MEASURED: literat.dat ends each menu answer with a carriage return; fed those
