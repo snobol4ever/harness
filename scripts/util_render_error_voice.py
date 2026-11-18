@@ -48,7 +48,7 @@ THE CODE RANGES THE VOICE RESERVES (src/runtime/core/core.c icn_errmsg_known is 
            702 is kept for the SNOBOL4 draft. 703 is Icon's compile refusal (the parser's oracle line): under icon it renders as the one line
            "File <basename>; Line <n> # <text>", under unicon as "<basename>:<n>: # <text>" (MEASURED by officer_02 on the 17 translator refusals of
            rosetta-unicon: unicon 13.3 prints arrays.icn:1: # "L" invalid declaration where Arizona prints File arrays.icn; Line 1 # ...; the cto's
-           CTO-639 hypothesis that the two shapes are one is refuted), with no blank line, no Run-time error line and no Traceback.
+           CTO-639 hypothesis that the two shapes are one is refuted; a refusal with no place, unicon's istop of an empty file, is code 703 at line 0 and renders as "error: <text>"), with no blank line, no Run-time error line and no Traceback.
 """
 import re, sys, os
 
@@ -78,7 +78,7 @@ def render(lines, oracle):
             else: break
             j += 1
         if oracle in ('icon', 'unicon') and code == 703 and not startup and at:
-            out.append('%s:%s: # %s' % (os.path.basename(at.group(1)), at.group(2), text) if oracle == 'unicon' else 'File %s; Line %s # %s' % (os.path.basename(at.group(1)), at.group(2), text))
+            out.append(('error: %s' % text if at.group(2) == '0' else '%s:%s: # %s' % (os.path.basename(at.group(1)), at.group(2), text)) if oracle == 'unicon' else 'File %s; Line %s # %s' % (os.path.basename(at.group(1)), at.group(2), text))
         elif oracle in ('icon', 'unicon'):
             if startup:
                 out += ['', 'Run-time error %d in startup code' % code, text]
@@ -261,6 +261,7 @@ FATAL_SUMMARY_MASKS = (   # each admits the oracle's number and the renderer's d
 def probe():
     cases = [
         ('unicon', 'scrip: error 703: "L" invalid declaration\n  at /x/arrays.icn:1\n', 'arrays.icn:1: # "L" invalid declaration\n'),
+        ('unicon', 'scrip: error 703: empty file\n  at /x/d.icn:0\n', 'error: empty file\n'),
         ('icon', 'scrip: error 703: "x": missing right parenthesis\n  at /x/p.icn:4\n', 'File p.icn; Line 4 # "x": missing right parenthesis\n'),
         ('unicon', 'scrip: error 101: integer expected\n  at /x/p.icn:2\n', None),
     ]
