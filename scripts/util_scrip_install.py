@@ -212,13 +212,12 @@ def table_row(bin_dir, name, kind, target, origin):
     tmp = bin_dir.parent / f".INSTALLED.tsv.{os.getpid()}"
     tmp.write_text("\n".join(head + body) + "\n"); os.rename(tmp, T)
 
-LAUNCHER = '#!/bin/sh\nexec "$(dirname "$0")/scrip.d/scrip" "$@"\n'
-
 def write_launcher(bin_dir):
     L = bin_dir / "scrip"
-    if L.is_file() and not L.is_symlink() and L.read_text() == LAUNCHER and os.access(L, os.X_OK): return
+    text = f'#!/bin/sh\nexec {bin_dir / "scrip.d" / "scrip"} "$@"\n'
+    if L.is_file() and not L.is_symlink() and L.read_text() == text and os.access(L, os.X_OK): return
     tmp = bin_dir / f".scrip.launcher.{os.getpid()}"
-    tmp.write_text(LAUNCHER)
+    tmp.write_text(text)
     os.chmod(tmp, 0o755); os.rename(tmp, bin_dir / "scrip")
 
 def install():
