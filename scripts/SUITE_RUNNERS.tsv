@@ -157,6 +157,7 @@ bratko_4th	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/bratko_4th
 gpc_tests	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/gpc_tests
 pascal_p5_samples	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascal_p5_samples
 benchmarksgame_fpc	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/benchmarksgame_fpc
+pascal_aoc	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascal_aoc
 icon_lab	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_lab
 icon_problems	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_problems
 pl_icon_examples	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/pl_icon_examples
