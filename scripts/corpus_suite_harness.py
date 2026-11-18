@@ -2570,8 +2570,8 @@ def write_suite(entries, out_sno, out_ref, out_in=None, lang=""):
             sno_lines.extend(e.sno_lines)
             ref_lines.append(banner)
             ref_lines.extend(e.ref)
-    Path(out_sno).write_text("\n".join(sno_lines) + "\n")
-    Path(out_ref).write_text("\n".join(ref_lines) + "\n")
+    Path(out_sno).write_bytes(("\n".join(sno_lines) + "\n").encode("utf-8", "surrogateescape"))
+    Path(out_ref).write_bytes(("\n".join(ref_lines) + "\n").encode("utf-8", "surrogateescape"))
     # ⛔ AFTER the .sno/.ref write, and keyed by the SAME seq the banners just got (write_suite reorders
     # lines-then-blocks and renumbers, so a sidecar written from the pre-reorder seq would banner its
     # blocks with numbers that no longer name the same entries), and BEFORE the round-trip check below --
@@ -2619,8 +2619,8 @@ def write_block_suite(entries, out_src, out_ref, comment_open, comment_close, ou
         src_lines.extend(e.sno_lines)
         ref_lines.append(banner)
         ref_lines.extend(e.ref)
-    Path(out_src).write_text("\n".join(src_lines) + "\n")
-    Path(out_ref).write_text("\n".join(ref_lines) + "\n")
+    Path(out_src).write_bytes(("\n".join(src_lines) + "\n").encode("utf-8", "surrogateescape"))
+    Path(out_ref).write_bytes(("\n".join(ref_lines) + "\n").encode("utf-8", "surrogateescape"))
     wrote_in = False
     if out_in is not None:
         wrote_in = write_stdin_sidecar(entries, out_in, comment_open, comment_close)
@@ -3029,7 +3029,12 @@ def _lf_lines(text):
 
 def _read_lf_lines(path):
     """A container read as bytes (no newline translation), decoded strictly as UTF-8 exactly as read_text() did, split on LF only."""
-    return _lf_lines(Path(path).read_bytes().decode("utf-8"))
+    return _lf_lines(Path(path).read_bytes().decode("utf-8", "surrogateescape"))
+
+
+def _read_src_lines(path):
+    """A program's own text read in place: bytes that are no UTF-8 come in as lone surrogates (surrogateescape) and go out as the same bytes, so an 8-bit source is the source it is (officer_01 2026-11-17, row uni_ipl-owed-thirteen-find-each-programs-input-or-declare-it, the cto's ruling (b))."""
+    return _lf_lines(Path(path).read_bytes().decode("utf-8", "surrogateescape"))
 
 
 def _read_stream_lines(path):
@@ -3821,7 +3826,7 @@ def read_package_dir(d, ext, modes=None):
         seen[stem] = name
         out = Path(str(stem) + ".out")
         units = [] if in_place else chain_units_beside(prog, resolve_paths()["corpus"])   # a chained demo is its units, then itself (beauty)
-        e = Entry("block", seq, name, _read_stream_lines(prog) if in_place else units + _read_lf_lines(prog), _read_stream_lines(out) if out.is_file() else [])
+        e = Entry("block", seq, name, _read_src_lines(prog) if in_place else units + _read_lf_lines(prog), _read_stream_lines(out) if out.is_file() else [])
         if in_place:
             e.in_place = str(prog)   # the collection's own file: never written back, never staged here; the switch runs it from a copy of its folder
         inp, err = Path(str(stem) + ".in"), Path(str(stem) + ".err")
@@ -4608,7 +4613,7 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
         _pt = " ".join(l.strip() for l in _pre.read_text().splitlines() if l.strip() and not l.lstrip().startswith("#"))
         if _pt:
             text = _pt + " " + text
-    cand.write_text(text)
+    cand.write_bytes(text.encode("utf-8", "surrogateescape"))
     # ⛔⭐ A NESTED ENTRY'S COMPANIONS LIVE BESIDE IT, AND LAND BESIDE IT (the coo 2026-10-01, measured on the regenerated arizona_tests
     # container): the entry runs in cand.parent (td/general for "general/fncs1"), but its companions were looked up in the suite's
     # own directory and copied into td -- so fncs1's open("gc1.icn"), prepro's prepro.dat and recent's data files were never

@@ -202,6 +202,11 @@ def read_text_tolerant(path):
         return raw.decode("latin-1"), True
 
 
+def read_src_text(path):
+    """A program's text as the oracle reads it: its bytes decoded UTF-8 with surrogateescape, so a byte that is no UTF-8 is held as a lone surrogate and written back as itself by h.write_suite (officer_01 2026-11-17, the cto's ruling (b) on row uni_ipl-owed-thirteen-find-each-programs-input-or-declare-it)."""
+    return path.read_bytes().decode("utf-8", "surrogateescape")
+
+
 def stdin_for(stem, pkg_dir):
     # ⭐ `.dat` ADDED (measured on arizona_tests' README.md: "16 with a matching .dat (fed as stdin..."
     # -- a DIFFERENT convention from jcon_tests' same-named extension, which feeds it as BOTH argv[1]
@@ -891,15 +896,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                                    f"a container entry carries no FPATH contract yet, so it is graded by the board, not here"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (loads C through {src.stem}.clib)", file=sys.stderr)
             continue
-        text, non_utf8 = read_text_tolerant(src)
-        if non_utf8:
-            excluded.append((name, "source is not valid UTF-8 (genuine 8-bit content, e.g. accented bytes) -- "
-                                        "h.write_suite's writer has no encoding param and would re-encode it as UTF-8, "
-                                        "silently changing the byte-oriented source's own byte count/content versus what "
-                                        "the ref was cut from; excluded rather than absorbed-but-wrong until write_suite "
-                                        "itself grows byte-faithful output (shared machinery, out of this tool's lane)"))
-            print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (non-UTF-8 8-bit source)", file=sys.stderr)
-            continue
+        text = read_src_text(src)
         # ⛔ A PROGRAM THAT LINKS A MODULE SHIPPED BESIDE IT IS DECIDED BY THE ORACLE'S OWN TRANSLATOR, NEVER BY A SIBLING FILE'S NAME (the
         # coo 2026-10-01, measured on arizona_tests): icont links ucode, never an untranslated .icn beside the program, so Arizona's
         # `link options` / `link io` mean the IPL library even where general/options.icn is shipped -- a name test excluded 31 such
@@ -1126,7 +1123,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (XSB, {len(_L1)} lines, NAME_old {_chk.split(' ')[0]})", file=sys.stderr)
             continue
         if name in pkg_refusals:
-            entries.append(h.Entry("block", len(entries) + 1, name, read_text_tolerant(src)[0].splitlines(), [""], stdin=stdin_text, want_rc=0))
+            entries.append(h.Entry("block", len(entries) + 1, name, read_src_text(src).splitlines(), [""], stdin=stdin_text, want_rc=0))
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (expected refusal, ISO_EXPECTED_REFUSALS.tsv)", file=sys.stderr)
             continue
         if iso_rej and name.startswith("iso7185prt") and src.with_suffix(".ecp").is_file() and name not in iso_acc:
@@ -1142,7 +1139,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                 excluded.append((name, "NO_ORACLE_ANSWER: no marked line in its .ecp and no ISO 7185 reference in its header (R-1696)"))
                 print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (no marked line and no clause)", file=sys.stderr)
                 continue
-            entries.append(h.Entry("block", len(entries) + 1, name, read_text_tolerant(src)[0].splitlines(), [""], stdin=stdin_text, want_rc=0))
+            entries.append(h.Entry("block", len(entries) + 1, name, read_src_text(src).splitlines(), [""], stdin=stdin_text, want_rc=0))
             iso_rej_names.append((name, _w))
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (iso-rejection, {_w})", file=sys.stderr)
             continue
