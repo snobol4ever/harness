@@ -28,14 +28,17 @@ if [ "${1:-}" = "--binaries" ]; then
   [ -z "$newer" ] || { echo "⛔ REFUSE(rc=2): the snobol4jvm jar $J is older than $newer -- rebuild: bash $HERE/build_snobol4jvm.sh" >&2; exit 2; }
   printf '%s\n' "$J"; exit 0
 fi
-u=(); stack_kb=""
+# THE COMMAND LINE IS sbl's (seat jvm 2026-11-17; Lon 2026-11-17 in the JVM window: "Have the INPUT and HOST be just like SPITBOL."): the program sees -bf and the
+# size switches before its name, as "sbl -bf -dNk -sNk name.sno" shows them, so HOST(2, n) and HOST(3) answer as sbl's do (MEASURED: sbl -bf -d131072k -s4096k
+# ha.sno x y answers HOST(2,2) -d131072k and HOST(3) 5; snobol4jvm from 9dca9ea takes the switches; strange_code_book classify reads HOST(2,2) to HOST(2,5))
+u=(); stack_kb=""; sbsw=(-bf)
 while [ $# -gt 0 ]; do
   case "$1" in
-    -d*) shift ;;
+    -d*) sbsw+=("$1"); shift ;;
     -s*) sw="${1#-s}"; n="${sw%%[!0-9]*}"; sfx="${sw#"$n"}"
          case "$sfx" in k|K) stack_kb="$n" ;; m|M) stack_kb=$(( n * 1024 )) ;; g|G) stack_kb=$(( n * 1048576 )) ;; "") stack_kb=$(( (n + 1023) / 1024 )) ;; *) stack_kb="" ;; esac
          [ -n "$n" ] || stack_kb=""
-         shift ;;
+         sbsw+=("$1"); shift ;;
     -u) [ $# -ge 2 ] || { echo "⛔ REFUSE(rc=2): -u takes a string" >&2; exit 2; }; u=(-u "$2"); shift 2 ;;
     --) echo "⛔ REFUSE(rc=2): no program file before --" >&2; exit 2 ;;
     *) break ;;
@@ -55,4 +58,4 @@ cds=(); [ -f "$A" ] && ! [ "$J" -nt "$A" ] && cds=("-XX:SharedArchiveFile=$A")
 # one, so the hottest function of the engine ran in the bytecode interpreter: perf record -g showed 19 percent of all CPU in the Interpreter frame, called from INVOKE.doInvoke (6.9 percent
 # with the flag). Same jar and flags, flag the only difference: a 700k-iteration arithmetic loop 73.8 G -> 62.7 G instructions and 9.85 s -> 6.59 s, a 300k-iteration pattern loop 135.8 G ->
 # 115.4 G and 17.3 s -> 12.0 s, the empty program 6.4 G -> 6.2 G, a 20k pattern loop 23.3 G -> 22.6 G. Output identical.
-exec java -Xlog:disable -Xlog:all=error:stderr "${cds[@]}" -XX:+UseSerialGC -XX:CompileThresholdScaling=4 -XX:-DontCompileHugeMethods ${stack_kb:+-Dsnobol4jvm.stack.kb=$stack_kb} -jar "$J" "${u[@]}" "$prog" "$@"
+exec java -Xlog:disable -Xlog:all=error:stderr "${cds[@]}" -XX:+UseSerialGC -XX:CompileThresholdScaling=4 -XX:-DontCompileHugeMethods ${stack_kb:+-Dsnobol4jvm.stack.kb=$stack_kb} -jar "$J" "${sbsw[@]}" "${u[@]}" "$prog" "$@"
