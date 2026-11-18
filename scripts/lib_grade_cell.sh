@@ -48,8 +48,8 @@ tell_lap_new_reds() {
         total=$((total + 1)); d="$(designer_of "$key")"
         # THE COO IS TOLD EVERY NEW RED, the designer its own (the coo 2026-11-15, MEASURED: laps 36 and 37's telegrams reached the cto alone, since no TIERS.tsv role names a
         # suite key and designer_of falls to the cto; the coo deals the rows): each red goes to its designer and to the coo, once when the coo is the designer
-        for r in "$d" coo; do
-            [ "$r" = coo ] && [ "$d" = coo ] && [ -n "${ONCE[$key|$prog|$mode]:-}" ] && continue; ONCE[$key|$prog|$mode]=1
+        for r in "$d" president; do
+            [ "$r" = president ] && [ "$d" = president ] && [ -n "${ONCE[$key|$prog|$mode]:-}" ] && continue; ONCE[$key|$prog|$mode]=1
             CNT[$r|$key]=$(( ${CNT[$r|$key]:-0} + 1 ))
             if [ "${SHOWN[$r|$key]:-0}" -lt 20 ]; then BODY[$r]="${BODY[$r]:-}  $key: $prog $mode reads $outc"$'\n'; SHOWN[$r|$key]=$(( ${SHOWN[$r|$key]:-0} + 1 )); fi
         done

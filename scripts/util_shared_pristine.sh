@@ -29,7 +29,7 @@
 # re-reads it.
 # EXIT: 0 done, 2 REFUSED (no source repo, a dirty pristine, a fetch or merge that failed); selftest as above.
 set -uo pipefail
-SH="${S4E_SHARED:-/home/resources/shared}"; SRC="${S4E_SHARED_FROM:-/home/claude_coo}"
+SH="${S4E_SHARED:-/home/resources/shared}"; SRC="${S4E_SHARED_FROM:-/home/claude_president}"
 cmd="${1:-}"; shift 2>/dev/null
 repos=("$@"); [ "${#repos[@]}" -gt 0 ] || repos=(corpus harness .github)
 refuse() { echo "REFUSE(2) [shared-pristine]: $*"; exit 2; }

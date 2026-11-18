@@ -17,7 +17,7 @@ ROOT=${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
 . "$(dirname "${BASH_SOURCE[0]}")/lib_paths.sh"
 cd "$ROOT" || exit 2
 TICK_DIR=${S4E_TICK_DIR:-/home/resources/progress/tick}
-OLD=${S4E_BOX_OLD:-/home/claude_coo/.scratch/verifier}   # READ ONLY: the old controller's sensor files and its decide.last
+OLD=${S4E_BOX_OLD:-/home/claude_president/.scratch/verifier}   # READ ONLY: the old controller's sensor files and its decide.last
 PO=/home/resources/postoffice
 P=/home/resources/progress
 U=/sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service

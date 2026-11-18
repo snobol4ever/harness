@@ -14,7 +14,7 @@ mkdir -p "/tmp/s4e/$ME" || refuse "cannot make /tmp/s4e/$ME"
 w="$(mktemp -d "/tmp/s4e/$ME/delete_probe.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$w"' EXIT
 po="$w/po"; rf="$w/RECUT.tsv"
-mkdir -p "$po/tasks" "$po/claims" "$po/cio/inbox" "$po/junior_07/inbox" || refuse "cannot make the scratch postoffice"
+mkdir -p "$po/tasks" "$po/claims" "$po/chairman/inbox" "$po/junior_07/inbox" || refuse "cannot make the scratch postoffice"
 : > "$rf"
 t1="plant-delete-probe-free"; t2="plant-delete-probe-claimed"
 printf '2\t%s\t@haiku\tFREE\n2\t%s\t@haiku\tFREE\n' "$t1" "$t2" > "$po/QUEUE.tsv"
@@ -22,9 +22,9 @@ for t in "$t1" "$t2"; do
   printf '# TASK %s\nGOAL: plant\nDONE-WHEN: false\n## NEXT\nprobe\n## QA\n## LEDGER\n' "$t" > "$po/tasks/$t.task.md"
   printf 'probe\n' > "$po/tasks/$t.probe.sh"
 done
-printf 'cio\n' > "$po/claims/$t1.claim"
+printf 'chairman\n' > "$po/claims/$t1.claim"
 printf 'junior_07\n' > "$po/claims/$t2.claim"
-bus() { env -u S4E_PID_LOCK S4E_POST="$po" S4E_SEAT=cio S4E_RECUT="$rf" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$HERE/s4e_msg.sh" "$@"; }
+bus() { env -u S4E_PID_LOCK S4E_POST="$po" S4E_SEAT=chairman S4E_RECUT="$rf" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$HERE/s4e_msg.sh" "$@"; }
 why=""
 
 out1="$(printf 'grep -q delete "${S4E_HARNESS:-/home/harness}/scripts/s4e_msg.sh"\n' | bus delete "$t1" --verdict DELETED-NOT-REAL --stdin 2>&1)"; rc1=$?
@@ -35,7 +35,7 @@ grep -qP "^[0-9]+\t\Q$t1\E\t" "$po/QUEUE.tsv" && why="$why the row survived the 
 [ -e "$po/tasks/$t1.probe.sh" ] && why="$why the probe file survived the delete;"
 [ -e "$po/claims/$t1.claim" ] && why="$why the claim survived the delete;"
 [ "$(wc -l < "$rf")" = 1 ] || why="$why RECUT.tsv gained $(wc -l < "$rf") lines, not one;"
-awk -F'\t' -v t="$t1" '$2=="cio" && $3==t && $4=="DELETED-NOT-REAL" && $5=="-" && $6!=""' "$rf" | grep -q . || why="$why the RECUT.tsv line does not carry cio, the topic, the verdict, a dash and the body;"
+awk -F'\t' -v t="$t1" '$2=="chairman" && $3==t && $4=="DELETED-NOT-REAL" && $5=="-" && $6!=""' "$rf" | grep -q . || why="$why the RECUT.tsv line does not carry chairman, the topic, the verdict, a dash and the body;"
 grep -qP "^[0-9]+\t\Q$t2\E\t" "$po/QUEUE.tsv" || why="$why the second row was removed before its refusal;"
 
 out2="$(printf 'body\n' | bus delete "$t2" --verdict DELETED-NOT-REAL --stdin 2>&1)"; rc2=$?

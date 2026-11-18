@@ -46,7 +46,7 @@ apply() { local t stamp r
     t="$(mktemp -d "${TMPDIR:-/tmp}/s4e_mode_cap.XXXXXX")" || { echo "REFUSE(2) [mode-cap]: mktemp failed"; return 2; }
     r="$(split "$MODEF" "$t/MODE" "$t/add")" || { rm -rf "$t"; echo "REFUSE(2) [mode-cap]: the split failed"; return 2; }
     if [ ! -s "$t/add" ]; then rm -rf "$t"; [ -s "$MODEF.archive" ] || : > "$MODEF.archive"; echo "MODE-CAP nothing to move ($r)"; check; return $?; fi
-    for k in ROSTER LANES ORDER-OF-WORK BOSSES ON-CALL CONCERNS REPORT-TO-LON; do
+    for k in ROSTER LANES ORDER-OF-WORK BOSSES OFFICERS ON-CALL CONCERNS REPORT-TO-LON; do
         [ "$(grep -c "^$k:" "$MODEF")" = "$(grep -c "^$k:" "$t/MODE")" ] || { rm -rf "$t"; echo "REFUSE(2) [mode-cap]: the keyed line $k: would change; nothing written"; return 2; }
     done
     [ "$(head -1 "$MODEF")" = "$(head -1 "$t/MODE")" ] || { rm -rf "$t"; echo "REFUSE(2) [mode-cap]: line 1 would change; nothing written"; return 2; }
@@ -58,13 +58,13 @@ probe() { local t o why="" k
     t="$(mktemp -d "${TMPDIR:-/tmp}/s4e_mode_cap_probe.XXXXXX")" || { echo "REFUSE(2) [mode-cap --probe]: mktemp failed"; exit 2; }
     trap 'rm -rf "$t"' EXIT
     { echo TENET; for i in $(seq 1 12); do printf '# 2026-11-%02d 10:0x CST: block %s %s PRIOR: ' "$i" "$i" "$(head -c 900 /dev/zero | tr '\0' x)"; done; echo
-      echo '# PRIOR LINE 2 (old): history'; echo 'ROSTER: cio coo'; echo '# ROSTER is MACHINE-READ'; echo 'BOSSES: cio coo cto'; echo '# 2026-09-05 09:32 CDT cto: MODE QUARTET'; } > "$t/MODE"
+      echo '# PRIOR LINE 2 (old): history'; echo 'ROSTER: chairman president'; echo '# ROSTER is MACHINE-READ'; echo 'BOSSES: chairman president cto'; echo '# 2026-09-05 09:32 CDT cto: MODE QUARTET'; } > "$t/MODE"
     run() { S4E_MODE_FILE="$t/MODE" S4E_SEAT="${ME}" bash "${BASH_SOURCE[0]}" "$@" 2>&1; }
     o="$(run --check)"; [ $? = 1 ] && printf '%s\n' "$o" | grep -q '^MODE-CAP RED' || why="$why over the cap did not read RED [$o];"
     o="$(run --apply)"; [ $? = 0 ] || why="$why --apply did not end GREEN [$o];"
     [ "$(head -2 "$t/MODE" | wc -c)" -le "$CAP" ] || why="$why head -2 still over the cap;"
     [ "$(head -1 "$t/MODE")" = TENET ] || why="$why line 1 changed;"
-    for k in 'ROSTER: cio coo' 'BOSSES: cio coo cto' '# ROSTER is MACHINE-READ'; do grep -qxF "$k" "$t/MODE" || why="$why lost line [$k];"; done
+    for k in 'ROSTER: chairman president' 'BOSSES: chairman president cto' '# ROSTER is MACHINE-READ'; do grep -qxF "$k" "$t/MODE" || why="$why lost line [$k];"; done
     grep -q '# 2026-11-01 10:0x CST: block 1 ' "$t/MODE" || why="$why the newest block was not kept;"
     grep -q 'block 12 ' "$t/MODE" && why="$why the oldest block was not moved;"
     grep -q 'ARCHIVED LINE-2 BLOCK .*block 12 ' "$t/MODE.archive" || why="$why the oldest block is not in the archive;"

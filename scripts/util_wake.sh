@@ -9,7 +9,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 refuse() { echo "REFUSE(2) [util_wake]: $*"; exit 2; }
-root_of() { case "$1" in cto|coo|cfo|cao|cqo|cio) echo "/home/claude_$1";; hq_*) echo "/home/claude_${1#hq_}";; *) echo "";; esac; }
+root_of() { case "$1" in cto|president|cfo|cao|cqo|chairman) echo "/home/claude_$1";; hq_*) echo "/home/claude_${1#hq_}";; *) echo "";; esac; }
 wired() { local r; r="$(root_of "$1")"; [ -n "$r" ] && [ -f "$r/.claude/settings.json" ] || return 1
     python3 - "$r/.claude/settings.json" <<'PY'
 import json,sys

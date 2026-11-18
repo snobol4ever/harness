@@ -142,7 +142,7 @@ _ho_seat="${S4E_SEAT:-$(basename "$(cd "$SELF_DIR/../.." && pwd)" | sed 's/^clau
 if [ "${SKIP_S_ARTIFACT_CHECK:-0}" = "1" ]; then
   echo "  SKIPPED (SKIP_S_ARTIFACT_CHECK=1 set) — .s drift is UNVERIFIED this run, and an unverified check cannot read COMPLETE."
   unknown=1; unknown_reasons+=(".s artifact drift NOT GRADED: skipped by SKIP_S_ARTIFACT_CHECK=1 -- unset it and re-run")
-elif [ "$_ho_seat" != coo ] && [ -z "${S4E_ONE_TEST_ADMIT:-}" ]; then
+elif [ "$_ho_seat" != president ] && [ "$_ho_seat" != coo ] && [ -z "${S4E_ONE_TEST_ADMIT:-}" ]; then
   # ⛔⭐⭐⭐⭐ ZERO OR ONE TEST PER SEAT (Lon 2026-10-11 11:5x CDT, verbatim: "I'm thinking each seat can run ZERO test, oh ONE test, instead. Then let
   # COO prioritize testing on a per feature basis and still cycle through everything eventually."; R-1671): this verifier regenerates
   # every demo and benchmark .s of every language (102 artifacts, each a compile) in a disposable clone, and it ran here for EVERY seat at

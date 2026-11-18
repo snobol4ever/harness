@@ -6131,7 +6131,7 @@ def _one_runner_who(lang=None):
     except Exception:
         pass
     if not lanes:
-        return ["coo"]
+        return ["president", "coo"]
     table = dict(kv.split("=", 1) for kv in lanes.split() if "=" in kv)
     # ⛔⭐ THE ENGINE IS A RUNNER SETTING (R-1822), word for word lib_one_runner.sh:one_runner_who: under a port engine the lane is
     # <lang>@<engine> and the bare key does not admit it; "all" is the bare keys only, so a port HQ is never a runner of every board.
@@ -6175,7 +6175,7 @@ def _one_runner_guard(suite_path=None, corpus_root=None, lang=None):
         return                            # needs. We do not need ONLY ONE test runner."); an identity off the roster (hq_*) is still refused; a suite row is still the cycle's and the coo's to write
     # THE coo IS NEVER REFUSED A SCRIP BOARD (Lon 2026-10-25, R-1976; lib_one_runner.sh:one_runner_seat_admitted carries the words),
     # whatever LANES: names.
-    if seat == "coo" and _engine() == "scrip":
+    if seat in ("president", "coo") and _engine() == "scrip":
         return
     if seat == "grader" and os.environ.get("S4E_CLASS") == "grader" and _engine() == "scrip":   # the controller's grade worker is the coo's instrument (fleet-control step 10; lib_one_runner.sh:one_runner_seat_admitted)
         return

@@ -28,7 +28,7 @@ U = "/sys/fs/cgroup/user.slice/user-%d.slice/user@%d.service" % (os.getuid(), os
 GRADER = next((p for p in (U + "/s4e.slice/s4e-runs.slice/s4e-runs-grader.slice", U + "/app.slice/app-s4e.slice/app-s4e-grader.slice", U + "/s4e.slice/s4e-grader.slice") if os.path.isfile(p + "/cpu.pressure")), U + "/s4e.slice/s4e-grader.slice")   # the grader seat's runs enter app-s4e-grader.slice (util_mem_scope seat_slice); the class slice stood empty and read 0.0, so W rose on a hot box (cio 2026-11-11)
 SEATS_SLICE = U + "/s4e.slice/s4e-seats.slice"
 DRY = os.environ.get("S4E_TICK_DRY") == "1"
-TICK_DIR = os.environ.get("S4E_TICK_DIR") or ("/tmp/s4e/%s/tick" % os.environ.get("S4E_SEAT", "cio"))
+TICK_DIR = os.environ.get("S4E_TICK_DIR") or ("/tmp/s4e/%s/tick" % os.environ.get("S4E_SEAT", "chairman"))
 CORES_CONF = os.environ.get("S4E_CORES_CONF") or (PO + "/CORES.conf")
 FLEET_SLICE = "s4e.slice"   # the one slice: every seat scope, the grader, batch and (since this row) the graded runs, util_mem_scope.seat_slice
 FLEET_TREES = ("s4e.slice", "app.slice/app-s4e.slice")   # every quota below these is a second limiter and is cleared; app-s4e.slice is where the graded runs lived before
@@ -530,7 +530,7 @@ def probe_sync():
     import tempfile, contextlib, io
     global ROOT, TICK_DIR, SYNC_EVERY, DRY, PROBING
     saved = (ROOT, TICK_DIR, SYNC_EVERY, DRY, PROBING)
-    base = "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "cio"); os.makedirs(base, exist_ok=True)
+    base = "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "chairman"); os.makedirs(base, exist_ok=True)
     d = tempfile.mkdtemp(prefix="s4e-sync-probe-", dir=base)
     who = dict(GIT_AUTHOR_NAME="s4e-probe", GIT_AUTHOR_EMAIL="probe@s4e.invalid", GIT_COMMITTER_NAME="s4e-probe", GIT_COMMITTER_EMAIL="probe@s4e.invalid")
     def git(*a, cwd=None):
@@ -603,7 +603,7 @@ def probe_roots_sync():
     import tempfile, inspect
     global ROOTS_GLOB, TICK_DIR, GRADER_HOME, ROOT
     saved = (ROOTS_GLOB, TICK_DIR, GRADER_HOME, ROOT)
-    base = "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "cio"); os.makedirs(base, exist_ok=True)
+    base = "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "chairman"); os.makedirs(base, exist_ok=True)
     d = tempfile.mkdtemp(prefix="s4e-roots-probe-", dir=base)
     who = dict(GIT_AUTHOR_NAME="s4e-probe", GIT_AUTHOR_EMAIL="probe@s4e.invalid", GIT_COMMITTER_NAME="s4e-probe", GIT_COMMITTER_EMAIL="probe@s4e.invalid")
     def git(*a, cwd=None):
@@ -687,7 +687,7 @@ FEED_UNIT = "s4e-feed"
 def stock_cmd():
     """the one command a stock run is: a transient service in the batch slice, its WAKE lines to TICK_DIR/wake.pending, its log beside them"""
     return ["systemd-run", "--user", "--quiet", "--collect", "--unit=" + FEED_UNIT, "--slice=s4e-batch.slice", "-p", "RuntimeMaxSec=1800",
-            "--setenv=S4E_HOME=" + ROOT, "--setenv=S4E_POST=" + POST, "--setenv=S4E_SEAT=" + os.environ.get("S4E_SEAT", "cio"),
+            "--setenv=S4E_HOME=" + ROOT, "--setenv=S4E_POST=" + POST, "--setenv=S4E_SEAT=" + os.environ.get("S4E_SEAT", "chairman"),
             "--setenv=S4E_FEED_WAKES=" + TICK_DIR + "/wake.pending", "-p", "StandardOutput=append:" + TICK_DIR + "/feed.log", "-p", "StandardError=append:" + TICK_DIR + "/feed.log",
             sys.executable, "-I", os.path.join(str(HP.harness(ROOT)), "scripts/util_reds_to_juniors.py"), "--stock", "--apply"]
 

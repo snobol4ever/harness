@@ -32,7 +32,7 @@ PO="${S4E_POST:-/home/resources/postoffice}"
 ME="${S4E_SEAT:-}"
 if [ -z "$ME" ]; then case "$S4E" in
     /home/claude_cto)       ME=cto;;
-    /home/claude_coo)       ME=coo;;
+    /home/claude_president)       ME=president;;
     /home/claude_cfo)       ME=cfo;;
     /home/claude_cao)       ME=cao;;
     /home/claude_cqo)       ME=cqo;;
@@ -74,11 +74,11 @@ fi
 # checks? If not you are failing. You know you are unable to remember anything." / "make it SURE THING"). For the coo only: the verifier's watchdog runs
 # (it restarts a dead loop8, tier1 or seat watch whose STOP file is absent, and says so), then the ops watch measures load, readings, timeouts,
 # the pool width and the queue, and its newest line prints here. Each step is bounded and can never break the banner above.
-if [ "$ME" = coo ] && [ -f /home/claude_coo/.scratch/verifier/opswatch.sh ]; then
-  _V=/home/claude_coo/.scratch/verifier
+if [ "$ME" = president ] && [ -f /home/claude_president/.scratch/verifier/opswatch.sh ]; then
+  _V=/home/claude_president/.scratch/verifier
   _w="$(timeout -k 5 20 bash "$_V/watchdog.sh" 2>/dev/null || true)"; [ -n "$_w" ] && printf '⛔ %s\n' "$_w"
   timeout -k 5 20 bash "$_V/opswatch.sh" > /dev/null 2>&1 || true
-  _o="$(tail -1 "$_V/ops.tsv" 2>/dev/null)"; [ -n "$_o" ] && printf 'OPS [coo] %s\n' "$(printf '%s' "$_o" | tr '\t' ' ')"
+  _o="$(tail -1 "$_V/ops.tsv" 2>/dev/null)"; [ -n "$_o" ] && printf 'OPS [president] %s\n' "$(printf '%s' "$_o" | tr '\t' ' ')"
 fi
 # ⭐ SAME DUTY-INTO-HARNESS CLASS AS THIS HOOK ITSELF (hq_B 2026-08-30, row
 # commit-trailer-hook-rejects-forbidden-trailers). Git hooks do NOT propagate through clone, so

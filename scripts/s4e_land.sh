@@ -472,7 +472,7 @@ probe_land_class() {   # the land class guards the build only (row bus-land-the-
     trap 'rm -rf "$T"' EXIT
     scratch_clone "$T"
     for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: the land-class commit in $r" || refuse "probe: cannot commit in $r"; done
-    gate="n=\$(ls \"$T/sem/semaphores\" 2>/dev/null | grep -c s4e-land); a=\${S4E_ADMITTED:+set}; echo \"\${n:-0} \${a:-unset}\" > \"$T/gate.out\"; mkdir -p \"$T/po/$seat/inbox\"; printf 'FROM coo TO %s RE probe-mail-after-preflight\nbody\n' \"$seat\" > \"$T/po/$seat/inbox/9-mail-after-preflight.msg\"; echo 'probe: gate ran'"
+    gate="n=\$(ls \"$T/sem/semaphores\" 2>/dev/null | grep -c s4e-land); a=\${S4E_ADMITTED:+set}; echo \"\${n:-0} \${a:-unset}\" > \"$T/gate.out\"; mkdir -p \"$T/po/$seat/inbox\"; printf 'FROM president TO %s RE probe-mail-after-preflight\nbody\n' \"$seat\" > \"$T/po/$seat/inbox/9-mail-after-preflight.msg\"; echo 'probe: gate ran'"
     env -u S4E_ADMITTED -u S4E_LAND_UNADMITTED S4E_SEM_HOME="$T/sem" S4E_POSTOFFICE="$T/po" S4E_POST="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate "$gate" > "$T/land.log" 2>&1 < /dev/null; rc=$?
     read -r n a < "$T/gate.out" 2>/dev/null || { n=none; a=none; }
     mail=refused; [ "$rc" = 0 ] && grep -q '^LAND ok ' "$T/land.log" && mail=landed
@@ -486,7 +486,7 @@ mail_guard() {   # ⛔ A STOP ORDER LANDS BEFORE THE LANDING (fleet-bus; the cio
     local po="$1" sd="$2" claim="$3" f b names=""
     for f in "$po/$sd/inbox"/*.msg; do [ -f "$f" ] || continue; b="$(basename "$f")"
         grep -qxF "$b" "$po/$sd/.last-check" 2>/dev/null && continue
-        head -1 "$f" 2>/dev/null | grep -q "^FROM $sd TO " && continue   # A SEAT'S OWN MAIL IS NO STOP ORDER (the cio 2026-11-14, on the coo's measurement: its own ops-watch telegram, coo to coo every 30 minutes, refused three coo landings in one day): a message whose FROM is the seat itself was written by the seat's own watch or note, never by another seat that wants it stopped
+        head -1 "$f" 2>/dev/null | grep -q "^FROM $sd TO " && continue   # A SEAT'S OWN MAIL IS NO STOP ORDER (the cio 2026-11-14, on the coo's measurement: its own ops-watch telegram, president to president every 30 minutes, refused three president landings in one day): a message whose FROM is the seat itself was written by the seat's own watch or note, never by another seat that wants it stopped
         if [ -n "$claim" ] && [ -f "$claim" ]; then [ "$f" -nt "$claim" ] || continue; fi
         names="$names $b"; done
     [ -z "$names" ] && return 0
@@ -496,14 +496,14 @@ probe_mail() {   # the mail guard's proof on scratch (row bus-the-unread-banner-
     local sc="/tmp/s4e/${S4E_SEAT:-worker}/land-mail.$$" po me=probe-mail rf=0 rp=0 rb=0 rs=0 h1 h2
     po="$sc/po"; mkdir -p "$po/$me/inbox" "$po/claims" || return 2
     printf '# probe\n' > "$po/MODE"; printf 'claim\n' > "$po/claims/t-mail.claim"; touch -d @1000000000 "$po/claims/t-mail.claim"
-    printf 'FROM coo TO %s RE m1-stop-order\nbody\n' "$me" > "$po/$me/inbox/1-m1.msg"; touch -d @2000000000 "$po/$me/inbox/1-m1.msg"
+    printf 'FROM president TO %s RE m1-stop-order\nbody\n' "$me" > "$po/$me/inbox/1-m1.msg"; touch -d @2000000000 "$po/$me/inbox/1-m1.msg"
     mail_guard "$po" "$me" "$po/claims/t-mail.claim" 2>/dev/null || rf=1
     S4E_POST="$po" S4E_SEAT="$me" S4E_NO_BANNER=1 bash "$HERE/s4e_msg.sh" check > /dev/null 2>&1
     mail_guard "$po" "$me" "$po/claims/t-mail.claim" 2>/dev/null && rp=1
     printf 'FROM %s TO %s RE m0-own-watch\nbody\n' "$me" "$me" > "$po/$me/inbox/0-m0.msg"; touch -d @2000000050 "$po/$me/inbox/0-m0.msg"
     mail_guard "$po" "$me" "$po/claims/t-mail.claim" 2>/dev/null && rs=1; rm -f "$po/$me/inbox/0-m0.msg"   # (d) the seat's own unread mail, newer than its claim, refuses nothing
     h1="$(S4E_HOME="$sc/noharness" S4E_POST="$po" S4E_SEAT="$me" bash "$HERE/s4e_inbox_hook.sh" 2>/dev/null)"
-    printf 'FROM coo TO %s RE m2-new-arrival\nbody\n' "$me" > "$po/$me/inbox/2-m2.msg"; touch -d @2000000100 "$po/$me/inbox/2-m2.msg"
+    printf 'FROM president TO %s RE m2-new-arrival\nbody\n' "$me" > "$po/$me/inbox/2-m2.msg"; touch -d @2000000100 "$po/$me/inbox/2-m2.msg"
     h2="$(S4E_HOME="$sc/noharness" S4E_POST="$po" S4E_SEAT="$me" bash "$HERE/s4e_inbox_hook.sh" 2>/dev/null)"
     if [ "${h1#*RE m1-stop-order}" = "$h1" ] && [ "${h2#*RE m2-new-arrival}" != "$h2" ] && [ "${h2#*RE m1-stop-order}" = "$h2" ]; then rb=1; fi
     rm -rf "$sc"
@@ -788,7 +788,7 @@ lease="${S4E_POSTOFFICE:-/home/resources/postoffice}/.land.lease"; lw="${S4E_LAN
 # refuses, because another landing got there first, goes round. A gate never runs under a lock. After its last gate a landing yields only to movers in its OWN directories
 # (finish loop, below): what other landings change elsewhere is read by the cycle, which grades origin every chunk and routes a regression at rank 0. With lease=flock, or no
 # line, the lease of before stands, so the switch is one line of LAND.conf. --probe-no-lease proves it on scratch origins.
-lease_boss() { [ "${lease_mode:-flock}" = none ] && return 0; local b; b="$(sed -n 's/^BOSSES: *//p' "${S4E_POSTOFFICE:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1)"; case " $b " in *" $seat "*) return 0 ;; esac; return 1; }
+lease_boss() { [ "${lease_mode:-flock}" = none ] && return 0; local b; b="$(sed -n 's/^\(BOSSES\|OFFICERS\): *//p' "${S4E_POSTOFFICE:-/home/resources/postoffice}/MODE" 2>/dev/null | tr '\n' ' ')"; case " $b " in *" $seat "*) return 0 ;; esac; return 1; }
 lease_skipped=0
 take_lease() {
     if lease_boss; then

@@ -81,7 +81,7 @@ TERM = "user@1000.service/app.slice/app-org.gnome.Terminal.slice/"
 LAPPOP = "/home/resources/progress/LAP_POP.tsv"
 BUDGET = "/home/resources/postoffice/BUDGET.tsv"
 BUDGET_KNOBS = [("CPUWeight", "cpu.weight"), ("CPUQuota", "cpu.max"), ("MemoryHigh", "memory.high"), ("MemoryMax", "memory.max"), ("MemorySwapMax", "memory.swap.max"), ("TasksMax", "pids.max")]
-LOOPDIR = "/home/claude_coo/.scratch/verifier"
+LOOPDIR = "/home/claude_president/.scratch/verifier"
 FRESH_H = 72
 
 
@@ -581,7 +581,7 @@ def lap_lines(window):
         fh.readline()
         for line in fh:
             f = line.rstrip("\n").split("\t")
-            if len(f) >= 14 and f[0] >= cut and f[3] == "coo" and (rrf.TAG_RR.search(f[13]) or rrf.TAG_REQ.search(f[13])):
+            if len(f) >= 14 and f[0] >= cut and f[3] in ("president", "coo") and (rrf.TAG_RR.search(f[13]) or rrf.TAG_REQ.search(f[13])):
                 rows += 1; progs.add((f[5], rrf.stem(f[7])))
     rph = rows / (window / 3600.0); rpt = rows / len(progs) if progs else 2.0; stale = tests - nfresh
     if rph > 0:
@@ -911,11 +911,11 @@ def probe_health():
             open(os.path.join(proc, pid, "comm"), "w").write(comm + "\n")
         sys.argv += ["--proc", proc]
         root = os.path.join(t, "cg")
-        rows, unm = classify(scopes(root), {"cio": ("SEAT", term + "/vte-spawn-a.scope")}, root)
+        rows, unm = classify(scopes(root), {"chairman": ("SEAT", term + "/vte-spawn-a.scope")}, root)
         got = sorted(u.rsplit("/", 1)[-1] for u in unm)
         if got != ["vte-spawn-b.scope", "vte-spawn-d.scope"]:
             bad.append("unmapped: a session no line maps is named and a scope holding no Claude process is not; read %s" % got)
-        if (term + "/vte-spawn-c.scope", "LON", "desktop") not in rows or (term + "/vte-spawn-a.scope", "SEAT", "cio") not in rows:
+        if (term + "/vte-spawn-c.scope", "LON", "desktop") not in rows or (term + "/vte-spawn-a.scope", "SEAT", "chairman") not in rows:
             bad.append("classes: the wrapper scope is LON desktop and the mapped scope its seat; read %s" % rows)
     now = time.time()
     ts = lambda ago: time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now - ago))
@@ -923,10 +923,10 @@ def probe_health():
     got = oom_recent([L(200000, "old", 1), L(3600, "old", 1), L(200000, "new", 0), L(7200, "new", 1), L(3600, "new", 1), L(200000, "gone", 2), L(100000, "gone", 0), L(60, "gone", 0)], now - 86400)
     if sorted(got) != ["SEAT/new"] or got.get("SEAT/new") != ts(7200):
         bad.append("oom: only the unit whose count rose inside the day is named, at the run that read the rise; read %s" % got)
-    sh, wr = ["CLAUDECODE=1", "S4E_SEAT=cio"], ["HOME=/x"]
+    sh, wr = ["CLAUDECODE=1", "S4E_SEAT=chairman"], ["HOME=/x"]
     arms = (([wr, wr], False), ([wr, ["CLAUDECODE=1"]], True), ([wr, sh, ["CLAUDECODE=1"]], False), ([], False))
     for envs, want in arms:
-        if seat_env_gap(envs, "cio") != want:
+        if seat_env_gap(envs, "chairman") != want:
             bad.append("env: %s reads %s, want %s" % (envs, not want, want))
     for b in bad:
         print("  RED  " + b)
@@ -1166,7 +1166,7 @@ def watch_check():
     the checks between the coo's turns can die silently (a reboot killed the loop for 11 h on 10-17). RED by name when the coo's loop (bash loop8.sh), tier1
     (bash tier1.sh, which carries the fleet watch) or the seat watch (bash seatwatch.sh) has no process and no STOP file in the verifier directory, and when
     the fleet watch's last pass (fleet.last) is over fifteen minutes old."""
-    vd = arg("--verifier-dir", "/home/claude_coo/.scratch/verifier")
+    vd = arg("--verifier-dir", "/home/claude_president/.scratch/verifier")
     psf = arg("--ps", "")
     txt = rd(psf) if psf else subprocess.run(["ps", "-eo", "pid=,ppid=,etimes=,rss=,cgroup:400=,args="], capture_output=True, text=True).stdout
     args = [l.split(None, 5)[5] for l in txt.splitlines() if len(l.split(None, 5)) == 6]
@@ -1218,7 +1218,7 @@ def health():
 TC_RESULTS = RESULTS
 TC_REQ_DONE = "/home/resources/postoffice/test_requests/done"
 TC_LAP = "/home/resources/progress/LAP.tsv"
-TC_TICKS = os.path.join(os.environ.get("S4E_TICK_DIR") or "/tmp/s4e/cio/tick", "ticks.log")   # the controller's TICK_DIR (s4e-tick.service runs it as S4E_SEAT=cio)
+TC_TICKS = os.path.join(os.environ.get("S4E_TICK_DIR") or "/tmp/s4e/chairman/tick", "ticks.log")   # the controller's TICK_DIR (s4e-tick.service runs it as S4E_SEAT=chairman)
 TC_CELLS = "sno-rungs:chunk:01,gimpel:chunk:01"   # the two cells the cio measured per cell on 2026-11-08 07:1x (the design text): one master chunk, one package chunk
 TC_EXT = {"snobol4": "sno", "icon": "icn", "prolog": "pl", "pascal": "pas", "raku": "raku", "rebus": "reb", "snocone": "sc"}
 TC_TZ = {"CST": -6 * 3600, "CDT": -5 * 3600}

@@ -99,7 +99,7 @@ def fresh_of(db, since, live):
         fh.readline()
         for line in fh:
             f = line.rstrip("\n").split("\t")
-            if len(f) < 14 or f[0] <= since or f[3] != "coo":
+            if len(f) < 14 or f[0] <= since or f[3] not in ("president", "coo"):   # coo: the president's name in every reading before 2026-11-18
                 continue
             rr, req = bool(TAG_RR.search(f[13])), bool(TAG_REQ.search(f[13]))
             if not (rr or req):
@@ -112,7 +112,7 @@ def fresh_of(db, since, live):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--loop-dir", default="/home/claude_coo/.scratch/verifier")
+    ap.add_argument("--loop-dir", default="/home/claude_president/.scratch/verifier")
     ap.add_argument("--hours", type=float, default=72.0)
     a = ap.parse_args()
     db = os.environ.get("S4E_PROGRESS_DB", "/home/resources/progress/results.tsv")

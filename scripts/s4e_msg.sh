@@ -68,6 +68,7 @@ ME="${S4E_SEAT:-}"
 # ⭐ /home/claude IS `officer` (Lon s257 topology ruling). The legacy `hq` mailbox stays readable until its backlog
 # drains; it is simply no longer any root's identity.
 s4e_canon() { case "$1" in
+    cio) if [ -d "$PO/chairman/inbox" ]; then echo chairman; else echo cio; fi;; coo) if [ -d "$PO/president/inbox" ]; then echo president; else echo coo; fi;;   # the two bosses' names until 2026-11-18 (Lon: "CIO should be CHAIRMAN, and COO should be PRESIDENT."): an old session's identity and an old baton's address still arrive, once the new mailbox stands
     claude0[1-9]|claude1[0-9]|claude20) echo "seat${1#claude}";;
     claude[1-9])               echo "seat0${1#claude}";;
     seat[1-9])                 echo "seat0${1#seat}";;
@@ -114,7 +115,7 @@ s4e_assert_not_drained() { [ -f "$PO/$1/DRAINED" ] || return 0
     printf '\n' >&2; exit 2; }
 if [ -z "$ME" ]; then case "$S4E" in
     /home/claude_cto)       ME=cto;;
-    /home/claude_coo)       ME=coo;;
+    /home/claude_president)       ME=president;;
     /home/claude_cfo)       ME=cfo;;
     /home/claude_cao)       ME=cao;;
     /home/claude_cqo)       ME=cqo;;
@@ -138,6 +139,7 @@ if [ -z "$ME" ]; then case "$S4E" in
     /home/claude[1-9])      ME="seat0${S4E#/home/claude}";;
     *)                      ME="$(basename "$S4E")";; esac; fi
 ME="$(s4e_canon "$ME")"
+_s4e_av=(); for _s4e_a in "$@"; do case "$_s4e_a" in cio|coo) _s4e_a="$(s4e_canon "$_s4e_a")";; esac; _s4e_av+=("$_s4e_a"); done; set -- ${_s4e_av[@]+"${_s4e_av[@]}"}; unset _s4e_av _s4e_a   # an argument that is exactly cio or coo is a seat in every verb (send, assign, reown, queue --to, ask): it names the chairman or the president; a topic is a slug and never one of the two
 # release-verbs-refuse-on-unfolded-authority-mail (hq_C 2026-08-30): s4e_unfolded_authority_mail /
 # s4e_release_guard_note, used by unclaim/park below. Sourced relative to this script's own
 # directory, not cwd, since these subcommands are invoked from anywhere.
@@ -267,7 +269,7 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
     [ -n "$(printf '%s' "$_body" | tr -d '[:space:]')" ] || { printf '⛔ REFUSED: escalate needs the measurement; an empty body is refused (one honest try, measured).\n' >&2; return 2; }
     [ -f "$_c" ] || { printf '⛔ REFUSED: %s has no claim; escalate only a row a seat holds.\n' "$_t" >&2; return 2; }
     _holder="$(head -1 "$_c")"
-    _bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" | head -1)"
+    _bosses="$(sed -n 's/^\(BOSSES\|OFFICERS\):[[:space:]]*//p' "$PO/MODE" | tr '\n' ' ')"
     case " $_bosses " in *" $ME "*) : ;; *) [ "$_holder" = "$ME" ] || { printf '⛔ REFUSED: %s is claimed by %s; only that seat or a boss may escalate it.\n' "$_t" "$_holder" >&2; return 2; }; s4e_escalate_not_landing "$_t" "$ME" || return 2;; esac
     if s4e_file_road; then   # bus-one-queue step 3: on the file road the column is the tube; no job is killed, put or recorded
         _tube="$(sed -n 's/^RESERVED file tube=\([^ ]*\).*/\1/p' "$_c" | tail -1)"
@@ -282,14 +284,14 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
         [ -z "$_sv" ] || printf '\nSAVED BY THE BUS at %s (every /tmp path this escalation names, copied to durable disk; /tmp is swept and is cleared at a reboot):\n%s\n' "$(date -u +%FT%TZ)" "$_sv" >> "$_mf"
         if [ "$_top" = 1 ]; then
             s4e_escalate_ledger "$_t" "$_rung" "$_tube" chairman "$_iso" "$_mf"; rm -f "$_c"; s4e_set_row_state "$_t" "PARKED-CHAIRMAN:escalated" || true
-            s4e_escalate_tell cio "$_t" "$_rung" "$_tube" chairman "$_mf" && _tg=$((_tg+1))
+            s4e_escalate_tell chairman "$_t" "$_rung" "$_tube" chairman "$_mf" && _tg=$((_tg+1))
         else
             s4e_escalate_ledger "$_t" "$_rung" "$_tube" "$_above" "$_iso" "$_mf"
             _own="@${_above#tier-}"; case "$_above" in seat-*) _own="${_above#seat-}";; esac
             rm -f "$_c"; s4e_set_row_state "$_t" "QUEUED:$_above" || true; s4e_reown_cell "$_t" "$_own" || true
             for _seat in $(printf '%s\n%s\n' "$_by" "$_des" | awk 'NF && !_s[$0]++'); do s4e_escalate_tell "$_seat" "$_t" "$_rung" "$_tube" "$_above" "$_mf" && _tg=$((_tg+1)); done
         fi
-        printf 'escalated %s rung=%s from=%s to=%s measurement=%s telegrams=%s (file road)\n' "$_t" "$_rung" "$_tube" "${_above:-chairman}" "$_mf" "$_tg"; if [ "$_top" = 1 ]; then [ "$ME" = cio ] || s4e_wake_hint seat-cio "$_t" escalate; else s4e_wake_hint "$_above" "$_t" escalate; fi; return 0
+        printf 'escalated %s rung=%s from=%s to=%s measurement=%s telegrams=%s (file road)\n' "$_t" "$_rung" "$_tube" "${_above:-chairman}" "$_mf" "$_tg"; if [ "$_top" = 1 ]; then [ "$ME" = chairman ] || s4e_wake_hint seat-chairman "$_t" escalate; else s4e_wake_hint "$_above" "$_t" escalate; fi; return 0
     fi
 }
 s4e_step_owned_refuse() {   # <topic>: the cio's ruling 2026-11-07 (one owner per job): a sub-step (-step-N- in its topic) whose parent job sits ready or reserved in a tube this seat does not serve is refused, rc 2; rc 0 otherwise
@@ -307,7 +309,7 @@ s4e_escalate_takeup() {   # <topic> <tier> < reason on stdin (escalate --to, the
   _body="$(cat)"
   [ -n "$(printf '%s' "$_body" | tr -d '[:space:]')" ] || { printf '⛔ REFUSED: escalate --to needs the reason on stdin.\n' >&2; return 2; }
   case "$_to" in fable|opus|sonnet|haiku) : ;; *) printf '⛔ REFUSED: --to takes fable, opus, sonnet or haiku (got %s).\n' "$_to" >&2; return 2 ;; esac
-  _bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" | head -1)"
+  _bosses="$(sed -n 's/^\(BOSSES\|OFFICERS\):[[:space:]]*//p' "$PO/MODE" | tr '\n' ' ')"
   _mytier="$(s4e_tier_of "$ME" 2>/dev/null)"
   case " $_bosses " in *" $ME "*) : ;; *) case "$_mytier" in fable|opus) : ;; *) printf '⛔ REFUSED: only a boss or a fable/opus seat takes a job up; %s is %s.\n' "$ME" "${_mytier:-untiered}" >&2; return 2 ;; esac ;; esac
   # bus-one-queue (CIO-82): the row's tube is its column QUEUED:<tube>, or its claim's RESERVED file tube= while a seat holds it
@@ -1182,7 +1184,7 @@ s4e_manifest_rowd_cite() {   # echo the citing manifest line(s) for topic $1; rc
 }
 s4e_lane_officer() {   # <topic> -> the officer of its lane from MODE's LANES: (lane=officer); a lane LANES does not name is the fleet system's, the cio
     local _l="${1%%-*}" _o; _o="$(sed -n 's/^LANES:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | tr ' ' '\n' | sed -n "s/^$_l=//p" | head -1)"
-    [ -n "$_o" ] && [ -d "$PO/$_o/inbox" ] && { echo "$_o"; return; }; echo cio; }
+    [ -n "$_o" ] && [ -d "$PO/$_o/inbox" ] && { echo "$_o"; return; }; echo chairman; }
 s4e_row_last_touch() {   # <topic> -> epoch seconds of the newest LEDGER date on the baton or ASSIGNED-BY stamp on the claim; 0 when none
     local _b="$PO/tasks/$1.task.md" _c="$PO/claims/$1.claim" _d _m=0 _e
     for _d in $(grep -oE '^- \[[A-Za-z_0-9]+·20[0-9]{2}-[0-9]{2}-[0-9]{2}' "$_b" 2>/dev/null | grep -oE '20[0-9]{2}-[0-9]{2}-[0-9]{2}') $(sed -n 's/^ASSIGNED-BY [^ ]* \(20[0-9T:-]*Z\).*/\1/p' "$_c" 2>/dev/null); do
@@ -1371,7 +1373,7 @@ s4e_sweep_plant_measuring_dead() {   # the cure's probe (box-scheduler step 8): 
 s4e_sweep_plant_rc2_stale() {   # step 9's probe on a scratch postoffice: a refusing row retires on the third sweep, a stale ASSIGNED row escalates to its lane officer, a timeout and a fresh row are kept
   local _w _o _why="" _now _r2 _st _fr _tm _off _rj
   _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_sweep_plant9.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
-  mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox" "$_w/plant-owner/inbox" "$_w/plant-slow/inbox" "$_w/cio/inbox" "$_w/coo/inbox"; _now="$(date -u +%FT%TZ)"
+  mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox" "$_w/plant-owner/inbox" "$_w/plant-slow/inbox" "$_w/chairman/inbox" "$_w/president/inbox"; _now="$(date -u +%FT%TZ)"
   cp "$PO/MODE" "$_w/MODE" 2>/dev/null
   _r2="rc2-plant-$$"; _st="prolog-stale-plant-$$"; _fr="prolog-fresh-plant-$$"; _tm="timeout-plant-$$"; _off="$(s4e_lane_officer "$_st")"; mkdir -p "$_w/$_off/inbox"
   printf '# plant queue (box-scheduler step 9, CTO-496)\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n2\t%s\tplant-slow\tASSIGNED:plant-slow\n2\t%s\tplant-slow\tASSIGNED:plant-slow\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n' "$_r2" "$_st" "$_fr" "$_tm" > "$_w/QUEUE.tsv"
@@ -1461,7 +1463,7 @@ s4e_done_probe_budget() {
     w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_done_budget.XXXXXX")" || { echo "REFUSE(2) [done --probe-budget]: mktemp failed"; exit 2; }
     now="$(date -u +%FT%TZ)"
     mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox"
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|OFFICERS|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/PROTOCOL-VERSION"
     a="done-budget-2s-$$"; b="done-budget-5s-$$"
     printf '# plant queue (fleet-queue DONE-BUDGET-S)\n2\t%s\t%s\tFREE\n2\t%s\t%s\tFREE\n' "$a" "$ME" "$b" "$ME" > "$w/QUEUE.tsv"
@@ -1486,7 +1488,7 @@ s4e_done_plant_unblock() {   # step 35's probe on a scratch postoffice: a row AS
     w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_done_unblock.XXXXXX")" || { echo "REFUSE(2) [done --probe-unblock]: mktemp failed"; exit 2; }
     trap 'rm -rf "$w"' EXIT; now="$(date -u +%FT%TZ)"
     mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" "$w/plant-x/inbox" "$w/plant-y/inbox"
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|OFFICERS|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/PROTOCOL-VERSION"
     a="unblock-closer-$$"; b="unblock-assigned-$$"; c="unblock-free-$$"
     printf '# plant queue (box-scheduler step 35)\n2\t%s\t%s\tFREE\n2\t%s\t%s\tASSIGNED:%s\n2\t%s\tplant-y\tFREE\n' "$a" "$ME" "$b" "$ME" "$ME" "$c" > "$w/QUEUE.tsv"
@@ -1510,7 +1512,7 @@ s4e_done_plant_restore_seat() {   # fleet-done-restores-a-blocked-row-only-to-a-
     w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_done_restore_seat.XXXXXX")" || { echo "REFUSE(2) [done --probe-restore-seat]: mktemp failed"; exit 2; }
     trap 'rm -rf "$w"' EXIT; now="$(date -u +%FT%TZ)"; a="restore-closer-$$"; b="restore-blocked-$$"
     mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" || { echo "REFUSE(2) [done --probe-restore-seat]: cannot make the scratch postoffice"; exit 2; }
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|OFFICERS|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
     printf '# plant queue (fleet-done restores a blocked row to a seat that exists)\n2\t%s\t%s\tASSIGNED:%s\n2\t%s\t%s\tBLOCKED-ON:%s\n' "$a" "$ME" "$ME" "$b" "$ME" "$a" > "$w/QUEUE.tsv"
     printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$a" "$now" > "$w/tasks/$a.task.md"
     printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\nLINKS: plant %s\nRESTORE-STATE: ASSIGNED:hq_nobody\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$b" "$now" > "$w/tasks/$b.task.md"
@@ -1528,7 +1530,7 @@ s4e_next_plant_serve() {   # step 32's probe on a scratch postoffice: next write
     [ -n "$ME" ] || { echo "REFUSE(2) [next --probe-serve]: S4E_SEAT unset"; exit 2; }
     w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_next_serve.XXXXXX")" || { echo "REFUSE(2) [next --probe-serve]: mktemp failed"; exit 2; }
     trap 'rm -rf "$w"' EXIT; mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox"
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|OFFICERS|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/PROTOCOL-VERSION"
     a="serve-older-assign-$$"; b="serve-newer-assign-$$"; c="serve-free-$$"; x="serve-live-x-$$"; y="serve-live-y-$$"; z="serve-assigned-z-$$"
     printf '# plant queue (box-scheduler step 32)\n1\t%s\t%s\tASSIGNED:%s\n2\t%s\t%s\tASSIGNED:%s\n2\t%s\t%s\tFREE\n2\t%s\t%s\tCLAIMED:%s\n2\t%s\t%s\tCLAIMED:%s\n2\t%s\t%s\tASSIGNED:%s\n' \
@@ -1585,7 +1587,7 @@ s4e_banner_plant_once() {   # step 37's probe on a scratch postoffice: two arriv
     [ -n "$ME" ] || { echo "REFUSE(2) [banner --probe-once]: S4E_SEAT unset"; exit 2; }
     w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_banner_once.XXXXXX")" || { echo "REFUSE(2) [banner --probe-once]: mktemp failed"; exit 2; }
     trap 'rm -rf "$w"' EXIT; mkdir -p "$w/$ME/inbox" "$w/tasks" "$w/claims"; printf '# plant\n' > "$w/QUEUE.tsv"
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|OFFICERS|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/PROTOCOL-VERSION"
     printf 'FROM plant TO %s RE one\nbody one\n' "$ME" > "$w/$ME/inbox/1-plant-one.msg"; printf 'FROM plant TO %s RE two\nbody two\n' "$ME" > "$w/$ME/inbox/2-plant-two.msg"
     run() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" "$@" 2>&1; }
@@ -1654,7 +1656,7 @@ s4e_banner_probe_absolute() {   # banner --probe-absolute: a scratch root that i
     [ -n "$ME" ] || { echo "REFUSE(2) [banner --probe-absolute]: S4E_SEAT unset"; exit 2; }
     mkdir -p "/tmp/s4e/$ME" && w="$(mktemp -d "/tmp/s4e/$ME/banner_abs.XXXXXX")" || { echo "REFUSE(2) [banner --probe-absolute]: mktemp failed"; exit 2; }
     trap 'rm -rf "$w"' EXIT; top="$w/top"; root="$w/root"; mkdir -p "$top" "$w/po/$ME/inbox" "$w/po/tasks" "$w/po/claims"; printf '# plant\n' > "$w/po/QUEUE.tsv"
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/po/MODE"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|OFFICERS|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/po/MODE"
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/po/PROTOCOL-VERSION"
     mkrepo() {   # <dir> <name>: a clone of a scratch origin, one commit pushed
         git init -q --bare -b main "$w/$2.git" && git init -q -b main "$1" && git -C "$1" remote add origin "$w/$2.git" && echo 1 > "$1/f" && git -C "$1" add f \
@@ -1709,7 +1711,7 @@ s4e_sweep_plant_awaiting() {   # step 31's probe: a scratch postoffice, a pendin
     t="$(mktemp -d "${TMPDIR:-/tmp}/s4e_park_awaiting.XXXXXX")" || { echo "REFUSE(2) [park --probe-awaiting]: mktemp failed"; exit 2; }
     trap 'rm -rf "$t"' EXIT
     po="$t/po"; mkdir -p "$po/tasks" "$po/$ME/inbox" "$po/plant-lander/inbox" "$po/claims" "$t/req/done"
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$po/MODE"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|OFFICERS|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$po/MODE"
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$po/PROTOCOL-VERSION"
     id="20261104T000000-plant-lander-sno-rungs-$$"
     printf '# plant queue\n2\tawaiting-plant\t%s\tFREE\n' "$ME" > "$po/QUEUE.tsv"
@@ -1796,11 +1798,11 @@ s4e_sweep_orphans() { for _o in "$PO"/.msg.*; do [ -f "$_o" ] || continue
 # that INVENTS a dead seat is worse than one that reports nothing: the officer acts on it. The forward map gained
 # hq_T when the fourth HQ opened; this one did not, because nothing checks that two hand-written tables of the
 # same fact still agree -- the same class as the per-root digests drifting from RULES.md.
-s4e_root() { case "$1" in cto) echo /home/claude_cto;; coo) echo /home/claude_coo;; cfo) echo /home/claude_cfo;; cao) echo /home/claude_cao;; cqo) echo /home/claude_cqo;; hq_icon) echo /home/claude_icon;; hq_unicon) echo /home/claude_unicon;; hq_prolog) echo /home/claude_prolog;; hq_raku) echo /home/claude_raku;; hq_pascal) echo /home/claude_pascal;; hq_snocone) echo /home/claude_snocone;; hq_snobol4) echo /home/claude_snobol4;; hq_templates) echo /home/claude_templates;; hq_runtime) echo /home/claude_runtime;; hq_collector) echo /home/claude_collector;; hq_zetas) echo /home/claude_zetas;; hq_packages) echo /home/claude_packages;; dotnet) echo /home/claude_dotnet;; jvm) echo /home/claude_jvm;;
+s4e_root() { case "$1" in cto) echo /home/claude_cto;; president) echo /home/claude_president;; cfo) echo /home/claude_cfo;; cao) echo /home/claude_cao;; cqo) echo /home/claude_cqo;; hq_icon) echo /home/claude_icon;; hq_unicon) echo /home/claude_unicon;; hq_prolog) echo /home/claude_prolog;; hq_raku) echo /home/claude_raku;; hq_pascal) echo /home/claude_pascal;; hq_snocone) echo /home/claude_snocone;; hq_snobol4) echo /home/claude_snobol4;; hq_templates) echo /home/claude_templates;; hq_runtime) echo /home/claude_runtime;; hq_collector) echo /home/claude_collector;; hq_zetas) echo /home/claude_zetas;; hq_packages) echo /home/claude_packages;; dotnet) echo /home/claude_dotnet;; jvm) echo /home/claude_jvm;;
     seat0[1-9]|seat1[0-9]|seat20) echo "/home/claude${1#seat}";; *) echo "";; esac; }
 s4e_roster() { sed -n 's/^ROSTER:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | head -1; }
 s4e_legacy_seats="hq hq_icon hq_unicon hq_prolog hq_raku hq_pascal hq_snocone hq_snobol4 hq_templates hq_runtime hq_collector hq_zetas hq_packages hq_dotnet hq_jvm"
-s4e_legacy_seats="$s4e_legacy_seats hq_C hq_P hq_B hq_T hq_U hq_S hq_I hq_R hq_V cto coo cfo cao cqo"
+s4e_legacy_seats="$s4e_legacy_seats hq_C hq_P hq_B hq_T hq_U hq_S hq_I hq_R hq_V cto president cfo cao cqo"
 s4e_hqboxes() { for _h in $(s4e_roster) $s4e_legacy_seats; do [ -d "$PO/$_h/inbox" ] && echo "$_h"; done | awk '!seen[$0]++'; }
 s4e_is_hq() { case " $(s4e_roster) $s4e_legacy_seats " in *" $1 "*) return 0;; *) return 1;; esac; }
 # ⛔⭐⭐ ONE AUTHORITY FOR "IS THIS SEAT STANDING", CALLED TWICE (coo 2026-09-20, R-1002, row
@@ -1863,7 +1865,7 @@ s4e_mode_stands() {   # <seat> <mode> -> rc 0 stands, rc 1 refused (reason in _R
                       DUO-STUPID) _dr "an officer" "Under DUO-STUPID only the lead seat and the cto work rows -- the cfo and the coo are stood down (Lon 2026-09-21, R-1087).";;
                       TRIO) _dr "an officer" "Under TRIO the lead seat, the coo and hq_runtime work rows -- hq_runtime finishes the collector in asm, the coo runs the tests, and the cto and the cfo are stood down (Lon 2026-10-15, R-1809).";;
                       QUARTET|SEXTET|QUINTET|NONET|UNDECET|SEPTET|OCTET|TENET) : ;; esac;;
-           coo)     case "$_m" in
+           president)     case "$_m" in
                       SOLO) _dr "an officer" "Under SOLO only the lead seat works rows -- the cto, the cfo and the coo are stood down.";;
                       DUO) : ;;
                       DUO-STUPID) _dr "an officer" "Under DUO-STUPID only the lead seat and the cto work rows -- the cfo and the coo are stood down (Lon 2026-09-21, R-1087).";;
@@ -1906,7 +1908,7 @@ s4e_mode_stands() {   # <seat> <mode> -> rc 0 stands, rc 1 refused (reason in _R
                       # TENET is DECTET's roster under Lon's own name for it; the arm is spelled out rather than aliased to DECTET because an alias makes two modes share one reason, and the reasons differ: DECTET was one-HQ-per-language for the shared nodes, TENET is six HQs driving their languages to 100% while the officers finish the GC.
                       TENET) case "$_seat" in hq_icon|hq_unicon|hq_prolog|hq_snobol4|hq_snocone|hq_pascal|hq_raku|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages) : ;; *) _dr "an HQ" "Under TENET the six LANGUAGE HQs, HQ-TEMPLATES, HQ-RUNTIME, HQ-COLLECTOR and HQ-ZETAS stand -- hq_icon hq_prolog hq_snobol4 hq_snocone hq_pascal hq_raku hq_templates (Lon 2026-09-27, R-1321) hq_runtime (Lon 2026-10-07, R-1535) hq_collector (Lon 2026-10-07, R-1538) hq_zetas (Lon 2026-10-07, R-1539) -- and $_seat is not one of them (Lon 2026-09-20, R-1010).";; esac;;
                       DECTET) case "$_seat" in hq_icon|hq_unicon|hq_prolog|hq_snobol4|hq_snocone|hq_pascal|hq_raku) : ;; *) _dr "an HQ" "Under DECTET the six LANGUAGE HQs stand -- hq_icon hq_prolog hq_snobol4 hq_snocone hq_pascal hq_raku -- and $_seat is not one of them; the lettered hq_B..hq_V are history (R-767, R-979).";; esac ;;
-                      EXECUTIVE) _dr "an HQ" "Under EXECUTIVE only the executives (cto, coo, cfo) work rows -- every HQ is stood down (Lon 2026-09-07).";; esac;;
+                      EXECUTIVE) _dr "an HQ" "Under EXECUTIVE only the executives (cto, president, cfo) work rows -- every HQ is stood down (Lon 2026-09-07).";; esac;;
            # ⛔⭐ SEXTET AND SEPTET WERE MISSING FROM THIS LIST AND A NUMBERED SEAT WAS ADMITTED BY FALLING OUT OF THE
            # CASE -- R-755b's class exactly, found 2026-09-20 by the coo the first time this table was asked about a
            # seat OTHER than $ME (the announcing cure, R-1002: its gate mailed seat07 under SEPTET and that is how
@@ -2025,7 +2027,7 @@ s4e_claim_probe_premise() {   # claim --probe-premise (job 595, the cio 2026-11-
 s4e_claim_probe_overlap() {   # step 21's probe on a scratch postoffice: a notice only where paths meet; none when the claimed row declares none
     local _w _o _why="" _now; _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_overlap_plant.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
     mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox"; for _s in probe_b probe_c probe_d probe_e; do mkdir -p "$_w/$_s/inbox"; done; _now="$(date -u +%FT%TZ)"
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$_w/MODE"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|OFFICERS|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$_w/MODE"
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$_w/PROTOCOL-VERSION"
     printf '# plant queue (box-scheduler step 21)\n2\tov-plant-p\t%s\tFREE\n2\tov-plant-q\t%s\tFREE\n2\tov-plant-b\tprobe_b\tCLAIMED:probe_b\n2\tov-plant-c\tprobe_c\tCLAIMED:probe_c\n2\tov-plant-d\tprobe_d\tCLAIMED:probe_d\n2\tov-plant-e\tprobe_e\tCLAIMED:probe_e\n' "$ME" "$ME" > "$_w/QUEUE.tsv"
     mk() { printf '# TASK %s\nGOAL: plant%s\nDONE-WHEN: test -f "$S4E_HARNESS/scripts/s4e_msg.sh"\n%s## NEXT\nplant\n## QA\n## LEDGER\n' "$1" "$3" "$2" > "$_w/tasks/$1.task.md"; }
@@ -2257,18 +2259,18 @@ s4e_lane_owner_of_language() {
       # seated as Opus 5.5 high. Go to TRIO mode. It is just you three overnight." and "Have COO find the test suite programs that need fixing and fix those immediately
       # between you and CFO and COO"; cto R-2116): every language's FREE rows route to the coo, the admin who finds and assigns (R-2095/2107; LANES: already names
       # the coo for every language); rebus leaves the removed the officer seat. The hq seats and their rows stay in place (R-755c). The TENET table is the one above this note.
-       icon)     printf 'coo';;
-       prolog)   printf 'cio';;
+       icon)     printf 'president';;
+       prolog)   printf 'chairman';;
       # ⛔ REDUCED FLEET FOR THE SPINE CONVERSION (R-1827, 2026-10-18, Lon in-chat: "we should run a reduced fleet until things settle"; roster the officer coo hq_icon hq_prolog hq_zetas hq_dotnet hq_jvm): hq_snobol4 stands down, so SNOBOL4 routes to the officer, who assigns; hq_zetas is its hands for spine fallout meanwhile. The table moves BEFORE the MODE file (R-1046).
-       snobol4)  printf 'cio';;
+       snobol4)  printf 'chairman';;
       # ⛔⭐ MODE TENET WITH FIVE LANGUAGE HQs (R-1870, 2026-10-21 17:3x CDT, Lon in-chat, verbatim: "I'm starting HQ-PASCAL and HQ-RAKU as Sonnet 5.5 xhigh."): PASCAL to
       # hq_pascal, RAKU to hq_raku; snocone and rebus stay the officer's, who assigns. The two arms the officer for pascal and raku are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-       pascal)   printf 'coo';;
+       pascal)   printf 'president';;
       # ⛔⭐ MODE TENET WITH SIX LANGUAGE HQs (R-1871, 2026-10-21 17:4x CDT, Lon in-chat, verbatim: "I started HQ-SONCONE. I want it to work on parser.sc programs completeness and
       # speed performance versus the SCRIP C parsers."): SNOCONE to hq_snocone; rebus stays the officer's. The arm the officer for snocone is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-       snocone)  printf 'cio';;
-       rebus)    printf 'cio';;
-       raku)     printf 'coo';;
+       snocone)  printf 'chairman';;
+       rebus)    printf 'chairman';;
+       raku)     printf 'president';;
     esac
 }
 # One line of prose for the `mint` refusal, DERIVED so it cannot drift from the arms above.
@@ -2298,7 +2300,7 @@ s4e_topic_lane() {
     # through and was re-guessed from its prefix. Under NONET four of the seven completeness owners ARE
     # executives, so "an explicit, already-made decision beats a guess" was switched off for exactly the seats
     # the fallback most often names — and the failure is invisible because a guess still returns something.
-    case "$_owner" in cto|coo|cfo|cao|cqo|hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|dotnet|jvm|hq_C|hq_B|hq_P|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V) printf '%s' "$_owner"; return 0;; esac
+    case "$_owner" in cto|president|cfo|cao|cqo|hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|dotnet|jvm|hq_C|hq_B|hq_P|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V) printf '%s' "$_owner"; return 0;; esac
     _lang="${_t%%-*}"
     case " $(s4e_lane_languages) " in *" $_lang "*) s4e_lane_owner_of_language "$_lang";; esac
 }
@@ -2324,7 +2326,7 @@ s4e_my_lane() {
       # is never lane-restricted, and the own-lane pass would restrict it. coo/cto/cfo degrade safely because
       # the own-lane pass tries the WHOLE rank-sorted queue and then falls through to the any-lane pass, so a
       # seat whose lane is empty (the coo, which holds no cure lane at all) wanders rather than starves.
-      cto|cfo|coo) printf '%s' "$ME"; return 0;;
+      cto|cfo|president) printf '%s' "$ME"; return 0;;
       seat*) local _f="$PO/$ME/HQ" _l
              [ -f "$_f" ] || return 0
              _l="$(head -1 "$_f" | tr -d '[:space:]')"
@@ -2332,7 +2334,7 @@ s4e_my_lane() {
              # above restricts the officer IDENTITY, never a seat reporting to it, and under EXECUTIVE every
              # language lane is held by an officer -- so refusing to read an officer's name here would have
              # left every numbered seat lane-blind for the same reason the executives themselves were.
-             case "$_l" in hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|dotnet|jvm|hq_C|hq_B|hq_P|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V|cto|cfo|coo) printf '%s' "$_l";; esac ;;
+             case "$_l" in hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|dotnet|jvm|hq_C|hq_B|hq_P|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V|cto|cfo|president) printf '%s' "$_l";; esac ;;
     esac
 }
 # ⭐⭐ THE ORDER OF WORK -- THE SET OF LIVE LANGUAGES, READ FROM A MACHINE LINE (row `snobol4-icon-postoffice-
@@ -3347,7 +3349,7 @@ s4e_unclaim_why() { if [ -z "$(s4e_tier_of "$1")" ]; then echo no-seat; else ech
 s4e_unclaim_evict() {   # unclaim <topic> --evict (the cio's ruling 2026-11-07, bus-no-verb-releases-a-dead-seats-claim): a BOSS (MODE BOSSES:) releases a claim whose seat is in no TIERS row or has no live session; a live seat's claim is refused. The claim is archived under claims/archive/, the row goes FREE (QUEUED:<tube> when the claim reserves a job there), and the baton's LEDGER says EVICTED
   local _t="$1" _c _own _bosses _why _tube _arch _state _b
   _c="$PO/claims/$_t.claim"
-  _bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | head -1)"
+  _bosses="$(sed -n 's/^\(BOSSES\|OFFICERS\):[[:space:]]*//p' "$PO/MODE" 2>/dev/null | tr '\n' ' ')"
   case " $_bosses " in *" $ME "*) ;; *) echo "⛔ REFUSED: --evict is a boss's verb (MODE BOSSES: ${_bosses:-none}); $ME is not one"; return 1;; esac
   [ -f "$_c" ] || { echo "no claim on $_t -- nothing to evict"; return 1; }
   _own="$(head -1 "$_c")"
@@ -3367,18 +3369,18 @@ s4e_unclaim_probe_evict() {   # unclaim --probe-evict (the cio's ruling 2026-11-
   w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_unclaim_evict.XXXXXX")" || { echo "REFUSE(2) [unclaim --probe-evict]: mktemp failed"; exit 2; }
   trap 'rm -rf "$w"' EXIT
   dead="plant-dead-$$"; live="worker_20"; rd="evict-dead-$$"; rl="evict-live-$$"; rx="evict-nonboss-$$"
-  mkdir -p "$w/claims" "$w/tasks" "$w/cio/inbox" "$w/worker_19/inbox" "$w/worker_20/inbox" || { echo "REFUSE(2) [unclaim --probe-evict]: cannot make the scratch postoffice"; exit 2; }
-  { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+  mkdir -p "$w/claims" "$w/tasks" "$w/chairman/inbox" "$w/worker_19/inbox" "$w/worker_20/inbox" || { echo "REFUSE(2) [unclaim --probe-evict]: cannot make the scratch postoffice"; exit 2; }
+  { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|OFFICERS|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
   printf '# plant tiers (only worker_20 is a seat)\nworker_20\tWORKER_20\t/home/claude_worker_20\tclaude-haiku-5-5\txhigh\tcyan\t4\tworker\n' > "$w/TIERS.tsv"
   printf '# plant queue (bus-no-verb-releases-a-dead-seats-claim)\n2\t%s\t%s\tCLAIMED:%s\n2\t%s\t%s\tCLAIMED:%s\n2\t%s\t%s\tCLAIMED:%s\n' "$rd" "$dead" "$dead" "$rl" "$live" "$live" "$rx" "$dead" "$dead" > "$w/QUEUE.tsv"
   for t in "$rd" "$rl" "$rx"; do printf '# TASK %s\nGOAL: plant\nDONE-WHEN: true\nPREMISE-WHEN: true\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$t" > "$w/tasks/$t.task.md"; done
   printf '%s\nRUNNING\n' "$dead" > "$w/claims/$rd.claim"; printf '%s\nRUNNING\n' "$dead" > "$w/claims/$rx.claim"; printf '%s\nRUNNING\n' "$live" > "$w/claims/$rl.claim"
   run() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$1" S4E_HOME="$S4E" S4E_TIERS="$w/TIERS.tsv" S4E_NO_BANNER=1 S4E_LIVE_SEATS="$live" bash "$0" unclaim "$2" --evict 2>&1; }
   o="$(run worker_19 "$rx")"; [ -f "$w/claims/$rx.claim" ] && printf '%s' "$o" | grep -q 'REFUSED' && nb=1
-  o="$(run cio "$rl")"; [ -f "$w/claims/$rl.claim" ] && printf '%s' "$o" | grep -q 'REFUSED' && lv=1
-  o="$(run cio "$rd")"
+  o="$(run chairman "$rl")"; [ -f "$w/claims/$rl.claim" ] && printf '%s' "$o" | grep -q 'REFUSED' && lv=1
+  o="$(run chairman "$rd")"
   if [ ! -f "$w/claims/$rd.claim" ] && ls "$w/claims/archive" 2>/dev/null | grep -q "^$rd\.claim\.evicted-"; then st="$(grep -P "^2\t\Q$rd\E\t" "$w/QUEUE.tsv" | cut -f4)"; [ "$st" = FREE ] && de=1; fi
-  grep -q "^- .*\*\*EVICTED\*\* by=cio why=no-seat" "$w/tasks/$rd.task.md" 2>/dev/null && lg=1
+  grep -q "^- .*\*\*EVICTED\*\* by=chairman why=no-seat" "$w/tasks/$rd.task.md" 2>/dev/null && lg=1
   printf 'EVICT dead_seat_released=%s live_seat_refused=%s non_boss_refused=%s ledger=%s\n' "$de" "$lv" "$nb" "$lg"
   [ "$de$lv$nb$lg" = 1111 ]; }
 case "$cmd" in
@@ -3503,7 +3505,7 @@ case "$cmd" in
          # took the seat as the topic and mailed the officer the literal body "<topic> --stdin", the question itself lost. A first argument that
          # names a mailbox is now the addressee, and --stdin reads the body from standard input as send does; an empty body is refused.
          if [ -n "${3:-}" ] && [ -d "$PO/$2/inbox" ]; then _hq="$2"; topic="$3"; shift 3; else topic="$2"; shift 2; _hq="$(s4e_hq)"; fi
-         _ob="$(s4e_operating_boss)"; case " $(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | head -1) " in *" $_hq "*) if [ -n "$_ob" ] && [ "$ME" != "$_ob" ] && [ "$_hq" != "$_ob" ] && [ "$(s4e_tier_of "$_hq")" = fable ]; then echo "ask: $_hq is a sleeping boss (COO-496); delivered to $_ob, who decides whether to wake it."; _hq="$_ob"; fi;; esac   # COO-496
+         _ob="$(s4e_operating_boss)"; case " $(sed -n 's/^\(BOSSES\|OFFICERS\):[[:space:]]*//p' "$PO/MODE" 2>/dev/null | tr '\n' ' ') " in *" $_hq "*) if [ -n "$_ob" ] && [ "$ME" != "$_ob" ] && [ "$_hq" != "$_ob" ] && [ "$(s4e_tier_of "$_hq")" = fable ]; then echo "ask: $_hq is a sleeping boss (COO-496); delivered to $_ob, who decides whether to wake it."; _hq="$_ob"; fi;; esac   # COO-496
          [ -n "$_hq" ] || { echo "⛔ REFUSED: no owning HQ resolved for $ME. Name the seat: s4e_msg.sh ask <seat> <topic> --stdin, or set S4E_HQ." >&2; exit 2; }
          if [ "${1:-}" = "--stdin" ]; then _body="$(cat)"; else _body="$*"; fi
          [ -n "$(printf '%s' "$_body" | tr -d '[:space:]')" ] || { echo "⛔ REFUSED (rc 2): ask carries no question -- give it after the topic in quotes, or with --stdin on standard input. Nothing sent." >&2; exit 2; }
@@ -3773,7 +3775,7 @@ case "$cmd" in
          # never come back to release their own claims. 9 rows were hidden from the picker by seats that are not
          # running, with no in-tool way to free them short of rm. An HQ release is ANNOTATED with who forced it.
          if [ "$own" != "$ME" ]; then
-             case " $(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | head -1) " in *" $ME "*) ;; *) echo "⛔ REFUSED(2): $topic is claimed by $own, not you -- unclaim releases only your own claim; a boss (MODE BOSSES:) alone forces another seat's (the coo 2026-11-08 12:42: junior_11 released junior_07's live claim)"; exit 2;; esac
+             case " $(sed -n 's/^\(BOSSES\|OFFICERS\):[[:space:]]*//p' "$PO/MODE" 2>/dev/null | tr '\n' ' ') " in *" $ME "*) ;; *) echo "⛔ REFUSED(2): $topic is claimed by $own, not you -- unclaim releases only your own claim; a boss (MODE BOSSES:) alone forces another seat's (the coo 2026-11-08 12:42: junior_11 released junior_07's live claim)"; exit 2;; esac
              why="${3:-released by HQ}"; why="$why (forced by $ME over $own's claim)"
          fi
          # ⛔⭐ A COMPUTED DONE AND AN OVERRIDE DONE ARE NOT THE SAME THING, AND UNTIL 2026-08-27 THIS LINE COULD NOT
@@ -4448,7 +4450,7 @@ case "$cmd" in
            --stdin) shift;;
            *) echo "⛔ REFUSED(2): delete takes no argument $1" >&2; exit 2;;
          esac; done
-         case "$ME" in cio|cto) ;; *) echo "⛔ REFUSED(2): delete is the cio's or the cto's verb; this seat is $ME." >&2; exit 2;; esac
+         case "$ME" in chairman|cto) ;; *) echo "⛔ REFUSED(2): delete is the cio's or the cto's verb; this seat is $ME." >&2; exit 2;; esac
          case "$topic" in ""|*/*|*$'\n'*) echo "⛔ REFUSED(2): topic must be a filename-safe slug" >&2; exit 2;; esac
          case "$verdict" in DELETED-DONE-IN-SOURCE|DELETED-NOT-REAL|REWRITTEN) ;; *) echo "⛔ REFUSED(2): --verdict is DELETED-DONE-IN-SOURCE, DELETED-NOT-REAL or REWRITTEN" >&2; exit 2;; esac
          q="$PO/QUEUE.tsv"; [ -f "$q" ] || { echo "⛔ REFUSED(2): no QUEUE.tsv at $q" >&2; exit 2; }
@@ -5722,7 +5724,7 @@ TASKEOF
          # THE dotnet PORT SEAT TOO (Lon 2026-11-17, in the dotnet window, verbatim: "where is your test-suite stop-turn banner?", after his word there that hour:
          # "get ALL SNOBOL4 tests working with snobol4dotnet."): a port seat's grid reads its own engine's <key>@<engine> rows alone (util_suite_banner.py GRID_ENGINES)
          # (harness ace14b06, by dotnet; this comment restored after the jvm landing 2b98ce38 dropped it, that patch having been cut on the text before it)
-         _grid=0; _eng=""; case "$ME" in coo|grader) _grid=1 ;; jvm|dotnet) _grid=1; _eng="$ME" ;; esac
+         _grid=0; _eng=""; case "$ME" in president|grader) _grid=1 ;; jvm|dotnet) _grid=1; _eng="$ME" ;; esac
          if [ "${S4E_BANNER_GRID:-$_grid}" = 0 ]; then :
          elif [ -f "$_sb" ]; then env ${_eng:+S4E_ENGINE=$_eng} timeout -k 5 30 python3 "$_sb" || printf '%s\n' "⛔ SUITE GRID REFUSED (rc=$?) -- $_sb ran and did not render"
          else printf '%s\n' "⛔ SUITE GRID MISSING -- no $_sb"; fi

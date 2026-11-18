@@ -149,7 +149,7 @@ if os.path.isdir(root):
             if js: cur = max(js, key=lambda f: os.stat(os.path.join(proj, f)).st_mtime)[:-6]
         except OSError: pass
         seat_id = seat.replace("-home-claude-", "")
-        seat_name = seat if not seat.startswith("-home-claude-") else seat_id if seat_id in ("cto", "coo", "cfo", "cao", "cqo") else "hq_" + seat_id
+        seat_name = seat if not seat.startswith("-home-claude-") else seat_id if seat_id in ("cto", "president", "cfo", "cao", "cqo") else "hq_" + seat_id
         down = roster and seat_name not in roster
         for ses in os.listdir(sd):
             p = os.path.join(sd, ses)

@@ -37,7 +37,7 @@ try:
     import util_score_row as _usr
     OFFICERS = set(_usr.roster_officers())
 except Exception:
-    OFFICERS = {"cto", "cfo", "coo", "cao", "cqo", "cio"}
+    OFFICERS = {"cto", "cfo", "president", "cao", "cqo", "chairman"}
 TERM = "app-org.gnome.Terminal.slice"
 SEATS_SLICE = "s4e-seats.slice"   # spawn_fleet.sh runs each seat in systemd-run --scope --slice=s4e-seats.slice --unit=s4e-seat-<seat>
 SEAT_PROPS = census.budget_props(BROWS.get("@SEAT")) if census else []   # CPUQuota (R-2105): the session scope IS the door -- every child of a seat session inherits a four-core cap

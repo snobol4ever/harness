@@ -31,8 +31,8 @@ for l in $LANGS; do
 done
 secs="$(echo "$(date +%s.%N) - $T0" | bc | sed 's/^\./0./')"
 printf 'FLEET_SMOKE total: langs=8 green=%s red=%s refused=%s pass=%s fail=%s wall=%ss tree=%s corpus=%s%s\n' "$green" "$red" "$refused" "$pass" "$fail" "$secs" "$tree" "$ctree" "${reds:+ reds:$reds}"
-if [ "$seat" = coo ]; then
-  [ -f "$RECORD" ] || printf '# THE FLEET SMOKE RECORD (R-1673): one line per coo run of ../harness/scripts/test_fleet_smoke.sh -- tier 1 of the verifier loop, run after every origin landing.\nat_utc\tscrip\tcorpus\tgreen\tred\trefused\tpass\tfail\tsecs\treds\n' > "$RECORD"  # one-disk: not a path
+if [ "$seat" = president ] || [ "$seat" = coo ]; then
+  [ -f "$RECORD" ] || printf '# THE FLEET SMOKE RECORD (R-1673): one line per president run of ../harness/scripts/test_fleet_smoke.sh -- tier 1 of the verifier loop, run after every origin landing.\nat_utc\tscrip\tcorpus\tgreen\tred\trefused\tpass\tfail\tsecs\treds\n' > "$RECORD"  # one-disk: not a path
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$tree" "$ctree" "$green" "$red" "$refused" "$pass" "$fail" "$secs" "${reds# }" >> "$RECORD"
 fi
 [ "$refused" = 0 ] || exit 2

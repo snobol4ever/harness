@@ -42,7 +42,7 @@ table_of() { local e; for e in $SUITES; do [ "${e%%|*}" = "$1" ] && { echo "${e#
 seat() {
   [ -n "${S4E_SEAT:-}" ] && { echo "$S4E_SEAT"; return; }
   local r; r="$(cd "$HERE/../.." && pwd)"; r="${r##*/claude_}"
-  case "$r" in cto|cfo|coo|cao|cqo) echo "$r";; icon|pascal|prolog|raku|snobol4|snocone|templates|runtime|collector|zetas|packages|dotnet|jvm) echo "hq_$r";; *) echo "";; esac
+  case "$r" in cto|cfo|president|cao|cqo) echo "$r";; icon|pascal|prolog|raku|snobol4|snocone|templates|runtime|collector|zetas|packages|dotnet|jvm) echo "hq_$r";; *) echo "";; esac
 }
 # THE VERDICTS A FILER READS (box-scheduler step 24). The loop writes a verdict into the request file it moves to done/: graded=<entry> and rc=<n> pairs, then one
 # served=<time> tree=<hash> rc=<overall> rows=<n> line; a request the port-engine rule gives back reads served=returned <time> ungraded; the oldest ones in done/ carry no
@@ -176,7 +176,7 @@ n=$(printf '%s\n' $ents | grep -c .)
 # --list names them) or the named witnesses of its row; a whole core, shell or chunk is the coo's round robin, never a seat's request. The coo's own
 # re-filings are not capped here.
 REQUEST_CAP=8
-if [ "$who" != coo ] && [ "$n" -gt "$REQUEST_CAP" ]; then
+if [ "$who" != president ] && [ "$who" != coo ] && [ "$n" -gt "$REQUEST_CAP" ]; then
   refuse "$n programs is not a handful: a seat's request names at most $REQUEST_CAP (the feature's representatives: bash ../harness/scripts/test_feature_reps.sh <lang> <feature> --list, or your row's witnesses); a whole ${part:-set} is the coo's round robin (R-1891)"  # one-disk: not a path
 fi
 mkdir -p "$REQ_DIR" || refuse "cannot create $REQ_DIR"

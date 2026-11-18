@@ -7,7 +7,7 @@ ONE FILE IS THE SWITCH: /home/resources/postoffice/SPRINT.conf, key=value a line
     lang=snobol4               the language column of the suite table whose rows are counted (SCRIP's rows only, never a port's key@engine row)
     start=107                  the bugs measured when the sprint was opened
     started=11-17 13:01        when that was measured (free text)
-    show=cio coo grader cqo    the seats whose banner carries the lines; any other seat prints nothing
+    show=chairman president grader cqo    the seats whose banner carries the lines; any other seat prints nothing
 With no file, no lang, or a seat the show line does not name, it prints nothing and the banner is as it was. To end the countdown delete the file.
 SEVERAL SPRINTS, ONE FILE (Lon 2026-11-17 17:0x CST, in the cio's window, verbatim: "Okay then, get the banner to show 3 sprints: SNOBOL4, Icon, and Unicon."): each name= line opens a sprint of its own, with its own
 lang, start and started, and two optional lines that pick its suites by their key in the suite table: keys=REGEX (the key must match) and nokeys=REGEX (the key must not), so the Icon suites and the
@@ -122,30 +122,30 @@ def probe():
     def table(a, b):
         open(tsv, "w").write("# a comment line\n" + head + "\n" + f"alpha\tSnoAlpha\tx\tsnobol4\td\t0\t0\td\t{a}\t10\th\n" + f"beta\tSnoBeta\tx\tsnobol4\td\t0\t0\td\t{b}\t5\th\n"
                              + "alpha@jvm\tSnoAlpha\tx\tsnobol4\td\t0\t0\td\t0\t10\th\n" + "gamma\tIcnGamma\tx\ticon\td\t0\t0\td\t1\t9\th\n")
-    open(conf, "w").write("# the switch\nname=SNOBOL4\nlang=snobol4\nstart=9\nstarted=11-17 13:01\nshow=cio coo\n")
+    open(conf, "w").write("# the switch\nname=SNOBOL4\nlang=snobol4\nstart=9\nstarted=11-17 13:01\nshow=chairman president\n")
     bad = []
     table(7, 3)
-    o = lines("cio", conf, tsv, stamp=False)
+    o = lines("chairman", conf, tsv, stamp=False)
     want0 = "⏬ SNOBOL4 SPRINT  ▌ 𝟱 FAILING TESTS LEFT, of 𝟵 at the start ▐   █████████░░░░░░░░░░░  4 closed (cured or declared out)  ·  10 of 15 SNOBOL4 tests pass  ·  0 of 2 suites at 100%  ·  since 11-17 13:01"
     if o != [want0, "   failing tests by suite: Alpha 3 · Beta 2"]:
         bad.append(("counts", o))                       # arm 1: the count, the port row and the other language left out, the names shortened
     if lines("officer_04", conf, tsv, stamp=False) != []:
         bad.append(("seat_not_shown", "printed"))       # arm 2: a seat the show line does not name prints nothing
-    if lines("cio", os.path.join(d, "none.conf"), tsv, stamp=False) != []:
+    if lines("chairman", os.path.join(d, "none.conf"), tsv, stamp=False) != []:
         bad.append(("no_switch", "printed"))            # arm 3: no switch file, nothing
     table(10, 5)
-    o = lines("coo", conf, tsv, stamp=False)
+    o = lines("president", conf, tsv, stamp=False)
     if o != ["🏁 SNOBOL4 SPRINT: ZERO. Every one of the 2 suites reads 100% of 9 at the start (11-17 13:01)."]:
         bad.append(("zero", o))                         # arm 4: zero is said as zero
     table(10, 1)
-    o = lines("cio", conf, tsv, stamp=False)
+    o = lines("chairman", conf, tsv, stamp=False)
     if not (o and "▌ 𝟰 FAILING TESTS LEFT, of 𝟵 at the start ▐" in o[0] and "1 of 2 suites at 100%" in o[0] and o[1] == "   failing tests by suite: Beta 4"):
         bad.append(("up_again", o))                     # arm 5: a suite that falls back is counted again
     open(tsv, "w").write("# a comment line\n" + head + "\n" + "alpha\tSnoAlpha\tx\tsnobol4\td\t0\t0\td\t10\t10\th\n" + "gamma\tIcnGamma\tx\ticon\td\t0\t0\td\t8\t9\th\n"
                          + "uni_one\tUniOne\tx\ticon\td\t0\t0\td\t4\t7\th\n" + "rosetta-unicon\tUniRosetta\tx\ticon\td\t0\t0\td\t2\t2\th\n")
-    open(conf, "w").write("show=cio coo\nname=SNOBOL4\nlang=snobol4\nstart=9\nstarted=13:01\nname=ICON\nlang=icon\nnokeys=^(uni|rosetta-unicon)\nstart=5\nstarted=12:5x\n"
+    open(conf, "w").write("show=chairman president\nname=SNOBOL4\nlang=snobol4\nstart=9\nstarted=13:01\nname=ICON\nlang=icon\nnokeys=^(uni|rosetta-unicon)\nstart=5\nstarted=12:5x\n"
                           "name=UNICON\nlang=icon\nkeys=^(uni|rosetta-unicon)\nstart=10\nstarted=15:01\n")
-    o = lines("cio", conf, tsv, stamp=False)
+    o = lines("chairman", conf, tsv, stamp=False)
     ok = (len(o) == 5 and o[0].startswith("🏁 SNOBOL4 SPRINT: ZERO.") and "▌ 𝟭 FAILING TESTS LEFT, of 𝟱 at the start ▐" in o[1] and "8 of 9 ICON tests pass" in o[1]
           and o[2] == "   failing tests by suite: IcnGamma 1" and "▌ 𝟯 FAILING TESTS LEFT, of 𝟭𝟬 at the start ▐" in o[3] and "6 of 9 UNICON tests pass" in o[3] and "1 of 2 suites at 100%" in o[3]
           and o[4] == "   failing tests by suite: One 3")

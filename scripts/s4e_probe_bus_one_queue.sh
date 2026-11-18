@@ -94,15 +94,15 @@ case "$N" in
     grep -l '^QUEUE-JOB:' "$w"/tasks/*.task.md >/dev/null 2>&1 && why="$why a baton carries a QUEUE-JOB line;"
     # THE TOP RUNG (the cio 2026-11-12 13:2x, on the coo's telegram ladder-top-rung-no-lon-hold; Lon 12:4x: "I release ALL holds."): the coo's own escalation
     # parks PARKED-CHAIRMAN:escalated, telegrams and wakes the cio, and an officer lifts it with a bare park FREE, no S4E_GRANT_BY
-    printf 'coo\tPCOO97\t/tmp\tclaude-opus-5-5\txhigh\tblue\t2\tboss\ncio\tPCIO97\t/tmp\tclaude-fable-5-2\txhigh\tblue\t1\tboss\n' >> "$w/TIERS.tsv"
-    printf 'BOSSES: cio coo\n' >> "$w/MODE"; mkdir -p "$w/coo/inbox" "$w/cio/inbox"
-    c=busq3-chair-$$; row 2 "$c" coo CLAIMED:coo; baton "$c"; pc="$(live_claude coo)"
-    printf 'coo\nRESERVED file tube=seat-coo session=PCOO97 pid=%s 2026-11-12T00:00:00Z\n' "$pc" > "$w/claims/$c.claim"
-    out="$(printf 'measured: the probe step 3 top rung\n' | bus coo escalate "$c" --stdin)"; rc=$?
+    printf 'president\tPCOO97\t/tmp\tclaude-opus-5-5\txhigh\tblue\t2\tboss\nchairman\tPCIO97\t/tmp\tclaude-fable-5-2\txhigh\tblue\t1\tboss\n' >> "$w/TIERS.tsv"
+    printf 'BOSSES: chairman president\n' >> "$w/MODE"; mkdir -p "$w/president/inbox" "$w/chairman/inbox"
+    c=busq3-chair-$$; row 2 "$c" president CLAIMED:president; baton "$c"; pc="$(live_claude president)"
+    printf 'president\nRESERVED file tube=seat-president session=PCOO97 pid=%s 2026-11-12T00:00:00Z\n' "$pc" > "$w/claims/$c.claim"
+    out="$(printf 'measured: the probe step 3 top rung\n' | bus president escalate "$c" --stdin)"; rc=$?
     [ "$rc" = 0 ] || why="$why the coo's escalate exited $rc [$(printf '%s' "$out" | grep -m1 -E '⚠|⛔|REFUSE' | cut -c1-90)];"
     [ "$(st "$c")" = PARKED-CHAIRMAN:escalated ] || why="$why the coo's escalated row reads $(st "$c"), not PARKED-CHAIRMAN:escalated;"
     printf '%s\n' "$out" | grep -q '^WAKE: SendMessage to PCIO97 ' || why="$why the coo's escalate printed no WAKE line for the cio;"
-    ls "$w/cio/inbox/" 2>/dev/null | grep -q "escalated-$c-rung" || why="$why the cio got no telegram of the top rung;"
+    ls "$w/chairman/inbox/" 2>/dev/null | grep -q "escalated-$c-rung" || why="$why the cio got no telegram of the top rung;"
     out="$(env -u S4E_GRANT_BY true; bus "$O" park "$c" FREE)"; rc=$?
     [ "$rc" = 0 ] && [ "$(st "$c")" = FREE ] || why="$why an officer's bare park FREE did not lift the chairman's row (rc $rc, reads $(st "$c")) [$(printf '%s' "$out" | grep -m1 -E '⛔|REFUSE' | cut -c1-90)];"
     verdict "queue=QUEUED escalate=QUEUED:tier-sonnet assign=ASSIGNED mint=QUEUED wake=4 top=PARKED-CHAIRMAN lift=park-FREE";;
@@ -177,15 +177,15 @@ case "$N" in
     [ "$rc" = 0 ] || why="$why test_gate_queue_is_an_index.sh exited $rc on a file-road index [$(printf '%s' "$out" | grep -m1 '⛔' | cut -c1-110)];"
     verdict "index_gate=GREEN";;
 wake-live-boss)  # CIO-106: a wake for a live boss names that boss; the operating boss is named only when the boss is asleep (the cio as mover, seat-cto tube)
-    tw="$w/TIERS-wake.tsv"; { head -1 "$w/TIERS.tsv"; printf 'cio\tCIO\t/tmp\tclaude-fable-5-2\txhigh\tblue\t1\tboss\ncto\tCTO\t/tmp\tclaude-fable-5-2\txhigh\tblue\t1\tboss\ncoo\tCOO\t/tmp\tclaude-opus-5-5\txhigh\tblue\t2\tboss\n'; } > "$tw"
-    printf 'BOSSES: cio coo cto\n' >> "$w/MODE"
-    wk() { ( export S4E_POST="$w" S4E_TIERS="$tw" S4E_SEAT_SCOPES="$w/scopes" ME=cio; . "$HERE/lib_wake.sh"; s4e_wake_hint seat-cto "$1" queue | head -1 ); }
-    rm -rf "$w/scopes"; mkdir -p "$w/scopes"; live_claude cio >/dev/null; live_claude cto >/dev/null
+    tw="$w/TIERS-wake.tsv"; { head -1 "$w/TIERS.tsv"; printf 'chairman\tCIO\t/tmp\tclaude-fable-5-2\txhigh\tblue\t1\tboss\ncto\tCTO\t/tmp\tclaude-fable-5-2\txhigh\tblue\t1\tboss\npresident\tCOO\t/tmp\tclaude-opus-5-5\txhigh\tblue\t2\tboss\n'; } > "$tw"
+    printf 'BOSSES: chairman president cto\n' >> "$w/MODE"
+    wk() { ( export S4E_POST="$w" S4E_TIERS="$tw" S4E_SEAT_SCOPES="$w/scopes" ME=chairman; . "$HERE/lib_wake.sh"; s4e_wake_hint seat-cto "$1" queue | head -1 ); }
+    rm -rf "$w/scopes"; mkdir -p "$w/scopes"; live_claude chairman >/dev/null; live_claude cto >/dev/null
     lv="$(wk wake-live-boss-live)"; ls_="$(printf '%s\n' "$lv" | sed -n 's/^WAKE: SendMessage to .* now (seat \([^;]*\);.*/\1/p')"
     rm -rf "$w/scopes/s4e-seat-cto.scope"
     as="$(wk wake-live-boss-asleep)"; as_="$(printf '%s\n' "$as" | sed -n 's/^WAKE: SendMessage to .* now (seat \([^;]*\);.*/\1/p')"
     [ "$ls_" = cto ] || why="$why the live cto is not named (wake reads '${lv:-none}');"
-    [ "$as_" = coo ] || why="$why the asleep cto does not name the operating boss coo (wake reads '${as:-none}');"
+    [ "$as_" = president ] || why="$why the asleep cto does not name the operating boss president (wake reads '${as:-none}');"
     if [ -z "$why" ]; then echo "WAKE_LIVE_BOSS live=$ls_ asleep=$as_"; exit 0; fi
     echo "WAKE_LIVE_BOSS live=${ls_:-none} asleep=${as_:-none} RED:$why"; exit 1;;
 10) # CONCURRENT WRITERS (the cio 2026-11-14, on the coo's and officer_02's measurement under the re-cut: of 10 queue moves 4 lost the owner and one read saw an empty QUEUE.tsv; the queue verb

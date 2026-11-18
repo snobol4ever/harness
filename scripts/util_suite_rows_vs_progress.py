@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_suite_rows_vs_progress.py -- THE CROSS-LANGUAGE BATCH AUDIT (MODE line 2 under DECTET, R-775; R-780a; coo
+"""util_suite_rows_vs_progress.py -- THE CROSS-LANGUAGE BATCH AUDIT (MODE line 2 under DECTET, R-775; R-780a; president
 2026-09-16, row util-suite-rows-vs-progress-the-cross-language-batch-audit-lands-as-an-instrument).
 
 After each batch every HQ's suite rows are on origin and AGREE with the progress DB; a disagreement is a row. This reads

@@ -18,7 +18,7 @@ import harness_paths   # THE ABSOLUTE MODEL (the cio 2026-11-14, row harness-one
 # (LANDINGS.tsv held two that hour) from S4E_HOME/.github, S4E_HOME/harness and S4E_HOME/<repo>, folders the cutover removed.
 REPO = {"SCRIP": str(harness_paths.scrip()), "harness": str(harness_paths.harness()), "corpus": str(harness_paths.corpus()), ".github": str(harness_paths.github())}
 PO = os.environ.get("S4E_POST", "/home/resources/postoffice"); P = os.environ.get("S4E_PROGRESS", "/home/resources/progress")
-V = os.environ.get("S4E_BOX_S", "/home/claude_coo/.scratch/verifier"); T = os.environ.get("S4E_TICK_DIR", "/tmp/s4e/cio/tick"); TIERS = os.environ.get("S4E_TIERS", REPO[".github"] + "/TIERS.tsv")
+V = os.environ.get("S4E_BOX_S", "/home/claude_president/.scratch/verifier"); T = os.environ.get("S4E_TICK_DIR", "/tmp/s4e/chairman/tick"); TIERS = os.environ.get("S4E_TIERS", REPO[".github"] + "/TIERS.tsv")
 W = 64   # column width of one quadrant (the seats line with asleep counts runs to 63)
 SLEEPING = os.path.join(V, "sleeping")   # one seat per line; util_suite_row_owner_census.py's sleepers() reads the same file
 

@@ -9,6 +9,6 @@ step	slug	executor	depends	probe
 4	ask-and-answer-move-the-column-and-print-wake-with-no-job	haiku	3	bash harness/scripts/s4e_probe_bus_one_queue.sh 4
 5	expire-reads-the-holder-pid-a-dead-holder-goes-back-to-its-tube	haiku	2	bash harness/scripts/s4e_probe_bus_one_queue.sh 5
 6	recut-reopens-superseded-as-it-reopens-retired	haiku	-	bash harness/scripts/s4e_probe_bus_one_queue.sh 6
-7	a-premise-on-a-stale-binary-is-a-refusal-never-red	cio	-	bash harness/scripts/s4e_probe_bus_one_queue.sh 7
+7	a-premise-on-a-stale-binary-is-a-refusal-never-red	chairman	-	bash harness/scripts/s4e_probe_bus_one_queue.sh 7
 8	the-sweep-retires-every-queue-job-line-and-rewrites-every-live-claim-to-the-file-form	haiku	1,2,3,4,5	bash harness/scripts/s4e_probe_bus_one_queue.sh 8
 9	the-queue-index-gate-admits-the-file-roads-owners-and-next-probe-serve-passes-with-no-daemon	haiku	-	bash harness/scripts/s4e_probe_bus_one_queue.sh 9

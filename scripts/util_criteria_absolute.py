@@ -173,7 +173,7 @@ def selftest():
         (P + 'cd SCRIP && ./scrip a.sno', P + S + 'cd "$S4E_SCRIP" && ./scrip a.sno'),
         (P + 'o="$(SCRIP/scrip corpus/x.icn)"; [ "$o" = 1 ]', P + S + 'o="$($S4E_SCRIP/scrip $S4E_CORPUS/x.icn)"; [ "$o" = 1 ]'),   # one-disk: not a path
         (P + "grep -q 'corpus/tests' f", P + "grep -q 'corpus/tests' f"),   # one-disk: not a path
-        (P + 'test -f /home/claude_cio/harness/scripts/x', P + 'test -f /home/claude_cio/harness/scripts/x'),
+        (P + 'test -f /home/claude_chairman/harness/scripts/x', P + 'test -f /home/claude_chairman/harness/scripts/x'),
         (PFXS + 'P=../corpus/packages/icon && ./scrip $P/a.icn', P + S + 'cd "$S4E_SCRIP" && P=$S4E_CORPUS/packages/icon && ./scrip $P/a.icn'),  # one-disk: not a path
         (P + 'cd "$S4E_HOME/SCRIP" && make', P + S + 'cd "$S4E_SCRIP" && make'),   # one-disk: not a path
         (P + 'test -x "$S4E_HOME"/SCRIP/scrip', P + S + 'test -x "$S4E_SCRIP"/scrip'),

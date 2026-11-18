@@ -13,7 +13,7 @@ set -uo pipefail
 # its SCRIP clone, .claude and CLAUDE.md, nothing else. SCRIP borrows its objects from the one store /home/SCRIP.git (the grader's keeper keeps it at origin); corpus,
 # harness and .github are read from /home/corpus, /home/harness and /home/.github (lib_paths.sh), and this script runs from /home/harness.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; STORE="${S4E_SCRIP_STORE:-/home/SCRIP.git}"; GH="${S4E_GITHUB:-/home/.github}"
-NN="${1:-}"; FROM=/home/claude_cio; [ "${2:-}" = --from ] && FROM="${3:?--from ROOT}"
+NN="${1:-}"; FROM=/home/claude_chairman; [ "${2:-}" = --from ] && FROM="${3:?--from ROOT}"
 # grader: the grade workers own root, which nothing but the controller syncs and builds (the coo 2026-11-07 16:23: a cio landing rebuilt the binary under job 1221)
 case "$NN" in [0-9][0-9]) seat="junior_$NN";; junior_[0-9][0-9]|developer_[0-9][0-9]|officer_[0-9][0-9]|senior_[0-9][0-9]|grader) seat="$NN";; *) echo "usage: populate_numbered_seat.sh NN|developer_NN|senior_NN [--from ROOT]  (NN two digits: the seat is worker_NN; a named numbered seat is itself; Lon 2026-11-07 15:4x: the Opus designers and Sonnet seniors)"; exit 2;; esac
 root="/home/claude_$seat"; PO=/home/resources/postoffice
@@ -28,7 +28,7 @@ src_seat="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["env
 git clone -q --shared --no-checkout "$STORE" "$root" && git -C "$root" remote set-url origin "$(git --git-dir="$STORE" remote get-url origin)" || exit 1
 git -C "$root" config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' && git -C "$root" fetch -q origin && git -C "$root" checkout -q -B main origin/main && git -C "$root" branch -q --set-upstream-to=origin/main main || exit 1
 mkdir -p "$root/.claude" "/tmp/s4e/$seat" "$PO/$seat/inbox" "$PO/$seat/archive"
-[ -d "$PO/$seat/HQ" ] && rmdir "$PO/$seat/HQ"; echo cio > "$PO/$seat/HQ"
+[ -d "$PO/$seat/HQ" ] && rmdir "$PO/$seat/HQ"; echo chairman > "$PO/$seat/HQ"
 sed "s#$FROM#$root#g; s#\b$src_seat\b#$seat#g" "$FROM/.claude/settings.json" > "$root/.claude/settings.json"
 sed "s#$FROM#$root#g; s#\b$src_seat\b#$seat#g" "$FROM/.claude/settings.local.json" > "$root/.claude/settings.local.json"
 python3 -c 'import json,sys; [json.load(open(f)) for f in sys.argv[1:]]' "$root/.claude/settings.json" "$root/.claude/settings.local.json" || exit 1

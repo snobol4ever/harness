@@ -38,7 +38,7 @@ reason=""; what=""
 # THE BOSSES ARE NEVER HELD (Lon 2026-11-08 07:4x in the coo's window, verbatim: "I see a Stop hook error. Fix that." / "I do not want to see the words
 # "Stop hook error" EVER again."): every BLOCK this gate answers shows Lon those words, and a boss's wake is its own loop (the coo's /loop and Monitor) or a
 # pointer (the cio and the cto sleep until a command or a design question reaches them). A seat MODE BOSSES names passes at once; the banner still prints.
-bosses="$(sed -n 's/^BOSSES: *//p' "$PO/MODE" 2>/dev/null | head -1)"
+bosses="$(sed -n 's/^\(BOSSES\|OFFICERS\): *//p' "$PO/MODE" 2>/dev/null | tr '\n' ' ')"
 case " $bosses " in *" $seat "*) emit PASS "$seat is a boss (MODE BOSSES: $bosses): never held at its Stop; its own loop or a pointer wakes it"; exit 0;; esac
 fl="$(grep -m1 '^FLEET: IDLE' "$PO/MODE" 2>/dev/null)"
 if [ -n "$fl" ]; then
@@ -80,7 +80,7 @@ else
             # THE BOSSES ARE NEVER HELD BY THE TIER ARM (Lon 2026-11-08 07:3x, "I see a Stop hook error. Get that fixed."; the cio): MODE's BOSSES: line (cio coo cto) names the seats whose
             # wake is their own (the coo's loop is the one loop; the cio and the cto sleep until a design question). The coo is tier 2 in TIERS.tsv (its escalation tube), so the arm held it
             # as a tier-opus seat and then sent the loop seat to long-poll forever (the coo, 07:39). The tier stays as it is: a boss's tube is its escalation road, not its hold.
-            bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1)"
+            bosses="$(sed -n 's/^\(BOSSES\|OFFICERS\):[[:space:]]*//p' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | tr '\n' ' ')"
             case " $bosses " in *" $seat "*) tn=boss;; esac
             case "$(awk -F'\t' -v s="$seat" '!/^#/ && $1==s {print $8; exit}' "$tiers" 2>/dev/null)" in designer) tn=designer;; esac   # officers design only (Lon 2026-11-08): never held for a tier tube
             case "$tn" in 2|opus) tier=opus;; 3|sonnet) tier=sonnet;; 4|haiku) tier=haiku;; *) tier="";; esac

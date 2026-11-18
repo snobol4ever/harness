@@ -55,7 +55,7 @@ n = int(mode.split('-')[1]) if mode.startswith('FLEET-') else 0
 # when only two HQs existed.  Harmless TODAY only because class B filters holders that start with 'seat', so
 # no HQ is ever tested against it; the moment that filter widens, every hq_B/hq_T claim reads as stood-down.
 # A latent wrong answer that is currently unreachable is still a wrong answer, and it costs one line to fix.
-active = set(f"seat{i:02d}" for i in range(1, n + 1)) | {'hq_B', 'hq_C', 'hq_P', 'hq_T', 'hq_U', 'hq_S', 'hq_I', 'hq_R', 'hq_V', 'cto', 'coo'}
+active = set(f"seat{i:02d}" for i in range(1, n + 1)) | {'hq_B', 'hq_C', 'hq_P', 'hq_T', 'hq_U', 'hq_S', 'hq_I', 'hq_R', 'hq_V', 'cto', 'president'}
 A2 = sorted(t for t, r in rows.items() if r['state'] == 'FREE' and t in claims and claims[t]['done'])
 B  = sorted(t for t, c in claims.items() if not c['done'] and c['holder'].startswith('seat') and c['holder'] not in active)
 # ⭐ A TOMBSTONE IS NOT LOST WORK (hq_C 2026-08-27, from triaging this census's own first C! list).  A baton
@@ -168,7 +168,7 @@ def _claim_lines(t):
     except OSError: return []
 _ROUTE = (('cfo', ('gc', 'collector', 'collection', 'safe-point', 'safepoint', 'heap', 'arena', 'allocator', 'rt-c')),
           ('cto', ('emitter', 'planner', 'template', 'templates', 'spine', 'codegen', 'zeta', 'lowerer')),
-          ('coo', ('instrument', 'instruments', 'gate', 'gates', 'census', 'bus', 'picker', 'postoffice', 'runner', 'runners',
+          ('president', ('instrument', 'instruments', 'gate', 'gates', 'census', 'bus', 'picker', 'postoffice', 'runner', 'runners',
                    'harness', 'board', 'boards', 'progress', 'triangulator', 'triangulation')))
 def _route(t):
     w = set(t.lower().replace('_', '-').replace('.', '-').split('-'))

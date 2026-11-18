@@ -139,11 +139,11 @@ def probe_retire():
     """--probe-retire: on a scratch postoffice (S4E_POST, never the live one) two rows, one FREE and one SUPERSEDED:x, each with a baton; after --regenerate the
     superseded row is out of QUEUE.tsv and in QUEUE.retired.tsv once, the FREE row stays; a second --regenerate appends nothing. Prints one RETIRE_PROBE line; rc 0 ok=1."""
     import subprocess, tempfile, shutil
-    w = tempfile.mkdtemp(prefix="s4e-view-probe-", dir=os.environ.get("S4E_SCRATCH") or "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "cio")); os.makedirs(w + "/tasks")
-    def baton(t, st): open("%s/tasks/%s.task.md" % (w, t), "w").write("# TASK %s\nRANK: 2\nOWNER: cio\nSTATE: %s\nLINKS: minted 2026-11-07T00:00:00Z\n\n## NEXT\n- x\n" % (t, st))
+    w = tempfile.mkdtemp(prefix="s4e-view-probe-", dir=os.environ.get("S4E_SCRATCH") or "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "chairman")); os.makedirs(w + "/tasks")
+    def baton(t, st): open("%s/tasks/%s.task.md" % (w, t), "w").write("# TASK %s\nRANK: 2\nOWNER: chairman\nSTATE: %s\nLINKS: minted 2026-11-07T00:00:00Z\n\n## NEXT\n- x\n" % (t, st))
     baton("probe-live", "FREE"); baton("probe-dead", "SUPERSEDED:x"); baton("probe-gone", "RETIRED:y"); baton("probe-closed", "FREE")
-    open(w + "/QUEUE.done.tsv", "w").write("2\tprobe-closed\tcio\tDONE\n")
-    open(w + "/QUEUE.tsv", "w").write("# header\n2\tprobe-live\tcio\tFREE\n2\tprobe-dead\tcio\tSUPERSEDED:x\n2\tprobe-gone\tcio\tRETIRED:y\n2\tprobe-closed\tcio\tFREE\n")
+    open(w + "/QUEUE.done.tsv", "w").write("2\tprobe-closed\tchairman\tDONE\n")
+    open(w + "/QUEUE.tsv", "w").write("# header\n2\tprobe-live\tchairman\tFREE\n2\tprobe-dead\tchairman\tSUPERSEDED:x\n2\tprobe-gone\tchairman\tRETIRED:y\n2\tprobe-closed\tchairman\tFREE\n")
     env = dict(os.environ, S4E_POST=w, S4E_QUEUE_NO_DAEMON="1")
     r1 = subprocess.run([sys.executable, "-I", os.path.abspath(__file__), "--regenerate"], env=env, capture_output=True, text=True)
     q1 = open(w + "/QUEUE.tsv").read(); ret1 = open(w + "/QUEUE.retired.tsv").read() if os.path.exists(w + "/QUEUE.retired.tsv") else ""

@@ -512,9 +512,9 @@ def selftest():
             f.write('ts_utc\tscrip\tcorpus\tmeasurer\tclass\tsuite\tlang\tprogram\tmode\toutcome\tsecs\tnote\tfingerprint\tconfig\n')
             for c in cases:
                 for m in ('m3', 'm4'):
-                    f.write('2026-10-21T00:00:00\ts\tc\tcoo\tpackage\tswi\tprolog\tcore/test_x.pl:x:%s#1\t%s\tFAIL\t0\t\t\tundeclared\n' % (c, m))
+                    f.write('2026-10-21T00:00:00\ts\tc\tpresident\tpackage\tswi\tprolog\tcore/test_x.pl:x:%s#1\t%s\tFAIL\t0\t\t\tundeclared\n' % (c, m))
         q = os.path.join(po, 'QUEUE.tsv')
-        open(q, 'w').write('# rank\ttopic\towner\tstate\n3\tunrelated-row\tcoo\tFREE\n')
+        open(q, 'w').write('# rank\ttopic\towner\tstate\n3\tunrelated-row\tpresident\tFREE\n')
         env = dict(os.environ, S4E_PROGRESS_DB=db, S4E_POSTOFFICE=po, S4E_SWI_TESTS=sw)
         def run(label, want, e=None):
             r = subprocess.run([sys.executable, '-I', me], env=e or env, capture_output=True, text=True)

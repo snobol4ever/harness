@@ -134,7 +134,7 @@ seat_of() {
             return
         fi
     done
-    for t in $(grep -oE '\b(cfo|coo|cto|hq_[A-Za-z0-9]+|seat[0-9]{2})\b' <<< "$msg" | awk '!seen[$0]++'); do
+    for t in $(grep -oE '\b(cfo|president|cto|hq_[A-Za-z0-9]+|seat[0-9]{2})\b' <<< "$msg" | awk '!seen[$0]++'); do
         [ -d "$PO/$t/inbox" ] && seats="$seats $t"
     done
     lang="$(head -1 <<< "$msg" | sed -E 's/^(lower_|emit_)?([a-z0-9]+).*/\2/')"

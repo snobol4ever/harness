@@ -43,7 +43,7 @@ if "--probe-umbrella" in sys.argv[1:]:
         with open(os.path.join(d, "QUEUE.tsv"), "w") as f: f.write("0\tumb-a\tworker_07\tPARKED-UMBRELLA:plana-cto-533-rest\n0\tumb-b\tworker_07\tPARKED-UMBRELLA:planb-cto-533-rest\n1\tplana-step-1-cto-533\t@haiku\tQUEUED:tier-haiku\n")
         for t, k in (("umb-a", "planted-a"), ("umb-b", "planted-b")):
             with open(os.path.join(d, "tasks", t + ".task.md"), "w") as f: f.write("# TASK %s\nDONE-WHEN: bash $S4E_HARNESS/scripts/util_suite_row_at_100.sh %s\n" % (t, k))
-        with open(os.path.join(d, "TIERS.tsv"), "w") as f: f.write("seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\ncio\tCIO\t/x\tclaude-fable-5-1\thigh\tred\t1\tfleet-system\n")
+        with open(os.path.join(d, "TIERS.tsv"), "w") as f: f.write("seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\nchairman\tCIO\t/x\tclaude-fable-5-1\thigh\tred\t1\tfleet-system\n")
         with open(os.path.join(d, "tubes.tsv"), "w") as f: f.write("tube\tready\toldest_ready_age_s\ntier-haiku\t0\t0\n")
         r = subprocess.run([sys.executable, os.path.abspath(__file__), "--suites", os.path.join(d, "SUITES.tsv"), "--queue", os.path.join(d, "QUEUE.tsv"), "--tasks", os.path.join(d, "tasks"), "--tiers", os.path.join(d, "TIERS.tsv"), "--claims", os.path.join(d, "claims"), "--tubes", os.path.join(d, "tubes.tsv"), "--sleeping", os.path.join(d, "none")], capture_output=True, text=True, timeout=120)
     finally: shutil.rmtree(d, ignore_errors=True)
@@ -104,7 +104,7 @@ for r in rows:
     ums = [(tp, st) for tp, st in rd if st.startswith("PARKED-UMBRELLA:")]
     if any(umbrella_live(tp, st) for tp, st in ums): owned += 1; continue
     if k in RULED or any(s.startswith("PARKED-LON-HOLD") for _, s in rd): held += 1; continue
-    if ums: reds.append("  RED  suite %s %s: umbrella %s with no live step under it -- %s cuts or lifts it" % (k, score, ums[0][1], "cto" if "cto-" in ums[0][1] else ("cio" if "cio-" in ums[0][1] else "its designer")))
+    if ums: reds.append("  RED  suite %s %s: umbrella %s with no live step under it -- %s cuts or lifts it" % (k, score, ums[0][1], "cto" if "cto-" in ums[0][1] else ("chairman" if "cio-" in ums[0][1] else "its designer")))
     elif not rd: reds.append("  RED  suite %s %s: no live row reads this suite (mint one, DONE-WHEN util_suite_row_at_100.sh %s, owner the lane, then assign)" % (k, score, k))
     else: reds.append("  RED  suite %s %s: no seat holds its row -- %s (assign it to the lane)" % (k, score, "; ".join("%s [%s]" % (tp, st) for tp, st in rd)))
 if n == 0: refuse("%s holds no SCRIP row" % SUITES)
@@ -123,7 +123,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import harness_paths as HP
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TIERS = arg("--tiers", os.path.join(str(HP.github(ROOT)), "TIERS.tsv")); CLAIMS = arg("--claims", "/home/resources/postoffice/claims"); TUBES = arg("--tubes", None)
-SLEEPING = arg("--sleeping", "/home/claude_coo/.scratch/verifier/sleeping")
+SLEEPING = arg("--sleeping", "/home/claude_president/.scratch/verifier/sleeping")
 OVERDUE_S = 1800
 def table(path, need):
     try: rows = [l.rstrip("\n").split("\t") for l in open(path, encoding="utf-8") if l.strip() and not l.startswith("#")]
@@ -189,9 +189,9 @@ if "--probe-seat-arm" in sys.argv[1:]:
     try:
         with open(os.path.join(d, "TIERS.tsv"), "w") as f:
             f.write("seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\n")
-            f.write("cio\tCIO\t/x\tclaude-fable-5-1\thigh\tred\t1\tfleet-system\n")
-            f.write("coo\tCOO\t/x\tclaude-opus-5-5\txhigh\tgreen\t2\ttesting-officer\n")
-            f.write("president\tPRESIDENT\t/x\tclaude-sonnet-5-5\txhigh\tpurple\t3\tcompany-man\n")
+            f.write("chairman\tCIO\t/x\tclaude-fable-5-1\thigh\tred\t1\tfleet-system\n")
+            f.write("president\tCOO\t/x\tclaude-opus-5-5\txhigh\tgreen\t2\ttesting-officer\n")
+            f.write("manager\tMANAGER\t/x\tclaude-sonnet-5-5\txhigh\tpurple\t3\tcompany-man\n")
             for i in range(1, 21): f.write("worker_%02d\tWORKER_%02d\t/x\tclaude-haiku-5-5\txhigh\tcyan\t4\tworker\n" % (i, i))
         os.mkdir(os.path.join(d, "claims"))
         with open(os.path.join(d, "tubes.tsv"), "w") as f: f.write("tube\tready\toldest_ready_age_s\ntier-haiku\t1\t0\nask-opus\t1\t2000\n")

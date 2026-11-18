@@ -224,7 +224,7 @@ one_runner_who() {
 # corpus_suite_harness.py:_one_runner_guard and util_score_row.py's lane-owner write mirror this.
 one_runner_seat_admitted() {
   local seat="$1" who="$2" w
-  [ "$seat" = coo ] && [ "$(one_runner_engine)" = scrip ] && return 0
+  { [ "$seat" = president ] || [ "$seat" = coo ]; } && [ "$(one_runner_engine)" = scrip ] && return 0
   # THE GRADER IS THE TESTING OFFICER'S INSTRUMENT (fleet-control step 10, the cio 2026-11-07 15:3x, on the coo's report: job 1147, a unitests request, was buried here
   # because the grader runs as seat grader): seat grader under S4E_CLASS=grader (the cycle, s4e_cycle.sh, the one grader since CIO-82, in the grader slice) is admitted to every SCRIP
   # board the coo is, and writes the coo's record; corpus_suite_harness.py:_one_runner_guard and util_score_row.py mirror this line.

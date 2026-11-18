@@ -21,7 +21,7 @@ def git(d, *a):
     return r.returncode, r.stdout.strip()
 
 
-REF_ROOT = os.environ.get("S4E_HOME") or "/home/claude_cio"
+REF_ROOT = os.environ.get("S4E_HOME") or "/home/claude_chairman"
 FAST = False   # --fast: count the commits a ref holds that origin/main lacks (git rev-list, a moment) and not their patches (git cherry, minutes over a
                # long history). A landed commit the lander rebased still counts under --fast, so a tidy seat deletes the branch once its work is on main.
 
@@ -104,7 +104,7 @@ def census(seat=None, root="/home"):
             if os.path.isdir(f"{d}/{r}/.git"):
                 rows += place_rows(s, f"{d}/{r}")
     if not seat:
-        ref_root = f"{root}/claude_cio"
+        ref_root = f"{root}/claude_chairman"
         for r in REPOS:
             d = f"{ref_root}/{r}"
             if not os.path.isdir(d + "/.git"):

@@ -27,7 +27,7 @@ probe() {
     t="$(mktemp -d "${TMPDIR:-/tmp}/s4e_resume_probe.XXXXXX")" || { echo "REFUSE(2) [resume --probe]: mktemp failed"; exit 2; }
     trap 'rm -rf "$t"' EXIT
     po="$t/po"; mkdir -p "$po/tasks" "$po/$ME/inbox" "$po/claims" "$t/wt" && : > "$t/run.log"
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$po/MODE"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|OFFICERS|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$po/MODE"
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$po/PROTOCOL-VERSION"
     printf '# plant queue\n2\tresume-plant\t%s\tCLAIMED:%s\n' "$ME" "$ME" > "$po/QUEUE.tsv"; printf '%s\n' "$ME" > "$po/claims/resume-plant.claim"
     bat="$po/tasks/resume-plant.task.md"

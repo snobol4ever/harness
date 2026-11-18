@@ -898,7 +898,7 @@ def derive_measurer():
     root = os.path.abspath(S4E).rstrip("/")
     fixed = {"/home/claude_C": "hq_C", "/home/claude_P": "hq_P",
              "/home/claude_B": "hq_B", "/home/claude_T": "hq_T", "/home/claude_U": "hq_U",
-             "/home/claude_S": "hq_S", "/home/claude_I": "hq_I", "/home/claude_R": "hq_R", "/home/claude_V": "hq_V", "/home/claude_icon": "hq_icon", "/home/claude_unicon": "hq_unicon", "/home/claude_prolog": "hq_prolog", "/home/claude_raku": "hq_raku", "/home/claude_pascal": "hq_pascal", "/home/claude_snocone": "hq_snocone", "/home/claude_snobol4": "hq_snobol4", "/home/claude_templates": "hq_templates", "/home/claude_runtime": "hq_runtime", "/home/claude_collector": "hq_collector", "/home/claude_zetas": "hq_zetas", "/home/claude_packages": "hq_packages","/home/claude_dotnet": "dotnet", "/home/claude_jvm": "jvm", "/home/claude_cto": "cto", "/home/claude_coo": "coo", "/home/claude_cfo": "cfo", "/home/claude_cao": "cao", "/home/claude_cqo": "cqo"}
+             "/home/claude_S": "hq_S", "/home/claude_I": "hq_I", "/home/claude_R": "hq_R", "/home/claude_V": "hq_V", "/home/claude_icon": "hq_icon", "/home/claude_unicon": "hq_unicon", "/home/claude_prolog": "hq_prolog", "/home/claude_raku": "hq_raku", "/home/claude_pascal": "hq_pascal", "/home/claude_snocone": "hq_snocone", "/home/claude_snobol4": "hq_snobol4", "/home/claude_templates": "hq_templates", "/home/claude_runtime": "hq_runtime", "/home/claude_collector": "hq_collector", "/home/claude_zetas": "hq_zetas", "/home/claude_packages": "hq_packages","/home/claude_dotnet": "dotnet", "/home/claude_jvm": "jvm", "/home/claude_cto": "cto", "/home/claude_president": "president", "/home/claude_cfo": "cfo", "/home/claude_cao": "cao", "/home/claude_cqo": "cqo"}
     if root in fixed:
         return fixed[root]
     m = re.match(r"^/home/claude([0-9]{1,2})$", root)
@@ -916,7 +916,7 @@ def derive_measurer():
 # /home/claude_<x> is the officer <x> when MODE's ROSTER: line carries <x> bare, and the HQ hq_<x> when it carries hq_<x>; the hand list is
 # kept only for a MODE that cannot be read (a scratch fixture).
 MODE_PATH = "/home/resources/postoffice/MODE"
-OFFICERS_FALLBACK = frozenset({"cto", "cfo", "coo", "cao", "cqo", "cio"})
+OFFICERS_FALLBACK = frozenset({"cto", "cfo", "president", "cao", "cqo", "chairman"})
 def roster_seats(mode_path=None):
     try:
         for line in open(mode_path or os.environ.get("S4E_MODE_PATH") or MODE_PATH, errors="replace"):
@@ -952,7 +952,7 @@ def roster_officers(mode_path=None):
 # other files while two seats' digests went unread; the queue's owner column was 44 rows behind this very lane cut.
 # So the seat who may write is lifted out of MODE line 2 at the moment of the write, and a MODE that names no ONE
 # RUNNER cuts no writer, so nothing is refused.
-MODE_SEAT_RE = r"(?:cto|coo|cfo|hq_[A-Za-z0-9]+)"
+MODE_SEAT_RE = r"(?:cto|president|cfo|hq_[A-Za-z0-9]+)"
 
 
 def mode_file():
@@ -1110,7 +1110,7 @@ def one_runner_declines(measurer, what, lang=None):
         return None
     # THE coo IS NEVER REFUSED (Lon 2026-10-25, R-1976; lib_one_runner.sh:one_runner_seat_admitted carries the words): a board the coo
     # runs writes its own row, whatever LANES: names.
-    if (measurer or "").strip() == "coo" or ((measurer or "").strip() == "grader" and os.environ.get("S4E_CLASS") == "grader"):   # the grader (the cycle, s4e_cycle.sh, the one grader since CIO-82) writes the coo's record: fleet-control step 10
+    if (measurer or "").strip() in ("president", "coo") or ((measurer or "").strip() == "grader" and os.environ.get("S4E_CLASS") == "grader"):   # the grader (the cycle, s4e_cycle.sh, the one grader since CIO-82) writes the coo's record: fleet-control step 10
         print("  %s writes %s rows: the coo is never refused (R-1976; lane owner %s, %s)" % (measurer.strip(), lang or "these", writer, why))
         return None
     sw = os.environ.get("S4E_SCORE_WRITE", "").strip()
@@ -4241,9 +4241,9 @@ def cmd_selftest(a):
         if True:
             _buf = []
             _line = "SUITE_BOARD family=ALL total=1982 m3_pass=1970 m3_skip=0 m4_pass=1967 m4_skip=3"
-            _p1 = archive_board_line("the runner printed: " + _line, "sno-rungs", "coo", "b12714737", out=_buf.append)
-            _p2 = archive_board_line(_line, "sno-rungs", "coo", "b12714737", out=_buf.append)
-            _p3 = archive_board_line("the snobol4 rungs reads 1967/1982", "sno-rungs", "coo", "b12714737", out=_buf.append)
+            _p1 = archive_board_line("the runner printed: " + _line, "sno-rungs", "president", "b12714737", out=_buf.append)
+            _p2 = archive_board_line(_line, "sno-rungs", "president", "b12714737", out=_buf.append)
+            _p3 = archive_board_line("the snobol4 rungs reads 1967/1982", "sno-rungs", "president", "b12714737", out=_buf.append)
             _txt = open(_p1, encoding="utf-8").read() if _p1 else ""
             if _p1 and _p2 == _p1 and _p3 is None and _txt.count(_line) == 1 \
                and any("already archived" in x for x in _buf) and any("NOT ARCHIVED" in x for x in _buf):
