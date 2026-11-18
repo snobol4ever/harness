@@ -168,8 +168,13 @@ FIRSTF="$PROG/CYCLE.first"
 # cell of another language whose last reading took over S4E_CYCLE_SPRINT_SECS (120) is logged SPRINT-HELD and not run (sprint_held); a request is never held. With no file
 # nothing changes. It replaces the SPRINT-HOLD lines the cio wrote into CYCLE.skip by hand that hour (267 cells of long Prolog, Pascal and Raku package chunks).
 SPRINTF="${S4E_SPRINT_CONF:-/home/resources/postoffice/SPRINT.conf}"
+# THE HOLD IS LIFTED BY ONE FILE (Lon 2026-11-17 21:xx CST, in the grader's window, asked how the packages are to be graded, chose "Lift the sprint hold"; MEASURED
+# that hour: lap 48 had logged 143 SPRINT-HELD cells by its cell 567 of 1274): while CYCLE.nohold stands beside CYCLE.first, sprint_held holds no cell and the
+# sprint's order stands; deleting the file puts the hold back. It is the grader's file: SPRINT.conf, the cio's, and the countdown it drives are not touched.
+NOHOLDF="${S4E_CYCLE_NOHOLD:-$PROG/CYCLE.nohold}"
 sprint_langs() { awk -F= '!/^#/ && $1 == "lang" { n = split($2, v, /[ ,]+/); for (i = 1; i <= n; i++) if (v[i] != "") print v[i] }' "$SPRINTF" 2> /dev/null | sort -u | tr '\n' ' '; }
 sprint_held() {   # key lang cell secs -> rc 0 when the sprint holds this lap cell
+    [ -e "$NOHOLDF" ] && return 1
     local sl; sl="$(sprint_langs)"; [ -n "$sl" ] || return 1
     case "$1" in *@*) return 1;; esac   # a port cell is never a sprint cell (it waits in the slow lane behind every SCRIP cell)
     case " $sl " in *" $2 "*) return 1;; esac
@@ -628,13 +633,15 @@ if [ "$MODE_ARG" = --probe-door ]; then   # THE DOOR'S PROBE (row cycle-a-cell-t
     # arm 5, the sprint: with a scratch SPRINT.conf of lang=snobol4, a prolog cell whose last reading took 500 s is held and a snobol4 cell of 500 s is not, a short prolog cell
     # (60 s) is not, and order_cells puts the snobol4 suite first; with no file nothing is held
     v5=RED; printf 'name=PROBE\nlang=snobol4\n' > "$T/sprint.conf"
-    h1=1; SPRINTF="$T/sprint.conf" sprint_held p1 prolog core 500 && h1=0
-    h2=1; SPRINTF="$T/sprint.conf" sprint_held s1 snobol4 core 500 && h2=0
-    h3=1; SPRINTF="$T/sprint.conf" sprint_held p2 prolog core 60 && h3=0
-    h4=1; SPRINTF="$T/none.conf" sprint_held p1 prolog core 500 && h4=0
+    # and with CYCLE.nohold standing the same 500 s prolog cell is not held
+    h1=1; NOHOLDF="$T/no.nohold" SPRINTF="$T/sprint.conf" sprint_held p1 prolog core 500 && h1=0
+    h2=1; NOHOLDF="$T/no.nohold" SPRINTF="$T/sprint.conf" sprint_held s1 snobol4 core 500 && h2=0
+    h3=1; NOHOLDF="$T/no.nohold" SPRINTF="$T/sprint.conf" sprint_held p2 prolog core 60 && h3=0
+    h4=1; NOHOLDF="$T/no.nohold" SPRINTF="$T/none.conf" sprint_held p1 prolog core 500 && h4=0
+    : > "$T/nohold"; h5=1; NOHOLDF="$T/nohold" SPRINTF="$T/sprint.conf" sprint_held p1 prolog core 500 && h5=0
     o1="$(printf 'pl_a\tpkg\tprolog\td\tcore\nsno_a\tpkg\tsnobol4\td\tcore\n' | ORDERF="$T/no.order" FIRSTF="$T/no.first" SPRINTF="$T/sprint.conf" order_cells | head -1 | cut -f1)"
     o0="$(printf 'pl_a\tpkg\tprolog\td\tcore\nsno_a\tpkg\tsnobol4\td\tcore\n' | ORDERF="$T/no.order" FIRSTF="$T/no.first" SPRINTF="$T/none.conf" order_cells | head -1 | cut -f1)"
-    [ "$h1$h2$h3$h4" = 0111 ] && [ "$o1" = sno_a ] && [ "$o0" = pl_a ] && v5=ok
+    [ "$h1$h2$h3$h4$h5" = 01111 ] && [ "$o1" = sno_a ] && [ "$o0" = pl_a ] && v5=ok
     # arm 6, the requests: with seat A's first request in serving, A's second is passed over and B's served; a request naming an entry whose timeout_s is over
     # 300 s is the slow lane's, never the fast lane's
     v6=RED; mkdir -p "$RQ/serving" "$T/rcorpus/packages/longpkg"; rm -f "$RQ"/*.req "$RQ"/serving/*.req
