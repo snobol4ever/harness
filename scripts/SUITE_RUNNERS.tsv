@@ -100,6 +100,7 @@ icn-pack-loadfuncpp	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/pack_l
 pack_idol	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/pack_idol
 uflex	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/uflex
 unicon-uni	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/unicon_uni
+unicon-gfx-witnesses	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/unicon_gfx_witnesses
 chat80	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/chat80
 press	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/press
 trealla-more	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/trealla_more
