@@ -9,7 +9,7 @@ in the cio's window, on the 19 Icon programs excluded NEEDS_TERMINAL: "well that
 It opens a pseudo-terminal of 24 rows and 80 columns (the cto's ruling of 2026-11-17 17:3x CST: 24x80, TERM vt100, the box's own vt100 entry, the
 same for the oracle's cut and SCRIP's grade), runs CMD in a new session with that terminal as its controlling terminal and as its standard
 input, output and error, with TERM=vt100 and TERMCAP set to the one fixed vt100 entry kept below (VT100_TERMCAP, the box's `infocmp -C vt100`
-with its continuation lines joined: the box has no /etc/termcap, and the Icon libraries iolib and itlib read TERMCAP). What CMD writes is read
+with its continuation lines joined and the numeric padding of its fifteen string capabilities dropped (the cto 2026-11-18: a pty has no baud rate to pad for, and a program that writes a capability itself, as ipl bj does, would print the digits): the box has no /etc/termcap, and the Icon libraries iolib and itlib read TERMCAP). What CMD writes is read
 off the master into a VT100 screen model (Screen: cursor addressing, erase in line and in display, the cursor moves, scroll region, insert and
 delete of lines and characters, save and restore of the cursor, CR LF BS TAB, autowrap, scrolling; a rendition code is read and dropped).
 THE ANSWER is FILE (default pty.dump, in the current directory): one block at each still point, the line `pty 80x24 step K` and the 24 rows
@@ -33,16 +33,17 @@ VT100_TERMCAP = (
     ":am:bs:ms:xn:xo:"
     ":co#80:it#8:li#24:vt#3:"
     ":DO=\\E[%dB:K1=\\EOq:K2=\\EOr:K3=\\EOs:K4=\\EOp:K5=\\EOn:"
-    ":LE=\\E[%dD:RI=\\E[%dC:UP=\\E[%dA:ae=^O:as=^N:bl=^G:cd=50\\E[J:"
-    ":ce=3\\E[K:cl=50\\E[H\\E[J:cm=5\\E[%i%d;%dH:cr=\\r:"
+    ":LE=\\E[%dD:RI=\\E[%dC:UP=\\E[%dA:ae=^O:as=^N:bl=^G:cd=\\E[J:"
+    ":ce=\\E[K:cl=\\E[H\\E[J:cm=\\E[%i%d;%dH:cr=\\r:"
     ":cs=\\E[%i%d;%dr:ct=\\E[3g:do=\\n:ho=\\E[H:k0=\\EOy:k1=\\EOP:"
     ":k2=\\EOQ:k3=\\EOR:k4=\\EOS:k5=\\EOt:k6=\\EOu:k7=\\EOv:k8=\\EOl:"
     ":k9=\\EOw:kb=^H:kd=\\EOB:ke=\\E[?1l\\E>:kl=\\EOD:kr=\\EOC:"
-    ":ks=\\E[?1h\\E=:ku=\\EOA:le=^H:mb=2\\E[5m:md=2\\E[1m:me=2\\E[0m:"
-    ":mr=2\\E[7m:nd=2\\E[C:rc=\\E8:"
+    ":ks=\\E[?1h\\E=:ku=\\EOA:le=^H:mb=\\E[5m:md=\\E[1m:me=\\E[0m:"
+    ":mr=\\E[7m:nd=\\E[C:rc=\\E8:"
     ":rs=\\E<\\E>\\E[?3;4;5l\\E[?7;8h\\E[r:"
-    ":sc=\\E7:se=2\\E[m:sf=\\n:so=2\\E[7m:sr=5\\EM:st=\\EH:ta=^I:"
-    ":ue=2\\E[m:up=2\\E[A:us=2\\E[4m:")
+    ":..sa=\\E[0%?%p1%p6%|%t;1%;%?%p2%t;4%;%?%p1%p3%|%t;7%;%?%p4%t;5%;m%?%p9%t\\016%e\\017%;$<2>:"
+    ":sc=\\E7:se=\\E[m:sf=\\n:so=\\E[7m:sr=\\EM:st=\\EH:ta=^I:"
+    ":ue=\\E[m:up=\\E[A:us=\\E[4m:")
 KEYS = {"Return": "\r", "Tab": "\t", "Escape": "\x1b", "BackSpace": "\x7f", "Space": " ",
         "Up": "\x1bOA", "Down": "\x1bOB", "Right": "\x1bOC", "Left": "\x1bOD"}
 def refuse(msg):
@@ -231,6 +232,11 @@ def probe():
     rc, d, e = road(["stty", "size"]); arm("size", rc == 0 and "\n24 80" in d, f"rc={rc} dump={d[:120]!r}")
     rc, d, e = road(["sh", "-c", "test -w /dev/tty && echo tty-open; echo \"$TERM\"; test -n \"$TERMCAP\" && echo termcap-set"]); arm("tty_term_termcap", "tty-open" in d and "vt100" in d and "termcap-set" in d, d[:160])
     rc, d, e = road(["cat"], "type hello\nkey Return\n"); arm("key_echo", rc == 0 and d.split("pty 80x24 step 2\n")[-1].split("\n")[:2] == ["hello", "hello"], f"rc={rc} {d[:100]!r}")
+    import re
+    caps = dict(re.findall(r":([A-Za-z0-9.]{2,3})=([^:]*)", VT100_TERMCAP))
+    arm("termcap_cm_no_padding", caps.get("cm") == "\\E[%i%d;%dH" and not re.search(r"=[0-9.*]+\\\\E", re.sub(r":\\.\\.sa=[^:]*:", ":", VT100_TERMCAP)), repr(caps.get("cm")))
+    padded = ["cd", "ce", "cl", "cm", "sr", "mb", "md", "me", "mr", "nd", "se", "so", "ue", "up", "us"]
+    arm("termcap_fifteen_kept", all(c in caps for c in padded) and caps.get("ct") == "\\E[3g" and "co#80" in VT100_TERMCAP and "li#24" in VT100_TERMCAP and "$<2>" in VT100_TERMCAP, str([c for c in padded if c not in caps]))
     rc, d, e = road(["sh", "-c", "echo before; tput clear; echo after"]); arm("clear", rc == 0 and d.split("\n")[1] == "after" and "before" not in d, d[:100])
     rc, d, e = road(["sh", "-c", "printf 'one\\ntwo\\n'; tput cup 5 10; printf 'at'"]); arm("cursor", d.split("\n")[1 + 5] == "          at", d[:160])
     rc, d, e = road(["sh", "-c", "echo done; exit 3"]); arm("status", rc == 3 and "done" in d, f"rc={rc}")
