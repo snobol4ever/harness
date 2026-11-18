@@ -2086,6 +2086,12 @@ def cmd_from_progress(a):
     _mexcl = None
     if not pkg and key in _aud.SIDECAR:
         _mx = _aud.container_stems(corpus, key)
+        # a port key leaves out its engine's own list beside the master too, EXCLUDED.<engine>.tsv, as a package's does above (R-1864 (4); seat jvm 2026-11-17:
+        # snobol4jvm declares in tests/snobol4/EXCLUDED.jvm.tsv the rungs whose sbl -bf answer turns on case folding, which it never does, Lon 18:2x CST)
+        if port:
+            _pf = os.path.join(corpus, os.path.dirname(_aud.SIDECAR[key]), "EXCLUDED.%s.tsv" % port)
+            if os.path.exists(_pf):
+                _mx |= {_aud.stem(l.split("\t")[0].strip()) for l in open(_pf, encoding="utf-8", errors="replace") if l.strip() and not l.startswith("#")}
         _n0 = len(pop)
         pop = [e for e in pop if _aud.stem(e) not in _mx]
         _mexcl = _n0 - len(pop)
