@@ -53,7 +53,7 @@ RESERVED = frozenset("abstract break by case class create critical default do el
 
 def _link_word(name):
     """A link name that is a Unicon reserved word is written as a string, link "package": the bare word is the keyword and the translator reads link list expected (MEASURED 2026-11-17 on unicon 13.3: unidoc/parlett/package.icn; the quoted form translates and answers)."""
-    return f'"{name}"' if name in RESERVED else name
+    return f'"{name}"' if name in RESERVED or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name) else name
 
 
 CONDITIONAL = re.compile(r"^[ \t]*\$(ifdef|ifndef|if)\b")
