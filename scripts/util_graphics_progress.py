@@ -68,13 +68,22 @@ def entries(key, d):
         rd = list(csv.DictReader(open(os.path.join(d, "ALL.csv"), encoding="utf-8", errors="replace")))
     except OSError:
         return out
+    # THE STAND-IN (the cto 2026-11-18, row ipl-gprogs-the-last-four-scripts-ruled): an entry named in its container's EVENTS-NONE.tsv whose reason carries the
+    # word STAND-IN counts on its mode-3 pass, its still picture being all a test can read of it; a plain EVENTS-NONE line still waits on a script.
+    stand = set()
+    try:
+        for ln in open(os.path.join(d, "EVENTS-NONE.tsv"), encoding="utf-8", errors="replace"):
+            f = ln.rstrip("\n").split("\t")
+            if len(f) > 1 and not ln.startswith("#") and "STAND-IN" in f[1]: stand.add(f[0].strip())
+    except OSError:
+        pass
     for r in rd:
         name = (r.get("entry") or "").strip()
         if not name: continue
         stems = [os.path.join(d, name)]
         if r.get("path"): stems.insert(0, os.path.join(d, os.path.splitext(r["path"])[0]))
         if "screen.dump" not in (r.get("out_files") or "").split() and not any(os.path.isfile(s + ".display") for s in stems): continue
-        out.append((key, name, any(os.path.isfile(s + ".events") for s in stems)))
+        out.append((key, name, any(os.path.isfile(s + ".events") for s in stems), name in stand))
     return out
 
 
@@ -125,12 +134,12 @@ def measure(e):
     for row in table(e):
         ents = []
         for key, d in containers(e, row["lang"], row["excluded"], row.get("only") or ()): ents += entries(key, d)
-        new = readings(e, {k for k, _n, _s in ents})
+        new = readings(e, {k for k, _n, _s, _t in ents})
         detail = []
-        for key, name, scr in ents:
+        for key, name, scr, std in ents:
             rd = new.get((key, name), ("", "UNREAD"))[1]
             need = key in row["scripted"]
-            detail.append((row["lang"], key, name, rd, scr, rd == "PASS" and (scr or not need)))
+            detail.append((row["lang"], key, name, rd, scr, rd == "PASS" and (scr or std or not need)))
         out.append((row, detail, built(e, row)))
     return out
 
@@ -214,6 +223,11 @@ def probe():
         if g[0] != 0: why += " arm4 a dirty reading and a mode-4 reading read %d works, wanted 0;" % g[0]
         db([("2026-01-01T00:00:00", "s", "c", "g", "package", "rs", "icon", "disp", "m3", "PASS")]); g = works()
         if g[0] != 1: why += " arm5 an entry with NAME.display passing reads %d works, wanted 1;" % g[0]
+        open(os.path.join(d, "EVENTS-NONE.tsv"), "w").write("# h\nb\tSTAND-IN: ruled by the cto\nc\tMEASURED: waits for a script\n")
+        db([("2026-01-01T00:00:00", "s", "c", "g", "package", "pk", "icon", "b", "m3", "PASS"), ("2026-01-01T00:00:00", "s", "c", "g", "package", "pk", "icon", "c", "m3", "PASS")]); g6 = works()[0]
+        db([("2026-01-01T00:00:00", "s", "c", "g", "package", "pk", "icon", "b", "m3", "FAIL")]); g6f = works()[0]
+        if (g6, g6f) != (1, 0): why += " arm6 a STAND-IN line and a plain EVENTS-NONE line, each passing, read %d works (wanted 1), a STAND-IN failing reads %d (wanted 0);" % (g6, g6f)
+        os.remove(os.path.join(d, "EVENTS-NONE.tsv"))
         os.makedirs(os.path.join(t, "lib"))
         for n in "abcde": open(os.path.join(t, "lib", n + ".icn"), "w").write("")
         open(os.path.join(t, "SUITES.tsv"), "w").write("# h\n" + "\t".join(["pk", "L", "x", "icon", "d", "0", "7", "d", "3", "7", "tree"]) + "\n")
