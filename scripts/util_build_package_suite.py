@@ -2023,7 +2023,7 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=
         sin = work / "stdin"
         sin.write_bytes(stdin_bytes)
         if lang == "pascal":
-            argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "fpc_oracle_run.sh"), *flags, name]
+            argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "fpc_oracle_run.sh"), *flags, name, *(["--", *args] if args else [])]   # ALL.args after a -- (the grader 2026-11-18)
             with open(sin, "rb") as fin:
                 pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
         elif lang == "icon":
@@ -2065,8 +2065,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     fed it, and the third run, which asks whether the answer changes with standard input, is not made."""
     fed = feed[1] if feed else b""
     args = tuple(args or ())
-    if args and lang == "pascal":
-        h.refuse(f"{rel}: ALL.args names arguments, which the mine road passes on the generic oracle road and the icon road only, after the program and any launch shim (not {lang}'s own road)")
+    # Pascal's road passes ALL.args too, after a -- (fpc_oracle_run.sh SRC -- ARG..., the grader 2026-11-18)
     if units and lang != "icon":
         h.refuse(f"{rel}: ALL.units names units, which the mine road hands to the Icon and Unicon oracle only (not {lang}'s road)")
     src = root / rel
