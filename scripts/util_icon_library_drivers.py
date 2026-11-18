@@ -164,6 +164,8 @@ def main(argv):
     # file_dlg: class FileDialog : _Dialog is found in lib/gui.icn with IPATH and LPATH unset, 55 fields). A link to the superclass's file would hide that road, so a driver of that folder
     # keeps the text it was cut with. Every other folder (udb lib among them, where the oracle refused without the links: 15 of 41 drivers) keeps them.
     unicon_lib = "--unicon-library" in argv or os.path.isfile(os.path.join(root, "uniclass.dir")) or os.path.realpath(root).endswith("/unicon_uni/lib")
+    # A FILE THAT DECLARES A PACKAGE HAS NO needs LINKS EITHER (developer_11, row icon-unicon-library-drivers-unicon-uni-udb-xml-parser-uflex, MEASURED on unicon 13.3: the driver of xml/htmldocument with link node ahead of import xml is
+    # answered node.icn: "xml__Node__state": inconsistent redeclaration, because import xml already brings node.icn in; the 26 stored xml drivers carry no such link and read their classes)
     pkg_of = {os.path.basename(f)[:-4]: (PACKAGE.search(codes[f]).group(1) if PACKAGE.search(codes[f]) else None) for f in files}
     wrote = same = skipped = differ = 0
     for f in files:
@@ -172,7 +174,7 @@ def main(argv):
         top, hops = name, 0
         while top in includer and includer[top] != top and hops < 20:
             top, hops = includer[top], hops + 1
-        drv, why = driver_text(name, text, via=(top, pkg_of.get(top)) if top != name else None, needs=() if unicon_lib else needs_of(name))
+        drv, why = driver_text(name, text, via=(top, pkg_of.get(top)) if top != name else None, needs=() if unicon_lib or pkg_of.get(name) else needs_of(name))
         rel = os.path.relpath(f, root)
         out = f[:-4] + "_driver.icn"
         if drv is None:
