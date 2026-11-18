@@ -113,6 +113,27 @@ def rows():
     return out, low
 
 
+def by_op(name, kinds):
+    """THE PER-OP LISTS (the cto 2026-11-18, row icon-gui-compile-the-planner-walks-only-an-ops-own-rows-of-box-cell-shapes; MEASURED: zd_bcs_pick and zd_rel_g were
+    14 per cent of vib's 26.6 G compile, each walking all the rows of the table from the top for every node): for each op that names rows, the indices of its own rows
+    in table order with the rows of op -1 (every op) merged in their place, ended by -1, and NAME_by_op(op) answers that list, the list of the -1 rows alone for an
+    op that names none. The planner walks only that list, so it meets the same rows in the same order and answers the same."""
+    ops = []
+    for k in kinds:
+        if k != '*' and k not in ops:
+            ops.append(k)
+
+    def idx(op):
+        return ''.join('%d, ' % i for i, k in enumerate(kinds) if k == '*' or k == op)
+    out, cases = [], []
+    for n, op in enumerate(ops):
+        out.append('static const short %s_r%d[] = { %s-1 };' % (name, n, idx(op)))
+        cases.append('case %s: return %s_r%d;' % (op, name, n))
+    out.append('static const short %s_rd[] = { %s-1 };' % (name, idx(None)))
+    out.append('static const short * %s_by_op(int op) { switch (op) { %s default: return %s_rd; } }' % (name, ' '.join(cases), name))
+    return out
+
+
 def render(rs, low):
     body = ['{ %s, %s, %s, %d, %d, %d, %d, %d }' % (('-1' if k == '*' else k, WORDS.get(w, w), WHEN[c]) + wk) for k, w, c, wk in rs]
     lines, cur = [], 'static const struct { int op; int words; int when; unsigned wk_pre; int wk_pre_n; int wk_fill; unsigned wk_suf; int wk_suf_n; } box_cell_shapes[] = {'
@@ -132,6 +153,7 @@ def render(rs, low):
             cur = '   '
         cur += item
     lines.append(cur)
+    lines += by_op('box_cell_shapes', [k for k, _w, _c, _wk in rs]) + by_op('box_low_regions', [k for k, _b, _c in low])
     text = '\n'.join(lines) + '\n'
     with tempfile.TemporaryDirectory(prefix='bcs.') as t:
         f = os.path.join(t, 'box_cell_shapes.inc')
