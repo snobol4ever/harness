@@ -13,6 +13,11 @@
 #                                                  requests, pending ones in the queue and graded ones in done/: GREEN and RED carry the served tree and rows, RED the
 #                                                  entries whose rc was not 0, RETURNED a request the loop gave back ungraded (the port engines), DROPPED one the coo dropped, UNSERVED one that
 #                                                  reached done/ with no served= line. It reads the files the loop wrote; it asks the loop for nothing.
+#   s4e_test_request.sh --wait [ID] [--timeout S]  WAIT FOR A VERDICT (the chairman 2026-11-18): blocks until request ID (default: the seat's newest request) stands
+#                                                  in done/, prints its verdict line and ends rc 0 GREEN, 1 RED, 2 anything else or still pending after S seconds
+#                                                  (default 3600). A verdict's telegram wakes nobody (MEASURED that day: developer_12 ran nothing for 32 minutes
+#                                                  with its green verdict in), and the end of a background task wakes its session: run it in the background and stop.
+#   s4e_test_request.sh --wait --probe             the wait proved on a planted scratch queue
 #   s4e_test_request.sh --read --probe             the reader proved on a planted scratch queue (six requests of one seat and a decoy of another); a red probe prints
 #                                                  PROBE RED and NO VERDICTS line, so a pipe through grep -q '^VERDICTS ' cannot pass a broken reader
 #   s4e_test_request.sh --engine E ...             REFUSED rc 2 for E = dotnet or jvm (R-1912); --engine scrip is the default
@@ -138,8 +143,58 @@ read_main() {
   [ -n "$me" ] || refuse_read "no seat: set S4E_SEAT, pass --seat S, or run from a seat root /home/claude_<seat>"
   read_verdicts "$REQ_DIR" "$me" "$last"
 }
+wait_main() {
+  local id="" to=3600 me t0 f rec st
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --timeout) to="${2:-}"; shift;;
+      --probe) wait_probe; return $?;;
+      -*) refuse_read "unknown switch $1 (--wait takes an ID, --timeout S, --probe)";;
+      *) id="${1%.req}";;
+    esac
+    shift
+  done
+  case "$to" in ''|*[!0-9]*) refuse_read "--timeout takes a number of seconds, got '$to'";; esac
+  if [ -z "$id" ]; then
+    me="$(seat)"; [ -n "$me" ] || refuse_read "no seat: set S4E_SEAT, or name the request ID"
+    id="$(ls "$REQ_DIR"/*-"$me"-*.req "$REQ_DIR"/serving/*-"$me"-*.req "$REQ_DIR"/done/*-"$me"-*.req 2>/dev/null | sed 's|.*/||; s|\.req$||' | sort | tail -1)"
+    [ -n "$id" ] || refuse_read "$me has filed no request"
+  fi
+  [ -f "$REQ_DIR/$id.req" ] || [ -f "$REQ_DIR/serving/$id.req" ] || [ -f "$REQ_DIR/serving/$id" ] || [ -f "$REQ_DIR/done/$id.req" ] || refuse_read "no request $id, pending, serving or graded, under $REQ_DIR"
+  t0=$(date +%s)
+  until [ -f "$REQ_DIR/done/$id.req" ]; do
+    [ $(( $(date +%s) - t0 )) -ge "$to" ] && { echo "WAITED $id: still pending after $to s; run --wait again, or read it with --read"; return 2; }
+    sleep "${S4E_REQ_WAIT_STEP:-10}"
+  done
+  rec="$(verdict_of "$REQ_DIR/done/$id.req" 1)"; st="${rec%%$'\t'*}"
+  printf 'VERDICT %s\n' "$(printf '%s' "$rec" | awk -F'\t' '{printf "%s %s suite=%s tree=%s rows=%s red=%s", $1, $2, $4, $5, $6, $8}')"
+  case "$st" in GREEN) echo "The store holds the reading: run your row's done."; return 0;; RED) return 1;; *) return 2;; esac
+}
+wait_probe() {
+  local d got rc bad=""
+  d="$(mktemp -d "${TMPDIR:-/tmp}/s4e_req_wait.XXXXXX")" || refuse_read "mktemp failed"
+  mkdir -p "$d/done" "$d/serving"
+  printf 'seat=probe\nsuite=pl-rungs\ntable=tests/prolog\nfiled=x\nentries=r1\ngraded=r1\nrc=0\nserved=2026-11-05 10:00:03 CST tree=abc1234 rc=0 rows=1\n' > "$d/done/20261105T100003-probe-pl-rungs-3.req"
+  printf 'seat=probe\nsuite=pl-rungs\ntable=tests/prolog\nfiled=x\nentries=r1 r2\ngraded=r1\nrc=0\ngraded=r2\nrc=1\nserved=2026-11-05 10:00:04 CST tree=def5678 rc=1 rows=2\n' > "$d/done/20261105T100004-probe-pl-rungs-4.req"
+  printf 'seat=probe\nsuite=pl-rungs\ntable=tests/prolog\nfiled=x\nentries=r9\n' > "$d/20261105T100009-probe-pl-rungs-9.req"
+  got="$(S4E_TEST_REQUEST_DIR="$d" bash "$0" --wait 20261105T100003-probe-pl-rungs-3)"; rc=$?
+  [ "$rc" = 0 ] && grep -q '^VERDICT GREEN 20261105T100003-probe-pl-rungs-3 suite=pl-rungs tree=abc1234 rows=1 red=-' <<<"$got" || bad="$bad green(rc=$rc)"
+  got="$(S4E_TEST_REQUEST_DIR="$d" bash "$0" --wait 20261105T100004-probe-pl-rungs-4)"; rc=$?
+  [ "$rc" = 1 ] && grep -q '^VERDICT RED .* red=r2' <<<"$got" || bad="$bad red(rc=$rc)"
+  got="$(S4E_TEST_REQUEST_DIR="$d" S4E_REQ_WAIT_STEP=1 bash "$0" --wait 20261105T100009-probe-pl-rungs-9 --timeout 2)"; rc=$?
+  [ "$rc" = 2 ] && grep -q '^WAITED .* still pending' <<<"$got" || bad="$bad pending_times_out(rc=$rc)"
+  ( sleep 2; mv "$d/20261105T100009-probe-pl-rungs-9.req" "$d/done/"; printf 'graded=r9\nrc=0\nserved=2026-11-05 10:00:10 CST tree=aaa1111 rc=0 rows=1\n' >> "$d/done/20261105T100009-probe-pl-rungs-9.req" ) &
+  got="$(S4E_TEST_REQUEST_DIR="$d" S4E_SEAT=probe S4E_REQ_WAIT_STEP=1 bash "$0" --wait --timeout 60)"; rc=$?; wait
+  [ "$rc" = 0 ] && grep -q '^VERDICT GREEN 20261105T100009-probe-pl-rungs-9 ' <<<"$got" || bad="$bad newest_of_seat_arrives(rc=$rc)"
+  got="$(S4E_TEST_REQUEST_DIR="$d" bash "$0" --wait no-such-request)"; rc=$?
+  [ "$rc" = 2 ] || bad="$bad unknown_refuses(rc=$rc)"
+  rm -rf "$d"
+  [ -z "$bad" ] && { echo "WAIT_PROBE ok arms=5"; return 0; }
+  echo "WAIT_PROBE RED:$bad"; return 1
+}
 case "${1:-}" in
   --read) shift; read_main "$@"; exit $?;;
+  --wait) shift; wait_main "$@"; exit $?;;
   ""|-h|--help) sed -n '2,/^set -uo/p' "$0" | grep '^#' | sed 's/^# \{0,1\}//'; exit 0;;
   --suites) for e in $SUITES; do printf '%-16s %s\n' "${e%%|*}" "${e#*|}"; done; exit 0;;
   --status) ls "$REQ_DIR"/*.req 2>/dev/null | while read -r f; do printf '%s  %s test(s) on %s\n' "$(basename "$f" .req)" "$(grep -m1 '^entries=' "$f" | cut -c9- | wc -w)" "$(sed -n 's/^engine=//p' "$f" | grep . || echo scrip)"; done; echo "pending: $(ls "$REQ_DIR"/*.req 2>/dev/null | wc -l)"; exit 0;;
@@ -184,3 +239,4 @@ id="$(date -u +%Y%m%dT%H%M%S)-$who-$key-$$"
 tmp="$REQ_DIR/.$id.tmp"
 { echo "seat=$who"; echo "suite=$key"; echo "table=$tab"; echo "filed=$(date '+%F %T %Z')"; echo "entries=$(printf '%s ' $ents | sed 's/ $//')"; } > "$tmp" && mv "$tmp" "$REQ_DIR/$id.req" || refuse "could not write the request"
 echo "REQUESTED $id: $n test(s) of $key for $who. The coo's loop grades them ahead of its round robin, one test at a time in both modes, rows tagged req=$who, and telegrams you the verdicts. Pending now: $(ls "$REQ_DIR"/*.req 2>/dev/null | wc -l)."
+echo "WAIT: a verdict's telegram wakes nobody. Run this in the background and stop; its end wakes your session with the verdict: bash $HERE/s4e_test_request.sh --wait $id"

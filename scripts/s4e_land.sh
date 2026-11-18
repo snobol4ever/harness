@@ -107,11 +107,26 @@ half_note() {   # the landing ends with part of it on origin: said loudly and wr
 }
 refuse() { declare -F ledger > /dev/null && ledger refuse; half_note; echo "LAND REFUSE(2) $*"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 2; }
 red() { declare -F ledger > /dev/null && ledger "red:$1"; half_note; echo "LAND RED stage=$1 $2"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 1; }
+# THE GATE OF A ROW (the chairman 2026-11-18; Lon, on the measured grades of the developer seats: "Well then, help the boys."). A DONE-WHEN that reads the
+# progress store (util_score_row.py from-progress) grades origin, so it cannot gate its own landing (skill gates-and-witnesses section 1), and --row ran it as
+# the gate: MEASURED, the five red:gate landings of developer_03, 04, 05 and 10 since 07:22 CST that day were this one fault, each a whole build and gate round
+# and then a gate script written by hand. For such a row the gate is the entries its criterion names, graded in mode 3 on the landing's own tree
+# (util_entries_green.sh --row); every other row's gate is its DONE-WHEN as before. --row-gate TOPIC prints the gate a landing of that row runs, and runs nothing.
+row_gate_of() {   # TOPIC -> the gate on stdout; rc 2 with the reason on stdout
+    local tf="${S4E_POSTOFFICE:-/home/resources/postoffice}/tasks/$1.task.md" dw
+    [ -f "$tf" ] || { echo "no baton $tf"; return 2; }
+    dw="$(sed -n 's/^DONE-WHEN: //p' "$tf" | head -1)"
+    [ -n "$dw" ] || { echo "the baton of $1 carries no DONE-WHEN"; return 2; }
+    case "$dw" in
+        *util_score_row.py*from-progress*) printf 'bash "${S4E_HARNESS:-/home/harness}/scripts/util_entries_green.sh" --row %q\n' "$1" ;;
+        *) printf '%s\n' "$dw" ;;
+    esac; }
 ORIG_ARGS=("$@")   # fleet-control step 3: the landing re-runs itself under the land class admission below
 while [ $# -gt 0 ]; do
     case "$1" in
         --home) home="${2:-}"; shift 2 ;;
         --row) row="${2:-}"; shift 2 ;;
+        --row-gate) row_gate_of "${2:-}"; exit $? ;;
         --gate) gate="${2:-}"; shift 2 ;;
         --gate-timeout) gt="${2:-}"; shift 2 ;;
         --tries) tries="${2:-}"; shift 2 ;;
@@ -891,9 +906,9 @@ g() { local r="$1"; shift; timeout -k 5 180 git -C "$(rd "$r")" "$@" 7>&- 8>&- 9
 git_state() { local p; p="$(git -C "$(rd "$1")" rev-parse --git-path "$2")"; case "$p" in /*) printf '%s' "$p" ;; *) printf '%s/%s' "$(rd "$1")" "$p" ;; esac; }   # --git-path answers relative to the repo, and this script runs elsewhere
 if [ -n "$row" ]; then
     tf="${S4E_POSTOFFICE:-/home/resources/postoffice}/tasks/$row.task.md"
-    [ -f "$tf" ] || refuse "no baton $tf"
-    gate="$(sed -n 's/^DONE-WHEN: //p' "$tf" | head -1)"
-    [ -n "$gate" ] || refuse "the baton of $row carries no DONE-WHEN"
+    gate="$(row_gate_of "$row")" || refuse "$gate"
+    case "$gate" in *util_entries_green.sh*) rowcalls="$(S4E_POSTOFFICE="${S4E_POSTOFFICE:-/home/resources/postoffice}" bash "$HERE/util_entries_green.sh" --row "$row" --list)" || refuse "${rowcalls#REFUSE(2): } (nothing was built: the DONE-WHEN of $row reads the progress store and cannot gate its own landing)"
+        echo "LAND gate=live: the DONE-WHEN of $row reads the progress store, which grades origin and cannot gate its own landing; the gate is the entries it names, graded in mode 3 on this tree (util_entries_green.sh --row). The store closes the row: file s4e_test_request.sh for them after the landing and wait on it with --wait." ;; esac
 fi
 if [ -n "$row" ] && [ -z "$touches" ]; then touches="$(sed -n 's/^TOUCHES: //p' "$tf" | head -1)"; fi
 if [ "$mode" = push ]; then
