@@ -15,6 +15,14 @@
 import os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.environ.get("S4E_SCRIP") or os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP"); PARSER = os.path.join(ROOT, 'out', 'parser_icon')
 ERR = re.compile(r"expected ';'.*?after the token at line (\d+) col (\d+)")
+# THE ARIZONA VOICE (the grader 2026-11-18, MEASURED: since SCRIP 8ac431b91d the parser speaks Arizona's sentence, `scrip: error 703: "every" missing semicolon
+# or operator` and on its next line `  at FILE:L`, with no column, so ERR matched nothing and every file came back unconverted and unreported, 82 of 82 live
+# Rosetta Unicon blocks UNCHANGED): the token named is the one the missing ';' stands before; it is found on line L and the ';' goes at the end of the code
+# just before it, on L or on the nearest earlier line that holds code (never inside a string or a comment).
+# and a declaration statement left open: `static cache` then `initial cache := ...` reads `error 703: "initial" invalid declaration` (MEASURED: with the ';' after
+# static SCRIP runs it, as unicon does either way); the ';' goes at the end of the local or static line before it.
+DECL703 = re.compile(r'error 703: "(.*?)":? invalid declaration\s*\n\s*at [^\n]*?:(\d+)')
+ERR703 = re.compile(r'error \d+: "(.*?)":? missing (?:semicolon or operator|right brace)\s*\n\s*at [^\n]*?:(\d+)')   # in a { } block two statements with no ';' between read "missing right brace"
 def token_end(line, col):
     i = col - 1
     if i >= len(line): return len(line)
@@ -140,7 +148,7 @@ def parse_error(path):
     first = (r.stderr or '').strip().splitlines()[0] if (r.stderr or '').strip() else 'parse error (no message)'
     if UNRESOLVED.match(first): UNRESOLVED_SEEN[os.path.abspath(path)] = first; return None
     if IMPORTED.match(first): IMPORTED_SEEN[os.path.abspath(path)] = first; return None
-    return first
+    return (r.stderr or '').strip() if (ERR703.search(r.stderr or '') or DECL703.search(r.stderr or '')) else first
 UNRESOLVED_SEEN = {}
 IMPORTED_SEEN = {}
 def string_close(lines, L, C):
@@ -156,13 +164,48 @@ def string_close(lines, L, C):
         if not s.rstrip().endswith('_'): return None
         k += 1; j = 0
     return None
+def before_token(lines, L, tok):
+    """(line index, offset) where the ';' a 703 asks for goes: before the first occurrence of tok on line L outside a string and a comment, at the end of
+    the code before it on that line, or else at the code end of the nearest earlier line holding code. None when tok is not found on line L."""
+    s = lines[L - 1]; q = None; i = 0; at = None
+    while i < len(s):
+        c = s[i]
+        if q:
+            if c == '\\': i += 1
+            elif c == q: q = None
+        elif c in '"\'' and not s.startswith(tok, i): q = c
+        elif c == '#': break
+        elif s.startswith(tok, i) and (i == 0 or not (s[i - 1].isalnum() or s[i - 1] == '_') or not (tok[:1].isalnum() or tok[:1] == '_')):
+            at = i; break
+        i += 1
+    if at is None: return None
+    if s[:at].strip(): return (L - 1, len(s[:at].rstrip()))
+    k = L - 2
+    while k >= 0:
+        e = code_end(lines[k])
+        if e > 0 and lines[k][:e].strip(): return (k, e)
+        k -= 1
+    return None
 def fix(path, check):
     lines = open(path, encoding='latin-1', newline='').read().split('\n'); added = preinsert(lines); cap = max(500, 4 * len(lines) + 4)
     for _ in range(cap):
         err = parse_error(path if not check and not added else write_tmp(path, lines))
         if err is None: break
         m = ERR.search(err)
-        if not m: return added, err
+        if not m:
+            m7 = ERR703.search(err)
+            d7 = None if m7 else DECL703.search(err)
+            if d7:
+                L = int(d7.group(2)); k = L - 2
+                while k >= 0 and not lines[k][:code_end(lines[k])].strip(): k -= 1
+                if k < 0 or not re.match(r'\s*(local|static)\b', lines[k]) or lines[k][:code_end(lines[k])].rstrip().endswith(';'): return added, err.splitlines()[0]
+                e = code_end(lines[k]); lines[k] = lines[k][:e] + ';' + lines[k][e:]; added.append((k + 1, e)); continue
+            if not m7: return added, err.splitlines()[0]
+            L = int(m7.group(2))
+            if L < 1 or L > len(lines): return added, err.splitlines()[0]
+            bt = before_token(lines, L, m7.group(1))
+            if not bt: return added, err.splitlines()[0]
+            k, e = bt; lines[k] = lines[k][:e] + ';' + lines[k][e:]; added.append((k + 1, e)); continue
         L, C = int(m.group(1)), int(m.group(2))
         if L < 1 or L > len(lines): return added, err
         sc = string_close(lines, L, C)
@@ -170,7 +213,7 @@ def fix(path, check):
         before = lines[L - 1]; e = settle(before, token_end(before, C))
         lines[L - 1] = before[:e] + ';' + before[e:]
         err2 = parse_error(write_tmp(path, lines))
-        if err2 is not None and not ERR.search(err2):
+        if err2 is not None and not ERR.search(err2) and not ERR703.search(err2):
             e = code_end(before); lines[L - 1] = before[:e] + ';' + before[e:]
         added.append((L, e))
     else:
