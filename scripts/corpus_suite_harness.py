@@ -9613,7 +9613,9 @@ def main():
     args.lang_explicit = bool(getattr(args, "lang", None))
     if getattr(args, "lang", None) == "snobol4":
         args.lang = ""      # the accepted synonym for the default -- see LANG_CHOICES
-    args.func(args)
+    rc = args.func(args)   # a verb's own return value is the exit status (the probes of unpack read rc 1 and rc 2); None and 0 exit 0 as before: no other verb returns anything else (MEASURED by ast, 17 verbs)
+    if isinstance(rc, int) and not isinstance(rc, bool) and rc:
+        sys.exit(rc)
 
 
 if __name__ == "__main__":
