@@ -741,8 +741,11 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                 _decl[_row.get("entry")] = {c: (_row.get(c) or "").strip() for c in _decl_cols}
                 _oracle_kb[_row.get("entry")] = (int((_row.get("heap_kb") or "").strip() or 131072), int((_row.get("stack_kb") or "").strip() or 4096))
                 _oracle_t[_row.get("entry")] = [_w for _w in (_row.get("compile_args") or "").split() if re.fullmatch(r"-t[1-9][0-9]*", _w)]
-                if (_row.get("dump") or "").strip() in ("1", "2"):   # the dump cell: the ref is cut with sbl -bf -D<n>, as the grade runs scrip --dump=<n> (the grader 2026-11-17)
+                if (_row.get("dump") or "").strip() in ("1", "2") and not DUMP_ONLY:   # the dump cell: the ref is cut with sbl -bf -D<n>, as the grade runs scrip --dump=<n> (the grader 2026-11-17)
                     _oracle_t[_row.get("entry")].append("-D" + (_row.get("dump") or "").strip())
+    if DUMP_ONLY and only:   # --dump N: each named program is cut with sbl -bf -DN, its dump cell written after the build (_write_dump_cells)
+        for _n in only:
+            _oracle_t[_n] = [w for w in _oracle_t.get(_n, []) if not w.startswith("-D")] + ["-D" + DUMP_ONLY]
     if merged:
         print("contract: stderr merged (CONTRACT.tsv) -- every ref is cut from stdout and stderr as one stream", file=sys.stderr)
     if contract["fatal"] == "gradable":
@@ -2352,6 +2355,31 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
     return 0
 
 
+DUMP_ONLY = ""   # --dump N, with --only: the named programs are silent and graded by their termination dump at level N (the grader 2026-11-17)
+
+
+def _write_dump_cells(pkg_dir, names, level):
+    """--dump N: the dump cell of each named entry of PKG/ALL.csv is N (the column added when absent), so the grade runs SCRIP with --dump=N --stlimit on
+    the fact the cut ran sbl -bf -DN on. An entry the build did not absorb has no row and gets nothing. Prints DUMP_CELLS n=K."""
+    import csv as _c
+    f = Path(pkg_dir) / "ALL.csv"
+    if not f.is_file():
+        return
+    with open(f, newline="") as fh:
+        rdr = _c.DictReader(fh); cols = list(rdr.fieldnames or []); rows = list(rdr)
+    if "dump" not in cols:
+        cols.append("dump")
+    n = 0
+    for r in rows:
+        if r.get("entry") in names:
+            r["dump"] = level; n += 1
+    with open(f, "w", newline="") as fh:
+        w = _c.DictWriter(fh, fieldnames=cols, lineterminator="\n", extrasaction="ignore"); w.writeheader()
+        for r in rows:
+            w.writerow({c: (r.get(c) if r.get(c) is not None else "") for c in cols})
+    print(f"DUMP_CELLS n={n} level={level} ({f})", file=sys.stderr)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("package_dir")
@@ -2359,6 +2387,7 @@ def main():
                      help="default snobol4 (blank); selects extension + attribute table + oracle")
     ap.add_argument("--twice", action="store_true",
                     help="run the oracle twice per program and exclude one whose two answers differ (time, randomness, addresses)")
+    ap.add_argument("--dump", default="", choices=["", "1", "2"], help="with --only: the named programs are silent; each is cut with sbl -bf -D<N> and its ALL.csv dump cell set to N, so the grade runs scrip --dump=N --stlimit (the grader 2026-11-17)")
     ap.add_argument("--only", action="append", default=None, metavar="NAME[,NAME...]",
                     help="cut only these programs and splice them into the existing container, every other entry byte-identical (repeatable)")
     ap.add_argument("--any-fpc-mode", action="store_true",
@@ -2416,10 +2445,17 @@ def main():
         only = [n.strip() for a in args.only for n in a.split(",") if n.strip()]
         if not only:
             h.refuse("--only names no program")
+    global DUMP_ONLY
+    if args.dump:
+        if not only or args.lang != "snobol4":
+            h.refuse("--dump N goes with --only NAMES, for SNOBOL4 (sbl's -D# switch)")
+        DUMP_ONLY = args.dump
     if h.pkg_dir_of(str(pkg_dir / f"ALL{LANG_EXT[args.lang]}")) is not None:
         build_files_form(pkg_dir, args.lang, twice=args.twice, only=only, src_ext=args.src_ext or None)
+        if DUMP_ONLY: _write_dump_cells(pkg_dir, set(only), DUMP_ONLY)
         return
     build(pkg_dir, args.lang, twice=args.twice, only=only, src_ext=args.src_ext or None, any_fpc_mode=args.any_fpc_mode)
+    if DUMP_ONLY: _write_dump_cells(pkg_dir, set(only), DUMP_ONLY)
 
 
 if __name__ == "__main__":
