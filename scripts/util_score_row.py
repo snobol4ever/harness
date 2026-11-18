@@ -60,6 +60,9 @@ COLUMNS = {
 }
 PROV_COL = 5
 STALE_WARN_COMMITS = 25
+# the engines that grade what SCRIP excludes for its own extensions, class SCRIP_EXTENSION_KEPT_BY_LON of EXCLUDED.tsv: the same set as
+# corpus_suite_harness.py's PORTS_GRADING_SCRIP_EXTENSIONS and lib_excluded.sh's case (the president's ruling 2026-11-18 15:57 CST)
+PORTS_GRADING_SCRIP_EXTENSIONS = ("dotnet", "jvm")
 
 # ⭐ THE FALLBACK cmd_write USES WHEN A PLAIN OVERWRITE WOULD LOSE PROSE (see cell_prose_loss below), row
 # score-writer-models-the-snobol4-board-cell-so-the-runner-can-write-it. hq_T RULED REFUSE on 2026-09-04
@@ -2108,6 +2111,11 @@ def cmd_from_progress(a):
                     # a SNOBOL4++ extension the port keeps is graded on its port, its mismatch a PASS (corpus_suite_harness.py PORT_EXTENSIONS; Lon 2026-11-18
                     # 10:5x CST: "You handle the difference in the test suite as a PASS, since the oracle is unable to grade."), so it stays in the denominator
                     if port and fn == "EXCLUDED.%s.tsv" % port and line.split("\t")[1:2] == ["SNOBOL4PP_EXTENSION_KEPT_BY_LON"]:
+                        continue
+                    # a SCRIP extension is SCRIP's exclusion alone: a port that grades it (corpus_suite_harness.py PORTS_GRADING_SCRIP_EXTENSIONS, the president's
+                    # ruling 2026-11-18 15:57 CST, the chairman confirming: "an exclusion is of an engine, not of a program") keeps it in its denominator, graded
+                    # against the ref sbl -bf cut; a class named for a port, in its own EXCLUDED.<engine>.tsv, likewise excludes nothing of SCRIP's
+                    if port in PORTS_GRADING_SCRIP_EXTENSIONS and fn == "EXCLUDED.tsv" and line.split("\t")[1:2] == ["SCRIP_EXTENSION_KEPT_BY_LON"]:
                         continue
                     if line.strip() and not line.startswith("#"):
                         n_ = _stem(line.split("\t")[0])

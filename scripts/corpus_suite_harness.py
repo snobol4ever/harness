@@ -8839,7 +8839,43 @@ def read_partition(suite_path):
         refuse(f"{p}: the header is {hdr!r}, not util_suite_partition.py's (entry, part, cluster, shells) -- rebuild it")
     if not rows:
         refuse(f"{p} names no entry")
+    # ⭐ A SCRIP EXTENSION IS SCRIP'S EXCLUSION ALONE: under a port engine an entry EXCLUDED.tsv marks SCRIP_EXTENSION_KEPT_BY_LON that the stored
+    # partition left out is an entry of the core, graded against its ref cut by sbl -bf (port_scrip_extension_entries); under scrip nothing is added
+    _have = {r[0] for r in rows}
+    for _e in port_scrip_extension_entries(p.parent):
+        if _e not in _have:
+            rows.append((_e, "core", "port-scrip-extension", []))
     return p, rows
+
+
+# ⭐ THE ENGINES THAT GRADE WHAT SCRIP EXCLUDES FOR ITS OWN EXTENSIONS (the president's ruling 2026-11-18 15:57 CST, the chairman confirming: "an exclusion is of an
+# engine, not of a program"; seat dotnet's measurement: 26 SNOBOL4 entries in 9 packages marked SCRIP_EXTENSION_KEPT_BY_LON print sbl -bf's answer under
+# snobol4dotnet). The class names SCRIP: SCRIP reserves null, NULL, epsilon and the like by Lon's word, and a port follows SPITBOL and reserves none of them,
+# so under these engines such an entry stays in the denominator and is graded against the oracle's ref; lib_excluded.sh and util_score_row.py read the same set.
+PORTS_GRADING_SCRIP_EXTENSIONS = ("dotnet", "jvm")
+
+
+def port_scrip_extension_entries(pkg_dir):
+    """The ALL.csv entries of pkg_dir that its EXCLUDED.tsv marks SCRIP_EXTENSION_KEPT_BY_LON, when S4E_ENGINE is one of PORTS_GRADING_SCRIP_EXTENSIONS;
+    an empty list under scrip, or with no such row. A row names its program by entry, by path, or by entry plus extension."""
+    e = os.environ.get("S4E_ENGINE", "").strip() or "scrip"
+    xp, cp = Path(pkg_dir) / "EXCLUDED.tsv", Path(pkg_dir) / "ALL.csv"
+    if e not in PORTS_GRADING_SCRIP_EXTENSIONS or not xp.is_file() or not cp.is_file():
+        return []
+    names = [l.split("\t")[0].strip() for l in xp.read_text(encoding="utf-8", errors="replace").splitlines()
+             if l.strip() and not l.startswith("#") and l.split("\t")[1:2] == ["SCRIP_EXTENSION_KEPT_BY_LON"]]
+    if not names:
+        return []
+    import csv as _csv_px
+    with open(cp, encoding="utf-8", errors="replace", newline="") as f:
+        table = [(r.get("entry") or "", r.get("path") or "") for r in _csv_px.DictReader(f)]
+    out = []
+    for n in names:
+        for ent, pth in table:
+            if ent and (n == ent or n == pth or n.rsplit(".", 1)[0] == ent):
+                out.append(ent)
+                break
+    return out
 
 
 def select_partition(suite_path, name):
