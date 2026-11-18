@@ -1071,7 +1071,10 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     _gfx = bool(out_files and h.SCREEN_FILE in out_files) or (src.parent / f"{src.stem}.display").is_file() or any(fnmatch.fnmatch(name, g) for g in contract["graphics_oracle"].split())
                     return h.run_unicon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text, prog_args=prog_args, out_files=out_files,
                                                                          merge_stderr=_ms, side_env=h.side_env_for_source(src, Path(_iso_dir)), full_refusal=(contract["fatal"] == "gradable"), graphics=_gfx)
-                elif lang == "icon" and (merged or _icon_sidecar_declared(src)):
+                elif lang == "icon" and (merged or _icon_sidecar_declared(src) or Path(src).stem.endswith("_driver")):
+                    # ⭐ A LIBRARY'S DRIVER IS CUT HERE TOO (the grader 2026-11-18): NAME_driver links its library, and only the built oracle translates a library
+                    # a link names that has no ucode (_oracle_translate_linking); the one-step driver of run_oracle answered every rosetta-icon driver EMPTY, MEASURED:
+                    # 69 of 69, while icont -c then icont and iconx by hand print the driver's lines. Its own stream is kept, stdout alone in a stdout-only package.
                     # ⭐ AN ENTRY THAT DECLARES A SIDECAR IS CUT HERE WHATEVER THE PACKAGE'S STDERR CELL (officer_04 2026-11-16, row
                     # rosetta-icon-ten-entries-answer-the-clock-the-directory-or-iconxs-stack-and-are-cut-under-sidecars, the cfo's design): NAME.env, NAME.pin,
                     # NAME.shims/ or NAME.alone beside an Icon source is applied by the grade in every package, so its ref is cut through the built oracle under it,
