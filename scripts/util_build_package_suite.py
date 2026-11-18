@@ -741,6 +741,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                 _decl[_row.get("entry")] = {c: (_row.get(c) or "").strip() for c in _decl_cols}
                 _oracle_kb[_row.get("entry")] = (int((_row.get("heap_kb") or "").strip() or 131072), int((_row.get("stack_kb") or "").strip() or 4096))
                 _oracle_t[_row.get("entry")] = [_w for _w in (_row.get("compile_args") or "").split() if re.fullmatch(r"-t[1-9][0-9]*", _w)]
+                if (_row.get("dump") or "").strip() in ("1", "2"):   # the dump cell: the ref is cut with sbl -bf -D<n>, as the grade runs scrip --dump=<n> (the grader 2026-11-17)
+                    _oracle_t[_row.get("entry")].append("-D" + (_row.get("dump") or "").strip())
     if merged:
         print("contract: stderr merged (CONTRACT.tsv) -- every ref is cut from stdout and stderr as one stream", file=sys.stderr)
     if contract["fatal"] == "gradable":

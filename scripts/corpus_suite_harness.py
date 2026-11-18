@@ -775,6 +775,34 @@ def _oracle_translate_linking(argv, timeout, d, translator):
     return kind, out, err, rc
 
 
+def dump_cell_probe():
+    """--probe-dump (the grader 2026-11-17): a scratch package of one silent SNOBOL4 program, its ref the oracle's termination dump (sbl -bf -D1). With its
+    ALL.csv dump cell 1 the entry PASSes in mode 3 (SCRIP run with --dump=1 --stlimit); with the cell empty it FAILs, SCRIP printing nothing. Prints
+    DUMP_PROBE cell=ok none=fails, rc 0; RED rc 1."""
+    t = Path(tempfile.mkdtemp(prefix="dump_probe_", dir=os.environ.get("TMPDIR") or None))
+    try:
+        pkg = t / "pkg"; pkg.mkdir()
+        (pkg / "silent.sno").write_text("        N = 42\n        S = 'hello'\nEND\n")
+        sbl = subprocess.run(["bash", "-c", f". '{HARNESS_SCRIPTS / 'lib_oracle_flags.sh'}' && sbl_correctness_bin"], capture_output=True, text=True).stdout.strip()
+        r = subprocess.run([sbl, "-bf", "-D1", "silent.sno"], cwd=str(pkg), capture_output=True, stdin=subprocess.DEVNULL, timeout=60)
+        if r.returncode != 0 or b"dump of natural variables" not in r.stdout:
+            refuse(f"--probe-dump: the oracle printed no dump under -D1 (rc {r.returncode}); its sbl lacks the switch")
+        (pkg / "silent.out").write_bytes(r.stdout)
+        def grade(cell):
+            (pkg / "ALL.csv").write_text("entry,path,timeout_s,heap_kb,stack_kb,dump\n" + f"silent,silent.sno,60,131072,4096,{cell}\n")
+            env = dict(os.environ, S4E_ONE_RUNNER_FIXTURE="--probe-dump: a planted package, not a board", S4E_PROGRESS_DB=str(t / "progress.tsv"))
+            o = subprocess.run([sys.executable, os.path.abspath(__file__), "run", str(pkg / "ALL.sno"), str(pkg / "ALL.ref"), "--lang", "snobol4", "--modes", "m3"],
+                               stdin=subprocess.DEVNULL, capture_output=True, text=True, env=env, timeout=600).stdout
+            m = re.search(r"^SUITE_BOARD .*\bm3_n=(\d+) m3_pass=(\d+)", o, re.M)
+            return (int(m.group(1)), int(m.group(2))) if m else None
+        g1, g0 = grade("1"), grade("")
+        v1 = "ok" if g1 == (1, 1) else f"RED({g1})"; v0 = "fails" if g0 == (1, 0) else f"RED({g0})"
+        print(f"DUMP_PROBE cell={v1} none={v0}")
+        return 0 if (v1, v0) == ("ok", "fails") else 1
+    finally:
+        shutil.rmtree(t, ignore_errors=True)
+
+
 def oracle_link_probe():
     """--probe-oracle-link (the grader 2026-11-17): a planted program that links a library standing beside it as source alone is translated by each oracle's
     translator through its built runner and answers its line, never TRANSLATE: Icon (run_icon_built_oracle, icont) and Unicon (run_unicon_built_oracle).
@@ -7807,7 +7835,7 @@ def oracle_args_declarations(src_path):
 # binary from scrip --compile -S both read the source as if it began with ':- use_subsumptive_tabling.' (an open call then a subsumed one: 1 table,
 # as XSB -S; 2 without), and the 39 xsb_tests runs ORACLE_RUNS.tsv records with -S declare it (test_gate_xsb_an_oracle_switch_is_the_entrys_compile_args.sh).
 # --dialect=unicon joins 2026-11-04 (cto, CTO-473): a markerless UniTests program is a Unicon program because the package says so; the driver turns the switch into the per-program Unicon state a class, package or import marker sets.
-COMPILE_ARGS_ADMITTED = ("--stlimit", "--dialect=gnu", "--dialect=unicon", "-S")
+COMPILE_ARGS_ADMITTED = ("--stlimit", "--dialect=gnu", "--dialect=unicon", "-S", "--dump=1", "--dump=2")
 # THE DIALECT COLUMN (run-switches steps 3 and 11, CTO-588 and the cto's step 11; CIO-118): an index's dialect cell is the entry's dialect switch,
 # scrip --dialect=CELL at the compile step in both modes, read by the package switch and by this per-process road alike; a row that also carries
 # a dialect word in compile_args is refused (two answers to one question). With it a package prelude that only named the dialect leaves.
@@ -8142,7 +8170,7 @@ def read_command_line_columns(src_path, entries, modes=None):
     import csv as _csvm
     with open(csv_path, newline="") as f:
         rdr = _csvm.DictReader(f)
-        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s", "grader", "cwd", "stage_name", "dialect", "fixtures", "env", "in_files") if rdr.fieldnames and c in rdr.fieldnames]
+        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s", "grader", "cwd", "stage_name", "dialect", "fixtures", "env", "in_files", "dump") if rdr.fieldnames and c in rdr.fieldnames]
         if not cols:
             return
         rows = [(n, r) for n, r in enumerate(rdr, 2)]
@@ -8163,6 +8191,15 @@ def read_command_line_columns(src_path, entries, modes=None):
             if any(w.startswith("--dialect=") for w in (e.compile_args or [])):
                 refuse(f"{where}: {e.name} names its dialect in the dialect cell AND in compile_args -- one declaration")
             e.compile_args = list(e.compile_args or []) + ["--dialect=" + _dl]
+        # THE dump CELL (Lon 2026-11-17 14:1x and 14:3x CST, in the grader's window: a silent program is graded by its end state, &DUMP, and "We should
+        # enhance the SPITBOL to accept a dump command-line switch"; sbl -D# since x64 1ebcf3e, scrip --dump=N since SCRIP 054da1d16): 1 or 2, the level of the
+        # termination dump the entry is graded by. SCRIP is run with --dump=N and --stlimit (the statement keywords the dump prints are kept under that switch
+        # alone, skill snobol4 section 7); the builder cuts the ref with sbl -bf -DN, the same cell, so the two sides read one fact.
+        _dp = (row.get("dump") or "").strip()
+        if _dp:
+            if _dp not in ("1", "2"):
+                refuse(f"{where}: dump {_dp!r} is not 1 or 2 (the level of &DUMP the entry is graded by), or empty")
+            e.compile_args = list(e.compile_args or []) + ["--dump=" + _dp] + ([] if "--stlimit" in (e.compile_args or []) else ["--stlimit"])
         ra = validate_args_cell(row.get("run_args"), "run_args", where)
         if ra:
             if e.argv:
@@ -9179,6 +9216,8 @@ def main():
         sys.exit(tap_cases_probe())
     if sys.argv[1:] == ["--probe-source"]:
         sys.exit(source_probe())
+    if sys.argv[1:] == ["--probe-dump"]:
+        sys.exit(dump_cell_probe())
     if sys.argv[1:] == ["--probe-oracle-link"]:
         sys.exit(oracle_link_probe())
     if sys.argv[1:] == ["--probe-one-container"]:
