@@ -24,6 +24,7 @@ extern void rt_gc_visit_icnx_descr(void *d);
 extern void rt_gc_run_loc_list(const char *const *const *list, long n);
 extern void rt_gc_root_fn_add(void (*fn)(void));
 extern void *xwin_list_new(void) __attribute__((weak));
+extern long xwin_list_reals(void *d, long i, long j, double *out, void *bad) __attribute__((weak));
 extern void rt_icn_set_errortext(int code) __attribute__((weak));
 extern struct descrip *const uxw_root_descrs[];
 extern const long uxw_root_descr_count;
@@ -178,13 +179,10 @@ struct b_list *alclist(uword size, uword nslots) { (void)size; (void)nslots; ret
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 static void uxw_no3d(void) { err_msg(121, (dptr)0); }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-struct b_list *alclisthdr(uword size, union block *bptr) { (void)size; (void)bptr; uxw_no3d(); return (struct b_list *)0; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-struct b_realarray *alcrealarray(uword n) { (void)n; uxw_no3d(); return (struct b_realarray *)0; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 int c_traverse(struct b_list *hp, struct descrip *res, int position) { (void)hp; (void)position; if (res) { res->dword = D_Null; res->vword.integr = 0; } return 1; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-int cplist2realarray(dptr dp, dptr dp2, word i, word j, word skipcopyelements) { (void)dp; (void)dp2; (void)i; (void)j; (void)skipcopyelements; uxw_no3d(); return RunError; }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define UXW_PRIV ((word)0x5558570000000000L)
 #define UXW_OWNED ((word)0x0000000100000000L)
@@ -209,6 +207,44 @@ struct b_list *uxw_alclist3d(uword size, uword nslots) {
     h->title = T_List; h->id = UXW_PRIV | UXW_OWNED | (uxw_idc++ & 0xffffffffL); h->listhead = h->listtail = (union block *)e;
     e->listprev = e->listnext = (union block *)h;
     return h;
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+struct b_realarray *alcrealarray(uword n) {
+    size_t sz = sizeof(struct b_realarray) + (size_t)(n > 1 ? n - 1 : 0) * sizeof(double);
+    struct b_realarray *a = calloc(1, sz);
+    if (!a) return (struct b_realarray *)0;
+    a->title = T_Realarray; a->blksize = (word)sz;
+    return a;
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+struct b_list *alclisthdr(uword size, union block *bptr) {
+    struct b_list *h;
+    if (!bptr || BlkType(bptr) != T_Realarray) { uxw_no3d(); return (struct b_list *)0; }
+    h = calloc(1, sizeof *h);
+    if (!h) return (struct b_list *)0;
+    h->title = T_List; h->size = (word)size; h->id = UXW_PRIV | UXW_OWNED | (uxw_idc++ & 0xffffffffL); h->listhead = h->listtail = bptr;
+    ((struct b_realarray *)bptr)->listp = (union block *)h;
+    return h;
+}
+/*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+int cplist2realarray(dptr dp, dptr dp2, word i, word j, word skipcopyelements) {
+    word size = j - i;
+    struct b_realarray *ap2 = alcrealarray((uword)size);
+    if (!ap2) return RunError;
+    if (!skipcopyelements) {
+        if (dp->dword == D_List) {
+            long r = xwin_list_reals ? xwin_list_reals(dp, (long)i, (long)j, ap2->a, (void *)0) : -2;
+            if (r == -2) uxw_no3d();
+            if (r != size) { free(ap2); return RunError; }
+        } else {
+            dp = &dp[i];
+            for (word k = 0; k < size; k++) if (!cnv_c_dbl(dp++, &ap2->a[k])) { free(ap2); return RunError; }
+        }
+    }
+    dp2->vword.bptr = (union block *)alclisthdr((uword)size, (union block *)ap2);
+    dp2->dword = D_List;
+    if (!dp2->vword.bptr) { free(ap2); return RunError; }
+    return Succeeded;
 }
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 struct b_record *alcrecd(int nflds, union block *recptr) {
@@ -280,6 +316,7 @@ static void uxw_free_rec(struct b_record *r) {
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 static void uxw_free_list(struct b_list *h) {
     struct b_lelem *e = (struct b_lelem *)h->listhead;
+    if (e && BlkType(e) == T_Realarray) { free(e); free(h); return; }
     while (e && (union block *)e != (union block *)h) {
         struct b_lelem *nx = (struct b_lelem *)e->listnext;
         for (word i = 0; i < e->nused; i++) {
@@ -308,6 +345,12 @@ static void uxw_by_value(dptr d) {
         struct b_list *h = (struct b_list *)d->vword.bptr;
         l.dword = D_List; l.vword.bptr = xwin_list_new ? (union block *)xwin_list_new() : (union block *)0;
         if (!l.vword.bptr) return;
+        if (BlkType(h->listhead) == T_Realarray) {
+            struct b_realarray *ra = (struct b_realarray *)h->listhead;
+            for (word i = 0; i < h->size; i++) { struct b_real r; struct descrip f; r.title = T_Real; r.realval = ra->a[i]; f.dword = D_Real; f.vword.bptr = (union block *)&r; c_put(&l, &f); }
+            *d = l;
+            return;
+        }
         for (struct b_lelem *e = (struct b_lelem *)h->listhead; e && (union block *)e != (union block *)h; e = (struct b_lelem *)e->listnext)
             for (word i = 0; i < e->nused; i++) { struct descrip f = e->lslots[(e->first + i) % e->nslots]; uxw_by_value(&f); c_put(&l, &f); }
         *d = l;
