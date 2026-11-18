@@ -743,6 +743,11 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                 _oracle_t[_row.get("entry")] = [_w for _w in (_row.get("compile_args") or "").split() if re.fullmatch(r"-t[1-9][0-9]*", _w)]
                 if (_row.get("dump") or "").strip() in ("1", "2") and not DUMP_ONLY:   # the dump cell: the ref is cut with sbl -bf -D<n>, as the grade runs scrip --dump=<n> (the grader 2026-11-17)
                     _oracle_t[_row.get("entry")].append("-D" + (_row.get("dump") or "").strip())
+    if STDERR_ONLY and only:   # --stderr merged, with --only: each named entry's stderr cell is merged before its cut, so its ref is stdout and stderr as one stream (the grader 2026-11-18)
+        if "stderr" not in _decl_cols:
+            _decl_cols.append("stderr")
+        for _n in only:
+            _decl.setdefault(_n, {c: "" for c in _decl_cols})["stderr"] = STDERR_ONLY
     if DUMP_ONLY and only:   # --dump N: each named program is cut with sbl -bf -DN, its dump cell written after the build (_write_dump_cells)
         for _n in only:
             _oracle_t[_n] = [w for w in _oracle_t.get(_n, []) if not w.startswith("-D")] + ["-D" + DUMP_ONLY]
@@ -1092,7 +1097,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None,
                     _gfx = bool(out_files and h.SCREEN_FILE in out_files) or (src.parent / f"{src.stem}.display").is_file() or any(fnmatch.fnmatch(name, g) for g in contract["graphics_oracle"].split())
                     return h.run_unicon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text, prog_args=prog_args, out_files=out_files,
                                                                          merge_stderr=_ms, side_env=h.side_env_for_source(src, Path(_iso_dir)), full_refusal=(contract["fatal"] == "gradable"), graphics=_gfx)
-                elif lang == "icon" and (merged or _icon_sidecar_declared(src) or Path(src).stem.endswith("_driver")):
+                elif lang == "icon" and (merged or _ms or _icon_sidecar_declared(src) or Path(src).stem.endswith("_driver")):   # _ms: an entry whose own stderr cell is merged (--stderr merged) is cut as a merged package cuts it, its translator kept apart
                     # ⭐ A LIBRARY'S DRIVER IS CUT HERE TOO (the grader 2026-11-18): NAME_driver links its library, and only the built oracle translates a library
                     # a link names that has no ucode (_oracle_translate_linking); the one-step driver of run_oracle answered every rosetta-icon driver EMPTY, MEASURED:
                     # 69 of 69, while icont -c then icont and iconx by hand print the driver's lines. Its own stream is kept, stdout alone in a stdout-only package.
@@ -1630,7 +1635,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
     if set(hdr) - known or "entry" not in ix or "rank" not in ix:
         h.refuse(f"splice gate: {f_csv}'s header is not one the splice can fill: unknown {sorted(set(hdr) - known)}")
     for e in entries:
-        for _col, _need in (("out_files", getattr(e, "out_files", None)), ("compare", _cm_val(e)), ("stderr", merged), ("stage", e.name in staged), ("fixtures", e.name in FX_STAGED or e.name in FX_FOLDER)):
+        for _col, _need in (("out_files", getattr(e, "out_files", None)), ("compare", _cm_val(e)), ("stderr", merged or bool(STDERR_ONLY)), ("stage", e.name in staged), ("fixtures", e.name in FX_STAGED or e.name in FX_FOLDER)):
             if _need and _col not in ix:
                 h.refuse(f"splice gate: {e.name} needs a {_col} cell and {f_csv} has no {_col} column -- a whole rebuild adds it")
     dialect_cell = {n: ("fpc" if d == "fpc-default" else d) for n, d in dialects} if "dialect" in ix else {}
@@ -1647,7 +1652,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
         v = {"entry": e.name, "origin": f"{pkg_dir.name}__{e.name}", "package": pkg_dir.name, "n_lines": len(e.sno_lines), "stdin": 1 if e.stdin else 0,
              "want_rc": e.want_rc, "heap_kb": m.DEFAULT_HEAP_KB, "stack_kb": m.DEFAULT_STACK_KB, "run_args": "", "mode_gap_s": "", "timeout_s": "",
              "compile_args": contract["unmarked_compile_args"] if contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "",
-             "out_files": " ".join(getattr(e, "out_files", None) or []), "stderr": "merged" if merged else "", "compare": _cm_val(e),
+             "out_files": " ".join(getattr(e, "out_files", None) or []), "stderr": "merged" if (merged or STDERR_ONLY) else "", "compare": _cm_val(e),
              "stage": "upstream" if e.name in staged else "", "fixtures": "folder" if e.name in FX_FOLDER else ("staged" if e.name in FX_STAGED else ""), "dialect": dialect_cell.get(e.name, ""), "answer": ("" if staged[e.name] == "stdout" else staged[e.name]) if e.name in staged else ""}
         v.update({c: flags_row[c] for c, _fn in cols})
         if e.name in row_at:
@@ -2423,6 +2428,7 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
     return 0
 
 
+STDERR_ONLY = ""   # --stderr merged, with --only: the named entries' stderr cell (the grader 2026-11-18; Lon: an oracle error is an answer, its stream graded)
 DUMP_ONLY = ""   # --dump N, with --only: the named programs are silent and graded by their termination dump at level N (the grader 2026-11-17)
 
 
@@ -2561,6 +2567,7 @@ def main():
                      help="default snobol4 (blank); selects extension + attribute table + oracle")
     ap.add_argument("--twice", action="store_true",
                     help="run the oracle twice per program and exclude one whose two answers differ (time, randomness, addresses)")
+    ap.add_argument("--stderr", default="", choices=["", "merged"], help="with --only: the named entries' stderr cell is set before the cut, so an entry the oracle answers on stderr alone (a translator's refusal, a run-time error) is cut with that stream, in a package whose CONTRACT merges none (the grader 2026-11-18)")
     ap.add_argument("--dump", default="", choices=["", "1", "2"], help="with --only: the named programs are silent; each is cut with sbl -bf -D<N> and its ALL.csv dump cell set to N, so the grade runs scrip --dump=N --stlimit (the grader 2026-11-17)")
     ap.add_argument("--only", action="append", default=None, metavar="NAME[,NAME...]",
                     help="cut only these programs and splice them into the existing container, every other entry byte-identical (repeatable)")
@@ -2626,6 +2633,11 @@ def main():
         only = [n.strip() for a in args.only for n in a.split(",") if n.strip()]
         if not only:
             h.refuse("--only names no program")
+    global STDERR_ONLY
+    if args.stderr:
+        if not only:
+            h.refuse("--stderr merged goes with --only NAMES")
+        STDERR_ONLY = args.stderr
     if args.dump:
         if not only or args.lang != "snobol4":
             h.refuse("--dump N goes with --only NAMES, for SNOBOL4 (sbl's -D# switch)")
