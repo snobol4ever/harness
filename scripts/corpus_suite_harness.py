@@ -6902,7 +6902,7 @@ def _entry_note(xfail, v, shard_tag=""):
     return " ".join(toks)
 
 
-PROGRESS_PACKAGE_KEYS = {"arizona_tests": "arizona", "jcon_tests": "jcon", "unicon_tests": "unitests", "ipl": "ipl", "csnobol4_suite": "csnobol4", "gimpel": "gimpel",
+PROGRESS_PACKAGE_KEYS = {"unicon_gfx_witnesses": "unicon-gfx-witnesses", "arizona_tests": "arizona", "jcon_tests": "jcon", "unicon_tests": "unitests", "ipl": "ipl", "csnobol4_suite": "csnobol4", "gimpel": "gimpel",
                          "snoflake_suite": "snoflake", "aisnobol": "aisnobol", "dotnet": "dotnet", "swi_tests": "swi", "logtalk_iso": "logtalk", "gnu_prolog": "gnu",
                          "inriasuite": "inria", "fpc_tests": "fpc", "pat": "pat", "spitbol_testpgms": "testpgms", "roast": "roast",
                          "trealla_tests": "trealla", "xsb_tests": "xsb", "spitbol_x64_tests": "spitbol_x64", "spitbol_x32_tests": "spitbol_x32",
