@@ -35,6 +35,8 @@ u=(); stack_kb=""; sbsw=(-bf)
 while [ $# -gt 0 ]; do
   case "$1" in
     -d*) sbsw+=("$1"); shift ;;
+    # sbl's page width -tN and its -D# (&DUMP before the first statement) go to the jar, which takes them as sbl does (snobol4jvm 0912956; seat jvm 2026-11-18)
+    -t[0-9]*|-D[0-9]*) sbsw+=("$1"); shift ;;
     -s*) sw="${1#-s}"; n="${sw%%[!0-9]*}"; sfx="${sw#"$n"}"
          case "$sfx" in k|K) stack_kb="$n" ;; m|M) stack_kb=$(( n * 1024 )) ;; g|G) stack_kb=$(( n * 1048576 )) ;; "") stack_kb=$(( (n + 1023) / 1024 )) ;; *) stack_kb="" ;; esac
          [ -n "$n" ] || stack_kb=""

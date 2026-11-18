@@ -2314,12 +2314,15 @@ def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb, compile_args=Non
     # entries declare -t400, the page width their ref was cut under, and snobol4dotnet, given it, prints sbl's page; without it, its page
     # is the 120 columns of the default): the page width -tN alone, and only for snobol4dotnet, whose runner hands every switch to the
     # engine; snobol4jvm's runner reads a switch it does not map as the program's name, so it gets none until it takes one
-    port_switches = [w for w in (compile_args or []) if re.fullmatch(r"-t[0-9]+", w)] if paths["engine"] == "dotnet" else []
+    # snobol4jvm takes -tN too since its runner hands sbl's switches to the jar (seat jvm 2026-11-18; MEASURED: gate_cases_snobol4's four -t400 entries)
+    port_switches = [w for w in (compile_args or []) if re.fullmatch(r"-t[0-9]+", w)] if paths["engine"] in ("dotnet", "jvm") else []
     # THE DUMP CELL REACHES snobol4dotnet AS SPITBOL'S -D# (seat dotnet 2026-11-18; MEASURED on corpus 00ca4cc2f: the entries graded by
     # their termination dump, cut with sbl -bf -D1, read FAIL under S4E_ENGINE=dotnet with the port's output empty, snolib 5 of 68, since
     # --dump=N is SCRIP's spelling and was dropped here with --stlimit): --dump=N is passed as -DN, which snobol4dotnet 1b33d04 takes as
     # sbl does ("set &DUMP to # before the first statement"); snobol4jvm gets none until its runner takes one, as for -tN above
-    if paths["engine"] == "dotnet":
+    # and so does snobol4jvm since 0912956, which takes -D# as sbl does (seat jvm 2026-11-18; MEASURED: csnobol4_suite collect and loop, cut with sbl -bf -D1, read
+    # FAIL under S4E_ENGINE=jvm with the port's output empty; with the switch the port's dump equals sbl's byte for byte)
+    if paths["engine"] in ("dotnet", "jvm"):
         port_switches += ["-D" + w[len("--dump="):] for w in (compile_args or []) if re.fullmatch(r"--dump=[0-9]+", w)]
     argv = ["bash", str(HARNESS_SCRIPTS / ENGINE_RUNNERS[paths["engine"]])] + _size_switches(heap_kb, stack_kb) \
         + port_switches + _host_u_switch(sno_path, prog_argv) + [Path(sno_path).name]
