@@ -202,6 +202,10 @@ drain_one() {   # <given patch>: one landing; rc 0 landed, 1 red (the patch is t
     ( cd "${S4E_HOME:-$WT}" && S4E_SEAT=grader S4E_LAND_IGNORE_MAIL="${S4E_LAND_IGNORE_MAIL:-the drain lands a patch of another seat on its own proof}" bash "$LANDER" --home "$WT" --gate "cd \"$d\" && ( $proof )" "$r" --regate own > "$log" 2>&1 )
     if grep -q '^LAND ok' "$log"; then out=ok; mv "$g" "$GIVES/done/"; echo "LANDED $b by $giver: $(grep -o 'pushed=[^ ]*' "$log" | tail -1)"; fin; return 0; fi
     git -C "$d" checkout -q --detach origin/main 2>/dev/null
+    # A RED AT THE FETCH IS THE FETCH'S, NEVER THE PATCH'S (the cio 2026-11-18 00:1x UTC, MEASURED on patch 20261118T000508Z-officer_06-corpus-3911933: LAND RED
+    # stage=fetch, error: cannot lock ref 'refs/remotes/origin/main': is at 7df4b9bd but expected eb5fdf95, two fetches of one repository racing, the two lanes or a
+    # lane and the cycle): the patch is held and tried again at the next pass, never returned to its giver as red.
+    if grep -q '^LAND RED stage=fetch' "$log"; then echo "HELD $b: the landing's fetch of origin failed ($(grep '^LAND RED stage=fetch' "$log" | tail -1 | cut -c1-140)); not the patch's fault, it is tried again"; fin; return 2; fi
     if grep -q '^LAND RED' "$log"; then
         out="red:$(grep -o '^LAND RED stage=[a-z:_A-Za-z0-9]*' "$log" | tail -1 | sed 's/.*stage=//')"; mv "$g" "$GIVES/refused/"; tail -5 "$log" | cut -c1-400 > "$GIVES/refused/${b%.patch}.why"
         echo "REFUSED $b by $giver: $(grep '^LAND RED' "$log" | tail -1 | cut -c1-200); log $log"; drain_tell "$giver" "$b" "patch $b read red on its own proof ($out); the log is $log; cure it and give it again"; fin; return 1
@@ -435,6 +439,15 @@ probe() {
     o="$(dr 2>&1)"; rc=$?
     [ "$rc" = 1 ] && [ -z "$(ls "$T/gives"/*.patch 2>/dev/null)" ] && [ "$(ls "$T/gives/refused"/*.patch | wc -l)" = 2 ] && printf '%s' "$o" | grep -q '^TELL x: .*could not run or measure' && ! $g --git-dir="$T/origin.git" cat-file -e main:n5 2>/dev/null || why="$why arm 12: a patch whose proof could not measure a second time was not returned to its giver (rc $rc);"
     grep -q '^grader send x your-patch-.*-came-back-from-the-graders-drain --stdin' "$T/told" 2>/dev/null && grep -q 'read red on its own proof' "$T/told" && grep -q 'LAND RED stage=gate' "$T/told" || why="$why arm 13: the drain did not send the giver of a red patch a telegram as the grader, with the line and the landing's last lines;"
+    # ARM 13b, A RED AT THE FETCH (the cio 2026-11-18): a landing that reads LAND RED stage=fetch leaves its patch in the queue, held, its giver untold; the next pass lands it
+    printf 'n7\n' > "$T/n7"; mk n7; $g -C "$T/top/corpus" fetch -q origin
+    run bash "$me" give corpus "$T/n7.patch" "adds n7, its landing's fetch races once" --proof 'test -f n7' > /dev/null 2>&1
+    printf '%s\n' '#!/bin/bash' "echo \"LAND RED stage=fetch repo=corpus error: cannot lock ref 'refs/remotes/origin/main': is at a but expected b\"; exit 1" > "$T/lander-fetchrace.sh"
+    : > "$T/told.before13b"; cp "$T/told" "$T/told.before13b" 2>/dev/null
+    o="$(SEATAS=grader run env S4E_GIVES_WT="$T/wt" S4E_TAKE_LANDER="$T/lander-fetchrace.sh" S4E_TAKE_MSG="$T/msg.sh" bash "$me" drain 2>&1)"
+    printf '%s' "$o" | grep -q '^HELD .*-x-corpus-.*fetch of origin failed' && [ "$(ls "$T/gives"/*.patch 2>/dev/null | wc -l)" = 1 ] && cmp -s "$T/told" "$T/told.before13b" || why="$why arm 13b: a landing red at its fetch did not leave the patch held and its giver untold ($(printf '%s' "$o" | tail -1 | cut -c1-120));"
+    o="$(dr 2>&1)"
+    [ -z "$(ls "$T/gives"/*.patch 2>/dev/null)" ] && [ "$($g --git-dir="$T/origin.git" show main:n7 2>/dev/null)" = n7 ] || why="$why arm 13b: the held patch did not land at the next pass;"
     printf 'n6\n' > "$T/n6"; mk n6; $g -C "$T/top/corpus" fetch -q origin
     ( exec 9> "$T/gives/.drain.lock"; flock -n 9; : > "$T/held"; while [ -e "$T/held" ]; do sleep 0.1; done ) &
     until [ -e "$T/held" ]; do sleep 0.1; done; o="$(run bash "$me" give corpus "$T/n6.patch" "adds n6 while a drain runs" --proof 'test -f n6' 2>&1)"; rc=$?; rm -f "$T/held"; wait
