@@ -2147,7 +2147,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     # directory, which no frozen .ref can ever match. cwd (set below) is what makes the bare name
     # still resolve to the right file.
     if paths["engine"] != "scrip":
-        return classify(_engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb), timeout, expected_text, cwd=str(Path(sno_path).parent),
+        return classify(_engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb, compile_args), timeout, expected_text, cwd=str(Path(sno_path).parent),
                         env=dict(os.environ, SNO_LIB=str(paths["inc"])), stdin_text=stdin_text, want_rc=want_rc, mask=mask,
                         out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
     argv = stdbuf_wrap(paths, [str(paths["scrip_bin"]), "--run"] + _compile_switches(paths, compile_args) + _source_path_switch(source_path) + _size_switches(heap_kb, stack_kb) + _host_u_switch(sno_path, prog_argv) + (list(source_files) if source_files else [(str(Path(sno_path).resolve()) if run_cwd else Path(sno_path).name)]))
@@ -2184,13 +2184,18 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     return classify(argv, timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file, voice=_entry_merged_voice(compile_args))
 
 
-def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
+def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb, compile_args=None):
     """THE PORT ARM OF run_m3 (R-1822): a port engine's program runs through its own runner script beside this file, called the way scrip
     --run is: bash run_<engine>.sh [-dNk] [-sNk] [-u STR] <name> [-- argv]. The runner maps the SPITBOL-shaped switches onto its engine and
     adds the language flags the refs were cut under; the unit's compile_args are SCRIP's own switches (--stlimit, clause 8 (f)) and are not
     passed, since SPITBOL and the ports always count statements. cwd, stdin, masks, want_rc and the refs are run_m3's, shared with SCRIP."""
+    # A SPITBOL SWITCH OF THE UNIT'S compile_args REACHES A PORT THAT TAKES IT (seat dotnet 2026-11-17; MEASURED: four gate_cases_snobol4
+    # entries declare -t400, the page width their ref was cut under, and snobol4dotnet, given it, prints sbl's page; without it, its page
+    # is the 120 columns of the default): the page width -tN alone, and only for snobol4dotnet, whose runner hands every switch to the
+    # engine; snobol4jvm's runner reads a switch it does not map as the program's name, so it gets none until it takes one
+    port_switches = [w for w in (compile_args or []) if re.fullmatch(r"-t[0-9]+", w)] if paths["engine"] == "dotnet" else []
     argv = ["bash", str(HARNESS_SCRIPTS / ENGINE_RUNNERS[paths["engine"]])] + _size_switches(heap_kb, stack_kb) \
-        + _host_u_switch(sno_path, prog_argv) + [Path(sno_path).name]
+        + port_switches + _host_u_switch(sno_path, prog_argv) + [Path(sno_path).name]
     if prog_argv:
         argv = argv + ["--"] + [str(a) for a in prog_argv]
     return stdbuf_wrap(paths, argv)
