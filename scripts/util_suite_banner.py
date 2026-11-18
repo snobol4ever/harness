@@ -48,6 +48,19 @@ def rpad(s, width):
     Never truncates, same as pad(): a wide cell pushes its row rather than lying about its value."""
     d = dw(s)
     return ' ' * (width - d) + s if d < width else s
+def fmt_loc(n):
+    """THE LoC CELL (Lon 2026-11-18 10:1x CST, in the president's window, verbatim: "regarding the test-suite banners, the summary and detail versions, include
+    lines-of-code, LoC, in addition to number of test programs/snippets."): under 10000 the whole number; from there one decimal with k (12.3k), from a million
+    one decimal with M (1.2M), so a cell is at most 6 columns. A value that rounds to 1000.0k is 1.0M."""
+    if n < 10000: return str(n)
+    if n < 1000000:
+        v = round(n / 1000.0, 1)
+        if v < 1000: return f"{v:.1f}k"
+    return f"{n / 1000000.0:.1f}M"
+def loc_cell(r):
+    """a row's LoC cell: the number util_score_row.py from-progress counted and wrote (the banner prints the cell and counts nothing), a dash for an old row with none"""
+    v = (r.get('loc') or '').strip()
+    return fmt_loc(int(v)) if v.isdigit() else '-'
 HERE=os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import harness_paths
@@ -636,7 +649,7 @@ def grid(plain=False):
         try: tp,tt=int(r['today_pass']),int(r['today_total'])
         except (ValueError,KeyError):
             _t=(r.get('today_total') or '').strip()
-            data.append([r.get('lang',''), r['nick'], "-", _t if _t.isdigit() else "-"] + _pm(r) + ["", (r.get('today_excluded') or '').strip() or "", "-", wall(r)] + run_stamps(r) + ["NO READING"] + ([_read_day(r)] if eng else [])); continue
+            data.append([r.get('lang',''), r['nick'], "-", _t if _t.isdigit() else "-", loc_cell(r)] + _pm(r) + ["", (r.get('today_excluded') or '').strip() or "", "-", wall(r)] + run_stamps(r) + ["NO READING"] + ([_read_day(r)] if eng else [])); continue
         # ⛔ `.0f` alone rounds 823/826 (99.64%) up to "100%" while the State column beside it correctly
         # reads not-DONE (tp<tt) -- a contradiction inside one row (Lon 2026-09-23, caught reading this
         # exact grid). 100% is reserved for tp>=tt (RULES.md: "100% only when FAIL=0 over the printed
@@ -648,12 +661,12 @@ def grid(plain=False):
             pct=f"{pv}%"
         # ⭐ EXCL (Lon 2026-09-26, CEO-1286: "We want to show this number of EXCLUDED tests in the test-suite grid."): the programs not in
         # the SPITBOL dialect that this row's Total leaves out, from today_excluded; blank for a suite with no such ruling (the rung suites).
-        data.append([r.get('lang',''), r['nick'], f"{tp}", f"{tt}"] + _pm(r) + [delta(r, tp, tt), (r.get('today_excluded') or '').strip(), pct, wall(r)] + run_stamps(r) + ["VOID" if (r.get('today_void') or '').strip() else ("DONE" if tt and tp>=tt else "")] + ([_read_day(r)] if eng else []))
+        data.append([r.get('lang',''), r['nick'], f"{tp}", f"{tt}", loc_cell(r)] + _pm(r) + [delta(r, tp, tt), (r.get('today_excluded') or '').strip(), pct, wall(r)] + run_stamps(r) + ["VOID" if (r.get('today_void') or '').strip() else ("DONE" if tt and tp>=tt else "")] + ([_read_day(r)] if eng else []))
     data.sort(key=lambda r: (r[0].lower(), r[1].lower()))
     if not data:
         if eng: print(f"SUITE GRID: no row yet (engine {eng}) -- no board has graded {GRID_PROGRAMS.get(eng, eng)} into SUITES.tsv"); return
         print("SUITE GRID: no readable rows in SUITES.tsv"); return
-    hdr=["Lang","Suite","Pass","Total","M3","M4","\u0394","Excl","Pct","Wall","Earliest","Latest","State"] + (["Date"] if eng else [])
+    hdr=["Lang","Suite","Pass","Total","LoC","M3","M4","\u0394","Excl","Pct","Wall","Earliest","Latest","State"] + (["Date"] if eng else [])
     cols=len(hdr)
     # ⭐ ONE EXTRA COLUMN OF ROOM PER CELL (Lon 2026-09-13: "Give one extra space in each column to give room
     # to breath."). Added to the WIDTH, so the rules that span each column widen with it and the box still
@@ -661,7 +674,7 @@ def grid(plain=False):
     # right of a left-justified name -- which is why this is one number here and not a space glued onto a cell.
     w=[max(dw(hdr[c]), max(dw(r[c]) for r in data)) + 1 for c in range(cols)]
     def rule(l,m,rr): return l + m.join("\u2500"*(w[c]) for c in range(cols)) + rr
-    NUM={2,3,4,5,6,7,8,9}   # Pass, Total, M3, M4, Delta, Excl, Pct, Wall -- the numeric cells, right-justified; Lang/Suite/State stay left.
+    NUM={2,3,4,5,6,7,8,9,10}   # Pass, Total, LoC, M3, M4, Delta, Excl, Pct, Wall -- the numeric cells, right-justified; Lang/Suite/State stay left.
     def line(cs, hdr_row=False):
         # ⭐ THE EXTRA COLUMN IS A TRAILING SPACE ON EVERY CELL, not slack handed to the justifier. Give it to
         # rpad() instead and a right-justified number lands FLUSH AGAINST THE RIGHT BORDER with the gap on its
@@ -958,7 +971,9 @@ def by_language():
     for r in rows:
         try: p_=int(r.get('today_pass') or 0); t_=int(r.get('today_total') or 0)
         except ValueError: continue
-        g=by.setdefault((r.get('lang') or '?').strip().lower() or '?',[0,0,0,0]); g[0]+=1; g[1]+=1 if t_ and p_==t_ else 0; g[2]+=p_; g[3]+=t_
+        g=by.setdefault((r.get('lang') or '?').strip().lower() or '?',[0,0,0,0,None]); g[0]+=1; g[1]+=1 if t_ and p_==t_ else 0; g[2]+=p_; g[3]+=t_
+        _lv=(r.get('loc') or '').strip()
+        if _lv.isdigit(): g[4]=(g[4] or 0)+int(_lv)
     order=[]
     try:
         mode=os.path.join(os.environ.get('S4E_POST') or '/home/resources/postoffice','MODE')
@@ -967,14 +982,86 @@ def by_language():
     except OSError: pass
     langs=[l for l in order if l in by]+sorted(l for l in by if l not in order)
     def pct(a_,b_): return f"{100.0*a_/b_:5.1f}%" if b_ else "    -"
-    print(f"{'Language':<10}{'Suites':>7}{'At 100%':>9}{'Pass/Total':>15}{'Pct':>8}")
+    def lc(v): return fmt_loc(v) if v is not None else '-'   # the sum of the loc cells of the suites that carry one; a dash when none does
+    print(f"{'Language':<10}{'Suites':>7}{'At 100%':>9}{'Pass/Total':>15}{'LoC':>8}{'Pct':>8}")
     for l in langs:
-        n,dn,p_,t_=by[l]; print(f"{l:<10}{n:>7}{dn:>9}{str(p_)+'/'+str(t_):>15}{pct(p_,t_):>8}")
+        n,dn,p_,t_,lo=by[l]; print(f"{l:<10}{n:>7}{dn:>9}{str(p_)+'/'+str(t_):>15}{lc(lo):>8}{pct(p_,t_):>8}")
     n=sum(v[0] for v in by.values()); dn=sum(v[1] for v in by.values()); p_=sum(v[2] for v in by.values()); t_=sum(v[3] for v in by.values())
-    print(f"{'ALL':<10}{n:>7}{dn:>9}{str(p_)+'/'+str(t_):>15}{pct(p_,t_):>8}")
+    _los=[v[4] for v in by.values() if v[4] is not None]
+    print(f"{'ALL':<10}{n:>7}{dn:>9}{str(p_)+'/'+str(t_):>15}{lc(sum(_los) if _los else None):>8}{pct(p_,t_):>8}")
+def probe_loc():
+    """THE PROOF OF THE LoC COLUMN, on a scratch SUITES.tsv and a scratch corpus of two tiny packages and touching nothing else: --probe-loc prints one line LOC_PROBE arm=ok|red ... and exits 0 when
+    every arm is ok, 1 naming the red arm(s), 2 when it cannot measure. THE COUNTER IS util_score_row.py's (from-progress --dry-run --loc on the scratch corpus), so the probe reads the writer's
+    own number; the grid and the summary are this file's, run on a scratch table. The last arm takes the counter out (a stub that counts nothing) and must read RED."""
+    import tempfile, shutil
+    here = os.path.dirname(os.path.abspath(__file__)); score = os.path.join(here, 'util_score_row.py')
+    if not os.path.isfile(score): print("LOC_PROBE REFUSE(2): util_score_row.py is not beside this script"); return 2
+    try: d = tempfile.mkdtemp(prefix='loc-probe.')
+    except OSError as ex: print(f"LOC_PROBE REFUSE(2): no scratch directory ({ex})"); return 2
+    res = {}
+    try:
+        corpus = os.path.join(d, 'corpus'); fd_ = os.path.join(corpus, 'packages', 'snobol4', 'locp_files'); cd_ = os.path.join(corpus, 'packages', 'icon', 'locp_cont')
+        os.makedirs(fd_); os.makedirs(cd_)
+        def w(path, text): open(path, 'w', encoding='utf-8').write(text)
+        # THE FILES FORM: three programs, one of them excluded; blank and whitespace-only lines among the code (a.sno 3 of 5 lines, b.sno 3 of 6, x.sno 5 and excluded)
+        w(os.path.join(fd_, 'ALL.csv'), 'entry,path\na,a.sno\nb,b.sno\nx,x.sno\n')
+        w(os.path.join(fd_, 'a.sno'), '  X = 1\n\n   \n  OUTPUT = X\nEND\n'); w(os.path.join(fd_, 'b.sno'), '  Y = 2\n\n\n  OUTPUT = Y\n\nEND\n')
+        w(os.path.join(fd_, 'x.sno'), '  A = 1\n  B = 2\n  C = 3\n  OUTPUT = A\nEND\n'); w(os.path.join(fd_, 'EXCLUDED.tsv'), 'x.sno\tNO_ORACLE_ANSWER\tprobe\n')
+        for n_ in ('a', 'b', 'x'): w(os.path.join(fd_, n_ + '.out'), '1\n')
+        # THE CONTAINER FORM (Icon, banners): e1 3 of 5 lines, e2 4, e3 excluded (4)
+        bn = lambda i, n: '#' + '-' * 54 + f' {i} {n}\n'
+        w(os.path.join(cd_, 'ALL.csv'), 'rank,entry\n1,e1\n2,e2\n3,e3\n')
+        w(os.path.join(cd_, 'ALL.icn'), bn(1, 'e1') + 'procedure main()\n   write(1)\n\n   \nend\n\n' + bn(2, 'e2') + 'procedure main()\n  x := 2\n  write(x)\nend\n\n' + bn(3, 'e3') + 'procedure main()\n  write(3)\n  write(4)\nend\n')
+        w(os.path.join(cd_, 'ALL.ref'), bn(1, 'e1') + '1\n\n' + bn(2, 'e2') + '2\n\n' + bn(3, 'e3') + '3\n4\n')
+        w(os.path.join(cd_, 'EXCLUDED.tsv'), 'e3\tNO_ORACLE_ANSWER\tprobe\n')
+        hd = ['key', 'nick', 'emoji', 'lang', 'first_date', 'first_pass', 'first_total', 'today_date', 'today_pass', 'today_total', 'tree', 'criterion_changed', 'today_excluded', 'today_secs', 'today_void', 'today_m3_pass', 'today_m4_pass', 'today_run_first', 'today_run_last', 'loc']
+        def row(key, nick, lang, p_, t_, loc): return '\t'.join([key, nick, 'x', lang, '2026-11-18', p_, t_, '2026-11-18', p_, t_, 'abc123', '', '1', '5', '', p_, p_, '', '', loc]) + '\n'
+        tsv = os.path.join(d, 'SUITES.tsv')
+        w(tsv, '\t'.join(hd) + '\n' + row('locp_files', 'ProbeFiles', 'snobol4', '2', '2', '6') + row('locp_cont', 'ProbeCont', 'icon', '2', '2', '7') + row('locp_big', 'ProbeBig', 'icon', '1', '1', '23400') + row('locp_empty', 'ProbeEmpty', 'snobol4', '1', '1', ''))
+        w(os.path.join(d, 'db.tsv'), 'ts_utc\tscrip\tcorpus\tmeasurer\tclass\tsuite\tlang\tprogram\tmode\toutcome\tsecs\tnote\tfingerprint\tconfig\n'); w(os.path.join(d, 'SCORE.md'), '# scratch\n')
+        env = dict(os.environ); env.update(S4E_CORPUS_ROOT=corpus, S4E_PROGRESS_DB=os.path.join(d, 'db.tsv'), S4E_SUITES_TSV=tsv, S4E_SCORE_MD=os.path.join(d, 'SCORE.md'), S4E_MODES='m3',
+                                          S4E_HARNESS=os.path.dirname(here) if os.path.basename(here) == 'scripts' else os.environ.get('S4E_HARNESS', ''))
+        env.pop('S4E_SUITE_TABLE_LOCKED', None)
+        def counted(k, stub=False):
+            code = "import sys; sys.path.insert(0,%r); sys.argv=['util_score_row.py','from-progress','--suite',%r,'--dry-run','--loc']\nimport util_score_row as U\n" % (here, k) + ("U.suite_loc=lambda *a,**k: (0, [])\n" if stub else "") + "sys.exit(U.main())\n"
+            r = subprocess.run([sys.executable, '-I', '-c', code], capture_output=True, text=True, env=env, cwd=here)
+            m = re.search(r'SUITE_ROW_LOC suite=\S+ loc=(\d+) members=(\d+) missing=(\d+)', r.stdout)
+            if not m: print(f"LOC_PROBE note: from-progress on {k} printed no SUITE_ROW_LOC (rc {r.returncode}): " + ' | '.join((r.stdout + r.stderr).strip().splitlines()[-3:])[:400])
+            return (int(m.group(1)), int(m.group(2)), int(m.group(3))) if m else None
+        fl, cl = counted('locp_files'), counted('locp_cont')
+        res['counts_denominator_only'] = 'ok' if fl and fl[0] == 6 and fl[1] == 2 and cl and cl[0] == 7 and cl[1] == 2 else 'red'   # 11 and 11 if the excluded entry were counted
+        res['blank_lines_not_counted'] = 'ok' if cl and cl[0] == 7 and fl and fl[0] == 6 else 'red'                                       # the raw line counts are 11 and 12 for the same entries
+        res['both_forms'] = 'ok' if fl and cl and fl[2] == 0 and cl[2] == 0 and fl[0] > 0 and cl[0] > 0 else 'red'
+        def banner(*args):
+            return subprocess.run([sys.executable, '-I', os.path.abspath(__file__)] + list(args), capture_output=True, text=True, env=env).stdout
+        g = banner('--plain').splitlines()
+        res['grid_has_the_column'] = 'ok' if g and re.search(r'\bLoC\b', g[0]) and re.search(r'ProbeFiles\s+2/2\s+6\s', '\n'.join(g)) and re.search(r'ProbeBig\s+1/1\s+23\.4k\s', '\n'.join(g)) else 'red'
+        res['empty_cell_is_a_dash'] = 'ok' if re.search(r'ProbeEmpty\s+1/1\s+-\s', '\n'.join(g)) else 'red'
+        sm = banner('--by-language').splitlines()
+        def lang_line(l): return next((x.split() for x in sm if x.split() and x.split()[0] == l), [])
+        i_, s_, a_ = lang_line('icon'), lang_line('snobol4'), lang_line('ALL')
+        res['summary_sums_the_language'] = 'ok' if sm and re.search(r'\bLoC\b', sm[0]) and len(i_) >= 5 and i_[4] == '23.4k' and len(s_) >= 5 and s_[4] == '6' and len(a_) >= 5 and a_[4] == '23.4k' else 'red'
+        res['the_k_and_M_forms'] = 'ok' if [fmt_loc(n) for n in (0, 9999, 10000, 12345, 999949, 999950, 1234567, 12345678)] == ['0', '9999', '10.0k', '12.3k', '999.9k', '1.0M', '1.2M', '12.3M'] else 'red'
+        stub = counted('locp_files', stub=True)
+        res['counter_taken_out_reads_red'] = 'ok' if stub and stub[0] == 0 and not (fl and fl[0] == stub[0]) else 'red'   # with the counter stubbed to nothing, the first arm's number is wrong: this arm is ok only because that reads RED
+        tsv2 = os.path.join(d, 'S2.tsv'); w(tsv2, '\t'.join(hd[:-1]) + '\n' + row('locp_files', 'ProbeFiles', 'snobol4', '2', '2', '')[:-1].rsplit('\t', 1)[0] + '\n')
+        env2 = dict(env); env2['S4E_SUITES_TSV'] = tsv2
+        b2 = lambda *args: subprocess.run([sys.executable, '-I', os.path.abspath(__file__)] + list(args), capture_output=True, text=True, env=env2)
+        b2('--add-loc-column'); b2('--set-loc', 'locp_files', '42'); b2('--add-loc-column')
+        t2 = open(tsv2, encoding='utf-8').read().splitlines()
+        res['column_added_once_and_set'] = 'ok' if len(t2) == 2 and t2[0].split('\t')[-1] == 'loc' and t2[1].split('\t')[-1] == '42' and t2[0].count('loc') == 1 else 'red'
+    except Exception as ex:
+        print(f"LOC_PROBE REFUSE(2): could not measure ({type(ex).__name__}: {ex})"); return 2
+    finally:
+        shutil.rmtree(d, ignore_errors=True)
+    print("LOC_PROBE " + ' '.join(f"{k}={v}" for k, v in res.items()))
+    red = [k for k, v in res.items() if v != 'ok']
+    if red: print("LOC_PROBE RED: " + ' '.join(red))
+    return 1 if red else 0
 def main(a):
+    if '--probe-loc' in a: sys.exit(probe_loc())
     if '--by-language' in a: by_language(); return
-    if '--set' in a or '--render' in a or '--open' in a or '--open-row' in a or '--set-wall' in a or '--set-run' in a or '--nick' in a: _suite_table_lock()
+    if '--set' in a or '--render' in a or '--open' in a or '--open-row' in a or '--set-wall' in a or '--set-run' in a or '--set-loc' in a or '--add-loc-column' in a or '--nick' in a: _suite_table_lock()
     if '--nick' in a:
         # ⭐ A ROW IS RENAMED IN ONE WRITE (the grader 2026-11-14; Lon 07:3x CST, in the grader's window, verbatim: "Your names are not consistent
         # PasRosetta versus RosettaSnobo. get it right."): --nick KEY NICK sets the nick of the bare row KEY and of every KEY@<engine> row, which shares
@@ -1088,6 +1175,33 @@ def main(a):
         history(head,before,rows)
         print(f"--set-wall {key}: the Wall reads {(new + ' s') if new else 'blank'}" + (f"\n{note}" if note else ""))
         return
+    if '--add-loc-column' in a:
+        # THE ONE-TIME SCHEMA STEP OF THE LoC COLUMN: loc joins the record as its last column, empty, under the table lock and the history writer; every later --set ... --loc fills the one
+        # row it writes and --set-loc fills one without touching a reading. Idempotent; a table that has the column is untouched (a row write never grows the header: a port's publish must leave SCRIP's row alone).
+        head,rows=load()
+        if 'loc' in head:
+            print(f"--add-loc-column: {TSV} already carries loc; nothing written"); return
+        before=open(TSV,encoding='utf-8').read()
+        head.append('loc')
+        for x in rows: x.setdefault('loc','')
+        save(head,rows); history(head,before,rows)
+        print(f"--add-loc-column: loc added to {TSV} ({len(rows)} rows, every cell empty until its row's next from-progress write or --backfill-loc)"); return
+    if '--set-loc' in a:
+        # --set-loc KEY N|none: the row's loc cell and no other (util_score_row.py from-progress --backfill-loc fills every row once with it; the word none blanks it)
+        i=a.index('--set-loc'); key=a[i+1] if len(a)>i+1 else ''; n=a[i+2] if len(a)>i+2 else ''
+        if not key or not re.match(r'^(\d+|none)$', n):
+            sys.stderr.write("REFUSE(rc=2): --set-loc takes a suite key and a whole number of lines, or the word none. NOTHING WAS WRITTEN.\n"); sys.exit(2)
+        head,rows=load(); r=next((x for x in rows if x['key']==key),None)
+        if r is None: sys.stderr.write(f"REFUSE(rc=2): no suite key {key} in {TSV}. NOTHING WAS WRITTEN.\n"); sys.exit(2)
+        if 'loc' not in head:
+            sys.stderr.write(f"REFUSE(rc=2): {TSV} has no loc column: run --add-loc-column first. NOTHING WAS WRITTEN.\n"); sys.exit(2)
+        new='' if n=='none' else str(int(n))
+        if (r.get('loc') or '').strip()==new:
+            print(f"--set-loc {key}: LoC already reads {new or 'blank'}; nothing written"); return
+        before=open(TSV,encoding='utf-8').read()
+        r['loc']=new; save(head,rows); history(head,before,rows)
+        print(f"--set-loc {key}: LoC reads {new or 'blank'}")
+        return
     if '--add-mode-columns' in a:
         # ⭐ THE ONE-TIME SCHEMA STEP OF CTO-482 (Lon 2026-11-04: "show both mode 3 and mode 4 numbers seperately."): today_m3_pass and today_m4_pass join the
         # record empty, under the table lock and the history writer; every later --set fills the one row it writes. Idempotent; a table that has them is untouched.
@@ -1130,6 +1244,15 @@ def main(a):
             if len(a)<=j+1 or not re.match(r'^\d+$', a[j+1]):
                 sys.stderr.write("REFUSE(rc=2): --excluded takes a count\n"); sys.exit(2)
             excluded=a[j+1]; a=a[:j]+a[j+2:]
+        # ⭐ --loc N (Lon 2026-11-18 10:1x CST, in the president's window): the lines of program text of the entries of this row's denominator, counted by
+        # util_score_row.py from-progress from the same population it has just read and written in this same write; the cell is only ever filled in a table
+        # that has the loc column (--add-loc-column adds it once, as --add-mode-columns adds the per-mode ones: a row write never grows the header).
+        loc=None
+        if '--loc' in a:
+            j=a.index('--loc')
+            if len(a)<=j+1 or not re.match(r'^\d+$', a[j+1]):
+                sys.stderr.write("REFUSE(rc=2): --loc takes a count of lines\n"); sys.exit(2)
+            loc=a[j+1]; a=a[:j]+a[j+2:]
         # ⭐ --secs N (Lon 2026-10-08, in-chat to the ceo: "List in a grid the total time for each test suite to run."; CEO-1562): the run's
         # wall clock in seconds, from the runner's own start (util_score_row.py reads S4E_RUN_T0, stamped by one_runner_guard) to its row
         # write, written to the today_secs column (added on first use, as today_excluded was) and shown as WALL= and in the grid's Wall column.
@@ -1190,6 +1313,9 @@ def main(a):
         if not all((r.get(c) or '').strip() for c in ('first_date','first_pass','first_total')):
             r['first_date'],r['first_pass'],r['first_total']=date,p,t
         if tree: r['tree']=tree
+        if loc is not None:
+            if 'loc' in head: r['loc']=loc
+            else: print(f"--set {key}: LoC not recorded -- {TSV} has no loc column (util_suite_banner.py --add-loc-column adds it once)")
         if excluded is not None:
             if 'today_excluded' not in head:
                 head.append('today_excluded')
