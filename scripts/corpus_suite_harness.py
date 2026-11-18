@@ -700,6 +700,41 @@ def run_xsb_gentest(xsb_bin, upstream, run, timeout):
 
 
 _LINK_UNRESOLVED = re.compile(r"cannot resolve reference to file '([^'/]+?)\.u1?'")
+_IMPORT_UNRESOLVED = re.compile(r'Unable to import \(\d+\) package "([^"]+)"')
+
+
+def _compile_package_units(translator, d, name, tried):
+    """THE FILES OF AN IMPORTED PACKAGE ARE COMPILED BESIDE THE PROGRAM (the cto 2026-11-17, row icon-unicon-the-builder-cuts-a-unicon-library-driver-in-unicon-uni,
+    on officer_09's measurement: the library drivers of unicon_uni uscribe and unidoc, each `import PACKAGE`, stopped at Unable to import (1) package, with the package's
+    files in the program's own folder): the sources of the folder, of S4E_ORACLE_LINK_DIRS and of IPATH that declare `package NAME` are compiled with the same translator
+    (-s -c) in the program's folder, every round those that compile leave the list and the rest go again, until none is left or a round compiles nothing; a file that stops on
+    another package it imports compiles that package first (once, TRIED shared). True when at least one file compiled."""
+    dirs = [Path(d)] + [Path(x) for x in os.environ.get("S4E_ORACLE_LINK_DIRS", "").split(os.pathsep) if x]
+    dirs += [Path(x) for x in re.split(r"[ %s]+" % re.escape(os.pathsep), os.environ.get("IPATH", "")) if x]
+    decl = re.compile(r"(?m)^[ \t]*package[ \t]+%s[ \t]*$" % re.escape(name))
+    files, seen = [], set()
+    for x in dirs:
+        for q in sorted(x.glob("*.icn")) if x.is_dir() else []:
+            if q.name not in seen and decl.search(q.read_text(errors="replace")):
+                seen.add(q.name); files.append(q)
+    for q in files:
+        if q.parent.resolve() != Path(d).resolve():
+            shutil.copyfile(q, Path(d) / q.name)
+    pending, did = [q.name for q in files], False
+    while pending:
+        left = []
+        for n in pending:
+            c = subprocess.run([translator, "-s", "-c", n], cwd=str(d), capture_output=True, timeout=300)
+            m = _IMPORT_UNRESOLVED.search((c.stdout + c.stderr).decode("utf-8", "replace"))
+            if c.returncode != 0 and m and m.group(1) not in tried:
+                tried.add(m.group(1))
+                _compile_package_units(translator, d, m.group(1), tried)
+                c = subprocess.run([translator, "-s", "-c", n], cwd=str(d), capture_output=True, timeout=300)
+            if c.returncode == 0: did = True
+            else: left.append(n)
+        if len(left) == len(pending): break
+        pending = left
+    return did
 
 
 def _oracle_translate_linking(argv, timeout, d, translator):
@@ -713,8 +748,16 @@ def _oracle_translate_linking(argv, timeout, d, translator):
     kind, out, err, rc = _run_raw(argv, timeout, cwd=str(d))
     tried = set()
     while kind == "RAN" and len(tried) < 20:   # whatever the status: unicon reports an unresolved library and exits 0, leaving no executable
-        m = _LINK_UNRESOLVED.search(((err or b"") + (out or b"")).decode("utf-8", "replace"))
-        if not m or m.group(1) in tried:
+        _msg = ((err or b"") + (out or b"")).decode("utf-8", "replace")
+        m = _LINK_UNRESOLVED.search(_msg)
+        if not m:
+            mi = _IMPORT_UNRESOLVED.search(_msg)
+            if not mi or mi.group(1) in tried or not _compile_package_units(translator, d, mi.group(1), tried | {mi.group(1)}):
+                break
+            tried.add(mi.group(1))
+            kind, out, err, rc = _run_raw(argv, timeout, cwd=str(d))
+            continue
+        if m.group(1) in tried:
             break
         name = m.group(1); tried.add(name)
         dirs = [Path(d)] + [Path(x) for x in os.environ.get("S4E_ORACLE_LINK_DIRS", "").split(os.pathsep) if x]   # the program's own folder, when a cut runs it in scratch
