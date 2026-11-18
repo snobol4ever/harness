@@ -10,9 +10,11 @@
 # a harness slot (S4E_RUN_SLOT_HELD set) takes no second one.
 #   bash ../harness/scripts/util_run_slot.sh ./scrip prog.sno < /dev/null
 #   bash ../harness/scripts/util_run_slot.sh ./old.bin -d64m
-[ "$#" -gt 0 ] || { echo "usage: util_run_slot.sh <command> <args>... | util_run_slot.sh --bg [--probe] <command> <args>... | util_run_slot.sh --admit <compile|run> <command>... | util_run_slot.sh --probe-sem" >&2; exit 2; }
+[ "$#" -gt 0 ] || { echo "usage: util_run_slot.sh <command> <args>... | util_run_slot.sh --bg [--probe] <command> <args>... | util_run_slot.sh --admit <compile|run> <command>... | util_run_slot.sh --probe-sem | util_run_slot.sh --probe-wake-take" >&2; exit 2; }
 # --probe-sem (fleet-queue step 18): util_slot_probe.sh proves the sem pools on a scratch home through the real takers, then prints one `SLOT by=sem class=... id=... cap=... timeout_s=...` line per pool class of SLOTS.tsv.
 [ "$1" = --probe-sem ] && exec bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_slot_probe.sh"
+# --probe-wake-take (the weighted door, a wake is a take): util_wake_take.sh proves the take on a scratch pool and a scratch CORES.conf, five arms; prints WAKE-TAKE probe ok, rc 0, or RED, rc 1
+[ "$1" = --probe-wake-take ] && exec bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_wake_take.sh" --probe
 # --bg (box-scheduler step 22): the command runs under setsid with S4E_BG_HANDLE=<id> in its environment, stdout and stderr in /home/resources/keep/<seat>/bg/<id>.log (never under /tmp: a baton cites that log, Lon 2026-11-14; S4E_KEEP names another top; a log or handle older than 30 days is pruned when a new run starts), and
 # a handle file <id>.handle beside it (pid, seat, start, cwd, command); it prints `BG handle=<id> pid=<pid> log=<path>`. s4e_kill_mine.sh --handle <id> stops it.
 if [ "$1" = --bg ]; then

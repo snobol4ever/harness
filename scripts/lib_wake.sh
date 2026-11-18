@@ -31,6 +31,18 @@ s4e_wake_live_of_tier() {   # <tier name> -> the live seats of that tier, one pe
 s4e_operating_boss() {   # COO-496: the one seat on MODE's BOSSES: line whose TIERS tier is 2 (the coo today); prints nothing when there is none
     local _b _s; _b="$(sed -n 's/^BOSSES:[[:space:]]*//p' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1)"
     for _s in $_b; do [ "$(awk -F'\t' -v s="$_s" '!/^#/ && $1==s {print $7; exit}' "$(s4e_wake_tiers)" 2>/dev/null)" = 2 ] && { printf '%s\n' "$_s"; return 0; }; done; return 0; }
+s4e_wake_take() {   # <seat> <topic> <verb> -- A WAKE IS A TAKE (the weighted door; util_wake_take.sh holds the law): a wake FOR WORK (assign, queue, a tiered mint, ask, answer, a verdict; never a send, which only points at a seat already at work) takes one place of the seats' share before its WAKE line is printed, when CORES.conf says wakes=on; with no such line nothing happens
+    case "$3" in assign|queue|mint|ask|answer|verdict) ;; *) return 0;; esac
+    [ "$(awk -F= '!/^#/ && $1 == "wakes" { v = $2 } END { print v }' "${S4E_CORES_CONF:-/home/resources/postoffice/CORES.conf}" 2> /dev/null)" = on ] || return 0
+    [ "$BASHPID" = "$$" ] || return 0   # a command substitution cannot let go of its parent's locks, so it takes nothing: the wake waits only with the identity and the queue flock free
+    local _ow=0 _qf=0   # THE CHAIRMAN'S RULE (2026-11-18): the row's write is done and the identity and the queue flock are RELEASED before the wake waits at the door, so the mover's next verb is served and no other seat's queue write waits; both are taken again after
+    [ -n "${_S4E_FD_OWNER:-}" ] && [ "$_S4E_FD_OWNER" = "$$" ] && type s4e_pid_unhold > /dev/null 2>&1 && { s4e_pid_unhold; _ow=1; }
+    case "$(readlink "/proc/$$/fd/8" 2> /dev/null)" in *.queue.flock) flock -u 8 2> /dev/null && _qf=1;; esac
+    bash "$(dirname "${BASH_SOURCE[0]}")/util_wake_take.sh" take "$1" "$2" "$3" >&2 8>&- 9>&-
+    [ "$_qf" = 1 ] && { flock -w 120 8 || echo "wake: the queue flock was busy 120 s after the wait: the verb goes on without it" >&2; }
+    [ "$_ow" = 1 ] && type s4e_pid_retake > /dev/null 2>&1 && s4e_pid_retake
+    return 0
+}
 s4e_wake_hint() {   # <tube> <topic> <verb>
     local _tube="$1" _t="$2" _v="$3" _seats _n _pick _name _others _s _tier
     local _ob _me _ov=""; _ob="$(s4e_operating_boss)"; _me="${ME:-${S4E_SEAT:-}}"   # COO-496: a mover that is not the operating boss wakes the operating boss, never a sleeping boss
@@ -47,6 +59,7 @@ s4e_wake_hint() {   # <tube> <topic> <verb>
     _pick=$(( $(printf '%s' "$_t" | cksum | cut -d' ' -f1) % _n + 1 )); eval "_s=\${$_pick}"
     _name="$(awk -F'\t' -v s="$_s" '!/^#/ && $1==s {print $2; exit}' "$(s4e_wake_tiers)" 2>/dev/null)"; [ -n "$_name" ] || _name="$_s"
     _others=""; for _x in "$@"; do [ "$_x" = "$_s" ] || _others="$_others $(awk -F'\t' -v s="$_x" '!/^#/ && $1==s {print $2; exit}' "$(s4e_wake_tiers)" 2>/dev/null)"; done
+    s4e_wake_take "$_s" "$_t" "$_v"
     printf 'WAKE: SendMessage to %s now (seat %s; tube %s%s) with this first line: "%s %s: run bash %s/scripts/s4e_msg.sh next, it serves this job"\n' "$_name" "$_s" "$_tube" "${_others:+; also live:$_others}" "$_v" "$_t" /home/harness
     printf '      DESIGN FLOWS DOWN, PROBLEMS FLOW UP (Lon 2026-11-08): the seat that moves work wakes its taker before doing anything else; a telegram wakes nobody, the coo is for emergencies.\n'
 }
