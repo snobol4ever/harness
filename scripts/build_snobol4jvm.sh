@@ -10,6 +10,9 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SJ="${S4E_JVM_ROOT:-/home/claude_jvm}"   # the jvm seat's root IS the snobol4jvm clone (Lon 2026-11-17: "the clone goes directly at the root"); before, a folder beside the harness, which the one-disk layout does not hold
 [ -f "$SJ/project.clj" ] || { echo "⛔ REFUSE(rc=2): no snobol4jvm checkout at $SJ"; exit 2; }
+# the cycle's environment carries no ~/.local/bin, where the box's lein stands (MEASURED 2026-11-18 by seat jvm: s4e_cycle.sh logged "PORT jvm: build of c8c58c1a8c
+# failed" at laps 49 and 50, its .build.log one line, no lein on the PATH, so no jvm port cell has run), so a lein found there is taken
+command -v lein >/dev/null 2>&1 || { [ -x "$HOME/.local/bin/lein" ] && PATH="$PATH:$HOME/.local/bin"; }
 command -v lein >/dev/null 2>&1 || { echo "⛔ REFUSE(rc=2): no lein on the PATH"; exit 2; }
 (cd "$SJ" && lein uberjar) || { echo "⛔ REFUSE(rc=2): lein uberjar failed in $SJ"; exit 2; }
 J="$(ls -t "$SJ"/target/uberjar/*-standalone.jar 2>/dev/null | head -1)"
