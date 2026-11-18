@@ -27,7 +27,7 @@ if [ "${1:-}" = --probe-door ] && [ -z "${S4E_DOOR_PROBE_T:-}" ]; then   # THE D
     _T="$(mktemp -d "${TMPDIR:-/tmp}/s4e_probe_door.XXXXXX")" || exit 2; mkdir -p "$_T/prog" "$_T/tmp" "$_T/req" "$_T/run" "$_T/post"; printf 'cores=1\ngrader=1\nwait=600\n' > "$_T/CORES.conf"
     env -u S4E_CORE_HELD -u S4E_RUN_SLOT_HELD -u S4E_SLOT_WAIT_MAX S4E_DOOR_PROBE_T="$_T" S4E_CYCLE_PROG="$_T/prog" S4E_CYCLE_TMP="$_T/tmp" S4E_PROGRESS_DB="$_T/results.tsv" S4E_RESULTS="$_T/results.tsv" \
         S4E_SUITES_TSV="$_T/SUITES.tsv" S4E_SCORE_MD="$_T/SCORE.md" S4E_TEST_REQUEST_DIR="$_T/req" S4E_POST="$_T/post" S4E_POSTOFFICE="$_T/post" S4E_CORES_CONF="$_T/CORES.conf" \
-        S4E_RUN_SLOT_DIR="$_T/run" S4E_SLOT_WAITS="$_T/SLOT_WAITS.tsv" S4E_SPRINT_CONF="$_T/no-sprint.conf" bash "$(readlink -f "${BASH_SOURCE[0]}")" --probe-door; _rc=$?
+        S4E_RUN_SLOT_DIR="$_T/run" S4E_SLOT_WAITS="$_T/SLOT_WAITS.tsv" S4E_SPRINT_CONF="$_T/no-sprint.conf" S4E_COSTS="$_T/COSTS.tsv" S4E_COSTS_IDX="$_T/COSTS.idx" bash "$(readlink -f "${BASH_SOURCE[0]}")" --probe-door; _rc=$?
     rm -rf "$_T"; exit "$_rc"
 fi
 S4E="${S4E_HOME:-/home/claude_grader}"
@@ -254,23 +254,38 @@ port_may_start() {   # slow_next slow_total slow_running port_running WS -> rc 0
     [ "$1" -ge "$2" ] && [ "$4" -lt 1 ] && [ $(( $3 + $4 )) -lt "${5:-1}" ] || return 1
     ! next_request f > /dev/null 2>&1 && ! next_request s > /dev/null 2>&1
 }
-door_take() {   # cell|request [what] -> rc 0: this shell holds a run token (or there is no pool and it runs unbounded, as util_run_slot.sh does); rc 2: none within the door's bound
-    local who="$1" what="${2:-}" t0 rc bound tk="" waited=0
+# THE CELL NAMES ITS KEY AT THE DOOR (row harness-the-cycles-cell-names-its-key-at-the-door-and-writes-its-ledger-line; the chairman 2026-11-18 13:4x CST; MEASURED by developer_15 in the LEDGER of door step 4:
+# the cycle took its token with the cell's words as a label and never a command, so under weights=on every cell and every request drew the class run's 90th percentile, 1155 millicores and 72 MB, whatever it
+# graded, where the harness's own runs in the ledger read 843 millicores, 618 MB and 381 s). door_take takes the key as a third word, cell:SUITE:PARTITION or request:SUITE, and passes it as the take's command
+# word, which the door's auto key reads with no code of its own; and a cell's launch runs under the ledger wrapper (util_cost_run.py, step 1) with that key, so each cell leaves ONE line in COSTS.tsv (class run,
+# the key, its wall seconds, the rusage of its child) and has its own weight after a day. With no weights=on line the word is read by nothing, and the line is the data the weights will read.
+cell_cost_args() {   # key -> COSTRUN, the words that put the ledger wrapper in front of a launch (none when S4E_COSTS=off or the wrapper is not in this tree)
+    COSTRUN=(); [ "${S4E_COSTS:-}" = off ] && return 0
+    [ -f "$S4E_HARNESS/scripts/util_cost_run.py" ] && COSTRUN=(python3 -I -S "$S4E_HARNESS/scripts/util_cost_run.py" --class run --key "${1//[^A-Za-z0-9_.:+,=-]/_}" --)
+    return 0
+}
+door_take() {   # cell|request [what [key]] -> rc 0: this shell holds a run token (or there is no pool and it runs unbounded, as util_run_slot.sh does); rc 2: none within the door's bound
+    local who="$1" what="${2:-}" kw="${3:-}" t0 rc bound tk="" waited=0
+    kw="${kw//[^A-Za-z0-9_.:+,=-]/_}"
     t0=$(date +%s.%N); mkdir -p "$TMPDIR/cycle/door" 2> /dev/null
     if [ "$who" = request ]; then
         tk="$TMPDIR/cycle/door/req.$BASHPID"; : > "$tk"; [ -n "${DOOR_EVENTS:-}" ] && echo "WAIT request $what" >> "$DOOR_EVENTS"
-        s4e_slot_hold run; rc=$?; rm -f "$tk"
+        S4E_DOOR_PRIO=0 s4e_slot_hold run $kw; rc=$?; rm -f "$tk"
     else
         bound="$(s4e_cores_conf wait)"; bound="${bound:-1800}"
+        if [ "$(s4e_cores_word weights)" = on ]; then   # THE WEIGHTED DOOR queues by arrival and serves a request first by its ticket's priority, so a cell waits inside the door, never in this poll
+            S4E_DOOR_PRIO=1 s4e_slot_hold run $kw; rc=$?
+        else
         while :; do
             if ! compgen -G "$TMPDIR/cycle/door/req.*" > /dev/null; then
-                S4E_SLOT_WAIT_MAX=0 S4E_SLOT_WAITS=/dev/null s4e_slot_hold run 2> /dev/null; rc=$?
+                S4E_SLOT_WAIT_MAX=0 S4E_SLOT_WAITS=/dev/null s4e_slot_hold run $kw 2> /dev/null; rc=$?
                 [ "$rc" = 2 ] || break
             fi
             [ "$waited" = 0 ] && { waited=1; [ -n "${DOOR_EVENTS:-}" ] && echo "WAIT cell $what" >> "$DOOR_EVENTS"; }
             awk -v a="$t0" -v b="$(date +%s.%N)" -v m="$bound" 'BEGIN {exit !(b - a >= m)}' && { rc=2; break; }
             sleep 0.5
         done
+        fi
     fi
     [ "$rc" = 2 ] && { s4e_slot_note run-refused "$t0" "cycle $who $what"; return 2; }
     s4e_slot_note run "$t0" "cycle $who $what"; [ -n "${DOOR_EVENTS:-}" ] && echo "TOKEN $who $what" >> "$DOOR_EVENTS"
@@ -279,13 +294,13 @@ door_take() {   # cell|request [what] -> rc 0: this shell holds a run token (or 
 run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23:0x, in the coo's window, verbatim: "We want ONE UNIFIED test suite system. The same ALL.tsv files etc. Same layout in corpus. Same script. Same spec on attributes and environment." / "Get those deleted and get to work with a complete test suite system."): every cell, master or pkg, is corpus_suite_harness.py run over the suite's container ALL.<ext> and ALL.ref; a suite without one refuses rc 2, named, until its container is built
     local key="$1" kind="$2" lang="$3" dir="$4" cell="$5" ttr alls rc t0 out nw
     out="$TMPDIR/cycle/$key.$cell.log"
-    door_take cell "$key $cell" || { echo "REFUSE(2): no run token within the door's bound (CORES.conf wait); nothing ran (door_take)" > "$out"; echo "2 0"; return 2; }   # the token first, then the base and the clock
-    t0=$(date +%s)
+    door_take cell "$key $cell" "cell:$key:$cell" || { echo "REFUSE(2): no run token within the door's bound (CORES.conf wait); nothing ran (door_take)" > "$out"; echo "2 0"; return 2; }   # the token first, then the base and the clock
+    t0=$(date +%s); cell_cost_args "cell:$key:$cell"
     local PORT_ENV=""
     if [ "$kind" = port ]; then PORT_ENV="$(port_env "$key")" || { echo "REFUSE(2): no build of the port for $key under $PORTS_TOP (port_refresh; CYCLE.log PORT lines)" > "$out"; echo "2 0"; return 2; }; fi
     if [ "$kind" = small ]; then
         ttr="$(small_budget "$key")"; nw=""; grep -q -- '--no-write' "$S4E_HARNESS/scripts/${dir%% *}" 2>/dev/null && nw=--no-write
-        ( cd "$S4E" && timeout -k 30 "$ttr" bash "$S4E_HARNESS/scripts/util_run_slot.sh" bash "$S4E_HARNESS"/scripts/$dir $nw ) > "$out" 2>&1 < /dev/null; rc=$?
+        ( cd "$S4E" && "${COSTRUN[@]}" timeout -k 30 "$ttr" bash "$S4E_HARNESS/scripts/util_run_slot.sh" bash "$S4E_HARNESS"/scripts/$dir $nw ) > "$out" 2>&1 < /dev/null; rc=$?
         echo "$rc $(( $(date +%s) - t0 ))"; return "$rc"
     fi
     local T_SCRIP T_CORPUS T_HARNESS T_GITHUB
@@ -293,7 +308,7 @@ run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23
     ttr="$(budget "$key" "$cell" "$BASE")"; [ -n "$ttr" ] || ttr=3600
     echo "CELL_BASE $BASE SCRIP=$(git -C "$T_SCRIP" rev-parse --short=10 HEAD) corpus=$(git -C "$T_CORPUS" rev-parse --short=10 HEAD) binary=$SBIN${PORT_ENV:+ port=$PORT_ENV}" > "$out"
     if ! suite_on_disk "$dir" "$alls"; then echo "REFUSE(2): no suite in $dir: no container ($alls and ALL.ref), no format 2 (MULTI-LINERS.md or ONE-LINERS.$(ext_of "$lang")), no files form (a path column in ALL.csv) -- the unified layout is owed (util_build_package_suite.py)" > "$out"; echo "2 0"; return 2; fi
-    ( cd "$BASE" && env $PORT_ENV S4E_HOME="$BASE" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash "$T_HARNESS/scripts/util_run_slot.sh" python3 "$T_HARNESS/scripts/corpus_suite_harness.py" run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
+    ( cd "$BASE" && env $PORT_ENV S4E_HOME="$BASE" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 "${COSTRUN[@]}" timeout -k 30 "$ttr" bash "$T_HARNESS/scripts/util_run_slot.sh" python3 "$T_HARNESS/scripts/corpus_suite_harness.py" run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
     echo "$rc $(( $(date +%s) - t0 ))"
 }
 # THE TEST REQUESTS (the cio 2026-11-10, row bus-one-queue-the-grading-tube-retires-the-cycle-serves-the-test-requests-itself, CIO-82; the grade tube,
@@ -433,8 +448,9 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     # forwarded to it at 22:40:35Z: base 1 was held when the request chose, so it took base 2 a turn behind and read a false FAIL). A request fetches
     # origin at once, whatever the rate, and waits until its base holds every head origin had then (each an ancestor of the base's head), trying every
     # 15 s for S4E_REQ_FRESH_WAIT seconds (900); only past that does it grade a turn behind, and the log says REQUEST_BASE_STALE.
-    door_take request "$name" || { echo "REQUEST_DOOR: no run token within the door's bound; it is pending again" >> "$out"; echo "3 $(( $(date +%s) - t0 ))"; return; }   # the token first, then the base and the clock
+    door_take request "$name" "request:$key" || { echo "REQUEST_DOOR: no run token within the door's bound; it is pending again" >> "$out"; echo "3 $(( $(date +%s) - t0 ))"; return; }   # the token first, then the base and the clock
     rm -f "$TMPDIR/cycle/base.fetched"
+    cell_cost_args "request:$key"
     local want0 tq; tq=$(( $(date +%s) + ${S4E_REQ_FRESH_WAIT:-900} ))
     choose_base 2>> "$out" || { echo "3 $(( $(date +%s) - t0 ))"; return; }   # a request runs on origin's newest heads, never the root's (no fallback); 3: no base yet, it is pending again
     want0="$(heads_of "$S4E" origin/main)"
@@ -447,7 +463,7 @@ run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMP
     # THE BOUND IS READ FROM THE BASE THE REQUEST RUNS ON (senior_01 2026-11-13, MEASURED: it was read from the grader root's ALL.csv before the forward, so
     # puzzles hakank_swi_euler14, whose timeout_s origin had raised to 3600 at corpus dd98b6587, was killed at ttr 420 s though it answers in 299 s)
     ttr="$(budget "$key" "entry:$ents" "$BASE")"; [ -n "$ttr" ] || ttr=1800
-    ( cd "$BASE" && env $PORT_ENV S4E_HOME="$BASE" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 bash "$T_HARNESS/scripts/util_run_slot.sh" timeout -k 30 "$ttr" python3 "$T_HARNESS/scripts/corpus_suite_harness.py" run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
+    ( cd "$BASE" && env $PORT_ENV S4E_HOME="$BASE" S4E_SCRIP="$T_SCRIP" S4E_CORPUS="$T_CORPUS" S4E_HARNESS="$T_HARNESS" S4E_GITHUB="$T_GITHUB" SCRIP="$SBIN" RT_DIR="$RTD" SUITE_LIST_ALL=1 "${COSTRUN[@]}" bash "$T_HARNESS/scripts/util_run_slot.sh" timeout -k 30 "$ttr" python3 "$T_HARNESS/scripts/corpus_suite_harness.py" run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" $(road_flag "$dir") ) >> "$out" 2>&1 < /dev/null; rc=$?   # one-disk: not a path (a base's own four repos, the tree this chunk grades)
     [ "$kind" = master ] && record_suite "$lang"; { [ "$kind" = pkg ] || [ "$kind" = port ]; } && record_pkg "$key"
     echo "$rc $(( $(date +%s) - t0 ))"; }
 finish_request() {   # name rc secs: the file lands in done/ with its per-entry verdicts and one served= line
@@ -651,10 +667,44 @@ if [ "$MODE_ARG" = --probe-door ]; then   # THE DOOR'S PROBE (row cycle-a-cell-t
     printf 'suite=longpkg\nentries=big\n' > "$RQ/20000101T000004-seatC-longpkg-4.req"
     q3f="$(RUNNERS="$T/rrunners.tsv" S4E_CORPUS="$T/rcorpus" next_request f)"; q3s="$(basename "$(RUNNERS="$T/rrunners.tsv" S4E_CORPUS="$T/rcorpus" next_request s)")"; rm -f "$RQ"/*.req
     [ "$q1" = 20000101T000001-seatA-x-1.req ] && [ "$q2" = 20000101T000003-seatB-x-3.req ] && [ -z "$q3f" ] && [ "$q3s" = 20000101T000004-seatC-longpkg-4.req ] && v6=ok
-    echo "DOOR_PROBE base_free=$v1 bound_counts_the_run=$v2 request_first=$v3 lanes=$v4 sprint=$v5 requests=$v6"
+    # arms 7 to 9, THE CELL'S KEY (row harness-the-cycles-cell-names-its-key-at-the-door-and-writes-its-ledger-line), on a scratch pool of the weighted door (cores=2 weights=on) and a scratch ledger: (7) two cells of unlike cost
+    # draw unlike weights, 3000 and 100 millicores, because door_take passes each its own key; with the key taken out both draw the class's 90th percentile and that arm must read RED; (8) a cell's launch under the ledger
+    # wrapper leaves ONE line, class run and its key, in the ledger; (9) a request, filed after a cell and waiting behind the same holder, is served first under the weighted door too (its ticket's priority)
+    v7=RED; v8=RED; v9=RED; wst() { python3 -I -S "$S4E_HARNESS/scripts/lib_weights.py" status; }
+    wmc() { wst | sed -n "s/.*'held_mc': \([0-9]*\).*/\1/p"; }
+    printf 'cores=2\nweights=on\npatience=60\nwait=600\n' > "$T/CW.conf"
+    { printf '# c\n# at_utc\tseat\tclass\tkey\twall_s\tcpu_s\tcores\trss_mb\ttmp_mb\trc\n'; for i in 1 2 3; do printf '2026-11-18T00:00:00Z\ts\trun\tcell:probe:heavy\t1.0\t3.0\t3.0\t500.0\t0.0\t0\n2026-11-18T00:00:00Z\ts\trun\tcell:probe:light\t1.0\t0.1\t0.1\t5.0\t0.0\t0\n'; done; } > "$T/COSTS.tsv"
+    rm -rf "$T/run/w" "$T/COSTS.idx"; keyed=""; nokey=""
+    for kk in "heavy cell:probe:heavy" "light cell:probe:light"; do
+        set -- $kk; rm -rf "$T/run/w"
+        ( S4E_CORES_CONF="$T/CW.conf" door_take cell "probe $1" "$2" && sleep 30 ) > /dev/null 2>&1 & wp=$!
+        i=0; until [ -n "$(wmc | grep -v '^0$')" ] || [ "$i" -gt 300 ]; do i=$((i + 1)); sleep 0.1; done
+        keyed="$keyed $(wmc)"; kill "$wp" 2> /dev/null; wait "$wp" 2> /dev/null
+        rm -rf "$T/run/w"
+        ( S4E_CORES_CONF="$T/CW.conf" door_take cell "probe $1" && sleep 30 ) > /dev/null 2>&1 & wp=$!
+        i=0; until [ -n "$(wmc | grep -v '^0$')" ] || [ "$i" -gt 300 ]; do i=$((i + 1)); sleep 0.1; done
+        nokey="$nokey $(wmc)"; kill "$wp" 2> /dev/null; wait "$wp" 2> /dev/null
+    done
+    set -- $keyed; k1="${1:-0}"; k2="${2:-0}"; set -- $nokey; n1="${1:-0}"; n2="${2:-0}"
+    [ "$k1" = 3000 ] && [ "$k2" = 100 ] && [ "$n1" = "$n2" ] && [ "$n1" != 0 ] && v7=ok
+    : > "$T/ledger.before"; cp "$T/COSTS.tsv" "$T/ledger.before"; cell_cost_args "cell:probe:led"; "${COSTRUN[@]}" /bin/true
+    [ "$(tail -n +"$(( $(wc -l < "$T/ledger.before") + 1 ))" "$T/COSTS.tsv" | grep -c "	run	cell:probe:led	")" = 1 ] && v8=ok
+    v9=ok; for rnd in 1 2 3; do   # three rounds: whichever waiter polls first is a coin, so one round could pass by luck
+        rm -rf "$T/run/w" "$T/w.held" "$T/w.release"; : > "$T/wev"
+        ( S4E_CORES_CONF="$T/CW.conf" door_take cell "probe holder" "cell:probe:heavy" && : > "$T/w.held" && until [ -f "$T/w.release" ]; do sleep 0.1; done ) > /dev/null 2>&1 & wh=$!
+        until_ev w.held || { echo "REFUSE(2): the weighted holder took no place"; exit 2; }
+        ( S4E_CORES_CONF="$T/CW.conf" door_take cell "probe late" "cell:probe:heavy" && echo cell >> "$T/wev" && sleep 1 ) > /dev/null 2>&1 & wc1=$!
+        i=0; until [ "$(wst | sed -n "s/.*'waiting': \\([0-9]*\\).*/\\1/p")" = 1 ] || [ "$i" -gt 300 ]; do i=$((i + 1)); sleep 0.1; done
+        ( S4E_CORES_CONF="$T/CW.conf" door_take request probe-req2 "request:probe" && echo request >> "$T/wev" && sleep 1 ) > /dev/null 2>&1 & wr=$!
+        i=0; until [ "$(wst | sed -n "s/.*'waiting': \\([0-9]*\\).*/\\1/p")" = 2 ] || [ "$i" -gt 300 ]; do i=$((i + 1)); sleep 0.1; done
+        : > "$T/w.release"; wait "$wh" "$wc1" "$wr" 2> /dev/null
+        [ "$(head -1 "$T/wev")" = request ] && [ "$(wc -l < "$T/wev")" = 2 ] || v9=RED
+    done
+    echo "DOOR_PROBE base_free=$v1 bound_counts_the_run=$v2 request_first=$v3 lanes=$v4 sprint=$v5 requests=$v6 cell_key=$v7 cell_ledger_line=$v8 request_first_weighted=$v9"
     [ "$v6" = ok ] || echo "  requests: first=$q1 second=$q2 (want seatB) long-in-fast=[$q3f] long-in-slow=$q3s"
     [ "$v4$v5" = okok ] || echo "  lanes: grader=4 -> $l4, grader=8 -> $l8, FAST=3 -> $le; sprint held: $h1$h2$h3$h4 (want 0111), first: $o1 (want sno_a), with no file: $o0 (want pl_a)"
-    [ "$v1$v2$v3$v4$v5$v6" = okokokokokok ] && exit 0
+    [ "$v7$v8$v9" = okokok ] || echo "  cell key: heavy $k1 light $k2 millicores with the key, $n1 and $n2 without it (want 3000 and 100, equal without); ledger line arm $v8; request-first order: $(tr '\n' ' ' < "$T/wev")"
+    [ "$v1$v2$v3$v4$v5$v6$v7$v8$v9" = okokokokokokokokok ] && exit 0
     echo "  events:"; sed 's/^/    /' "$DOOR_EVENTS"; for r in a b c; do echo "  res.$r: $(cat "$T/res.$r" 2> /dev/null)"; done; exit 1
 fi
 { [ "${BASH_VERSINFO[0]}" -gt 5 ] || { [ "${BASH_VERSINFO[0]}" -eq 5 ] && [ "${BASH_VERSINFO[1]}" -ge 1 ]; }; } || { echo "REFUSE(2) [cycle]: bash ${BASH_VERSION} has no wait -n -p (5.1 or newer; the rolling pool needs it)"; exit 2; }

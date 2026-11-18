@@ -64,7 +64,7 @@ def p90(v):
     return v[max(0, math.ceil(0.9 * len(v)) - 1)] if v else None
 
 
-REC = ("w", "m", "seat", "grader", "cls", "key", "t", "pid", "st", "t0")
+REC = ("w", "m", "seat", "grader", "cls", "key", "t", "pid", "st", "t0", "prio")
 
 
 def rec_str(r):
@@ -75,7 +75,7 @@ def rec_str(r):
 def rec_load(txt):
     f = (txt.strip().split("\t") + [""] * len(REC))[:len(REC)]
     try:
-        return {"w": int(f[0]), "m": float(f[1] or 0), "seat": f[2], "grader": f[3] == "1", "cls": f[4], "key": f[5], "t": float(f[6] or 0), "pid": int(f[7] or 0), "st": f[8], "t0": f[9]}
+        return {"w": int(f[0]), "m": float(f[1] or 0), "seat": f[2], "grader": f[3] == "1", "cls": f[4], "key": f[5], "t": float(f[6] or 0), "pid": int(f[7] or 0), "st": f[8], "t0": f[9], "prio": int(f[10] or 1)}
     except ValueError:
         return {}
 
@@ -180,7 +180,7 @@ def lookup(cls, key):
     e = idx["k"].get(cls + "\t" + key)
     src = "key"
     if not e or len(e["c"]) < 1:
-        e = idx["cl"].get(cls) or (idx["cl"].get("run") if cls == "graded" else None)
+        e = idx["cl"].get(cls) or (idx["cl"].get("run") if cls in ("graded", "wake") else None)
         src = "class"
     if not e or not e["c"]:
         return UNKNOWN_MC, 0.0, 0.0, "default"
@@ -210,7 +210,7 @@ def admission(me, holders, older, b, now):
     if not fits(me, holders, b):
         return False
     for w in older:
-        if now - w["t"] < b["patience"]:
+        if now - w["t"] < (0 if w.get("prio") == 0 else b["patience"]):   # a request has no patience to wait out: it goes first
             continue
         if fits(w, holders, b, seat_share=True) is False and fits(w, holders, b, seat_share=False) is True:
             continue   # held back by its own seat's share alone: it does not stand in the way of the pool
@@ -295,7 +295,7 @@ def admit(cls, key, seat, grader, holder_fd, bound=None, now=time.time, sleep=ti
     for sub in ("h", "q"):
         os.makedirs(os.path.join(d, sub), exist_ok=True)
     w, m, secs, src = lookup(cls, key)
-    me = {"w": w, "m": m, "seat": seat, "grader": bool(grader), "cls": cls, "key": key, "t": now(), "pid": os.getpid(), "st": starttime(os.getpid())}
+    me = {"w": w, "m": m, "seat": seat, "grader": bool(grader), "cls": cls, "key": key, "t": now(), "pid": os.getpid(), "st": starttime(os.getpid()), "prio": 0 if os.environ.get("S4E_DOOR_PRIO") == "0" else 1}
     bound = b["wait"] if bound is None else bound
     lk = open(os.path.join(d, "door.lock"), "a")
     fcntl.flock(lk, fcntl.LOCK_EX)
@@ -306,7 +306,7 @@ def admit(cls, key, seat, grader, holder_fd, bound=None, now=time.time, sleep=ti
         except (OSError, ValueError):
             n = 0
         open(sq, "w").write(str(n + 1))
-        mine = "%012d.%d" % (n + 1, os.getpid())
+        mine = "%d%012d.%d" % (0 if os.environ.get("S4E_DOOR_PRIO") == "0" else 1, n + 1, os.getpid())   # a request goes first: its ticket sorts before every other, whatever the arrival
         open(os.path.join(d, "q", mine), "w").write(rec_str(me))
     finally:
         fcntl.flock(lk, fcntl.LOCK_UN)

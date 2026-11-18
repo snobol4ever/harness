@@ -125,7 +125,7 @@ s4e_weights_hold() {
     eval "exec $pfd<>\"$W/h/$$.$RANDOM\"" || return 1
     flock -n "$pfd" || return 1
     t0=$(date +%s.%N); bound="${S4E_SLOT_WAIT_MAX:-}"
-    out="$(python3 -I -S "$here/lib_weights.py" admit --class "$kind" --seat "$seat" $([ "$grader" = 1 ] && echo --grader) --holder-fd "$pfd" ${bound:+--bound "$bound"} -- "$@")"; rc=$?
+    out="$(python3 -I -S "$here/lib_weights.py" admit --class "${S4E_DOOR_CLASS:-$kind}" --seat "$seat" $([ "$grader" = 1 ] && echo --grader) --holder-fd "$pfd" ${bound:+--bound "$bound"} -- "$@")"; rc=$?
     if [ "$rc" != 0 ]; then
         eval "exec $pfd>&-"
         [ "$rc" = 2 ] && { s4e_slot_note "$kind-refused" "$t0" "weights bound"; printf 'REFUSE(2) [util_%s_slot]: no turn at the weighted door for %s within its bound: the box is over-admitted, nothing ran (weights=on).\n' "$kind" "$seat" >&2; return 2; }

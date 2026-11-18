@@ -38,7 +38,7 @@ _wk_at_work() {   # <seat> -- rc 0 with the reason on stdout when the seat is at
 _wk_hold() {   # <seat> <W> <ready>
     local seat="$1" w="$2" ready="$3" rc u0 u1 t0 t1 cost mem
     export S4E_SEAT=wake; unset S4E_CLASS S4E_CORE_HELD S4E_RUN_SLOT_HELD S4E_ADMITTED
-    s4e_slot_hold run; rc=$?
+    S4E_DOOR_CLASS=wake s4e_slot_hold run "wake:$seat"; rc=$?   # the wake names its key at the door (wake:SEAT, class wake, the ledger line it writes below), as a cell does
     if [ "$rc" = 2 ]; then printf 'REFUSED\n' > "$ready.tmp"; mv "$ready.tmp" "$ready"; rm -f "${ready%.ready}.handle" "${ready%.ready}.log"; return 0; fi
     u0="$(_wk_usage "$seat")"; t0="$(date +%s.%N)"
     _wk_log "HELD $seat"
