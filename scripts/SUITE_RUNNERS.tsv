@@ -236,3 +236,5 @@ snobol4_golf	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snobol4
 prolog_golf	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/prolog_golf
 raku_golf	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/raku_golf
 pascal_golf	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascal_golf
+rosetta-fpc	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/rosetta-fpc
+rosetta-delphi	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/rosetta-delphi
