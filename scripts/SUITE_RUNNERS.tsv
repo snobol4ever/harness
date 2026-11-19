@@ -205,6 +205,7 @@ mikebeer_snobol@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4
 sw_cor24_snobol4@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/sw_cor24_snobol4
 gate_cases_snobol4@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gate_cases_snobol4
 rosetta-snobol4@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/rosetta-snobol4
+aoc2022_snobol@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/aoc2022_snobol
 vanilla@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/vanilla
 rosetta-snobol4@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/rosetta-snobol4
 snolib@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snolib
