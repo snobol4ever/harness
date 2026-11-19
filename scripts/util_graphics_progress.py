@@ -149,7 +149,7 @@ def measure(e):
         for key, name, scr, std, aside in ents:
             rd = new.get((key, name), ("", "UNREAD"))[1]
             need = key in row["scripted"]
-            detail.append((row["lang"], key, name, rd, scr, rd == "PASS" and (scr or std or not need) and not aside, aside))
+            detail.append((row["lang"], key, name, rd, scr, rd == "PASS" and (scr or std or not need) and not aside, aside, std))
         out.append((row, detail, built(e, row)))
     return out
 
@@ -194,14 +194,18 @@ def render(e):
     for label, have, of, nas in goals(e, m):
         if have is None or not of: lines.append("%-17s%14s%8s  %s" % ("GOAL " + label, "?", "-", "the suite row or the library is unread")); continue
         lines.append("%-17s%14s%8s  %s" % ("GOAL " + label, "%d/%d" % (have, of), "%5.1f%%" % (100.0 * have / of), ("%d to go" % (of - have) if of > have else "REACHED") + (", %d set aside" % nas if nas else "")))
-    lines.append("%-17s%14s%8s  %-22s%s" % ("Graphics", "Works", "Pct", "", "Built"))
+    lines.append("%-17s%14s%8s  %-22s  %s" % ("Graphics", "Works", "Pct", "", "Built"))
     for row, detail, b in m:
         n = sum(1 for d in detail if not d[6]); w = sum(1 for d in detail if d[5]); s = sum(1 for d in detail if d[4] and not d[6]); na = len(detail) - n
-        need = sum(1 for d in detail if d[1] in row["scripted"])
+        # SCRIPTED TO 100 (the chairman's reading of 2026-11-18, fleet-bus section 1; Lon 2026-11-19, in the grader's window: "Is 155/159 scripted and 27/34
+        # scripted considered complete? if not finish."): every entry of a scripted container has its events or its officer's STAND-IN, so a STAND-IN counts here
+        # and is named, and an entry set aside leaves the denominator as it leaves the goal.
+        scope = [d for d in detail if d[1] in row["scripted"] and not d[6]]
+        need, si = len(scope), sum(1 for d in scope if d[7] and not d[4])
         pct = "%5.1f%%" % (100.0 * w / n) if n else "    -"
-        note = "none cut yet" if not n and not na else ("%d of %d scripted" % (sum(1 for d in detail if d[4] and d[1] in row["scripted"] and not d[6]), need) if need else "%d scripted" % s) + (", %d set aside" % na if na else "")
+        note = "none cut yet" if not n and not na else (("%d of %d scripted" % (sum(1 for d in scope if d[4] or d[7]), need) + (" (%d stand-in)" % si if si else "")) if need else "%d scripted" % s) + (", %d set aside" % na if na else "")
         bt = "no step table" if b is None else "%d/%d steps" % b
-        lines.append("%-17s%14s%8s  %-22s%s" % (row["label"], "%d/%d" % (w, n), pct, note, bt))
+        lines.append("%-17s%14s%8s  %-22s  %s" % (row["label"], "%d/%d" % (w, n), pct, note, bt))
     return lines
 
 
@@ -237,6 +241,8 @@ def probe():
         open(os.path.join(d, "EVENTS-NONE.tsv"), "w").write("# h\nb\tSTAND-IN: ruled by the cto\nc\tMEASURED: waits for a script\n")
         db([("2026-01-01T00:00:00", "s", "c", "g", "package", "pk", "icon", "b", "m3", "PASS"), ("2026-01-01T00:00:00", "s", "c", "g", "package", "pk", "icon", "c", "m3", "PASS")]); g6 = works()[0]
         db([("2026-01-01T00:00:00", "s", "c", "g", "package", "pk", "icon", "b", "m3", "FAIL")]); g6f = works()[0]
+        nt = [l for l in render(e) if l.startswith("Icon graphics")]
+        if not nt or "2 of 3 scripted (1 stand-in)" not in nt[0]: why += " arm10 a scripted entry, a STAND-IN and a plain EVENTS-NONE line read %r, wanted 2 of 3 scripted (1 stand-in);" % (nt[:1],)
         if (g6, g6f) != (1, 0): why += " arm6 a STAND-IN line and a plain EVENTS-NONE line, each passing, read %d works (wanted 1), a STAND-IN failing reads %d (wanted 0);" % (g6, g6f)
         os.remove(os.path.join(d, "EVENTS-NONE.tsv"))
         os.makedirs(os.path.join(t, "lib"))
@@ -281,7 +287,7 @@ def probe():
         if [(sum(1 for x in det if x[5]), sum(1 for x in det if x[6])) for r, det, _b in mm if r["label"] == "Unicon graphics"] != [(1, 0)]: why += " arm9 a STAND-IN line on the Unicon line was set aside, wanted counted;"
     finally:
         shutil.rmtree(t, ignore_errors=True)
-    print("GRAPHICS-PROGRESS PROBE " + ("RED:" + why if why else "ok arms=9 (empty store, the script rule, newest wins, dirty and mode 4 unread, a display entry, the goal lines, a line of named containers and its scope goal, a step's row named by its table, a Unicon entry set aside by a measured EVENTS-NONE line and never an Icon one; steps closed by the done file and by a baton, never by a claim)"))
+    print("GRAPHICS-PROGRESS PROBE " + ("RED:" + why if why else "ok arms=10 (empty store, the script rule, a STAND-IN counted as scripted and named, newest wins, dirty and mode 4 unread, a display entry, the goal lines, a line of named containers and its scope goal, a step's row named by its table, a Unicon entry set aside by a measured EVENTS-NONE line and never an Icon one; steps closed by the done file and by a baton, never by a claim)"))
     return 1 if why else 0
 
 
@@ -290,7 +296,7 @@ if __name__ == "__main__":
     e = env()
     if "--list" in sys.argv:
         for row, detail, _b in measure(e):
-            for lang, key, name, rd, scr, cnt, aside in detail: print("\t".join((lang, key, name, rd, "scripted" if scr else "-", "SET-ASIDE" if aside else "WORKS" if cnt else "-")))
+            for lang, key, name, rd, scr, cnt, aside, std in detail: print("\t".join((lang, key, name, rd, "scripted" if scr else "stand-in" if std else "-", "SET-ASIDE" if aside else "WORKS" if cnt else "-")))
         sys.exit(0)
     try:
         print("\n".join(render(e)))
