@@ -61,6 +61,9 @@ snobol4-bench-ref@dotnet	port	snobol4	test_snobol4_bench_suite.sh	-
 x32tests@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_x32_tests
 x64tests@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_x64_tests
 dotnet@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/dotnet
+jvm	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/jvm
+jvm@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/jvm
+jvm@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/jvm
 snobol4-bench-ref@jvm	port	snobol4	test_snobol4_bench_suite.sh	-
 snobol4-demos@jvm	port	snobol4	corpus_suite_harness.py	corpus/demos/snobol4
 csnobol4@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/csnobol4_suite
