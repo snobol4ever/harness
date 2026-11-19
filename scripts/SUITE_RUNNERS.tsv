@@ -238,3 +238,6 @@ raku_golf	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/raku_golf
 pascal_golf	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascal_golf
 rosetta-fpc	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/rosetta-fpc
 rosetta-delphi	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/rosetta-delphi
+pascal_euler	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascal_euler
+raku_euler	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/raku_euler
+rosetta-pascalabc	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/rosetta-pascalabc
