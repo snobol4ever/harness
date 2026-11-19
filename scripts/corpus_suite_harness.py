@@ -1304,9 +1304,9 @@ def big_mem_probe():
         shutil.rmtree(t, ignore_errors=True)
     print("BIG_MEM ok arms=8 (the declared sizes are read from the run's own switches; no mem line and a small run meet no door; cache counts as room; one big run holds the place; a run without room waits and starts when room appears; the wait ends at wait=; a nested run takes no second place)" if not why else "BIG_MEM RED: " + " ".join(why))
     return 0 if not why else 1
-def _bounded_run_in_slot(argv, timeout, cwd, env, stdin_bytes, merge_stderr):
+def _bounded_run_in_slot(argv, timeout, cwd, env, stdin_bytes, merge_stderr, stdin_file=None):
     p = subprocess.Popen(([_SETPRIV, "--pdeathsig", "KILL", "--"] if _SETPRIV else []) + list(argv), cwd=cwd, env=env,
-                         stdin=subprocess.DEVNULL if stdin_bytes is None else subprocess.PIPE, stdout=subprocess.PIPE,
+                         stdin=stdin_file if stdin_file is not None else subprocess.DEVNULL if stdin_bytes is None else subprocess.PIPE, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT if merge_stderr else subprocess.PIPE)
     over = threading.Event()
     def drain(f, keep):

@@ -2004,6 +2004,20 @@ def mine_read_launch(pkg_dir, lang, dialects):
     return got
 
 
+# ⛔ THE MINE ROAD'S OUTPUT IS BOUNDED AS THE GRADER'S IS (the grader 2026-11-18, MEASURED: pascal_golf's four Big_Number solutions print without end, 100 MB in
+# under 5 s, and the builder held each 30 s run whole through subprocess.run(capture_output=True), 8 GB in 100 s, and its scope's cap killed the census three
+# times): each run goes through the harness's own reader, h._bounded_run_in_slot (each stream kept to S4E_OUTPUT_CAP_MB, the child killed past it, setpriv's
+# parent-death signal), its slot still the one util_run_slot.sh or util_oracle.sh takes, its stdin the same file or nothing; its own bound is a day, since
+# the wrapper's wait for a slot is inside it and the program's cap is the wrapper's. A run the bound killed is MINE_OVERFLOW_RC, read as DOES-NOT-END.
+MINE_OVERFLOW_RC = -1000
+
+
+def _mine_bounded(argv, cwd, env, stdin_file=None):
+    import types
+    rc, out, err, why = h._bounded_run_in_slot(argv, 86400, cwd, env, None, False, stdin_file=stdin_file)
+    return types.SimpleNamespace(returncode=MINE_OVERFLOW_RC if why == "OVERFLOW" else 124 if why == "HANG" else rc, stdout=out, stderr=err)
+
+
 def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=(), outf=None, sizes=None, units=()):
     """One oracle run of NAME in a scratch copy of FOLDER (subfolders included; the collection is never written to), from the top of that
     copy: the program's own folder and its bare name, or under copy root and cwd root the whole collection and the path from its root (CTO-591).
@@ -2035,20 +2049,20 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=
         if lang == "pascal":
             argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "fpc_oracle_run.sh"), *flags, name, *(["--", *args] if args else [])]   # ALL.args after a -- (the grader 2026-11-18)
             with open(sin, "rb") as fin:
-                pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
+                pr = _mine_bounded(argv, str(work / "f"), _mine_env(work), fin)
         elif lang == "icon":
             argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "unicon_oracle_run.sh"), "--here", name, *(["--units", ",".join(units)] if units else []), *args]   # the units ride a flag, never the arguments (ALL.units, _mine_units)
             with open(sin, "rb") as fin:
-                pr = subprocess.run(argv, cwd=str(work / "f"), stdin=fin, capture_output=True, env=_mine_env(work))
+                pr = _mine_bounded(argv, str(work / "f"), _mine_env(work), fin)
         elif lang == "prolog" and "--xsb" in flags:
             if args:
                 h.refuse(f"{name}: ALL.args names arguments, and XSB's road runs one -e goal that passes none")
             goal = ", ".join("consult('" + str(x).replace("\\", "\\\\").replace("'", "\\'") + "')" for x in files) + ", halt."
             argv = ["bash", os.path.join(HERE, "util_oracle.sh"), "xsb", "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_XSB_FLAGS, "-e", goal]
-            pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
+            pr = _mine_bounded(argv, str(work / "f"), _mine_env(work))
         else:
             argv = ["bash", os.path.join(HERE, "util_oracle.sh"), MINE_ORACLE[lang], "--stdin", str(sin), "--timeout", str(cap), "--no-cache", "--", *MINE_FLAGS.get(lang, ()), *(("-D" + DUMP_ONLY,) if (DUMP_ONLY and lang in ("", "snobol4")) else ()), *(h._size_switches(*sizes) if (sizes and lang in ("", "snobol4")) else ()), *flags, *files, *args]
-            pr = subprocess.run(argv, cwd=str(work / "f"), stdin=subprocess.DEVNULL, capture_output=True, env=_mine_env(work))
+            pr = _mine_bounded(argv, str(work / "f"), _mine_env(work))
         here = (str(work / "f") + "/").encode()
         there = (str(work / "launch") + "/").encode()
         # THE OUT FILES ARE THE ANSWER'S TAIL (officer_06 2026-11-13, row vanilla-owed-wdstar-mine-road-captures-its-out-file): a program whose answer
@@ -2108,6 +2122,8 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     if lang == "icon" and rc1 == 126:
         why = next((ln for ln in err1.decode("utf-8", "replace").splitlines() if ln.strip() and not ln.startswith("Parsing ")), first)
         return "ORACLE-REFUSES", f"unicon does not translate it: {why.strip()[:140]}", None, b""
+    if rc1 == MINE_OVERFLOW_RC:
+        return "DOES-NOT-END", f"its output passed the harness's bound (S4E_OUTPUT_CAP_MB, {h._OUTPUT_CAP} bytes) inside {cap} s and the run was killed -- no answer", None, b""
     if rc1 in (124, 137):
         return "DOES-NOT-END", f"no answer inside {cap} s", None, b""
     leak = _mine_env_leak(out1)
@@ -2337,6 +2353,9 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
     finally:
         _mine_scratch_drop()
     unfed = [f"{r} ({feeds[r][0] if r in feeds else 'ALL.args ' + ' '.join(margs[r])}): {v}: {note}" for r, (v, note, rc, out) in zip(rels, got) if (r in feeds or r in margs) and v != "ENTRY"]
+    if unfed and MINE_FEEDS_LENIENT:   # --mine-feeds-lenient (the grader 2026-11-18, MEASURED: a 147-program golf census ran 2 h 38 m and wrote nothing for 5 fed programs)
+        print(f"MINE_FEEDS_LENIENT package={pkg_dir.name} unfed={len(unfed)}: each keeps the verdict its fed runs gave: {'; '.join(unfed)[:600]}", file=sys.stderr)
+        unfed = []
     if unfed:
         h.refuse(f"{pkg_dir.name}: the package names a standard input for {len(unfed)} program(s) the oracle does not answer with it, and nothing is "
                  f"written: {'; '.join(unfed)[:600]}. Correct the input, or take its line out of ALL.stdin (or its NAME.in out of the package) and "
@@ -2429,6 +2448,7 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
 
 
 STDERR_ONLY = ""   # --stderr merged, with --only: the named entries' stderr cell (the grader 2026-11-18; Lon: an oracle error is an answer, its stream graded)
+MINE_FEEDS_LENIENT = False   # --mine-feeds-lenient: a program fed by the package that the oracle does not answer with its input keeps that verdict, never refuses the census
 DUMP_ONLY = ""   # --dump N, with --only: the named programs are silent and graded by their termination dump at level N (the grader 2026-11-17)
 
 
@@ -2568,6 +2588,7 @@ def main():
     ap.add_argument("--twice", action="store_true",
                     help="run the oracle twice per program and exclude one whose two answers differ (time, randomness, addresses)")
     ap.add_argument("--stderr", default="", choices=["", "merged"], help="with --only: the named entries' stderr cell is set before the cut, so an entry the oracle answers on stderr alone (a translator's refusal, a run-time error) is cut with that stream, in a package whose CONTRACT merges none (the grader 2026-11-18)")
+    ap.add_argument("--mine-feeds-lenient", action="store_true", help="with --mine: a program the package feeds (ALL.stdin, NAME.in, ALL.args) that the oracle does not answer with it keeps the verdict its fed runs gave (NO-OUTPUT, DIFFERS-BETWEEN-RUNS...) and is named on one line, where without it the whole census refuses and writes nothing (the grader 2026-11-18, for collections of many fed programs such as Anarchy Golf)")
     ap.add_argument("--dump", default="", choices=["", "1", "2"], help="with --only: the named programs are silent; each is cut with sbl -bf -D<N> and its ALL.csv dump cell set to N, so the grade runs scrip --dump=N --stlimit (the grader 2026-11-17)")
     ap.add_argument("--only", action="append", default=None, metavar="NAME[,NAME...]",
                     help="cut only these programs and splice them into the existing container, every other entry byte-identical (repeatable)")
@@ -2620,7 +2641,8 @@ def main():
     MINE_MASKS = h.read_mask_sidecar(pkg_dir / "ALL.ref")
     if args.mine and args.mine_add and not args.mine_under:
         h.refuse("--mine-add adds one folder to a mined package: it needs --mine-under FOLDER")
-    global DUMP_ONLY
+    global DUMP_ONLY, MINE_FEEDS_LENIENT
+    MINE_FEEDS_LENIENT = bool(getattr(args, "mine_feeds_lenient", False))
     if args.mine:
         if args.dump:   # one program at a time on the mine road (the grader 2026-11-18): the 168 SNOBOL4 entries graded by their exit status alone take the dump cell
             if args.lang != "snobol4" or not (args.mine_under and args.mine_add and (Path(mine_read_source(pkg_dir)["root"]) / args.mine_under.strip("/")).is_file()):
