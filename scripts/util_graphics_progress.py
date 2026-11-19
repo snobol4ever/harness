@@ -80,6 +80,10 @@ def entries(key, d, aside_ok=False):
         for ln in open(os.path.join(d, "EVENTS-NONE.tsv"), encoding="utf-8", errors="replace"):
             f = ln.rstrip("\n").split("\t")
             if len(f) > 1 and not ln.startswith("#") and "STAND-IN" in f[1]: stand.add(f[0].strip())
+            # SET-ASIDE BY LON'S WORD ON ANY LINE (Lon 2026-11-19, in the grader's window, asked how ipl_mprogs alcscope and alcview are graded, whose pictures
+            # draw each allocation's size and SCRIP's block sizes are not iconx's: "Mask or set aside"): a line whose reason carries the word SET-ASIDE leaves the
+            # line and its goal, the Icon line too; a plain line of an Icon container is still owed a script, as before.
+            elif len(f) > 1 and not ln.startswith("#") and f[0].strip() and "SET-ASIDE" in f[1]: aside.add(f[0].strip())
             elif aside_ok and len(f) > 1 and not ln.startswith("#") and f[0].strip() and f[1].strip(): aside.add(f[0].strip())
     except OSError:
         pass
