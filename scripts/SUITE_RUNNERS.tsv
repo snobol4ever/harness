@@ -242,3 +242,4 @@ pascal_euler	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascal_eu
 raku_euler	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/raku_euler
 rosetta-pascalabc	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/rosetta-pascalabc
 raku_weekly	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/raku_weekly
+prolog_aoc	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/prolog_aoc
