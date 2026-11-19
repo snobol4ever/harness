@@ -145,6 +145,7 @@ ipl_mprogs	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/ipl_mprogs
 ipl_gpacks	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/ipl_gpacks
 scriptix-variables	pkg	scriptix	corpus_suite_harness.py	corpus/tests/scriptix/variables
 scriptix-functions	pkg	scriptix	corpus_suite_harness.py	corpus/tests/scriptix/functions
+scriptix-backtracking	pkg	scriptix	corpus_suite_harness.py	corpus/tests/scriptix/backtracking
 wirth1976	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/wirth1976
 pascaline	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascaline
 p99	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/p99
@@ -229,3 +230,4 @@ sno_procmail@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4
 sno_bintree@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/sno_bintree
 scriptix-variables@kernel	small	scriptix	test_scriptix_pairs_kernel_road.sh variables	corpus/tests/scriptix/variables
 scriptix-functions@kernel	small	scriptix	test_scriptix_pairs_kernel_road.sh functions	corpus/tests/scriptix/functions
+scriptix-backtracking@kernel	small	scriptix	test_scriptix_pairs_kernel_road.sh backtracking	corpus/tests/scriptix/backtracking

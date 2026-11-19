@@ -7,7 +7,7 @@
 # A pair with a red of its own on the file road or the session host is skipped and counted, never read as a green.
 #   one line a pair: SAME, DIFFERS (the first differing line and the cell's stderr), SKIP (which road), UNMEASURED; then REALKERNEL pairs= same= differs= skipped_for_a_red_of_their_own= unmeasured=
 #   rc 0 every measured pair equal; rc 1 a pair differs; rc 2 could not measure (no binary, no jupyter, no pairs, no kernel, a spec that does not resolve to the scratch folder).
-#   PAIRS_JOBS (default 4) runs that many notebooks at once; REALKERNEL_ONLY (a space list of set/NAME) limits the run to those pairs; an argument, variables or functions, limits the run to that set.
+#   PAIRS_JOBS (default 4) runs that many notebooks at once; REALKERNEL_ONLY (a space list of set/NAME) limits the run to those pairs; an argument, variables, functions or backtracking, limits the run to that set.
 #   THE READING IS RECORDED (the grader's ruling 2026-11-18, the second road of one entry is its own suite key): each measured pair is a row of the progress table, suite scriptix-<set>@kernel, mode m3,
 #   program the entry name, outcome PASS for SAME and FAIL for DIFFERS, through util_progress_append.py (S4E_PROGRESS_OFF=1 records nothing, S4E_PROGRESS_DB redirects the table); a skipped pair is no reading.
 : "${S4E_SCRIP:?REFUSE(2): S4E_SCRIP unset}"
@@ -70,7 +70,7 @@ fi
 command -v jupyter > /dev/null 2>&1 || { echo "REFUSE(2): no jupyter on the box"; exit 2; }
 [ -d "$TOP/variables" ] && [ -d "$TOP/functions" ] || { echo "REFUSE(2): no tests/scriptix pairs under $TOP"; exit 2; }
 SETS="${1:-variables functions}"
-case "$SETS" in variables|functions|"variables functions") ;; *) echo "REFUSE(2): the set is variables or functions, not $SETS"; exit 2;; esac
+case "$SETS" in variables|functions|backtracking|"variables functions") ;; *) echo "REFUSE(2): the set is variables, functions or backtracking, not $SETS"; exit 2;; esac
 W="$(mktemp -d /tmp/s4e/${S4E_SEAT:-seat}-realkernel.XXXXXX)"
 trap 'rm -rf "$W"' EXIT
 "$S" --kernel-install "$W/spec/kernels" > "$W/install.log" 2>&1 || { echo "REFUSE(2): scrip --kernel-install did not install the kernel: $(tail -1 "$W/install.log")"; exit 2; }
