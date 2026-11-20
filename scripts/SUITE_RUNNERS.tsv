@@ -255,3 +255,7 @@ hakank_kattis	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/hakank_k
 rosetta_live_raku	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/rosetta_live_raku
 hakank_perl6	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/hakank_perl6
 rosetta_live_pascal	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/rosetta_live_pascal
+snobol4_bottles99	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snobol4_bottles99
+icon_bottles99	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/icon_bottles99
+pascal_bottles99	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pascal_bottles99
+prolog_bottles99	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/prolog_bottles99
