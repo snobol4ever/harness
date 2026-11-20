@@ -1631,7 +1631,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
     hdr = next(csv.reader([csv_lines[0]]))
     ix = {c: i for i, c in enumerate(hdr)}
     known = {"rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb", "compile_args", "run_args", "out_files", "stderr",
-             "compare", "stage", "answer", "mode_gap_s", "timeout_s", "fixtures", "dialect"} | {c for c, _fn in cols}
+             "compare", "stage", "answer", "mode_gap_s", "timeout_s", "fixtures", "dialect", "dump"} | {c for c, _fn in cols}
     if set(hdr) - known or "entry" not in ix or "rank" not in ix:
         h.refuse(f"splice gate: {f_csv}'s header is not one the splice can fill: unknown {sorted(set(hdr) - known)}")
     for e in entries:
@@ -1653,12 +1653,12 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
              "want_rc": e.want_rc, "heap_kb": m.DEFAULT_HEAP_KB, "stack_kb": m.DEFAULT_STACK_KB, "run_args": "", "mode_gap_s": "", "timeout_s": "",
              "compile_args": contract["unmarked_compile_args"] if contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "",
              "out_files": " ".join(getattr(e, "out_files", None) or []), "stderr": "merged" if (merged or STDERR_ONLY) else "", "compare": _cm_val(e),
-             "stage": "upstream" if e.name in staged else "", "fixtures": "folder" if e.name in FX_FOLDER else ("staged" if e.name in FX_STAGED else ""), "dialect": dialect_cell.get(e.name, ""), "answer": ("" if staged[e.name] == "stdout" else staged[e.name]) if e.name in staged else ""}
+             "stage": "upstream" if e.name in staged else "", "fixtures": "folder" if e.name in FX_FOLDER else ("staged" if e.name in FX_STAGED else ""), "dialect": dialect_cell.get(e.name, ""), "dump": "", "answer": ("" if staged[e.name] == "stdout" else staged[e.name]) if e.name in staged else ""}
         v.update({c: flags_row[c] for c, _fn in cols})
         if e.name in row_at:
             prev = rows[row_at[e.name]]
             v["rank"] = prev[ix["rank"]]
-            for c in ("heap_kb", "stack_kb", "compile_args", "run_args", "mode_gap_s", "timeout_s", "stderr") + (() if e.name in dialect_cell else ("dialect",)):
+            for c in ("heap_kb", "stack_kb", "compile_args", "run_args", "mode_gap_s", "timeout_s", "stderr", "dump") + (() if e.name in dialect_cell else ("dialect",)):
                 if c in ix and prev[ix[c]].strip():
                     v[c] = prev[ix[c]].strip()
             out_lines[row_at[e.name] + 1] = _fmt(v)
