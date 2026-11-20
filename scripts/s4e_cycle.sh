@@ -511,13 +511,13 @@ runner_row() {   # key -> "kind lang dir" of its SUITE_RUNNERS.tsv row, dir from
 # Demo as the table spells it, the last word dropped while it is over 12 (metalevel_contests ProMetalevel); one word still over 12 prints nothing and
 # --open-row refuses, so a row is named by hand (util_suite_banner.py --nick), never cut mid-word. rosetta-raku RakRosetta, rosetta-unicon UniRosetta,
 # uni_ipl UniIpl, power_of_prolog ProPower. A row named by hand keeps its name (Gimpel, Logtalk, PrologCafe): the rule names only a row the cycle opens.
-cycle_nick() {   # key lang -> the banner nick of a row the cycle opens: prefix and whole words, at most 12 characters, or nothing
+cycle_nick() {   # key lang -> the banner nick of a row the cycle opens: prefix and whole words, at most 18 characters (Lon 2026-11-15: the full language prefix, at most 18), or nothing
     local ab drop; case "$2" in snobol4) ab=Snobol4 drop="snobol4 snobol sno";; icon) ab=Icon drop="icon icn";; prolog) ab=Prolog drop="prolog pl pro";; pascal) ab=Pascal drop="pascal pas";; raku) ab=Raku drop="raku rak";; snocone) ab=Snocone drop="snocone snc";; rebus) ab=Rebus drop="rebus reb";; scriptix) ab=Scrip drop="scriptix tix";; *) ab=X drop="";; esac
     case "$1" in gate_cases_*) echo "${ab}Cases"; return 0;; esac
     case "$2:-$1-" in icon:*[-_]uni[-_]*|icon:*[-_]unicon[-_]*) ab=Unicon drop="$drop unicon uni";; esac
     printf '%s' "$1" | awk -F'[-_]' -v ab="$ab" -v drop="$drop of the" 'BEGIN { n = split(drop, d, " "); for (i = 1; i <= n; i++) skip[d[i]] = 1 }
         { m = 0; for (i = 1; i <= NF; i++) if ($i != "" && !($i in skip)) w[++m] = ($i == "demos") ? "Demo" : toupper(substr($i, 1, 1)) substr($i, 2)
-          while (m > 0) { s = ab; for (i = 1; i <= m; i++) s = s w[i]; if (length(s) <= 12) { print s; exit } m-- } }'
+          while (m > 0) { s = ab; for (i = 1; i <= m; i++) s = s w[i]; if (length(s) <= 18) { print s; exit } m-- } }'
 }
 record_row() {   # key -> the suite's row from the progress store; a refusal the cycle cannot cure is logged and held in CYCLE.refused
     local o rc r R="$PROG/CYCLE.refused" kind lang dir mv st c

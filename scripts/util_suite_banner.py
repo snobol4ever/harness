@@ -1118,6 +1118,11 @@ def main(a):
         head,rows=load()
         if any(r['key']==key for r in rows):
             print(f"--open-row {key}: the row is already open; nothing written"); return
+        # A NEW ROW TAKES NO NICK ANOTHER BARE ROW HOLDS (the grader 2026-11-20, MEASURED: the cycle opened rosetta_live_icon as IconRosetta, rosetta-icon's nick, and
+        # ipl_gprocs and ipl_mprogs both as IconIpl; nick_to_key hands one row's readings to the other), the rule --nick already keeps
+        other=[r['key'] for r in _scrip(rows) if r['nick']==nick]
+        if other:
+            sys.stderr.write(f"REFUSE(rc=2): --open-row {key!r} {nick!r}: the nick is {other[0]}'s; name the row by hand with --open-row KEY NICK. NOTHING WAS WRITTEN.\n"); sys.exit(2)
         new={h:'' for h in head}; new.update(key=key, nick=nick, emoji=emoji, lang=lang, criterion_changed=f"{box_clock_day()}:ROW-OPENED by the cycle, {key} is a {_graded[key]} row of SUITE_RUNNERS.tsv graded every lap")
         before=open(TSV,encoding='utf-8').read()
         rows.append(new); save(head,rows); history(head,before,rows)
