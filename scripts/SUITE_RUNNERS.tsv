@@ -247,3 +247,11 @@ rosetta-pascalabc	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/rose
 raku_weekly	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/raku_weekly
 prolog_aoc	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/prolog_aoc
 prolog_euler	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/prolog_euler
+rosetta_live_icon	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/rosetta_live_icon
+rosetta_live_unicon	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/rosetta_live_unicon
+hakank_unicon	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/hakank_unicon
+rosetta_live_prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/rosetta_live_prolog
+hakank_kattis	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/hakank_kattis
+rosetta_live_raku	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/rosetta_live_raku
+hakank_perl6	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/hakank_perl6
+rosetta_live_pascal	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/rosetta_live_pascal
