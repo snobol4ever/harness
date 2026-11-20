@@ -441,6 +441,17 @@ fpc_bin() {
     fi
     printf '%s\n' "$c"
 }
+# ⭐ GNU PASCAL, THE SECOND PASCAL ORACLE (the grader 2026-11-20; Lon: "Yes, build gpc and cut a sample" / "keep on cutting, grading, and scoring."): gpc 20070904 on
+# gcc-3.4.6, built on this box from hebisch/gpc 21ec0ce (/home/packages/pascal/gpc-20070904/BUILD.md, every fix it needed). It answers the programs written in GNU
+# Pascal's own dialect, which fpc refuses in every mode (MEASURED: 28 of 28 sampled gpc_tests programs give the test's own answer under it). Run by gpc_oracle_run.sh.
+gpc_bin() {
+    local c="${S4E_PACKAGES:-/home/packages}/pascal/gpc-20070904/bin/gpc"
+    if [ ! -x "$c" ]; then
+        printf "⛔ THE GNU PASCAL ORACLE IS MISSING: %s (built by the recipe in /home/resources/evidence/grader/gpc-oracle-2026-11-20).\n" "$c" >&2
+        return 1
+    fi
+    printf '%s\n' "$c"
+}
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ⭐ CSNOBOL4 ORACLE ACCESSOR (row snobol4-csnobol4-suite-graded).  Phil Budne's CSNOBOL4 is the vendored
 # csnobol4_suite's OWN home-dialect oracle -- `sbl -bf` is NOT a substitute for grading it: 30 of the suite's

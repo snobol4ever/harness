@@ -4128,6 +4128,11 @@ def read_package_dir(d, ext, modes=None):
             raise ValueError(f"{d}: {name} and {seen[stem]} share the stem {stem.relative_to(d)}; their NAME.in, NAME.out and NAME.err would be one file")
         seen[stem] = name
         out = Path(str(stem) + ".out")
+        # A HUGE ANSWER STAYS BESIDE ITS PROGRAM, NEVER IN THE REPO (Lon 2026-11-19, in the grader's window, verbatim: "Do not store huge files in the repo, but leave
+        # them /home/packages or /home/resources folders."): an answer the package folder does not hold is read from the same path under the ALL.source root, so
+        # the entry is graded all the same (MEASURED: raku_weekly challenge-069 colin-crain ch-2 answers 67108864 bytes, twice alike; the corpus's largest before 2.8 MB).
+        if not out.is_file() and src_root is not None and (src_root / out.relative_to(d)).is_file():
+            out = src_root / out.relative_to(d)
         units = [] if in_place else chain_units_beside(prog, resolve_paths()["corpus"])   # a chained demo is its units, then itself (beauty)
         e = Entry("block", seq, name, _read_src_lines(prog) if in_place else units + _read_lf_lines(prog), _read_stream_lines(out) if out.is_file() else [])
         if in_place:
@@ -8143,7 +8148,7 @@ COMPILE_ARGS_ADMITTED = ("--stlimit", "--dialect=gnu", "--dialect=unicon", "-S",
 # a dialect word in compile_args is refused (two answers to one question). With it a package prelude that only named the dialect leaves.
 # Pascal's five join 2026-11-11 (the coo, COO-508): a mined Pascal row's cell is the fpc mode that cut its answer (iso, fpc, objfpc, delphi, tp),
 # which scrip --dialect= already takes; the first reading of Free Pascal's tbs folder refused at row 2 on the cell fpc.
-DIALECT_CELLS = ("swi", "xsb", "gnu", "unicon", "iso", "fpc", "objfpc", "delphi", "tp")
+DIALECT_CELLS = ("swi", "xsb", "gnu", "unicon", "iso", "fpc", "objfpc", "delphi", "tp", "gpc")   # gpc: GNU Pascal, the second Pascal oracle (the grader 2026-11-20), scrip --dialect=gpc
 
 
 def validate_out_files_cell(raw, where):

@@ -1867,6 +1867,10 @@ MINE_SILENT_RC = False   # --mine-silent-rc: a silent program is an entry graded
 # tests, which state their mode in the source).
 MINE_LADDER = {"pascal": (("iso", "-Miso"), ("fpc", ""), ("objfpc", "-Mobjfpc"), ("delphi", "-Mdelphi"), ("tp", "-Mtp")),
                "prolog": (("swi", ""), ("xsb", "--xsb"))}
+# GNU PASCAL, A RUNG NAMED ONLY (the grader 2026-11-20; Lon: "keep on cutting, grading, and scoring."): --mine-dialects iso,fpc,objfpc,delphi,tp,gpc asks
+# gpc (gpc_oracle_run.sh) for a program fpc refuses in every mode, and the row's dialect cell is gpc. It is no rung of the default ladder, so a re-cut of a
+# package that does not name it moves no total. MEASURED: 28 of 28 sampled gpc_tests programs fpc refuses give the test's own answer under gpc.
+MINE_LADDER_NAMED = {"pascal": (("gpc", "--gpc"),)}
 # PROLOG BY XSB (the grader 2026-11-11, row mining-a-test-suite-from-xsb-examples; RULES.md: XSB is the third Prolog oracle, for XSB's own programs):
 # --mine-dialects xsb reads the collection's .P files and asks xsb, through util_oracle.sh, to consult the program and halt
 # (xsb --noprompt --quietload --nobanner -e "consult('NAME'), halt."), the form the fleet's XSB gates use; the row's dialect cell is xsb and its
@@ -2047,7 +2051,8 @@ def _mine_run(lang, folder, name, cap, stdin_bytes, flags=(), launch=None, args=
         sin = work / "stdin"
         sin.write_bytes(stdin_bytes)
         if lang == "pascal":
-            argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "fpc_oracle_run.sh"), *flags, name, *(["--", *args] if args else [])]   # ALL.args after a -- (the grader 2026-11-18)
+            _gpc = "--gpc" in flags
+            argv = ["bash", os.path.join(HERE, "util_run_slot.sh"), "timeout", "-k", "5", str(cap), "bash", os.path.join(HERE, "gpc_oracle_run.sh" if _gpc else "fpc_oracle_run.sh"), *[f for f in flags if f != "--gpc"], name, *(["--", *args] if args else [])]   # ALL.args after a -- (the grader 2026-11-18); the gpc rung runs GNU Pascal (2026-11-20)
             with open(sin, "rb") as fin:
                 pr = _mine_bounded(argv, str(work / "f"), _mine_env(work), fin)
         elif lang == "icon":
@@ -2118,7 +2123,7 @@ def _mine_one(lang, root, rel, cap, whole=False, ladder=None, feed=None, launch=
     first = (err1.decode("utf-8", "replace").strip().splitlines() or [""])[0][:160]
     if lang == "pascal" and rc1 == 126:
         why = next((ln for ln in err1.decode("utf-8", "replace").splitlines() if re.search(r"\b(Fatal|Error):", ln)), first)
-        return "ORACLE-REFUSES", f"fpc compiles it in no mode of the ladder; the last says: {why.strip()[:140]}", None, b""
+        return "ORACLE-REFUSES", f"{'fpc and gpc compile' if '--gpc' in flags else 'fpc compiles'} it in no mode of the ladder; the last says: {why.strip()[:140]}", None, b""
     if lang == "icon" and rc1 == 126:
         why = next((ln for ln in err1.decode("utf-8", "replace").splitlines() if ln.strip() and not ln.startswith("Parsing ")), first)
         return "ORACLE-REFUSES", f"unicon does not translate it: {why.strip()[:140]}", None, b""
@@ -2337,7 +2342,7 @@ def mine(pkg_dir, lang, census_path, cap=60, jobs=4, under=None, skip=None, dial
     rels = [r for r in rels if r not in twin]
     ladder = None
     if dialects:
-        known = dict(MINE_LADDER.get(lang) or ())
+        known = dict(MINE_LADDER.get(lang) or ()) | dict(MINE_LADDER_NAMED.get(lang) or ())
         if not known or any(d not in known for d in dialects):
             h.refuse(f"--mine-dialects {','.join(dialects)}: the ladder of {lang or 'snobol4'} is {', '.join(known) or 'empty'}")
         ladder = tuple((d, known[d]) for d in dialects)
